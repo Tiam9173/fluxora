@@ -140,103 +140,344 @@ class _WarpViewState extends ConsumerState<WarpView> {
     );
   }
 
-  void _showEndpointDialog(WarpConfig config) {
-    final serverCtrl = TextEditingController(text: config.server);
-    final portCtrl = TextEditingController(text: config.port.toString());
-
-    final presets = [
-      {'name': '官方推荐 1', 'server': '162.159.192.1', 'port': 2408},
-      {'name': '官方推荐 2', 'server': '162.159.193.1', 'port': 2408},
-      {'name': '官方推荐 3', 'server': '162.159.195.1', 'port': 2408},
-      {'name': '域名端点', 'server': 'engage.cloudflareclient.com', 'port': 2408},
-    ];
-
+  void _showRoutingModeDialog(WarpConfig config) {
+    var selected = config.routingMode;
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('设置 Cloudflare 端点'),
-        content: SingleChildScrollView(
-          child: Column(
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setDlgState) {
+            return AlertDialog(
+              title: const Text(
+                'WARP 路由模式',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              content: RadioGroup<WarpRoutingMode>(
+                groupValue: selected,
+                onChanged: (val) {
+                  if (val != null) {
+                    setDlgState(() => selected = val);
+                  }
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    RadioListTile<WarpRoutingMode>(
+                      value: WarpRoutingMode.proxyOverWarp,
+                      title: const Text('通过 WARP 路由代理'),
+                      subtitle: const Text('流量先经过 WARP 再连接代理节点，用于节点被阻断时救砖'),
+                    ),
+                    RadioListTile<WarpRoutingMode>(
+                      value: WarpRoutingMode.warpOverProxy,
+                      title: const Text('通过代理路由 WARP'),
+                      subtitle: const Text('流量经代理节点后再连 WARP 出口，用于防送中与解锁 AI'),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    warpManager.setRoutingMode(WarpRoutingMode.warpOverProxy);
+                    Navigator.of(ctx).pop();
+                    context.showSnackBar('已重置为默认「通过代理路由 WARP」');
+                  },
+                  child: const Text('重置'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('取消'),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    warpManager.setRoutingMode(selected);
+                    Navigator.of(ctx).pop();
+                    context.showSnackBar('已切换为 ${selected.label}');
+                  },
+                  child: const Text('确定'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showCleanIpDialog(WarpConfig config) {
+    final ctrl = TextEditingController(text: config.cleanIp);
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('优选 IP (Clean IP)'),
+          content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('常用优质预设端点：',
-                  style: TextStyle(fontSize: 12, color: Colors.grey)),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 4,
-                children: presets.map((p) {
-                  return ActionChip(
-                    label: Text('${p['name']}: ${p['server']}'),
-                    onPressed: () {
-                      serverCtrl.text = p['server'].toString();
-                      portCtrl.text = p['port'].toString();
-                    },
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: serverCtrl,
-                decoration: const InputDecoration(
-                  labelText: '服务器 IP 或域名',
-                  border: OutlineInputBorder(),
-                ),
+              const Text(
+                '设置连接 Cloudflare WARP 的优选 IP，输入 auto 则自动使用官方最优 IP：',
+                style: TextStyle(fontSize: 13),
               ),
               const SizedBox(height: 12),
               TextField(
-                controller: portCtrl,
-                keyboardType: TextInputType.number,
+                controller: ctrl,
                 decoration: const InputDecoration(
-                  labelText: '端口 (默认 2408)',
+                  labelText: '优选 IP / 域名',
+                  hintText: 'auto 或例如 162.159.193.1',
                   border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.auto_awesome),
                 ),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  ActionChip(
+                    label: const Text('auto (默认)'),
+                    onPressed: () => ctrl.text = 'auto',
+                  ),
+                  ActionChip(
+                    label: const Text('162.159.193.1'),
+                    onPressed: () => ctrl.text = '162.159.193.1',
+                  ),
+                  ActionChip(
+                    label: const Text('188.114.96.1'),
+                    onPressed: () => ctrl.text = '188.114.96.1',
+                  ),
+                  ActionChip(
+                    label: const Text('162.159.192.1'),
+                    onPressed: () => ctrl.text = '162.159.192.1',
+                  ),
+                ],
               ),
             ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('取消'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                warpManager.setCleanIp('auto');
+                Navigator.of(ctx).pop();
+                context.showSnackBar('优选 IP 已重置为 auto');
+              },
+              child: const Text('重置'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final val = ctrl.text.trim();
+                warpManager.setCleanIp(val.isEmpty ? 'auto' : val);
+                Navigator.of(ctx).pop();
+                context.showSnackBar('优选 IP 已保存');
+              },
+              child: const Text('保存'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showPortDialog(WarpConfig config) {
+    final ctrl = TextEditingController(
+      text: config.port == 0 ? '0' : config.port.toString(),
+    );
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('端口 (Port)'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '设置 WireGuard 端口（0 为默认 2408 端口）：',
+                style: TextStyle(fontSize: 13),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: ctrl,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: '端口号',
+                  hintText: '0, 2408, 500, 1701, 4500',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.device_hub),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  ActionChip(
+                    label: const Text('0 (默认 2408)'),
+                    onPressed: () => ctrl.text = '0',
+                  ),
+                  ActionChip(
+                    label: const Text('2408'),
+                    onPressed: () => ctrl.text = '2408',
+                  ),
+                  ActionChip(
+                    label: const Text('500'),
+                    onPressed: () => ctrl.text = '500',
+                  ),
+                  ActionChip(
+                    label: const Text('1701'),
+                    onPressed: () => ctrl.text = '1701',
+                  ),
+                  ActionChip(
+                    label: const Text('4500'),
+                    onPressed: () => ctrl.text = '4500',
+                  ),
+                ],
+              ),
+            ],
           ),
-          FilledButton(
-            onPressed: () {
-              final port = int.tryParse(portCtrl.text.trim()) ?? 2408;
-              warpManager.setEndpoint(serverCtrl.text.trim(), port);
-              Navigator.of(ctx).pop();
-              context.showSnackBar('端点已更新为 ${serverCtrl.text.trim()}:$port');
-            },
-            child: const Text('保存'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                warpManager.setPort(0);
+                Navigator.of(ctx).pop();
+                context.showSnackBar('端口已重置为 0 (默认 2408)');
+              },
+              child: const Text('重置'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final p = int.tryParse(ctrl.text.trim()) ?? 0;
+                warpManager.setPort(p);
+                Navigator.of(ctx).pop();
+                context.showSnackBar('端口已更新');
+              },
+              child: const Text('保存'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showNoiseDialog(WarpConfig config) {
+    final countCtrl = TextEditingController(text: config.noiseCount);
+    final modeCtrl = TextEditingController(text: config.noiseMode);
+    final sizeCtrl = TextEditingController(text: config.noiseSize);
+    final delayCtrl = TextEditingController(text: config.noiseDelay);
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('噪声与伪装参数'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: countCtrl,
+                  decoration: const InputDecoration(
+                    labelText: '噪声数量',
+                    hintText: '1-3',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: modeCtrl,
+                  decoration: const InputDecoration(
+                    labelText: '噪声模式',
+                    hintText: 'm4',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: sizeCtrl,
+                  decoration: const InputDecoration(
+                    labelText: '噪声大小',
+                    hintText: '10-30',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: delayCtrl,
+                  decoration: const InputDecoration(
+                    labelText: '噪声延迟',
+                    hintText: '10-30',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                warpManager.setNoise(
+                  count: '1-3',
+                  mode: 'm4',
+                  size: '10-30',
+                  delay: '10-30',
+                );
+                Navigator.of(ctx).pop();
+                context.showSnackBar('噪声参数已重置为默认值');
+              },
+              child: const Text('重置'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: () {
+                warpManager.setNoise(
+                  count: countCtrl.text.trim().isEmpty ? '1-3' : countCtrl.text.trim(),
+                  mode: modeCtrl.text.trim().isEmpty ? 'm4' : modeCtrl.text.trim(),
+                  size: sizeCtrl.text.trim().isEmpty ? '10-30' : sizeCtrl.text.trim(),
+                  delay: delayCtrl.text.trim().isEmpty ? '10-30' : delayCtrl.text.trim(),
+                );
+                Navigator.of(ctx).pop();
+                context.showSnackBar('噪声参数已保存');
+              },
+              child: const Text('保存'),
+            ),
+          ],
+        );
+      },
     );
   }
 
   void _showLicenseDialog(WarpConfig config) {
     final ctrl = TextEditingController(text: config.licenseKey);
-
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('绑定 WARP+ / Teams 密钥'),
+        title: const Text('绑定 WARP+ 许可证密钥'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              '如拥有 WARP+ 24 位许可证密钥或 Cloudflare Zero Trust 团队凭证，输入后将为您自动升级至极速专用线路。',
-              style: TextStyle(fontSize: 13, color: Colors.grey),
+              '输入您的 24 位 WARP+ License 密钥（例如通过 1.1.1.1 机器人、促销或购买获得）：',
+              style: TextStyle(fontSize: 13),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             TextField(
               controller: ctrl,
               decoration: const InputDecoration(
-                labelText: '24 位许可证密钥 (License Key)',
-                hintText: '例如: xxxxxxxx-xxxxxxxx-xxxxxxxx',
+                labelText: 'License Key (24 位字符)',
+                hintText: 'xxxx-xxxx-xxxx-xxxx',
                 border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.vpn_key),
               ),
             ),
           ],
@@ -246,6 +487,15 @@ class _WarpViewState extends ConsumerState<WarpView> {
             onPressed: () => Navigator.of(ctx).pop(),
             child: const Text('取消'),
           ),
+          if (config.licenseKey.isNotEmpty)
+            TextButton(
+              onPressed: () {
+                warpManager.setLicenseKey('');
+                Navigator.of(ctx).pop();
+                context.showSnackBar('已清除许可证密钥');
+              },
+              child: const Text('解绑'),
+            ),
           FilledButton(
             onPressed: () async {
               final lic = ctrl.text.trim();
@@ -285,7 +535,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
               const SizedBox(height: 12),
               _buildKeyField('Cloudflare 对端公钥', config.peerPublicKey),
               const SizedBox(height: 12),
-              _buildKeyField('客户端保留字段 (Reserved)', config.reserved.toString()),
+              _buildKeyField('客户端预留字段 (Reserved)', config.reserved.toString()),
               const SizedBox(height: 12),
               _buildKeyField('虚拟 IPv4', config.ip),
               const SizedBox(height: 12),
@@ -333,8 +583,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
               Expanded(
                 child: SelectableText(
                   value.isNotEmpty ? value : '未设置',
-                  style: const TextStyle(
-                      fontFamily: 'monospace', fontSize: 11),
+                  style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
                 ),
               ),
               IconButton(
@@ -376,6 +625,16 @@ class _WarpViewState extends ConsumerState<WarpView> {
         onPressed: isTesting ? null : () => warpManager.checkWarpStatus(),
       ),
       IconButton(
+        tooltip: '重置为默认配置',
+        icon: const Icon(Icons.restart_alt),
+        onPressed: () async {
+          await warpManager.resetConfig();
+          if (context.mounted) {
+            context.showSnackBar('WARP 已重置为初始默认配置');
+          }
+        },
+      ),
+      IconButton(
         tooltip: '使用指南与原理解释',
         icon: Icon(
           _isGuideExpanded ? Icons.info : Icons.info_outline,
@@ -391,33 +650,29 @@ class _WarpViewState extends ConsumerState<WarpView> {
         // 1. Usage Guide Card (Collapsible)
         if (_isGuideExpanded) _buildGuideCard(colorScheme),
 
-        // 2. Master Switch Card
-        _buildMasterSwitchCard(config, colorScheme),
-
-        const SizedBox(height: 16),
-
-        // 3. Visual Diagnostic Card (Hero Card)
+        // 2. Visual Diagnostic Card (Hero Card)
         _buildDiagnosticHeroCard(report, config, isTesting, colorScheme),
 
         const SizedBox(height: 16),
 
-        // 4. Mode Selection Card
-        _buildModeSelectorCard(config, colorScheme),
+        // 3. Main Settings List
+        _buildSettingsCard(config, isRegistering, colorScheme),
 
         const SizedBox(height: 16),
 
-        // 5. Hop Node Selection Card
-        _buildHopSelectorCard(config, colorScheme),
+        // 4. Contextual Routing Configuration Card
+        if (config.routingMode == WarpRoutingMode.warpOverProxy) ...[
+          _buildHopSelectorCard(config, colorScheme),
+          const SizedBox(height: 16),
+          _buildModeSelectorCard(config, colorScheme),
+          const SizedBox(height: 16),
+        ] else ...[
+          _buildProxyOverWarpNoticeCard(colorScheme),
+          const SizedBox(height: 16),
+        ],
 
-        const SizedBox(height: 16),
-
-        // 6. Account & Key Management Card
+        // 5. Account, Keys & Advanced Card
         _buildAccountCard(config, isRegistering, colorScheme),
-
-        const SizedBox(height: 16),
-
-        // 7. Advanced Endpoint & MTU Card
-        _buildEndpointCard(config, colorScheme),
 
         const SizedBox(height: 32),
       ],
@@ -426,14 +681,14 @@ class _WarpViewState extends ConsumerState<WarpView> {
     if (widget.type != null) {
       return AdaptiveSheetScaffold(
         type: widget.type!,
-        title: '🛡️ 机场节点套 WARP (WARP on Proxy)',
+        title: 'WARP',
         actions: actions,
         body: body,
       );
     }
 
     return CommonScaffold(
-      title: '🛡️ 机场节点套 WARP (WARP on Proxy)',
+      title: 'WARP',
       actions: actions,
       body: body,
     );
@@ -459,7 +714,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
                     color: colorScheme.primary, size: 20),
                 const SizedBox(width: 8),
                 Text(
-                  '💡 使用场景与链式隧道原理',
+                  '💡 使用场景与路由模式原理',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
@@ -470,66 +725,14 @@ class _WarpViewState extends ConsumerState<WarpView> {
             ),
             const SizedBox(height: 8),
             const Text(
-              '• 解决 Google 送中：机场节点常用机房 IP 容易被 Google 判定为数据中心并频繁弹出人机验证（Captcha），或被强制重定向到香港/大陆域名。\n'
-              '• 解锁限制平台：OpenAI/ChatGPT、Claude、Gemini、流媒体等常屏蔽机场 IP，套上 WARP 后出口变为干净的 Cloudflare Anycast/家庭宽带出口。\n'
-              '• 隐藏机场落地：您的流量经由机场节点穿透墙体，再在出口处通过 WireGuard 封装直接连入 Cloudflare 边缘网络，目标站点完全看不到机场真实落地 IP，极大提升隐私安全性。\n'
-              '• 智能分流推荐：默认开启「智能防送中与 AI 解锁」模式，Google 与 AI 平台走 WARP 出口，机场其它流量保持原节点原生高速！',
+              '• 通过代理路由 WARP (推荐)：流量经机场节点中转后再接入 Cloudflare WireGuard 网络，隐藏机场落地机房 IP，获得干净 Anycast 出口，彻底规避 Google Captcha 人机验证并解锁 ChatGPT、Claude 及流媒体。\n'
+              '• 通过 WARP 路由代理：流量先通过 WARP 隧道穿透，再连向机场代理节点。当机场节点服务器 IP 在国内被封锁阻断时，WARP 作为前置穿透通道拯救被封节点！\n'
+              '• 优选 IP 支持：国内网络若直连官方 IP 缓慢，可在「优选 IP」输入低延迟 Cloudflare IP，实现流畅加速。\n'
+              '• 真实诊断核验：顶部卡片直连 Cloudflare cdn-cgi/trace 深度检测，实时显示 warp=on/plus 状态、出口 IP 与 Google 防送中评定。',
               style: TextStyle(fontSize: 13, height: 1.5),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildMasterSwitchCard(WarpConfig config, ColorScheme colorScheme) {
-    return Card(
-      elevation: config.enable ? 2 : 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: config.enable
-              ? colorScheme.primary.withValues(alpha: 0.5)
-              : colorScheme.outlineVariant,
-        ),
-      ),
-      child: SwitchListTile(
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        secondary: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: config.enable
-                ? colorScheme.primaryContainer
-                : colorScheme.surfaceContainerHighest,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            config.enable ? Icons.shield : Icons.shield_outlined,
-            color: config.enable
-                ? colorScheme.primary
-                : colorScheme.onSurfaceVariant,
-            size: 26,
-          ),
-        ),
-        title: const Text(
-          '启用 机场节点套 WARP',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        ),
-        subtitle: Text(
-          config.enable
-              ? '🛡️ WARP 出口已激活 (Mihomo WireGuard 隧道级联运行中)'
-              : '为选定前置机场节点套上 Cloudflare WireGuard 出口',
-          style: TextStyle(
-            fontSize: 12,
-            color: config.enable ? colorScheme.primary : Colors.grey,
-          ),
-        ),
-        value: config.enable,
-        onChanged: (val) {
-          warpManager.setEnable(val);
-          context.showSnackBar(val ? '已开启 WARP on Proxy' : '已关闭 WARP on Proxy');
-        },
       ),
     );
   }
@@ -803,6 +1006,221 @@ class _WarpViewState extends ConsumerState<WarpView> {
     );
   }
 
+  /// Main Settings Card layout
+  Widget _buildSettingsCard(
+    WarpConfig config,
+    bool isRegistering,
+    ColorScheme colorScheme,
+  ) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: colorScheme.outlineVariant),
+      ),
+      child: Column(
+        children: [
+          // 1. 启用 WARP
+          SwitchListTile(
+            secondary: Icon(Icons.cloud, color: colorScheme.primary),
+            title: const Text(
+              '启用 WARP',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: Text(
+              config.enable ? '已启用 Cloudflare WARP' : '点击开启 WARP 功能',
+              style: TextStyle(
+                fontSize: 12,
+                color: config.enable ? colorScheme.primary : Colors.grey,
+              ),
+            ),
+            value: config.enable,
+            onChanged: (val) {
+              warpManager.setEnable(val);
+              context.showSnackBar(val ? '已开启 WARP' : '已关闭 WARP');
+            },
+          ),
+          const Divider(height: 1),
+
+          // 2. 生成 WARP 配置
+          ListTile(
+            leading: Icon(Icons.build_rounded, color: colorScheme.primary),
+            title: const Text('生成 WARP 配置'),
+            subtitle: isRegistering
+                ? const Text('正在向 Cloudflare 官方注册设备并生成密钥...',
+                    style: TextStyle(fontSize: 12, color: Colors.blue))
+                : Text(
+                    config.accountId.isNotEmpty
+                        ? '设备已就绪 (ID: ${config.accountId})，点击可重新生成'
+                        : '一键生成 X25519 密钥对并向 Cloudflare 注册设备',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+            trailing: isRegistering
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.arrow_forward_ios, size: 14),
+            onTap: isRegistering
+                ? null
+                : () async {
+                    context.showSnackBar('正在生成 X25519 密钥并向 Cloudflare 注册设备...');
+                    final ok = await warpManager.registerCloudflareAccount();
+                    if (mounted) {
+                      if (ok) {
+                        context.showSnackBar('🎉 官方设备与密钥生成成功！');
+                      } else {
+                        context.showSnackBar('生成完成（已载入内置合法密钥对）');
+                      }
+                    }
+                  },
+          ),
+          const Divider(height: 1),
+
+          // 3. WARP 路由模式
+          ListTile(
+            leading: Icon(Icons.alt_route_rounded, color: colorScheme.primary),
+            title: const Text('WARP 路由模式'),
+            subtitle: Text(
+              config.routingMode.label,
+              style: TextStyle(fontSize: 12, color: colorScheme.primary),
+            ),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+            onTap: () => _showRoutingModeDialog(config),
+          ),
+          const Divider(height: 1),
+
+          // 4. 许可证密钥
+          ListTile(
+            leading: Icon(Icons.vpn_key_rounded, color: colorScheme.primary),
+            title: const Text('许可证密钥'),
+            subtitle: Text(
+              config.licenseKey.isEmpty
+                  ? '未设置'
+                  : (config.accountType == 'plus'
+                      ? '👑 WARP+ (已激活): ${config.licenseKey}'
+                      : config.licenseKey),
+              style: TextStyle(
+                fontSize: 12,
+                color: config.licenseKey.isEmpty ? Colors.grey : colorScheme.primary,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+            onTap: () => _showLicenseDialog(config),
+          ),
+          const Divider(height: 1),
+
+          // 5. 优选 IP
+          ListTile(
+            leading: Icon(Icons.auto_awesome_rounded, color: colorScheme.primary),
+            title: const Text('优选 IP'),
+            subtitle: Text(
+              config.cleanIp.isEmpty ? 'auto' : config.cleanIp,
+              style: TextStyle(fontSize: 12, color: colorScheme.primary),
+            ),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+            onTap: () => _showCleanIpDialog(config),
+          ),
+          const Divider(height: 1),
+
+          // 6. 端口
+          ListTile(
+            leading: Icon(Icons.device_hub_rounded, color: colorScheme.primary),
+            title: const Text('端口'),
+            subtitle: Text(
+              config.port == 0 ? '0' : config.port.toString(),
+              style: TextStyle(fontSize: 12, color: colorScheme.primary),
+            ),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+            onTap: () => _showPortDialog(config),
+          ),
+          const Divider(height: 1),
+
+          // 7. 噪声数量
+          ListTile(
+            leading: Icon(Icons.layers_outlined, color: colorScheme.primary),
+            title: const Text('噪声数量'),
+            subtitle: Text(
+              config.noiseCount,
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+            onTap: () => _showNoiseDialog(config),
+          ),
+          const Divider(height: 1),
+
+          // 8. 噪声模式
+          ListTile(
+            leading: Icon(Icons.mode_standby_rounded, color: colorScheme.primary),
+            title: const Text('噪声模式'),
+            subtitle: Text(
+              config.noiseMode,
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+            onTap: () => _showNoiseDialog(config),
+          ),
+          const Divider(height: 1),
+
+          // 9. 噪声大小
+          ListTile(
+            leading: Icon(Icons.compare_arrows_rounded, color: colorScheme.primary),
+            title: const Text('噪声大小'),
+            subtitle: Text(
+              config.noiseSize,
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+            onTap: () => _showNoiseDialog(config),
+          ),
+          const Divider(height: 1),
+
+          // 10. 噪声延迟
+          ListTile(
+            leading: Icon(Icons.schedule_rounded, color: colorScheme.primary),
+            title: const Text('噪声延迟'),
+            subtitle: Text(
+              config.noiseDelay,
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+            onTap: () => _showNoiseDialog(config),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProxyOverWarpNoticeCard(ColorScheme colorScheme) {
+    return Card(
+      elevation: 0,
+      color: Colors.blue.withValues(alpha: 0.08),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.blue.withValues(alpha: 0.3)),
+      ),
+      child: const Padding(
+        padding: EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.info_outline, color: Colors.blue, size: 22),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                '当前为「通过 WARP 路由代理」模式：所有机场代理节点均自动级联经由 WARP 隧道出境连接，能有效拯救被 GFW 阻断的节点，无需额外选择前置跳板。',
+                style: TextStyle(fontSize: 13, height: 1.4),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildModeSelectorCard(WarpConfig config, ColorScheme colorScheme) {
     return Card(
       elevation: 0,
@@ -873,7 +1291,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        leading: Icon(Icons.alt_route, color: colorScheme.primary),
+        leading: Icon(Icons.flight_takeoff, color: colorScheme.primary),
         title: const Text(
           '前置跳板代理 (Dialer-Proxy)',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
@@ -929,7 +1347,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
                         color: colorScheme.primary, size: 20),
                     const SizedBox(width: 8),
                     const Text(
-                      'WARP 账号与设备凭据',
+                      'WARP 凭据与高级详情',
                       style:
                           TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                     ),
@@ -955,9 +1373,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
             ),
             const SizedBox(height: 8),
             Text(
-              config.accountId.isNotEmpty
-                  ? '设备 ID: ${config.accountId}'
-                  : '已为您自动生成 Curve25519 密钥对。您也可以点击下方一键向 Cloudflare 官方注册独立设备。',
+              '端点: ${config.effectiveServer}:${config.effectivePort} | MTU: ${config.mtu} | Reserved: ${config.reserved}',
               style: const TextStyle(fontSize: 12, color: Colors.grey),
             ),
             const SizedBox(height: 12),
@@ -966,91 +1382,52 @@ class _WarpViewState extends ConsumerState<WarpView> {
               runSpacing: 8,
               children: [
                 OutlinedButton.icon(
-                  icon: isRegistering
-                      ? const SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.app_registration, size: 16),
-                  label: Text(isRegistering ? '正在注册...' : '一键注册官方设备'),
-                  onPressed: isRegistering
-                      ? null
-                      : () async {
-                          context.showSnackBar('正在调用 Cloudflare 官方接口注册设备...');
-                          final ok =
-                              await warpManager.registerCloudflareAccount();
-                          if (mounted) {
-                            if (ok) {
-                              context.showSnackBar('🎉 官方设备注册成功！已分配专属 Client ID');
-                            } else {
-                              context.showSnackBar(
-                                  '官方接口注册失败，已使用内置合法密钥对正常工作');
-                            }
-                          }
-                        },
+                  icon: const Icon(Icons.vpn_key_outlined, size: 16),
+                  label: const Text('查看完整 WireGuard 密钥'),
+                  onPressed: () => _showKeyDetailsDialog(config),
                 ),
                 OutlinedButton.icon(
-                  icon: const Icon(Icons.key, size: 16),
-                  label: const Text('绑定 WARP+ License'),
-                  onPressed: () => _showLicenseDialog(config),
-                ),
-                TextButton.icon(
-                  icon: const Icon(Icons.vpn_key_outlined, size: 16),
-                  label: const Text('查看 WireGuard 密钥'),
-                  onPressed: () => _showKeyDetailsDialog(config),
+                  icon: const Icon(Icons.compress, size: 16),
+                  label: Text('MTU: ${config.mtu}'),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => SimpleDialog(
+                        title: const Text('选择 WireGuard MTU'),
+                        children: [
+                          SimpleDialogOption(
+                            onPressed: () {
+                              warpManager.setMtu(1280);
+                              Navigator.of(ctx).pop();
+                              context.showSnackBar('MTU 已设为 1280 (推荐)');
+                            },
+                            child: const Text('1280 (推荐，UDP代理最优)'),
+                          ),
+                          SimpleDialogOption(
+                            onPressed: () {
+                              warpManager.setMtu(1360);
+                              Navigator.of(ctx).pop();
+                              context.showSnackBar('MTU 已设为 1360');
+                            },
+                            child: const Text('1360 (适中)'),
+                          ),
+                          SimpleDialogOption(
+                            onPressed: () {
+                              warpManager.setMtu(1420);
+                              Navigator.of(ctx).pop();
+                              context.showSnackBar('MTU 已设为 1420 (标准)');
+                            },
+                            child: const Text('1420 (标准)'),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildEndpointCard(WarpConfig config, ColorScheme colorScheme) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: colorScheme.outlineVariant),
-      ),
-      child: Column(
-        children: [
-          ListTile(
-            leading: Icon(Icons.dns, color: colorScheme.primary),
-            title: const Text('Cloudflare 节点端点',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-            subtitle: Text(
-              '${config.server}:${config.port}',
-              style: TextStyle(fontSize: 12, color: colorScheme.primary),
-            ),
-            trailing: const Icon(Icons.edit, size: 16),
-            onTap: () => _showEndpointDialog(config),
-          ),
-          const Divider(height: 1),
-          ListTile(
-            leading: Icon(Icons.compress, color: colorScheme.primary),
-            title: const Text('WireGuard MTU',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-            subtitle: Text(
-              '${config.mtu} (推荐 1280，避免 UDP 隧道分包丢包)',
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-            trailing: PopupMenuButton<int>(
-              initialValue: config.mtu,
-              itemBuilder: (ctx) => [
-                const PopupMenuItem(value: 1280, child: Text('1280 (推荐，UDP代理最优)')),
-                const PopupMenuItem(value: 1360, child: Text('1360 (适中)')),
-                const PopupMenuItem(value: 1420, child: Text('1420 (标准)')),
-              ],
-              onSelected: (val) {
-                warpManager.setMtu(val);
-                context.showSnackBar('MTU 已设为 $val');
-              },
-            ),
-          ),
-        ],
       ),
     );
   }

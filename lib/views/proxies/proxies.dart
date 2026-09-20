@@ -122,8 +122,8 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
               },
             ),
             PopupMenuItemData(
-              icon: Icons.shield_outlined,
-              label: '🛡️ 节点套 WARP',
+              icon: Icons.cloud_rounded,
+              label: 'WARP',
               onPressed: () {
                 showExtend(
                   context,

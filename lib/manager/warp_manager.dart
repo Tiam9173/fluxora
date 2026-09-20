@@ -121,6 +121,49 @@ class WarpManager extends ChangeNotifier {
     await updateConfig((c) => c.copyWith(licenseKey: licenseKey.trim()));
   }
 
+  Future<void> setRoutingMode(WarpRoutingMode routingMode) async {
+    await updateConfig((c) => c.copyWith(routingMode: routingMode));
+  }
+
+  Future<void> setCleanIp(String cleanIp) async {
+    await updateConfig((c) => c.copyWith(cleanIp: cleanIp.trim()));
+  }
+
+  Future<void> setPort(int port) async {
+    await updateConfig((c) => c.copyWith(port: port));
+  }
+
+  Future<void> setNoise({
+    String? count,
+    String? mode,
+    String? size,
+    String? delay,
+  }) async {
+    await updateConfig((c) => c.copyWith(
+          noiseCount: count,
+          noiseMode: mode,
+          noiseSize: size,
+          noiseDelay: delay,
+        ));
+  }
+
+  Future<void> resetConfig() async {
+    final keyPair = Curve25519.generateKeyPair();
+    await updateConfig(
+      (c) => WarpConfig(
+        enable: c.enable,
+        privateKey: keyPair.privateKey,
+        publicKey: keyPair.publicKey,
+        defaultDialerProxy: '',
+        routingMode: WarpRoutingMode.warpOverProxy,
+        mode: WarpMode.googleAndAi,
+        cleanIp: 'auto',
+        port: 0,
+        licenseKey: '',
+      ),
+    );
+  }
+
   Future<void> generateNewKeys() async {
     final keyPair = Curve25519.generateKeyPair();
     await updateConfig((c) => c.copyWith(

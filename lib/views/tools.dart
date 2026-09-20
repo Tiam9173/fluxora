@@ -248,13 +248,13 @@ class _ToolViewState extends ConsumerState<ToolsView> {
         ),
       ),
       _SearchItem(
-        title: '🛡️ 节点套 WARP (WARP on Proxy)',
-        subtitle: '为机场节点套上 Cloudflare WARP 出口，解锁 AI/流媒体并解决 Google 送中',
+        title: 'WARP',
+        subtitle: 'Cloudflare WARP',
         category: settingsCategory,
-        leading: const Icon(Icons.shield_outlined),
+        leading: const Icon(Icons.cloud_rounded),
         onTap: (context, _) => _pushPage(
           context,
-          '🛡️ 节点套 WARP',
+          'WARP',
           const WarpView(),
         ),
       ),
@@ -1549,11 +1549,11 @@ class _WarpProxyItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListItem.next(
-      leading: const Icon(Icons.shield_outlined),
-      title: const Text('🛡️ 节点套 WARP (WARP on Proxy)'),
-      subtitle: const Text('为机场节点套上 Cloudflare WARP 出口，解锁 AI/流媒体并解决 Google 送中'),
+      leading: const Icon(Icons.cloud_rounded),
+      title: const Text('WARP'),
+      subtitle: const Text('Cloudflare WARP'),
       delegate: NextDelegate(
-        title: '🛡️ 节点套 WARP',
+        title: 'WARP',
         builder: (_) => const WarpView(),
       ),
     );

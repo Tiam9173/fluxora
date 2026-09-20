@@ -288,4 +288,51 @@ warp=off
       expect(report.isGoogleAntiRedirect, isFalse);
     });
   });
+
+  group('WARP 路由模式与优选 IP 测试', () {
+    test('优选 IP 与端口有效值计算', () {
+      const configAuto = WarpConfig(cleanIp: 'auto', port: 0);
+      expect(configAuto.effectiveServer, WarpConfig.defaultEndpoint);
+      expect(configAuto.effectivePort, WarpConfig.defaultPort);
+
+      const configCustom = WarpConfig(cleanIp: '162.159.193.10', port: 4500);
+      expect(configCustom.effectiveServer, '162.159.193.10');
+      expect(configCustom.effectivePort, 4500);
+    });
+
+    test('proxyOverWarp 模式：所有机场代理节点自动注入 dialer-proxy 为 WARP', () {
+      final config = WarpConfig(
+        enable: true,
+        privateKey: 'priv_key',
+        routingMode: WarpRoutingMode.proxyOverWarp,
+      );
+
+      final raw = <String, dynamic>{
+        'proxies': [
+          {'name': '🇭🇰 香港 01', 'type': 'ss', 'server': '1.1.1.1', 'port': 8388},
+          {'name': '🇯🇵 日本 01', 'type': 'trojan', 'server': '2.2.2.2', 'port': 443},
+        ],
+        'proxy-groups': [
+          {
+            'name': 'GLOBAL',
+            'type': 'select',
+            'proxies': ['🇭🇰 香港 01']
+          }
+        ],
+        'rules': ['MATCH,GLOBAL'],
+      };
+
+      config.applyToClashConfig(raw);
+
+      final proxies = raw['proxies'] as List;
+      final warpNode = proxies.firstWhere((p) => p['name'] == config.proxyName);
+      expect(warpNode.containsKey('dialer-proxy'), isFalse); // WARP 直连
+
+      final hkNode = proxies.firstWhere((p) => p['name'] == '🇭🇰 香港 01');
+      expect(hkNode['dialer-proxy'], config.proxyName); // 机场节点通过 WARP 级联
+
+      final jpNode = proxies.firstWhere((p) => p['name'] == '🇯🇵 日本 01');
+      expect(jpNode['dialer-proxy'], config.proxyName);
+    });
+  });
 }

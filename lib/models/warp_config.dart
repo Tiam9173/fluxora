@@ -22,6 +22,28 @@ enum WarpMode {
   }
 }
 
+enum WarpRoutingMode {
+  warpOverProxy('通过代理路由 WARP', '通过代理路由 WARP (推荐: 机场套 WARP 出口，防送中、解锁流媒体与 AI)'),
+  proxyOverWarp('通过 WARP 路由代理', '通过 WARP 路由代理 (WARP 作为前置跳板连通被封锁的节点)');
+
+  final String label;
+  final String description;
+
+  const WarpRoutingMode(this.label, this.description);
+
+  static WarpRoutingMode fromString(String? val) {
+    if (val == null) return WarpRoutingMode.warpOverProxy;
+    final lower = val.toLowerCase().trim();
+    if (lower.contains('proxy_over_warp') ||
+        lower.contains('proxyoverwarp') ||
+        lower.contains('warp_as_entry') ||
+        lower == 'proxyoverwarp') {
+      return WarpRoutingMode.proxyOverWarp;
+    }
+    return WarpRoutingMode.warpOverProxy;
+  }
+}
+
 class WarpConfig {
   static const String defaultPeerPublicKey =
       'bmXOC+F1FxEMF9dyiK2H5/1SUtzH0JuVo51h2wPfgyo=';
@@ -40,6 +62,7 @@ class WarpConfig {
   final String peerPublicKey;
   final String server;
   final int port;
+  final String cleanIp;
   final String ip;
   final String ipv6;
   final List<int> reserved;
@@ -47,11 +70,16 @@ class WarpConfig {
   final bool udp;
   final bool remoteDnsResolve;
   final String defaultDialerProxy;
+  final WarpRoutingMode routingMode;
   final WarpMode mode;
   final String licenseKey;
   final String accountId;
   final String accountToken;
   final String accountType; // free, plus, teams
+  final String noiseCount;
+  final String noiseMode;
+  final String noiseSize;
+  final String noiseDelay;
   final List<String> customRules;
 
   const WarpConfig({
@@ -63,6 +91,7 @@ class WarpConfig {
     this.peerPublicKey = defaultPeerPublicKey,
     this.server = defaultEndpoint,
     this.port = defaultPort,
+    this.cleanIp = 'auto',
     this.ip = defaultV4,
     this.ipv6 = defaultV6,
     this.reserved = const [0, 0, 0],
@@ -70,18 +99,42 @@ class WarpConfig {
     this.udp = true,
     this.remoteDnsResolve = true,
     this.defaultDialerProxy = '',
+    this.routingMode = WarpRoutingMode.warpOverProxy,
     this.mode = WarpMode.googleAndAi,
     this.licenseKey = '',
     this.accountId = '',
     this.accountToken = '',
     this.accountType = 'free',
+    this.noiseCount = '1-3',
+    this.noiseMode = 'm4',
+    this.noiseSize = '10-30',
+    this.noiseDelay = '10-30',
     this.customRules = const [],
   });
+
+  /// The effective endpoint server hostname / IP address
+  String get effectiveServer {
+    final c = cleanIp.trim();
+    if (c.isNotEmpty && c.toLowerCase() != 'auto') {
+      return c;
+    }
+    if (server.trim().isNotEmpty && server.trim().toLowerCase() != 'auto') {
+      return server.trim();
+    }
+    return defaultEndpoint;
+  }
+
+  /// The effective WireGuard port
+  int get effectivePort {
+    if (port > 0) return port;
+    return defaultPort;
+  }
 
   /// Factory to generate a new initial WARP config with fresh Curve25519 keys
   factory WarpConfig.generateNew({
     bool enable = false,
     String defaultDialerProxy = '',
+    WarpRoutingMode routingMode = WarpRoutingMode.warpOverProxy,
     WarpMode mode = WarpMode.googleAndAi,
   }) {
     final keyPair = Curve25519.generateKeyPair();
@@ -90,6 +143,7 @@ class WarpConfig {
       privateKey: keyPair.privateKey,
       publicKey: keyPair.publicKey,
       defaultDialerProxy: defaultDialerProxy,
+      routingMode: routingMode,
       mode: mode,
     );
   }
@@ -103,6 +157,7 @@ class WarpConfig {
     String? peerPublicKey,
     String? server,
     int? port,
+    String? cleanIp,
     String? ip,
     String? ipv6,
     List<int>? reserved,
@@ -110,11 +165,16 @@ class WarpConfig {
     bool? udp,
     bool? remoteDnsResolve,
     String? defaultDialerProxy,
+    WarpRoutingMode? routingMode,
     WarpMode? mode,
     String? licenseKey,
     String? accountId,
     String? accountToken,
     String? accountType,
+    String? noiseCount,
+    String? noiseMode,
+    String? noiseSize,
+    String? noiseDelay,
     List<String>? customRules,
   }) {
     return WarpConfig(
@@ -126,6 +186,7 @@ class WarpConfig {
       peerPublicKey: peerPublicKey ?? this.peerPublicKey,
       server: server ?? this.server,
       port: port ?? this.port,
+      cleanIp: cleanIp ?? this.cleanIp,
       ip: ip ?? this.ip,
       ipv6: ipv6 ?? this.ipv6,
       reserved: reserved ?? this.reserved,
@@ -133,11 +194,16 @@ class WarpConfig {
       udp: udp ?? this.udp,
       remoteDnsResolve: remoteDnsResolve ?? this.remoteDnsResolve,
       defaultDialerProxy: defaultDialerProxy ?? this.defaultDialerProxy,
+      routingMode: routingMode ?? this.routingMode,
       mode: mode ?? this.mode,
       licenseKey: licenseKey ?? this.licenseKey,
       accountId: accountId ?? this.accountId,
       accountToken: accountToken ?? this.accountToken,
       accountType: accountType ?? this.accountType,
+      noiseCount: noiseCount ?? this.noiseCount,
+      noiseMode: noiseMode ?? this.noiseMode,
+      noiseSize: noiseSize ?? this.noiseSize,
+      noiseDelay: noiseDelay ?? this.noiseDelay,
       customRules: customRules ?? this.customRules,
     );
   }
@@ -152,6 +218,7 @@ class WarpConfig {
       'peerPublicKey': peerPublicKey,
       'server': server,
       'port': port,
+      'cleanIp': cleanIp,
       'ip': ip,
       'ipv6': ipv6,
       'reserved': reserved,
@@ -159,11 +226,16 @@ class WarpConfig {
       'udp': udp,
       'remoteDnsResolve': remoteDnsResolve,
       'defaultDialerProxy': defaultDialerProxy,
+      'routingMode': routingMode.name,
       'mode': mode.name,
       'licenseKey': licenseKey,
       'accountId': accountId,
       'accountToken': accountToken,
       'accountType': accountType,
+      'noiseCount': noiseCount,
+      'noiseMode': noiseMode,
+      'noiseSize': noiseSize,
+      'noiseDelay': noiseDelay,
       'customRules': customRules,
     };
   }
@@ -188,6 +260,7 @@ class WarpConfig {
       port: (json['port'] is int)
           ? json['port'] as int
           : int.tryParse(json['port']?.toString() ?? '') ?? defaultPort,
+      cleanIp: json['cleanIp']?.toString() ?? 'auto',
       ip: json['ip']?.toString() ?? defaultV4,
       ipv6: json['ipv6']?.toString() ?? defaultV6,
       reserved: parseReserved(json['reserved']),
@@ -197,11 +270,16 @@ class WarpConfig {
       udp: json['udp'] != false,
       remoteDnsResolve: json['remoteDnsResolve'] != false,
       defaultDialerProxy: json['defaultDialerProxy']?.toString() ?? '',
+      routingMode: WarpRoutingMode.fromString(json['routingMode']?.toString()),
       mode: WarpMode.fromString(json['mode']?.toString()),
       licenseKey: json['licenseKey']?.toString() ?? '',
       accountId: json['accountId']?.toString() ?? '',
       accountToken: json['accountToken']?.toString() ?? '',
       accountType: json['accountType']?.toString() ?? 'free',
+      noiseCount: json['noiseCount']?.toString() ?? '1-3',
+      noiseMode: json['noiseMode']?.toString() ?? 'm4',
+      noiseSize: json['noiseSize']?.toString() ?? '10-30',
+      noiseDelay: json['noiseDelay']?.toString() ?? '10-30',
       customRules: (json['customRules'] is List)
           ? (json['customRules'] as List).map((e) => e.toString()).toList()
           : const [],
@@ -209,12 +287,12 @@ class WarpConfig {
   }
 
   /// Builds the Mihomo (Clash.Meta) WireGuard proxy map with dialer-proxy
-  Map<String, dynamic> toMihomoProxyMap(String effectiveDialer) {
+  Map<String, dynamic> toMihomoProxyMap([String effectiveDialer = '']) {
     final map = <String, dynamic>{
       'name': proxyName,
       'type': 'wireguard',
-      'server': server.trim(),
-      'port': port,
+      'server': effectiveServer,
+      'port': effectivePort,
       'ip': ip.trim().isNotEmpty ? ip.trim() : defaultV4,
       if (ipv6.trim().isNotEmpty) 'ipv6': ipv6.trim(),
       'private-key': privateKey.trim(),
@@ -271,7 +349,45 @@ class WarpConfig {
     rawConfig['tcp-concurrent'] = true;
     rawConfig['unified-delay'] = true;
 
-    // Determine effective dialer-proxy hop
+    // 2. Ensure proxy-groups
+    final rawGroups = rawConfig['proxy-groups'];
+    final List<dynamic> groupList = (rawGroups is List)
+        ? List<dynamic>.from(rawGroups)
+        : <dynamic>[];
+    rawConfig['proxy-groups'] = groupList;
+
+    // Check routingMode:
+    // Case A: proxyOverWarp ("通过 WARP 路由代理")
+    // Client -> WARP (direct) -> Airport Proxy -> Destination
+    if (routingMode == WarpRoutingMode.proxyOverWarp) {
+      // Inject WireGuard proxy with direct connection (no dialer-proxy)
+      proxiesList.removeWhere((p) => p is Map && p['name'] == proxyName);
+      proxiesList.add(toMihomoProxyMap(''));
+
+      // Set dialer-proxy = proxyName for all airport proxies
+      for (final item in proxiesList) {
+        if (item is Map && item['name'] != null) {
+          final name = item['name'].toString();
+          if (name != proxyName && item['type'] != null) {
+            item['dialer-proxy'] = proxyName;
+          }
+        }
+      }
+
+      // Add WARP node to general groups if not present
+      for (final group in groupList) {
+        if (group is Map) {
+          final pList = group['proxies'];
+          if (pList is List && !pList.contains(proxyName)) {
+            pList.add(proxyName);
+          }
+        }
+      }
+      return;
+    }
+
+    // Case B: warpOverProxy ("通过代理路由 WARP", default)
+    // Client -> Airport Proxy (hop) -> WARP (WireGuard) -> Destination
     const String dedicatedWarpHopGroup = '✈️ WARP跳板';
     String configuredHop = defaultDialerProxy.trim();
 
@@ -284,13 +400,6 @@ class WarpConfig {
     final String effectiveHop = (isHopSpecificProxy || isHopDirect)
         ? configuredHop
         : dedicatedWarpHopGroup;
-
-    // 2. Ensure proxy-groups
-    final rawGroups = rawConfig['proxy-groups'];
-    final List<dynamic> groupList = (rawGroups is List)
-        ? List<dynamic>.from(rawGroups)
-        : <dynamic>[];
-    rawConfig['proxy-groups'] = groupList;
 
     // Filter out dummy/info nodes
     bool isInformationalName(String name) {
@@ -342,7 +451,6 @@ class WarpConfig {
     }
 
     // 3. Inject WireGuard proxy
-    // Remove old instance if any
     proxiesList.removeWhere((p) => p is Map && p['name'] == proxyName);
     proxiesList.add(toMihomoProxyMap(effectiveHop));
 
