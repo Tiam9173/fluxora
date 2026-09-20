@@ -1,7 +1,7 @@
 name: bett_box
 description: Bettbox+ is an enhanced multi-platform proxy client based on Bettbox and Mihomo, featuring Chain Proxy and residential IP support.
 publish_to: 'none'
-version: 1.19.2+2026090901
+version: 1.19.2+2026092002
 environment:
   sdk: '>=3.9.0 <4.0.0'
 

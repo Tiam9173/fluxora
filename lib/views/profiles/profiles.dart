@@ -15,6 +15,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 import 'add_profile.dart';
+import 'profile_nodes_view.dart';
+import 'profile_chain_dialog.dart';
 
 class ProfilesView extends ConsumerStatefulWidget {
   const ProfilesView({super.key});
@@ -476,6 +478,20 @@ class ProfileItem extends StatelessWidget {
 
   List<PopupMenuItemData> _buildMenuItems(BuildContext context) {
     return [
+      PopupMenuItemData(
+        icon: Icons.dns_outlined,
+        label: '节点管理 / 添加节点',
+        onPressed: () {
+          BaseNavigator.push(context, ProfileNodesView(profile: profile));
+        },
+      ),
+      PopupMenuItemData(
+        icon: Icons.alt_route_rounded,
+        label: '前置与落地代理',
+        onPressed: () {
+          ProfileChainDialog.show(context, profile);
+        },
+      ),
       PopupMenuItemData(
         icon: Icons.edit_outlined,
         label: appLocalizations.edit,
