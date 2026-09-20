@@ -9,6 +9,7 @@
 
 <div align="left">
 
+[![Telegram Group](https://img.shields.io/badge/bettbox+-Group-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/+xtB80V6DWhZmZDVl)
 [![Telegram Channel](https://img.shields.io/badge/bettbox+-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/bettboxplus)
 
 ---

@@ -10,6 +10,7 @@
 <p align="center">
   <a href="https://github.com/Tiam9173/bettboxplus/releases/latest"><img src="https://img.shields.io/github/v/release/Tiam9173/bettboxplus?style=for-the-badge&logo=github&color=238636&label=Release" alt="Latest Release" /></a>
   <a href="https://github.com/MetaCubeX/mihomo/releases/latest"><img src="https://img.shields.io/github/v/release/MetaCubeX/mihomo?style=for-the-badge&logo=go&logoColor=white&color=8A2BE2&label=Mihomo" alt="Core" /></a>
+  <a href="https://t.me/+xtB80V6DWhZmZDVl"><img src="https://img.shields.io/badge/Telegram-Group-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white" alt="Telegram Group" /></a>
   <a href="https://t.me/bettboxplus"><img src="https://img.shields.io/badge/Telegram-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white" alt="Telegram Channel" /></a>
 </p>
 
@@ -29,6 +30,7 @@ Guided by the principles of lightness, fluidity, and out-of-the-box readiness, b
 
 ### ✈️ Community
 
+👉 **Official Telegram Group**: [https://t.me/+xtB80V6DWhZmZDVl](https://t.me/+xtB80V6DWhZmZDVl)  
 👉 **Official Telegram Channel**: [https://t.me/bettboxplus](https://t.me/bettboxplus)
 
 ---
