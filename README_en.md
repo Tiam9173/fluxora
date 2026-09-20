@@ -58,7 +58,7 @@ bettbox+ includes native, easy-to-use **Chain Proxy** (two-hop proxying):
 
 ## 🛡️ WARP on Proxy (Cloudflare WireGuard Egress)
 
-Inspired by Hiddify, bettbox+ supports cascading an egress Cloudflare WARP tunnel over airport proxies:
+bettbox+ supports cascading an egress Cloudflare WARP tunnel over airport proxies:
 - **Prevent Google Redirection**: Route through airport nodes into Cloudflare's WireGuard Anycast network to resolve CAPTCHAs and geolocational redirects.
 - **Pure Identity & Privacy**: Conceal the airport landing IP behind Cloudflare's Anycast IP to unlock OpenAI/ChatGPT, Claude, Gemini, and streaming services.
 - **Visual Diagnostics**: Real-time trace validation testing `warp=on`/`warp=plus`, egress IP, edge POP colo codes (HKG, NRT, SJC...), and anti-redirect scores.

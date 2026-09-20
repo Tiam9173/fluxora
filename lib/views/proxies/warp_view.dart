@@ -459,7 +459,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
                     color: colorScheme.primary, size: 20),
                 const SizedBox(width: 8),
                 Text(
-                  '💡 使用场景与链式隧道原理 (借鉴 Hiddify)',
+                  '💡 使用场景与链式隧道原理',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
