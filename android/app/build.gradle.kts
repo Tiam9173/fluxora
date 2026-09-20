@@ -11,10 +11,10 @@ val localProperties = Properties().apply {
 }
 
 val mStoreFile = file("keystore.jks")
-val mStorePassword: String? = localProperties.getProperty("storePassword")
-val mKeyAlias: String? = localProperties.getProperty("keyAlias")
-val mKeyPassword: String? = localProperties.getProperty("keyPassword")
-val isRelease = mStoreFile.exists() && mStorePassword != null && mKeyAlias != null && mKeyPassword != null
+val mStorePassword: String? = localProperties.getProperty("storePassword")?.takeIf { it.isNotBlank() }
+val mKeyAlias: String? = localProperties.getProperty("keyAlias")?.takeIf { it.isNotBlank() }
+val mKeyPassword: String? = localProperties.getProperty("keyPassword")?.takeIf { it.isNotBlank() }
+val isRelease = mStoreFile.exists() && mStoreFile.length() > 0L && mStorePassword != null && mKeyAlias != null && mKeyPassword != null
 
 android {
     namespace = "com.appshub.bettbox"
