@@ -1,0 +1,53 @@
+PODS:
+  - code_forge (10.0.0):
+    - FlutterMacOS
+  - flutter_qjs (0.0.1):
+    - FlutterMacOS
+  - FlutterMacOS (1.0.0)
+  - HotKey (0.2.0)
+  - hotkey_manager_macos (0.0.1):
+    - FlutterMacOS
+    - HotKey
+  - tray_manager (0.0.1):
+    - FlutterMacOS
+  - window_ext (0.0.1):
+    - FlutterMacOS
+
+DEPENDENCIES:
+  - code_forge (from `Flutter/ephemeral/.symlinks/plugins/code_forge/macos`)
+  - flutter_qjs (from `Flutter/ephemeral/.symlinks/plugins/flutter_qjs/macos`)
+  - FlutterMacOS (from `Flutter/ephemeral`)
+  - hotkey_manager_macos (from `Flutter/ephemeral/.symlinks/plugins/hotkey_manager_macos/macos`)
+  - tray_manager (from `Flutter/ephemeral/.symlinks/plugins/tray_manager/macos`)
+  - window_ext (from `Flutter/ephemeral/.symlinks/plugins/window_ext/macos`)
+
+SPEC REPOS:
+  trunk:
+    - HotKey
+
+EXTERNAL SOURCES:
+  code_forge:
+    :path: Flutter/ephemeral/.symlinks/plugins/code_forge/macos
+  flutter_qjs:
+    :path: Flutter/ephemeral/.symlinks/plugins/flutter_qjs/macos
+  FlutterMacOS:
+    :path: Flutter/ephemeral
+  hotkey_manager_macos:
+    :path: Flutter/ephemeral/.symlinks/plugins/hotkey_manager_macos/macos
+  tray_manager:
+    :path: Flutter/ephemeral/.symlinks/plugins/tray_manager/macos
+  window_ext:
+    :path: Flutter/ephemeral/.symlinks/plugins/window_ext/macos
+
+SPEC CHECKSUMS:
+  code_forge: 98e13c7eb9501d37ca00128ef243a822a00efc7d
+  flutter_qjs: cb2d0cba9deade1d03b89f6c432eac126f39482a
+  FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
+  HotKey: e96d8a2ddbf4591131e2bb3f54e69554d90cdca6
+  hotkey_manager_macos: a4317849af96d2430fa89944d3c58977ca089fbe
+  tray_manager: 9064e219c56d75c476e46b9a21182087930baf90
+  window_ext: 4afef727fe428b30c68ce800ba92e890fd329f63
+
+PODFILE CHECKSUM: 9ebaf0ce3d369aaa26a9ea0e159195ed94724cf3
+
+COCOAPODS: 1.16.2

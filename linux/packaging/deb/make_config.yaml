@@ -1,0 +1,44 @@
+display_name: Bettbox
+package_name: Bettbox
+maintainer:
+  name: appshub
+  email: appshubcc@gmail.com
+
+priority: optional
+section: x11
+installed_size: 6604
+essential: false
+icon: ./assets/images/icon.png
+
+dependencies:
+  - libayatana-appindicator3-dev
+  - libkeybinder-3.0-dev
+
+keywords:
+  - Bettbox
+  - Clash
+  - ClashMeta
+  - Mihomo
+  - Proxy
+
+generic_name: Bettbox
+
+categories:
+  - Network
+
+startup_notify: true
+startup_wm_class: com.appshub.bettbox
+
+postinstall_scripts:
+  - |
+    CORE_PATH="/usr/share/Bettbox/BettboxCore"
+    if [ -f "$CORE_PATH" ]; then
+      chown root:root "$CORE_PATH" 2>/dev/null || true
+      chmod +sx "$CORE_PATH" 2>/dev/null || true
+    fi
+postuninstall_scripts:
+  - |
+    CORE_PATH="/usr/share/Bettbox/BettboxCore"
+    if [ -f "$CORE_PATH" ]; then
+      chmod -s "$CORE_PATH" 2>/dev/null || true
+    fi

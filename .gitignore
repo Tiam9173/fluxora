@@ -1,0 +1,91 @@
+# Miscellaneous
+*.md
+!/README.md
+!/README_en.md
+!/readme/*.md
+!/SIGNING-POLICY.md
+!.github/release_template.md
+!.github/release_template_pre.md
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+/specs/
+/dist/
+.test/
+# Unsupported generated iOS platform
+/ios/
+
+# Xcode project-local SwiftPM state; keep the workspace Package.resolved
+/macos/Runner.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
+/services/helper/target/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+/android/core/.cxx
+
+#libclash
+/libclash/
+
+#jniLibs
+/android/app/src/main/jniLibs/
+/android/core/src/main/jniLibs/
+
+# Tool-generated local configuration
+/plugins/flutter_distributor/packages/flutter_distributor/devtools_options.yaml
+
+# FVM Version Cache
+.fvm/
+.fvmrc
+
+# Scratch & local debug artifacts
+/android/build/
+crop_*.png
+resized_media*.png
+ikuuu.yaml
+scratch/
+sub*.txt
+sub*.html
+test_*.py
