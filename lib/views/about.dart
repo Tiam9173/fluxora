@@ -7,14 +7,6 @@ import 'package:bett_box/widgets/list.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-@immutable
-class Contributor {
-  final String avatar;
-  final String name;
-
-  const Contributor({required this.avatar, required this.name});
-}
-
 class AboutView extends StatelessWidget {
   const AboutView({super.key});
 
@@ -41,7 +33,7 @@ class AboutView extends StatelessWidget {
             title: 'Github Releases',
             icon: Icons.star,
             onTap: () =>
-                globalState.openUrl('https://github.com/Tiam9173/bettboxplus'),
+                globalState.openUrl('https://github.com/Tiam9173/bettboxplus/releases'),
           ),
           right: _LinkGridTile(
             title: appLocalizations.checkUpdate,
@@ -51,115 +43,44 @@ class AboutView extends StatelessWidget {
         ),
         _LinkGridRow(
           left: _LinkGridTile(
-            title: 'Telegram 频道',
+            title: 'Telegram Group',
+            icon: Icons.launch,
+            onTap: () =>
+                globalState.openUrl('https://t.me/+xtB80V6DWhZmZDVl'),
+          ),
+          right: _LinkGridTile(
+            title: 'Channel',
             icon: Icons.launch,
             onTap: () =>
                 globalState.openUrl('https://t.me/bettboxplus'),
           ),
-          right: _LinkGridTile(
-            title: 'Bettbox (上游)',
-            icon: Icons.favorite,
-            onTap: () =>
-                globalState.openUrl('https://github.com/appshubcc/Bettbox'),
-          ),
         ),
         _LinkGridRow(
           left: _LinkGridTile(
+            title: 'Bettbox',
+            icon: Icons.launch,
+            onTap: () =>
+                globalState.openUrl('https://github.com/appshubcc/Bettbox'),
+          ),
+          right: _LinkGridTile(
             title: 'FlClash',
             icon: Icons.launch,
             onTap: () =>
                 globalState.openUrl('https://github.com/chen08209/FlClash'),
           ),
-          right: _LinkGridTile(
+        ),
+        _LinkGridRow(
+          left: _LinkGridTile(
             title: 'Mihomo',
             icon: Icons.launch,
             onTap: () =>
                 globalState.openUrl('https://github.com/MetaCubeX/mihomo'),
           ),
-        ),
-      ],
-    );
-  }
-
-  List<Widget> _buildContributorsSection() {
-    final contributors = [
-      const Contributor(
-        avatar: 'assets/images/avatars/june2.jpg',
-        name: 'June2',
-      ),
-      const Contributor(avatar: 'assets/images/avatars/arue.jpg', name: 'Arue'),
-      const Contributor(
-        avatar: 'assets/images/avatars/dabaozi.jpg',
-        name: '大包子',
-      ),
-      const Contributor(
-        avatar: 'assets/images/avatars/xiaolou.png',
-        name: '小楼',
-      ),
-      const Contributor(avatar: 'assets/images/avatars/www.jpg', name: 'Www'),
-      const Contributor(
-        avatar: 'assets/images/avatars/AIsouler.jpg',
-        name: 'AIsouler',
-      ),
-      const Contributor(
-        avatar: 'assets/images/avatars/songchenwen.jpg',
-        name: 'songchenwen',
-      ),
-      const Contributor(
-        avatar: 'assets/images/avatars/EriDeLee.jpg',
-        name: 'EriDeLee',
-      ),
-      const Contributor(
-        avatar: 'assets/images/avatars/AdySnowflake.png',
-        name: 'AdySnowflake',
-      ),
-      const Contributor(
-        avatar: 'assets/images/avatars/CyberVacation.jpg',
-        name: 'CyberVacation',
-      ),
-      const Contributor(
-        avatar: 'assets/images/avatars/VillagerTom.png',
-        name: 'VillagerTom',
-      ),
-      const Contributor(
-        avatar: 'assets/images/avatars/ZeonX.jpg',
-        name: 'ZeonX',
-      ),
-      const Contributor(
-        avatar: 'assets/images/avatars/feitianmoo.png',
-        name: 'feitianmoo',
-      ),
-      const Contributor(
-        avatar: 'assets/images/avatars/kouhe3.jpg',
-        name: 'kouhe3',
-      ),
-      const Contributor(
-        avatar: 'assets/images/avatars/soffchen.png',
-        name: 'soffchen',
-      ),
-      const Contributor(
-        avatar: 'assets/images/avatars/utafrali.jpg',
-        name: 'utafrali',
-      ),
-      const Contributor(
-        avatar: 'assets/images/avatars/wfion.png',
-        name: 'wfion',
-      ),
-    ]..shuffle();
-    return generateSection(
-      separated: false,
-      title: appLocalizations.otherContributors,
-      items: [
-        ListItem(
-          title: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Wrap(
-              spacing: 24,
-              children: [
-                for (final contributor in contributors)
-                  Avatar(contributor: contributor),
-              ],
-            ),
+          right: _LinkGridTile(
+            title: 'bettbox+',
+            icon: Icons.launch,
+            onTap: () =>
+                globalState.openUrl('https://github.com/Tiam9173/bettboxplus'),
           ),
         ),
       ],
@@ -225,31 +146,9 @@ class AboutView extends StatelessWidget {
         ),
       ),
       const SizedBox(height: 12),
-      ..._buildContributorsSection(),
       ..._buildMoreSection(context),
     ];
     return generateListView(items);
-  }
-}
-
-class Avatar extends StatelessWidget {
-  final Contributor contributor;
-
-  const Avatar({super.key, required this.contributor});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        SizedBox(
-          width: 36,
-          height: 36,
-          child: CircleAvatar(foregroundImage: AssetImage(contributor.avatar)),
-        ),
-        const SizedBox(height: 4),
-        Text(contributor.name, style: context.textTheme.bodySmall),
-      ],
-    );
   }
 }
 
