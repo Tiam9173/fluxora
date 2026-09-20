@@ -23,6 +23,7 @@ import 'package:bett_box/views/connection/connections.dart';
 import 'package:bett_box/views/hotkey.dart';
 import 'package:bett_box/views/other_setting.dart';
 import 'package:bett_box/views/proxies/chain_proxy_view.dart';
+import 'package:bett_box/views/proxies/warp_view.dart';
 import 'package:bett_box/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -244,6 +245,17 @@ class _ToolViewState extends ConsumerState<ToolsView> {
           context,
           appLocalizations.backupAndRecovery,
           const BackupAndRecovery(),
+        ),
+      ),
+      _SearchItem(
+        title: '🛡️ 节点套 WARP (WARP on Proxy)',
+        subtitle: '为机场节点套上 Cloudflare WARP 出口，解锁 AI/流媒体并解决 Google 送中',
+        category: settingsCategory,
+        leading: const Icon(Icons.shield_outlined),
+        onTap: (context, _) => _pushPage(
+          context,
+          '🛡️ 节点套 WARP',
+          const WarpView(),
         ),
       ),
       _SearchItem(
@@ -1400,6 +1412,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
           if (system.isDesktop) _HotkeyItem(),
           if (system.isWindows) _LoopbackItem(),
           if (system.isAndroid) _AccessItem(),
+          const _WarpProxyItem(),
           const _ChainProxyItem(),
           _ConfigItem(),
           _OtherSettingItem(),
@@ -1525,6 +1538,23 @@ class _BackupItem extends StatelessWidget {
       delegate: NextDelegate(
         title: appLocalizations.backupAndRecovery,
         builder: (_) => const BackupAndRecovery(),
+      ),
+    );
+  }
+}
+
+class _WarpProxyItem extends StatelessWidget {
+  const _WarpProxyItem();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListItem.next(
+      leading: const Icon(Icons.shield_outlined),
+      title: const Text('🛡️ 节点套 WARP (WARP on Proxy)'),
+      subtitle: const Text('为机场节点套上 Cloudflare WARP 出口，解锁 AI/流媒体并解决 Google 送中'),
+      delegate: NextDelegate(
+        title: '🛡️ 节点套 WARP',
+        builder: (_) => const WarpView(),
       ),
     );
   }

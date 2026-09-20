@@ -16,6 +16,7 @@ import '../profiles/scripts.dart'
 import 'package:bett_box/l10n/chain_proxy_l10n.dart';
 import 'advanced_settings.dart';
 import 'chain_proxy_view.dart';
+import 'warp_view.dart';
 import 'setting.dart';
 import 'tab.dart';
 
@@ -116,6 +117,18 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
                       body: const ProxiesAdvancedSettings(),
                       title: appLocalizations.advancedSettings,
                     );
+                  },
+                );
+              },
+            ),
+            PopupMenuItemData(
+              icon: Icons.shield_outlined,
+              label: '🛡️ 节点套 WARP',
+              onPressed: () {
+                showExtend(
+                  context,
+                  builder: (_, type) {
+                    return const WarpView();
                   },
                 );
               },

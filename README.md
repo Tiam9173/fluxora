@@ -57,6 +57,15 @@ bettbox+ 内置便捷的**链式代理**（两跳多跳代理）功能：
 
 ---
 
+## 🛡️ 机场节点套 WARP (WARP on Proxy)
+
+借鉴 Hiddify 官方实践，bettbox+ 创新支持**为机场节点套 WARP 出口**：
+- **应对 Google 送中**：通过机场节点中转后接入 Cloudflare WireGuard 官方边缘网络，彻底解决频繁弹出 Google Captcha 人机验证与区域重定向。
+- **纯净出口与隐私保护**：隐藏机场真实落地 IP，获取干净的 Anycast 出口，解锁 OpenAI/ChatGPT、Claude、Gemini 等限制平台。
+- **可视化诊断与检测**：内置真实有效性检测卡片，实时核验 `warp=on`/`warp=plus` 状态、出口 IP、边缘机房代码（HKG、NRT、SJC...）与 Google 防送中评定。
+
+---
+
 ## ⬇️ 安装与下载
 
 请前往 **[Releases 最新发布页面](https://github.com/Tiam9173/bettboxplus/releases/latest)** 获取最新安装包：

@@ -25,6 +25,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'common/common.dart';
 import 'controller.dart';
 import 'manager/chain_proxy_manager.dart';
+import 'manager/warp_manager.dart';
 import 'models/models.dart';
 
 typedef UpdateTasks = List<FutureOr Function()>;
@@ -170,6 +171,7 @@ class GlobalState {
         );
     await globalState.migrateOldData(config);
     await chainProxyManager.init();
+    await warpManager.init();
     final locale =
         utils.getLocaleForString(config.appSetting.locale) ??
         utils.getSystemLocale();
@@ -1051,6 +1053,9 @@ class GlobalState {
 
     // Apply chain proxy configuration if enabled (including WebRTC leak prevention rules)
     chainProxyManager.applyToClashConfig(rawConfig);
+
+    // Apply Cloudflare WARP on Proxy configuration if enabled (including Google anti-redirect & AI unlock rules)
+    warpManager.applyToClashConfig(rawConfig);
 
     return rawConfig;
   }
