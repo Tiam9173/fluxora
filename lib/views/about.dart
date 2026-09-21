@@ -46,7 +46,7 @@ class AboutView extends StatelessWidget {
             title: 'Telegram Group',
             icon: Icons.launch,
             onTap: () =>
-                globalState.openUrl('https://t.me/+xtB80V6DWhZmZDVl'),
+                globalState.openUrl('https://t.me/bettboxplus_grup'),
           ),
           right: _LinkGridTile(
             title: 'Channel',
