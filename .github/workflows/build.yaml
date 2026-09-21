@@ -40,6 +40,33 @@ jobs:
           - platform: windows
             os: windows-2022
             arch: amd64
+          - platform: windows
+            os: windows-11-arm
+            arch: arm64
+          - platform: windows
+            os: windows-2022
+            arch: amd64
+            compatible: true
+          - platform: macos
+            os: macos-15
+            arch: arm64
+          - platform: macos
+            os: macos-15
+            arch: amd64
+          - platform: macos
+            os: macos-15
+            arch: amd64
+            compatible: true
+          - platform: linux
+            os: ubuntu-22.04
+            arch: amd64
+          - platform: linux
+            os: ubuntu-24.04-arm
+            arch: arm64
+          - platform: linux
+            os: ubuntu-22.04
+            arch: amd64
+            compatible: true
 
     steps:
       - name: Checkout
@@ -52,13 +79,23 @@ jobs:
         if: matrix.platform == 'windows'
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: x86_64-pc-windows-msvc
+          targets: ${{ matrix.arch == 'arm64' && 'aarch64-pc-windows-msvc' || 'x86_64-pc-windows-msvc' }}
 
       - name: Setup Rust (Android)
         if: matrix.platform == 'android'
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android,i686-linux-android
+
+      - name: Setup Rust (Linux)
+        if: matrix.platform == 'linux'
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Rust (macOS)
+        if: matrix.platform == 'macos'
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.arch == 'amd64' && 'x86_64-apple-darwin' || 'aarch64-apple-darwin' }}
 
       - name: Enable Git long paths (Windows)
         if: matrix.platform == 'windows'
@@ -110,29 +147,40 @@ jobs:
           linker = "${ANDROID_NDK}/toolchains/llvm/prebuilt/linux-x86_64/bin/i686-linux-android26-clang"
           EOF
 
+      - name: Install Dependencies (Linux)
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update -o Acquire::Retries=3 -o Acquire::ForceIPv4=true
+          sudo apt-get install -y -o Acquire::Retries=3 -o Acquire::ForceIPv4=true --fix-missing libcurl4-openssl-dev ninja-build libgtk-3-dev rpm
+
       - name: Setup Golang
         uses: actions/setup-go@v6
         with:
-          go-version: '1.25.x'
+          go-version: ${{ matrix.compatible == true && '1.20.x' || '1.25.x' }}
           cache-dependency-path: core/go.sum
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          channel: ${{ contains(matrix.os, 'arm') && 'master' || 'stable' }}
           cache: true
           cache-key: flutter-${{ matrix.platform }}-${{ matrix.arch }}-${{ hashFiles('**/pubspec.lock') }}
-          flutter-version: '3.44.9'
+          flutter-version: ${{ contains(matrix.os, 'arm') && '' || '3.44.9' }}
 
       - name: Clear Pub Cache Credentials
         shell: bash
         run: rm -f ~/.pub-cache/credentials.json 2>/dev/null || true
+
 
       - name: Clean Gradle (Android)
         if: matrix.platform == 'android'
         run: |
           cd android
           flutter clean
+
+      - name: Disable Swift Package Manager (macOS)
+        if: matrix.platform == 'macos'
+        run: flutter config --no-enable-swift-package-manager
 
       - name: Patch for Windows
         if: matrix.platform == 'windows'
@@ -146,16 +194,15 @@ jobs:
           FILE="${MOD_CACHE}/github.com/metacubex/sing-tun@${SING_TUN_VERSION}/tun_windows.go"
           echo "Patching ${FILE}"
           chmod +w "${FILE}"
-
-      - name: Build Bettbox (Android)
-        if: matrix.platform == 'android'
+      - name: Build Bettbox (Non-Windows)
+        if: matrix.platform != 'windows'
         shell: bash
         env:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
         run: |
           flutter pub get
           dart run build_runner build -d
-          dart setup.dart android --arch ${{ matrix.arch }} ${{ env.IS_STABLE == 'true' && '--env stable' || '' }}
+          dart setup.dart ${{ matrix.platform }} --arch ${{ matrix.arch }} ${{ env.IS_STABLE == 'true' && '--env stable' || '' }} ${{ matrix.compatible == true && '--compatible' || '' }}
 
       - name: Install SignPath (Windows)
         if: matrix.platform == 'windows'
@@ -359,11 +406,68 @@ jobs:
             unsigned-installer-${{ matrix.arch }}-${{ matrix.compatible }}
           failOnError: false
       
-      - name: Upload Artifacts
+      - name: Verify Core Permissions (Linux)
+        if: matrix.platform == 'linux' && matrix.compatible != true
+        shell: bash
+        run: |
+          echo "=== Verifying BettboxCore setuid in DEB package ==="
+          if ls dist/Bettbox-*.deb 1>/dev/null 2>&1; then
+            DEB_PERMS=$(dpkg-deb -c dist/Bettbox-*.deb | grep BettboxCore || true)
+            echo "$DEB_PERMS"
+            if echo "$DEB_PERMS" | grep -q 'rws'; then
+              echo "OK: BettboxCore in DEB has setuid bit"
+            else
+              echo "WARNING: BettboxCore in DEB is missing setuid bit (will be set by postinst on install)"
+              POSTINST=$(dpkg-deb -e dist/Bettbox-*.deb /tmp/bettbox-deb-control && cat /tmp/bettbox-deb-control/postinst || true)
+              if ! echo "$POSTINST" | grep -q '/usr/share/Bettbox/BettboxCore'; then
+                echo "ERROR: postinst script does not set permissions on /usr/share/Bettbox/BettboxCore"
+                exit 1
+              fi
+            fi
+          fi
+          echo "=== Verifying BettboxCore setuid in RPM package ==="
+          if ls dist/Bettbox-*.rpm 1>/dev/null 2>&1; then
+            RPM_PERMS=$(rpm -qplv dist/Bettbox-*.rpm | grep BettboxCore || true)
+            echo "$RPM_PERMS"
+            if ! echo "$RPM_PERMS" | grep -q 'rws'; then
+              echo "ERROR: BettboxCore in RPM is missing setuid bit"
+              exit 1
+            fi
+          fi
+
+      - name: Upload Artifacts (Non-Linux)
+        if: matrix.platform != 'linux'
         uses: actions/upload-artifact@v7
         with:
-          name: Bettbox-${{ matrix.platform }}-${{ matrix.arch }}
+          name: Bettbox-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}
           path: ./dist/*
+          archive: false
+          overwrite: true
+
+      - name: Upload DEB Artifact
+        if: matrix.platform == 'linux'
+        uses: actions/upload-artifact@v7
+        with:
+          name: Bettbox-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}-deb
+          path: ./dist/*.deb
+          archive: false
+          overwrite: true
+
+      - name: Upload AppImage Artifact
+        if: matrix.platform == 'linux' && matrix.arch == 'amd64'
+        uses: actions/upload-artifact@v7
+        with:
+          name: Bettbox-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}-AppImage
+          path: ./dist/*.AppImage
+          archive: false
+          overwrite: true
+
+      - name: Upload RPM Artifact
+        if: matrix.platform == 'linux' && matrix.arch == 'amd64'
+        uses: actions/upload-artifact@v7
+        with:
+          name: Bettbox-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}-rpm
+          path: ./dist/*.rpm
           archive: false
           overwrite: true
 

@@ -89,3 +89,5 @@ scratch/
 sub*.txt
 sub*.html
 test_*.py
+/upstream_assets/
+/scripts/

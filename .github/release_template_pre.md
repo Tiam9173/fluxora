@@ -9,7 +9,7 @@
 
 <div align="left">
 
-[![Telegram Group](https://img.shields.io/badge/bettbox+-Group-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/+xtB80V6DWhZmZDVl)
+[![Telegram Group](https://img.shields.io/badge/bettbox+-Group-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/bettboxplus_grup)
 [![Telegram Channel](https://img.shields.io/badge/bettbox+-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/bettboxplus)
 
 ---
@@ -20,7 +20,7 @@
 **Note: Android coexistence build can be installed side-by-side with original Bettbox.**
 <br>**注意：Android 共存版可与原版 Bettbox 并存安装，桌面显示名称为 bettbox+**
 
-**常用设备平台：android-arm64-v8a, windows-amd64**
+**常用设备平台：android-arm64-v8a, windows-amd64, macos-arm64, linux-amd64**
 
 ---
 
@@ -30,6 +30,8 @@
 |:---:|:---|:---|
 | <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/android/android-original.svg" alt="Android" width="28"/> | Android 8.0+<br>*(桌面显示为 bettbox+，共存版)* |<a href="https://github.com/Tiam9173/bettboxplus/releases/download/vVERSION/bettbox+-BASE_VERSION-android-arm64-v8a-coexistence.apk"><img src="https://img.shields.io/badge/APK-ARMv8%20(共存版)-32AF6A?logo=android&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/Tiam9173/bettboxplus/releases/download/vVERSION/Bettbox-BASE_VERSION-android-x86_64.apk"><img src="https://img.shields.io/badge/APK-x64-32AF6A?logo=android&logoColor=white&style=flat-square&labelColor=222222"></a><br><a href="https://github.com/Tiam9173/bettboxplus/releases/download/vVERSION/Bettbox-BASE_VERSION-android-armeabi-v7a.apk"><img src="https://img.shields.io/badge/APK-ARMv7-32AF6A?logo=android&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/Tiam9173/bettboxplus/releases/download/vVERSION/Bettbox-BASE_VERSION-android-universal.apk"><img src="https://img.shields.io/badge/APK-Universal-32AF6A?logo=android&logoColor=white&style=flat-square&labelColor=222222"></a> |
 | <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/windows11/windows11-original.svg" alt="Windows" width="28"/> | Windows 10 / 11<br>*(绿色免安装便携版)* | <a href="https://github.com/Tiam9173/bettboxplus/releases/download/vVERSION/bettbox+-BASE_VERSION-windows-amd64-portable.zip"><img src="https://img.shields.io/badge/Portable-x64%20(便携包)-0078D7?logo=windows&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/Tiam9173/bettboxplus/releases/download/vVERSION/Bettbox-BASE_VERSION-windows-amd64-setup.exe"><img src="https://img.shields.io/badge/Setup-x64-0078D7?logo=windows&logoColor=white&style=flat-square&labelColor=222222"></a> |
+| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/apple/apple-original.svg" alt="macOS" width="28"/> | macOS 12.0+<br>*(Compatible for 10.15-11.7)* | <a href="https://github.com/Tiam9173/bettboxplus/releases/download/vVERSION/Bettbox-BASE_VERSION-macos-arm64.dmg"><img src="https://img.shields.io/badge/DMG-Apple%20Silicon-000000?logo=apple&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/Tiam9173/bettboxplus/releases/download/vVERSION/Bettbox-BASE_VERSION-macos-amd64.dmg"><img src="https://img.shields.io/badge/DMG-Intel%20x64-00A9E0?logo=apple&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/Tiam9173/bettboxplus/releases/download/vVERSION/Bettbox-BASE_VERSION-macos-amd64-compatible.dmg"><img src="https://img.shields.io/badge/DMG-Compatible-555555?logo=apple&logoColor=white&style=flat-square&labelColor=222222"></a> |
+| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/linux/linux-original.svg" alt="Linux" width="28"/> | Linux Kernel 5.4+<br>*(Compatible for Older CPU)* | <a href="https://github.com/Tiam9173/bettboxplus/releases/download/vVERSION/Bettbox-BASE_VERSION-linux-amd64.AppImage"><img src="https://img.shields.io/badge/AppImage-x64-f84e29?logo=linux&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/Tiam9173/bettboxplus/releases/download/vVERSION/Bettbox-BASE_VERSION-linux-amd64.deb"><img src="https://img.shields.io/badge/DEB-x64-A81D33?logo=debian&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/Tiam9173/bettboxplus/releases/download/vVERSION/Bettbox-BASE_VERSION-linux-amd64.rpm"><img src="https://img.shields.io/badge/RPM-x64-EE0000?logo=redhat&logoColor=white&style=flat-square&labelColor=222222"></a><br><a href="https://github.com/Tiam9173/bettboxplus/releases/download/vVERSION/Bettbox-BASE_VERSION-linux-arm64.deb"><img src="https://img.shields.io/badge/DEB-ARM64-A81D33?logo=debian&logoColor=white&style=flat-square&labelColor=222222"></a> |
 ---
 </div>
 

@@ -62,6 +62,13 @@
 | **Android 8.0+** | Universal (全架构) | [`Bettbox-1.19.2-android-universal.apk`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2/Bettbox-1.19.2-android-universal.apk) | 包含全部 CPU 架构，通用安装包 |
 | **Windows 10 / 11** | x64 便携版 (Portable) | [`bettbox+-1.19.2.2-windows-amd64-portable.zip`](https://github.com/Tiam9173/bettboxplus/releases/latest) | 绿色免安装便携版，解压即用 |
 | **Windows 10 / 11** | x64 安装版 (Setup) | [`Bettbox-1.19.2-windows-amd64-setup.exe`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2/Bettbox-1.19.2-windows-amd64-setup.exe) | Windows 经典安装向导版本 |
+| **macOS 12.0+** | Apple Silicon (M系列) | [`Bettbox-1.19.2-macos-arm64.dmg`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2/Bettbox-1.19.2-macos-arm64.dmg) | 推荐搭载 M1/M2/M3/M4 系列 Mac 设备 |
+| **macOS 12.0+** | Intel x64 | [`Bettbox-1.19.2-macos-amd64.dmg`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2/Bettbox-1.19.2-macos-amd64.dmg) | 适用于搭载 Intel 处理器 Mac 设备 |
+| **macOS 10.15 - 11.7** | 兼容版 (Compatible) | [`Bettbox-1.19.2-macos-amd64-compatible.dmg`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2/Bettbox-1.19.2-macos-amd64-compatible.dmg) | 适用于老旧 macOS 系统版本 |
+| **Linux 5.4+** | 通用 AppImage (x64) | [`Bettbox-1.19.2-linux-amd64.AppImage`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2/Bettbox-1.19.2-linux-amd64.AppImage) | 无需安装赋予执行权限即可直接运行 |
+| **Linux (Ubuntu / Debian)** | DEB 包 (x64) | [`Bettbox-1.19.2-linux-amd64.deb`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2/Bettbox-1.19.2-linux-amd64.deb) | 适用于 Debian、Ubuntu、Linux Mint 等 |
+| **Linux (Debian / ARM64)** | DEB 包 (arm64) | [`Bettbox-1.19.2-linux-arm64.deb`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2/Bettbox-1.19.2-linux-arm64.deb) | 适用于 ARM64 架构 Linux 设备（树莓派等） |
+| **Linux (Fedora / RHEL)** | RPM 包 (x64) | [`Bettbox-1.19.2-linux-amd64.rpm`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2/Bettbox-1.19.2-linux-amd64.rpm) | 适用于 Fedora、RHEL、openSUSE 等 |
 
 > 💡 **提示**：更多平台历史版本与完整资源，请直接查看 **[GitHub Releases](https://github.com/Tiam9173/bettboxplus/releases)** 列表下载。
 

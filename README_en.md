@@ -61,6 +61,13 @@ Please visit the **[Latest Releases](https://github.com/Tiam9173/bettboxplus/rel
 | **Android 8.0+** | Universal | [`Bettbox-1.19.2-android-universal.apk`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2/Bettbox-1.19.2-android-universal.apk) | Universal build supporting all architectures |
 | **Windows 10 / 11** | x64 Portable ZIP | [`bettbox+-1.19.2.2-windows-amd64-portable.zip`](https://github.com/Tiam9173/bettboxplus/releases/latest) | Green portable archive, unzip and run |
 | **Windows 10 / 11** | x64 Setup EXE | [`Bettbox-1.19.2-windows-amd64-setup.exe`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2/Bettbox-1.19.2-windows-amd64-setup.exe) | Standard Windows installer wizard |
+| **macOS 12.0+** | Apple Silicon (M Series) | [`Bettbox-1.19.2-macos-arm64.dmg`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2/Bettbox-1.19.2-macos-arm64.dmg) | Recommended for Apple Silicon (M1/M2/M3/M4) Macs |
+| **macOS 12.0+** | Intel x64 | [`Bettbox-1.19.2-macos-amd64.dmg`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2/Bettbox-1.19.2-macos-amd64.dmg) | For Intel-based Macs |
+| **macOS 10.15 - 11.7** | Compatible DMG | [`Bettbox-1.19.2-macos-amd64-compatible.dmg`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2/Bettbox-1.19.2-macos-amd64-compatible.dmg) | For legacy macOS versions |
+| **Linux 5.4+** | Universal AppImage (x64) | [`Bettbox-1.19.2-linux-amd64.AppImage`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2/Bettbox-1.19.2-linux-amd64.AppImage) | Portable, executable on modern Linux distributions |
+| **Linux (Ubuntu / Debian)** | DEB Package (x64) | [`Bettbox-1.19.2-linux-amd64.deb`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2/Bettbox-1.19.2-linux-amd64.deb) | For Ubuntu, Debian, Linux Mint, etc. |
+| **Linux (Debian / ARM64)** | DEB Package (arm64) | [`Bettbox-1.19.2-linux-arm64.deb`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2/Bettbox-1.19.2-linux-arm64.deb) | For ARM64 Linux devices (Raspberry Pi, etc.) |
+| **Linux (Fedora / RHEL)** | RPM Package (x64) | [`Bettbox-1.19.2-linux-amd64.rpm`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2/Bettbox-1.19.2-linux-amd64.rpm) | For Fedora, RHEL, openSUSE, etc. |
 
 > 💡 **Tip**: For older versions and complete package assets, visit **[GitHub Releases](https://github.com/Tiam9173/bettboxplus/releases)**.
 
