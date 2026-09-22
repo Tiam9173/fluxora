@@ -168,4 +168,69 @@ void main(List<String> arguments) async {
   final targetInstallerPath = path.join('dist', '$outputBaseName.exe');
   generatedInstallerFile.renameSync(targetInstallerPath);
   print('Successfully generated and moved installer to: $targetInstallerPath');
+
+  // 8. Generate portable ZIP archive in dist/
+  final portableBaseName = isDev
+      ? 'bettbox+-dev-$appVersion-windows-$desc-portable'
+      : 'bettbox+-$appVersion-windows-$desc-portable';
+  final targetZipPath = path.join('dist', '$portableBaseName.zip');
+  print('Generating portable ZIP: $targetZipPath...');
+
+  // Ensure Bettbox+.exe exists alongside Bettbox.exe
+  final exePath = path.join(sourceDir, 'Bettbox.exe');
+  final plusExePath = path.join(sourceDir, 'Bettbox+.exe');
+  if (File(exePath).existsSync() && !File(plusExePath).existsSync()) {
+    try {
+      File(exePath).copySync(plusExePath);
+      print('Copied Bettbox.exe to Bettbox+.exe');
+    } catch (e) {
+      print('Warning: Failed to copy Bettbox.exe to Bettbox+.exe: $e');
+    }
+  }
+
+  // Create .portable marker so the portable edition uses local userData directory
+  final portableMarkerPath = path.join(sourceDir, '.portable');
+  try {
+    File(portableMarkerPath).writeAsStringSync('# Bettbox+ Portable Mode\n');
+  } catch (e) {
+    print('Warning: Failed to create .portable marker: $e');
+  }
+
+  try {
+    final zipFile = File(targetZipPath);
+    if (zipFile.existsSync()) {
+      zipFile.deleteSync();
+    }
+
+    final tarResult = await Process.run('tar', [
+      '-a',
+      '-c',
+      '-f',
+      path.absolute(targetZipPath),
+      '*',
+    ], workingDirectory: sourceDir);
+
+    if (tarResult.exitCode == 0 && File(targetZipPath).existsSync()) {
+      print('Successfully generated portable ZIP using tar: $targetZipPath');
+    } else {
+      print('tar command failed, falling back to PowerShell Compress-Archive...');
+      final psCommand =
+          "Compress-Archive -Path '${path.join(sourceDir, '*')}' -DestinationPath '${path.absolute(targetZipPath)}' -Force";
+      final psResult = await Process.run('powershell', ['-NoProfile', '-Command', psCommand]);
+      if (psResult.exitCode == 0 && File(targetZipPath).existsSync()) {
+        print('Successfully generated portable ZIP using PowerShell: $targetZipPath');
+      } else {
+        print('Error generating portable ZIP: ${psResult.stderr}');
+      }
+    }
+  } catch (e) {
+    print('Error creating portable ZIP: $e');
+  } finally {
+    if (File(portableMarkerPath).existsSync()) {
+      try {
+        File(portableMarkerPath).deleteSync();
+      } catch (_) {}
+    }
+  }
 }
+

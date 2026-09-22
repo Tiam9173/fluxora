@@ -17,6 +17,21 @@ class AppPath {
     appDirPath = join(dirname(Platform.resolvedExecutable));
     getApplicationSupportDirectory().then((value) {
       if (system.isWindows) {
+        // Portable mode: check if .portable file or userData directory exists alongside executable
+        final portableMarker = File(join(appDirPath, '.portable'));
+        final portableUserData = Directory(join(appDirPath, 'userData'));
+        if (portableMarker.existsSync() || portableUserData.existsSync()) {
+          try {
+            if (!portableUserData.existsSync()) {
+              portableUserData.createSync(recursive: true);
+            }
+            dataDir.complete(portableUserData);
+            return;
+          } catch (_) {
+            // If local directory is not writable, fall back to APPDATA
+          }
+        }
+
         final roamingAppData = Platform.environment['APPDATA'];
         if (roamingAppData != null && roamingAppData.isNotEmpty) {
           dataDir.complete(
