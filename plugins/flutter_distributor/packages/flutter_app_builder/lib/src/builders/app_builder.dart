@@ -15,7 +15,10 @@ abstract class AppBuilder {
 
   String get appName => pubspec.name;
   Version get appVersion => pubspec.version!;
-  String get appBuildName => appVersion.toString().split('+').first;
+  String get appBuildName =>
+      Platform.environment['APP_BUILD_NAME'] ??
+      Platform.environment['APP_VERSION'] ??
+      appVersion.toString().split('+').first;
   String get appBuildNumber => appVersion.toString().split('+').last;
 
   Pubspec? _pubspec;

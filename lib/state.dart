@@ -152,7 +152,19 @@ class GlobalState {
   }
 
   Future<void> init() async {
-    packageInfo = await PackageInfo.fromPlatform();
+    final platformInfo = await PackageInfo.fromPlatform();
+    packageInfo = PackageInfo(
+      appName: AppIdentity.displayName,
+      packageName: AppIdentity.packageId,
+      version: AppIdentity.appVersion.isNotEmpty
+          ? AppIdentity.appVersion
+          : platformInfo.version,
+      buildNumber: AppIdentity.appVersion.isNotEmpty
+          ? ''
+          : platformInfo.buildNumber,
+      buildSignature: platformInfo.buildSignature,
+      installerStore: platformInfo.installerStore,
+    );
     if (system.isAndroid) {
       _isAndroidTV = await app.isAndroidTV();
     }

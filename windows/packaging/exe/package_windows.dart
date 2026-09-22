@@ -21,22 +21,31 @@ void main(List<String> arguments) async {
 
   final desc = compatible ? '$arch-compatible' : arch;
 
-  // 1. Get version from pubspec.yaml
-  final pubspecFile = File('pubspec.yaml');
-  if (!pubspecFile.existsSync()) {
-    print('Error: pubspec.yaml not found.');
-    exit(1);
+  // 1. Get version from environment or pubspec.yaml
+  final envVersion =
+      Platform.environment['APP_BUILD_NAME'] ??
+      Platform.environment['APP_VERSION'];
+  String appVersion = envVersion ?? '';
+  if (appVersion.isEmpty) {
+    final pubspecFile = File('pubspec.yaml');
+    if (!pubspecFile.existsSync()) {
+      print('Error: pubspec.yaml not found.');
+      exit(1);
+    }
+    final pubspecContent = pubspecFile.readAsStringSync();
+    final versionMatch = RegExp(
+      r'^version:\s*([^\s+]+)',
+      multiLine: true,
+    ).firstMatch(pubspecContent);
+    if (versionMatch == null) {
+      print('Error: Could not find version in pubspec.yaml.');
+      exit(1);
+    }
+    appVersion = versionMatch.group(1)!;
   }
-  final pubspecContent = pubspecFile.readAsStringSync();
-  final versionMatch = RegExp(r'^version:\s*([^\s+]+)', multiLine: true).firstMatch(pubspecContent);
-  if (versionMatch == null) {
-    print('Error: Could not find version in pubspec.yaml.');
-    exit(1);
-  }
-  final appVersion = versionMatch.group(1)!;
   print('App Version: $appVersion');
 
-  final outputBaseName = 'Bettbox-$appVersion-windows-$desc-setup';
+  final outputBaseName = 'bettbox+-$appVersion-windows-$desc-setup';
 
   // 2. Parse make_config.yaml
   final configFile = File('windows/packaging/exe/make_config.yaml');

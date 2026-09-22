@@ -200,6 +200,9 @@ jobs:
         env:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
         run: |
+          version=$(echo "${{ github.ref_name }}" | sed 's/^v//')
+          export APP_BUILD_NAME="$version"
+          export APP_VERSION="$version"
           flutter pub get
           dart run build_runner build -d
           dart setup.dart ${{ matrix.platform }} --arch ${{ matrix.arch }} ${{ env.IS_STABLE == 'true' && '--env stable' || '' }} ${{ matrix.compatible == true && '--compatible' || '' }}
@@ -315,11 +318,13 @@ jobs:
           
           $desc = if ('${{ matrix.compatible }}' -eq 'true') { "${{ matrix.arch }}-compatible" } else { "${{ matrix.arch }}" }
           $appEnv = if ('${{ env.IS_STABLE }}' -eq 'true') { "stable" } else { "pre" }
+          $version = '${{ github.ref_name }}' -replace '^v', ''
           
           $flutterArgs = @(
             "build", "windows", "--release", "--verbose",
             "--dart-define=CORE_SHA256=$coreHash",
             "--dart-define=APP_ENV=$appEnv",
+            "--dart-define=APP_VERSION=$version",
             "--dart-define=APP_ASSET_SUFFIX=windows-$desc-setup.exe"
           )
           if ($env:SENTRY_DSN) {
@@ -359,6 +364,9 @@ jobs:
         if: matrix.platform == 'windows'
         shell: bash
         run: |
+          version=$(echo "${{ github.ref_name }}" | sed 's/^v//')
+          export APP_BUILD_NAME="$version"
+          export APP_VERSION="$version"
           dart windows/packaging/exe/package_windows.dart --arch ${{ matrix.arch }} ${{ matrix.compatible == true && '--compatible' || '' }} --env ${{ env.IS_STABLE == 'true' && 'stable' || 'pre' }}
 
       - name: Find Installer Path
@@ -366,7 +374,7 @@ jobs:
         shell: pwsh
         run: |
           $desc = if ('${{ matrix.compatible }}' -eq 'true') { "${{ matrix.arch }}-compatible" } else { "${{ matrix.arch }}" }
-          $installer = (Resolve-Path "dist/Bettbox-*-windows-$desc-setup.exe").Path
+          $installer = (Resolve-Path "dist/bettbox+-*-windows-$desc-setup.exe").Path
           echo "INSTALLER_PATH=$installer" | Out-File -FilePath $env:GITHUB_ENV -Append
           echo "INSTALLER_FILENAME=$(Split-Path -Leaf $installer)" | Out-File -FilePath $env:GITHUB_ENV -Append
 
@@ -411,23 +419,23 @@ jobs:
         shell: bash
         run: |
           echo "=== Verifying BettboxCore setuid in DEB package ==="
-          if ls dist/Bettbox-*.deb 1>/dev/null 2>&1; then
-            DEB_PERMS=$(dpkg-deb -c dist/Bettbox-*.deb | grep BettboxCore || true)
+          if ls dist/*bettbox*.deb 1>/dev/null 2>&1; then
+            DEB_PERMS=$(dpkg-deb -c dist/*bettbox*.deb | grep BettboxCore || true)
             echo "$DEB_PERMS"
             if echo "$DEB_PERMS" | grep -q 'rws'; then
               echo "OK: BettboxCore in DEB has setuid bit"
             else
               echo "WARNING: BettboxCore in DEB is missing setuid bit (will be set by postinst on install)"
-              POSTINST=$(dpkg-deb -e dist/Bettbox-*.deb /tmp/bettbox-deb-control && cat /tmp/bettbox-deb-control/postinst || true)
-              if ! echo "$POSTINST" | grep -q '/usr/share/Bettbox/BettboxCore'; then
-                echo "ERROR: postinst script does not set permissions on /usr/share/Bettbox/BettboxCore"
+              POSTINST=$(dpkg-deb -e dist/*bettbox*.deb /tmp/bettbox-deb-control && cat /tmp/bettbox-deb-control/postinst || true)
+              if ! echo "$POSTINST" | grep -q '/BettboxCore'; then
+                echo "ERROR: postinst script does not set permissions on BettboxCore"
                 exit 1
               fi
             fi
           fi
           echo "=== Verifying BettboxCore setuid in RPM package ==="
-          if ls dist/Bettbox-*.rpm 1>/dev/null 2>&1; then
-            RPM_PERMS=$(rpm -qplv dist/Bettbox-*.rpm | grep BettboxCore || true)
+          if ls dist/*bettbox*.rpm 1>/dev/null 2>&1; then
+            RPM_PERMS=$(rpm -qplv dist/*bettbox*.rpm | grep BettboxCore || true)
             echo "$RPM_PERMS"
             if ! echo "$RPM_PERMS" | grep -q 'rws'; then
               echo "ERROR: BettboxCore in RPM is missing setuid bit"
@@ -439,7 +447,7 @@ jobs:
         if: matrix.platform != 'linux'
         uses: actions/upload-artifact@v7
         with:
-          name: Bettbox-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}
+          name: bettbox+-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}
           path: ./dist/*
           archive: false
           overwrite: true
@@ -448,7 +456,7 @@ jobs:
         if: matrix.platform == 'linux'
         uses: actions/upload-artifact@v7
         with:
-          name: Bettbox-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}-deb
+          name: bettbox+-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}-deb
           path: ./dist/*.deb
           archive: false
           overwrite: true
@@ -457,7 +465,7 @@ jobs:
         if: matrix.platform == 'linux' && matrix.arch == 'amd64'
         uses: actions/upload-artifact@v7
         with:
-          name: Bettbox-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}-AppImage
+          name: bettbox+-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}-AppImage
           path: ./dist/*.AppImage
           archive: false
           overwrite: true
@@ -466,7 +474,7 @@ jobs:
         if: matrix.platform == 'linux' && matrix.arch == 'amd64'
         uses: actions/upload-artifact@v7
         with:
-          name: Bettbox-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}-rpm
+          name: bettbox+-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}-rpm
           path: ./dist/*.rpm
           archive: false
           overwrite: true
@@ -485,7 +493,7 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           path: ./dist/
-          pattern: Bettbox-*
+          pattern: bettbox+-*
           merge-multiple: true
 
       - name: Generate release.md

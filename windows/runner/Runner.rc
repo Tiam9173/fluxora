@@ -101,11 +101,11 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.appshub" "\0"
+            VALUE "CompanyName", "BettboxPlus" "\0"
             VALUE "FileDescription", APP_FILE_DESCRIPTION "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", APP_INTERNAL_NAME "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2025 com.appshub. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 BettboxPlus. All rights reserved." "\0"
             VALUE "OriginalFilename", APP_ORIGINAL_FILENAME "\0"
             VALUE "ProductName", APP_PRODUCT_NAME "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"

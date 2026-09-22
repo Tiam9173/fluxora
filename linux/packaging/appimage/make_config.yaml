@@ -1,19 +1,20 @@
-display_name: Bettbox
+display_name: bettbox+
 
 icon: ./assets/images/icon.png
 
 keywords:
+  - bettbox+
   - Bettbox
   - Clash
   - ClashMeta
   - Proxy
 
-generic_name: Bettbox
+generic_name: bettbox+
 
 categories:
   - Network
 
 startup_notify: true
-startup_wm_class: com.appshub.bettbox
+startup_wm_class: com.appshub.bettboxplus
 
 include: []

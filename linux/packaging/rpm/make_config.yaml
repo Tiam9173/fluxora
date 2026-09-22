@@ -1,4 +1,4 @@
-display_name: Bettbox
+display_name: bettbox+
 
 packager: appshub
 packagerEmail: appshubcc@gmail.com
@@ -11,17 +11,18 @@ essential: false
 icon: ./assets/images/icon.png
 
 keywords:
+  - bettbox+
   - Bettbox
   - Clash
   - ClashMeta
   - Proxy
 
-generic_name: Bettbox
+generic_name: bettbox+
 
 group: Applications/Internet
 
 startup_notify: true
-startup_wm_class: com.appshub.bettbox
+startup_wm_class: com.appshub.bettboxplus
 
 install: |
   mkdir -p %{buildroot}%{_bindir}

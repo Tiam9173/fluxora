@@ -168,8 +168,8 @@ var
   i: Integer;
 begin
   SetArrayLength(RegistryKeys, 2);
-  RegistryKeys[0] := 'Software\com.appshub.bettbox';
-  RegistryKeys[1] := 'Software\com.appshub\Bettbox';
+  RegistryKeys[0] := 'Software\BettboxPlus';
+  RegistryKeys[1] := 'Software\com.appshub.bettboxplus';
   
   for i := 0 to GetArrayLength(RegistryKeys)-1 do
   begin
@@ -186,8 +186,8 @@ begin
   AppDataPath := ExpandConstant('{userappdata}');
   
   SetArrayLength(UserDataPaths, 2);
-  UserDataPaths[0] := AppDataPath + '\com.appshub.bettbox';
-  UserDataPaths[1] := AppDataPath + '\com.appshub\Bettbox';
+  UserDataPaths[0] := AppDataPath + '\BettboxPlus';
+  UserDataPaths[1] := AppDataPath + '\com.appshub.bettboxplus';
   
   for i := 0 to GetArrayLength(UserDataPaths)-1 do
   begin
@@ -195,11 +195,6 @@ begin
     begin
       DelTree(UserDataPaths[i], True, True, True);
     end;
-  end;
-  
-  if DirExists(AppDataPath + '\com.appshub') then
-  begin
-    RemoveDir(AppDataPath + '\com.appshub');
   end;
 end;
 

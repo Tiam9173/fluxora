@@ -13,6 +13,10 @@ class AppIdentity {
   static const coreExecutableName = 'BettboxCore';
   static const dataDirName = 'BettboxPlus';
   static const tunDeviceName = 'BettboxPlus';
+  static const appVersion = String.fromEnvironment(
+    'APP_VERSION',
+    defaultValue: '1.19.2.2',
+  );
 }
 
 class WindowsHelperIdentity {

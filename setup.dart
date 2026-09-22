@@ -484,6 +484,13 @@ class BuildCommand extends Command {
 
     final appDevArg = Build.isDev ? ' --build-dart-define=APP_DEV=true' : '';
 
+    final appVersion = Platform.environment['APP_BUILD_NAME'] ??
+        Platform.environment['APP_VERSION'] ??
+        '';
+    final appVersionArg = appVersion.isNotEmpty
+        ? ' --build-dart-define=APP_VERSION=$appVersion'
+        : '';
+
     final environment = Map<String, String>.from(Platform.environment);
     if (compatible) {
       environment['BETTBOX_COMPATIBLE_BUILD'] = '1';
@@ -493,7 +500,7 @@ class BuildCommand extends Command {
     await Build.exec(
       name: name,
       Build.getExecutable(
-        'flutter_distributor package --skip-clean --platform ${target.name} --targets $targets --flutter-build-args=verbose$args$sentryArg$suffixArg$ipinfoArg --build-dart-define=APP_ENV=$env$appDevArg',
+        'flutter_distributor package --skip-clean --platform ${target.name} --targets $targets --flutter-build-args=verbose$args$sentryArg$suffixArg$ipinfoArg$appVersionArg --build-dart-define=APP_ENV=$env$appDevArg$appVersionArg',
       ),
       environment: environment,
     );

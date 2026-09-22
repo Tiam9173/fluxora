@@ -16,10 +16,17 @@ class AppPath {
   AppPath._internal() {
     appDirPath = join(dirname(Platform.resolvedExecutable));
     getApplicationSupportDirectory().then((value) {
-      if (system.isWindows && AppIdentity.isDev) {
-        dataDir.complete(
-          Directory(join(value.parent.path, AppIdentity.dataDirName)),
-        );
+      if (system.isWindows) {
+        final roamingAppData = Platform.environment['APPDATA'];
+        if (roamingAppData != null && roamingAppData.isNotEmpty) {
+          dataDir.complete(
+            Directory(join(roamingAppData, AppIdentity.dataDirName)),
+          );
+        } else {
+          dataDir.complete(
+            Directory(join(value.parent.parent.path, AppIdentity.dataDirName)),
+          );
+        }
       } else {
         dataDir.complete(value);
       }

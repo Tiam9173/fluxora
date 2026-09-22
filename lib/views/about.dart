@@ -117,7 +117,9 @@ class AboutView extends StatelessWidget {
                             style: Theme.of(context).textTheme.headlineSmall,
                           ),
                           Text(
-                            '${globalState.packageInfo.version}+${globalState.packageInfo.buildNumber}',
+                            globalState.packageInfo.buildNumber.isNotEmpty
+                                ? '${globalState.packageInfo.version}+${globalState.packageInfo.buildNumber}'
+                                : globalState.packageInfo.version,
                             style: Theme.of(context).textTheme.labelLarge,
                           ),
                         ],

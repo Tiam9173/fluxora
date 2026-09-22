@@ -1,4 +1,4 @@
-display_name: Bettbox
+display_name: bettbox+
 package_name: Bettbox
 maintainer:
   name: appshub
@@ -15,30 +15,33 @@ dependencies:
   - libkeybinder-3.0-dev
 
 keywords:
+  - bettbox+
   - Bettbox
   - Clash
   - ClashMeta
   - Mihomo
   - Proxy
 
-generic_name: Bettbox
+generic_name: bettbox+
 
 categories:
   - Network
 
 startup_notify: true
-startup_wm_class: com.appshub.bettbox
+startup_wm_class: com.appshub.bettboxplus
 
 postinstall_scripts:
   - |
-    CORE_PATH="/usr/share/Bettbox/BettboxCore"
-    if [ -f "$CORE_PATH" ]; then
-      chown root:root "$CORE_PATH" 2>/dev/null || true
-      chmod +sx "$CORE_PATH" 2>/dev/null || true
-    fi
+    for CORE_PATH in "/usr/share/bettbox+/BettboxCore" "/usr/share/Bettbox/BettboxCore" "/usr/share/bettboxplus/BettboxCore"; do
+      if [ -f "$CORE_PATH" ]; then
+        chown root:root "$CORE_PATH" 2>/dev/null || true
+        chmod +sx "$CORE_PATH" 2>/dev/null || true
+      fi
+    done
 postuninstall_scripts:
   - |
-    CORE_PATH="/usr/share/Bettbox/BettboxCore"
-    if [ -f "$CORE_PATH" ]; then
-      chmod -s "$CORE_PATH" 2>/dev/null || true
-    fi
+    for CORE_PATH in "/usr/share/bettbox+/BettboxCore" "/usr/share/Bettbox/BettboxCore" "/usr/share/bettboxplus/BettboxCore"; do
+      if [ -f "$CORE_PATH" ]; then
+        chmod -s "$CORE_PATH" 2>/dev/null || true
+      fi
+    done
