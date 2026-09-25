@@ -30,12 +30,6 @@ class AboutView extends StatelessWidget {
       items: [
         _LinkGridRow(
           left: _LinkGridTile(
-            title: 'Github Releases',
-            icon: Icons.star,
-            onTap: () =>
-                globalState.openUrl('https://github.com/Tiam9173/fluxora/releases'),
-          ),
-          right: _LinkGridTile(
             title: appLocalizations.checkUpdate,
             icon: Icons.refresh,
             onTap: () => _checkUpdate(context),
@@ -43,44 +37,16 @@ class AboutView extends StatelessWidget {
         ),
         _LinkGridRow(
           left: _LinkGridTile(
-            title: 'Telegram Group',
-            icon: Icons.launch,
-            onTap: () =>
-                globalState.openUrl('https://t.me/fluxora_grup'),
-          ),
-          right: _LinkGridTile(
-            title: 'Channel',
-            icon: Icons.launch,
-            onTap: () =>
-                globalState.openUrl('https://t.me/fluxora'),
-          ),
-        ),
-        _LinkGridRow(
-          left: _LinkGridTile(
-            title: 'Fluxora',
-            icon: Icons.launch,
-            onTap: () =>
-                globalState.openUrl('https://github.com/Tiam9173/fluxora'),
-          ),
-          right: _LinkGridTile(
             title: 'FlClash',
             icon: Icons.launch,
             onTap: () =>
                 globalState.openUrl('https://github.com/chen08209/FlClash'),
           ),
-        ),
-        _LinkGridRow(
-          left: _LinkGridTile(
+          right: _LinkGridTile(
             title: 'Mihomo',
             icon: Icons.launch,
             onTap: () =>
                 globalState.openUrl('https://github.com/MetaCubeX/mihomo'),
-          ),
-          right: _LinkGridTile(
-            title: 'Fluxora',
-            icon: Icons.launch,
-            onTap: () =>
-                globalState.openUrl('https://github.com/Tiam9173/fluxora'),
           ),
         ),
       ],
@@ -202,12 +168,16 @@ class _DeveloperModeDetectorState extends State<_DeveloperModeDetector> {
 
 class _LinkGridRow extends StatelessWidget {
   final _LinkGridTile left;
-  final _LinkGridTile right;
+  final _LinkGridTile? right;
 
-  const _LinkGridRow({required this.left, required this.right});
+  const _LinkGridRow({required this.left, this.right});
 
   @override
   Widget build(BuildContext context) {
+    final right = this.right;
+    if (right == null) {
+      return left;
+    }
     final dividerColor = context.colorScheme.outlineVariant.withValues(
       alpha: context.colorScheme.brightness == Brightness.light ? 0.6 : 0.45,
     );
