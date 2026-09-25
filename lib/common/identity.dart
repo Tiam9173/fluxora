@@ -3,16 +3,16 @@ const _useDevIdentity = bool.fromEnvironment('APP_DEV');
 class AppIdentity {
   static const isDev = _useDevIdentity;
 
-  static const productName = 'bettbox+';
-  static const devSuffix = '+';
-  static const packageId = 'com.appshub.bettbox.plus';
+  static const productName = 'Fluxora';
+  static const devSuffix = '-dev';
+  static const packageId = 'io.fluxora.app';
 
-  static const compactName = 'BettboxPlus';
-  static const displayName = 'bettbox+';
-  static const mainExecutableName = 'Bettbox+';
-  static const coreExecutableName = 'BettboxCore';
-  static const dataDirName = 'BettboxPlus';
-  static const tunDeviceName = 'BettboxPlus';
+  static const compactName = 'Fluxora';
+  static const displayName = 'Fluxora';
+  static const mainExecutableName = 'Fluxora';
+  static const coreExecutableName = 'FluxoraCore';
+  static const dataDirName = 'Fluxora';
+  static const tunDeviceName = 'Fluxora';
   static const appVersion = String.fromEnvironment(
     'APP_VERSION',
     defaultValue: '1.19.2.2',

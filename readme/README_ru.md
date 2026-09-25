@@ -2,23 +2,23 @@
   <a href="../README.md">简体中文</a> | <a href="README_en.md">English</a> | <strong>Русский</strong> | <a href="README_fa.md">فارسی</a> | <a href="README_ja.md">日本語</a> | <a href="README_ko.md">한국어</a>
 </h4>
 
-<h1 align="center">⚡ Bettbox</h1>
+<h1 align="center">⚡ Fluxora</h1>
 <p align="center">
-  <strong>Another Better Mihomo Client</strong>
+  <strong>Open-source cross-platform Mihomo routing client</strong>
 </p>
 
-**Bettbox — это мультиплатформенный клиент для отладки сети и маршрутизации трафика на базе правил, созданный на ядре Mihomo (Clash Meta) и переработанный из ранней версии FlClash.**
+**Fluxora — это мультиплатформенный клиент для отладки сети и маршрутизации трафика на базе правил, созданный на ядре Mihomo (Clash Meta) и переработанный из ранней версии FlClash.**
 
-Следуя принципу «Better Experience» (Лучший опыт), Bettbox сохраняет отличный UI оригинала, глубоко оптимизируя детали интерфейса и логику функций. Ключевые особенности и цели: высокая частота кадров и плавность на переднем плане, незаметное энергосбережение в фоновом режиме — надёжный клиент Mihomo для долгосрочной стабильной работы с минимальным потреблением ресурсов.
+Следуя принципу «clear and reliable routing» (Лучший опыт), Fluxora сохраняет отличный UI оригинала, глубоко оптимизируя детали интерфейса и логику функций. Ключевые особенности и цели: высокая частота кадров и плавность на переднем плане, незаметное энергосбережение в фоновом режиме — надёжный клиент Mihomo для долгосрочной стабильной работы с минимальным потреблением ресурсов.
 
-Название Bettbox означает: Better Experience, Out of the box — Превосходный опыт из коробки.
+Название Fluxora означает: Make routing legible. — Превосходный опыт из коробки.
 
-Наше видение: Connecting Open Source and AI, Accelerating Innovation
+Наше видение: Clear routes, calm control.
 
-[![Latest Release](https://img.shields.io/github/v/release/appshubcc/Bettbox?style=for-the-badge&logo=github&color=238636&label=Release)](https://github.com/appshubcc/Bettbox/releases/latest) [![Core](https://img.shields.io/github/v/release/MetaCubeX/mihomo?style=for-the-badge&logo=go&logoColor=white&color=8A2BE2&label=Mihomo)](https://github.com/MetaCubeX/mihomo/releases/latest)
+[![Latest Release](https://img.shields.io/github/v/release/Tiam9173/fluxora?style=for-the-badge&logo=github&color=238636&label=Release)](https://github.com/Tiam9173/fluxora/releases/latest) [![Core](https://img.shields.io/github/v/release/MetaCubeX/mihomo?style=for-the-badge&logo=go&logoColor=white&color=8A2BE2&label=Mihomo)](https://github.com/MetaCubeX/mihomo/releases/latest)
 
 <p align="center">
-  <img src="../snapshots/home.png" alt="Bettbox" />
+  <img src="../assets/images/fluxora_mark.svg" alt="Fluxora" />
 </p>
 
 ---
@@ -28,7 +28,7 @@
 
 <div align="left">
 
-[![Telegram Group](https://img.shields.io/badge/Bettbox-Chat-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/bettboxplus_grup) [![Telegram Channel](https://img.shields.io/badge/Bettbox-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/appshub_channel)
+[![Telegram Group](https://img.shields.io/badge/Fluxora-Chat-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://github.com/Tiam9173/fluxora/discussions) [![Telegram Channel](https://img.shields.io/badge/Fluxora-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://github.com/Tiam9173/fluxora/discussions)
 
 ---
 ## 🚀 Основные особенности
@@ -53,7 +53,7 @@
 
 ## 🛠️ Установка и загрузка
 
-Перейдите на страницу **[[Releases]](https://github.com/appshubcc/Bettbox/releases)**, чтобы скачать актуальный установочный пакет для вашей платформы и системы.
+Перейдите на страницу **[[Releases]](https://github.com/Tiam9173/fluxora/releases)**, чтобы скачать актуальный установочный пакет для вашей платформы и системы.
 
 
 * **Все ПК платформы**: 
@@ -65,8 +65,8 @@
 * **HarmonyOS NEXT:** Совместимо при использовании с [[ZhuoYiTong]](https://harmonyos.cool/android-app)
 
 **Другие способы установки:**<br>
-**ArchLinux:** <code>yay -S bettbox-bin или paru -S bettbox-bin</code> (поддерживается [lyj404](https://github.com/lyj404/bettbox-aur))<br>
-**AMD64=v1:** <code>yay -S bettbox-compatible-bin или paru -S bettbox-compatible-bin</code> (поддерживается [VillagerTom](https://github.com/VillagerTom))
+**ArchLinux:** <code>yay -S fluxora-bin или paru -S fluxora-bin</code> (поддерживается [lyj404](https://github.com/lyj404/fluxora-aur))<br>
+**AMD64=v1:** <code>yay -S fluxora-compatible-bin или paru -S fluxora-compatible-bin</code> (поддерживается [VillagerTom](https://github.com/VillagerTom))
 
 ---
 ## ❓ FAQ (Часто задаваемые вопросы)
@@ -83,11 +83,11 @@
    - Если проблема не решена, пожалуйста, создайте ISSUE для обратной связи.
 
 3. **Важные примечания по установке на macOS**:
-   - Скачайте образ для вашей платформы (Intel / Apple Silicon) и откройте `Bettbox-macos-xx.dmg`.
-   - Перетащите значок Bettbox в папку `Applications` (Программы).
+   - Скачайте образ для вашей платформы (Intel / Apple Silicon) и откройте `Fluxora-macos-xx.dmg`.
+   - Перетащите значок Fluxora в папку `Applications` (Программы).
    - **Обход блокировок Gatekeeper при установке или обновлении** ([так как мы пока не приобретали сертификат разработчика Apple](https://support.apple.com/en-us/102445)):
-     - **Рекомендуемый**: откройте папку «Программы», **нажмите правой кнопкой мыши по значку Bettbox**, выберите **«Открыть»**, а затем снова **«Открыть»** в окне подтверждения.
-     - **Альтернативный**: если запуск заблокирован, перейдите в «Системные настройки» -> «Конфиденциальность и безопасность», найдите Bettbox и нажмите **«Подтвердить вход»**.
+     - **Рекомендуемый**: откройте папку «Программы», **нажмите правой кнопкой мыши по значку Fluxora**, выберите **«Открыть»**, а затем снова **«Открыть»** в окне подтверждения.
+     - **Альтернативный**: если запуск заблокирован, перейдите в «Системные настройки» -> «Конфиденциальность и безопасность», найдите Fluxora и нажмите **«Подтвердить вход»**.
    - При первом включении режима TUN введите пароль текущего вошедшего пользователя Mac для настройки сети.
 
 4. **Не удается импортировать ссылку на подписку**:
@@ -111,8 +111,8 @@
 
 Адаптация пользовательских скриптов UI:
 
-* Начиная с v1.18.8, Bettbox поддерживает внешние скрипты оверрайда для UI. Например, для конфигураций AIsouler **[Репозиторий скриптов](https://github.com/AIsouler/MyClash)** достаточно добавить строку в начало скрипта:
-* <code>const Compatible_With_Bettbox = { ruleOptionsEnable: true };</code>
+* Начиная с v1.18.8, Fluxora поддерживает внешние скрипты оверрайда для UI. Например, для конфигураций AIsouler **[Репозиторий скриптов](https://github.com/AIsouler/MyClash)** достаточно добавить строку в начало скрипта:
+* <code>const Compatible_With_Fluxora = { ruleOptionsEnable: true };</code>
 
 ---
 
@@ -139,7 +139,7 @@
 
 **[FlClash GUI](https://github.com/chen08209/FlClash)** 〢 **[Mihomo Core](https://github.com/MetaCubeX/mihomo)**
 
-Отдельное спасибо всем [Участникам](https://github.com/appshubcc/Bettbox/graphs/contributors), а также используемым и связанным открытым проектам:
+Отдельное спасибо всем [Участникам](https://github.com/Tiam9173/fluxora/graphs/contributors), а также используемым и связанным открытым проектам:
 
 [Zashboard](https://github.com/Zephyruso/zashboard), [CMFA](https://github.com/MetaCubeX/ClashMetaForAndroid), [Sparkle](https://github.com/xishang0128/sparkle), [SFA](https://github.com/SagerNet/sing-box-for-android), [HUSI](https://github.com/xchacha20-poly1305/husi), [V2rayN](https://github.com/2dust/v2rayN)
 

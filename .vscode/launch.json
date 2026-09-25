@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Bettbox Dev",
+      "name": "Fluxora Dev",
       "request": "launch",
       "type": "dart",
       "flutterMode": "debug",
@@ -11,7 +11,7 @@
         "--dart-define",
         "APP_DEV=true"
       ],
-      "preLaunchTask": "bettbox: ensure dev core"
+      "preLaunchTask": "fluxora: ensure dev core"
     }
   ]
 }

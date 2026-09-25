@@ -1,5 +1,5 @@
 import 'dart:ui';
-import 'package:bett_box/common/color.dart';
+import 'package:fluxora/common/color.dart';
 import 'package:flutter/material.dart';
 
 class Point {

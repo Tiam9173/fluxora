@@ -1,4 +1,4 @@
-import 'package:bett_box/state.dart';
+import 'package:fluxora/state.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 

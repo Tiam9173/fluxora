@@ -4,11 +4,11 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:ui';
 
-import 'package:bett_box/plugins/app.dart';
-import 'package:bett_box/plugins/clipboard_ext.dart';
-import 'package:bett_box/plugins/tile.dart';
-import 'package:bett_box/plugins/vpn.dart';
-import 'package:bett_box/state.dart';
+import 'package:fluxora/plugins/app.dart';
+import 'package:fluxora/plugins/clipboard_ext.dart';
+import 'package:fluxora/plugins/tile.dart';
+import 'package:fluxora/plugins/vpn.dart';
+import 'package:fluxora/state.dart';
 import 'package:code_forge/code_forge.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
@@ -99,7 +99,7 @@ Future<void> _runApp() async {
   if (system.isWindows) {
     clipboardExt.init();
   }
-  HttpOverrides.global = BettboxHttpOverrides();
+  HttpOverrides.global = FluxoraHttpOverrides();
   runApp(ProviderScope(child: const Application()));
 }
 
@@ -232,7 +232,7 @@ Future<void> _service(List<String> flags) async {
           final profile = globalState.config.profiles
               .where((e) => e.id == profileId)
               .firstOrNull;
-          final profileName = profile?.label ?? 'Bettbox';
+          final profileName = profile?.label ?? 'Fluxora';
           await vpn?.updateNotificationSpeed(profileName, '↑0B/s ↓0B/s');
         }
 

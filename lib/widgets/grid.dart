@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:bett_box/common/common.dart';
+import 'package:fluxora/common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 

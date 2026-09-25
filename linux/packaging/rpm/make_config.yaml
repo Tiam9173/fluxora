@@ -1,7 +1,7 @@
-display_name: bettbox+
+display_name: Fluxora
 
-packager: appshub
-packagerEmail: appshubcc@gmail.com
+packager: Fluxora Contributors
+packagerEmail: support@fluxora.io
 license: Other
 
 priority: optional
@@ -11,18 +11,18 @@ essential: false
 icon: ./assets/images/icon.png
 
 keywords:
-  - bettbox+
-  - Bettbox
+  - Fluxora
+  - Fluxora
   - Clash
   - ClashMeta
   - Proxy
 
-generic_name: bettbox+
+generic_name: Fluxora
 
 group: Applications/Internet
 
 startup_notify: true
-startup_wm_class: com.appshub.bettboxplus
+startup_wm_class: io.fluxora.app
 
 install: |
   mkdir -p %{buildroot}%{_bindir}
@@ -33,8 +33,8 @@ install: |
   ln -s ../share/%{name}/%{name} %{buildroot}%{_bindir}/%{name}
   cp -r %{name}.desktop %{buildroot}%{_datadir}/applications
   cp -r %{name}.png %{buildroot}%{_datadir}/pixmaps
-  chmod +sx %{buildroot}%{_datadir}/%{name}/BettboxCore
+  chmod +sx %{buildroot}%{_datadir}/%{name}/FluxoraCore
   update-mime-database %{_datadir}/mime &> /dev/null || :
 
 attr: |
-  %attr(4755, root, root) %{_datadir}/%{name}/BettboxCore
+  %attr(4755, root, root) %{_datadir}/%{name}/FluxoraCore

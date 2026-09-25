@@ -1,5 +1,5 @@
-# bettbox+ 预览版本发布
-**注意：预览版本通常包含最新的功能修复增强或不确定性，如遇问题请提交issue[[反馈]](https://github.com/Tiam9173/bettboxplus/issues/new)联系社区交流。**
+# Fluxora 预览版本发布
+**注意：预览版本通常包含最新的功能修复增强或不确定性，如遇问题请提交issue[[反馈]](https://github.com/Tiam9173/fluxora/issues/new)联系社区交流。**
 
 <div align="left">
 
@@ -9,8 +9,8 @@
 
 <div align="left">
 
-[![Telegram Group](https://img.shields.io/badge/bettbox+-Group-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/bettboxplus_grup)
-[![Telegram Channel](https://img.shields.io/badge/bettbox+-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/bettboxplus)
+[![Telegram Group](https://img.shields.io/badge/Fluxora-Group-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/fluxora_grup)
+[![Telegram Channel](https://img.shields.io/badge/Fluxora-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/fluxora)
 
 ---
 </div>
@@ -25,10 +25,10 @@
 
 | **OS / 系统** | **Requirements / 版本要求** | **Direct Links / 点击直链下载** |
 |:---:|:---|:---|
-| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/android/android-original.svg" alt="Android" width="28"/> | Android 8.0+ | <a href="https://github.com/Tiam9173/bettboxplus/releases/download/vVERSION/bettbox+-BASE_VERSION-android-arm64-v8a.apk"><img src="https://img.shields.io/badge/APK-ARMv8-32AF6A?logo=android&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/Tiam9173/bettboxplus/releases/download/vVERSION/bettbox+-BASE_VERSION-android-x86_64.apk"><img src="https://img.shields.io/badge/APK-x64-32AF6A?logo=android&logoColor=white&style=flat-square&labelColor=222222"></a><br><a href="https://github.com/Tiam9173/bettboxplus/releases/download/vVERSION/bettbox+-BASE_VERSION-android-armeabi-v7a.apk"><img src="https://img.shields.io/badge/APK-ARMv7-32AF6A?logo=android&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/Tiam9173/bettboxplus/releases/download/vVERSION/bettbox+-BASE_VERSION-android-universal.apk"><img src="https://img.shields.io/badge/APK-Universal-32AF6A?logo=android&logoColor=white&style=flat-square&labelColor=222222"></a> |
-| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/windows11/windows11-original.svg" alt="Windows" width="28"/> | Windows 10 / 11<br>*(绿色免安装便携版)* | <a href="https://github.com/Tiam9173/bettboxplus/releases/download/vVERSION/bettbox+-BASE_VERSION-windows-amd64-portable.zip"><img src="https://img.shields.io/badge/Portable-x64%20(便携包)-0078D7?logo=windows&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/Tiam9173/bettboxplus/releases/download/vVERSION/bettbox+-BASE_VERSION-windows-amd64-setup.exe"><img src="https://img.shields.io/badge/Setup-x64-0078D7?logo=windows&logoColor=white&style=flat-square&labelColor=222222"></a> |
-| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/apple/apple-original.svg" alt="macOS" width="28"/> | macOS 12.0+<br>*(Compatible for 10.15-11.7)* | <a href="https://github.com/Tiam9173/bettboxplus/releases/download/vVERSION/bettbox+-BASE_VERSION-macos-arm64.dmg"><img src="https://img.shields.io/badge/DMG-Apple%20Silicon-000000?logo=apple&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/Tiam9173/bettboxplus/releases/download/vVERSION/bettbox+-BASE_VERSION-macos-amd64.dmg"><img src="https://img.shields.io/badge/DMG-Intel%20x64-00A9E0?logo=apple&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/Tiam9173/bettboxplus/releases/download/vVERSION/bettbox+-BASE_VERSION-macos-amd64-compatible.dmg"><img src="https://img.shields.io/badge/DMG-Compatible-555555?logo=apple&logoColor=white&style=flat-square&labelColor=222222"></a> |
-| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/linux/linux-original.svg" alt="Linux" width="28"/> | Linux Kernel 5.4+<br>*(Compatible for Older CPU)* | <a href="https://github.com/Tiam9173/bettboxplus/releases/download/vVERSION/bettbox+-BASE_VERSION-linux-amd64.AppImage"><img src="https://img.shields.io/badge/AppImage-x64-f84e29?logo=linux&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/Tiam9173/bettboxplus/releases/download/vVERSION/bettbox+-BASE_VERSION-linux-amd64.deb"><img src="https://img.shields.io/badge/DEB-x64-A81D33?logo=debian&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/Tiam9173/bettboxplus/releases/download/vVERSION/bettbox+-BASE_VERSION-linux-amd64.rpm"><img src="https://img.shields.io/badge/RPM-x64-EE0000?logo=redhat&logoColor=white&style=flat-square&labelColor=222222"></a><br><a href="https://github.com/Tiam9173/bettboxplus/releases/download/vVERSION/bettbox+-BASE_VERSION-linux-arm64.deb"><img src="https://img.shields.io/badge/DEB-ARM64-A81D33?logo=debian&logoColor=white&style=flat-square&labelColor=222222"></a> |
+| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/android/android-original.svg" alt="Android" width="28"/> | Android 8.0+ | <a href="https://github.com/Tiam9173/fluxora/releases/download/vVERSION/Fluxora-BASE_VERSION-android-arm64-v8a.apk"><img src="https://img.shields.io/badge/APK-ARMv8-32AF6A?logo=android&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/Tiam9173/fluxora/releases/download/vVERSION/Fluxora-BASE_VERSION-android-x86_64.apk"><img src="https://img.shields.io/badge/APK-x64-32AF6A?logo=android&logoColor=white&style=flat-square&labelColor=222222"></a><br><a href="https://github.com/Tiam9173/fluxora/releases/download/vVERSION/Fluxora-BASE_VERSION-android-armeabi-v7a.apk"><img src="https://img.shields.io/badge/APK-ARMv7-32AF6A?logo=android&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/Tiam9173/fluxora/releases/download/vVERSION/Fluxora-BASE_VERSION-android-universal.apk"><img src="https://img.shields.io/badge/APK-Universal-32AF6A?logo=android&logoColor=white&style=flat-square&labelColor=222222"></a> |
+| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/windows11/windows11-original.svg" alt="Windows" width="28"/> | Windows 10 / 11<br>*(绿色免安装便携版)* | <a href="https://github.com/Tiam9173/fluxora/releases/download/vVERSION/Fluxora-BASE_VERSION-windows-amd64-portable.zip"><img src="https://img.shields.io/badge/Portable-x64%20(便携包)-0078D7?logo=windows&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/Tiam9173/fluxora/releases/download/vVERSION/Fluxora-BASE_VERSION-windows-amd64-setup.exe"><img src="https://img.shields.io/badge/Setup-x64-0078D7?logo=windows&logoColor=white&style=flat-square&labelColor=222222"></a> |
+| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/apple/apple-original.svg" alt="macOS" width="28"/> | macOS 12.0+<br>*(Compatible for 10.15-11.7)* | <a href="https://github.com/Tiam9173/fluxora/releases/download/vVERSION/Fluxora-BASE_VERSION-macos-arm64.dmg"><img src="https://img.shields.io/badge/DMG-Apple%20Silicon-000000?logo=apple&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/Tiam9173/fluxora/releases/download/vVERSION/Fluxora-BASE_VERSION-macos-amd64.dmg"><img src="https://img.shields.io/badge/DMG-Intel%20x64-00A9E0?logo=apple&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/Tiam9173/fluxora/releases/download/vVERSION/Fluxora-BASE_VERSION-macos-amd64-compatible.dmg"><img src="https://img.shields.io/badge/DMG-Compatible-555555?logo=apple&logoColor=white&style=flat-square&labelColor=222222"></a> |
+| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/linux/linux-original.svg" alt="Linux" width="28"/> | Linux Kernel 5.4+<br>*(Compatible for Older CPU)* | <a href="https://github.com/Tiam9173/fluxora/releases/download/vVERSION/Fluxora-BASE_VERSION-linux-amd64.AppImage"><img src="https://img.shields.io/badge/AppImage-x64-f84e29?logo=linux&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/Tiam9173/fluxora/releases/download/vVERSION/Fluxora-BASE_VERSION-linux-amd64.deb"><img src="https://img.shields.io/badge/DEB-x64-A81D33?logo=debian&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/Tiam9173/fluxora/releases/download/vVERSION/Fluxora-BASE_VERSION-linux-amd64.rpm"><img src="https://img.shields.io/badge/RPM-x64-EE0000?logo=redhat&logoColor=white&style=flat-square&labelColor=222222"></a><br><a href="https://github.com/Tiam9173/fluxora/releases/download/vVERSION/Fluxora-BASE_VERSION-linux-arm64.deb"><img src="https://img.shields.io/badge/DEB-ARM64-A81D33?logo=debian&logoColor=white&style=flat-square&labelColor=222222"></a> |
 ---
 </div>
 
@@ -38,13 +38,13 @@
 > Detailed and well-structured issues will be prioritized (logs / reproduction steps)<br>
 > 书写认真、信息完整（包含必要的复现步骤和日志）的 issues 会被优先处理和对待
 
-**Bug Report / 提交故障**: [Click Here / 点击这里](https://github.com/Tiam9173/bettboxplus/issues/new)  
-**Feature Request / 需求建议**: [Click Here / 点击这里](https://github.com/Tiam9173/bettboxplus/issues/new)
+**Bug Report / 提交故障**: [Click Here / 点击这里](https://github.com/Tiam9173/fluxora/issues/new)
+**Feature Request / 需求建议**: [Click Here / 点击这里](https://github.com/Tiam9173/fluxora/issues/new)
 
 ---
 
 ### 💖 致谢与开源协议 / Acknowledgements
 
-- 特别鸣谢上游项目 [Bettbox](https://github.com/appshubcc/Bettbox) 团队及贡献者！本项目基于 Bettbox 深度重构与增强。
+- Fluxora v1.0 is an independent product. See NOTICE and the Lineage & Licenses section for open-source attribution.
 - 鸣谢 [FlClash](https://github.com/chen08209/FlClash) 与 [Mihomo (Clash.Meta)](https://github.com/MetaCubeX/mihomo)。
 - 本项目遵循 GPL-3.0 License 开源协议。

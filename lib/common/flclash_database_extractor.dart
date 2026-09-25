@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-import 'package:bett_box/common/common.dart';
-import 'package:bett_box/enum/enum.dart';
-import 'package:bett_box/models/models.dart';
+import 'package:fluxora/common/common.dart';
+import 'package:fluxora/enum/enum.dart';
+import 'package:fluxora/models/models.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 /// FlClash 数据库提取工具

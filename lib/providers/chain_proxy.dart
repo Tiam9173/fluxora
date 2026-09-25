@@ -1,4 +1,4 @@
-import 'package:bett_box/manager/chain_proxy_manager.dart';
+import 'package:fluxora/manager/chain_proxy_manager.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final chainProxyConfigProvider =

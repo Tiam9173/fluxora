@@ -1,20 +1,20 @@
-display_name: bettbox+
+display_name: Fluxora
 
 icon: ./assets/images/icon.png
 
 keywords:
-  - bettbox+
-  - Bettbox
+  - Fluxora
+  - Fluxora
   - Clash
   - ClashMeta
   - Proxy
 
-generic_name: bettbox+
+generic_name: Fluxora
 
 categories:
   - Network
 
 startup_notify: true
-startup_wm_class: com.appshub.bettboxplus
+startup_wm_class: io.fluxora.app
 
 include: []

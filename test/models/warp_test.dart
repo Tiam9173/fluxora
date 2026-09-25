@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:bett_box/models/warp_config.dart';
+import 'package:fluxora/models/warp_config.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

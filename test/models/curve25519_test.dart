@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:bett_box/common/curve25519.dart';
+import 'package:fluxora/common/curve25519.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Uint8List _hexToBytes(String hex) {

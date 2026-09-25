@@ -15,7 +15,7 @@ use windows_service::{
     service_dispatcher, Result,
 };
 
-const DEFAULT_SERVICE_NAME: &str = "BettboxHelperService";
+const DEFAULT_SERVICE_NAME: &str = "FluxoraHelperService";
 
 const SERVICE_TYPE: ServiceType = ServiceType::OWN_PROCESS;
 
@@ -47,9 +47,9 @@ pub fn service_main(_arguments: Vec<OsString>) {
         rt.block_on(async {
             if let Err(e) = run_windows_service().await {
                 let log_name = if service_name().contains("Dev") {
-                    "bettbox_dev_helper_error.log"
+                    "fluxora_dev_helper_error.log"
                 } else {
-                    "bettbox_helper_error.log"
+                    "fluxora_helper_error.log"
                 };
                 let log_path = std::env::temp_dir().join(log_name);
                 let ts = std::time::SystemTime::now()

@@ -1,86 +1,67 @@
-<p align="center">
-  <a href="README.md">简体中文</a> | <strong>English</strong>
-</p>
+# Fluxora
 
-<h1 align="center">⚡ bettbox+</h1>
-<p align="center">
-  <strong>A lightweight, high-performance cross-platform proxy and rule-based routing client based on Bettbox</strong>
-</p>
+![Fluxora](assets/images/fluxora_mark.svg)
 
-<p align="center">
-  <a href="https://github.com/Tiam9173/bettboxplus/releases/latest"><img src="https://img.shields.io/github/v/release/Tiam9173/bettboxplus?style=for-the-badge&logo=github&color=238636&label=Release" alt="Latest Release" /></a>
-  <a href="https://github.com/MetaCubeX/mihomo/releases/latest"><img src="https://img.shields.io/github/v/release/MetaCubeX/mihomo?style=for-the-badge&logo=go&logoColor=white&color=8A2BE2&label=Mihomo" alt="Core" /></a>
-  <a href="https://t.me/bettboxplus_grup"><img src="https://img.shields.io/badge/Telegram-Group-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white" alt="Telegram Group" /></a>
-  <a href="https://t.me/bettboxplus"><img src="https://img.shields.io/badge/Telegram-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white" alt="Telegram Channel" /></a>
-</p>
+An open-source, cross-platform Mihomo routing client for clear and reliable rule-based traffic management.
 
-<p align="center">
-  <img src="snapshots/home.png" alt="bettbox+" width="720" />
-</p>
+Fluxora runs on Android, Windows, macOS, and Linux. It is designed for users who manage multiple profiles, proxy groups, routing rules, and TUN/VPN connections.
 
----
+## Quick start
 
-## 📖 Introduction
+1. Download the package for your platform from the [latest release](https://github.com/Tiam9173/fluxora/releases/latest).
+2. Import a subscription URL or add a local configuration.
+3. Select a profile and connect.
 
-**bettbox+** is a high-performance, cross-platform network proxy and rule-based traffic routing client powered by the **Mihomo (Clash Meta)** core, rebuilt and enhanced upon the acclaimed **[Bettbox](https://github.com/appshubcc/Bettbox)** project.
+## Features
 
-Guided by the principles of lightness, fluidity, and out-of-the-box readiness, bettbox+ preserves Bettbox's signature high frame rates, sleek interface, and minimal battery consumption, while incorporating Chain Proxy relaying, Cloudflare WARP egress enhancement, blank profiles, and comprehensive manual node entry across all major protocols.
+- Mihomo core and rule-based routing
+- Android, Windows, macOS, and Linux support
+- Profile, proxy group, connection, and request management
+- TUN/VPN, system proxy, tray, and shortcut controls
+- Chain proxy, scripts, rule providers, and connection diagnostics
+- Open source and auditable, with no built-in account system
 
----
+## Supported platforms
 
-### ✈️ Community
+| Platform | Status |
+|---|---|
+| Android 8.0+ | Supported |
+| Windows 10/11 | Supported |
+| macOS 10.15+ | Supported |
+| Linux | Supported |
+| iOS | No official client currently |
 
-👉 **Official Telegram Group**: [https://t.me/bettboxplus_grup](https://t.me/bettboxplus_grup)  
-👉 **Official Telegram Channel**: [https://t.me/bettboxplus](https://t.me/bettboxplus)
+## Download
 
----
+Visit [GitHub Releases](https://github.com/Tiam9173/fluxora/releases). Release files use the `Fluxora-<version>-<platform>` naming format.
 
-## 🚀 Key Features
+## Privacy and security
 
-* **⚡ Fluid & Low Power**: Smooth 120Hz animations in foreground, intelligent sleep mode with near-zero resource consumption in background.
-* **🛠️ Out-of-the-Box TUN / VPN**: Comprehensive virtual network adapter integration for both Android and Windows with zero hassle.
-* **🔗 Chain Proxy & Relay Chaining**: Connect high-speed transit hops with egress landing proxies with automated loop-free isolation, shielding true client IPs.
-* **🛡️ WARP on Proxy**: Cascade Cloudflare WARP Anycast egress over existing proxies to eliminate Google geolocational redirects and CAPTCHAs, unlocking AI services and streaming platforms with real-time visual diagnostics.
-* **📝 Blank Profiles & All-Protocol Manual Entry**: Create independent empty profiles and manually configure nodes across all protocols (VLESS/REALITY, VMess, SS/SSR, Trojan, Trojan Go, Hysteria 1/2, TUIC, WireGuard, AmneziaWG 2/3, Snell, SSH, ShadowTLS, Juicity, Naïve, Direct, Custom Config) or batch import multi-line links.
-* **🔀 Subscription Pre-Proxy & Landing Proxy**: Configure subscription group pre-proxies (bypass blockades) and landing proxies (IP masking & media unlock) via native `dialer-proxy` cascading.
-* **📊 Dashboard & Widgets**: Sleek home screen and desktop widgets for real-time throughput and connection monitoring.
-* **💻 Built-in Code Editor**: Powerful refactored code-forge editor for tweaking complex configurations.
-* **🔒 Clean & Transparent**: Open-source, ad-free, zero tracking, dedicated strictly to proxy performance.
+Fluxora does not provide a cloud account service. Subscription, configuration, and network behavior depend on the configuration and destinations selected by the user. Review the privacy policies of your subscription provider, rule sources, and proxy services before use.
 
----
+## Lineage & Licenses
 
-## ⬇️ Download & Installation
+Fluxora is distributed under the GNU General Public License v3.0. See [LICENSE](LICENSE).
 
-Please visit the **[Latest Releases](https://github.com/Tiam9173/bettboxplus/releases/latest)** to download:
+Fluxora includes and interoperates with open-source components, including the [Mihomo](https://github.com/MetaCubeX/mihomo) core and other Flutter, Go, Rust, and platform libraries. Their applicable copyright notices and licenses remain in their respective source directories and distribution metadata. See [NOTICE](NOTICE) and the relevant component license files.
 
-| Platform | Architecture / Type | Download Link | Notes |
-| :--- | :--- | :--- | :--- |
-| **Android 8.0+** | ARMv8 (arm64-v8a) | [`bettbox+-1.19.2.2-android-arm64-v8a.apk`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2.2/bettbox+-1.19.2.2-android-arm64-v8a.apk) | Recommended for modern 64-bit devices |
-| **Android 8.0+** | ARMv7 (armeabi-v7a) | [`bettbox+-1.19.2.2-android-armeabi-v7a.apk`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2.2/bettbox+-1.19.2.2-android-armeabi-v7a.apk) | For legacy 32-bit devices |
-| **Android 8.0+** | x86_64 | [`bettbox+-1.19.2.2-android-x86_64.apk`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2.2/bettbox+-1.19.2.2-android-x86_64.apk) | For x86-based Android tablets / emulators |
-| **Android 8.0+** | Universal | [`bettbox+-1.19.2.2-android-universal.apk`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2.2/bettbox+-1.19.2.2-android-universal.apk) | Universal build supporting all architectures |
-| **Windows 10 / 11** | x64 Portable ZIP | [`bettbox+-1.19.2.2-windows-amd64-portable.zip`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2.2/bettbox+-1.19.2.2-windows-amd64-portable.zip) | Green portable archive, unzip and run |
-| **Windows 10 / 11** | x64 Setup EXE | [`bettbox+-1.19.2.2-windows-amd64-setup.exe`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2.2/bettbox+-1.19.2.2-windows-amd64-setup.exe) | Standard Windows installer wizard |
-| **macOS 12.0+** | Apple Silicon (M Series) | [`bettbox+-1.19.2.2-macos-arm64.dmg`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2.2/bettbox+-1.19.2.2-macos-arm64.dmg) | Recommended for Apple Silicon (M1/M2/M3/M4) Macs |
-| **macOS 12.0+** | Intel x64 | [`bettbox+-1.19.2.2-macos-amd64.dmg`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2.2/bettbox+-1.19.2.2-macos-amd64.dmg) | For Intel-based Macs |
-| **macOS 10.15 - 11.7** | Compatible DMG | [`bettbox+-1.19.2.2-macos-amd64-compatible.dmg`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2.2/bettbox+-1.19.2.2-macos-amd64-compatible.dmg) | For legacy macOS versions |
-| **Linux 5.4+** | Universal AppImage (x64) | [`bettbox+-1.19.2.2-linux-amd64.AppImage`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2.2/bettbox+-1.19.2.2-linux-amd64.AppImage) | Portable, executable on modern Linux distributions |
-| **Linux (Ubuntu / Debian)** | DEB Package (x64) | [`bettbox+-1.19.2.2-linux-amd64.deb`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2.2/bettbox+-1.19.2.2-linux-amd64.deb) | For Ubuntu, Debian, Linux Mint, etc. |
-| **Linux (Debian / ARM64)** | DEB Package (arm64) | [`bettbox+-1.19.2.2-linux-arm64.deb`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2.2/bettbox+-1.19.2.2-linux-arm64.deb) | For ARM64 Linux devices (Raspberry Pi, etc.) |
-| **Linux (Fedora / RHEL)** | RPM Package (x64) | [`bettbox+-1.19.2.2-linux-amd64.rpm`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2.2/bettbox+-1.19.2.2-linux-amd64.rpm) | For Fedora, RHEL, openSUSE, etc. |
+Fluxora is an independent product identity. This repository does not present itself as an official product of any upstream project.
 
-> 💡 **Tip**: For older versions and complete package assets, visit **[GitHub Releases](https://github.com/Tiam9173/bettboxplus/releases)**.
+## Development
 
----
+```bash
+flutter pub get
+dart run build_runner build -d
+flutter analyze
+flutter test
+```
 
-## 💖 Acknowledgements
+Install the required Flutter, Dart, Go, Rust, Android SDK/NDK, and platform toolchains before building desktop or Android targets.
 
-- **[Bettbox](https://github.com/appshubcc/Bettbox)**: Our highest gratitude to the Bettbox project for providing an exceptional foundation.
-- **[FlClash](https://github.com/chen08209/FlClash)**: For the outstanding GUI design and Flutter architecture.
-- **[Mihomo (Clash.Meta)](https://github.com/MetaCubeX/mihomo)**: For the powerful and flexible routing core.
+## Contributing
 
----
+Issues, documentation improvements, bug fixes, and code contributions are welcome. Do not introduce undeclared closed-source dependencies or remove GPL and third-party license notices.
 
-## 📄 License
+## License
 
-This project is licensed under the **GPL-3.0 License**.
+This project is licensed under GPL-3.0. See [LICENSE](LICENSE) for the complete terms.

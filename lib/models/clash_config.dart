@@ -1,7 +1,7 @@
 // ignore_for_file: invalid_annotation_target
 
-import 'package:bett_box/common/common.dart';
-import 'package:bett_box/enum/enum.dart';
+import 'package:fluxora/common/common.dart';
+import 'package:fluxora/enum/enum.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'generated/clash_config.freezed.dart';
@@ -497,15 +497,15 @@ abstract class Experimental with _$Experimental {
 abstract class GeoXUrl with _$GeoXUrl {
   const factory GeoXUrl({
     @Default(
-      'https://github.com/appshubcc/bett-rules/releases/download/latest/geoip.metadb',
+      'https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip.metadb',
     )
     String mmdb,
     @Default(
-      'https://github.com/appshubcc/bett-rules/releases/download/latest/GeoLite2-ASN.mmdb',
+      'https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/GeoLite2-ASN.mmdb',
     )
     String asn,
     @Default(
-      'https://github.com/appshubcc/bett-rules/releases/download/latest/geosite.dat',
+      'https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.dat',
     )
     String geosite,
   }) = _GeoXUrl;

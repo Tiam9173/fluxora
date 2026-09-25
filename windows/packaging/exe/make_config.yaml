@@ -1,11 +1,11 @@
 script_template: inno_setup.iss
-app_id: 839C4643-D85E-4981-A179-BE70FE1PLUS2
-app_name: Bettbox+
-publisher: Bettbox+
-publisher_url: https://github.com/Tiam9173/bettboxplus
-display_name: Bettbox+
-executable_name: Bettbox.exe
-output_base_file_name: Bettbox+.exe
+app_id: 5F0E8A64-3D57-4F11-9B20-6A8D4C7E1F32
+app_name: Fluxora
+publisher: Fluxora
+publisher_url: https://github.com/Tiam9173/fluxora
+display_name: Fluxora
+executable_name: Fluxora.exe
+output_base_file_name: Fluxora.exe
 setup_icon_file: ..\windows\runner\resources\app_icon.ico
 locales:
   - lang: zh

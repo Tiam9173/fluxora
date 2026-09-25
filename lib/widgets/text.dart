@@ -1,5 +1,5 @@
 import 'package:emoji_regex/emoji_regex.dart';
-import 'package:bett_box/enum/enum.dart';
+import 'package:fluxora/enum/enum.dart';
 import 'package:flutter/material.dart';
 
 import '../state.dart';

@@ -2,10 +2,10 @@
 
 import 'dart:io';
 
-import 'package:bett_box/common/system.dart';
-import 'package:bett_box/common/app_localizations.dart';
-import 'package:bett_box/views/dashboard/widgets/widgets.dart';
-import 'package:bett_box/widgets/widgets.dart';
+import 'package:fluxora/common/system.dart';
+import 'package:fluxora/common/app_localizations.dart';
+import 'package:fluxora/views/dashboard/widgets/widgets.dart';
+import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';

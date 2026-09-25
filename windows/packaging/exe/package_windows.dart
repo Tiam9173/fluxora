@@ -45,7 +45,7 @@ void main(List<String> arguments) async {
   }
   print('App Version: $appVersion');
 
-  final outputBaseName = 'bettbox+-$appVersion-windows-$desc-setup';
+  final outputBaseName = 'Fluxora-$appVersion-windows-$desc-setup';
 
   // 2. Parse make_config.yaml
   final configFile = File('windows/packaging/exe/make_config.yaml');
@@ -66,10 +66,10 @@ void main(List<String> arguments) async {
   }
 
   // 4. Map variables for Inno Setup template
-  final coreExecutableName = isDev ? 'BettboxDevCore.exe' : 'BettboxCore.exe';
-  final helperExecutableName = isDev ? 'BettboxDevHelperService.exe' : 'BettboxHelperService.exe';
-  final helperServiceName = isDev ? 'BettboxDevHelperService' : 'BettboxHelperService';
-  final taskName = isDev ? 'Bettbox Dev' : 'Bettbox';
+  final coreExecutableName = isDev ? 'FluxoraDevCore.exe' : 'FluxoraCore.exe';
+  final helperExecutableName = isDev ? 'FluxoraDevHelperService.exe' : 'FluxoraHelperService.exe';
+  final helperServiceName = isDev ? 'FluxoraDevHelperService' : 'FluxoraHelperService';
+  final taskName = isDev ? 'Fluxora Dev' : 'Fluxora';
   
   // Format locales - resolve file paths to absolute to avoid Inno Setup relative path issues
   final packagingDir = path.absolute('windows/packaging/exe');
@@ -89,14 +89,14 @@ void main(List<String> arguments) async {
     'APP_ID': makeConfig['app_id'],
     'APP_NAME': makeConfig['app_name'],
     'APP_VERSION': appVersion,
-    'EXECUTABLE_NAME': makeConfig['executable_name'] ?? 'Bettbox.exe',
-    'DISPLAY_NAME': makeConfig['display_name'] ?? 'Bettbox',
-    'PUBLISHER_NAME': makeConfig['publisher'] ?? 'appshub.cc',
+    'EXECUTABLE_NAME': makeConfig['executable_name'] ?? 'Fluxora.exe',
+    'DISPLAY_NAME': makeConfig['display_name'] ?? 'Fluxora',
+    'PUBLISHER_NAME': makeConfig['publisher'] ?? 'Fluxora Contributors',
     'ARCH': arch == 'arm64' ? 'arm64' : 'x64',
-    'PUBLISHER_URL': makeConfig['publisher_url'] ?? 'https://github.com/appshubcc/Bettbox',
+    'PUBLISHER_URL': makeConfig['publisher_url'] ?? 'https://github.com/Tiam9173/fluxora',
     'CREATE_DESKTOP_ICON': true,
     'LAUNCH_AT_STARTUP': true,
-    'INSTALL_DIR_NAME': '{autopf64}\\${makeConfig['display_name'] ?? 'Bettbox'}',
+    'INSTALL_DIR_NAME': '{autopf64}\\${makeConfig['display_name'] ?? 'Fluxora'}',
     'SOURCE_DIR': sourceDir,
     'OUTPUT_BASE_FILENAME': outputBaseName,
     'LOCALES': locales,
@@ -171,27 +171,15 @@ void main(List<String> arguments) async {
 
   // 8. Generate portable ZIP archive in dist/
   final portableBaseName = isDev
-      ? 'bettbox+-dev-$appVersion-windows-$desc-portable'
-      : 'bettbox+-$appVersion-windows-$desc-portable';
+      ? 'Fluxora-dev-$appVersion-windows-$desc-portable'
+      : 'Fluxora-$appVersion-windows-$desc-portable';
   final targetZipPath = path.join('dist', '$portableBaseName.zip');
   print('Generating portable ZIP: $targetZipPath...');
-
-  // Ensure Bettbox+.exe exists alongside Bettbox.exe
-  final exePath = path.join(sourceDir, 'Bettbox.exe');
-  final plusExePath = path.join(sourceDir, 'Bettbox+.exe');
-  if (File(exePath).existsSync() && !File(plusExePath).existsSync()) {
-    try {
-      File(exePath).copySync(plusExePath);
-      print('Copied Bettbox.exe to Bettbox+.exe');
-    } catch (e) {
-      print('Warning: Failed to copy Bettbox.exe to Bettbox+.exe: $e');
-    }
-  }
 
   // Create .portable marker so the portable edition uses local userData directory
   final portableMarkerPath = path.join(sourceDir, '.portable');
   try {
-    File(portableMarkerPath).writeAsStringSync('# Bettbox+ Portable Mode\n');
+    File(portableMarkerPath).writeAsStringSync('# Fluxora Portable Mode\n');
   } catch (e) {
     print('Warning: Failed to create .portable marker: $e');
   }

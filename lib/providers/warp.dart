@@ -1,5 +1,5 @@
-import 'package:bett_box/manager/warp_manager.dart';
-import 'package:bett_box/models/warp_config.dart';
+import 'package:fluxora/manager/warp_manager.dart';
+import 'package:fluxora/models/warp_config.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final warpProvider = ChangeNotifierProvider<WarpManager>((ref) {

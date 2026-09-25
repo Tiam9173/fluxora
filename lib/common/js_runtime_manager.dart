@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:bett_box/common/common.dart';
+import 'package:fluxora/common/common.dart';
 import 'package:flutter_qjs/flutter_qjs.dart';
 import 'package:synchronized/synchronized.dart';
 

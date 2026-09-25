@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:bett_box/models/chain_proxy.dart';
+import 'package:fluxora/models/chain_proxy.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

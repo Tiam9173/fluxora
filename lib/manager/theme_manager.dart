@@ -1,9 +1,9 @@
 import 'dart:math';
 
-import 'package:bett_box/common/common.dart';
-import 'package:bett_box/common/theme.dart';
-import 'package:bett_box/providers/config.dart';
-import 'package:bett_box/state.dart';
+import 'package:fluxora/common/common.dart';
+import 'package:fluxora/common/theme.dart';
+import 'package:fluxora/providers/config.dart';
+import 'package:fluxora/state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

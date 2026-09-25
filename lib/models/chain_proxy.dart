@@ -1102,7 +1102,7 @@ class DirectSocketVerifier {
     final headers = StringBuffer();
     headers.write('CONNECT 1.1.1.1:80 HTTP/1.1\r\n');
     headers.write('Host: 1.1.1.1:80\r\n');
-    headers.write('User-Agent: Bettbox/1.0\r\n');
+    headers.write('User-Agent: Fluxora/1.0\r\n');
     if (hasAuth) {
       final cred = base64Encode(utf8.encode('$username:$password'));
       headers.write('Proxy-Authorization: Basic $cred\r\n');

@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:bett_box/common/common.dart';
+import 'package:fluxora/common/common.dart';
 
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
@@ -108,7 +108,7 @@ class AppPath {
       return targetHelper;
     }
     final fallbackHelper =
-        join(executableDirPath, 'BettboxHelperService$executableExtension');
+        join(executableDirPath, 'FluxoraHelperService$executableExtension');
     if (File(fallbackHelper).existsSync()) {
       return fallbackHelper;
     }

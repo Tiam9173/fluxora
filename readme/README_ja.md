@@ -2,23 +2,23 @@
   <a href="../README.md">简体中文</a> | <a href="README_en.md">English</a> | <a href="README_ru.md">Русский</a> | <a href="README_fa.md">فارسی</a> | <strong>日本語</strong> | <a href="README_ko.md">한국어</a>
 </h4>
 
-<h1 align="center">⚡ Bettbox</h1>
+<h1 align="center">⚡ Fluxora</h1>
 <p align="center">
-  <strong>Another Better Mihomo Client</strong>
+  <strong>Open-source cross-platform Mihomo routing client</strong>
 </p>
 
-**Bettbox は、Mihomo（Clash Meta）カーネルを搭載し、初期の FlClash をベースに再構築されたマルチプラットフォーム対応のネットワークデバッグ・分流クライアントです。**
+**Fluxora は、Mihomo（Clash Meta）カーネルを搭載し、初期の FlClash をベースに再構築されたマルチプラットフォーム対応のネットワークデバッグ・分流クライアントです。**
 
-「Better Experience（より良い体験）」を追求し、オリジナルの洗練された UI を継承しつつ、細部のデザインや実用ロジックを深層最適化。コア機能と実現目標：「フロントエンドは高フレームレートで滑らか、バックグラウンドは省電力で無感」。低リソースで長期にわたり安定動作する、より優れた Mihomo クライアントの実現に尽力しています。
+「clear and reliable routing（より良い体験）」を追求し、オリジナルの洗練された UI を継承しつつ、細部のデザインや実用ロジックを深層最適化。コア機能と実現目標：「フロントエンドは高フレームレートで滑らか、バックグラウンドは省電力で無感」。低リソースで長期にわたり安定動作する、より優れた Mihomo クライアントの実現に尽力しています。
 
-Bettbox：Better Experience, Out of the box - 優れた体験を、すぐに使える。
+Fluxora：Make routing legible. - 優れた体験を、すぐに使える。
 
-私たちのビジョン：Connecting Open Source and AI, Accelerating Innovation
+私たちのビジョン：Clear routes, calm control.
 
-[![Latest Release](https://img.shields.io/github/v/release/appshubcc/Bettbox?style=for-the-badge&logo=github&color=238636&label=Release)](https://github.com/appshubcc/Bettbox/releases/latest) [![Core](https://img.shields.io/github/v/release/MetaCubeX/mihomo?style=for-the-badge&logo=go&logoColor=white&color=8A2BE2&label=Mihomo)](https://github.com/MetaCubeX/mihomo/releases/latest)
+[![Latest Release](https://img.shields.io/github/v/release/Tiam9173/fluxora?style=for-the-badge&logo=github&color=238636&label=Release)](https://github.com/Tiam9173/fluxora/releases/latest) [![Core](https://img.shields.io/github/v/release/MetaCubeX/mihomo?style=for-the-badge&logo=go&logoColor=white&color=8A2BE2&label=Mihomo)](https://github.com/MetaCubeX/mihomo/releases/latest)
 
 <p align="center">
-  <img src="../snapshots/home.png" alt="Bettbox" />
+  <img src="../assets/images/fluxora_mark.svg" alt="Fluxora" />
 </p>
 
 ---
@@ -28,7 +28,7 @@ Bettbox：Better Experience, Out of the box - 優れた体験を、すぐに使�
 
 <div align="left">
 
-[![Telegram Group](https://img.shields.io/badge/Bettbox-Chat-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/bettboxplus_grup) [![Telegram Channel](https://img.shields.io/badge/Bettbox-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/appshub_channel)
+[![Telegram Group](https://img.shields.io/badge/Fluxora-Chat-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://github.com/Tiam9173/fluxora/discussions) [![Telegram Channel](https://img.shields.io/badge/Fluxora-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://github.com/Tiam9173/fluxora/discussions)
 
 ---
 ## 🚀 主な特徴
@@ -53,7 +53,7 @@ Bettbox：Better Experience, Out of the box - 優れた体験を、すぐに使�
 
 ## 🛠️ インストールとダウンロード
 
-ご利用のプラットフォームおよびシステムに適した最新のインストールパッケージを **[[Releases]](https://github.com/appshubcc/Bettbox/releases)** ページからダウンロードしてください。
+ご利用のプラットフォームおよびシステムに適した最新のインストールパッケージを **[[Releases]](https://github.com/Tiam9173/fluxora/releases)** ページからダウンロードしてください。
 
 
 * **全デスクトッププラットフォーム**: 
@@ -65,8 +65,8 @@ Bettbox：Better Experience, Out of the box - 優れた体験を、すぐに使�
 * **HarmonyOS NEXT**: [[卓易通]](https://harmonyos.cool/android-app) と組み合わせてご利用ください
 
 **その他のインストール方法:**<br>
-**ArchLinux:** <code>yay -S bettbox-bin または paru -S bettbox-bin</code> ([lyj404](https://github.com/lyj404/bettbox-aur) により維持)<br>
-**AMD64=v1:** <code>yay -S bettbox-compatible-bin または paru -S bettbox-compatible-bin</code> ([VillagerTom](https://github.com/VillagerTom) により維持)
+**ArchLinux:** <code>yay -S fluxora-bin または paru -S fluxora-bin</code> ([lyj404](https://github.com/lyj404/fluxora-aur) により維持)<br>
+**AMD64=v1:** <code>yay -S fluxora-compatible-bin または paru -S fluxora-compatible-bin</code> ([VillagerTom](https://github.com/VillagerTom) により維持)
 
 ---
 ## ❓ よくある質問
@@ -74,7 +74,7 @@ Bettbox：Better Experience, Out of the box - 優れた体験を、すぐに使�
 1. **インストール・起動およびセキュリティ**：
    - Android端末：**十分なバックグラウンド権限が与えられているか、最低システム要件（Android 8.0+）を満たしているか**確認してください。
    - デスクトップ旧型端末：システムアーキテクチャに応じて**特定 CPU クラス向けの Compatible バージョンが必要か**確認してください。
-   - **セキュリティ：Bettbox は完全オープンソースかつ透明で、コードは Signpath のセキュリティ監査に合格しています。**
+   - **セキュリティ：Fluxora は完全オープンソースかつ透明で、コードは Signpath のセキュリティ監査に合格しています。**
 
 2. **デスクトップ端末のよくある質問**：
    - Windows管理者権限：インストール時に自動処理されるため、**手動での再権限付与は不要です**。
@@ -83,11 +83,11 @@ Bettbox：Better Experience, Out of the box - 優れた体験を、すぐに使�
    - 問題が解決しない場合は、ISSUE を提出してください。
 
 3. **macOSインストールの注意事項**：
-   - ご利用の環境（Intel / Apple Silicon）に適したファイルをダウンロードし、`Bettbox-macos-xx.dmg` をダブルクリックして開きます。
-   - Bettbox アイコンを「Applications」フォルダにドラッグ＆ドロップしてインストール完了。
+   - ご利用の環境（Intel / Apple Silicon）に適したファイルをダウンロードし、`Fluxora-macos-xx.dmg` をダブルクリックして開きます。
+   - Fluxora アイコンを「Applications」フォルダにドラッグ＆ドロップしてインストール完了。
    - **インストールまたはアップデート時の Gatekeeper 回避**（[現在 Apple デベロッパー証明書を購入していないため](https://support.apple.com/en-us/102445)）：
-     - **推奨**：「Applications」フォルダ内で **Bettbox アイコンを右クリック**し、**「開く」** を選択後、確認ダイアログで再度 **「開く」** をクリックします。
-     - **代替案**：ダブルクリックで開けない場合は、Mac「システム設定」 -> 「プライバシーとセキュリティ」から Bettbox を探して **「このまま開く」** をクリックします。
+     - **推奨**：「Applications」フォルダ内で **Fluxora アイコンを右クリック**し、**「開く」** を選択後、確認ダイアログで再度 **「開く」** をクリックします。
+     - **代替案**：ダブルクリックで開けない場合は、Mac「システム設定」 -> 「プライバシーとセキュリティ」から Fluxora を探して **「このまま開く」** をクリックします。
    - 初めて TUN モードを有効にする際、現在ログインしている Mac ユーザーのパスワードを入力してネットワーク構成を許可してください。
 
 4. **購読リンクをインポートできない**：
@@ -111,8 +111,8 @@ Windows の例：
 
 カスタムスクリプト UI 適応：
 
-* v1.18.8 より、Bettbox は外部オーバーライドスクリプトの UI 適応をサポートしています。例えば AIsouler の **[スクリプト/設定リポジトリ](https://github.com/AIsouler/MyClash)** の場合、スクリプトの1行目に以下を追加するだけで、Bettbox 内蔵のトグルスイッチを直接使用できます：
-* <code>const Compatible_With_Bettbox = { ruleOptionsEnable: true };</code>
+* v1.18.8 より、Fluxora は外部オーバーライドスクリプトの UI 適応をサポートしています。例えば AIsouler の **[スクリプト/設定リポジトリ](https://github.com/AIsouler/MyClash)** の場合、スクリプトの1行目に以下を追加するだけで、Fluxora 内蔵のトグルスイッチを直接使用できます：
+* <code>const Compatible_With_Fluxora = { ruleOptionsEnable: true };</code>
 
 ---
 
@@ -139,7 +139,7 @@ Windows の例：
 
 **[FlClash GUI](https://github.com/chen08209/FlClash)** 〢 **[Mihomo Core](https://github.com/MetaCubeX/mihomo)**
 
-すべての [コントリビューター](https://github.com/appshubcc/Bettbox/graphs/contributors) および利用・参考にしたオープンソースプロジェクトに感謝いたします：
+すべての [コントリビューター](https://github.com/Tiam9173/fluxora/graphs/contributors) および利用・参考にしたオープンソースプロジェクトに感謝いたします：
 
 [Zashboard](https://github.com/Zephyruso/zashboard), [CMFA](https://github.com/MetaCubeX/ClashMetaForAndroid), [Sparkle](https://github.com/xishang0128/sparkle), [SFA](https://github.com/SagerNet/sing-box-for-android), [HUSI](https://github.com/xchacha20-poly1305/husi), [V2rayN](https://github.com/2dust/v2rayN)
 

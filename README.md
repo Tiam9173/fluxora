@@ -1,87 +1,67 @@
-<p align="center">
-  <strong>简体中文</strong> | <a href="README_en.md">English</a>
-</p>
+# Fluxora 流序
 
-<h1 align="center">⚡ bettbox+</h1>
-<p align="center">
-  <strong>轻量流畅、功能强大的高性能多平台网络代理及规则分流客户端</strong><br>
-  <strong>A lightweight, high-performance cross-platform proxy client based on Bettbox</strong>
-</p>
+![Fluxora](assets/images/fluxora_mark.svg)
 
-<p align="center">
-  <a href="https://github.com/Tiam9173/bettboxplus/releases/latest"><img src="https://img.shields.io/github/v/release/Tiam9173/bettboxplus?style=for-the-badge&logo=github&color=238636&label=Release" alt="Latest Release" /></a>
-  <a href="https://github.com/MetaCubeX/mihomo/releases/latest"><img src="https://img.shields.io/github/v/release/MetaCubeX/mihomo?style=for-the-badge&logo=go&logoColor=white&color=8A2BE2&label=Mihomo" alt="Core" /></a>
-  <a href="https://t.me/bettboxplus_grup"><img src="https://img.shields.io/badge/Telegram-Group-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white" alt="Telegram Group" /></a>
-  <a href="https://t.me/bettboxplus"><img src="https://img.shields.io/badge/Telegram-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white" alt="Telegram Channel" /></a>
-</p>
+开源、跨平台的 Mihomo 网络路由客户端，让配置、连接、规则与流量状态清晰可控。
 
-<p align="center">
-  <img src="snapshots/home.png" alt="bettbox+" width="720" />
-</p>
+Fluxora 支持 Android、Windows、macOS 与 Linux，适合需要管理多配置、规则分流、代理节点和 TUN/VPN 连接的用户。
 
----
+## 快速开始
 
-## 📖 项目简介
+1. 从 [最新版本](https://github.com/Tiam9173/fluxora/releases/latest) 下载对应平台安装包。
+2. 导入订阅链接或添加本地配置。
+3. 选择配置并连接。
 
-**bettbox+** 是一款使用 **Mihomo (Clash Meta)** 内核、基于优秀开源项目 **[Bettbox](https://github.com/appshubcc/Bettbox)** 深度重构的多平台网络代理及规则分流客户端。
+## 主要能力
 
-秉承“流畅、轻量、开箱即用”的理念，bettbox+ 在继承原版高帧率动画、极低后台功耗与优雅界面的基础上，深度优化网络内核与稳定性，并增强了链式代理中继、Cloudflare WARP 节点赋能、空白分组及全协议手动节点录入等实用特性，致力于为广大用户提供省心、纯净、可靠的网络代理体验。
+- Mihomo 核心与规则分流
+- Android、Windows、macOS、Linux 跨平台支持
+- 配置、代理组、连接和请求管理
+- TUN/VPN、系统代理、托盘和快捷操作
+- 链式代理、脚本、规则资源和连接诊断
+- 开源、可审计、无内置账号系统
 
----
+## 支持平台
 
-### ✈️ 社区交流
+| 平台 | 状态 |
+|---|---|
+| Android 8.0+ | 支持 |
+| Windows 10/11 | 支持 |
+| macOS 10.15+ | 支持 |
+| Linux | 支持 |
+| iOS | 当前未提供官方客户端 |
 
-👉 **官方 Telegram 群组 (Group)**: [https://t.me/bettboxplus_grup](https://t.me/bettboxplus_grup)  
-👉 **官方 Telegram 频道 (Channel)**: [https://t.me/bettboxplus](https://t.me/bettboxplus)
+## 下载
 
----
+请访问 [GitHub Releases](https://github.com/Tiam9173/fluxora/releases) 获取安装包。发布文件将使用 `Fluxora-<version>-<platform>` 命名。
 
-## 🚀 核心特性
+## 隐私与安全
 
-* **⚡ 前台高帧，后台低耗**：精雕细琢的 UI 交互与动画过渡，前台支持高刷新率，后台智能休眠、近乎零资源消耗。
-* **🛠️ 开箱即用**：全平台稳定的 TUN 虚拟网卡与系统代理支持，无需复杂配置即可畅享全局或规则分流。
-* **🔗 链式代理与跳板中继**：支持将高速跳板（如优质专线）与落地出口两跳串联，自动隔离跳板池与防回环，兼顾传输速度与隐私保护。
-* **🛡️ 机场节点套 WARP**：支持为节点一键级联 Cloudflare WARP 出口，有效解决 Google 送中与人机验证，解锁流媒体及 AI 服务，内置实时可视化有效性检测卡片。
-* **📝 空白分组与全协议手动录入**：支持新建空白配置分组，自由录入与管理个人自建节点；全面覆盖 SOCKS、HTTP(S)、Shadowsocks、ShadowsocksR、VMess、VLESS (含 REALITY / Vision / gRPC / WebSocket / HTTPUpgrade)、Trojan、Trojan Go、Hysteria 1/2、TUIC、WireGuard、AmneziaWG 2/3、Snell (v1-v4)、SSH、ShadowTLS、Juicity、Naïve (NaiveProxy)、Direct 及 Custom Config，支持多行批量分享链接与配置片段一键导入。
-* **🔀 订阅分组前置与落地中继**：支持为订阅分组灵活配置前置代理（穿透救砖）与落地代理（IP 伪装与解锁），基于内核原生 `dialer-proxy` 机制平滑级联。
-* **📊 实时仪表与小组件**：内置精美桌面与首页 Widget 小组件，直观掌握实时网络速率、流量统计与出站模式。
-* **💻 专业配置编辑**：内置高性能 code-forge 编辑器，轻松阅读与编辑各类复杂配置文件。
-* **🔒 安全纯净透明**：开源、无广告、零隐私收集，专注于提供纯粹的代理工具体验。
+Fluxora 不提供云端账户服务。订阅、配置和网络请求由用户选择的配置及其目标服务决定。请在使用前检查订阅来源、规则资源和代理服务的隐私政策。
 
----
+## Lineage & Licenses
 
-## ⬇️ 安装与下载
+Fluxora is distributed under the GNU General Public License v3.0. See [LICENSE](LICENSE).
 
-请前往 **[Releases 最新发布页面](https://github.com/Tiam9173/bettboxplus/releases/latest)** 获取最新安装包：
+Fluxora includes and interoperates with open-source components, including the [Mihomo](https://github.com/MetaCubeX/mihomo) core and other Flutter, Go, Rust, and platform libraries. Their applicable copyright notices and licenses remain in their respective source directories and distribution metadata. See [NOTICE](NOTICE) and the relevant component license files.
 
-| 系统平台 | 架构 / 类型 | 安装包下载 | 说明 |
-| :--- | :--- | :--- | :--- |
-| **Android 8.0+** | ARMv8 (arm64-v8a) | [`bettbox+-1.19.2.2-android-arm64-v8a.apk`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2.2/bettbox+-1.19.2.2-android-arm64-v8a.apk) | 推荐现代 64 位 Android 手机/平板 |
-| **Android 8.0+** | ARMv7 (armeabi-v7a) | [`bettbox+-1.19.2.2-android-armeabi-v7a.apk`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2.2/bettbox+-1.19.2.2-android-armeabi-v7a.apk) | 适用于老旧 32 位 Android 设备 |
-| **Android 8.0+** | x86_64 | [`bettbox+-1.19.2.2-android-x86_64.apk`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2.2/bettbox+-1.19.2.2-android-x86_64.apk) | 适用于 x86 架构 Android 平板或模拟器 |
-| **Android 8.0+** | Universal (全架构) | [`bettbox+-1.19.2.2-android-universal.apk`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2.2/bettbox+-1.19.2.2-android-universal.apk) | 包含全部 CPU 架构，通用安装包 |
-| **Windows 10 / 11** | x64 便携版 (Portable) | [`bettbox+-1.19.2.2-windows-amd64-portable.zip`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2.2/bettbox+-1.19.2.2-windows-amd64-portable.zip) | 绿色免安装便携版，解压即用 |
-| **Windows 10 / 11** | x64 安装版 (Setup) | [`bettbox+-1.19.2.2-windows-amd64-setup.exe`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2.2/bettbox+-1.19.2.2-windows-amd64-setup.exe) | Windows 经典安装向导版本 |
-| **macOS 12.0+** | Apple Silicon (M系列) | [`bettbox+-1.19.2.2-macos-arm64.dmg`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2.2/bettbox+-1.19.2.2-macos-arm64.dmg) | 推荐搭载 M1/M2/M3/M4 系列 Mac 设备 |
-| **macOS 12.0+** | Intel x64 | [`bettbox+-1.19.2.2-macos-amd64.dmg`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2.2/bettbox+-1.19.2.2-macos-amd64.dmg) | 适用于搭载 Intel 处理器 Mac 设备 |
-| **macOS 10.15 - 11.7** | 兼容版 (Compatible) | [`bettbox+-1.19.2.2-macos-amd64-compatible.dmg`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2.2/bettbox+-1.19.2.2-macos-amd64-compatible.dmg) | 适用于老旧 macOS 系统版本 |
-| **Linux 5.4+** | 通用 AppImage (x64) | [`bettbox+-1.19.2.2-linux-amd64.AppImage`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2.2/bettbox+-1.19.2.2-linux-amd64.AppImage) | 无需安装赋予执行权限即可直接运行 |
-| **Linux (Ubuntu / Debian)** | DEB 包 (x64) | [`bettbox+-1.19.2.2-linux-amd64.deb`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2.2/bettbox+-1.19.2.2-linux-amd64.deb) | 适用于 Debian、Ubuntu、Linux Mint 等 |
-| **Linux (Debian / ARM64)** | DEB 包 (arm64) | [`bettbox+-1.19.2.2-linux-arm64.deb`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2.2/bettbox+-1.19.2.2-linux-arm64.deb) | 适用于 ARM64 架构 Linux 设备（树莓派等） |
-| **Linux (Fedora / RHEL)** | RPM 包 (x64) | [`bettbox+-1.19.2.2-linux-amd64.rpm`](https://github.com/Tiam9173/bettboxplus/releases/download/v1.19.2.2/bettbox+-1.19.2.2-linux-amd64.rpm) | 适用于 Fedora、RHEL、openSUSE 等 |
+Fluxora is an independent product identity. This repository does not present itself as an official product of any upstream project.
 
-> 💡 **提示**：更多平台历史版本与完整资源，请直接查看 **[GitHub Releases](https://github.com/Tiam9173/bettboxplus/releases)** 列表下载。
+## 开发
 
----
+```bash
+flutter pub get
+dart run build_runner build -d
+flutter analyze
+flutter test
+```
 
-## 💖 致谢 (Special Thanks)
+构建桌面端和 Android 版本前，请安装对应的 Flutter、Dart、Go、Rust、Android SDK/NDK 与平台工具链。
 
-- **[Bettbox](https://github.com/appshubcc/Bettbox)**：本项目直接基于 Bettbox 进行重构与扩展，特此向 Bettbox 团队致以最真挚的感谢！
-- **[FlClash](https://github.com/chen08209/FlClash)**：优秀的 Flutter 客户端基础设计与界面灵感。
-- **[Mihomo (Clash.Meta)](https://github.com/MetaCubeX/mihomo)**：功能强大、扩展性极致的开源核心。
+## 参与贡献
 
----
+欢迎提交 Issue、改进文档、修复问题或贡献代码。提交前请确认变更不会引入未声明的闭源依赖或破坏 GPL 及第三方许可证要求。
 
-## 📄 开源协议
+## 许可证
 
-本项目遵循 **GPL-3.0 License** 开源协议。
+本项目使用 GPL-3.0 许可证。完整条款见 [LICENSE](LICENSE)。

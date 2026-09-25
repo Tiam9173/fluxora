@@ -88,10 +88,10 @@ var
 begin
   PowerShellScript := 
     '$ErrorActionPreference = ''SilentlyContinue'';' + #13#10 +
-    'Write-Host "Cleaning old Wintun/Bettbox/LiClash network adapters...";' + #13#10 +
+    'Write-Host "Cleaning old Wintun/Fluxora/LiClash network adapters...";' + #13#10 +
     '$adapters = Get-NetAdapter | Where-Object {' + #13#10 +
-    '$_.InterfaceDescription -like "*Bettbox*" -or' + #13#10 +
-    '  $_.Name -like "*Bettbox*"' + #13#10 +
+    '$_.InterfaceDescription -like "*Fluxora*" -or' + #13#10 +
+    '  $_.Name -like "*Fluxora*"' + #13#10 +
     '};' + #13#10 +
     'if ($adapters) {' + #13#10 +
     '  foreach ($adapter in $adapters) {' + #13#10 +
@@ -168,8 +168,8 @@ var
   i: Integer;
 begin
   SetArrayLength(RegistryKeys, 2);
-  RegistryKeys[0] := 'Software\BettboxPlus';
-  RegistryKeys[1] := 'Software\com.appshub.bettboxplus';
+  RegistryKeys[0] := 'Software\Fluxora';
+  RegistryKeys[1] := 'Software\io.fluxora.app';
   
   for i := 0 to GetArrayLength(RegistryKeys)-1 do
   begin
@@ -186,8 +186,8 @@ begin
   AppDataPath := ExpandConstant('{userappdata}');
   
   SetArrayLength(UserDataPaths, 2);
-  UserDataPaths[0] := AppDataPath + '\BettboxPlus';
-  UserDataPaths[1] := AppDataPath + '\com.appshub.bettboxplus';
+  UserDataPaths[0] := AppDataPath + '\Fluxora';
+  UserDataPaths[1] := AppDataPath + '\io.fluxora.app';
   
   for i := 0 to GetArrayLength(UserDataPaths)-1 do
   begin

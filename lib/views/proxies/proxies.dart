@@ -1,19 +1,19 @@
-import 'package:bett_box/common/common.dart';
-import 'package:bett_box/enum/enum.dart';
-import 'package:bett_box/models/common.dart';
-import 'package:bett_box/models/config.dart';
-import 'package:bett_box/models/widget.dart';
-import 'package:bett_box/providers/providers.dart';
-import 'package:bett_box/state.dart';
-import 'package:bett_box/views/proxies/list.dart';
-import 'package:bett_box/views/proxies/providers.dart';
-import 'package:bett_box/widgets/widgets.dart';
+import 'package:fluxora/common/common.dart';
+import 'package:fluxora/enum/enum.dart';
+import 'package:fluxora/models/common.dart';
+import 'package:fluxora/models/config.dart';
+import 'package:fluxora/models/widget.dart';
+import 'package:fluxora/providers/providers.dart';
+import 'package:fluxora/state.dart';
+import 'package:fluxora/views/proxies/list.dart';
+import 'package:fluxora/views/proxies/providers.dart';
+import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../profiles/scripts.dart'
     show showGroupSwitchOptions, showScriptCustomOptions;
-import 'package:bett_box/l10n/chain_proxy_l10n.dart';
+import 'package:fluxora/l10n/chain_proxy_l10n.dart';
 import 'advanced_settings.dart';
 import 'chain_proxy_view.dart';
 import 'warp_view.dart';
@@ -38,7 +38,7 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
     );
     final (scriptOn, compatible) = ref.watch(
       scriptStateProvider.select(
-        (s) => (s.currentId != null, s.currentScript?.isCompatibleWithBettbox ?? false),
+        (s) => (s.currentId != null, s.currentScript?.isCompatibleWithFluxora ?? false),
       ),
     );
     final profileOverride = ref.watch(
@@ -219,7 +219,7 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
     final profileOverride =
         ref.read(currentProfileProvider)?.useScriptOverride ?? false;
     final script = ref.read(scriptStateProvider).currentScript;
-    if (script != null && script.isCompatibleWithBettbox && profileOverride) {
+    if (script != null && script.isCompatibleWithFluxora && profileOverride) {
       await showScriptCustomOptions(context, ref, script: script);
       return;
     }

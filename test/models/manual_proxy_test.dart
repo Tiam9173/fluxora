@@ -1,5 +1,5 @@
-import 'package:bett_box/manager/profile_chain_manager.dart';
-import 'package:bett_box/models/models.dart';
+import 'package:fluxora/manager/profile_chain_manager.dart';
+import 'package:fluxora/models/models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

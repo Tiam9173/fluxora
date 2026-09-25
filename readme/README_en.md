@@ -2,23 +2,23 @@
   <a href="../README.md">简体中文</a> | <strong>English</strong>
 </h4>
 
-<h1 align="center">⚡ Bettbox</h1>
+<h1 align="center">⚡ Fluxora</h1>
 <p align="center">
-  <strong>Another Better Mihomo Client</strong>
+  <strong>Open-source cross-platform Mihomo routing client</strong>
 </p>
 
-**Bettbox is a cross-platform network debugging and rule-based traffic splitting client powered by the Mihomo (Clash Meta) core and refactored from an early version of FlClash.**
+**Fluxora is a cross-platform network debugging and rule-based traffic splitting client powered by the Mihomo (Clash Meta) core and refactored from an early version of FlClash.**
 
-Guided by the principle of "Better Experience", Bettbox inherits the original sleek UI while deeply refining key details and feature logic. Core features and implementation goals: high-FPS fluid animations in the foreground, zero-impact power saving in the background — dedicated to delivering a better experience as a lightweight Mihomo client that runs stably and reliably over the long term with minimal resource consumption.
+Guided by the principle of "clear and reliable routing", Fluxora is designed as a calm, precise control surface for Mihomo. Core features and implementation goals: high-FPS fluid animations in the foreground, zero-impact power saving in the background, and a lightweight client that runs stably and reliably over the long term.
 
-Bettbox stands for: Better Experience, Out of the box.
+Fluxora stands for: Make routing legible..
 
-Our Vision: Connecting Open Source and AI, Accelerating Innovation
+Our vision: Clear routes, calm control.
 
-[![Latest Release](https://img.shields.io/github/v/release/appshubcc/Bettbox?style=for-the-badge&logo=github&color=238636&label=Release)](https://github.com/appshubcc/Bettbox/releases/latest) [![Core](https://img.shields.io/github/v/release/MetaCubeX/mihomo?style=for-the-badge&logo=go&logoColor=white&color=8A2BE2&label=Mihomo)](https://github.com/MetaCubeX/mihomo/releases/latest)
+[![Latest Release](https://img.shields.io/github/v/release/Tiam9173/fluxora?style=for-the-badge&logo=github&color=238636&label=Release)](https://github.com/Tiam9173/fluxora/releases/latest) [![Core](https://img.shields.io/github/v/release/MetaCubeX/mihomo?style=for-the-badge&logo=go&logoColor=white&color=8A2BE2&label=Mihomo)](https://github.com/MetaCubeX/mihomo/releases/latest)
 
 <p align="center">
-  <img src="../snapshots/home.png" alt="Bettbox" />
+  <img src="../assets/images/fluxora_mark.svg" alt="Fluxora" />
 </p>
 
 ---
@@ -28,7 +28,7 @@ Our Vision: Connecting Open Source and AI, Accelerating Innovation
 
 <div align="left">
 
-[![Telegram Group](https://img.shields.io/badge/Bettbox-Chat-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/bettboxplus_grup) [![Telegram Channel](https://img.shields.io/badge/Bettbox-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/appshub_channel)
+[![Telegram Group](https://img.shields.io/badge/Fluxora-Chat-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://github.com/Tiam9173/fluxora/discussions) [![Telegram Channel](https://img.shields.io/badge/Fluxora-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://github.com/Tiam9173/fluxora/discussions)
 
 ---
 ## 🚀 Core Features
@@ -54,9 +54,7 @@ Our Vision: Connecting Open Source and AI, Accelerating Innovation
 ###   🛩️ Recommended Services
 ### Premium Dedicated Line  〢  [BBXY](https://www.bbxy01.com/v2/register?code=c09R)
 
-### Exclusive Discount Code (32% OFF): bettbox68
 
-**Review** : ❚ ❚  Established premium line operated overseas for years, Tier-1 enterprise BGP ingress + GZ-HK & SH-JP dedicated lines, approx. ¥17/mo or ¥127/yr after discount, unlocking streaming media & AI, with excellent latency and reputation. Ideal for users prioritizing high stability. Pro tip: Don't forget to use the 32% OFF discount code, and check in daily in the dashboard to claim an extra 5-10GB bonus bandwidth.
 
 --------------------------------
 ### Low-Cost Direct  〢  [Liangxin Cloud](https://xn--9kqz23b19z.com/#/register?code=VTnrQYAj)  〢  [Chuixue Cloud](https://xn--9kqs1lo79d.com/#/register?code=skKMTab7)  〢  [YiFen](https://xn--4gqx1hgtfdmt.com/#/register?code=AuCiXprV)
@@ -66,7 +64,7 @@ Our Vision: Connecting Open Source and AI, Accelerating Innovation
 ---
 ## 🛠️ Installation & Downloads
 
-Please visit the **[[Releases]](https://github.com/appshubcc/Bettbox/releases)** page to download the latest installer for your platform.
+Please visit the **[[Releases]](https://github.com/Tiam9173/fluxora/releases)** page to download the latest installer for your platform.
 
 
 * **Cross-Platform Desktop**: 
@@ -78,8 +76,8 @@ Please visit the **[[Releases]](https://github.com/appshubcc/Bettbox/releases)**
 * **HarmonyOS NEXT:** Supported via [[ZhuoYiTong]](https://harmonyos.cool/android-app)
 
 **Other Installation Methods:**<br>
-**ArchLinux:** <code>yay -S bettbox-bin or paru -S bettbox-bin</code> (Maintained by [lyj404](https://github.com/lyj404/bettbox-aur))<br>
-**AMD64=v1:** <code>yay -S bettbox-compatible-bin or paru -S bettbox-compatible-bin</code> (Maintained by [VillagerTom](https://github.com/VillagerTom))
+**ArchLinux:** <code>yay -S fluxora-bin or paru -S fluxora-bin</code> (Maintained by [lyj404](https://github.com/lyj404/fluxora-aur))<br>
+**AMD64=v1:** <code>yay -S fluxora-compatible-bin or paru -S fluxora-compatible-bin</code> (Maintained by [VillagerTom](https://github.com/VillagerTom))
 
 ---
 ## ❓ Frequently Asked Questions
@@ -87,7 +85,7 @@ Please visit the **[[Releases]](https://github.com/appshubcc/Bettbox/releases)**
 1.  **Installation, Startup & Security Issues**:
    - Android devices: **Ensure sufficient background permissions are granted and minimum requirements are met**: Android 8.0+
    - Legacy desktop devices: Check if your CPU architecture **requires downloading a specific CPU-level Compatible version**.
-   - **Security: Bettbox is fully open-source and transparent with zero telemetry. Current builds have passed SignPath security audit.**
+   - **Security: Fluxora is fully open-source and transparent with zero telemetry. Current builds have passed SignPath security audit.**
 
 2.  **Desktop FAQs**:
    - Windows Admin Permissions: Handled automatically during installation — **no manual re-authorization required**.
@@ -97,11 +95,11 @@ Please visit the **[[Releases]](https://github.com/appshubcc/Bettbox/releases)**
 
 3.  **macOS Installation Notes**:
    - Download the appropriate `.dmg` file for your architecture (Intel / Apple Silicon) and double-click to open.
-   - Drag the Bettbox icon into the `Applications` folder.
+   - Drag the Fluxora icon into the `Applications` folder.
    - **Bypassing system security checks during installation or updates** ([as Apple Developer Certificate is not currently purchased](https://support.apple.com/en-us/102445)):
-     - **Recommended**: Open `Applications`, **right-click the Bettbox icon**, select **"Open"**, and click **"Open"** again in the confirmation prompt.
-     - **Alternative**: If blocked, go to System Settings -> Privacy & Security, scroll to find Bettbox, and click **"Open Anyway"**.
-   - Upon enabling TUN mode for the first time, enter the password of the currently logged-in user when prompted to allow Bettbox to configure the network.
+     - **Recommended**: Open `Applications`, **right-click the Fluxora icon**, select **"Open"**, and click **"Open"** again in the confirmation prompt.
+     - **Alternative**: If blocked, go to System Settings -> Privacy & Security, scroll to find Fluxora, and click **"Open Anyway"**.
+   - Upon enabling TUN mode for the first time, enter the password of the currently logged-in user when prompted to allow Fluxora to configure the network.
 
 4.  **Unable to Import Subscription Links**:
    - **Always try resetting the subscription link first** to ensure it is valid before importing.
@@ -124,8 +122,8 @@ Building on Windows:
 
 Custom Script UI Adaptation:
 
-* Starting from v1.18.8, Bettbox supports external override scripts for UI adaptation. Taking AIsouler's **[Script/Config Repository](https://github.com/AIsouler/MyClash)** as an example, simply add the following declaration on the first line of your script to enable Bettbox built-in visual toggles:
-* <code>const Compatible_With_Bettbox = { ruleOptionsEnable: true };</code>
+* Starting from v1.18.8, Fluxora supports external override scripts for UI adaptation. Taking AIsouler's **[Script/Config Repository](https://github.com/AIsouler/MyClash)** as an example, simply add the following declaration on the first line of your script to enable Fluxora built-in visual toggles:
+* <code>const Compatible_With_Fluxora = { ruleOptionsEnable: true };</code>
 
 ---
 

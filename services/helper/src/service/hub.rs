@@ -1,6 +1,6 @@
 use crate::ipc;
 
-const DEFAULT_PIPE_NAME: &str = r"\\.\pipe\Bettbox.Helper";
+const DEFAULT_PIPE_NAME: &str = r"\\.\pipe\Fluxora.Helper";
 
 fn pipe_name() -> String {
     std::env::var("HELPER_PIPE_NAME").unwrap_or_else(|_| DEFAULT_PIPE_NAME.to_string())

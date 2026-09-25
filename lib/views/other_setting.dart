@@ -1,12 +1,12 @@
-import 'package:bett_box/common/common.dart';
-import 'package:bett_box/common/network_matcher.dart';
-import 'package:bett_box/enum/enum.dart';
-import 'package:bett_box/plugins/app.dart';
-import 'package:bett_box/plugins/service.dart';
-import 'package:bett_box/providers/config.dart';
-import 'package:bett_box/providers/providers.dart';
-import 'package:bett_box/state.dart';
-import 'package:bett_box/widgets/widgets.dart';
+import 'package:fluxora/common/common.dart';
+import 'package:fluxora/common/network_matcher.dart';
+import 'package:fluxora/enum/enum.dart';
+import 'package:fluxora/plugins/app.dart';
+import 'package:fluxora/plugins/service.dart';
+import 'package:fluxora/providers/config.dart';
+import 'package:fluxora/providers/providers.dart';
+import 'package:fluxora/state.dart';
+import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

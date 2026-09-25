@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 
-import 'package:bett_box/common/common.dart';
+import 'package:fluxora/common/common.dart';
 
 extension CompleterExt<T> on Completer<T> {
   Future<T> safeFuture({

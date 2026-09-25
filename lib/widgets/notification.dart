@@ -1,5 +1,5 @@
-import 'package:bett_box/models/config.dart';
-import 'package:bett_box/providers/config.dart';
+import 'package:fluxora/models/config.dart';
+import 'package:fluxora/providers/config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

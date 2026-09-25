@@ -2,8 +2,8 @@
 
 import 'dart:math';
 
-import 'package:bett_box/common/common.dart';
-import 'package:bett_box/enum/enum.dart';
+import 'package:fluxora/common/common.dart';
+import 'package:fluxora/enum/enum.dart';
 import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -838,8 +838,8 @@ abstract class Script with _$Script {
 }
 
 extension ScriptExt on Script {
-  bool get isCompatibleWithBettbox {
+  bool get isCompatibleWithFluxora {
     final head = content.length > 2000 ? content.substring(0, 2000) : content;
-    return head.contains('Compatible_With_Bettbox');
+    return head.contains('Compatible_With_Fluxora');
   }
 }

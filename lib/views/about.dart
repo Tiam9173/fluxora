@@ -1,9 +1,9 @@
 import 'dart:async';
 
-import 'package:bett_box/common/common.dart';
-import 'package:bett_box/providers/config.dart';
-import 'package:bett_box/state.dart';
-import 'package:bett_box/widgets/list.dart';
+import 'package:fluxora/common/common.dart';
+import 'package:fluxora/providers/config.dart';
+import 'package:fluxora/state.dart';
+import 'package:fluxora/widgets/list.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -33,7 +33,7 @@ class AboutView extends StatelessWidget {
             title: 'Github Releases',
             icon: Icons.star,
             onTap: () =>
-                globalState.openUrl('https://github.com/Tiam9173/bettboxplus/releases'),
+                globalState.openUrl('https://github.com/Tiam9173/fluxora/releases'),
           ),
           right: _LinkGridTile(
             title: appLocalizations.checkUpdate,
@@ -46,21 +46,21 @@ class AboutView extends StatelessWidget {
             title: 'Telegram Group',
             icon: Icons.launch,
             onTap: () =>
-                globalState.openUrl('https://t.me/bettboxplus_grup'),
+                globalState.openUrl('https://t.me/fluxora_grup'),
           ),
           right: _LinkGridTile(
             title: 'Channel',
             icon: Icons.launch,
             onTap: () =>
-                globalState.openUrl('https://t.me/bettboxplus'),
+                globalState.openUrl('https://t.me/fluxora'),
           ),
         ),
         _LinkGridRow(
           left: _LinkGridTile(
-            title: 'Bettbox',
+            title: 'Fluxora',
             icon: Icons.launch,
             onTap: () =>
-                globalState.openUrl('https://github.com/appshubcc/Bettbox'),
+                globalState.openUrl('https://github.com/Tiam9173/fluxora'),
           ),
           right: _LinkGridTile(
             title: 'FlClash',
@@ -77,10 +77,10 @@ class AboutView extends StatelessWidget {
                 globalState.openUrl('https://github.com/MetaCubeX/mihomo'),
           ),
           right: _LinkGridTile(
-            title: 'bettbox+',
+            title: 'Fluxora',
             icon: Icons.launch,
             onTap: () =>
-                globalState.openUrl('https://github.com/Tiam9173/bettboxplus'),
+                globalState.openUrl('https://github.com/Tiam9173/fluxora'),
           ),
         ),
       ],

@@ -91,3 +91,6 @@ sub*.html
 test_*.py
 /upstream_assets/
 /scripts/
+
+# Agent workspace data (local only, never published)
+/.workbuddy-ai/

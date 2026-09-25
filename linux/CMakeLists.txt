@@ -6,7 +6,7 @@ set(SENTRY_BACKEND none CACHE STRING "Sentry backend" FORCE)
 
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
-set(BINARY_NAME "Bettbox")
+set(BINARY_NAME "Fluxora")
 
 # Detect APP_DEV=true from dart defines (base64 of "APP_DEV=true" is "QVBQX0RFVj10cnVl")
 set(_app_dev_found -1)
@@ -19,7 +19,7 @@ endif()
 
 # The unique GTK application identifier for this application. See:
 # https://wiki.gnome.org/HowDoI/ChooseApplicationID
-set(APPLICATION_ID "com.appshub.bettboxplus")
+set(APPLICATION_ID "io.fluxora.app")
 if(_app_dev_found GREATER -1)
   set(APPLICATION_ID "${APPLICATION_ID}.dev")
 endif()
@@ -141,9 +141,9 @@ install(FILES "${FLUTTER_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
 # libclash.so
 set(CLASH_DIR "../libclash/linux")
 if(_app_dev_found GREATER -1)
-  set(CORE_PATH "${CLASH_DIR}/BettboxDevCore")
+  set(CORE_PATH "${CLASH_DIR}/FluxoraDevCore")
 else()
-  set(CORE_PATH "${CLASH_DIR}/BettboxCore")
+  set(CORE_PATH "${CLASH_DIR}/FluxoraCore")
 endif()
 install(PROGRAMS "${CORE_PATH}" DESTINATION "${BUILD_BUNDLE_DIR}"
   COMPONENT Runtime)

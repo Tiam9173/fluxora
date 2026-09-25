@@ -1,9 +1,9 @@
-import 'package:bett_box/common/common.dart';
-import 'package:bett_box/manager/warp_manager.dart';
-import 'package:bett_box/models/warp_config.dart';
-import 'package:bett_box/providers/providers.dart';
-import 'package:bett_box/providers/warp.dart';
-import 'package:bett_box/widgets/widgets.dart';
+import 'package:fluxora/common/common.dart';
+import 'package:fluxora/manager/warp_manager.dart';
+import 'package:fluxora/models/warp_config.dart';
+import 'package:fluxora/providers/providers.dart';
+import 'package:fluxora/providers/warp.dart';
+import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
