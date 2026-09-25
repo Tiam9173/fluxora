@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:bett_box/common/common.dart';
-import 'package:bett_box/state.dart';
+import 'package:fluxora/common/common.dart';
+import 'package:fluxora/state.dart';
 import 'package:flutter/material.dart';
 import 'package:screen_retriever/screen_retriever.dart';
 import 'package:tray_manager/tray_manager.dart';
@@ -13,7 +13,7 @@ class Window {
     if (system.isWindows) {
       protocol.register('clash');
       protocol.register('clashmeta');
-      protocol.register('bettbox');
+      protocol.register('fluxora');
     }
     await windowManager.ensureInitialized();
     WindowOptions windowOptions = WindowOptions(

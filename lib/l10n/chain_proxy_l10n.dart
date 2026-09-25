@@ -1,5 +1,5 @@
 import 'package:intl/intl.dart';
-import 'package:bett_box/l10n/l10n.dart';
+import 'package:fluxora/l10n/l10n.dart';
 
 extension ChainProxyLocalizations on AppLocalizations {
   String get chainProxy => Intl.message(

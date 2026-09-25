@@ -117,7 +117,7 @@ class AppPackageMakerDeb extends AppPackageMaker {
 
     // Preserve setuid bit on the core binary when packaging as root/fakeroot.
     final coreFile = File(
-      '${packagingDirectory.path}/usr/share/${makeConfig.appBinaryName}/BettboxCore',
+      '${packagingDirectory.path}/usr/share/${makeConfig.appBinaryName}/FluxoraCore',
     );
     if (coreFile.existsSync()) {
       await $('chmod', ['+sx', coreFile.path]);

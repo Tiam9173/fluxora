@@ -3219,7 +3219,7 @@ return $default(_that.mmdb,_that.asn,_that.geosite);case _:
 @JsonSerializable()
 
 class _GeoXUrl implements GeoXUrl {
-  const _GeoXUrl({this.mmdb = 'https://github.com/appshubcc/bett-rules/releases/download/latest/geoip.metadb', this.asn = 'https://github.com/appshubcc/bett-rules/releases/download/latest/GeoLite2-ASN.mmdb', this.geosite = 'https://github.com/appshubcc/bett-rules/releases/download/latest/geosite.dat'});
+  const _GeoXUrl({this.mmdb = 'https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip.metadb', this.asn = 'https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/GeoLite2-ASN.mmdb', this.geosite = 'https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.dat'});
   factory _GeoXUrl.fromJson(Map<String, dynamic> json) => _$GeoXUrlFromJson(json);
 
 @override@JsonKey() final  String mmdb;

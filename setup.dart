@@ -97,7 +97,7 @@ class Build {
     BuildItem(target: Target.android, arch: Arch.amd64, archName: 'x86_64'),
   ];
 
-  static String get appName => 'Bettbox';
+  static String get appName => 'Fluxora';
 
   static String get coreName => '${identityName}Core';
 
@@ -416,7 +416,7 @@ class BuildCommand extends Command {
   }
 
   Future<void> _setLinuxCoreSetuid() async {
-    final coreFile = File('libclash/linux/BettboxCore');
+    final coreFile = File('libclash/linux/FluxoraCore');
     if (!coreFile.existsSync()) return;
     try {
       await Process.run('chmod', ['+sx', coreFile.path]);
@@ -493,7 +493,7 @@ class BuildCommand extends Command {
 
     final environment = Map<String, String>.from(Platform.environment);
     if (compatible) {
-      environment['BETTBOX_COMPATIBLE_BUILD'] = '1';
+      environment['FLUXORA_COMPATIBLE_BUILD'] = '1';
     }
 
     await Build.getDistributor();

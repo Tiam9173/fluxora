@@ -6,8 +6,8 @@ body:
   - type: markdown
     attributes:
       value: |
-        感谢你为提高项目质量做出贡献！在提交建议前，请检查 [已有 Issue](https://github.com/appshubcc/Bettbox/issues)。
-        Thanks for your contribution! Please check [existing issues](https://github.com/appshubcc/Bettbox/issues) before proposing.
+        感谢你为提高项目质量做出贡献！在提交建议前，请检查 [已有 Issue](https://github.com/Tiam9173/fluxora/issues)。
+        Thanks for your contribution! Please check [existing issues](https://github.com/Tiam9173/fluxora/issues) before proposing.
 
   - type: textarea
     id: feature-description

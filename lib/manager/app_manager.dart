@@ -1,12 +1,12 @@
 import 'dart:async';
 
-import 'package:bett_box/clash/core.dart';
-import 'package:bett_box/common/common.dart';
-import 'package:bett_box/enum/enum.dart';
-import 'package:bett_box/manager/window_manager.dart';
-import 'package:bett_box/plugins/app.dart';
-import 'package:bett_box/providers/providers.dart';
-import 'package:bett_box/state.dart';
+import 'package:fluxora/clash/core.dart';
+import 'package:fluxora/common/common.dart';
+import 'package:fluxora/enum/enum.dart';
+import 'package:fluxora/manager/window_manager.dart';
+import 'package:fluxora/plugins/app.dart';
+import 'package:fluxora/providers/providers.dart';
+import 'package:fluxora/state.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

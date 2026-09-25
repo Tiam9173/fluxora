@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:bett_box/enum/enum.dart';
-import 'package:bett_box/models/models.dart';
-import 'package:bett_box/state.dart';
-import 'package:bett_box/views/proxies/common.dart';
+import 'package:fluxora/enum/enum.dart';
+import 'package:fluxora/models/models.dart';
+import 'package:fluxora/state.dart';
+import 'package:fluxora/views/proxies/common.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';

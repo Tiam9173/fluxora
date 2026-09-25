@@ -1,5 +1,5 @@
-import 'package:bett_box/plugins/app.dart';
-import 'package:bett_box/state.dart';
+import 'package:fluxora/plugins/app.dart';
+import 'package:fluxora/state.dart';
 
 import 'system.dart';
 

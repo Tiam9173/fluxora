@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.appshub.bettbox.core"
+    namespace = "io.fluxora.core"
     compileSdk = 36
     ndkVersion = "28.2.13676358"
 

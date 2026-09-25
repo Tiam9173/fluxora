@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:bett_box/enum/enum.dart';
-import 'package:bett_box/models/models.dart';
+import 'package:fluxora/enum/enum.dart';
+import 'package:fluxora/models/models.dart';
 import 'package:flutter/foundation.dart';
 
 class ClashMessage {

@@ -2,10 +2,10 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
-import 'package:bett_box/clash/core.dart';
-import 'package:bett_box/common/common.dart';
-import 'package:bett_box/models/chain_proxy.dart';
-import 'package:bett_box/state.dart';
+import 'package:fluxora/clash/core.dart';
+import 'package:fluxora/common/common.dart';
+import 'package:fluxora/models/chain_proxy.dart';
+import 'package:fluxora/state.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
@@ -165,7 +165,7 @@ class ChainProxyManager extends ChangeNotifier {
   }
 
   Future<void> testProxyDelay(LandingProxy proxy, String testUrl) async {
-    setDelayForProxy(proxy.id, 0); // 0 means testing in Bettbox
+    setDelayForProxy(proxy.id, 0); // 0 means testing in Fluxora
     try {
       final res = await clashCore.getDelay(testUrl, proxy.name);
       setDelayForProxy(proxy.id, res.value);
@@ -302,10 +302,10 @@ class ChainProxyManager extends ChangeNotifier {
 
         final status = direct.isSuccess ? HealthStatus.healthy : HealthStatus.error;
         final diagnosticTips = direct.isSuccess
-            ? '直接握手成功（响应时间 ${direct.delay}ms）。建议启动 Bettbox 核心通过跳板节点进行多目标业务体检。'
+            ? '直接握手成功（响应时间 ${direct.delay}ms）。建议启动 Fluxora 核心通过跳板节点进行多目标业务体检。'
             : (direct.isAuthError
                 ? '住宅 IP 账号或密码错误（鉴权失败），请核对凭据。'
-                : '${direct.message}。提示：在国内网络直接测试海外住宅IP可能受阻，建议启动 Bettbox 核心通过跳板节点体检。');
+                : '${direct.message}。提示：在国内网络直接测试海外住宅IP可能受阻，建议启动 Fluxora 核心通过跳板节点体检。');
 
         final results = [
           TargetHealthResult(

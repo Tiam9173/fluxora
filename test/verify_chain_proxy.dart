@@ -1,6 +1,6 @@
 // ignore_for_file: avoid_print, avoid_relative_lib_imports
 import 'dart:convert';
-import 'package:bett_box/models/chain_proxy.dart';
+import 'package:fluxora/models/chain_proxy.dart';
 
 void assertTrue(bool condition, String message) {
   if (!condition) {

@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
-import 'package:bett_box/common/common.dart';
-import 'package:bett_box/models/models.dart';
-import 'package:bett_box/state.dart';
+import 'package:fluxora/common/common.dart';
+import 'package:fluxora/models/models.dart';
+import 'package:fluxora/state.dart';
 
 class _BatchTokenInterceptor extends Interceptor {
   _BatchTokenInterceptor(this.token);

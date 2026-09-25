@@ -2,7 +2,7 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "bettbox: ensure dev core",
+      "label": "fluxora: ensure dev core",
       "type": "shell",
       "command": "dart",
       "args": [

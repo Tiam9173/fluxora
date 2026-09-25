@@ -1,24 +1,24 @@
 import 'dart:convert';
 
-import 'package:bett_box/clash/clash.dart';
-import 'package:bett_box/common/common.dart';
-import 'package:bett_box/enum/enum.dart';
-import 'package:bett_box/models/models.dart';
-import 'package:bett_box/pages/editor.dart';
-import 'package:bett_box/providers/providers.dart';
-import 'package:bett_box/state.dart';
-import 'package:bett_box/widgets/card.dart';
-import 'package:bett_box/widgets/dialog.dart';
-import 'package:bett_box/widgets/icon.dart';
-import 'package:bett_box/widgets/input.dart';
-import 'package:bett_box/widgets/list.dart';
-import 'package:bett_box/widgets/null_status.dart';
-import 'package:bett_box/widgets/pop_scope.dart';
-import 'package:bett_box/widgets/popup.dart';
-import 'package:bett_box/widgets/scaffold.dart';
-import 'package:bett_box/widgets/scroll.dart';
-import 'package:bett_box/widgets/sheet.dart';
-import 'package:bett_box/widgets/text.dart';
+import 'package:fluxora/clash/clash.dart';
+import 'package:fluxora/common/common.dart';
+import 'package:fluxora/enum/enum.dart';
+import 'package:fluxora/models/models.dart';
+import 'package:fluxora/pages/editor.dart';
+import 'package:fluxora/providers/providers.dart';
+import 'package:fluxora/state.dart';
+import 'package:fluxora/widgets/card.dart';
+import 'package:fluxora/widgets/dialog.dart';
+import 'package:fluxora/widgets/icon.dart';
+import 'package:fluxora/widgets/input.dart';
+import 'package:fluxora/widgets/list.dart';
+import 'package:fluxora/widgets/null_status.dart';
+import 'package:fluxora/widgets/pop_scope.dart';
+import 'package:fluxora/widgets/popup.dart';
+import 'package:fluxora/widgets/scaffold.dart';
+import 'package:fluxora/widgets/scroll.dart';
+import 'package:fluxora/widgets/sheet.dart';
+import 'package:fluxora/widgets/text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -213,7 +213,7 @@ class _ScriptsViewState extends ConsumerState<ScriptsView> {
                               _handleToEditor(script: script);
                             },
                           ),
-                          if (script.isCompatibleWithBettbox)
+                          if (script.isCompatibleWithFluxora)
                             PopupMenuItemData(
                               icon: Icons.tune,
                               label: appLocalizations.custom,

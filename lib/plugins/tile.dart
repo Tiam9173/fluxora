@@ -1,4 +1,4 @@
-import 'package:bett_box/common/system.dart';
+import 'package:fluxora/common/system.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 

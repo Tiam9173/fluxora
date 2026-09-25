@@ -6,8 +6,8 @@ body:
   - type: markdown
     attributes:
       value: |
-        感谢你提交问题！在提交之前，请确保已搜索过 [现有 Issue](https://github.com/appshubcc/Bettbox/issues)。
-        Thanks for reporting! Please search [existing issues](https://github.com/appshubcc/Bettbox/issues) before submitting.
+        感谢你提交问题！在提交之前，请确保已搜索过 [现有 Issue](https://github.com/Tiam9173/fluxora/issues)。
+        Thanks for reporting! Please search [existing issues](https://github.com/Tiam9173/fluxora/issues) before submitting.
 
   - type: textarea
     id: bug-description

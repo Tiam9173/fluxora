@@ -8,10 +8,10 @@
 
 #include "flutter/generated_plugin_registrant.h"
 
-#ifdef BETTBOX_DEV
-#define BETTBOX_REG_KEY L"Software\\BettboxDev"
+#ifdef FLUXORA_DEV
+#define FLUXORA_REG_KEY L"Software\\FluxoraDev"
 #else
-#define BETTBOX_REG_KEY L"Software\\Bettbox"
+#define FLUXORA_REG_KEY L"Software\\Fluxora"
 #endif
 
 // TODO: Legacy cleanup routines to revert modified shortcuts/registry for users
@@ -33,7 +33,7 @@ std::wstring GetExecutablePath() {
 
 bool HasLegacyIconSettings() {
   HKEY hKey;
-  if (RegOpenKeyExW(HKEY_CURRENT_USER, BETTBOX_REG_KEY, 0, KEY_READ,
+  if (RegOpenKeyExW(HKEY_CURRENT_USER, FLUXORA_REG_KEY, 0, KEY_READ,
                     &hKey) != ERROR_SUCCESS) {
     return false;
   }
@@ -50,7 +50,7 @@ bool HasLegacyIconSettings() {
 
 void RemoveLegacyIconRegistryKeys() {
   HKEY hKey;
-  if (RegOpenKeyExW(HKEY_CURRENT_USER, BETTBOX_REG_KEY, 0, KEY_SET_VALUE,
+  if (RegOpenKeyExW(HKEY_CURRENT_USER, FLUXORA_REG_KEY, 0, KEY_SET_VALUE,
                     &hKey) == ERROR_SUCCESS) {
     RegDeleteValueW(hKey, kUseDarkIconValue);
     RegDeleteValueW(hKey, kPendingShortcutIconUpdateValue);
@@ -167,7 +167,7 @@ void CleanupLegacyIconSettings() {
 
 constexpr const char kClipboardChannel[] = "clipboard_ext";
 constexpr const char kPasteMethod[] = "paste";
-constexpr const wchar_t kFlutterWindowProp[] = L"BettboxFlutterWindow";
+constexpr const wchar_t kFlutterWindowProp[] = L"FluxoraFlutterWindow";
 
 }  // namespace
 

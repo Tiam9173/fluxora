@@ -17,7 +17,7 @@ static gboolean _is_dev_build() {
 
 static gchar* _get_control_socket_path() {
   const gchar* user_data_dir = g_get_user_data_dir();
-  const gchar* name = _is_dev_build() ? "BettboxDev.control.sock" : "Bettbox.control.sock";
+  const gchar* name = _is_dev_build() ? "FluxoraDev.control.sock" : "Fluxora.control.sock";
   return g_build_filename(user_data_dir, APPLICATION_ID, name, nullptr);
 }
 
@@ -86,11 +86,11 @@ static void my_application_activate(GApplication* application) {
   if (use_header_bar) {
     GtkHeaderBar* header_bar = GTK_HEADER_BAR(gtk_header_bar_new());
     gtk_widget_show(GTK_WIDGET(header_bar));
-    gtk_header_bar_set_title(header_bar, "Bettbox");
+    gtk_header_bar_set_title(header_bar, "Fluxora");
     gtk_header_bar_set_show_close_button(header_bar, TRUE);
     gtk_window_set_titlebar(window, GTK_WIDGET(header_bar));
   } else {
-    gtk_window_set_title(window, "Bettbox");
+    gtk_window_set_title(window, "Fluxora");
   }
 
   gtk_window_set_default_size(window, 1280, 720);

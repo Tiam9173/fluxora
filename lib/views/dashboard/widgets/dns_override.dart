@@ -1,9 +1,9 @@
-import 'package:bett_box/common/common.dart';
-import 'package:bett_box/providers/config.dart';
-import 'package:bett_box/widgets/widgets.dart';
-import 'package:bett_box/clash/core.dart';
-import 'package:bett_box/state.dart';
-import 'package:bett_box/views/config/dns.dart';
+import 'package:fluxora/common/common.dart';
+import 'package:fluxora/providers/config.dart';
+import 'package:fluxora/widgets/widgets.dart';
+import 'package:fluxora/clash/core.dart';
+import 'package:fluxora/state.dart';
+import 'package:fluxora/views/config/dns.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

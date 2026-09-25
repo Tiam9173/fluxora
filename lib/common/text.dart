@@ -1,4 +1,4 @@
-import 'package:bett_box/enum/enum.dart';
+import 'package:fluxora/enum/enum.dart';
 import 'package:flutter/material.dart';
 import 'color.dart';
 

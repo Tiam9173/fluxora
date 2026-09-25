@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:bett_box/common/curve25519.dart';
+import 'package:fluxora/common/curve25519.dart';
 
 enum WarpMode {
   googleAndAi('智能防送中与 AI 解锁 (推荐)', '针对 Google、OpenAI、Claude、Gemini 等平台套 WARP 出口，其余保持机场原生高速'),

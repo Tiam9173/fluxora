@@ -1,6 +1,6 @@
-import 'package:bett_box/common/common.dart';
-import 'package:bett_box/views/proxies/providers.dart';
-import 'package:bett_box/widgets/widgets.dart';
+import 'package:fluxora/common/common.dart';
+import 'package:fluxora/views/proxies/providers.dart';
+import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 
 class ProvidersInfo extends StatelessWidget {

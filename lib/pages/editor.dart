@@ -1,12 +1,12 @@
 import 'dart:convert';
 
-import 'package:bett_box/common/common.dart';
-import 'package:bett_box/enum/enum.dart' hide Mode;
-import 'package:bett_box/models/common.dart';
-import 'package:bett_box/plugins/clipboard_ext.dart';
-import 'package:bett_box/providers/app.dart';
-import 'package:bett_box/state.dart';
-import 'package:bett_box/widgets/widgets.dart';
+import 'package:fluxora/common/common.dart';
+import 'package:fluxora/enum/enum.dart' hide Mode;
+import 'package:fluxora/models/common.dart';
+import 'package:fluxora/plugins/clipboard_ext.dart';
+import 'package:fluxora/providers/app.dart';
+import 'package:fluxora/state.dart';
+import 'package:fluxora/widgets/widgets.dart';
 import 'package:code_forge/code_forge.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';

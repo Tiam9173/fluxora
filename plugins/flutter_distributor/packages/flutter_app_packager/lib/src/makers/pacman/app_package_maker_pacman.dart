@@ -131,7 +131,7 @@ class AppPackageMakerPacman extends AppPackageMaker {
         packagingDirectory.path,
         'usr/share',
         makeConfig.appBinaryName,
-        'BettboxCore',
+        'FluxoraCore',
       ),
     );
     if (coreFile.existsSync()) {

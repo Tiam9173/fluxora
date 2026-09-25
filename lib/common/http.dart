@@ -1,9 +1,9 @@
 import 'dart:io';
 
-import 'package:bett_box/common/common.dart';
-import 'package:bett_box/state.dart';
+import 'package:fluxora/common/common.dart';
+import 'package:fluxora/state.dart';
 
-class BettboxHttpOverrides extends HttpOverrides {
+class FluxoraHttpOverrides extends HttpOverrides {
   static String handleFindProxy(Uri url) {
     if ([localhost].contains(url.host)) {
       return 'DIRECT';

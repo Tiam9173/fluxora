@@ -17,7 +17,7 @@ val mKeyPassword: String? = localProperties.getProperty("keyPassword")?.takeIf {
 val isRelease = mStoreFile.exists() && mStoreFile.length() > 0L && mStorePassword != null && mKeyAlias != null && mKeyPassword != null
 
 android {
-    namespace = "com.appshub.bettbox"
+    namespace = "io.fluxora.app"
     compileSdk = 36
     ndkVersion = "28.2.13676358"
 
@@ -31,7 +31,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.appshub.bettbox.plus"
+        applicationId = "io.fluxora.app"
         minSdk = 26
         targetSdk = 36
         versionCode = flutter.versionCode

@@ -1,9 +1,9 @@
-import 'package:bett_box/common/common.dart';
-import 'package:bett_box/enum/enum.dart';
-import 'package:bett_box/providers/config.dart';
-import 'package:bett_box/state.dart';
-import 'package:bett_box/views/config/general.dart';
-import 'package:bett_box/widgets/widgets.dart';
+import 'package:fluxora/common/common.dart';
+import 'package:fluxora/enum/enum.dart';
+import 'package:fluxora/providers/config.dart';
+import 'package:fluxora/state.dart';
+import 'package:fluxora/views/config/general.dart';
+import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';

@@ -1,8 +1,8 @@
-display_name: bettbox+
-package_name: Bettbox
+display_name: Fluxora
+package_name: Fluxora
 maintainer:
-  name: appshub
-  email: appshubcc@gmail.com
+  name: Fluxora Contributors
+  email: support@fluxora.io
 
 priority: optional
 section: x11
@@ -15,24 +15,24 @@ dependencies:
   - libkeybinder-3.0-dev
 
 keywords:
-  - bettbox+
-  - Bettbox
+  - Fluxora
+  - Fluxora
   - Clash
   - ClashMeta
   - Mihomo
   - Proxy
 
-generic_name: bettbox+
+generic_name: Fluxora
 
 categories:
   - Network
 
 startup_notify: true
-startup_wm_class: com.appshub.bettboxplus
+startup_wm_class: io.fluxora.app
 
 postinstall_scripts:
   - |
-    for CORE_PATH in "/usr/share/bettbox+/BettboxCore" "/usr/share/Bettbox/BettboxCore" "/usr/share/bettboxplus/BettboxCore"; do
+    for CORE_PATH in "/usr/share/Fluxora/FluxoraCore" "/usr/share/Fluxora/FluxoraCore" "/usr/share/fluxora/FluxoraCore"; do
       if [ -f "$CORE_PATH" ]; then
         chown root:root "$CORE_PATH" 2>/dev/null || true
         chmod +sx "$CORE_PATH" 2>/dev/null || true
@@ -40,7 +40,7 @@ postinstall_scripts:
     done
 postuninstall_scripts:
   - |
-    for CORE_PATH in "/usr/share/bettbox+/BettboxCore" "/usr/share/Bettbox/BettboxCore" "/usr/share/bettboxplus/BettboxCore"; do
+    for CORE_PATH in "/usr/share/Fluxora/FluxoraCore" "/usr/share/Fluxora/FluxoraCore" "/usr/share/fluxora/FluxoraCore"; do
       if [ -f "$CORE_PATH" ]; then
         chmod -s "$CORE_PATH" 2>/dev/null || true
       fi

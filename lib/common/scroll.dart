@@ -1,8 +1,8 @@
 import 'dart:math';
 import 'dart:ui';
 
-import 'package:bett_box/common/common.dart';
-import 'package:bett_box/widgets/scroll.dart';
+import 'package:fluxora/common/common.dart';
+import 'package:fluxora/widgets/scroll.dart';
 import 'package:flutter/material.dart';
 
 class BaseScrollBehavior extends MaterialScrollBehavior {

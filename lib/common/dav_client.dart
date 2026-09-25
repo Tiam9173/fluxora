@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:bett_box/common/common.dart';
-import 'package:bett_box/models/models.dart';
+import 'package:fluxora/common/common.dart';
+import 'package:fluxora/models/models.dart';
 import 'package:dio/dio.dart';
 import 'package:webdav_client/webdav_client.dart';
 

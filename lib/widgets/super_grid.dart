@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:bett_box/common/common.dart';
-import 'package:bett_box/enum/enum.dart';
-import 'package:bett_box/state.dart';
-import 'package:bett_box/widgets/activate_box.dart';
-import 'package:bett_box/widgets/card.dart';
-import 'package:bett_box/widgets/grid.dart';
+import 'package:fluxora/common/common.dart';
+import 'package:fluxora/enum/enum.dart';
+import 'package:fluxora/state.dart';
+import 'package:fluxora/widgets/activate_box.dart';
+import 'package:fluxora/widgets/card.dart';
+import 'package:fluxora/widgets/grid.dart';
 import 'package:defer_pointer/defer_pointer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';

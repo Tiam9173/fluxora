@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:bett_box/clash/core.dart';
-import 'package:bett_box/common/common.dart';
-import 'package:bett_box/common/curve25519.dart';
-import 'package:bett_box/models/warp_config.dart';
-import 'package:bett_box/state.dart';
+import 'package:fluxora/clash/core.dart';
+import 'package:fluxora/common/common.dart';
+import 'package:fluxora/common/curve25519.dart';
+import 'package:fluxora/models/warp_config.dart';
+import 'package:fluxora/state.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 

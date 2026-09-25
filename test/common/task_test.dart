@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:bett_box/common/task.dart';
-import 'package:bett_box/models/models.dart';
+import 'package:fluxora/common/task.dart';
+import 'package:fluxora/models/models.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:yaml/yaml.dart';
 
@@ -41,7 +41,7 @@ void main() {
     });
 
     test('handles LITES.yaml patch without errors', () async {
-      final litesFile = File(r'D:\Bettbox\LITES.yaml');
+      final litesFile = File(r'D:\Fluxora\LITES.yaml');
       if (!await litesFile.exists()) return;
 
       final content = await litesFile.readAsString();
