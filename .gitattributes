@@ -1,0 +1,94 @@
+# Fluxora line-ending policy
+# Repository stores LF; working tree checks out LF for text files.
+# Windows-native scripts keep CRLF; binary assets are never converted.
+
+# Normalize every file Git detects as text to LF.
+* text=auto eol=lf
+
+# ---------------------------------------------------------------------------
+# Binary assets - no text/line-ending conversion, no diff munging
+# ---------------------------------------------------------------------------
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.gif    binary
+*.webp   binary
+*.bmp    binary
+*.ico    binary
+*.icns   binary
+*.ttf    binary
+*.otf    binary
+*.ttc    binary
+*.woff   binary
+*.woff2  binary
+*.so     binary
+*.dll    binary
+*.dylib  binary
+*.a      binary
+*.lib    binary
+*.exe    binary
+*.jar    binary
+*.aar    binary
+*.zip    binary
+*.gz     binary
+*.7z     binary
+*.rar    binary
+*.db     binary
+*.sqlite binary
+*.dat    binary
+*.mmdb   binary
+*.mdb    binary
+*.keystore binary
+*.jks    binary
+*.p12    binary
+*.pfx    binary
+
+# ---------------------------------------------------------------------------
+# Windows-native scripts and installer/resource files keep CRLF
+# ---------------------------------------------------------------------------
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+*.ps1  text eol=crlf
+*.iss  text eol=crlf
+*.rc   text eol=crlf
+
+# ---------------------------------------------------------------------------
+# Shell and build scripts keep LF
+# ---------------------------------------------------------------------------
+*.sh     text eol=lf
+gradlew  text eol=lf
+Makefile text eol=lf
+
+# ---------------------------------------------------------------------------
+# Explicit text types - always LF, diff friendly
+# ---------------------------------------------------------------------------
+*.dart      text eol=lf
+*.go        text eol=lf
+*.rs        text eol=lf
+*.kt        text eol=lf
+*.kts       text eol=lf
+*.java      text eol=lf
+*.c         text eol=lf
+*.cc        text eol=lf
+*.cpp       text eol=lf
+*.h         text eol=lf
+*.hpp       text eol=lf
+*.swift     text eol=lf
+*.gradle    text eol=lf
+*.yaml      text eol=lf
+*.yml       text eol=lf
+*.json      text eol=lf
+*.xml       text eol=lf
+*.plist     text eol=lf
+*.xcconfig  text eol=lf
+*.pbxproj   text eol=lf
+*.xib       text eol=lf
+*.storyboard text eol=lf
+*.md        text eol=lf
+*.arb       text eol=lf
+*.svg       text eol=lf
+*.toml      text eol=lf
+*.lock      text eol=lf
+*.mod       text eol=lf
+*.sum       text eol=lf
+*.txt       text eol=lf
