@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of '../app.dart';
@@ -9,6 +9,7 @@ part of '../app.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -25,16 +26,21 @@ $AppStateCopyWith<AppState> get copyWith => _$AppStateCopyWithImpl<AppState>(thi
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AppState&&(identical(other.isInit, isInit) || other.isInit == isInit)&&(identical(other.backBlock, backBlock) || other.backBlock == backBlock)&&(identical(other.pageLabel, pageLabel) || other.pageLabel == pageLabel)&&const DeepCollectionEquality().equals(other.packages, packages)&&(identical(other.sortNum, sortNum) || other.sortNum == sortNum)&&(identical(other.viewSize, viewSize) || other.viewSize == viewSize)&&const DeepCollectionEquality().equals(other.delayMap, delayMap)&&const DeepCollectionEquality().equals(other.groups, groups)&&(identical(other.checkIpNum, checkIpNum) || other.checkIpNum == checkIpNum)&&(identical(other.brightness, brightness) || other.brightness == brightness)&&(identical(other.runTime, runTime) || other.runTime == runTime)&&const DeepCollectionEquality().equals(other.providers, providers)&&(identical(other.localIp, localIp) || other.localIp == localIp)&&(identical(other.requests, requests) || other.requests == requests)&&(identical(other.version, version) || other.version == version)&&(identical(other.logs, logs) || other.logs == logs)&&(identical(other.traffics, traffics) || other.traffics == traffics)&&(identical(other.totalTraffic, totalTraffic) || other.totalTraffic == totalTraffic)&&(identical(other.realTunEnable, realTunEnable) || other.realTunEnable == realTunEnable)&&(identical(other.loading, loading) || other.loading == loading)&&(identical(other.systemUiOverlayStyle, systemUiOverlayStyle) || other.systemUiOverlayStyle == systemUiOverlayStyle));
+  final _this = this as AppState;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AppState&&(identical(other.isInit, _this.isInit) || other.isInit == _this.isInit)&&(identical(other.backBlock, _this.backBlock) || other.backBlock == _this.backBlock)&&(identical(other.pageLabel, _this.pageLabel) || other.pageLabel == _this.pageLabel)&&const DeepCollectionEquality().equals(other.packages, _this.packages)&&(identical(other.sortNum, _this.sortNum) || other.sortNum == _this.sortNum)&&(identical(other.viewSize, _this.viewSize) || other.viewSize == _this.viewSize)&&const DeepCollectionEquality().equals(other.delayMap, _this.delayMap)&&const DeepCollectionEquality().equals(other.groups, _this.groups)&&(identical(other.checkIpNum, _this.checkIpNum) || other.checkIpNum == _this.checkIpNum)&&(identical(other.brightness, _this.brightness) || other.brightness == _this.brightness)&&(identical(other.runTime, _this.runTime) || other.runTime == _this.runTime)&&const DeepCollectionEquality().equals(other.providers, _this.providers)&&(identical(other.localIp, _this.localIp) || other.localIp == _this.localIp)&&(identical(other.requests, _this.requests) || other.requests == _this.requests)&&(identical(other.version, _this.version) || other.version == _this.version)&&(identical(other.logs, _this.logs) || other.logs == _this.logs)&&(identical(other.traffics, _this.traffics) || other.traffics == _this.traffics)&&(identical(other.totalTraffic, _this.totalTraffic) || other.totalTraffic == _this.totalTraffic)&&(identical(other.realTunEnable, _this.realTunEnable) || other.realTunEnable == _this.realTunEnable)&&(identical(other.loading, _this.loading) || other.loading == _this.loading)&&(identical(other.systemUiOverlayStyle, _this.systemUiOverlayStyle) || other.systemUiOverlayStyle == _this.systemUiOverlayStyle));
 }
 
 
 @override
-int get hashCode => Object.hashAll([runtimeType,isInit,backBlock,pageLabel,const DeepCollectionEquality().hash(packages),sortNum,viewSize,const DeepCollectionEquality().hash(delayMap),const DeepCollectionEquality().hash(groups),checkIpNum,brightness,runTime,const DeepCollectionEquality().hash(providers),localIp,requests,version,logs,traffics,totalTraffic,realTunEnable,loading,systemUiOverlayStyle]);
+int get hashCode {
+  final _this = this as AppState;
+  return Object.hashAll([runtimeType,_this.isInit,_this.backBlock,_this.pageLabel,const DeepCollectionEquality().hash(_this.packages),_this.sortNum,_this.viewSize,const DeepCollectionEquality().hash(_this.delayMap),const DeepCollectionEquality().hash(_this.groups),_this.checkIpNum,_this.brightness,_this.runTime,const DeepCollectionEquality().hash(_this.providers),_this.localIp,_this.requests,_this.version,_this.logs,_this.traffics,_this.totalTraffic,_this.realTunEnable,_this.loading,_this.systemUiOverlayStyle]);
+}
 
 @override
 String toString() {
-  return 'AppState(isInit: $isInit, backBlock: $backBlock, pageLabel: $pageLabel, packages: $packages, sortNum: $sortNum, viewSize: $viewSize, delayMap: $delayMap, groups: $groups, checkIpNum: $checkIpNum, brightness: $brightness, runTime: $runTime, providers: $providers, localIp: $localIp, requests: $requests, version: $version, logs: $logs, traffics: $traffics, totalTraffic: $totalTraffic, realTunEnable: $realTunEnable, loading: $loading, systemUiOverlayStyle: $systemUiOverlayStyle)';
+  final _this = this as AppState;
+  return 'AppState(isInit: ${_this.isInit}, backBlock: ${_this.backBlock}, pageLabel: ${_this.pageLabel}, packages: ${_this.packages}, sortNum: ${_this.sortNum}, viewSize: ${_this.viewSize}, delayMap: ${_this.delayMap}, groups: ${_this.groups}, checkIpNum: ${_this.checkIpNum}, brightness: ${_this.brightness}, runTime: ${_this.runTime}, providers: ${_this.providers}, localIp: ${_this.localIp}, requests: ${_this.requests}, version: ${_this.version}, logs: ${_this.logs}, traffics: ${_this.traffics}, totalTraffic: ${_this.totalTraffic}, realTunEnable: ${_this.realTunEnable}, loading: ${_this.loading}, systemUiOverlayStyle: ${_this.systemUiOverlayStyle})';
 }
 
 
@@ -63,7 +69,7 @@ class _$AppStateCopyWithImpl<$Res>
 /// Create a copy of AppState
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? isInit = null,Object? backBlock = null,Object? pageLabel = null,Object? packages = null,Object? sortNum = null,Object? viewSize = null,Object? delayMap = null,Object? groups = null,Object? checkIpNum = null,Object? brightness = null,Object? runTime = freezed,Object? providers = null,Object? localIp = freezed,Object? requests = null,Object? version = null,Object? logs = null,Object? traffics = null,Object? totalTraffic = null,Object? realTunEnable = null,Object? loading = null,Object? systemUiOverlayStyle = null,}) {
-  return _then(_self.copyWith(
+  return _then(AppState(
 isInit: null == isInit ? _self.isInit : isInit // ignore: cast_nullable_to_non_nullable
 as bool,backBlock: null == backBlock ? _self.backBlock : backBlock // ignore: cast_nullable_to_non_nullable
 as bool,pageLabel: null == pageLabel ? _self.pageLabel : pageLabel // ignore: cast_nullable_to_non_nullable
@@ -226,7 +232,7 @@ return $default(_that.isInit,_that.backBlock,_that.pageLabel,_that.packages,_tha
 
 
 class _AppState implements AppState {
-  const _AppState({this.isInit = false, this.backBlock = false, this.pageLabel = PageLabel.dashboard, final  List<Package> packages = const [], this.sortNum = 0, required this.viewSize, final  DelayMap delayMap = const {}, final  List<Group> groups = const [], this.checkIpNum = 0, required this.brightness, this.runTime, final  List<ExternalProvider> providers = const [], this.localIp, required this.requests, required this.version, required this.logs, required this.traffics, required this.totalTraffic, this.realTunEnable = false, this.loading = false, required this.systemUiOverlayStyle}): _packages = packages,_delayMap = delayMap,_groups = groups,_providers = providers;
+  const _AppState({this.isInit = false, this.backBlock = false, this.pageLabel = PageLabel.dashboard,  List<Package> packages = const [], this.sortNum = 0, required this.viewSize,  DelayMap delayMap = const {},  List<Group> groups = const [], this.checkIpNum = 0, required this.brightness, this.runTime,  List<ExternalProvider> providers = const [], this.localIp, required this.requests, required this.version, required this.logs, required this.traffics, required this.totalTraffic, this.realTunEnable = false, this.loading = false, required this.systemUiOverlayStyle}): _packages = packages,_delayMap = delayMap,_groups = groups,_providers = providers;
   
 
 @override@JsonKey() final  bool isInit;
@@ -285,16 +291,18 @@ _$AppStateCopyWith<_AppState> get copyWith => __$AppStateCopyWithImpl<_AppState>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AppState&&(identical(other.isInit, isInit) || other.isInit == isInit)&&(identical(other.backBlock, backBlock) || other.backBlock == backBlock)&&(identical(other.pageLabel, pageLabel) || other.pageLabel == pageLabel)&&const DeepCollectionEquality().equals(other._packages, _packages)&&(identical(other.sortNum, sortNum) || other.sortNum == sortNum)&&(identical(other.viewSize, viewSize) || other.viewSize == viewSize)&&const DeepCollectionEquality().equals(other._delayMap, _delayMap)&&const DeepCollectionEquality().equals(other._groups, _groups)&&(identical(other.checkIpNum, checkIpNum) || other.checkIpNum == checkIpNum)&&(identical(other.brightness, brightness) || other.brightness == brightness)&&(identical(other.runTime, runTime) || other.runTime == runTime)&&const DeepCollectionEquality().equals(other._providers, _providers)&&(identical(other.localIp, localIp) || other.localIp == localIp)&&(identical(other.requests, requests) || other.requests == requests)&&(identical(other.version, version) || other.version == version)&&(identical(other.logs, logs) || other.logs == logs)&&(identical(other.traffics, traffics) || other.traffics == traffics)&&(identical(other.totalTraffic, totalTraffic) || other.totalTraffic == totalTraffic)&&(identical(other.realTunEnable, realTunEnable) || other.realTunEnable == realTunEnable)&&(identical(other.loading, loading) || other.loading == loading)&&(identical(other.systemUiOverlayStyle, systemUiOverlayStyle) || other.systemUiOverlayStyle == systemUiOverlayStyle));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _AppState&&(identical(other.isInit, isInit) || other.isInit == isInit)&&(identical(other.backBlock, backBlock) || other.backBlock == backBlock)&&(identical(other.pageLabel, pageLabel) || other.pageLabel == pageLabel)&&const DeepCollectionEquality().equals(other.packages, _packages)&&(identical(other.sortNum, sortNum) || other.sortNum == sortNum)&&(identical(other.viewSize, viewSize) || other.viewSize == viewSize)&&const DeepCollectionEquality().equals(other.delayMap, _delayMap)&&const DeepCollectionEquality().equals(other.groups, _groups)&&(identical(other.checkIpNum, checkIpNum) || other.checkIpNum == checkIpNum)&&(identical(other.brightness, brightness) || other.brightness == brightness)&&(identical(other.runTime, runTime) || other.runTime == runTime)&&const DeepCollectionEquality().equals(other.providers, _providers)&&(identical(other.localIp, localIp) || other.localIp == localIp)&&(identical(other.requests, requests) || other.requests == requests)&&(identical(other.version, version) || other.version == version)&&(identical(other.logs, logs) || other.logs == logs)&&(identical(other.traffics, traffics) || other.traffics == traffics)&&(identical(other.totalTraffic, totalTraffic) || other.totalTraffic == totalTraffic)&&(identical(other.realTunEnable, realTunEnable) || other.realTunEnable == realTunEnable)&&(identical(other.loading, loading) || other.loading == loading)&&(identical(other.systemUiOverlayStyle, systemUiOverlayStyle) || other.systemUiOverlayStyle == systemUiOverlayStyle));
 }
 
 
 @override
-int get hashCode => Object.hashAll([runtimeType,isInit,backBlock,pageLabel,const DeepCollectionEquality().hash(_packages),sortNum,viewSize,const DeepCollectionEquality().hash(_delayMap),const DeepCollectionEquality().hash(_groups),checkIpNum,brightness,runTime,const DeepCollectionEquality().hash(_providers),localIp,requests,version,logs,traffics,totalTraffic,realTunEnable,loading,systemUiOverlayStyle]);
+int get hashCode {
+    return Object.hashAll([runtimeType,isInit,backBlock,pageLabel,const DeepCollectionEquality().hash(_packages),sortNum,viewSize,const DeepCollectionEquality().hash(_delayMap),const DeepCollectionEquality().hash(_groups),checkIpNum,brightness,runTime,const DeepCollectionEquality().hash(_providers),localIp,requests,version,logs,traffics,totalTraffic,realTunEnable,loading,systemUiOverlayStyle]);
+}
 
 @override
 String toString() {
-  return 'AppState(isInit: $isInit, backBlock: $backBlock, pageLabel: $pageLabel, packages: $packages, sortNum: $sortNum, viewSize: $viewSize, delayMap: $delayMap, groups: $groups, checkIpNum: $checkIpNum, brightness: $brightness, runTime: $runTime, providers: $providers, localIp: $localIp, requests: $requests, version: $version, logs: $logs, traffics: $traffics, totalTraffic: $totalTraffic, realTunEnable: $realTunEnable, loading: $loading, systemUiOverlayStyle: $systemUiOverlayStyle)';
+    return 'AppState(isInit: $isInit, backBlock: $backBlock, pageLabel: $pageLabel, packages: $packages, sortNum: $sortNum, viewSize: $viewSize, delayMap: $delayMap, groups: $groups, checkIpNum: $checkIpNum, brightness: $brightness, runTime: $runTime, providers: $providers, localIp: $localIp, requests: $requests, version: $version, logs: $logs, traffics: $traffics, totalTraffic: $totalTraffic, realTunEnable: $realTunEnable, loading: $loading, systemUiOverlayStyle: $systemUiOverlayStyle)';
 }
 
 

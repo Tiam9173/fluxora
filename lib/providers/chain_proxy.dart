@@ -1,5 +1,6 @@
 import 'package:fluxora/manager/chain_proxy_manager.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 final chainProxyConfigProvider =
     ChangeNotifierProvider<ChainProxyManager>((ref) {

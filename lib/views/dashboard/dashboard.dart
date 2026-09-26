@@ -10,6 +10,7 @@ import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 final customDashboardTitleProvider =
     StateNotifierProvider<CustomDashboardTitleNotifier, String?>((ref) {

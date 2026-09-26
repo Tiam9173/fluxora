@@ -25,7 +25,7 @@ dependencies:
   tray_manager:
     path: plugins/tray_manager
   launch_at_startup: ^0.5.1
-  json_annotation: ^4.9.0
+  json_annotation: ^4.12.0
   file_picker: ^8.3.7
   mobile_scanner: ^7.2.1
   app_links: ^6.3.3
@@ -53,9 +53,9 @@ dependencies:
   connectivity_plus: 7.0.0
   screen_retriever: ^0.2.0
   defer_pointer: ^0.0.2
-  flutter_riverpod: ^2.6.1
-  riverpod_annotation: ^2.6.1
-  riverpod: ^2.6.1
+  flutter_riverpod: 3.4.2
+  riverpod_annotation: ^4.0.6
+  riverpod: 3.4.2
   flutter_svg: ^2.2.4
   xml: ^6.6.1
   flutter_cache_manager: ^3.4.1
@@ -83,13 +83,12 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
   ffigen: ^20.1.1
-  json_serializable: ^6.9.5
-  build_runner: ^2.4.15
+  json_serializable: ^6.14.1
+  build_runner: ^2.15.1
   args: ^2.4.2
-  freezed: ^3.1.0
-  riverpod_generator: ^2.6.4
-  custom_lint: ^0.7.6
-  intl_utils: ^2.8.11
+  freezed: ^4.0.1
+  riverpod_generator: ^4.0.8
+  intl_utils: ^2.8.16
   liquid_engine: ^0.2.2
 
 flutter:

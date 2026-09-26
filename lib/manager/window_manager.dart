@@ -9,6 +9,7 @@ import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:window_ext/window_ext.dart';
 import 'package:window_manager/window_manager.dart';
 

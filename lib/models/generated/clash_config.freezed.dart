@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of '../clash_config.dart';
@@ -9,6 +9,7 @@ part of '../clash_config.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 
@@ -28,16 +29,21 @@ $ProxyGroupCopyWith<ProxyGroup> get copyWith => _$ProxyGroupCopyWithImpl<ProxyGr
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ProxyGroup&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&const DeepCollectionEquality().equals(other.proxies, proxies)&&const DeepCollectionEquality().equals(other.use, use)&&(identical(other.interval, interval) || other.interval == interval)&&(identical(other.lazy, lazy) || other.lazy == lazy)&&(identical(other.url, url) || other.url == url)&&(identical(other.timeout, timeout) || other.timeout == timeout)&&(identical(other.maxFailedTimes, maxFailedTimes) || other.maxFailedTimes == maxFailedTimes)&&(identical(other.filter, filter) || other.filter == filter)&&(identical(other.excludeFilter, excludeFilter) || other.excludeFilter == excludeFilter)&&(identical(other.excludeType, excludeType) || other.excludeType == excludeType)&&const DeepCollectionEquality().equals(other.expectedStatus, expectedStatus)&&(identical(other.hidden, hidden) || other.hidden == hidden)&&(identical(other.icon, icon) || other.icon == icon)&&(identical(other.tolerance, tolerance) || other.tolerance == tolerance));
+  final _this = this as ProxyGroup;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ProxyGroup&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.type, _this.type) || other.type == _this.type)&&const DeepCollectionEquality().equals(other.proxies, _this.proxies)&&const DeepCollectionEquality().equals(other.use, _this.use)&&(identical(other.interval, _this.interval) || other.interval == _this.interval)&&(identical(other.lazy, _this.lazy) || other.lazy == _this.lazy)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.timeout, _this.timeout) || other.timeout == _this.timeout)&&(identical(other.maxFailedTimes, _this.maxFailedTimes) || other.maxFailedTimes == _this.maxFailedTimes)&&(identical(other.filter, _this.filter) || other.filter == _this.filter)&&(identical(other.excludeFilter, _this.excludeFilter) || other.excludeFilter == _this.excludeFilter)&&(identical(other.excludeType, _this.excludeType) || other.excludeType == _this.excludeType)&&const DeepCollectionEquality().equals(other.expectedStatus, _this.expectedStatus)&&(identical(other.hidden, _this.hidden) || other.hidden == _this.hidden)&&(identical(other.icon, _this.icon) || other.icon == _this.icon)&&(identical(other.tolerance, _this.tolerance) || other.tolerance == _this.tolerance));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,name,type,const DeepCollectionEquality().hash(proxies),const DeepCollectionEquality().hash(use),interval,lazy,url,timeout,maxFailedTimes,filter,excludeFilter,excludeType,const DeepCollectionEquality().hash(expectedStatus),hidden,icon,tolerance);
+int get hashCode {
+  final _this = this as ProxyGroup;
+  return Object.hash(runtimeType,_this.name,_this.type,const DeepCollectionEquality().hash(_this.proxies),const DeepCollectionEquality().hash(_this.use),_this.interval,_this.lazy,_this.url,_this.timeout,_this.maxFailedTimes,_this.filter,_this.excludeFilter,_this.excludeType,const DeepCollectionEquality().hash(_this.expectedStatus),_this.hidden,_this.icon,_this.tolerance);
+}
 
 @override
 String toString() {
-  return 'ProxyGroup(name: $name, type: $type, proxies: $proxies, use: $use, interval: $interval, lazy: $lazy, url: $url, timeout: $timeout, maxFailedTimes: $maxFailedTimes, filter: $filter, excludeFilter: $excludeFilter, excludeType: $excludeType, expectedStatus: $expectedStatus, hidden: $hidden, icon: $icon, tolerance: $tolerance)';
+  final _this = this as ProxyGroup;
+  return 'ProxyGroup(name: ${_this.name}, type: ${_this.type}, proxies: ${_this.proxies}, use: ${_this.use}, interval: ${_this.interval}, lazy: ${_this.lazy}, url: ${_this.url}, timeout: ${_this.timeout}, maxFailedTimes: ${_this.maxFailedTimes}, filter: ${_this.filter}, excludeFilter: ${_this.excludeFilter}, excludeType: ${_this.excludeType}, expectedStatus: ${_this.expectedStatus}, hidden: ${_this.hidden}, icon: ${_this.icon}, tolerance: ${_this.tolerance})';
 }
 
 
@@ -66,7 +72,7 @@ class _$ProxyGroupCopyWithImpl<$Res>
 /// Create a copy of ProxyGroup
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? type = null,Object? proxies = freezed,Object? use = freezed,Object? interval = freezed,Object? lazy = freezed,Object? url = freezed,Object? timeout = freezed,Object? maxFailedTimes = freezed,Object? filter = freezed,Object? excludeFilter = freezed,Object? excludeType = freezed,Object? expectedStatus = freezed,Object? hidden = freezed,Object? icon = freezed,Object? tolerance = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(ProxyGroup(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as GroupType,proxies: freezed == proxies ? _self.proxies : proxies // ignore: cast_nullable_to_non_nullable
@@ -224,7 +230,7 @@ return $default(_that.name,_that.type,_that.proxies,_that.use,_that.interval,_th
 @JsonSerializable()
 
 class _ProxyGroup implements ProxyGroup {
-  const _ProxyGroup({required this.name, @JsonKey(fromJson: GroupType.parseProfileType) required this.type, @JsonKey(fromJson: _parseStringList) final  List<String>? proxies, @JsonKey(fromJson: _parseStringList) final  List<String>? use, @JsonKey(fromJson: _parseInt) this.interval, @JsonKey(fromJson: _parseBool) this.lazy, this.url, @JsonKey(fromJson: _parseInt) this.timeout, @JsonKey(name: 'max-failed-times', fromJson: _parseInt) this.maxFailedTimes, this.filter, @JsonKey(name: 'expected-filter') this.excludeFilter, @JsonKey(name: 'exclude-type') this.excludeType, @JsonKey(name: 'expected-status') this.expectedStatus, @JsonKey(fromJson: _parseBool) this.hidden, this.icon, @JsonKey(fromJson: _parseInt) this.tolerance}): _proxies = proxies,_use = use;
+  const _ProxyGroup({required this.name, @JsonKey(fromJson: GroupType.parseProfileType) required this.type, @JsonKey(fromJson: _parseStringList)  List<String>? proxies, @JsonKey(fromJson: _parseStringList)  List<String>? use, @JsonKey(fromJson: _parseInt) this.interval, @JsonKey(fromJson: _parseBool) this.lazy, this.url, @JsonKey(fromJson: _parseInt) this.timeout, @JsonKey(name: 'max-failed-times', fromJson: _parseInt) this.maxFailedTimes, this.filter, @JsonKey(name: 'expected-filter') this.excludeFilter, @JsonKey(name: 'exclude-type') this.excludeType, @JsonKey(name: 'expected-status') this.expectedStatus, @JsonKey(fromJson: _parseBool) this.hidden, this.icon, @JsonKey(fromJson: _parseInt) this.tolerance}): _proxies = proxies,_use = use;
   factory _ProxyGroup.fromJson(Map<String, dynamic> json) => _$ProxyGroupFromJson(json);
 
 @override final  String name;
@@ -273,16 +279,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ProxyGroup&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&const DeepCollectionEquality().equals(other._proxies, _proxies)&&const DeepCollectionEquality().equals(other._use, _use)&&(identical(other.interval, interval) || other.interval == interval)&&(identical(other.lazy, lazy) || other.lazy == lazy)&&(identical(other.url, url) || other.url == url)&&(identical(other.timeout, timeout) || other.timeout == timeout)&&(identical(other.maxFailedTimes, maxFailedTimes) || other.maxFailedTimes == maxFailedTimes)&&(identical(other.filter, filter) || other.filter == filter)&&(identical(other.excludeFilter, excludeFilter) || other.excludeFilter == excludeFilter)&&(identical(other.excludeType, excludeType) || other.excludeType == excludeType)&&const DeepCollectionEquality().equals(other.expectedStatus, expectedStatus)&&(identical(other.hidden, hidden) || other.hidden == hidden)&&(identical(other.icon, icon) || other.icon == icon)&&(identical(other.tolerance, tolerance) || other.tolerance == tolerance));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ProxyGroup&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&const DeepCollectionEquality().equals(other.proxies, _proxies)&&const DeepCollectionEquality().equals(other.use, _use)&&(identical(other.interval, interval) || other.interval == interval)&&(identical(other.lazy, lazy) || other.lazy == lazy)&&(identical(other.url, url) || other.url == url)&&(identical(other.timeout, timeout) || other.timeout == timeout)&&(identical(other.maxFailedTimes, maxFailedTimes) || other.maxFailedTimes == maxFailedTimes)&&(identical(other.filter, filter) || other.filter == filter)&&(identical(other.excludeFilter, excludeFilter) || other.excludeFilter == excludeFilter)&&(identical(other.excludeType, excludeType) || other.excludeType == excludeType)&&const DeepCollectionEquality().equals(other.expectedStatus, expectedStatus)&&(identical(other.hidden, hidden) || other.hidden == hidden)&&(identical(other.icon, icon) || other.icon == icon)&&(identical(other.tolerance, tolerance) || other.tolerance == tolerance));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,name,type,const DeepCollectionEquality().hash(_proxies),const DeepCollectionEquality().hash(_use),interval,lazy,url,timeout,maxFailedTimes,filter,excludeFilter,excludeType,const DeepCollectionEquality().hash(expectedStatus),hidden,icon,tolerance);
+int get hashCode {
+    return Object.hash(runtimeType,name,type,const DeepCollectionEquality().hash(_proxies),const DeepCollectionEquality().hash(_use),interval,lazy,url,timeout,maxFailedTimes,filter,excludeFilter,excludeType,const DeepCollectionEquality().hash(expectedStatus),hidden,icon,tolerance);
+}
 
 @override
 String toString() {
-  return 'ProxyGroup(name: $name, type: $type, proxies: $proxies, use: $use, interval: $interval, lazy: $lazy, url: $url, timeout: $timeout, maxFailedTimes: $maxFailedTimes, filter: $filter, excludeFilter: $excludeFilter, excludeType: $excludeType, expectedStatus: $expectedStatus, hidden: $hidden, icon: $icon, tolerance: $tolerance)';
+    return 'ProxyGroup(name: $name, type: $type, proxies: $proxies, use: $use, interval: $interval, lazy: $lazy, url: $url, timeout: $timeout, maxFailedTimes: $maxFailedTimes, filter: $filter, excludeFilter: $excludeFilter, excludeType: $excludeType, expectedStatus: $expectedStatus, hidden: $hidden, icon: $icon, tolerance: $tolerance)';
 }
 
 
@@ -352,16 +360,21 @@ $RuleProviderCopyWith<RuleProvider> get copyWith => _$RuleProviderCopyWithImpl<R
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RuleProvider&&(identical(other.name, name) || other.name == name));
+  final _this = this as RuleProvider;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RuleProvider&&(identical(other.name, _this.name) || other.name == _this.name));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,name);
+int get hashCode {
+  final _this = this as RuleProvider;
+  return Object.hash(runtimeType,_this.name);
+}
 
 @override
 String toString() {
-  return 'RuleProvider(name: $name)';
+  final _this = this as RuleProvider;
+  return 'RuleProvider(name: ${_this.name})';
 }
 
 
@@ -390,7 +403,7 @@ class _$RuleProviderCopyWithImpl<$Res>
 /// Create a copy of RuleProvider
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? name = null,}) {
-  return _then(_self.copyWith(
+  return _then(RuleProvider(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,
   ));
@@ -551,16 +564,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RuleProvider&&(identical(other.name, name) || other.name == name));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _RuleProvider&&(identical(other.name, name) || other.name == name));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,name);
+int get hashCode {
+    return Object.hash(runtimeType,name);
+}
 
 @override
 String toString() {
-  return 'RuleProvider(name: $name)';
+    return 'RuleProvider(name: $name)';
 }
 
 
@@ -615,16 +630,21 @@ $SnifferCopyWith<Sniffer> get copyWith => _$SnifferCopyWithImpl<Sniffer>(this as
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Sniffer&&(identical(other.enable, enable) || other.enable == enable)&&(identical(other.overrideDest, overrideDest) || other.overrideDest == overrideDest)&&const DeepCollectionEquality().equals(other.sniffing, sniffing)&&const DeepCollectionEquality().equals(other.forceDomain, forceDomain)&&const DeepCollectionEquality().equals(other.skipSrcAddress, skipSrcAddress)&&const DeepCollectionEquality().equals(other.skipDstAddress, skipDstAddress)&&const DeepCollectionEquality().equals(other.skipDomain, skipDomain)&&const DeepCollectionEquality().equals(other.port, port)&&(identical(other.forceDnsMapping, forceDnsMapping) || other.forceDnsMapping == forceDnsMapping)&&(identical(other.parsePureIp, parsePureIp) || other.parsePureIp == parsePureIp)&&const DeepCollectionEquality().equals(other.sniff, sniff));
+  final _this = this as Sniffer;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Sniffer&&(identical(other.enable, _this.enable) || other.enable == _this.enable)&&(identical(other.overrideDest, _this.overrideDest) || other.overrideDest == _this.overrideDest)&&const DeepCollectionEquality().equals(other.sniffing, _this.sniffing)&&const DeepCollectionEquality().equals(other.forceDomain, _this.forceDomain)&&const DeepCollectionEquality().equals(other.skipSrcAddress, _this.skipSrcAddress)&&const DeepCollectionEquality().equals(other.skipDstAddress, _this.skipDstAddress)&&const DeepCollectionEquality().equals(other.skipDomain, _this.skipDomain)&&const DeepCollectionEquality().equals(other.port, _this.port)&&(identical(other.forceDnsMapping, _this.forceDnsMapping) || other.forceDnsMapping == _this.forceDnsMapping)&&(identical(other.parsePureIp, _this.parsePureIp) || other.parsePureIp == _this.parsePureIp)&&const DeepCollectionEquality().equals(other.sniff, _this.sniff));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,enable,overrideDest,const DeepCollectionEquality().hash(sniffing),const DeepCollectionEquality().hash(forceDomain),const DeepCollectionEquality().hash(skipSrcAddress),const DeepCollectionEquality().hash(skipDstAddress),const DeepCollectionEquality().hash(skipDomain),const DeepCollectionEquality().hash(port),forceDnsMapping,parsePureIp,const DeepCollectionEquality().hash(sniff));
+int get hashCode {
+  final _this = this as Sniffer;
+  return Object.hash(runtimeType,_this.enable,_this.overrideDest,const DeepCollectionEquality().hash(_this.sniffing),const DeepCollectionEquality().hash(_this.forceDomain),const DeepCollectionEquality().hash(_this.skipSrcAddress),const DeepCollectionEquality().hash(_this.skipDstAddress),const DeepCollectionEquality().hash(_this.skipDomain),const DeepCollectionEquality().hash(_this.port),_this.forceDnsMapping,_this.parsePureIp,const DeepCollectionEquality().hash(_this.sniff));
+}
 
 @override
 String toString() {
-  return 'Sniffer(enable: $enable, overrideDest: $overrideDest, sniffing: $sniffing, forceDomain: $forceDomain, skipSrcAddress: $skipSrcAddress, skipDstAddress: $skipDstAddress, skipDomain: $skipDomain, port: $port, forceDnsMapping: $forceDnsMapping, parsePureIp: $parsePureIp, sniff: $sniff)';
+  final _this = this as Sniffer;
+  return 'Sniffer(enable: ${_this.enable}, overrideDest: ${_this.overrideDest}, sniffing: ${_this.sniffing}, forceDomain: ${_this.forceDomain}, skipSrcAddress: ${_this.skipSrcAddress}, skipDstAddress: ${_this.skipDstAddress}, skipDomain: ${_this.skipDomain}, port: ${_this.port}, forceDnsMapping: ${_this.forceDnsMapping}, parsePureIp: ${_this.parsePureIp}, sniff: ${_this.sniff})';
 }
 
 
@@ -653,7 +673,7 @@ class _$SnifferCopyWithImpl<$Res>
 /// Create a copy of Sniffer
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? enable = null,Object? overrideDest = null,Object? sniffing = null,Object? forceDomain = null,Object? skipSrcAddress = null,Object? skipDstAddress = null,Object? skipDomain = null,Object? port = null,Object? forceDnsMapping = null,Object? parsePureIp = null,Object? sniff = null,}) {
-  return _then(_self.copyWith(
+  return _then(Sniffer(
 enable: null == enable ? _self.enable : enable // ignore: cast_nullable_to_non_nullable
 as bool,overrideDest: null == overrideDest ? _self.overrideDest : overrideDest // ignore: cast_nullable_to_non_nullable
 as bool,sniffing: null == sniffing ? _self.sniffing : sniffing // ignore: cast_nullable_to_non_nullable
@@ -806,7 +826,7 @@ return $default(_that.enable,_that.overrideDest,_that.sniffing,_that.forceDomain
 @JsonSerializable()
 
 class _Sniffer implements Sniffer {
-  const _Sniffer({this.enable = true, @JsonKey(name: 'override-destination') this.overrideDest = false, final  List<String> sniffing = const [], @JsonKey(name: 'force-domain') final  List<String> forceDomain = const ['+.v2ex.com'], @JsonKey(name: 'skip-src-address') final  List<String> skipSrcAddress = const ['192.168.0.3/32'], @JsonKey(name: 'skip-dst-address') final  List<String> skipDstAddress = const ['91.108.56.0/22', '91.108.4.0/22', '91.108.8.0/22', '91.108.16.0/22', '91.108.12.0/22', '149.154.160.0/20', '91.105.192.0/23', '91.108.20.0/22', '185.76.151.0/24', '2001:b28:f23d::/48', '2001:b28:f23f::/48', '2001:67c:4e8::/48', '2001:b28:f23c::/48', '2a0a:f280::/32'], @JsonKey(name: 'skip-domain') final  List<String> skipDomain = const ['Mijia Cloud', '+.push.apple.com'], @JsonKey(name: 'port-whitelist') final  List<String> port = const [], @JsonKey(name: 'force-dns-mapping') this.forceDnsMapping = true, @JsonKey(name: 'parse-pure-ip') this.parsePureIp = true, final  Map<String, SnifferConfig> sniff = const {'HTTP' : SnifferConfig(ports: ['80', '8080-8880'], overrideDest: true), 'TLS' : SnifferConfig(ports: ['443', '8443']), 'QUIC' : SnifferConfig(ports: ['443', '8443'])}}): _sniffing = sniffing,_forceDomain = forceDomain,_skipSrcAddress = skipSrcAddress,_skipDstAddress = skipDstAddress,_skipDomain = skipDomain,_port = port,_sniff = sniff;
+  const _Sniffer({this.enable = true, @JsonKey(name: 'override-destination') this.overrideDest = false,  List<String> sniffing = const [], @JsonKey(name: 'force-domain')  List<String> forceDomain = const ['+.v2ex.com'], @JsonKey(name: 'skip-src-address')  List<String> skipSrcAddress = const ['192.168.0.3/32'], @JsonKey(name: 'skip-dst-address')  List<String> skipDstAddress = const ['91.108.56.0/22', '91.108.4.0/22', '91.108.8.0/22', '91.108.16.0/22', '91.108.12.0/22', '149.154.160.0/20', '91.105.192.0/23', '91.108.20.0/22', '185.76.151.0/24', '2001:b28:f23d::/48', '2001:b28:f23f::/48', '2001:67c:4e8::/48', '2001:b28:f23c::/48', '2a0a:f280::/32'], @JsonKey(name: 'skip-domain')  List<String> skipDomain = const ['Mijia Cloud', '+.push.apple.com'], @JsonKey(name: 'port-whitelist')  List<String> port = const [], @JsonKey(name: 'force-dns-mapping') this.forceDnsMapping = true, @JsonKey(name: 'parse-pure-ip') this.parsePureIp = true,  Map<String, SnifferConfig> sniff = const {'HTTP' : SnifferConfig(ports: ['80', '8080-8880'], overrideDest: true), 'TLS' : SnifferConfig(ports: ['443', '8443']), 'QUIC' : SnifferConfig(ports: ['443', '8443'])}}): _sniffing = sniffing,_forceDomain = forceDomain,_skipSrcAddress = skipSrcAddress,_skipDstAddress = skipDstAddress,_skipDomain = skipDomain,_port = port,_sniff = sniff;
   factory _Sniffer.fromJson(Map<String, dynamic> json) => _$SnifferFromJson(json);
 
 @override@JsonKey() final  bool enable;
@@ -876,16 +896,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Sniffer&&(identical(other.enable, enable) || other.enable == enable)&&(identical(other.overrideDest, overrideDest) || other.overrideDest == overrideDest)&&const DeepCollectionEquality().equals(other._sniffing, _sniffing)&&const DeepCollectionEquality().equals(other._forceDomain, _forceDomain)&&const DeepCollectionEquality().equals(other._skipSrcAddress, _skipSrcAddress)&&const DeepCollectionEquality().equals(other._skipDstAddress, _skipDstAddress)&&const DeepCollectionEquality().equals(other._skipDomain, _skipDomain)&&const DeepCollectionEquality().equals(other._port, _port)&&(identical(other.forceDnsMapping, forceDnsMapping) || other.forceDnsMapping == forceDnsMapping)&&(identical(other.parsePureIp, parsePureIp) || other.parsePureIp == parsePureIp)&&const DeepCollectionEquality().equals(other._sniff, _sniff));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Sniffer&&(identical(other.enable, enable) || other.enable == enable)&&(identical(other.overrideDest, overrideDest) || other.overrideDest == overrideDest)&&const DeepCollectionEquality().equals(other.sniffing, _sniffing)&&const DeepCollectionEquality().equals(other.forceDomain, _forceDomain)&&const DeepCollectionEquality().equals(other.skipSrcAddress, _skipSrcAddress)&&const DeepCollectionEquality().equals(other.skipDstAddress, _skipDstAddress)&&const DeepCollectionEquality().equals(other.skipDomain, _skipDomain)&&const DeepCollectionEquality().equals(other.port, _port)&&(identical(other.forceDnsMapping, forceDnsMapping) || other.forceDnsMapping == forceDnsMapping)&&(identical(other.parsePureIp, parsePureIp) || other.parsePureIp == parsePureIp)&&const DeepCollectionEquality().equals(other.sniff, _sniff));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,enable,overrideDest,const DeepCollectionEquality().hash(_sniffing),const DeepCollectionEquality().hash(_forceDomain),const DeepCollectionEquality().hash(_skipSrcAddress),const DeepCollectionEquality().hash(_skipDstAddress),const DeepCollectionEquality().hash(_skipDomain),const DeepCollectionEquality().hash(_port),forceDnsMapping,parsePureIp,const DeepCollectionEquality().hash(_sniff));
+int get hashCode {
+    return Object.hash(runtimeType,enable,overrideDest,const DeepCollectionEquality().hash(_sniffing),const DeepCollectionEquality().hash(_forceDomain),const DeepCollectionEquality().hash(_skipSrcAddress),const DeepCollectionEquality().hash(_skipDstAddress),const DeepCollectionEquality().hash(_skipDomain),const DeepCollectionEquality().hash(_port),forceDnsMapping,parsePureIp,const DeepCollectionEquality().hash(_sniff));
+}
 
 @override
 String toString() {
-  return 'Sniffer(enable: $enable, overrideDest: $overrideDest, sniffing: $sniffing, forceDomain: $forceDomain, skipSrcAddress: $skipSrcAddress, skipDstAddress: $skipDstAddress, skipDomain: $skipDomain, port: $port, forceDnsMapping: $forceDnsMapping, parsePureIp: $parsePureIp, sniff: $sniff)';
+    return 'Sniffer(enable: $enable, overrideDest: $overrideDest, sniffing: $sniffing, forceDomain: $forceDomain, skipSrcAddress: $skipSrcAddress, skipDstAddress: $skipDstAddress, skipDomain: $skipDomain, port: $port, forceDnsMapping: $forceDnsMapping, parsePureIp: $parsePureIp, sniff: $sniff)';
 }
 
 
@@ -950,16 +972,21 @@ $TunnelEntryCopyWith<TunnelEntry> get copyWith => _$TunnelEntryCopyWithImpl<Tunn
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is TunnelEntry&&(identical(other.id, id) || other.id == id)&&const DeepCollectionEquality().equals(other.network, network)&&(identical(other.address, address) || other.address == address)&&(identical(other.target, target) || other.target == target)&&(identical(other.proxyName, proxyName) || other.proxyName == proxyName));
+  final _this = this as TunnelEntry;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TunnelEntry&&(identical(other.id, _this.id) || other.id == _this.id)&&const DeepCollectionEquality().equals(other.network, _this.network)&&(identical(other.address, _this.address) || other.address == _this.address)&&(identical(other.target, _this.target) || other.target == _this.target)&&(identical(other.proxyName, _this.proxyName) || other.proxyName == _this.proxyName));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,const DeepCollectionEquality().hash(network),address,target,proxyName);
+int get hashCode {
+  final _this = this as TunnelEntry;
+  return Object.hash(runtimeType,_this.id,const DeepCollectionEquality().hash(_this.network),_this.address,_this.target,_this.proxyName);
+}
 
 @override
 String toString() {
-  return 'TunnelEntry(id: $id, network: $network, address: $address, target: $target, proxyName: $proxyName)';
+  final _this = this as TunnelEntry;
+  return 'TunnelEntry(id: ${_this.id}, network: ${_this.network}, address: ${_this.address}, target: ${_this.target}, proxyName: ${_this.proxyName})';
 }
 
 
@@ -988,7 +1015,7 @@ class _$TunnelEntryCopyWithImpl<$Res>
 /// Create a copy of TunnelEntry
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? network = freezed,Object? address = freezed,Object? target = freezed,Object? proxyName = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(TunnelEntry(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,network: freezed == network ? _self.network : network // ignore: cast_nullable_to_non_nullable
 as List<String>?,address: freezed == address ? _self.address : address // ignore: cast_nullable_to_non_nullable
@@ -1135,7 +1162,7 @@ return $default(_that.id,_that.network,_that.address,_that.target,_that.proxyNam
 @JsonSerializable()
 
 class _TunnelEntry implements TunnelEntry {
-  const _TunnelEntry({required this.id, final  List<String>? network, this.address, this.target, this.proxyName}): _network = network;
+  const _TunnelEntry({required this.id,  List<String>? network, this.address, this.target, this.proxyName}): _network = network;
   factory _TunnelEntry.fromJson(Map<String, dynamic> json) => _$TunnelEntryFromJson(json);
 
 @override final  String id;
@@ -1165,16 +1192,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TunnelEntry&&(identical(other.id, id) || other.id == id)&&const DeepCollectionEquality().equals(other._network, _network)&&(identical(other.address, address) || other.address == address)&&(identical(other.target, target) || other.target == target)&&(identical(other.proxyName, proxyName) || other.proxyName == proxyName));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _TunnelEntry&&(identical(other.id, id) || other.id == id)&&const DeepCollectionEquality().equals(other.network, _network)&&(identical(other.address, address) || other.address == address)&&(identical(other.target, target) || other.target == target)&&(identical(other.proxyName, proxyName) || other.proxyName == proxyName));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,const DeepCollectionEquality().hash(_network),address,target,proxyName);
+int get hashCode {
+    return Object.hash(runtimeType,id,const DeepCollectionEquality().hash(_network),address,target,proxyName);
+}
 
 @override
 String toString() {
-  return 'TunnelEntry(id: $id, network: $network, address: $address, target: $target, proxyName: $proxyName)';
+    return 'TunnelEntry(id: $id, network: $network, address: $address, target: $target, proxyName: $proxyName)';
 }
 
 
@@ -1233,16 +1262,21 @@ $SnifferConfigCopyWith<SnifferConfig> get copyWith => _$SnifferConfigCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnifferConfig&&const DeepCollectionEquality().equals(other.ports, ports)&&(identical(other.overrideDest, overrideDest) || other.overrideDest == overrideDest));
+  final _this = this as SnifferConfig;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SnifferConfig&&const DeepCollectionEquality().equals(other.ports, _this.ports)&&(identical(other.overrideDest, _this.overrideDest) || other.overrideDest == _this.overrideDest));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(ports),overrideDest);
+int get hashCode {
+  final _this = this as SnifferConfig;
+  return Object.hash(runtimeType,const DeepCollectionEquality().hash(_this.ports),_this.overrideDest);
+}
 
 @override
 String toString() {
-  return 'SnifferConfig(ports: $ports, overrideDest: $overrideDest)';
+  final _this = this as SnifferConfig;
+  return 'SnifferConfig(ports: ${_this.ports}, overrideDest: ${_this.overrideDest})';
 }
 
 
@@ -1271,7 +1305,7 @@ class _$SnifferConfigCopyWithImpl<$Res>
 /// Create a copy of SnifferConfig
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? ports = null,Object? overrideDest = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(SnifferConfig(
 ports: null == ports ? _self.ports : ports // ignore: cast_nullable_to_non_nullable
 as List<String>,overrideDest: freezed == overrideDest ? _self.overrideDest : overrideDest // ignore: cast_nullable_to_non_nullable
 as bool?,
@@ -1415,7 +1449,7 @@ return $default(_that.ports,_that.overrideDest);case _:
 @JsonSerializable()
 
 class _SnifferConfig implements SnifferConfig {
-  const _SnifferConfig({@JsonKey(fromJson: _formJsonPorts) final  List<String> ports = const [], @JsonKey(name: 'override-destination') this.overrideDest}): _ports = ports;
+  const _SnifferConfig({@JsonKey(fromJson: _formJsonPorts)  List<String> ports = const [], @JsonKey(name: 'override-destination') this.overrideDest}): _ports = ports;
   factory _SnifferConfig.fromJson(Map<String, dynamic> json) => _$SnifferConfigFromJson(json);
 
  final  List<String> _ports;
@@ -1440,16 +1474,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnifferConfig&&const DeepCollectionEquality().equals(other._ports, _ports)&&(identical(other.overrideDest, overrideDest) || other.overrideDest == overrideDest));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SnifferConfig&&const DeepCollectionEquality().equals(other.ports, _ports)&&(identical(other.overrideDest, overrideDest) || other.overrideDest == overrideDest));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_ports),overrideDest);
+int get hashCode {
+    return Object.hash(runtimeType,const DeepCollectionEquality().hash(_ports),overrideDest);
+}
 
 @override
 String toString() {
-  return 'SnifferConfig(ports: $ports, overrideDest: $overrideDest)';
+    return 'SnifferConfig(ports: $ports, overrideDest: $overrideDest)';
 }
 
 
@@ -1505,16 +1541,21 @@ $TunCopyWith<Tun> get copyWith => _$TunCopyWithImpl<Tun>(this as Tun, _$identity
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Tun&&(identical(other.enable, enable) || other.enable == enable)&&(identical(other.device, device) || other.device == device)&&(identical(other.autoRoute, autoRoute) || other.autoRoute == autoRoute)&&(identical(other.stack, stack) || other.stack == stack)&&const DeepCollectionEquality().equals(other.dnsHijack, dnsHijack)&&const DeepCollectionEquality().equals(other.routeAddress, routeAddress)&&const DeepCollectionEquality().equals(other.routeExcludeAddress, routeExcludeAddress)&&(identical(other.strictRoute, strictRoute) || other.strictRoute == strictRoute)&&(identical(other.disableIcmpForwarding, disableIcmpForwarding) || other.disableIcmpForwarding == disableIcmpForwarding)&&(identical(other.mtu, mtu) || other.mtu == mtu)&&(identical(other.endpointIndependentNat, endpointIndependentNat) || other.endpointIndependentNat == endpointIndependentNat)&&(identical(other.autoRedirect, autoRedirect) || other.autoRedirect == autoRedirect));
+  final _this = this as Tun;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Tun&&(identical(other.enable, _this.enable) || other.enable == _this.enable)&&(identical(other.device, _this.device) || other.device == _this.device)&&(identical(other.autoRoute, _this.autoRoute) || other.autoRoute == _this.autoRoute)&&(identical(other.stack, _this.stack) || other.stack == _this.stack)&&const DeepCollectionEquality().equals(other.dnsHijack, _this.dnsHijack)&&const DeepCollectionEquality().equals(other.routeAddress, _this.routeAddress)&&const DeepCollectionEquality().equals(other.routeExcludeAddress, _this.routeExcludeAddress)&&(identical(other.strictRoute, _this.strictRoute) || other.strictRoute == _this.strictRoute)&&(identical(other.disableIcmpForwarding, _this.disableIcmpForwarding) || other.disableIcmpForwarding == _this.disableIcmpForwarding)&&(identical(other.mtu, _this.mtu) || other.mtu == _this.mtu)&&(identical(other.endpointIndependentNat, _this.endpointIndependentNat) || other.endpointIndependentNat == _this.endpointIndependentNat)&&(identical(other.autoRedirect, _this.autoRedirect) || other.autoRedirect == _this.autoRedirect));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,enable,device,autoRoute,stack,const DeepCollectionEquality().hash(dnsHijack),const DeepCollectionEquality().hash(routeAddress),const DeepCollectionEquality().hash(routeExcludeAddress),strictRoute,disableIcmpForwarding,mtu,endpointIndependentNat,autoRedirect);
+int get hashCode {
+  final _this = this as Tun;
+  return Object.hash(runtimeType,_this.enable,_this.device,_this.autoRoute,_this.stack,const DeepCollectionEquality().hash(_this.dnsHijack),const DeepCollectionEquality().hash(_this.routeAddress),const DeepCollectionEquality().hash(_this.routeExcludeAddress),_this.strictRoute,_this.disableIcmpForwarding,_this.mtu,_this.endpointIndependentNat,_this.autoRedirect);
+}
 
 @override
 String toString() {
-  return 'Tun(enable: $enable, device: $device, autoRoute: $autoRoute, stack: $stack, dnsHijack: $dnsHijack, routeAddress: $routeAddress, routeExcludeAddress: $routeExcludeAddress, strictRoute: $strictRoute, disableIcmpForwarding: $disableIcmpForwarding, mtu: $mtu, endpointIndependentNat: $endpointIndependentNat, autoRedirect: $autoRedirect)';
+  final _this = this as Tun;
+  return 'Tun(enable: ${_this.enable}, device: ${_this.device}, autoRoute: ${_this.autoRoute}, stack: ${_this.stack}, dnsHijack: ${_this.dnsHijack}, routeAddress: ${_this.routeAddress}, routeExcludeAddress: ${_this.routeExcludeAddress}, strictRoute: ${_this.strictRoute}, disableIcmpForwarding: ${_this.disableIcmpForwarding}, mtu: ${_this.mtu}, endpointIndependentNat: ${_this.endpointIndependentNat}, autoRedirect: ${_this.autoRedirect})';
 }
 
 
@@ -1543,7 +1584,7 @@ class _$TunCopyWithImpl<$Res>
 /// Create a copy of Tun
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? enable = null,Object? device = null,Object? autoRoute = null,Object? stack = null,Object? dnsHijack = null,Object? routeAddress = null,Object? routeExcludeAddress = null,Object? strictRoute = null,Object? disableIcmpForwarding = null,Object? mtu = null,Object? endpointIndependentNat = null,Object? autoRedirect = null,}) {
-  return _then(_self.copyWith(
+  return _then(Tun(
 enable: null == enable ? _self.enable : enable // ignore: cast_nullable_to_non_nullable
 as bool,device: null == device ? _self.device : device // ignore: cast_nullable_to_non_nullable
 as String,autoRoute: null == autoRoute ? _self.autoRoute : autoRoute // ignore: cast_nullable_to_non_nullable
@@ -1697,7 +1738,7 @@ return $default(_that.enable,_that.device,_that.autoRoute,_that.stack,_that.dnsH
 @JsonSerializable()
 
 class _Tun implements Tun {
-  const _Tun({this.enable = false, this.device = tunDeviceName, @JsonKey(name: 'auto-route') this.autoRoute = false, this.stack = TunStack.mixed, @JsonKey(name: 'dns-hijack') final  List<String> dnsHijack = const ['any:53'], @JsonKey(name: 'route-address') final  List<String> routeAddress = const [], @JsonKey(name: 'route-exclude-address') final  List<String> routeExcludeAddress = const [], @JsonKey(name: 'strict-route') this.strictRoute = false, @JsonKey(name: 'disable-icmp-forwarding') this.disableIcmpForwarding = true, this.mtu = 9000, @JsonKey(name: 'endpoint-independent-nat') this.endpointIndependentNat = false, @JsonKey(name: 'auto-redirect') this.autoRedirect = false}): _dnsHijack = dnsHijack,_routeAddress = routeAddress,_routeExcludeAddress = routeExcludeAddress;
+  const _Tun({this.enable = false, this.device = tunDeviceName, @JsonKey(name: 'auto-route') this.autoRoute = false, this.stack = TunStack.mixed, @JsonKey(name: 'dns-hijack')  List<String> dnsHijack = const ['any:53'], @JsonKey(name: 'route-address')  List<String> routeAddress = const [], @JsonKey(name: 'route-exclude-address')  List<String> routeExcludeAddress = const [], @JsonKey(name: 'strict-route') this.strictRoute = false, @JsonKey(name: 'disable-icmp-forwarding') this.disableIcmpForwarding = true, this.mtu = 9000, @JsonKey(name: 'endpoint-independent-nat') this.endpointIndependentNat = false, @JsonKey(name: 'auto-redirect') this.autoRedirect = false}): _dnsHijack = dnsHijack,_routeAddress = routeAddress,_routeExcludeAddress = routeExcludeAddress;
   factory _Tun.fromJson(Map<String, dynamic> json) => _$TunFromJson(json);
 
 @override@JsonKey() final  bool enable;
@@ -1744,16 +1785,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Tun&&(identical(other.enable, enable) || other.enable == enable)&&(identical(other.device, device) || other.device == device)&&(identical(other.autoRoute, autoRoute) || other.autoRoute == autoRoute)&&(identical(other.stack, stack) || other.stack == stack)&&const DeepCollectionEquality().equals(other._dnsHijack, _dnsHijack)&&const DeepCollectionEquality().equals(other._routeAddress, _routeAddress)&&const DeepCollectionEquality().equals(other._routeExcludeAddress, _routeExcludeAddress)&&(identical(other.strictRoute, strictRoute) || other.strictRoute == strictRoute)&&(identical(other.disableIcmpForwarding, disableIcmpForwarding) || other.disableIcmpForwarding == disableIcmpForwarding)&&(identical(other.mtu, mtu) || other.mtu == mtu)&&(identical(other.endpointIndependentNat, endpointIndependentNat) || other.endpointIndependentNat == endpointIndependentNat)&&(identical(other.autoRedirect, autoRedirect) || other.autoRedirect == autoRedirect));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Tun&&(identical(other.enable, enable) || other.enable == enable)&&(identical(other.device, device) || other.device == device)&&(identical(other.autoRoute, autoRoute) || other.autoRoute == autoRoute)&&(identical(other.stack, stack) || other.stack == stack)&&const DeepCollectionEquality().equals(other.dnsHijack, _dnsHijack)&&const DeepCollectionEquality().equals(other.routeAddress, _routeAddress)&&const DeepCollectionEquality().equals(other.routeExcludeAddress, _routeExcludeAddress)&&(identical(other.strictRoute, strictRoute) || other.strictRoute == strictRoute)&&(identical(other.disableIcmpForwarding, disableIcmpForwarding) || other.disableIcmpForwarding == disableIcmpForwarding)&&(identical(other.mtu, mtu) || other.mtu == mtu)&&(identical(other.endpointIndependentNat, endpointIndependentNat) || other.endpointIndependentNat == endpointIndependentNat)&&(identical(other.autoRedirect, autoRedirect) || other.autoRedirect == autoRedirect));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,enable,device,autoRoute,stack,const DeepCollectionEquality().hash(_dnsHijack),const DeepCollectionEquality().hash(_routeAddress),const DeepCollectionEquality().hash(_routeExcludeAddress),strictRoute,disableIcmpForwarding,mtu,endpointIndependentNat,autoRedirect);
+int get hashCode {
+    return Object.hash(runtimeType,enable,device,autoRoute,stack,const DeepCollectionEquality().hash(_dnsHijack),const DeepCollectionEquality().hash(_routeAddress),const DeepCollectionEquality().hash(_routeExcludeAddress),strictRoute,disableIcmpForwarding,mtu,endpointIndependentNat,autoRedirect);
+}
 
 @override
 String toString() {
-  return 'Tun(enable: $enable, device: $device, autoRoute: $autoRoute, stack: $stack, dnsHijack: $dnsHijack, routeAddress: $routeAddress, routeExcludeAddress: $routeExcludeAddress, strictRoute: $strictRoute, disableIcmpForwarding: $disableIcmpForwarding, mtu: $mtu, endpointIndependentNat: $endpointIndependentNat, autoRedirect: $autoRedirect)';
+    return 'Tun(enable: $enable, device: $device, autoRoute: $autoRoute, stack: $stack, dnsHijack: $dnsHijack, routeAddress: $routeAddress, routeExcludeAddress: $routeExcludeAddress, strictRoute: $strictRoute, disableIcmpForwarding: $disableIcmpForwarding, mtu: $mtu, endpointIndependentNat: $endpointIndependentNat, autoRedirect: $autoRedirect)';
 }
 
 
@@ -1819,16 +1862,21 @@ $FallbackFilterCopyWith<FallbackFilter> get copyWith => _$FallbackFilterCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is FallbackFilter&&(identical(other.geoip, geoip) || other.geoip == geoip)&&(identical(other.geoipCode, geoipCode) || other.geoipCode == geoipCode)&&const DeepCollectionEquality().equals(other.ipcidr, ipcidr)&&const DeepCollectionEquality().equals(other.domain, domain));
+  final _this = this as FallbackFilter;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is FallbackFilter&&(identical(other.geoip, _this.geoip) || other.geoip == _this.geoip)&&(identical(other.geoipCode, _this.geoipCode) || other.geoipCode == _this.geoipCode)&&const DeepCollectionEquality().equals(other.ipcidr, _this.ipcidr)&&const DeepCollectionEquality().equals(other.domain, _this.domain));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,geoip,geoipCode,const DeepCollectionEquality().hash(ipcidr),const DeepCollectionEquality().hash(domain));
+int get hashCode {
+  final _this = this as FallbackFilter;
+  return Object.hash(runtimeType,_this.geoip,_this.geoipCode,const DeepCollectionEquality().hash(_this.ipcidr),const DeepCollectionEquality().hash(_this.domain));
+}
 
 @override
 String toString() {
-  return 'FallbackFilter(geoip: $geoip, geoipCode: $geoipCode, ipcidr: $ipcidr, domain: $domain)';
+  final _this = this as FallbackFilter;
+  return 'FallbackFilter(geoip: ${_this.geoip}, geoipCode: ${_this.geoipCode}, ipcidr: ${_this.ipcidr}, domain: ${_this.domain})';
 }
 
 
@@ -1857,7 +1905,7 @@ class _$FallbackFilterCopyWithImpl<$Res>
 /// Create a copy of FallbackFilter
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? geoip = null,Object? geoipCode = null,Object? ipcidr = null,Object? domain = null,}) {
-  return _then(_self.copyWith(
+  return _then(FallbackFilter(
 geoip: null == geoip ? _self.geoip : geoip // ignore: cast_nullable_to_non_nullable
 as bool,geoipCode: null == geoipCode ? _self.geoipCode : geoipCode // ignore: cast_nullable_to_non_nullable
 as String,ipcidr: null == ipcidr ? _self.ipcidr : ipcidr // ignore: cast_nullable_to_non_nullable
@@ -2003,7 +2051,7 @@ return $default(_that.geoip,_that.geoipCode,_that.ipcidr,_that.domain);case _:
 @JsonSerializable()
 
 class _FallbackFilter implements FallbackFilter {
-  const _FallbackFilter({this.geoip = false, @JsonKey(name: 'geoip-code') this.geoipCode = 'CN', final  List<String> ipcidr = const [], final  List<String> domain = const []}): _ipcidr = ipcidr,_domain = domain;
+  const _FallbackFilter({this.geoip = false, @JsonKey(name: 'geoip-code') this.geoipCode = 'CN',  List<String> ipcidr = const [],  List<String> domain = const []}): _ipcidr = ipcidr,_domain = domain;
   factory _FallbackFilter.fromJson(Map<String, dynamic> json) => _$FallbackFilterFromJson(json);
 
 @override@JsonKey() final  bool geoip;
@@ -2036,16 +2084,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _FallbackFilter&&(identical(other.geoip, geoip) || other.geoip == geoip)&&(identical(other.geoipCode, geoipCode) || other.geoipCode == geoipCode)&&const DeepCollectionEquality().equals(other._ipcidr, _ipcidr)&&const DeepCollectionEquality().equals(other._domain, _domain));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _FallbackFilter&&(identical(other.geoip, geoip) || other.geoip == geoip)&&(identical(other.geoipCode, geoipCode) || other.geoipCode == geoipCode)&&const DeepCollectionEquality().equals(other.ipcidr, _ipcidr)&&const DeepCollectionEquality().equals(other.domain, _domain));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,geoip,geoipCode,const DeepCollectionEquality().hash(_ipcidr),const DeepCollectionEquality().hash(_domain));
+int get hashCode {
+    return Object.hash(runtimeType,geoip,geoipCode,const DeepCollectionEquality().hash(_ipcidr),const DeepCollectionEquality().hash(_domain));
+}
 
 @override
 String toString() {
-  return 'FallbackFilter(geoip: $geoip, geoipCode: $geoipCode, ipcidr: $ipcidr, domain: $domain)';
+    return 'FallbackFilter(geoip: $geoip, geoipCode: $geoipCode, ipcidr: $ipcidr, domain: $domain)';
 }
 
 
@@ -2103,16 +2153,21 @@ $DnsCopyWith<Dns> get copyWith => _$DnsCopyWithImpl<Dns>(this as Dns, _$identity
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Dns&&(identical(other.enable, enable) || other.enable == enable)&&(identical(other.listen, listen) || other.listen == listen)&&(identical(other.preferH3, preferH3) || other.preferH3 == preferH3)&&(identical(other.cacheAlgorithm, cacheAlgorithm) || other.cacheAlgorithm == cacheAlgorithm)&&(identical(other.useHosts, useHosts) || other.useHosts == useHosts)&&(identical(other.useSystemHosts, useSystemHosts) || other.useSystemHosts == useSystemHosts)&&(identical(other.respectRules, respectRules) || other.respectRules == respectRules)&&(identical(other.ipv6, ipv6) || other.ipv6 == ipv6)&&const DeepCollectionEquality().equals(other.defaultNameserver, defaultNameserver)&&(identical(other.enhancedMode, enhancedMode) || other.enhancedMode == enhancedMode)&&(identical(other.fakeIpRange, fakeIpRange) || other.fakeIpRange == fakeIpRange)&&(identical(other.fakeIpRangeV6, fakeIpRangeV6) || other.fakeIpRangeV6 == fakeIpRangeV6)&&(identical(other.fakeIpFilterMode, fakeIpFilterMode) || other.fakeIpFilterMode == fakeIpFilterMode)&&const DeepCollectionEquality().equals(other.fakeIpFilter, fakeIpFilter)&&(identical(other.fakeIpTtl, fakeIpTtl) || other.fakeIpTtl == fakeIpTtl)&&const DeepCollectionEquality().equals(other.nameserverPolicy, nameserverPolicy)&&const DeepCollectionEquality().equals(other.nameserver, nameserver)&&const DeepCollectionEquality().equals(other.fallback, fallback)&&const DeepCollectionEquality().equals(other.proxyServerNameserver, proxyServerNameserver)&&const DeepCollectionEquality().equals(other.directNameserver, directNameserver)&&(identical(other.directNameserverFollowPolicy, directNameserverFollowPolicy) || other.directNameserverFollowPolicy == directNameserverFollowPolicy)&&(identical(other.fallbackFilter, fallbackFilter) || other.fallbackFilter == fallbackFilter)&&(identical(other.fallbackLazyQuery, fallbackLazyQuery) || other.fallbackLazyQuery == fallbackLazyQuery));
+  final _this = this as Dns;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Dns&&(identical(other.enable, _this.enable) || other.enable == _this.enable)&&(identical(other.listen, _this.listen) || other.listen == _this.listen)&&(identical(other.preferH3, _this.preferH3) || other.preferH3 == _this.preferH3)&&(identical(other.cacheAlgorithm, _this.cacheAlgorithm) || other.cacheAlgorithm == _this.cacheAlgorithm)&&(identical(other.useHosts, _this.useHosts) || other.useHosts == _this.useHosts)&&(identical(other.useSystemHosts, _this.useSystemHosts) || other.useSystemHosts == _this.useSystemHosts)&&(identical(other.respectRules, _this.respectRules) || other.respectRules == _this.respectRules)&&(identical(other.ipv6, _this.ipv6) || other.ipv6 == _this.ipv6)&&const DeepCollectionEquality().equals(other.defaultNameserver, _this.defaultNameserver)&&(identical(other.enhancedMode, _this.enhancedMode) || other.enhancedMode == _this.enhancedMode)&&(identical(other.fakeIpRange, _this.fakeIpRange) || other.fakeIpRange == _this.fakeIpRange)&&(identical(other.fakeIpRangeV6, _this.fakeIpRangeV6) || other.fakeIpRangeV6 == _this.fakeIpRangeV6)&&(identical(other.fakeIpFilterMode, _this.fakeIpFilterMode) || other.fakeIpFilterMode == _this.fakeIpFilterMode)&&const DeepCollectionEquality().equals(other.fakeIpFilter, _this.fakeIpFilter)&&(identical(other.fakeIpTtl, _this.fakeIpTtl) || other.fakeIpTtl == _this.fakeIpTtl)&&const DeepCollectionEquality().equals(other.nameserverPolicy, _this.nameserverPolicy)&&const DeepCollectionEquality().equals(other.nameserver, _this.nameserver)&&const DeepCollectionEquality().equals(other.fallback, _this.fallback)&&const DeepCollectionEquality().equals(other.proxyServerNameserver, _this.proxyServerNameserver)&&const DeepCollectionEquality().equals(other.directNameserver, _this.directNameserver)&&(identical(other.directNameserverFollowPolicy, _this.directNameserverFollowPolicy) || other.directNameserverFollowPolicy == _this.directNameserverFollowPolicy)&&(identical(other.fallbackFilter, _this.fallbackFilter) || other.fallbackFilter == _this.fallbackFilter)&&(identical(other.fallbackLazyQuery, _this.fallbackLazyQuery) || other.fallbackLazyQuery == _this.fallbackLazyQuery));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hashAll([runtimeType,enable,listen,preferH3,cacheAlgorithm,useHosts,useSystemHosts,respectRules,ipv6,const DeepCollectionEquality().hash(defaultNameserver),enhancedMode,fakeIpRange,fakeIpRangeV6,fakeIpFilterMode,const DeepCollectionEquality().hash(fakeIpFilter),fakeIpTtl,const DeepCollectionEquality().hash(nameserverPolicy),const DeepCollectionEquality().hash(nameserver),const DeepCollectionEquality().hash(fallback),const DeepCollectionEquality().hash(proxyServerNameserver),const DeepCollectionEquality().hash(directNameserver),directNameserverFollowPolicy,fallbackFilter,fallbackLazyQuery]);
+int get hashCode {
+  final _this = this as Dns;
+  return Object.hashAll([runtimeType,_this.enable,_this.listen,_this.preferH3,_this.cacheAlgorithm,_this.useHosts,_this.useSystemHosts,_this.respectRules,_this.ipv6,const DeepCollectionEquality().hash(_this.defaultNameserver),_this.enhancedMode,_this.fakeIpRange,_this.fakeIpRangeV6,_this.fakeIpFilterMode,const DeepCollectionEquality().hash(_this.fakeIpFilter),_this.fakeIpTtl,const DeepCollectionEquality().hash(_this.nameserverPolicy),const DeepCollectionEquality().hash(_this.nameserver),const DeepCollectionEquality().hash(_this.fallback),const DeepCollectionEquality().hash(_this.proxyServerNameserver),const DeepCollectionEquality().hash(_this.directNameserver),_this.directNameserverFollowPolicy,_this.fallbackFilter,_this.fallbackLazyQuery]);
+}
 
 @override
 String toString() {
-  return 'Dns(enable: $enable, listen: $listen, preferH3: $preferH3, cacheAlgorithm: $cacheAlgorithm, useHosts: $useHosts, useSystemHosts: $useSystemHosts, respectRules: $respectRules, ipv6: $ipv6, defaultNameserver: $defaultNameserver, enhancedMode: $enhancedMode, fakeIpRange: $fakeIpRange, fakeIpRangeV6: $fakeIpRangeV6, fakeIpFilterMode: $fakeIpFilterMode, fakeIpFilter: $fakeIpFilter, fakeIpTtl: $fakeIpTtl, nameserverPolicy: $nameserverPolicy, nameserver: $nameserver, fallback: $fallback, proxyServerNameserver: $proxyServerNameserver, directNameserver: $directNameserver, directNameserverFollowPolicy: $directNameserverFollowPolicy, fallbackFilter: $fallbackFilter, fallbackLazyQuery: $fallbackLazyQuery)';
+  final _this = this as Dns;
+  return 'Dns(enable: ${_this.enable}, listen: ${_this.listen}, preferH3: ${_this.preferH3}, cacheAlgorithm: ${_this.cacheAlgorithm}, useHosts: ${_this.useHosts}, useSystemHosts: ${_this.useSystemHosts}, respectRules: ${_this.respectRules}, ipv6: ${_this.ipv6}, defaultNameserver: ${_this.defaultNameserver}, enhancedMode: ${_this.enhancedMode}, fakeIpRange: ${_this.fakeIpRange}, fakeIpRangeV6: ${_this.fakeIpRangeV6}, fakeIpFilterMode: ${_this.fakeIpFilterMode}, fakeIpFilter: ${_this.fakeIpFilter}, fakeIpTtl: ${_this.fakeIpTtl}, nameserverPolicy: ${_this.nameserverPolicy}, nameserver: ${_this.nameserver}, fallback: ${_this.fallback}, proxyServerNameserver: ${_this.proxyServerNameserver}, directNameserver: ${_this.directNameserver}, directNameserverFollowPolicy: ${_this.directNameserverFollowPolicy}, fallbackFilter: ${_this.fallbackFilter}, fallbackLazyQuery: ${_this.fallbackLazyQuery})';
 }
 
 
@@ -2141,7 +2196,7 @@ class _$DnsCopyWithImpl<$Res>
 /// Create a copy of Dns
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? enable = null,Object? listen = null,Object? preferH3 = null,Object? cacheAlgorithm = null,Object? useHosts = null,Object? useSystemHosts = null,Object? respectRules = null,Object? ipv6 = null,Object? defaultNameserver = null,Object? enhancedMode = null,Object? fakeIpRange = null,Object? fakeIpRangeV6 = null,Object? fakeIpFilterMode = null,Object? fakeIpFilter = null,Object? fakeIpTtl = null,Object? nameserverPolicy = null,Object? nameserver = null,Object? fallback = null,Object? proxyServerNameserver = null,Object? directNameserver = null,Object? directNameserverFollowPolicy = null,Object? fallbackFilter = null,Object? fallbackLazyQuery = null,}) {
-  return _then(_self.copyWith(
+  return _then(Dns(
 enable: null == enable ? _self.enable : enable // ignore: cast_nullable_to_non_nullable
 as bool,listen: null == listen ? _self.listen : listen // ignore: cast_nullable_to_non_nullable
 as String,preferH3: null == preferH3 ? _self.preferH3 : preferH3 // ignore: cast_nullable_to_non_nullable
@@ -2315,7 +2370,7 @@ return $default(_that.enable,_that.listen,_that.preferH3,_that.cacheAlgorithm,_t
 @JsonSerializable()
 
 class _Dns implements Dns {
-  const _Dns({this.enable = true, this.listen = '0.0.0.0:10053', @JsonKey(name: 'prefer-h3') this.preferH3 = false, @JsonKey(name: 'cache-algorithm') this.cacheAlgorithm = CacheAlgorithm.arc, @JsonKey(name: 'use-hosts') this.useHosts = true, @JsonKey(name: 'use-system-hosts') this.useSystemHosts = true, @JsonKey(name: 'respect-rules') this.respectRules = false, this.ipv6 = false, @JsonKey(name: 'default-nameserver') final  List<String> defaultNameserver = const ['114.114.114.114'], @JsonKey(name: 'enhanced-mode') this.enhancedMode = DnsMode.fakeIp, @JsonKey(name: 'fake-ip-range') this.fakeIpRange = '198.18.0.1/15', @JsonKey(name: 'fake-ip-range6') this.fakeIpRangeV6 = '', @JsonKey(name: 'fake-ip-filter-mode') this.fakeIpFilterMode = FilterMode.blacklist, @JsonKey(name: 'fake-ip-filter') final  List<String> fakeIpFilter = const ['*', 'geosite:private', 'geosite:category-ntp', 'geosite:geolocation-cn', 'geosite:connectivity-check'], @JsonKey(name: 'fake-ip-ttl') this.fakeIpTtl = 1, @JsonKey(name: 'nameserver-policy') final  Map<String, String> nameserverPolicy = const {'+.internal.corp.com' : '10.0.0.1', 'geosite:cn' : '119.29.29.29', 'geosite:private' : 'system', '*' : 'system'}, final  List<String> nameserver = const ['1.1.1.1'], final  List<String> fallback = const [], @JsonKey(name: 'proxy-server-nameserver') final  List<String> proxyServerNameserver = const ['https://120.53.53.53/dns-query#DIRECT'], @JsonKey(name: 'direct-nameserver') final  List<String> directNameserver = const [], @JsonKey(name: 'direct-nameserver-follow-policy') this.directNameserverFollowPolicy = false, @JsonKey(name: 'fallback-filter') this.fallbackFilter = const FallbackFilter(), @JsonKey(name: 'fallback-lazy-query') this.fallbackLazyQuery = false}): _defaultNameserver = defaultNameserver,_fakeIpFilter = fakeIpFilter,_nameserverPolicy = nameserverPolicy,_nameserver = nameserver,_fallback = fallback,_proxyServerNameserver = proxyServerNameserver,_directNameserver = directNameserver;
+  const _Dns({this.enable = true, this.listen = '0.0.0.0:10053', @JsonKey(name: 'prefer-h3') this.preferH3 = false, @JsonKey(name: 'cache-algorithm') this.cacheAlgorithm = CacheAlgorithm.arc, @JsonKey(name: 'use-hosts') this.useHosts = true, @JsonKey(name: 'use-system-hosts') this.useSystemHosts = true, @JsonKey(name: 'respect-rules') this.respectRules = false, this.ipv6 = false, @JsonKey(name: 'default-nameserver')  List<String> defaultNameserver = const ['114.114.114.114'], @JsonKey(name: 'enhanced-mode') this.enhancedMode = DnsMode.fakeIp, @JsonKey(name: 'fake-ip-range') this.fakeIpRange = '198.18.0.1/15', @JsonKey(name: 'fake-ip-range6') this.fakeIpRangeV6 = '', @JsonKey(name: 'fake-ip-filter-mode') this.fakeIpFilterMode = FilterMode.blacklist, @JsonKey(name: 'fake-ip-filter')  List<String> fakeIpFilter = const ['*', 'geosite:private', 'geosite:category-ntp', 'geosite:geolocation-cn', 'geosite:connectivity-check'], @JsonKey(name: 'fake-ip-ttl') this.fakeIpTtl = 1, @JsonKey(name: 'nameserver-policy')  Map<String, String> nameserverPolicy = const {'+.internal.corp.com' : '10.0.0.1', 'geosite:cn' : '119.29.29.29', 'geosite:private' : 'system', '*' : 'system'},  List<String> nameserver = const ['1.1.1.1'],  List<String> fallback = const [], @JsonKey(name: 'proxy-server-nameserver')  List<String> proxyServerNameserver = const ['https://120.53.53.53/dns-query#DIRECT'], @JsonKey(name: 'direct-nameserver')  List<String> directNameserver = const [], @JsonKey(name: 'direct-nameserver-follow-policy') this.directNameserverFollowPolicy = false, @JsonKey(name: 'fallback-filter') this.fallbackFilter = const FallbackFilter(), @JsonKey(name: 'fallback-lazy-query') this.fallbackLazyQuery = false}): _defaultNameserver = defaultNameserver,_fakeIpFilter = fakeIpFilter,_nameserverPolicy = nameserverPolicy,_nameserver = nameserver,_fallback = fallback,_proxyServerNameserver = proxyServerNameserver,_directNameserver = directNameserver;
   factory _Dns.fromJson(Map<String, dynamic> json) => _$DnsFromJson(json);
 
 @override@JsonKey() final  bool enable;
@@ -2397,16 +2452,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Dns&&(identical(other.enable, enable) || other.enable == enable)&&(identical(other.listen, listen) || other.listen == listen)&&(identical(other.preferH3, preferH3) || other.preferH3 == preferH3)&&(identical(other.cacheAlgorithm, cacheAlgorithm) || other.cacheAlgorithm == cacheAlgorithm)&&(identical(other.useHosts, useHosts) || other.useHosts == useHosts)&&(identical(other.useSystemHosts, useSystemHosts) || other.useSystemHosts == useSystemHosts)&&(identical(other.respectRules, respectRules) || other.respectRules == respectRules)&&(identical(other.ipv6, ipv6) || other.ipv6 == ipv6)&&const DeepCollectionEquality().equals(other._defaultNameserver, _defaultNameserver)&&(identical(other.enhancedMode, enhancedMode) || other.enhancedMode == enhancedMode)&&(identical(other.fakeIpRange, fakeIpRange) || other.fakeIpRange == fakeIpRange)&&(identical(other.fakeIpRangeV6, fakeIpRangeV6) || other.fakeIpRangeV6 == fakeIpRangeV6)&&(identical(other.fakeIpFilterMode, fakeIpFilterMode) || other.fakeIpFilterMode == fakeIpFilterMode)&&const DeepCollectionEquality().equals(other._fakeIpFilter, _fakeIpFilter)&&(identical(other.fakeIpTtl, fakeIpTtl) || other.fakeIpTtl == fakeIpTtl)&&const DeepCollectionEquality().equals(other._nameserverPolicy, _nameserverPolicy)&&const DeepCollectionEquality().equals(other._nameserver, _nameserver)&&const DeepCollectionEquality().equals(other._fallback, _fallback)&&const DeepCollectionEquality().equals(other._proxyServerNameserver, _proxyServerNameserver)&&const DeepCollectionEquality().equals(other._directNameserver, _directNameserver)&&(identical(other.directNameserverFollowPolicy, directNameserverFollowPolicy) || other.directNameserverFollowPolicy == directNameserverFollowPolicy)&&(identical(other.fallbackFilter, fallbackFilter) || other.fallbackFilter == fallbackFilter)&&(identical(other.fallbackLazyQuery, fallbackLazyQuery) || other.fallbackLazyQuery == fallbackLazyQuery));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Dns&&(identical(other.enable, enable) || other.enable == enable)&&(identical(other.listen, listen) || other.listen == listen)&&(identical(other.preferH3, preferH3) || other.preferH3 == preferH3)&&(identical(other.cacheAlgorithm, cacheAlgorithm) || other.cacheAlgorithm == cacheAlgorithm)&&(identical(other.useHosts, useHosts) || other.useHosts == useHosts)&&(identical(other.useSystemHosts, useSystemHosts) || other.useSystemHosts == useSystemHosts)&&(identical(other.respectRules, respectRules) || other.respectRules == respectRules)&&(identical(other.ipv6, ipv6) || other.ipv6 == ipv6)&&const DeepCollectionEquality().equals(other.defaultNameserver, _defaultNameserver)&&(identical(other.enhancedMode, enhancedMode) || other.enhancedMode == enhancedMode)&&(identical(other.fakeIpRange, fakeIpRange) || other.fakeIpRange == fakeIpRange)&&(identical(other.fakeIpRangeV6, fakeIpRangeV6) || other.fakeIpRangeV6 == fakeIpRangeV6)&&(identical(other.fakeIpFilterMode, fakeIpFilterMode) || other.fakeIpFilterMode == fakeIpFilterMode)&&const DeepCollectionEquality().equals(other.fakeIpFilter, _fakeIpFilter)&&(identical(other.fakeIpTtl, fakeIpTtl) || other.fakeIpTtl == fakeIpTtl)&&const DeepCollectionEquality().equals(other.nameserverPolicy, _nameserverPolicy)&&const DeepCollectionEquality().equals(other.nameserver, _nameserver)&&const DeepCollectionEquality().equals(other.fallback, _fallback)&&const DeepCollectionEquality().equals(other.proxyServerNameserver, _proxyServerNameserver)&&const DeepCollectionEquality().equals(other.directNameserver, _directNameserver)&&(identical(other.directNameserverFollowPolicy, directNameserverFollowPolicy) || other.directNameserverFollowPolicy == directNameserverFollowPolicy)&&(identical(other.fallbackFilter, fallbackFilter) || other.fallbackFilter == fallbackFilter)&&(identical(other.fallbackLazyQuery, fallbackLazyQuery) || other.fallbackLazyQuery == fallbackLazyQuery));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hashAll([runtimeType,enable,listen,preferH3,cacheAlgorithm,useHosts,useSystemHosts,respectRules,ipv6,const DeepCollectionEquality().hash(_defaultNameserver),enhancedMode,fakeIpRange,fakeIpRangeV6,fakeIpFilterMode,const DeepCollectionEquality().hash(_fakeIpFilter),fakeIpTtl,const DeepCollectionEquality().hash(_nameserverPolicy),const DeepCollectionEquality().hash(_nameserver),const DeepCollectionEquality().hash(_fallback),const DeepCollectionEquality().hash(_proxyServerNameserver),const DeepCollectionEquality().hash(_directNameserver),directNameserverFollowPolicy,fallbackFilter,fallbackLazyQuery]);
+int get hashCode {
+    return Object.hashAll([runtimeType,enable,listen,preferH3,cacheAlgorithm,useHosts,useSystemHosts,respectRules,ipv6,const DeepCollectionEquality().hash(_defaultNameserver),enhancedMode,fakeIpRange,fakeIpRangeV6,fakeIpFilterMode,const DeepCollectionEquality().hash(_fakeIpFilter),fakeIpTtl,const DeepCollectionEquality().hash(_nameserverPolicy),const DeepCollectionEquality().hash(_nameserver),const DeepCollectionEquality().hash(_fallback),const DeepCollectionEquality().hash(_proxyServerNameserver),const DeepCollectionEquality().hash(_directNameserver),directNameserverFollowPolicy,fallbackFilter,fallbackLazyQuery]);
+}
 
 @override
 String toString() {
-  return 'Dns(enable: $enable, listen: $listen, preferH3: $preferH3, cacheAlgorithm: $cacheAlgorithm, useHosts: $useHosts, useSystemHosts: $useSystemHosts, respectRules: $respectRules, ipv6: $ipv6, defaultNameserver: $defaultNameserver, enhancedMode: $enhancedMode, fakeIpRange: $fakeIpRange, fakeIpRangeV6: $fakeIpRangeV6, fakeIpFilterMode: $fakeIpFilterMode, fakeIpFilter: $fakeIpFilter, fakeIpTtl: $fakeIpTtl, nameserverPolicy: $nameserverPolicy, nameserver: $nameserver, fallback: $fallback, proxyServerNameserver: $proxyServerNameserver, directNameserver: $directNameserver, directNameserverFollowPolicy: $directNameserverFollowPolicy, fallbackFilter: $fallbackFilter, fallbackLazyQuery: $fallbackLazyQuery)';
+    return 'Dns(enable: $enable, listen: $listen, preferH3: $preferH3, cacheAlgorithm: $cacheAlgorithm, useHosts: $useHosts, useSystemHosts: $useSystemHosts, respectRules: $respectRules, ipv6: $ipv6, defaultNameserver: $defaultNameserver, enhancedMode: $enhancedMode, fakeIpRange: $fakeIpRange, fakeIpRangeV6: $fakeIpRangeV6, fakeIpFilterMode: $fakeIpFilterMode, fakeIpFilter: $fakeIpFilter, fakeIpTtl: $fakeIpTtl, nameserverPolicy: $nameserverPolicy, nameserver: $nameserver, fallback: $fallback, proxyServerNameserver: $proxyServerNameserver, directNameserver: $directNameserver, directNameserverFollowPolicy: $directNameserverFollowPolicy, fallbackFilter: $fallbackFilter, fallbackLazyQuery: $fallbackLazyQuery)';
 }
 
 
@@ -2492,16 +2549,21 @@ $NtpCopyWith<Ntp> get copyWith => _$NtpCopyWithImpl<Ntp>(this as Ntp, _$identity
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Ntp&&(identical(other.enable, enable) || other.enable == enable)&&(identical(other.writeToSystem, writeToSystem) || other.writeToSystem == writeToSystem)&&(identical(other.server, server) || other.server == server)&&(identical(other.port, port) || other.port == port)&&(identical(other.interval, interval) || other.interval == interval));
+  final _this = this as Ntp;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Ntp&&(identical(other.enable, _this.enable) || other.enable == _this.enable)&&(identical(other.writeToSystem, _this.writeToSystem) || other.writeToSystem == _this.writeToSystem)&&(identical(other.server, _this.server) || other.server == _this.server)&&(identical(other.port, _this.port) || other.port == _this.port)&&(identical(other.interval, _this.interval) || other.interval == _this.interval));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,enable,writeToSystem,server,port,interval);
+int get hashCode {
+  final _this = this as Ntp;
+  return Object.hash(runtimeType,_this.enable,_this.writeToSystem,_this.server,_this.port,_this.interval);
+}
 
 @override
 String toString() {
-  return 'Ntp(enable: $enable, writeToSystem: $writeToSystem, server: $server, port: $port, interval: $interval)';
+  final _this = this as Ntp;
+  return 'Ntp(enable: ${_this.enable}, writeToSystem: ${_this.writeToSystem}, server: ${_this.server}, port: ${_this.port}, interval: ${_this.interval})';
 }
 
 
@@ -2530,7 +2592,7 @@ class _$NtpCopyWithImpl<$Res>
 /// Create a copy of Ntp
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? enable = null,Object? writeToSystem = null,Object? server = null,Object? port = null,Object? interval = null,}) {
-  return _then(_self.copyWith(
+  return _then(Ntp(
 enable: null == enable ? _self.enable : enable // ignore: cast_nullable_to_non_nullable
 as bool,writeToSystem: null == writeToSystem ? _self.writeToSystem : writeToSystem // ignore: cast_nullable_to_non_nullable
 as bool,server: null == server ? _self.server : server // ignore: cast_nullable_to_non_nullable
@@ -2699,16 +2761,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Ntp&&(identical(other.enable, enable) || other.enable == enable)&&(identical(other.writeToSystem, writeToSystem) || other.writeToSystem == writeToSystem)&&(identical(other.server, server) || other.server == server)&&(identical(other.port, port) || other.port == port)&&(identical(other.interval, interval) || other.interval == interval));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Ntp&&(identical(other.enable, enable) || other.enable == enable)&&(identical(other.writeToSystem, writeToSystem) || other.writeToSystem == writeToSystem)&&(identical(other.server, server) || other.server == server)&&(identical(other.port, port) || other.port == port)&&(identical(other.interval, interval) || other.interval == interval));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,enable,writeToSystem,server,port,interval);
+int get hashCode {
+    return Object.hash(runtimeType,enable,writeToSystem,server,port,interval);
+}
 
 @override
 String toString() {
-  return 'Ntp(enable: $enable, writeToSystem: $writeToSystem, server: $server, port: $port, interval: $interval)';
+    return 'Ntp(enable: $enable, writeToSystem: $writeToSystem, server: $server, port: $port, interval: $interval)';
 }
 
 
@@ -2767,16 +2831,21 @@ $ExperimentalCopyWith<Experimental> get copyWith => _$ExperimentalCopyWithImpl<E
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Experimental&&(identical(other.quicGoDisableGso, quicGoDisableGso) || other.quicGoDisableGso == quicGoDisableGso)&&(identical(other.quicGoDisableEcn, quicGoDisableEcn) || other.quicGoDisableEcn == quicGoDisableEcn)&&(identical(other.dialerIp4pConvert, dialerIp4pConvert) || other.dialerIp4pConvert == dialerIp4pConvert));
+  final _this = this as Experimental;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Experimental&&(identical(other.quicGoDisableGso, _this.quicGoDisableGso) || other.quicGoDisableGso == _this.quicGoDisableGso)&&(identical(other.quicGoDisableEcn, _this.quicGoDisableEcn) || other.quicGoDisableEcn == _this.quicGoDisableEcn)&&(identical(other.dialerIp4pConvert, _this.dialerIp4pConvert) || other.dialerIp4pConvert == _this.dialerIp4pConvert));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,quicGoDisableGso,quicGoDisableEcn,dialerIp4pConvert);
+int get hashCode {
+  final _this = this as Experimental;
+  return Object.hash(runtimeType,_this.quicGoDisableGso,_this.quicGoDisableEcn,_this.dialerIp4pConvert);
+}
 
 @override
 String toString() {
-  return 'Experimental(quicGoDisableGso: $quicGoDisableGso, quicGoDisableEcn: $quicGoDisableEcn, dialerIp4pConvert: $dialerIp4pConvert)';
+  final _this = this as Experimental;
+  return 'Experimental(quicGoDisableGso: ${_this.quicGoDisableGso}, quicGoDisableEcn: ${_this.quicGoDisableEcn}, dialerIp4pConvert: ${_this.dialerIp4pConvert})';
 }
 
 
@@ -2805,7 +2874,7 @@ class _$ExperimentalCopyWithImpl<$Res>
 /// Create a copy of Experimental
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? quicGoDisableGso = null,Object? quicGoDisableEcn = null,Object? dialerIp4pConvert = null,}) {
-  return _then(_self.copyWith(
+  return _then(Experimental(
 quicGoDisableGso: null == quicGoDisableGso ? _self.quicGoDisableGso : quicGoDisableGso // ignore: cast_nullable_to_non_nullable
 as bool,quicGoDisableEcn: null == quicGoDisableEcn ? _self.quicGoDisableEcn : quicGoDisableEcn // ignore: cast_nullable_to_non_nullable
 as bool,dialerIp4pConvert: null == dialerIp4pConvert ? _self.dialerIp4pConvert : dialerIp4pConvert // ignore: cast_nullable_to_non_nullable
@@ -2970,16 +3039,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Experimental&&(identical(other.quicGoDisableGso, quicGoDisableGso) || other.quicGoDisableGso == quicGoDisableGso)&&(identical(other.quicGoDisableEcn, quicGoDisableEcn) || other.quicGoDisableEcn == quicGoDisableEcn)&&(identical(other.dialerIp4pConvert, dialerIp4pConvert) || other.dialerIp4pConvert == dialerIp4pConvert));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Experimental&&(identical(other.quicGoDisableGso, quicGoDisableGso) || other.quicGoDisableGso == quicGoDisableGso)&&(identical(other.quicGoDisableEcn, quicGoDisableEcn) || other.quicGoDisableEcn == quicGoDisableEcn)&&(identical(other.dialerIp4pConvert, dialerIp4pConvert) || other.dialerIp4pConvert == dialerIp4pConvert));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,quicGoDisableGso,quicGoDisableEcn,dialerIp4pConvert);
+int get hashCode {
+    return Object.hash(runtimeType,quicGoDisableGso,quicGoDisableEcn,dialerIp4pConvert);
+}
 
 @override
 String toString() {
-  return 'Experimental(quicGoDisableGso: $quicGoDisableGso, quicGoDisableEcn: $quicGoDisableEcn, dialerIp4pConvert: $dialerIp4pConvert)';
+    return 'Experimental(quicGoDisableGso: $quicGoDisableGso, quicGoDisableEcn: $quicGoDisableEcn, dialerIp4pConvert: $dialerIp4pConvert)';
 }
 
 
@@ -3036,16 +3107,21 @@ $GeoXUrlCopyWith<GeoXUrl> get copyWith => _$GeoXUrlCopyWithImpl<GeoXUrl>(this as
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is GeoXUrl&&(identical(other.mmdb, mmdb) || other.mmdb == mmdb)&&(identical(other.asn, asn) || other.asn == asn)&&(identical(other.geosite, geosite) || other.geosite == geosite));
+  final _this = this as GeoXUrl;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is GeoXUrl&&(identical(other.mmdb, _this.mmdb) || other.mmdb == _this.mmdb)&&(identical(other.asn, _this.asn) || other.asn == _this.asn)&&(identical(other.geosite, _this.geosite) || other.geosite == _this.geosite));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,mmdb,asn,geosite);
+int get hashCode {
+  final _this = this as GeoXUrl;
+  return Object.hash(runtimeType,_this.mmdb,_this.asn,_this.geosite);
+}
 
 @override
 String toString() {
-  return 'GeoXUrl(mmdb: $mmdb, asn: $asn, geosite: $geosite)';
+  final _this = this as GeoXUrl;
+  return 'GeoXUrl(mmdb: ${_this.mmdb}, asn: ${_this.asn}, geosite: ${_this.geosite})';
 }
 
 
@@ -3074,7 +3150,7 @@ class _$GeoXUrlCopyWithImpl<$Res>
 /// Create a copy of GeoXUrl
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? mmdb = null,Object? asn = null,Object? geosite = null,}) {
-  return _then(_self.copyWith(
+  return _then(GeoXUrl(
 mmdb: null == mmdb ? _self.mmdb : mmdb // ignore: cast_nullable_to_non_nullable
 as String,asn: null == asn ? _self.asn : asn // ignore: cast_nullable_to_non_nullable
 as String,geosite: null == geosite ? _self.geosite : geosite // ignore: cast_nullable_to_non_nullable
@@ -3239,16 +3315,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _GeoXUrl&&(identical(other.mmdb, mmdb) || other.mmdb == mmdb)&&(identical(other.asn, asn) || other.asn == asn)&&(identical(other.geosite, geosite) || other.geosite == geosite));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _GeoXUrl&&(identical(other.mmdb, mmdb) || other.mmdb == mmdb)&&(identical(other.asn, asn) || other.asn == asn)&&(identical(other.geosite, geosite) || other.geosite == geosite));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,mmdb,asn,geosite);
+int get hashCode {
+    return Object.hash(runtimeType,mmdb,asn,geosite);
+}
 
 @override
 String toString() {
-  return 'GeoXUrl(mmdb: $mmdb, asn: $asn, geosite: $geosite)';
+    return 'GeoXUrl(mmdb: $mmdb, asn: $asn, geosite: $geosite)';
 }
 
 
@@ -3302,16 +3380,21 @@ $ParsedRuleCopyWith<ParsedRule> get copyWith => _$ParsedRuleCopyWithImpl<ParsedR
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ParsedRule&&(identical(other.ruleAction, ruleAction) || other.ruleAction == ruleAction)&&(identical(other.content, content) || other.content == content)&&(identical(other.ruleTarget, ruleTarget) || other.ruleTarget == ruleTarget)&&(identical(other.ruleProvider, ruleProvider) || other.ruleProvider == ruleProvider)&&(identical(other.subRule, subRule) || other.subRule == subRule)&&(identical(other.noResolve, noResolve) || other.noResolve == noResolve)&&(identical(other.src, src) || other.src == src));
+  final _this = this as ParsedRule;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ParsedRule&&(identical(other.ruleAction, _this.ruleAction) || other.ruleAction == _this.ruleAction)&&(identical(other.content, _this.content) || other.content == _this.content)&&(identical(other.ruleTarget, _this.ruleTarget) || other.ruleTarget == _this.ruleTarget)&&(identical(other.ruleProvider, _this.ruleProvider) || other.ruleProvider == _this.ruleProvider)&&(identical(other.subRule, _this.subRule) || other.subRule == _this.subRule)&&(identical(other.noResolve, _this.noResolve) || other.noResolve == _this.noResolve)&&(identical(other.src, _this.src) || other.src == _this.src));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,ruleAction,content,ruleTarget,ruleProvider,subRule,noResolve,src);
+int get hashCode {
+  final _this = this as ParsedRule;
+  return Object.hash(runtimeType,_this.ruleAction,_this.content,_this.ruleTarget,_this.ruleProvider,_this.subRule,_this.noResolve,_this.src);
+}
 
 @override
 String toString() {
-  return 'ParsedRule(ruleAction: $ruleAction, content: $content, ruleTarget: $ruleTarget, ruleProvider: $ruleProvider, subRule: $subRule, noResolve: $noResolve, src: $src)';
+  final _this = this as ParsedRule;
+  return 'ParsedRule(ruleAction: ${_this.ruleAction}, content: ${_this.content}, ruleTarget: ${_this.ruleTarget}, ruleProvider: ${_this.ruleProvider}, subRule: ${_this.subRule}, noResolve: ${_this.noResolve}, src: ${_this.src})';
 }
 
 
@@ -3340,7 +3423,7 @@ class _$ParsedRuleCopyWithImpl<$Res>
 /// Create a copy of ParsedRule
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? ruleAction = null,Object? content = freezed,Object? ruleTarget = freezed,Object? ruleProvider = freezed,Object? subRule = freezed,Object? noResolve = null,Object? src = null,}) {
-  return _then(_self.copyWith(
+  return _then(ParsedRule(
 ruleAction: null == ruleAction ? _self.ruleAction : ruleAction // ignore: cast_nullable_to_non_nullable
 as RuleAction,content: freezed == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
 as String?,ruleTarget: freezed == ruleTarget ? _self.ruleTarget : ruleTarget // ignore: cast_nullable_to_non_nullable
@@ -3510,16 +3593,18 @@ _$ParsedRuleCopyWith<_ParsedRule> get copyWith => __$ParsedRuleCopyWithImpl<_Par
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ParsedRule&&(identical(other.ruleAction, ruleAction) || other.ruleAction == ruleAction)&&(identical(other.content, content) || other.content == content)&&(identical(other.ruleTarget, ruleTarget) || other.ruleTarget == ruleTarget)&&(identical(other.ruleProvider, ruleProvider) || other.ruleProvider == ruleProvider)&&(identical(other.subRule, subRule) || other.subRule == subRule)&&(identical(other.noResolve, noResolve) || other.noResolve == noResolve)&&(identical(other.src, src) || other.src == src));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ParsedRule&&(identical(other.ruleAction, ruleAction) || other.ruleAction == ruleAction)&&(identical(other.content, content) || other.content == content)&&(identical(other.ruleTarget, ruleTarget) || other.ruleTarget == ruleTarget)&&(identical(other.ruleProvider, ruleProvider) || other.ruleProvider == ruleProvider)&&(identical(other.subRule, subRule) || other.subRule == subRule)&&(identical(other.noResolve, noResolve) || other.noResolve == noResolve)&&(identical(other.src, src) || other.src == src));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,ruleAction,content,ruleTarget,ruleProvider,subRule,noResolve,src);
+int get hashCode {
+    return Object.hash(runtimeType,ruleAction,content,ruleTarget,ruleProvider,subRule,noResolve,src);
+}
 
 @override
 String toString() {
-  return 'ParsedRule(ruleAction: $ruleAction, content: $content, ruleTarget: $ruleTarget, ruleProvider: $ruleProvider, subRule: $subRule, noResolve: $noResolve, src: $src)';
+    return 'ParsedRule(ruleAction: $ruleAction, content: $content, ruleTarget: $ruleTarget, ruleProvider: $ruleProvider, subRule: $subRule, noResolve: $noResolve, src: $src)';
 }
 
 
@@ -3580,16 +3665,21 @@ $RuleCopyWith<Rule> get copyWith => _$RuleCopyWithImpl<Rule>(this as Rule, _$ide
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Rule&&(identical(other.id, id) || other.id == id)&&(identical(other.value, value) || other.value == value));
+  final _this = this as Rule;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Rule&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.value, _this.value) || other.value == _this.value));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,value);
+int get hashCode {
+  final _this = this as Rule;
+  return Object.hash(runtimeType,_this.id,_this.value);
+}
 
 @override
 String toString() {
-  return 'Rule(id: $id, value: $value)';
+  final _this = this as Rule;
+  return 'Rule(id: ${_this.id}, value: ${_this.value})';
 }
 
 
@@ -3618,7 +3708,7 @@ class _$RuleCopyWithImpl<$Res>
 /// Create a copy of Rule
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? value = null,}) {
-  return _then(_self.copyWith(
+  return _then(Rule(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,value: null == value ? _self.value : value // ignore: cast_nullable_to_non_nullable
 as String,
@@ -3781,16 +3871,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Rule&&(identical(other.id, id) || other.id == id)&&(identical(other.value, value) || other.value == value));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Rule&&(identical(other.id, id) || other.id == id)&&(identical(other.value, value) || other.value == value));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,value);
+int get hashCode {
+    return Object.hash(runtimeType,id,value);
+}
 
 @override
 String toString() {
-  return 'Rule(id: $id, value: $value)';
+    return 'Rule(id: $id, value: $value)';
 }
 
 
@@ -3846,16 +3938,21 @@ $SubRuleCopyWith<SubRule> get copyWith => _$SubRuleCopyWithImpl<SubRule>(this as
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SubRule&&(identical(other.name, name) || other.name == name));
+  final _this = this as SubRule;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SubRule&&(identical(other.name, _this.name) || other.name == _this.name));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,name);
+int get hashCode {
+  final _this = this as SubRule;
+  return Object.hash(runtimeType,_this.name);
+}
 
 @override
 String toString() {
-  return 'SubRule(name: $name)';
+  final _this = this as SubRule;
+  return 'SubRule(name: ${_this.name})';
 }
 
 
@@ -3884,7 +3981,7 @@ class _$SubRuleCopyWithImpl<$Res>
 /// Create a copy of SubRule
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? name = null,}) {
-  return _then(_self.copyWith(
+  return _then(SubRule(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,
   ));
@@ -4045,16 +4142,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SubRule&&(identical(other.name, name) || other.name == name));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SubRule&&(identical(other.name, name) || other.name == name));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,name);
+int get hashCode {
+    return Object.hash(runtimeType,name);
+}
 
 @override
 String toString() {
-  return 'SubRule(name: $name)';
+    return 'SubRule(name: $name)';
 }
 
 
@@ -4109,16 +4208,21 @@ $ClashConfigSnippetCopyWith<ClashConfigSnippet> get copyWith => _$ClashConfigSni
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ClashConfigSnippet&&const DeepCollectionEquality().equals(other.proxyGroups, proxyGroups)&&const DeepCollectionEquality().equals(other.rule, rule)&&const DeepCollectionEquality().equals(other.ruleProvider, ruleProvider)&&const DeepCollectionEquality().equals(other.subRules, subRules));
+  final _this = this as ClashConfigSnippet;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ClashConfigSnippet&&const DeepCollectionEquality().equals(other.proxyGroups, _this.proxyGroups)&&const DeepCollectionEquality().equals(other.rule, _this.rule)&&const DeepCollectionEquality().equals(other.ruleProvider, _this.ruleProvider)&&const DeepCollectionEquality().equals(other.subRules, _this.subRules));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(proxyGroups),const DeepCollectionEquality().hash(rule),const DeepCollectionEquality().hash(ruleProvider),const DeepCollectionEquality().hash(subRules));
+int get hashCode {
+  final _this = this as ClashConfigSnippet;
+  return Object.hash(runtimeType,const DeepCollectionEquality().hash(_this.proxyGroups),const DeepCollectionEquality().hash(_this.rule),const DeepCollectionEquality().hash(_this.ruleProvider),const DeepCollectionEquality().hash(_this.subRules));
+}
 
 @override
 String toString() {
-  return 'ClashConfigSnippet(proxyGroups: $proxyGroups, rule: $rule, ruleProvider: $ruleProvider, subRules: $subRules)';
+  final _this = this as ClashConfigSnippet;
+  return 'ClashConfigSnippet(proxyGroups: ${_this.proxyGroups}, rule: ${_this.rule}, ruleProvider: ${_this.ruleProvider}, subRules: ${_this.subRules})';
 }
 
 
@@ -4147,7 +4251,7 @@ class _$ClashConfigSnippetCopyWithImpl<$Res>
 /// Create a copy of ClashConfigSnippet
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? proxyGroups = null,Object? rule = null,Object? ruleProvider = null,Object? subRules = null,}) {
-  return _then(_self.copyWith(
+  return _then(ClashConfigSnippet(
 proxyGroups: null == proxyGroups ? _self.proxyGroups : proxyGroups // ignore: cast_nullable_to_non_nullable
 as List<ProxyGroup>,rule: null == rule ? _self.rule : rule // ignore: cast_nullable_to_non_nullable
 as List<Rule>,ruleProvider: null == ruleProvider ? _self.ruleProvider : ruleProvider // ignore: cast_nullable_to_non_nullable
@@ -4293,7 +4397,7 @@ return $default(_that.proxyGroups,_that.rule,_that.ruleProvider,_that.subRules);
 @JsonSerializable()
 
 class _ClashConfigSnippet implements ClashConfigSnippet {
-  const _ClashConfigSnippet({@JsonKey(name: 'proxy-groups') final  List<ProxyGroup> proxyGroups = const [], @JsonKey(fromJson: _genRule, name: 'rules') final  List<Rule> rule = const [], @JsonKey(name: 'rule-providers', fromJson: _genRuleProviders) final  List<RuleProvider> ruleProvider = const [], @JsonKey(name: 'sub-rules', fromJson: _genSubRules) final  List<SubRule> subRules = const []}): _proxyGroups = proxyGroups,_rule = rule,_ruleProvider = ruleProvider,_subRules = subRules;
+  const _ClashConfigSnippet({@JsonKey(name: 'proxy-groups')  List<ProxyGroup> proxyGroups = const [], @JsonKey(fromJson: _genRule, name: 'rules')  List<Rule> rule = const [], @JsonKey(name: 'rule-providers', fromJson: _genRuleProviders)  List<RuleProvider> ruleProvider = const [], @JsonKey(name: 'sub-rules', fromJson: _genSubRules)  List<SubRule> subRules = const []}): _proxyGroups = proxyGroups,_rule = rule,_ruleProvider = ruleProvider,_subRules = subRules;
   factory _ClashConfigSnippet.fromJson(Map<String, dynamic> json) => _$ClashConfigSnippetFromJson(json);
 
  final  List<ProxyGroup> _proxyGroups;
@@ -4338,16 +4442,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ClashConfigSnippet&&const DeepCollectionEquality().equals(other._proxyGroups, _proxyGroups)&&const DeepCollectionEquality().equals(other._rule, _rule)&&const DeepCollectionEquality().equals(other._ruleProvider, _ruleProvider)&&const DeepCollectionEquality().equals(other._subRules, _subRules));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ClashConfigSnippet&&const DeepCollectionEquality().equals(other.proxyGroups, _proxyGroups)&&const DeepCollectionEquality().equals(other.rule, _rule)&&const DeepCollectionEquality().equals(other.ruleProvider, _ruleProvider)&&const DeepCollectionEquality().equals(other.subRules, _subRules));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_proxyGroups),const DeepCollectionEquality().hash(_rule),const DeepCollectionEquality().hash(_ruleProvider),const DeepCollectionEquality().hash(_subRules));
+int get hashCode {
+    return Object.hash(runtimeType,const DeepCollectionEquality().hash(_proxyGroups),const DeepCollectionEquality().hash(_rule),const DeepCollectionEquality().hash(_ruleProvider),const DeepCollectionEquality().hash(_subRules));
+}
 
 @override
 String toString() {
-  return 'ClashConfigSnippet(proxyGroups: $proxyGroups, rule: $rule, ruleProvider: $ruleProvider, subRules: $subRules)';
+    return 'ClashConfigSnippet(proxyGroups: $proxyGroups, rule: $rule, ruleProvider: $ruleProvider, subRules: $subRules)';
 }
 
 
@@ -4405,16 +4511,21 @@ $ClashConfigCopyWith<ClashConfig> get copyWith => _$ClashConfigCopyWithImpl<Clas
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ClashConfig&&(identical(other.mixedPort, mixedPort) || other.mixedPort == mixedPort)&&(identical(other.socksPort, socksPort) || other.socksPort == socksPort)&&(identical(other.port, port) || other.port == port)&&(identical(other.redirPort, redirPort) || other.redirPort == redirPort)&&(identical(other.tproxyPort, tproxyPort) || other.tproxyPort == tproxyPort)&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.allowLan, allowLan) || other.allowLan == allowLan)&&(identical(other.logLevel, logLevel) || other.logLevel == logLevel)&&(identical(other.ipv6, ipv6) || other.ipv6 == ipv6)&&(identical(other.findProcessMode, findProcessMode) || other.findProcessMode == findProcessMode)&&(identical(other.keepAliveInterval, keepAliveInterval) || other.keepAliveInterval == keepAliveInterval)&&(identical(other.unifiedDelay, unifiedDelay) || other.unifiedDelay == unifiedDelay)&&(identical(other.tcpConcurrent, tcpConcurrent) || other.tcpConcurrent == tcpConcurrent)&&(identical(other.tun, tun) || other.tun == tun)&&(identical(other.dns, dns) || other.dns == dns)&&(identical(other.ntp, ntp) || other.ntp == ntp)&&(identical(other.sniffer, sniffer) || other.sniffer == sniffer)&&const DeepCollectionEquality().equals(other.tunnels, tunnels)&&(identical(other.experimental, experimental) || other.experimental == experimental)&&(identical(other.geoXUrl, geoXUrl) || other.geoXUrl == geoXUrl)&&(identical(other.geodataLoader, geodataLoader) || other.geodataLoader == geodataLoader)&&const DeepCollectionEquality().equals(other.proxyGroups, proxyGroups)&&const DeepCollectionEquality().equals(other.rule, rule)&&(identical(other.globalUa, globalUa) || other.globalUa == globalUa)&&(identical(other.externalController, externalController) || other.externalController == externalController)&&(identical(other.secret, secret) || other.secret == secret)&&(identical(other.externalUiName, externalUiName) || other.externalUiName == externalUiName)&&(identical(other.externalUiUrl, externalUiUrl) || other.externalUiUrl == externalUiUrl)&&const DeepCollectionEquality().equals(other.hosts, hosts));
+  final _this = this as ClashConfig;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ClashConfig&&(identical(other.mixedPort, _this.mixedPort) || other.mixedPort == _this.mixedPort)&&(identical(other.socksPort, _this.socksPort) || other.socksPort == _this.socksPort)&&(identical(other.port, _this.port) || other.port == _this.port)&&(identical(other.redirPort, _this.redirPort) || other.redirPort == _this.redirPort)&&(identical(other.tproxyPort, _this.tproxyPort) || other.tproxyPort == _this.tproxyPort)&&(identical(other.mode, _this.mode) || other.mode == _this.mode)&&(identical(other.allowLan, _this.allowLan) || other.allowLan == _this.allowLan)&&(identical(other.logLevel, _this.logLevel) || other.logLevel == _this.logLevel)&&(identical(other.ipv6, _this.ipv6) || other.ipv6 == _this.ipv6)&&(identical(other.findProcessMode, _this.findProcessMode) || other.findProcessMode == _this.findProcessMode)&&(identical(other.keepAliveInterval, _this.keepAliveInterval) || other.keepAliveInterval == _this.keepAliveInterval)&&(identical(other.unifiedDelay, _this.unifiedDelay) || other.unifiedDelay == _this.unifiedDelay)&&(identical(other.tcpConcurrent, _this.tcpConcurrent) || other.tcpConcurrent == _this.tcpConcurrent)&&(identical(other.tun, _this.tun) || other.tun == _this.tun)&&(identical(other.dns, _this.dns) || other.dns == _this.dns)&&(identical(other.ntp, _this.ntp) || other.ntp == _this.ntp)&&(identical(other.sniffer, _this.sniffer) || other.sniffer == _this.sniffer)&&const DeepCollectionEquality().equals(other.tunnels, _this.tunnels)&&(identical(other.experimental, _this.experimental) || other.experimental == _this.experimental)&&(identical(other.geoXUrl, _this.geoXUrl) || other.geoXUrl == _this.geoXUrl)&&(identical(other.geodataLoader, _this.geodataLoader) || other.geodataLoader == _this.geodataLoader)&&const DeepCollectionEquality().equals(other.proxyGroups, _this.proxyGroups)&&const DeepCollectionEquality().equals(other.rule, _this.rule)&&(identical(other.globalUa, _this.globalUa) || other.globalUa == _this.globalUa)&&(identical(other.externalController, _this.externalController) || other.externalController == _this.externalController)&&(identical(other.secret, _this.secret) || other.secret == _this.secret)&&(identical(other.externalUiName, _this.externalUiName) || other.externalUiName == _this.externalUiName)&&(identical(other.externalUiUrl, _this.externalUiUrl) || other.externalUiUrl == _this.externalUiUrl)&&const DeepCollectionEquality().equals(other.hosts, _this.hosts));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hashAll([runtimeType,mixedPort,socksPort,port,redirPort,tproxyPort,mode,allowLan,logLevel,ipv6,findProcessMode,keepAliveInterval,unifiedDelay,tcpConcurrent,tun,dns,ntp,sniffer,const DeepCollectionEquality().hash(tunnels),experimental,geoXUrl,geodataLoader,const DeepCollectionEquality().hash(proxyGroups),const DeepCollectionEquality().hash(rule),globalUa,externalController,secret,externalUiName,externalUiUrl,const DeepCollectionEquality().hash(hosts)]);
+int get hashCode {
+  final _this = this as ClashConfig;
+  return Object.hashAll([runtimeType,_this.mixedPort,_this.socksPort,_this.port,_this.redirPort,_this.tproxyPort,_this.mode,_this.allowLan,_this.logLevel,_this.ipv6,_this.findProcessMode,_this.keepAliveInterval,_this.unifiedDelay,_this.tcpConcurrent,_this.tun,_this.dns,_this.ntp,_this.sniffer,const DeepCollectionEquality().hash(_this.tunnels),_this.experimental,_this.geoXUrl,_this.geodataLoader,const DeepCollectionEquality().hash(_this.proxyGroups),const DeepCollectionEquality().hash(_this.rule),_this.globalUa,_this.externalController,_this.secret,_this.externalUiName,_this.externalUiUrl,const DeepCollectionEquality().hash(_this.hosts)]);
+}
 
 @override
 String toString() {
-  return 'ClashConfig(mixedPort: $mixedPort, socksPort: $socksPort, port: $port, redirPort: $redirPort, tproxyPort: $tproxyPort, mode: $mode, allowLan: $allowLan, logLevel: $logLevel, ipv6: $ipv6, findProcessMode: $findProcessMode, keepAliveInterval: $keepAliveInterval, unifiedDelay: $unifiedDelay, tcpConcurrent: $tcpConcurrent, tun: $tun, dns: $dns, ntp: $ntp, sniffer: $sniffer, tunnels: $tunnels, experimental: $experimental, geoXUrl: $geoXUrl, geodataLoader: $geodataLoader, proxyGroups: $proxyGroups, rule: $rule, globalUa: $globalUa, externalController: $externalController, secret: $secret, externalUiName: $externalUiName, externalUiUrl: $externalUiUrl, hosts: $hosts)';
+  final _this = this as ClashConfig;
+  return 'ClashConfig(mixedPort: ${_this.mixedPort}, socksPort: ${_this.socksPort}, port: ${_this.port}, redirPort: ${_this.redirPort}, tproxyPort: ${_this.tproxyPort}, mode: ${_this.mode}, allowLan: ${_this.allowLan}, logLevel: ${_this.logLevel}, ipv6: ${_this.ipv6}, findProcessMode: ${_this.findProcessMode}, keepAliveInterval: ${_this.keepAliveInterval}, unifiedDelay: ${_this.unifiedDelay}, tcpConcurrent: ${_this.tcpConcurrent}, tun: ${_this.tun}, dns: ${_this.dns}, ntp: ${_this.ntp}, sniffer: ${_this.sniffer}, tunnels: ${_this.tunnels}, experimental: ${_this.experimental}, geoXUrl: ${_this.geoXUrl}, geodataLoader: ${_this.geodataLoader}, proxyGroups: ${_this.proxyGroups}, rule: ${_this.rule}, globalUa: ${_this.globalUa}, externalController: ${_this.externalController}, secret: ${_this.secret}, externalUiName: ${_this.externalUiName}, externalUiUrl: ${_this.externalUiUrl}, hosts: ${_this.hosts})';
 }
 
 
@@ -4443,7 +4554,7 @@ class _$ClashConfigCopyWithImpl<$Res>
 /// Create a copy of ClashConfig
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? mixedPort = null,Object? socksPort = null,Object? port = null,Object? redirPort = null,Object? tproxyPort = null,Object? mode = null,Object? allowLan = null,Object? logLevel = null,Object? ipv6 = null,Object? findProcessMode = null,Object? keepAliveInterval = null,Object? unifiedDelay = null,Object? tcpConcurrent = null,Object? tun = null,Object? dns = null,Object? ntp = null,Object? sniffer = null,Object? tunnels = null,Object? experimental = null,Object? geoXUrl = null,Object? geodataLoader = null,Object? proxyGroups = null,Object? rule = null,Object? globalUa = freezed,Object? externalController = null,Object? secret = freezed,Object? externalUiName = freezed,Object? externalUiUrl = freezed,Object? hosts = null,}) {
-  return _then(_self.copyWith(
+  return _then(ClashConfig(
 mixedPort: null == mixedPort ? _self.mixedPort : mixedPort // ignore: cast_nullable_to_non_nullable
 as int,socksPort: null == socksPort ? _self.socksPort : socksPort // ignore: cast_nullable_to_non_nullable
 as int,port: null == port ? _self.port : port // ignore: cast_nullable_to_non_nullable
@@ -4668,7 +4779,7 @@ return $default(_that.mixedPort,_that.socksPort,_that.port,_that.redirPort,_that
 @JsonSerializable()
 
 class _ClashConfig implements ClashConfig {
-  const _ClashConfig({@JsonKey(name: 'mixed-port') this.mixedPort = defaultMixedPort, @JsonKey(name: 'socks-port') this.socksPort = 0, @JsonKey(name: 'port') this.port = 0, @JsonKey(name: 'redir-port') this.redirPort = 0, @JsonKey(name: 'tproxy-port') this.tproxyPort = 0, this.mode = Mode.rule, @JsonKey(name: 'allow-lan') this.allowLan = false, @JsonKey(name: 'log-level') this.logLevel = LogLevel.error, this.ipv6 = false, @JsonKey(name: 'find-process-mode', unknownEnumValue: FindProcessMode.always) this.findProcessMode = FindProcessMode.off, @JsonKey(name: 'keep-alive-interval') this.keepAliveInterval = defaultKeepAliveInterval, @JsonKey(name: 'unified-delay') this.unifiedDelay = true, @JsonKey(name: 'tcp-concurrent') this.tcpConcurrent = true, @JsonKey(fromJson: Tun.safeFormJson) this.tun = defaultTun, @JsonKey(fromJson: Dns.safeDnsFromJson) this.dns = defaultDns, @JsonKey(fromJson: Ntp.safeNtpFromJson) this.ntp = defaultNtp, @JsonKey(fromJson: Sniffer.safeSnifferFromJson) this.sniffer = defaultSniffer, final  List<TunnelEntry> tunnels = defaultTunnel, @JsonKey(fromJson: Experimental.safeExperimentalFromJson) this.experimental = defaultExperimental, @JsonKey(name: 'geox-url', fromJson: GeoXUrl.safeFormJson) this.geoXUrl = defaultGeoXUrl, @JsonKey(name: 'geodata-loader') this.geodataLoader = GeodataLoader.memconservative, @JsonKey(name: 'proxy-groups') final  List<ProxyGroup> proxyGroups = const [], final  List<String> rule = const [], @JsonKey(name: 'global-ua') this.globalUa, @JsonKey(name: 'external-controller') this.externalController = ExternalControllerStatus.close, this.secret, @JsonKey(name: 'external-ui-name') this.externalUiName, @JsonKey(name: 'external-ui-url') this.externalUiUrl, final  HostsMap hosts = const {}}): _tunnels = tunnels,_proxyGroups = proxyGroups,_rule = rule,_hosts = hosts;
+  const _ClashConfig({@JsonKey(name: 'mixed-port') this.mixedPort = defaultMixedPort, @JsonKey(name: 'socks-port') this.socksPort = 0, @JsonKey(name: 'port') this.port = 0, @JsonKey(name: 'redir-port') this.redirPort = 0, @JsonKey(name: 'tproxy-port') this.tproxyPort = 0, this.mode = Mode.rule, @JsonKey(name: 'allow-lan') this.allowLan = false, @JsonKey(name: 'log-level') this.logLevel = LogLevel.error, this.ipv6 = false, @JsonKey(name: 'find-process-mode', unknownEnumValue: FindProcessMode.always) this.findProcessMode = FindProcessMode.off, @JsonKey(name: 'keep-alive-interval') this.keepAliveInterval = defaultKeepAliveInterval, @JsonKey(name: 'unified-delay') this.unifiedDelay = true, @JsonKey(name: 'tcp-concurrent') this.tcpConcurrent = true, @JsonKey(fromJson: Tun.safeFormJson) this.tun = defaultTun, @JsonKey(fromJson: Dns.safeDnsFromJson) this.dns = defaultDns, @JsonKey(fromJson: Ntp.safeNtpFromJson) this.ntp = defaultNtp, @JsonKey(fromJson: Sniffer.safeSnifferFromJson) this.sniffer = defaultSniffer,  List<TunnelEntry> tunnels = defaultTunnel, @JsonKey(fromJson: Experimental.safeExperimentalFromJson) this.experimental = defaultExperimental, @JsonKey(name: 'geox-url', fromJson: GeoXUrl.safeFormJson) this.geoXUrl = defaultGeoXUrl, @JsonKey(name: 'geodata-loader') this.geodataLoader = GeodataLoader.memconservative, @JsonKey(name: 'proxy-groups')  List<ProxyGroup> proxyGroups = const [],  List<String> rule = const [], @JsonKey(name: 'global-ua') this.globalUa, @JsonKey(name: 'external-controller') this.externalController = ExternalControllerStatus.close, this.secret, @JsonKey(name: 'external-ui-name') this.externalUiName, @JsonKey(name: 'external-ui-url') this.externalUiUrl,  HostsMap hosts = const {}}): _tunnels = tunnels,_proxyGroups = proxyGroups,_rule = rule,_hosts = hosts;
   factory _ClashConfig.fromJson(Map<String, dynamic> json) => _$ClashConfigFromJson(json);
 
 @override@JsonKey(name: 'mixed-port') final  int mixedPort;
@@ -4738,16 +4849,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ClashConfig&&(identical(other.mixedPort, mixedPort) || other.mixedPort == mixedPort)&&(identical(other.socksPort, socksPort) || other.socksPort == socksPort)&&(identical(other.port, port) || other.port == port)&&(identical(other.redirPort, redirPort) || other.redirPort == redirPort)&&(identical(other.tproxyPort, tproxyPort) || other.tproxyPort == tproxyPort)&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.allowLan, allowLan) || other.allowLan == allowLan)&&(identical(other.logLevel, logLevel) || other.logLevel == logLevel)&&(identical(other.ipv6, ipv6) || other.ipv6 == ipv6)&&(identical(other.findProcessMode, findProcessMode) || other.findProcessMode == findProcessMode)&&(identical(other.keepAliveInterval, keepAliveInterval) || other.keepAliveInterval == keepAliveInterval)&&(identical(other.unifiedDelay, unifiedDelay) || other.unifiedDelay == unifiedDelay)&&(identical(other.tcpConcurrent, tcpConcurrent) || other.tcpConcurrent == tcpConcurrent)&&(identical(other.tun, tun) || other.tun == tun)&&(identical(other.dns, dns) || other.dns == dns)&&(identical(other.ntp, ntp) || other.ntp == ntp)&&(identical(other.sniffer, sniffer) || other.sniffer == sniffer)&&const DeepCollectionEquality().equals(other._tunnels, _tunnels)&&(identical(other.experimental, experimental) || other.experimental == experimental)&&(identical(other.geoXUrl, geoXUrl) || other.geoXUrl == geoXUrl)&&(identical(other.geodataLoader, geodataLoader) || other.geodataLoader == geodataLoader)&&const DeepCollectionEquality().equals(other._proxyGroups, _proxyGroups)&&const DeepCollectionEquality().equals(other._rule, _rule)&&(identical(other.globalUa, globalUa) || other.globalUa == globalUa)&&(identical(other.externalController, externalController) || other.externalController == externalController)&&(identical(other.secret, secret) || other.secret == secret)&&(identical(other.externalUiName, externalUiName) || other.externalUiName == externalUiName)&&(identical(other.externalUiUrl, externalUiUrl) || other.externalUiUrl == externalUiUrl)&&const DeepCollectionEquality().equals(other._hosts, _hosts));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ClashConfig&&(identical(other.mixedPort, mixedPort) || other.mixedPort == mixedPort)&&(identical(other.socksPort, socksPort) || other.socksPort == socksPort)&&(identical(other.port, port) || other.port == port)&&(identical(other.redirPort, redirPort) || other.redirPort == redirPort)&&(identical(other.tproxyPort, tproxyPort) || other.tproxyPort == tproxyPort)&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.allowLan, allowLan) || other.allowLan == allowLan)&&(identical(other.logLevel, logLevel) || other.logLevel == logLevel)&&(identical(other.ipv6, ipv6) || other.ipv6 == ipv6)&&(identical(other.findProcessMode, findProcessMode) || other.findProcessMode == findProcessMode)&&(identical(other.keepAliveInterval, keepAliveInterval) || other.keepAliveInterval == keepAliveInterval)&&(identical(other.unifiedDelay, unifiedDelay) || other.unifiedDelay == unifiedDelay)&&(identical(other.tcpConcurrent, tcpConcurrent) || other.tcpConcurrent == tcpConcurrent)&&(identical(other.tun, tun) || other.tun == tun)&&(identical(other.dns, dns) || other.dns == dns)&&(identical(other.ntp, ntp) || other.ntp == ntp)&&(identical(other.sniffer, sniffer) || other.sniffer == sniffer)&&const DeepCollectionEquality().equals(other.tunnels, _tunnels)&&(identical(other.experimental, experimental) || other.experimental == experimental)&&(identical(other.geoXUrl, geoXUrl) || other.geoXUrl == geoXUrl)&&(identical(other.geodataLoader, geodataLoader) || other.geodataLoader == geodataLoader)&&const DeepCollectionEquality().equals(other.proxyGroups, _proxyGroups)&&const DeepCollectionEquality().equals(other.rule, _rule)&&(identical(other.globalUa, globalUa) || other.globalUa == globalUa)&&(identical(other.externalController, externalController) || other.externalController == externalController)&&(identical(other.secret, secret) || other.secret == secret)&&(identical(other.externalUiName, externalUiName) || other.externalUiName == externalUiName)&&(identical(other.externalUiUrl, externalUiUrl) || other.externalUiUrl == externalUiUrl)&&const DeepCollectionEquality().equals(other.hosts, _hosts));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hashAll([runtimeType,mixedPort,socksPort,port,redirPort,tproxyPort,mode,allowLan,logLevel,ipv6,findProcessMode,keepAliveInterval,unifiedDelay,tcpConcurrent,tun,dns,ntp,sniffer,const DeepCollectionEquality().hash(_tunnels),experimental,geoXUrl,geodataLoader,const DeepCollectionEquality().hash(_proxyGroups),const DeepCollectionEquality().hash(_rule),globalUa,externalController,secret,externalUiName,externalUiUrl,const DeepCollectionEquality().hash(_hosts)]);
+int get hashCode {
+    return Object.hashAll([runtimeType,mixedPort,socksPort,port,redirPort,tproxyPort,mode,allowLan,logLevel,ipv6,findProcessMode,keepAliveInterval,unifiedDelay,tcpConcurrent,tun,dns,ntp,sniffer,const DeepCollectionEquality().hash(_tunnels),experimental,geoXUrl,geodataLoader,const DeepCollectionEquality().hash(_proxyGroups),const DeepCollectionEquality().hash(_rule),globalUa,externalController,secret,externalUiName,externalUiUrl,const DeepCollectionEquality().hash(_hosts)]);
+}
 
 @override
 String toString() {
-  return 'ClashConfig(mixedPort: $mixedPort, socksPort: $socksPort, port: $port, redirPort: $redirPort, tproxyPort: $tproxyPort, mode: $mode, allowLan: $allowLan, logLevel: $logLevel, ipv6: $ipv6, findProcessMode: $findProcessMode, keepAliveInterval: $keepAliveInterval, unifiedDelay: $unifiedDelay, tcpConcurrent: $tcpConcurrent, tun: $tun, dns: $dns, ntp: $ntp, sniffer: $sniffer, tunnels: $tunnels, experimental: $experimental, geoXUrl: $geoXUrl, geodataLoader: $geodataLoader, proxyGroups: $proxyGroups, rule: $rule, globalUa: $globalUa, externalController: $externalController, secret: $secret, externalUiName: $externalUiName, externalUiUrl: $externalUiUrl, hosts: $hosts)';
+    return 'ClashConfig(mixedPort: $mixedPort, socksPort: $socksPort, port: $port, redirPort: $redirPort, tproxyPort: $tproxyPort, mode: $mode, allowLan: $allowLan, logLevel: $logLevel, ipv6: $ipv6, findProcessMode: $findProcessMode, keepAliveInterval: $keepAliveInterval, unifiedDelay: $unifiedDelay, tcpConcurrent: $tcpConcurrent, tun: $tun, dns: $dns, ntp: $ntp, sniffer: $sniffer, tunnels: $tunnels, experimental: $experimental, geoXUrl: $geoXUrl, geodataLoader: $geodataLoader, proxyGroups: $proxyGroups, rule: $rule, globalUa: $globalUa, externalController: $externalController, secret: $secret, externalUiName: $externalUiName, externalUiUrl: $externalUiUrl, hosts: $hosts)';
 }
 
 
