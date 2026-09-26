@@ -11,6 +11,7 @@ import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 // Force refresh icon flag
 final forceRefreshIconProvider = StateProvider<bool>((ref) => false);

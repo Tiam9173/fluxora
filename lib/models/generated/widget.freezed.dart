@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of '../widget.dart';
@@ -9,6 +9,7 @@ part of '../widget.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -25,16 +26,21 @@ $ActivateStateCopyWith<ActivateState> get copyWith => _$ActivateStateCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ActivateState&&(identical(other.active, active) || other.active == active));
+  final _this = this as ActivateState;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ActivateState&&(identical(other.active, _this.active) || other.active == _this.active));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,active);
+int get hashCode {
+  final _this = this as ActivateState;
+  return Object.hash(runtimeType,_this.active);
+}
 
 @override
 String toString() {
-  return 'ActivateState(active: $active)';
+  final _this = this as ActivateState;
+  return 'ActivateState(active: ${_this.active})';
 }
 
 
@@ -63,7 +69,7 @@ class _$ActivateStateCopyWithImpl<$Res>
 /// Create a copy of ActivateState
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? active = null,}) {
-  return _then(_self.copyWith(
+  return _then(ActivateState(
 active: null == active ? _self.active : active // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
@@ -221,16 +227,18 @@ _$ActivateStateCopyWith<_ActivateState> get copyWith => __$ActivateStateCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ActivateState&&(identical(other.active, active) || other.active == active));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ActivateState&&(identical(other.active, active) || other.active == active));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,active);
+int get hashCode {
+    return Object.hash(runtimeType,active);
+}
 
 @override
 String toString() {
-  return 'ActivateState(active: $active)';
+    return 'ActivateState(active: $active)';
 }
 
 
@@ -282,16 +290,21 @@ $CommonMessageCopyWith<CommonMessage> get copyWith => _$CommonMessageCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CommonMessage&&(identical(other.id, id) || other.id == id)&&(identical(other.text, text) || other.text == text)&&(identical(other.duration, duration) || other.duration == duration)&&(identical(other.onAction, onAction) || other.onAction == onAction)&&(identical(other.actionLabel, actionLabel) || other.actionLabel == actionLabel)&&(identical(other.showCountdown, showCountdown) || other.showCountdown == showCountdown));
+  final _this = this as CommonMessage;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CommonMessage&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.text, _this.text) || other.text == _this.text)&&(identical(other.duration, _this.duration) || other.duration == _this.duration)&&(identical(other.onAction, _this.onAction) || other.onAction == _this.onAction)&&(identical(other.actionLabel, _this.actionLabel) || other.actionLabel == _this.actionLabel)&&(identical(other.showCountdown, _this.showCountdown) || other.showCountdown == _this.showCountdown));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,text,duration,onAction,actionLabel,showCountdown);
+int get hashCode {
+  final _this = this as CommonMessage;
+  return Object.hash(runtimeType,_this.id,_this.text,_this.duration,_this.onAction,_this.actionLabel,_this.showCountdown);
+}
 
 @override
 String toString() {
-  return 'CommonMessage(id: $id, text: $text, duration: $duration, onAction: $onAction, actionLabel: $actionLabel, showCountdown: $showCountdown)';
+  final _this = this as CommonMessage;
+  return 'CommonMessage(id: ${_this.id}, text: ${_this.text}, duration: ${_this.duration}, onAction: ${_this.onAction}, actionLabel: ${_this.actionLabel}, showCountdown: ${_this.showCountdown})';
 }
 
 
@@ -320,7 +333,7 @@ class _$CommonMessageCopyWithImpl<$Res>
 /// Create a copy of CommonMessage
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? text = null,Object? duration = null,Object? onAction = freezed,Object? actionLabel = freezed,Object? showCountdown = null,}) {
-  return _then(_self.copyWith(
+  return _then(CommonMessage(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,text: null == text ? _self.text : text // ignore: cast_nullable_to_non_nullable
 as String,duration: null == duration ? _self.duration : duration // ignore: cast_nullable_to_non_nullable
@@ -488,16 +501,18 @@ _$CommonMessageCopyWith<_CommonMessage> get copyWith => __$CommonMessageCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CommonMessage&&(identical(other.id, id) || other.id == id)&&(identical(other.text, text) || other.text == text)&&(identical(other.duration, duration) || other.duration == duration)&&(identical(other.onAction, onAction) || other.onAction == onAction)&&(identical(other.actionLabel, actionLabel) || other.actionLabel == actionLabel)&&(identical(other.showCountdown, showCountdown) || other.showCountdown == showCountdown));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _CommonMessage&&(identical(other.id, id) || other.id == id)&&(identical(other.text, text) || other.text == text)&&(identical(other.duration, duration) || other.duration == duration)&&(identical(other.onAction, onAction) || other.onAction == onAction)&&(identical(other.actionLabel, actionLabel) || other.actionLabel == actionLabel)&&(identical(other.showCountdown, showCountdown) || other.showCountdown == showCountdown));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,text,duration,onAction,actionLabel,showCountdown);
+int get hashCode {
+    return Object.hash(runtimeType,id,text,duration,onAction,actionLabel,showCountdown);
+}
 
 @override
 String toString() {
-  return 'CommonMessage(id: $id, text: $text, duration: $duration, onAction: $onAction, actionLabel: $actionLabel, showCountdown: $showCountdown)';
+    return 'CommonMessage(id: $id, text: $text, duration: $duration, onAction: $onAction, actionLabel: $actionLabel, showCountdown: $showCountdown)';
 }
 
 
@@ -554,16 +569,21 @@ $AppBarStateCopyWith<AppBarState> get copyWith => _$AppBarStateCopyWithImpl<AppB
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AppBarState&&const DeepCollectionEquality().equals(other.actions, actions)&&(identical(other.searchState, searchState) || other.searchState == searchState)&&(identical(other.editState, editState) || other.editState == editState));
+  final _this = this as AppBarState;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AppBarState&&const DeepCollectionEquality().equals(other.actions, _this.actions)&&(identical(other.searchState, _this.searchState) || other.searchState == _this.searchState)&&(identical(other.editState, _this.editState) || other.editState == _this.editState));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(actions),searchState,editState);
+int get hashCode {
+  final _this = this as AppBarState;
+  return Object.hash(runtimeType,const DeepCollectionEquality().hash(_this.actions),_this.searchState,_this.editState);
+}
 
 @override
 String toString() {
-  return 'AppBarState(actions: $actions, searchState: $searchState, editState: $editState)';
+  final _this = this as AppBarState;
+  return 'AppBarState(actions: ${_this.actions}, searchState: ${_this.searchState}, editState: ${_this.editState})';
 }
 
 
@@ -592,7 +612,7 @@ class _$AppBarStateCopyWithImpl<$Res>
 /// Create a copy of AppBarState
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? actions = null,Object? searchState = freezed,Object? editState = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(AppBarState(
 actions: null == actions ? _self.actions : actions // ignore: cast_nullable_to_non_nullable
 as List<Widget>,searchState: freezed == searchState ? _self.searchState : searchState // ignore: cast_nullable_to_non_nullable
 as AppBarSearchState?,editState: freezed == editState ? _self.editState : editState // ignore: cast_nullable_to_non_nullable
@@ -761,7 +781,7 @@ return $default(_that.actions,_that.searchState,_that.editState);case _:
 
 
 class _AppBarState implements AppBarState {
-  const _AppBarState({final  List<Widget> actions = const [], this.searchState, this.editState}): _actions = actions;
+  const _AppBarState({ List<Widget> actions = const [], this.searchState, this.editState}): _actions = actions;
   
 
  final  List<Widget> _actions;
@@ -784,16 +804,18 @@ _$AppBarStateCopyWith<_AppBarState> get copyWith => __$AppBarStateCopyWithImpl<_
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AppBarState&&const DeepCollectionEquality().equals(other._actions, _actions)&&(identical(other.searchState, searchState) || other.searchState == searchState)&&(identical(other.editState, editState) || other.editState == editState));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _AppBarState&&const DeepCollectionEquality().equals(other.actions, _actions)&&(identical(other.searchState, searchState) || other.searchState == searchState)&&(identical(other.editState, editState) || other.editState == editState));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_actions),searchState,editState);
+int get hashCode {
+    return Object.hash(runtimeType,const DeepCollectionEquality().hash(_actions),searchState,editState);
+}
 
 @override
 String toString() {
-  return 'AppBarState(actions: $actions, searchState: $searchState, editState: $editState)';
+    return 'AppBarState(actions: $actions, searchState: $searchState, editState: $editState)';
 }
 
 
@@ -860,7 +882,7 @@ $AppBarEditStateCopyWith<$Res>? get editState {
 /// @nodoc
 mixin _$AppBarSearchState {
 
-  Function(String) get onSearch; String? get query;
+ dynamic Function(String) get onSearch; String? get query;
 /// Create a copy of AppBarSearchState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -871,16 +893,21 @@ $AppBarSearchStateCopyWith<AppBarSearchState> get copyWith => _$AppBarSearchStat
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AppBarSearchState&&(identical(other.onSearch, onSearch) || other.onSearch == onSearch)&&(identical(other.query, query) || other.query == query));
+  final _this = this as AppBarSearchState;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AppBarSearchState&&(identical(other.onSearch, _this.onSearch) || other.onSearch == _this.onSearch)&&(identical(other.query, _this.query) || other.query == _this.query));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,onSearch,query);
+int get hashCode {
+  final _this = this as AppBarSearchState;
+  return Object.hash(runtimeType,_this.onSearch,_this.query);
+}
 
 @override
 String toString() {
-  return 'AppBarSearchState(onSearch: $onSearch, query: $query)';
+  final _this = this as AppBarSearchState;
+  return 'AppBarSearchState(onSearch: ${_this.onSearch}, query: ${_this.query})';
 }
 
 
@@ -891,7 +918,7 @@ abstract mixin class $AppBarSearchStateCopyWith<$Res>  {
   factory $AppBarSearchStateCopyWith(AppBarSearchState value, $Res Function(AppBarSearchState) _then) = _$AppBarSearchStateCopyWithImpl;
 @useResult
 $Res call({
-  Function(String) onSearch, String? query
+ dynamic Function(String) onSearch, String? query
 });
 
 
@@ -909,9 +936,9 @@ class _$AppBarSearchStateCopyWithImpl<$Res>
 /// Create a copy of AppBarSearchState
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? onSearch = null,Object? query = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(AppBarSearchState(
 onSearch: null == onSearch ? _self.onSearch : onSearch // ignore: cast_nullable_to_non_nullable
-as  Function(String),query: freezed == query ? _self.query : query // ignore: cast_nullable_to_non_nullable
+as dynamic Function(String),query: freezed == query ? _self.query : query // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -997,7 +1024,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(  Function(String) onSearch,  String? query)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( dynamic Function(String) onSearch,  String? query)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AppBarSearchState() when $default != null:
 return $default(_that.onSearch,_that.query);case _:
@@ -1018,7 +1045,7 @@ return $default(_that.onSearch,_that.query);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(  Function(String) onSearch,  String? query)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( dynamic Function(String) onSearch,  String? query)  $default,) {final _that = this;
 switch (_that) {
 case _AppBarSearchState():
 return $default(_that.onSearch,_that.query);case _:
@@ -1038,7 +1065,7 @@ return $default(_that.onSearch,_that.query);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(  Function(String) onSearch,  String? query)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( dynamic Function(String) onSearch,  String? query)?  $default,) {final _that = this;
 switch (_that) {
 case _AppBarSearchState() when $default != null:
 return $default(_that.onSearch,_that.query);case _:
@@ -1056,7 +1083,7 @@ class _AppBarSearchState implements AppBarSearchState {
   const _AppBarSearchState({required this.onSearch, this.query});
   
 
-@override final   Function(String) onSearch;
+@override final  dynamic Function(String) onSearch;
 @override final  String? query;
 
 /// Create a copy of AppBarSearchState
@@ -1069,16 +1096,18 @@ _$AppBarSearchStateCopyWith<_AppBarSearchState> get copyWith => __$AppBarSearchS
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AppBarSearchState&&(identical(other.onSearch, onSearch) || other.onSearch == onSearch)&&(identical(other.query, query) || other.query == query));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _AppBarSearchState&&(identical(other.onSearch, onSearch) || other.onSearch == onSearch)&&(identical(other.query, query) || other.query == query));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,onSearch,query);
+int get hashCode {
+    return Object.hash(runtimeType,onSearch,query);
+}
 
 @override
 String toString() {
-  return 'AppBarSearchState(onSearch: $onSearch, query: $query)';
+    return 'AppBarSearchState(onSearch: $onSearch, query: $query)';
 }
 
 
@@ -1089,7 +1118,7 @@ abstract mixin class _$AppBarSearchStateCopyWith<$Res> implements $AppBarSearchS
   factory _$AppBarSearchStateCopyWith(_AppBarSearchState value, $Res Function(_AppBarSearchState) _then) = __$AppBarSearchStateCopyWithImpl;
 @override @useResult
 $Res call({
-  Function(String) onSearch, String? query
+ dynamic Function(String) onSearch, String? query
 });
 
 
@@ -1109,7 +1138,7 @@ class __$AppBarSearchStateCopyWithImpl<$Res>
 @override @pragma('vm:prefer-inline') $Res call({Object? onSearch = null,Object? query = freezed,}) {
   return _then(_AppBarSearchState(
 onSearch: null == onSearch ? _self.onSearch : onSearch // ignore: cast_nullable_to_non_nullable
-as  Function(String),query: freezed == query ? _self.query : query // ignore: cast_nullable_to_non_nullable
+as dynamic Function(String),query: freezed == query ? _self.query : query // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -1120,7 +1149,7 @@ as String?,
 /// @nodoc
 mixin _$AppBarEditState {
 
- int get editCount;  Function() get onExit;
+ int get editCount; dynamic Function() get onExit;
 /// Create a copy of AppBarEditState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1131,16 +1160,21 @@ $AppBarEditStateCopyWith<AppBarEditState> get copyWith => _$AppBarEditStateCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AppBarEditState&&(identical(other.editCount, editCount) || other.editCount == editCount)&&(identical(other.onExit, onExit) || other.onExit == onExit));
+  final _this = this as AppBarEditState;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AppBarEditState&&(identical(other.editCount, _this.editCount) || other.editCount == _this.editCount)&&(identical(other.onExit, _this.onExit) || other.onExit == _this.onExit));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,editCount,onExit);
+int get hashCode {
+  final _this = this as AppBarEditState;
+  return Object.hash(runtimeType,_this.editCount,_this.onExit);
+}
 
 @override
 String toString() {
-  return 'AppBarEditState(editCount: $editCount, onExit: $onExit)';
+  final _this = this as AppBarEditState;
+  return 'AppBarEditState(editCount: ${_this.editCount}, onExit: ${_this.onExit})';
 }
 
 
@@ -1151,7 +1185,7 @@ abstract mixin class $AppBarEditStateCopyWith<$Res>  {
   factory $AppBarEditStateCopyWith(AppBarEditState value, $Res Function(AppBarEditState) _then) = _$AppBarEditStateCopyWithImpl;
 @useResult
 $Res call({
- int editCount,  Function() onExit
+ int editCount, dynamic Function() onExit
 });
 
 
@@ -1169,10 +1203,10 @@ class _$AppBarEditStateCopyWithImpl<$Res>
 /// Create a copy of AppBarEditState
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? editCount = null,Object? onExit = null,}) {
-  return _then(_self.copyWith(
+  return _then(AppBarEditState(
 editCount: null == editCount ? _self.editCount : editCount // ignore: cast_nullable_to_non_nullable
 as int,onExit: null == onExit ? _self.onExit : onExit // ignore: cast_nullable_to_non_nullable
-as  Function(),
+as dynamic Function(),
   ));
 }
 
@@ -1257,7 +1291,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int editCount,   Function() onExit)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int editCount,  dynamic Function() onExit)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AppBarEditState() when $default != null:
 return $default(_that.editCount,_that.onExit);case _:
@@ -1278,7 +1312,7 @@ return $default(_that.editCount,_that.onExit);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int editCount,   Function() onExit)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int editCount,  dynamic Function() onExit)  $default,) {final _that = this;
 switch (_that) {
 case _AppBarEditState():
 return $default(_that.editCount,_that.onExit);case _:
@@ -1298,7 +1332,7 @@ return $default(_that.editCount,_that.onExit);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int editCount,   Function() onExit)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int editCount,  dynamic Function() onExit)?  $default,) {final _that = this;
 switch (_that) {
 case _AppBarEditState() when $default != null:
 return $default(_that.editCount,_that.onExit);case _:
@@ -1317,7 +1351,7 @@ class _AppBarEditState implements AppBarEditState {
   
 
 @override@JsonKey() final  int editCount;
-@override final   Function() onExit;
+@override final  dynamic Function() onExit;
 
 /// Create a copy of AppBarEditState
 /// with the given fields replaced by the non-null parameter values.
@@ -1329,16 +1363,18 @@ _$AppBarEditStateCopyWith<_AppBarEditState> get copyWith => __$AppBarEditStateCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AppBarEditState&&(identical(other.editCount, editCount) || other.editCount == editCount)&&(identical(other.onExit, onExit) || other.onExit == onExit));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _AppBarEditState&&(identical(other.editCount, editCount) || other.editCount == editCount)&&(identical(other.onExit, onExit) || other.onExit == onExit));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,editCount,onExit);
+int get hashCode {
+    return Object.hash(runtimeType,editCount,onExit);
+}
 
 @override
 String toString() {
-  return 'AppBarEditState(editCount: $editCount, onExit: $onExit)';
+    return 'AppBarEditState(editCount: $editCount, onExit: $onExit)';
 }
 
 
@@ -1349,7 +1385,7 @@ abstract mixin class _$AppBarEditStateCopyWith<$Res> implements $AppBarEditState
   factory _$AppBarEditStateCopyWith(_AppBarEditState value, $Res Function(_AppBarEditState) _then) = __$AppBarEditStateCopyWithImpl;
 @override @useResult
 $Res call({
- int editCount,  Function() onExit
+ int editCount, dynamic Function() onExit
 });
 
 
@@ -1370,7 +1406,7 @@ class __$AppBarEditStateCopyWithImpl<$Res>
   return _then(_AppBarEditState(
 editCount: null == editCount ? _self.editCount : editCount // ignore: cast_nullable_to_non_nullable
 as int,onExit: null == onExit ? _self.onExit : onExit // ignore: cast_nullable_to_non_nullable
-as  Function(),
+as dynamic Function(),
   ));
 }
 
