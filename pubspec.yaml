@@ -1,7 +1,7 @@
 name: fluxora
 description: Fluxora is an open-source cross-platform Mihomo routing client for clear, reliable rule-based traffic management.
 publish_to: 'none'
-version: 1.0.0+2026092002
+version: 1.0.1+2026092701
 repository: https://github.com/Tiam9173/fluxora
 issue_tracker: https://github.com/Tiam9173/fluxora/issues
 environment:
