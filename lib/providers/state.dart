@@ -717,6 +717,17 @@ VM2<int, bool> checkMediaUnlock(Ref ref) {
   return VM2(a: checkIpNum, b: containsMediaUnlock);
 }
 
+/// Builds the app's [ColorScheme] for [brightness].
+///
+/// Seed priority follows `ThemeProps.colorSource` (D4.2 §5.2): `fluxora` and
+/// `custom` resolve `primaryColor` → Flux `#29D6C7`, while `system` resolves
+/// `corePalette` → `accentColor` → Flux. Only `system` consults Android Material
+/// You, so the brand identity survives on Android. [ignoreConfig] forces the
+/// `system` path and an explicit [color] wins over every mode.
+///
+/// The seed-derived scheme is then re-skinned with the Fluxora surface ladder so
+/// the canvas, cards and dividers use the Deep Space / Mist neutrals rather than
+/// seed-tinted greys. `pureBlack` is applied by the caller afterwards.
 @riverpod
 ColorScheme genColorScheme(
   Ref ref,
@@ -724,29 +735,54 @@ ColorScheme genColorScheme(
   Color? color,
   bool ignoreConfig = false,
 }) {
-  final vm2 = ref.watch(
+  final vm3 = ref.watch(
     themeSettingProvider.select(
-      (state) => VM2(a: state.primaryColor, b: state.schemeVariant),
+      (state) => VM3(
+        a: state.primaryColor,
+        b: state.schemeVariant,
+        c: state.colorSource,
+      ),
     ),
   );
-  if (color == null && (ignoreConfig == true || vm2.a == null)) {
-    // if (globalState.corePalette != null) {
-    //   return globalState.corePalette!.toColorScheme(brightness: brightness);
-    // }
-    return ColorScheme.fromSeed(
-      seedColor:
-          globalState.corePalette
-              ?.toColorScheme(brightness: brightness)
-              .primary ??
+  final variant = vm3.b;
+  final source = ignoreConfig == true ? ColorSource.system : vm3.c;
+
+  // `ThemeProps.primaryColor` → Flux preset, shared by the brand-first modes.
+  final configured = vm3.a == null ? FluxoraColors.fluxCyan : Color(vm3.a!);
+
+  final seed = switch (source) {
+    // Brand-first: Android's Material You palette is deliberately bypassed.
+    ColorSource.fluxora => configured,
+    // Material You / system dynamic colour stays fully functional here.
+    ColorSource.system =>
+      globalState.corePalette?.toColorScheme(brightness: brightness).primary ??
           globalState.accentColor,
-      brightness: brightness,
-      dynamicSchemeVariant: vm2.b,
-    );
-  }
+    // User-picked colour from the palette picker.
+    ColorSource.custom => configured,
+  };
+
+  final fluxora = FluxoraColorSet.of(brightness);
+
   return ColorScheme.fromSeed(
-    seedColor: color ?? Color(vm2.a!),
+    seedColor: color ?? seed,
     brightness: brightness,
-    dynamicSchemeVariant: vm2.b,
+    dynamicSchemeVariant: variant,
+  ).copyWith(
+    // Page canvas. The app shell paints `Material(color: colorScheme.surface)`
+    // (`lib/pages/home.dart`), and `scaffoldBackgroundColor` also defaults to
+    // `surface` — so D4.2's "Background" (#F6F9FB / #0C1222) belongs here.
+    surface: fluxora.background,
+    // Card / panel surfaces. `CommonCard` reads `surfaceContainerLow` (plain)
+    // and `surfaceContainer` (filled), so D4.2's "Surface" (#FFFFFF / #121A2B)
+    // lands on the container ladder.
+    surfaceContainerLowest: fluxora.surface,
+    surfaceContainerLow: fluxora.surface,
+    surfaceContainer: fluxora.surfaceContainer,
+    surfaceContainerHigh: fluxora.surfaceContainerHigh,
+    surfaceContainerHighest: fluxora.surfaceContainerHighest,
+    // Lines.
+    outline: fluxora.outline,
+    outlineVariant: fluxora.outlineVariant,
   );
 }
 

@@ -12,10 +12,10 @@ class IntranetIP extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       height: getWidgetHeight(1),
-      child: CommonCard(
+      child: FluxoraCard(
         info: Info(label: appLocalizations.intranetIP, iconData: Icons.devices),
-        onPressed: () {},
-        child: Container(
+        onTap: () {},
+        child: Padding(
           padding: baseInfoEdgeInsets.copyWith(top: 0),
           child: Column(
             mainAxisSize: MainAxisSize.max,
@@ -33,14 +33,15 @@ class IntranetIP extends StatelessWidget {
                                 localIp.isNotEmpty
                                     ? localIp
                                     : appLocalizations.noNetwork,
-                                style: context.textTheme.bodyMedium?.toLight
-                                    .adjustSize(1),
+                                style: FluxoraTypography.body.copyWith(
+                                  color: context.colorScheme.onSurfaceVariant,
+                                ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             )
-                          : Container(
-                              padding: EdgeInsets.all(2),
+                          : Padding(
+                              padding: const EdgeInsets.all(2),
                               child: AspectRatio(
                                 aspectRatio: 1,
                                 child: CircularProgressIndicator(

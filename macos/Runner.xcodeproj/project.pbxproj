@@ -33,6 +33,8 @@
 		F50091052CF74B7700D43AEA /* FluxoraCore in CopyFiles */ = {isa = PBXBuildFile; fileRef = F50091042CF74B7700D43AEA /* FluxoraCore */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F5AA39AF2DA1D9FB00F5C816 /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = F5AA39AE2DA1D9FB00F5C816 /* LaunchAtLogin */; };
 		78A318202AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 78A3181F2AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage */; };
+		F5D401A10000000000000011 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = F5D401A10000000000000001 /* LICENSE */; };
+		F5D401A10000000000000012 /* NOTICE in Resources */ = {isa = PBXBuildFile; fileRef = F5D401A10000000000000002 /* NOTICE */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -108,6 +110,8 @@
 		33CEB47222A05771004F2AC0 /* Flutter-Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Flutter-Debug.xcconfig"; sourceTree = "<group>"; };
 		33CEB47422A05771004F2AC0 /* Flutter-Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Flutter-Release.xcconfig"; sourceTree = "<group>"; };
 		33CEB47722A0578A004F2AC0 /* Flutter-Generated.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = "Flutter-Generated.xcconfig"; path = "ephemeral/Flutter-Generated.xcconfig"; sourceTree = "<group>"; };
+		F5D401A10000000000000001 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = SOURCE_ROOT; };
+		F5D401A10000000000000002 /* NOTICE */ = {isa = PBXFileReference; lastKnownFileType = text; name = NOTICE; path = ../NOTICE; sourceTree = SOURCE_ROOT; };
 		33E51913231747F40026EE4D /* DebugProfile.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DebugProfile.entitlements; sourceTree = "<group>"; };
 		33E51914231749380026EE4D /* Release.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = Release.entitlements; sourceTree = "<group>"; };
 		33E5194F232828860026EE4D /* AppInfo.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = AppInfo.xcconfig; sourceTree = "<group>"; };
@@ -194,6 +198,8 @@
 				33CC10F22044A3C60003C045 /* Assets.xcassets */,
 				33CC10F42044A3C60003C045 /* MainMenu.xib */,
 				33CC10F72044A3C60003C045 /* Info.plist */,
+				F5D401A10000000000000001 /* LICENSE */,
+				F5D401A10000000000000002 /* NOTICE */,
 			);
 			name = Resources;
 			path = ..;
@@ -364,6 +370,8 @@
 			files = (
 				33CC10F32044A3C60003C045 /* Assets.xcassets in Resources */,
 				33CC10F62044A3C60003C045 /* MainMenu.xib in Resources */,
+				F5D401A10000000000000011 /* LICENSE in Resources */,
+				F5D401A10000000000000012 /* NOTICE in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

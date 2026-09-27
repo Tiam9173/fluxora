@@ -1,14 +1,41 @@
-import 'dart:async';
 import 'package:fluxora/common/common.dart';
-import 'package:fluxora/models/models.dart';
 import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:fluxora/views/profiles/add_profile.dart';
 
+/// How the connection Hero should be presented for the current core state.
+///
+/// Pure presentation data — derived from the same providers the previous
+/// implementation read, with no new data source and no new logic.
+typedef _HeroPresentation = ({
+  FluxoraFlowState flow,
+  FluxoraStatusKind kind,
+  String label,
+  String value,
+});
+
+/// The Dashboard connection Hero (D4.6).
+///
+/// Was a half-width card whose header carried the state and whose body was a
+/// single line of text. It is now the full-width (8-column) anchor of the
+/// Dashboard: a [FluxoraCard] holding the brand's [FluxoraFlowIndicator] plus a
+/// semantic [FluxoraStatus] and the mono uptime read-out.
+///
+/// **D4.6 regression fix.** The redesign dropped the card's `Info` header and
+/// replaced the body's play/pause glyph with a decorative `Icon` — no
+/// `onPressed`, no press feedback, no cursor change. The card was still the
+/// control (its whole surface is a tap target), but nothing said so. The header
+/// is back (`Icons.power_settings_new` + `powerSwitch`) and the trailing glyph
+/// is now an `IconButton.filledTonal`. The D4.6 body — flow indicator, status,
+/// uptime — is untouched.
+///
+/// **Behaviour is unchanged**: the same `startButtonSelectorStateProvider` /
+/// `runTimeProvider` / `isRestartingCoreProvider` / `isSmartStoppedProvider`
+/// drive it, tapping still calls `updateStatus`, long-press still offers a core
+/// restart, and a missing profile still opens the add-profile sheet.
 class StartButton extends ConsumerStatefulWidget {
   const StartButton({super.key});
 
@@ -80,9 +107,7 @@ class _StartButtonState extends ConsumerState<StartButton> {
       builder: (_, type) {
         return AdaptiveSheetScaffold(
           type: type,
-          body: AddProfileView(
-            context: context,
-          ),
+          body: AddProfileView(context: context),
           title: appLocalizations.add,
         );
       },
@@ -106,48 +131,116 @@ class _StartButtonState extends ConsumerState<StartButton> {
         final isStart = runTime != null;
         final displayStart =
             isSmartStopped ? false : (_optimisticStart ?? isStart);
+        // Busy covers the initial read plus the brief optimistic toggle window.
+        final busy = !state.isInit || _isDisabled || isRestarting;
+
+        final hero = _resolveHero(
+          isInit: state.isInit,
+          hasProfile: state.hasProfile,
+          isRestarting: isRestarting,
+          isSmartStopped: isSmartStopped,
+          started: displayStart,
+          runTime: runTime,
+        );
+
+        // The header names the *control*; `hero.label` names the *state*.
+        // `_resolveHero` reuses `powerSwitch` as its idle state label, which is
+        // the same string the header now shows — in that one case the read-out
+        // is promoted into the status slot so the card never prints it twice.
+        final isIdleState = hero.label == appLocalizations.powerSwitch;
+        final statusLabel = isIdleState ? hero.value : hero.label;
+        final readOut = isIdleState ? '' : hero.value;
+
         return SizedBox(
-          height: getWidgetHeight(1),
-          child: CommonCard(
-            info: Info(
-              label: isSmartStopped
-                  ? appLocalizations.coreSuspended
-                  : isRestarting
-                  ? appLocalizations.restartCoreTitle
-                  : displayStart
-                  ? appLocalizations.runTime
-                  : appLocalizations.powerSwitch,
-              iconData: Icons.power_settings_new,
-            ),
-            onPressed: canPress
+          // Height budget (D4.6 header restore): card padding (md ×2) + power
+          // header (`baseInfoEdgeInsets.top` + glyph line) + one body row, which
+          // the 40×40 action button dominates. `getWidgetHeight(1)` alone (84)
+          // is no longer enough once the header row is back.
+          height: getWidgetHeight(1) + FluxoraSpacing.xxl,
+          child: FluxoraCard(
+            onTap: canPress
                 ? _handleStart
                 : hasNoProfile
-                    ? _handleShowAddProfile
-                    : null,
+                ? _handleShowAddProfile
+                : null,
             onLongPress: canPress ? _handleLongPress : null,
-            child: Container(
-              padding: baseInfoEdgeInsets.copyWith(top: 0),
-              child: Column(
-                mainAxisSize: MainAxisSize.max,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  SizedBox(
-                    height: globalState.measure.bodyMediumHeight + 2,
-                    child: FadeThroughBox(
-                      child: _buildContent(
-                        context,
-                        ref,
-                        state,
-                        isStart,
-                        runTime,
-                        isRestarting,
-                        _isDisabled,
-                        isSmartStopped,
+            semanticLabel: hero.label,
+            // Restores the power affordance D4.6 dropped: a power glyph plus a
+            // control label in the card header, so the card reads as the
+            // start/stop control instead of a status card that happens to hold a
+            // play icon. Layout stays D4.6's — only the header comes back.
+            info: Info(
+              label: appLocalizations.powerSwitch,
+              iconData: Icons.power_settings_new,
+            ),
+            padding: const EdgeInsets.symmetric(
+              horizontal: FluxoraSpacing.lg,
+              vertical: FluxoraSpacing.md,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                FluxoraFlowIndicator(state: hero.flow, width: 56, height: 16),
+                const SizedBox(width: FluxoraSpacing.lg),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      FluxoraStatus(
+                        status: hero.kind,
+                        label: statusLabel,
+                        semanticLabel: statusLabel,
                       ),
-                    ),
+                      if (readOut.isNotEmpty) ...[
+                        const SizedBox(height: FluxoraSpacing.xxs),
+                        Text(
+                          readOut,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: FluxoraTypography.numericLabel.copyWith(
+                            color: context.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(width: FluxoraSpacing.md),
+                // A real Material 3 button, not a decorative glyph. D4.6 left a
+                // bare `Icon` here (no `onPressed`), which removed the only
+                // visible cue that the card starts/stops the service.
+                //
+                // Nested buttons do not double-fire: hit testing walks deepest
+                // first, so the IconButton's tap recognizer enters the gesture
+                // arena before the card's `OutlinedButton`, and the arena sweep
+                // accepts the first member and rejects the rest. `_handleStart`'s
+                // synchronous `_isDisabled` guard is the second line of defence.
+                SizedBox(
+                  width: 40,
+                  height: 40,
+                  child: busy
+                      ? const Padding(
+                          padding: EdgeInsets.all(8),
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : IconButton.filledTonal(
+                          onPressed: canPress
+                              ? _handleStart
+                              : hasNoProfile
+                              ? _handleShowAddProfile
+                              : null,
+                          tooltip: appLocalizations.powerSwitch,
+                          icon: Icon(
+                            displayStart
+                                ? Icons.pause_circle_outline
+                                : Icons.play_circle_outline,
+                            size: 20,
+                          ),
+                        ),
+                ),
+              ],
             ),
           ),
         );
@@ -155,100 +248,63 @@ class _StartButtonState extends ConsumerState<StartButton> {
     );
   }
 
-  Widget _buildContent(
-    BuildContext context,
-    WidgetRef ref,
-    StartButtonSelectorState state,
-    bool isStart,
-    int? runTime,
-    bool isRestarting,
-    bool isDisabled,
-    bool isSmartStopped,
-  ) {
+  /// Maps the existing core state onto Fluxora flow / status / text.
+  ///
+  /// Labels reuse existing localisation keys only — no new strings, so no
+  /// l10n regeneration was needed.
+  _HeroPresentation _resolveHero({
+    required bool isInit,
+    required bool hasProfile,
+    required bool isRestarting,
+    required bool isSmartStopped,
+    required bool started,
+    required int? runTime,
+  }) {
+    if (!isInit) {
+      return (
+        flow: FluxoraFlowState.connecting,
+        kind: FluxoraStatusKind.connecting,
+        label: appLocalizations.serviceRunning,
+        value: '',
+      );
+    }
+    if (isRestarting) {
+      return (
+        flow: FluxoraFlowState.connecting,
+        kind: FluxoraStatusKind.connecting,
+        label: appLocalizations.restartCoreTitle,
+        value: '',
+      );
+    }
     if (isSmartStopped) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          Icon(
-            Icons.pause_circle_outline,
-            size: 20,
-            color: context.colorScheme.outline,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              'Suspended',
-              style: context.textTheme.bodyMedium?.copyWith(
-                color: context.colorScheme.outline,
-              ).adjustSize(1),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
+      return (
+        flow: FluxoraFlowState.idle,
+        kind: FluxoraStatusKind.disconnected,
+        label: appLocalizations.coreSuspended,
+        value: appLocalizations.serviceReady,
       );
     }
-
-    if (!state.isInit || isDisabled || isRestarting) {
-      return Container(
-        padding: const EdgeInsets.all(2),
-        child: Center(
-          child: OverflowBox(
-            maxWidth: 30,
-            maxHeight: 16,
-            child: SpinKitThreeBounce(
-              color: context.colorScheme.primary,
-              size: 16,
-            ),
-          ),
-        ),
+    if (!hasProfile) {
+      return (
+        flow: FluxoraFlowState.error,
+        kind: FluxoraStatusKind.warning,
+        label: appLocalizations.checkOrAddProfile,
+        value: '',
       );
     }
-
-    if (!state.hasProfile) {
-      return Text(
-        appLocalizations.checkOrAddProfile,
-        style: context.textTheme.bodyMedium?.toLight.adjustSize(1),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
+    if (started) {
+      return (
+        flow: FluxoraFlowState.connected,
+        kind: FluxoraStatusKind.connected,
+        label: appLocalizations.coreConnected,
+        value: _formatRunTime(runTime),
       );
     }
-
-    if (!isStart) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          Icon(Icons.play_arrow, size: 16, color: context.colorScheme.primary),
-          SizedBox(width: 4),
-          Expanded(
-            child: Text(
-              appLocalizations.serviceReady,
-              style: context.textTheme.bodyMedium?.toLight.adjustSize(1),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      );
-    }
-
-    // Started state: show pause icon + run time
-    final timeText = _formatRunTime(runTime);
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: [
-        Icon(Icons.pause, size: 16, color: context.colorScheme.primary),
-        SizedBox(width: 4),
-        Text('  ', style: context.textTheme.bodyMedium?.toLight.adjustSize(1)),
-        Expanded(
-          child: Text(
-            timeText,
-            style: context.textTheme.bodyMedium?.toLight.adjustSize(1),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ],
+    return (
+      flow: FluxoraFlowState.idle,
+      kind: FluxoraStatusKind.disconnected,
+      label: appLocalizations.powerSwitch,
+      value: appLocalizations.serviceReady,
     );
   }
 

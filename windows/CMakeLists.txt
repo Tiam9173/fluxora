@@ -53,6 +53,11 @@ add_subdirectory(${FLUTTER_MANAGED_DIR})
 # Application build; see runner/CMakeLists.txt.
 add_subdirectory("runner")
 
+# Fluxora's own loopback exemption helper. It replaces the legacy third-party
+# tool and is installed next to the app executable (see the installation
+# section below).
+add_subdirectory("fluxora_loopback")
+
 
 # Generated plugin build rules, which manage building the plugins and adding
 # them to the application.
@@ -111,7 +116,24 @@ install(PROGRAMS "${CLASH_DIR}/FluxoraHelperService.exe" DESTINATION "${INSTALL_
   CONFIGURATIONS Profile;Release
   COMPONENT Runtime)
 
-install(FILES "WindowsLoopbackManager.exe" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+# Fluxora's own loopback exemption helper, installed beside the app executable
+# so that tools.dart can launch it from the executable's directory.
+#
+# The legacy third-party WindowsLoopbackManager.exe was removed in D5.4: nothing
+# in the build or the runtime referenced it any more, and its upstream project
+# carried no licence. See NOTICE for the historical attribution.
+install(TARGETS FluxoraLoopbackManager RUNTIME DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+  COMPONENT Runtime)
+
+# GPL-3.0 licence text and attribution notices, installed beside the executable.
+#
+# Both Windows distribution artifacts package this directory verbatim — the
+# portable zip (windows/packaging/exe/package_windows.dart) and the Inno Setup
+# installer ([Files] -> "{{SOURCE_DIR}}\*") — so installing them here is what
+# makes the licence travel with the binary, as GPLv3 requires.
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/../LICENSE"
+              "${CMAKE_CURRENT_SOURCE_DIR}/../NOTICE"
+  DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
   COMPONENT Runtime)
 
 if(PLUGIN_BUNDLED_LIBRARIES)

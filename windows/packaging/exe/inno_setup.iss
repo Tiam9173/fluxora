@@ -6,6 +6,10 @@ AppPublisher={{PUBLISHER_NAME}}
 AppPublisherURL={{PUBLISHER_URL}}
 AppSupportURL={{PUBLISHER_URL}}
 AppUpdatesURL={{PUBLISHER_URL}}
+; GPL-3.0: show the licence before installation and require acknowledgement.
+; The file is placed next to the executable by windows/CMakeLists.txt, so it is
+; present in {{SOURCE_DIR}} when ISCC compiles this script.
+LicenseFile={{SOURCE_DIR}}\LICENSE
 DefaultDirName={{INSTALL_DIR_NAME}}
 DisableProgramGroupPage=yes
 OutputDir=.

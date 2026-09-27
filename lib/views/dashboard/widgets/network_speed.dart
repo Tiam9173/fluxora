@@ -38,12 +38,11 @@ class NetworkSpeed extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final color = context.colorScheme.onSurfaceVariant.opacity80;
     final primaryColor = Theme.of(context).colorScheme.primary;
     return SizedBox(
       height: getWidgetHeight(2),
-      child: CommonCard(
-        onPressed: () {
+      child: FluxoraCard(
+        onTap: () {
           globalState.openUrl('https://ptclspeed.speedtestcustom.com');
         },
         info: Info(
@@ -56,13 +55,13 @@ class NetworkSpeed extends ConsumerWidget {
             builder: (_, _, _) {
               final traffics = ref.read(trafficsProvider).list;
               final points = _getPoints(traffics);
-              final speedText = _getLastTraffic(traffics).toSpeedText();
+              final last = _getLastTraffic(traffics);
               return Stack(
                 children: [
                   Positioned.fill(
                     child: Padding(
                       padding: const EdgeInsets.only(
-                        top: 16,
+                        top: 24,
                         left: 0,
                         right: 0,
                         bottom: 0,
@@ -79,13 +78,23 @@ class NetworkSpeed extends ConsumerWidget {
                   Positioned(
                     top: 0,
                     right: 0,
-                    child: Transform.translate(
-                      offset: const Offset(-16, -20),
-                      child: Text(
-                        speedText,
-                        style: context.textTheme.bodySmall?.copyWith(
-                          color: color,
-                        ),
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 16),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          FluxoraSpeedGauge(
+                            mode: FluxoraSpeedGaugeMode.download,
+                            download: last.down.value,
+                            compact: true,
+                          ),
+                          const SizedBox(width: FluxoraSpacing.lg),
+                          FluxoraSpeedGauge(
+                            mode: FluxoraSpeedGaugeMode.upload,
+                            upload: last.up.value,
+                            compact: true,
+                          ),
+                        ],
                       ),
                     ),
                   ),

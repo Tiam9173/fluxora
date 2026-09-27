@@ -76,7 +76,12 @@ class ProxyCard extends StatelessWidget {
     proxyDelayTest(proxy, testUrl);
   }
 
-  Widget _buildDelayText(BuildContext context) {
+  /// The latency slot handed to [FluxoraProxyTile].
+  ///
+  /// Preserves the original affordances: a testing spinner (`delay == 0`), a
+  /// tap-to-test bolt button (`delay == null`), and the Fluxora latency badge
+  /// otherwise. Non-testable nodes (REJECT / PASS / REMATCH) render nothing.
+  Widget _buildLatencySlot(BuildContext context) {
     return SizedBox(
       height: measure.labelSmallHeight,
       child: Consumer(
@@ -120,15 +125,14 @@ class ProxyCard extends StatelessWidget {
             );
           }
 
-          return GestureDetector(
+          // D4.7: the raw `Text` + `utils.getDelayColor` pair is replaced by the
+          // Fluxora latency badge, so the 600ms legacy threshold and the
+          // hardcoded Colors.red/green/amber are gone. `dense` keeps the badge
+          // 12px tall so the list's fixed item extent is unchanged.
+          return FluxoraLatencyBadge(
+            delay: delay,
+            dense: true,
             onTap: _handleTestCurrentDelay,
-            child: Text(
-              delay > 0 ? '$delay ms' : 'Timeout',
-              style: context.textTheme.labelSmall?.copyWith(
-                overflow: TextOverflow.ellipsis,
-                color: utils.getDelayColor(delay),
-              ),
-            ),
           );
         },
       ),
@@ -176,42 +180,11 @@ class ProxyCard extends StatelessWidget {
     };
   }
 
-  Widget _buildProxyNameWithIcon(
-    BuildContext context,
-    WidgetRef ref, {
-    required bool showComputedMark,
-  }) {
-    final nameWidget = _buildProxyNameText(context);
-
-    Widget wrapPadding(Widget child) {
-      if (showComputedMark) {
-        return Padding(
-          padding: const EdgeInsets.only(right: 28),
-          child: child,
-        );
-      }
-      return child;
-    }
-
-    if (_hasEmoji(proxy.name)) {
-      return wrapPadding(nameWidget);
-    }
-
-    final subGroupIcon = ref.watch(proxyIconProvider(proxy.name));
-    if (subGroupIcon.isEmpty) {
-      return wrapPadding(nameWidget);
-    }
-    return wrapPadding(
-      Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          CommonTargetIcon(src: subGroupIcon, size: measure.bodyMediumHeight),
-          const SizedBox(width: 4),
-          Flexible(child: nameWidget),
-        ],
-      ),
-    );
+  /// Icon of the sub-group this node belongs to, or '' when the node name
+  /// already carries an emoji (the emoji then acts as the icon).
+  String _subGroupIcon(WidgetRef ref) {
+    if (_hasEmoji(proxy.name)) return '';
+    return ref.watch(proxyIconProvider(proxy.name));
   }
 
   bool _isSelectedProxy(WidgetRef ref) {
@@ -228,30 +201,6 @@ class ProxyCard extends StatelessWidget {
         (name) => name == proxy.name,
       ),
     );
-  }
-
-  Widget _buildProxyNameText(BuildContext context) {
-    if (type == ProxyCardType.min) {
-      return SizedBox(
-        height: measure.bodyMediumHeight * 1,
-        child: EmojiText(
-          proxy.name,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: context.textTheme.bodyMedium,
-        ),
-      );
-    } else {
-      return SizedBox(
-        height: measure.bodyMediumHeight * 2,
-        child: EmojiText(
-          proxy.name,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: context.textTheme.bodyMedium,
-        ),
-      );
-    }
   }
 
   Future<void> _changeProxy(WidgetRef ref) async {
@@ -362,103 +311,51 @@ class ProxyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final delayText = _buildDelayText(context);
+    final latencySlot = _buildLatencySlot(context);
+    final isExpand = type == ProxyCardType.expand;
     return Consumer(
       builder: (_, ref, child) {
         final isSelected = _isSelectedProxy(ref);
         final isComputedMatch = groupType.isComputedSelected &&
             _isComputedMatch(ref);
-        final proxyNameWidget = _buildProxyNameWithIcon(
-          context,
-          ref,
-          showComputedMark: isComputedMatch,
-        );
-        return Stack(
-          children: [
-            CommonCard(
-              onPressed: () {
-                _changeProxy(ref);
-              },
-              isSelected: isSelected,
-              child: Container(
-                alignment: Alignment.centerLeft,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: 8,
-                  children: [
-                    proxyNameWidget,
-                    if (type == ProxyCardType.expand) ...[
-                      SizedBox(
-                        height: measure.labelSmallHeight * 2 + 4,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          spacing: 4,
-                          children: [
-                            SizedBox(
-                              height: measure.labelSmallHeight,
-                              child: _ProxyDesc(proxy: proxy),
-                            ),
-                            SizedBox(
-                              height: measure.labelSmallHeight,
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                spacing: 4,
-                                children: [
-                                  Expanded(
-                                    child: Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: _ProxyMetaTag(proxy.type),
-                                    ),
-                                  ),
-                                  delayText,
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ] else
-                      SizedBox(
-                        height: measure.bodySmallHeight,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Flexible(
-                              flex: 1,
-                              child: TooltipText(
-                                text: Text(
-                                  proxy.type,
-                                  style: context.textTheme.bodySmall
-                                      ?.copyWith(
-                                        overflow: TextOverflow.ellipsis,
-                                        color: context
-                                            .textTheme
-                                            .bodySmall
-                                            ?.color
-                                            ?.opacity80,
-                                      ),
-                                ),
-                              ),
-                            ),
-                            delayText,
-                          ],
-                        ),
-                      ),
-                  ],
+        final subGroupIcon = _subGroupIcon(ref);
+
+        // D4.7: the card body is now a FluxoraProxyTile.
+        //
+        // * `getItemHeight()` is deliberately untouched, so `itemExtentBuilder`
+        //   stays correct by construction — the parent SizedBox bounds the tile.
+        // * `padding` reproduces the previous horizontal 12px inset with **no**
+        //   vertical inset, keeping the same available content height.
+        // * `latencySlot` carries the original test affordances (testing
+        //   spinner / tap-to-test bolt / badge), so nothing is lost.
+        return FluxoraProxyTile(
+          name: proxy.name,
+          protocol: proxy.type,
+          status: isSelected
+              ? FluxoraStatusKind.connected
+              : (_isNonTestableProxy
+                    ? FluxoraStatusKind.disconnected
+                    : FluxoraStatusKind.unknown),
+          selected: isSelected,
+          compact: true,
+          // `min` cards only ever showed one line; the wider types showed two.
+          nameMaxLines: type == ProxyCardType.min ? 1 : 2,
+          onTap: () => _changeProxy(ref),
+          padding: const EdgeInsets.symmetric(horizontal: FluxoraSpacing.md),
+          leading: subGroupIcon.isEmpty
+              ? null
+              : CommonTargetIcon(
+                  src: subGroupIcon,
+                  size: measure.bodyMediumHeight,
                 ),
-              ),
-            ),
-            if (isComputedMatch)
-              const Positioned(
-                top: 0,
-                right: 0,
-                child: _ProxyComputedMarkIcon(),
-              ),
-          ],
+          trailing: isComputedMatch ? const _ProxyComputedMarkIcon() : null,
+          description: isExpand
+              ? SizedBox(
+                  height: measure.labelSmallHeight,
+                  child: _ProxyDesc(proxy: proxy),
+                )
+              : null,
+          latencySlot: latencySlot,
         );
       },
     );
@@ -511,10 +408,9 @@ class _ProxyMetaTag extends StatelessWidget {
       text,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: context.textTheme.labelSmall?.copyWith(
+      style: FluxoraTypography.label.copyWith(
         height: 1,
-        color: colorScheme.onSurfaceVariant.opacity80,
-        fontWeight: FontWeight.w400,
+        color: colorScheme.onSurfaceVariant,
       ),
     );
   }

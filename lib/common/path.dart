@@ -107,11 +107,10 @@ class AppPath {
     if (File(targetHelper).existsSync()) {
       return targetHelper;
     }
-    final fallbackHelper =
-        join(executableDirPath, 'FluxoraHelperService$executableExtension');
-    if (File(fallbackHelper).existsSync()) {
-      return fallbackHelper;
-    }
+    // NOTE: this used to fall back to a hardcoded `FluxoraHelperService`, which
+    // was provably the same path as `targetHelper` (and is now wrong for debug
+    // builds, where the helper is `FluxoraDevHelperService`). Removed instead of
+    // left as dead code — `targetHelper` is the correct answer either way.
     return targetHelper;
   }
 

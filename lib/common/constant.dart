@@ -9,7 +9,9 @@ import 'package:fluxora/state.dart';
 import 'package:flutter/material.dart';
 
 const appName = AppIdentity.displayName;
-const appHelperService = WindowsHelperIdentity.serviceName;
+// No longer `const`: the helper name is dev-aware now, so
+// `WindowsHelperIdentity.serviceName` is a getter rather than a constant.
+final appHelperService = WindowsHelperIdentity.serviceName;
 const coreName = 'clash.meta';
 const tunDeviceName = AppIdentity.tunDeviceName;
 const browserUa =
@@ -130,7 +132,20 @@ const proxiesListStoreKey = PageStorageKey<String>('proxies_list');
 const toolsStoreKey = PageStorageKey<String>('tools');
 const profilesStoreKey = PageStorageKey<String>('profiles');
 
-const defaultPrimaryColor = 0xFF00897B;
+/// Fluxora brand primary — "Flux Cyan".
+///
+/// Was `0xFF00897B` (Material Teal 600) before D4.4; now aligned with the
+/// Fluxora mark so the default theme is actually on-brand.
+/// See `D4_BRAND_PROPOSAL.md` §3.1 and `FluxoraColors.fluxCyan`.
+const defaultPrimaryColor = 0xFF29D6C7;
+
+/// The primary colour Fluxora shipped **before** D4.4 (Material Teal 600).
+///
+/// Kept so D4.8 can tell "the user never picked a colour" apart from "the user
+/// picked one": a stored `primaryColor` equal to this is the *old default*, not
+/// a user choice, and may be migrated to [defaultPrimaryColor]. Any other value
+/// is treated as a real user choice and must never be overwritten.
+const legacyDefaultPrimaryColor = 0xFF00897B;
 
 double getWidgetHeight(num lines) {
   return max(lines * 84 + (lines - 1) * 16, 0).ap;
@@ -142,14 +157,23 @@ final mainIsolate = 'FluxoraMainIsolate';
 
 final serviceIsolate = 'FluxoraServiceIsolate';
 
+/// The 7 Fluxora theme presets (`D4_BRAND_PROPOSAL.md` §四).
+///
+/// Ordered along the colour wheel — cyan-green → blue → teal-blue → violet →
+/// mint → amber → neutral. [defaultPrimaryColor] (Flux) is first and is the
+/// default selection.
+///
+/// Raw ARGB values are kept here rather than referencing `FluxoraColors` so
+/// this stays a compile-time `const` list (the token constants are `Color`
+/// objects, whose `value`/`toARGB32()` is not const).
 const defaultPrimaryColors = [
-  0xFF1E293B,
-  0xFF1976D2,
-  defaultPrimaryColor,
-  0xFFE91E63,
-  0xFF7B1FA2,
-  0xFFD97706,
-  0xFF334155,
+  0xFF29D6C7, // 1. Flux      — brand cyan (default)
+  0xFF4C8DFF, // 2. Aurora    — aurora blue
+  0xFF0E9AA7, // 3. Ocean     — calm teal-blue
+  0xFF7C75FF, // 4. Violet    — flow violet
+  0xFF34D399, // 5. Mint      — fresh mint
+  0xFFF59E0B, // 6. Amber     — warm amber
+  0xFF334155, // 7. Graphite  — neutral slate
 ];
 
 const scriptTemplate = '''

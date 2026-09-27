@@ -105,7 +105,9 @@ class System {
           corePath,
         ]);
         if (removeResult.exitCode == 0) {
-          commonPrint.log('Cleared quarantine attribute from FluxoraCore');
+          commonPrint.log(
+            'Cleared quarantine attribute from ${AppIdentity.coreExecutableName}',
+          );
         } else {
           quarantineCleared = false;
           commonPrint.log(
@@ -124,7 +126,7 @@ class System {
       if (result.exitCode != 0) {
         if (!quarantineCleared) {
           globalState.showNotifier(
-            'Failed to authorize FluxoraCore. Try: xattr -dr com.apple.quarantine /Applications/Fluxora.app',
+            'Failed to authorize ${AppIdentity.coreExecutableName}. Try: xattr -dr com.apple.quarantine /Applications/${AppIdentity.mainExecutableName}.app',
           );
         } else {
           globalState.showNotifier(appLocalizations.tunEnableRequireAdmin);

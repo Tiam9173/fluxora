@@ -148,6 +148,15 @@ endif()
 install(PROGRAMS "${CORE_PATH}" DESTINATION "${BUILD_BUNDLE_DIR}"
   COMPONENT Runtime)
 
+# GPL-3.0 licence text and attribution notices, installed into the bundle root
+# beside the executable. All three Linux artifacts are produced from this bundle
+# directory (deb / rpm / AppImage), so the licence travels with the binary as
+# GPLv3 requires.
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/../LICENSE"
+              "${CMAKE_CURRENT_SOURCE_DIR}/../NOTICE"
+  DESTINATION "${CMAKE_INSTALL_PREFIX}"
+  COMPONENT Runtime)
+
 foreach(bundled_library ${PLUGIN_BUNDLED_LIBRARIES})
   install(FILES "${bundled_library}"
     DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"

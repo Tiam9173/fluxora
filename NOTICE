@@ -5,3 +5,47 @@ Fluxora is distributed under the GNU General Public License v3.0. See LICENSE.
 Fluxora includes and interoperates with open-source components, including Mihomo.
 Their applicable licenses and copyright notices remain in their respective
 source directories and distribution metadata.
+
+## Upstream lineage
+
+Fluxora is an independent product. It is not an official release of, and does
+not claim any affiliation with, any upstream project.
+
+Fluxora's codebase is derived from **bettbox+**
+(<https://github.com/Tiam9173/bettboxplus>, v1.19.2, commit `dcad2db`), which is
+distributed under the GNU General Public License v3.0. bettbox+ is in turn a
+rebuild of **Bettbox** (<https://github.com/appshubcc/Bettbox>).
+
+Fluxora's independent product identity — branding, UI, design tokens, theming,
+and the Windows loopback component — was developed on top of that base starting
+2026-09-25 (commit `7d47c3f`).
+
+## Bundled components
+
+- **Mihomo (Clash.Meta)** — the proxy core. Licensed GPL-3.0; the licence text
+  is at `core/Clash.Meta/LICENSE` and the corresponding source is in `core/`.
+- **Flutter / Dart packages** — their licence texts are collected automatically
+  by the Flutter tool and shipped inside the application bundle as
+  `data/flutter_assets/NOTICES.Z`.
+- **Fluxora Loopback Manager** (`windows/fluxora_loopback/`) — original work,
+  Copyright (C) 2026 Fluxora Contributors, GPL-3.0-or-later.
+
+## Historical third-party binary (removed)
+
+Earlier revisions of this repository included a third-party Windows loopback
+exemption tool at `windows/WindowsLoopbackManager.exe`, obtained from
+`appshubcc/Windows-Loopback-Manager` (author: `tiagonmas`).
+
+The upstream project does not publish a licence for that binary, so its licence
+status is unknown. It has therefore been removed from this repository and is no
+longer distributed in any form.
+
+Its function is now provided by Fluxora's own implementation,
+`FluxoraLoopbackManager`, built from `windows/fluxora_loopback/`. That component
+is an independent implementation and is the only loopback tool shipped.
+
+For audit traceability, the removed file was:
+
+    path   : windows/WindowsLoopbackManager.exe
+    size   : 197120 bytes
+    sha256 : d9b1bd0e9f05c8f046578c6f870b1c6822fbd660a01c55a4c838386432215263

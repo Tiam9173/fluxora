@@ -18,8 +18,9 @@ class ProxiesListView extends ConsumerWidget {
     final state = ref.watch(proxiesListStateProvider);
 
     if (state.groups.isEmpty) {
-      return NullStatus(
-        label: appLocalizations.nullTip(appLocalizations.proxies),
+      return FluxoraEmptyState(
+        icon: Icons.dns_outlined,
+        title: appLocalizations.nullTip(appLocalizations.proxies),
       );
     }
 
@@ -297,10 +298,13 @@ class _GroupHeader extends ConsumerWidget {
       proxyIconProvider(selectedProxyName),
     );
 
-    return CommonCard(
-      radius: 16,
-      type: CommonCardType.filled,
-      onPressed: onToggle,
+    return FluxoraCard(
+      // radius == FluxoraRadius.card (16), matching the previous hardcoded 16.
+      filled: true,
+      onTap: onToggle,
+      // Zero padding keeps the explicit 16/12 inset below, so the list's fixed
+      // item extent is unchanged.
+      padding: EdgeInsets.zero,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(

@@ -9,8 +9,8 @@
 
 <div align="left">
 
-[![Telegram Group](https://img.shields.io/badge/Fluxora-Group-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/fluxora_grup)
-[![Telegram Channel](https://img.shields.io/badge/Fluxora-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/fluxora)
+[![Telegram Group](https://img.shields.io/badge/Fluxora-Group-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/Fluxora_Grup)
+[![Telegram Channel](https://img.shields.io/badge/Fluxora-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/Fluxora_Chanel)
 
 ---
 </div>

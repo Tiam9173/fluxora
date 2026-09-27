@@ -6,6 +6,12 @@ import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// Sparkline-only variant of the network speed card.
+///
+/// The 1-row card has roughly 32px of body height once the header is drawn, so
+/// there is no room for a numeric read-out here — the full-width
+/// [NetworkSpeed] card carries [FluxoraSpeedGauge]. This card only adopts the
+/// Fluxora surface.
 class NetworkSpeedSmall extends ConsumerWidget {
   const NetworkSpeedSmall({super.key});
 
@@ -37,8 +43,8 @@ class NetworkSpeedSmall extends ConsumerWidget {
     return RepaintBoundary(
       child: SizedBox(
         height: getWidgetHeight(1),
-        child: CommonCard(
-          onPressed: () {
+        child: FluxoraCard(
+          onTap: () {
             globalState.openUrl('https://ptclspeed.speedtestcustom.com');
           },
           info: Info(
