@@ -7,7 +7,7 @@
   <strong>Open-source cross-platform Mihomo routing client</strong>
 </p>
 
-**Fluxora یک کلاینت چندسکویی برای دیباگ شبکه و تقسیم ترافیک بر اساس قوانین است که با هسته Mihomo (Clash Meta) بازنویسی شده است.**
+**Fluxora یک کلاینت چندسکویی برای دیباگ شبکه و تقسیم ترافیک بر اساس قوانین است که با هسته Mihomo (Clash Meta) کار می‌کند و ادامهٔ مستقل پروژه Bettbox است.**
 
 با پایبندی به اصل "clear and reliable routing"، Fluxora ضمن حفظ رابط کاربری جذاب نسخه اصلی، جزئیات و منطق برنامه را عمیقاً بهینه‌سازی کرده است. ویژگی‌های کلیدی و اهداف تحقق: روانی با نرخ فریم بالا در پیش‌زمینه و عملکرد بی‌صدا و کم‌مصرف در پس‌زمینه — کلاینتی با تجربه کاربری بهتر که با مصرف منابع اندک، عملکرد پایدار و طولانی‌مدتی را برای Mihomo ارائه می‌دهد.
 
@@ -28,7 +28,9 @@ Fluxora یعنی: Make routing legible. - تجربه برتر، آماده اس�
 
 <div align="left">
 
-[![Telegram Group](https://img.shields.io/badge/Fluxora-Chat-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://github.com/Tiam9173/fluxora/discussions) [![Telegram Channel](https://img.shields.io/badge/Fluxora-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://github.com/Tiam9173/fluxora/discussions)
+[![Telegram Group](https://img.shields.io/badge/Fluxora-Chat-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/Fluxora_Grup) [![Telegram Channel](https://img.shields.io/badge/Fluxora-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/Fluxora_Chanel)
+
+[![GitHub Discussions](https://img.shields.io/badge/Fluxora-Discussions-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Tiam9173/fluxora/discussions)
 
 ---
 ## 🚀 ویژگی‌های اصلی
@@ -137,7 +139,7 @@ Fluxora یعنی: Make routing legible. - تجربه برتر، آماده اس�
   </tr>
 </table>
 
-**[FlClash GUI](https://github.com/chen08209/FlClash)** 〢 **[Mihomo Core](https://github.com/MetaCubeX/mihomo)**
+**[Bettbox](https://github.com/appshubcc/Bettbox)** 〢 **[FlClash GUI](https://github.com/chen08209/FlClash)** 〢 **[Mihomo Core](https://github.com/MetaCubeX/mihomo)**
 
 تشکر ویژه از تمامی [مشارکت‌کنندگان](https://github.com/Tiam9173/fluxora/graphs/contributors) و پروژه‌های متن‌باز استفاده‌شده یا ارجاع‌داده‌شده:
 

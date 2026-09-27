@@ -12,8 +12,8 @@ class TUNButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       height: getWidgetHeight(1),
-      child: CommonCard(
-        onPressed: () {
+      child: FluxoraCard(
+        onTap: () {
           showSheet(
             context: context,
             builder: (_, type) {
@@ -52,9 +52,9 @@ class TUNButton extends StatelessWidget {
                     appLocalizations.options,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleSmall?.adjustSize(-2).toLight,
+                    style: FluxoraTypography.label.copyWith(
+                      color: context.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
               ),
@@ -93,8 +93,8 @@ class SystemProxyButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       height: getWidgetHeight(1),
-      child: CommonCard(
-        onPressed: () {
+      child: FluxoraCard(
+        onTap: () {
           showSheet(
             context: context,
             builder: (_, type) {
@@ -127,9 +127,9 @@ class SystemProxyButton extends StatelessWidget {
                     appLocalizations.options,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleSmall?.adjustSize(-2).toLight,
+                    style: FluxoraTypography.label.copyWith(
+                      color: context.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
               ),
@@ -167,8 +167,8 @@ class VpnButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       height: getWidgetHeight(1),
-      child: CommonCard(
-        onPressed: () {
+      child: FluxoraCard(
+        onTap: () {
           showSheet(
             context: context,
             builder: (_, type) {
@@ -203,9 +203,9 @@ class VpnButton extends StatelessWidget {
                     appLocalizations.options,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleSmall?.adjustSize(-2).toLight,
+                    style: FluxoraTypography.label.copyWith(
+                      color: context.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
               ),

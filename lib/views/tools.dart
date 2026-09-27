@@ -289,7 +289,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
           leading: const Icon(Icons.lock),
           onTap: (context, _) {
             windows?.runas(
-              '"${join(dirname(Platform.resolvedExecutable), "WindowsLoopbackManager.exe")}"',
+              '"${join(dirname(Platform.resolvedExecutable), "FluxoraLoopbackManager.exe")}"',
               '',
               showWindow: true,
             );
@@ -1605,7 +1605,7 @@ class _LoopbackItem extends StatelessWidget {
       subtitle: Text(appLocalizations.loopbackDesc),
       onTap: () {
         windows?.runas(
-          '"${join(dirname(Platform.resolvedExecutable), "WindowsLoopbackManager.exe")}"',
+          '"${join(dirname(Platform.resolvedExecutable), "FluxoraLoopbackManager.exe")}"',
           '',
           showWindow: true,
         );

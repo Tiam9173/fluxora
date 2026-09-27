@@ -56,11 +56,12 @@ class _ConnectionsCountState extends State<ConnectionsCount> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = context.colorScheme;
     return SizedBox(
       height: getWidgetHeight(1),
-      child: CommonCard(
+      child: FluxoraCard(
         info: Info(iconData: Icons.ballot, label: appLocalizations.connection),
-        onPressed: () {
+        onTap: () {
           showExtend(
             context,
             builder: (_, type) {
@@ -68,23 +69,28 @@ class _ConnectionsCountState extends State<ConnectionsCount> {
             },
           );
         },
-        child: Container(
+        child: Padding(
           padding: baseInfoEdgeInsets.copyWith(top: 0),
           child: Align(
             alignment: Alignment.bottomLeft,
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.baseline,
               textBaseline: TextBaseline.alphabetic,
               children: [
+                // Monospaced so the figure does not jitter while it ticks.
                 Text(
                   '$_count',
-                  style: context.textTheme.bodyLarge?.toLight.adjustSize(2),
+                  style: FluxoraTypography.numericTitle.copyWith(
+                    color: colorScheme.onSurface,
+                  ),
                 ),
-                const SizedBox(width: 4),
+                const SizedBox(width: FluxoraSpacing.xs),
                 Text(
-                  ' Connections',
-                  style: context.textTheme.bodyMedium?.toLight.adjustSize(0),
+                  appLocalizations.connections,
+                  style: FluxoraTypography.label.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),

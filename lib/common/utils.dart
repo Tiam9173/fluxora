@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:fluxora/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:fluxora/widgets/fluxora/fluxora_latency_badge.dart';
 import 'package:lpinyin/lpinyin.dart';
 
 enum IpCategory {
@@ -18,11 +19,22 @@ enum IpCategory {
 }
 
 class Utils {
-  Color? getDelayColor(int? delay) {
-    if (delay == null) return null;
-    if (delay < 0) return Colors.red;
-    if (delay < 600) return Colors.green;
-    return const Color(0xFFC57F0A);
+  /// Legacy latency colour helper.
+  ///
+  /// D4.7: delegates to the Fluxora latency semantics
+  /// ([FluxoraLatencyBadge.tierOf] + [FluxoraLatencyBadge.colorFor]) so there is
+  /// **one** set of thresholds (300 / 800) instead of the old 600 — and so
+  /// `delay == 0` (testing) is no longer painted green.
+  ///
+  /// The signature is unchanged apart from the added optional [brightness], so
+  /// existing callers keep compiling. New UI should use
+  /// [FluxoraLatencyBadge] directly; the previous sole caller
+  /// (`views/proxies/card.dart`) now does.
+  Color? getDelayColor(int? delay, {Brightness brightness = Brightness.light}) {
+    final tier = FluxoraLatencyBadge.tierOf(delay);
+    // Preserve the original "no colour when never tested" behaviour.
+    if (tier == FluxoraLatencyTier.untested) return null;
+    return FluxoraLatencyBadge.colorFor(brightness, tier);
   }
 
   String countryCodeToEmoji(String countryCode) {

@@ -217,6 +217,24 @@ enum FontFamily {
   const FontFamily(this.value);
 }
 
+/// Where the theme's seed colour comes from.
+///
+/// Fluxora brand-first by default: [fluxora] deliberately ignores Android's
+/// Material You `corePalette` so the brand identity survives on Android.
+/// Material You stays available as an explicit user opt-in via [system].
+enum ColorSource {
+  /// Fluxora brand palette. `ThemeProps.primaryColor` → Flux preset `#29D6C7`.
+  /// **Ignores** `corePalette` / `accentColor` entirely.
+  fluxora,
+
+  /// Android Material You / system dynamic colour.
+  /// `corePalette` → `accentColor` → Flux preset `#29D6C7`.
+  system,
+
+  /// User-picked colour. `ThemeProps.primaryColor` → Flux preset `#29D6C7`.
+  custom,
+}
+
 enum RouteMode { bypassPrivate, config }
 
 enum ActionMethod {
@@ -335,7 +353,8 @@ enum DashboardWidget {
   mediaUnlock(GridItem(crossAxisCellCount: 8, child: MediaUnlock())),
   mediaUnlockSmall(GridItem(crossAxisCellCount: 4, child: MediaUnlockSmall())),
   startButton(
-    GridItem(crossAxisCellCount: 4, isDeletable: false, child: StartButton()),
+    // Full width (8 columns) — the Dashboard's connection Hero (D4.6).
+    GridItem(crossAxisCellCount: 8, isDeletable: false, child: StartButton()),
   );
 
   final GridItem widget;

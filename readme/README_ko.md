@@ -7,7 +7,7 @@
   <strong>Open-source cross-platform Mihomo routing client</strong>
 </p>
 
-**Fluxora는 Mihomo(Clash Meta) 커널 기반으로 FlClash 초기 버전을 재구축한 멀티플랫폼 네트워크 디버깅 및 규칙 분류 클라이언트입니다.**
+**Fluxora는 Mihomo(Clash Meta) 커널 기반의 멀티플랫폼 네트워크 디버깅 및 규칙 분류 클라이언트입니다. Bettbox 프로젝트에서 파생된 독립적인 후속 프로젝트입니다.**
 
 "clear and reliable routing (더 나은 경험)"라는 원칙 아래 기존의 뛰어난 UI를 계승하면서 세부 인터랙션과 기능 로직을 한층 더 최적화했습니다. 핵심 기능 및 구현 목표: 부드러운 고프레임 화면, 전력 소비 없는 백그라운드 — 적은 리소스로 장기적으로 안정적인 실행을 유지하며 더 나은 경험을 제공하는 Mihomo 클라이언트입니다.
 
@@ -28,7 +28,9 @@ Fluxora: Make routing legible. - 뛰어난 경험, 설치 즉시 사용.
 
 <div align="left">
 
-[![Telegram Group](https://img.shields.io/badge/Fluxora-Chat-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://github.com/Tiam9173/fluxora/discussions) [![Telegram Channel](https://img.shields.io/badge/Fluxora-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://github.com/Tiam9173/fluxora/discussions)
+[![Telegram Group](https://img.shields.io/badge/Fluxora-Chat-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/Fluxora_Grup) [![Telegram Channel](https://img.shields.io/badge/Fluxora-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/Fluxora_Chanel)
+
+[![GitHub Discussions](https://img.shields.io/badge/Fluxora-Discussions-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Tiam9173/fluxora/discussions)
 
 ---
 ## 🚀 핵심 특징
@@ -137,7 +139,7 @@ Windows 환경을 예로 들면:
   </tr>
 </table>
 
-**[FlClash GUI](https://github.com/chen08209/FlClash)** 〢 **[Mihomo Core](https://github.com/MetaCubeX/mihomo)**
+**[Bettbox](https://github.com/appshubcc/Bettbox)** 〢 **[FlClash GUI](https://github.com/chen08209/FlClash)** 〢 **[Mihomo Core](https://github.com/MetaCubeX/mihomo)**
 
 프로젝트에 기여해 주신 모든 [기여자](https://github.com/Tiam9173/fluxora/graphs/contributors) 및 사용하거나 참고한 오픈소스 프로젝트에 감사드립니다:
 

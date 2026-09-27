@@ -30,7 +30,17 @@ class Logs extends _$Logs with AutoDisposeNotifierMixin {
   }
 
   void addLog(Log value) {
+    // The write is deferred out of the current synchronous phase on purpose:
+    // logging is driven from process-wide code (`commonPrint` →
+    // `appController.addLog`) and can fire while a widget or provider is
+    // building, where mutating a provider is not allowed.
+    //
+    // `Logs` is autoDispose and nothing watches it while the Logs page is
+    // closed, so the provider can already be disposed by the time this
+    // microtask runs. `ref.mounted` is Riverpod 3's lifecycle check for exactly
+    // that case — bail out instead of touching a disposed notifier.
     Future.microtask(() {
+      if (!ref.mounted) return;
       state = state.copyWith()..add(value);
     });
   }
@@ -83,7 +93,11 @@ class Requests extends _$Requests with AutoDisposeNotifierMixin {
   }
 
   void addRequest(TrackerInfo value) {
+    // Same lifecycle race as `Logs.addLog`: `Requests` is autoDispose and is
+    // fed from the clash connection stream, which keeps producing requests
+    // while no page is watching this provider.
     Future.microtask(() {
+      if (!ref.mounted) return;
       state = state.copyWith()..add(value);
     });
   }

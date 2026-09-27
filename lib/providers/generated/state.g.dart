@@ -2103,12 +2103,47 @@ final class CheckMediaUnlockProvider
 
 String _$checkMediaUnlockHash() => r'6487b5f673e9092c48978ec82f79d9a4f0fd078a';
 
+/// Builds the app's [ColorScheme] for [brightness].
+///
+/// Seed priority follows `ThemeProps.colorSource` (D4.2 §5.2): `fluxora` and
+/// `custom` resolve `primaryColor` → Flux `#29D6C7`, while `system` resolves
+/// `corePalette` → `accentColor` → Flux. Only `system` consults Android Material
+/// You, so the brand identity survives on Android. [ignoreConfig] forces the
+/// `system` path and an explicit [color] wins over every mode.
+///
+/// The seed-derived scheme is then re-skinned with the Fluxora surface ladder so
+/// the canvas, cards and dividers use the Deep Space / Mist neutrals rather than
+/// seed-tinted greys. `pureBlack` is applied by the caller afterwards.
+
 @ProviderFor(genColorScheme)
 final genColorSchemeProvider = GenColorSchemeFamily._();
+
+/// Builds the app's [ColorScheme] for [brightness].
+///
+/// Seed priority follows `ThemeProps.colorSource` (D4.2 §5.2): `fluxora` and
+/// `custom` resolve `primaryColor` → Flux `#29D6C7`, while `system` resolves
+/// `corePalette` → `accentColor` → Flux. Only `system` consults Android Material
+/// You, so the brand identity survives on Android. [ignoreConfig] forces the
+/// `system` path and an explicit [color] wins over every mode.
+///
+/// The seed-derived scheme is then re-skinned with the Fluxora surface ladder so
+/// the canvas, cards and dividers use the Deep Space / Mist neutrals rather than
+/// seed-tinted greys. `pureBlack` is applied by the caller afterwards.
 
 final class GenColorSchemeProvider
     extends $FunctionalProvider<ColorScheme, ColorScheme, ColorScheme>
     with $Provider<ColorScheme> {
+  /// Builds the app's [ColorScheme] for [brightness].
+  ///
+  /// Seed priority follows `ThemeProps.colorSource` (D4.2 §5.2): `fluxora` and
+  /// `custom` resolve `primaryColor` → Flux `#29D6C7`, while `system` resolves
+  /// `corePalette` → `accentColor` → Flux. Only `system` consults Android Material
+  /// You, so the brand identity survives on Android. [ignoreConfig] forces the
+  /// `system` path and an explicit [color] wins over every mode.
+  ///
+  /// The seed-derived scheme is then re-skinned with the Fluxora surface ladder so
+  /// the canvas, cards and dividers use the Deep Space / Mist neutrals rather than
+  /// seed-tinted greys. `pureBlack` is applied by the caller afterwards.
   GenColorSchemeProvider._({
     required GenColorSchemeFamily super.from,
     required (Brightness, {Color? color, bool ignoreConfig}) super.argument,
@@ -2166,7 +2201,19 @@ final class GenColorSchemeProvider
   }
 }
 
-String _$genColorSchemeHash() => r'b18f15c938a8132ee4ed02cdfc02f3b9f01724e2';
+String _$genColorSchemeHash() => r'5e54b7d43837170c3b94aa04c8b5a9c3723e08df';
+
+/// Builds the app's [ColorScheme] for [brightness].
+///
+/// Seed priority follows `ThemeProps.colorSource` (D4.2 §5.2): `fluxora` and
+/// `custom` resolve `primaryColor` → Flux `#29D6C7`, while `system` resolves
+/// `corePalette` → `accentColor` → Flux. Only `system` consults Android Material
+/// You, so the brand identity survives on Android. [ignoreConfig] forces the
+/// `system` path and an explicit [color] wins over every mode.
+///
+/// The seed-derived scheme is then re-skinned with the Fluxora surface ladder so
+/// the canvas, cards and dividers use the Deep Space / Mist neutrals rather than
+/// seed-tinted greys. `pureBlack` is applied by the caller afterwards.
 
 final class GenColorSchemeFamily extends $Family
     with
@@ -2182,6 +2229,18 @@ final class GenColorSchemeFamily extends $Family
         $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
+
+  /// Builds the app's [ColorScheme] for [brightness].
+  ///
+  /// Seed priority follows `ThemeProps.colorSource` (D4.2 §5.2): `fluxora` and
+  /// `custom` resolve `primaryColor` → Flux `#29D6C7`, while `system` resolves
+  /// `corePalette` → `accentColor` → Flux. Only `system` consults Android Material
+  /// You, so the brand identity survives on Android. [ignoreConfig] forces the
+  /// `system` path and an explicit [color] wins over every mode.
+  ///
+  /// The seed-derived scheme is then re-skinned with the Fluxora surface ladder so
+  /// the canvas, cards and dividers use the Deep Space / Mist neutrals rather than
+  /// seed-tinted greys. `pureBlack` is applied by the caller afterwards.
 
   GenColorSchemeProvider call(
     Brightness brightness, {

@@ -245,17 +245,22 @@ class ApplicationState extends ConsumerState<Application>
                   primaryColor: themeProps.primaryColor,
                 ),
                 fontFamily: fontFamily,
+                // Fluxora typography (D4.2 §9): 6 levels, 3 weights. The token
+                // styles leave `fontFamily` null, so they inherit the
+                // `fontFamily` above (HarmonyOS_Sans or the platform default).
+                textTheme: FluxoraTypography.textTheme(),
                 floatingActionButtonTheme: const FloatingActionButtonThemeData(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.all(Radius.circular(20)),
                   ),
-                  elevation: 3,
-                  hoverElevation: 5,
+                  elevation: FluxoraElevation.raised,
+                  hoverElevation: FluxoraElevation.menu,
                 ),
                 dialogTheme: DialogThemeData(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(24),
                   ),
+                  elevation: FluxoraElevation.modal,
                 ),
                 bottomSheetTheme: const BottomSheetThemeData(
                   shape: RoundedRectangleBorder(
@@ -269,6 +274,7 @@ class ApplicationState extends ConsumerState<Application>
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.all(Radius.circular(20)),
                   ),
+                  elevation: FluxoraElevation.menu,
                 ),
                 dividerTheme: DividerThemeData(
                   color: _getAppColorScheme(
@@ -332,17 +338,20 @@ class ApplicationState extends ConsumerState<Application>
                   primaryColor: themeProps.primaryColor,
                 ).toPureBlack(themeProps.pureBlack),
                 fontFamily: fontFamily,
+                // Same Fluxora typography scale as the light theme.
+                textTheme: FluxoraTypography.textTheme(),
                 floatingActionButtonTheme: const FloatingActionButtonThemeData(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.all(Radius.circular(20)),
                   ),
-                  elevation: 3,
-                  hoverElevation: 5,
+                  elevation: FluxoraElevation.raised,
+                  hoverElevation: FluxoraElevation.menu,
                 ),
                 dialogTheme: DialogThemeData(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(24),
                   ),
+                  elevation: FluxoraElevation.modal,
                 ),
                 bottomSheetTheme: const BottomSheetThemeData(
                   shape: RoundedRectangleBorder(
@@ -356,6 +365,7 @@ class ApplicationState extends ConsumerState<Application>
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.all(Radius.circular(20)),
                   ),
+                  elevation: FluxoraElevation.menu,
                 ),
                 dividerTheme: DividerThemeData(
                   color:

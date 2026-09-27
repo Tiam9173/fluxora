@@ -34,6 +34,19 @@ class FontFamilyItem {
   const FontFamilyItem({required this.fontFamily, required this.label});
 }
 
+/// One option of the D4.8 colour-source selector.
+class ColorSourceItem {
+  final ColorSource colorSource;
+  final IconData iconData;
+  final String label;
+
+  const ColorSourceItem({
+    required this.colorSource,
+    required this.iconData,
+    required this.label,
+  });
+}
+
 class ThemeView extends ConsumerWidget {
   const ThemeView({super.key});
 
@@ -55,6 +68,9 @@ class ThemeView extends ConsumerWidget {
 
     final items = [
       _ThemeModeItem(),
+      // D4.8: where the theme colour comes from (Fluxora / System / Custom).
+      // Must come before the palette card, which now reflects the choice.
+      _ColorSourceItem(),
       _PrimaryColorItem(),
       if (brightness == Brightness.dark) _PrueBlackItem(),
       if (toggleItems.isNotEmpty) ...generateSection(items: toggleItems),
@@ -188,7 +204,8 @@ class _PrimaryColorItemState extends ConsumerState<_PrimaryColorItem> {
       return state.copyWith(
         primaryColors: defaultPrimaryColors,
         primaryColor: defaultPrimaryColor,
-        schemeVariant: DynamicSchemeVariant.content,
+        schemeVariant: DynamicSchemeVariant.tonalSpot,
+        colorSource: ColorSource.fluxora,
       );
     });
   }
@@ -271,6 +288,16 @@ class _PrimaryColorItemState extends ConsumerState<_PrimaryColorItem> {
 
   @override
   Widget build(BuildContext context) {
+    // D4.8: the palette picker only applies to a user-chosen colour. When the
+    // colour comes from Fluxora or from the system, show a preview instead —
+    // letting the user tap a swatch there would silently imply `custom`.
+    final colorSource = ref.watch(
+      themeSettingProvider.select((state) => state.colorSource),
+    );
+    if (colorSource != ColorSource.custom) {
+      return _buildColorSourcePreview(context, colorSource);
+    }
+
     final vm4 = ref.watch(
       themeSettingProvider.select(
         (state) => VM4(
@@ -299,7 +326,7 @@ class _PrimaryColorItemState extends ConsumerState<_PrimaryColorItem> {
         return true;
       },
       child: ItemCard(
-        info: Info(label: appLocalizations.themeColor, iconData: Icons.palette),
+        info: Info(label: appLocalizations.colorSchemes, iconData: Icons.palette),
         actions: genActions([
           if (_removablePrimaryColor == null)
             FilledButton(
@@ -856,4 +883,131 @@ class _SliderDefaultsM3 extends SliderThemeData {
 
   @override
   double? get trackGap => 6.0;
+}
+
+/// Colour-source selector (D4.8).
+///
+/// Mirrors `_ThemeModeItem`'s layout so the two "pick one of three" controls on
+/// this page look and behave the same. Labels reuse existing localisation keys
+/// (`system` / `custom`); "Fluxora" is a brand name and needs no translation.
+class _ColorSourceItem extends ConsumerWidget {
+  const _ColorSourceItem();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colorSource = ref.watch(
+      themeSettingProvider.select((state) => state.colorSource),
+    );
+    final items = [
+      ColorSourceItem(
+        colorSource: ColorSource.fluxora,
+        iconData: Icons.auto_awesome,
+        label: AppIdentity.displayName,
+      ),
+      ColorSourceItem(
+        colorSource: ColorSource.system,
+        iconData: Icons.smartphone,
+        label: appLocalizations.system,
+      ),
+      ColorSourceItem(
+        colorSource: ColorSource.custom,
+        iconData: Icons.colorize,
+        label: appLocalizations.custom,
+      ),
+    ];
+    return ItemCard(
+      info: Info(label: appLocalizations.themeColor, iconData: Icons.palette),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        height: 56,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: items.length,
+          itemBuilder: (_, index) {
+            final item = items[index];
+            return CommonCard(
+              isSelected: item.colorSource == colorSource,
+              onPressed: () {
+                ref
+                    .read(themeSettingProvider.notifier)
+                    .updateState(
+                      (state) => state.copyWith(colorSource: item.colorSource),
+                    );
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Flexible(child: Icon(item.iconData)),
+                    const SizedBox(width: 8),
+                    Flexible(child: Text(item.label)),
+                  ],
+                ),
+              ),
+            );
+          },
+          separatorBuilder: (_, _) {
+            return const SizedBox(width: 16);
+          },
+        ),
+      ),
+    );
+  }
+}
+
+/// Read-only preview shown in place of the palette picker when the colour comes
+/// from Fluxora or from the system (D4.8).
+///
+/// Fluxora shows its three brand colours; System shows the colour the platform
+/// actually resolved (Material You on Android, the safe fallback elsewhere).
+Widget _buildColorSourcePreview(BuildContext context, ColorSource source) {
+  final isFluxora = source == ColorSource.fluxora;
+  return ItemCard(
+    info: Info(label: appLocalizations.colorSchemes, iconData: Icons.palette),
+    child: Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      height: 56,
+      child: Row(
+        children: [
+          if (isFluxora)
+            for (final color in const [
+              FluxoraColors.fluxCyan,
+              FluxoraColors.auroraBlue,
+              FluxoraColors.flowViolet,
+            ])
+              Padding(
+                padding: const EdgeInsets.only(right: FluxoraSpacing.sm),
+                child: _buildColorSwatch(context, color),
+              ),
+          if (!isFluxora)
+            _buildColorSwatch(context, context.colorScheme.primary),
+          const SizedBox(width: FluxoraSpacing.md),
+          Expanded(
+            child: Text(
+              isFluxora ? AppIdentity.displayName : appLocalizations.system,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: FluxoraTypography.body.copyWith(
+                color: context.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+Widget _buildColorSwatch(BuildContext context, Color color) {
+  return Container(
+    width: 36,
+    height: 36,
+    decoration: BoxDecoration(
+      color: color,
+      borderRadius: FluxoraRadius.smAll,
+      border: Border.all(color: context.colorScheme.outlineVariant),
+    ),
+  );
 }

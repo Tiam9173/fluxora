@@ -8,6 +8,7 @@ export 'color_scheme_box.dart';
 export 'disabled_mask.dart';
 export 'fade_box.dart';
 export 'float_layout.dart';
+export 'fluxora/fluxora.dart';
 export 'grid.dart';
 export 'icon.dart';
 export 'input.dart';

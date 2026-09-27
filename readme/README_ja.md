@@ -7,7 +7,7 @@
   <strong>Open-source cross-platform Mihomo routing client</strong>
 </p>
 
-**Fluxora は、Mihomo（Clash Meta）カーネルを搭載し、初期の FlClash をベースに再構築されたマルチプラットフォーム対応のネットワークデバッグ・分流クライアントです。**
+**Fluxora は、Mihomo（Clash Meta）カーネルを搭載したマルチプラットフォーム対応のネットワークデバッグ・分流クライアントです。Bettbox プロジェクトから派生した独立した継続プロジェクトです。**
 
 「clear and reliable routing（より良い体験）」を追求し、オリジナルの洗練された UI を継承しつつ、細部のデザインや実用ロジックを深層最適化。コア機能と実現目標：「フロントエンドは高フレームレートで滑らか、バックグラウンドは省電力で無感」。低リソースで長期にわたり安定動作する、より優れた Mihomo クライアントの実現に尽力しています。
 
@@ -28,7 +28,9 @@ Fluxora：Make routing legible. - 優れた体験を、すぐに使える。
 
 <div align="left">
 
-[![Telegram Group](https://img.shields.io/badge/Fluxora-Chat-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://github.com/Tiam9173/fluxora/discussions) [![Telegram Channel](https://img.shields.io/badge/Fluxora-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://github.com/Tiam9173/fluxora/discussions)
+[![Telegram Group](https://img.shields.io/badge/Fluxora-Chat-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/Fluxora_Grup) [![Telegram Channel](https://img.shields.io/badge/Fluxora-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/Fluxora_Chanel)
+
+[![GitHub Discussions](https://img.shields.io/badge/Fluxora-Discussions-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Tiam9173/fluxora/discussions)
 
 ---
 ## 🚀 主な特徴
@@ -137,7 +139,7 @@ Windows の例：
   </tr>
 </table>
 
-**[FlClash GUI](https://github.com/chen08209/FlClash)** 〢 **[Mihomo Core](https://github.com/MetaCubeX/mihomo)**
+**[Bettbox](https://github.com/appshubcc/Bettbox)** 〢 **[FlClash GUI](https://github.com/chen08209/FlClash)** 〢 **[Mihomo Core](https://github.com/MetaCubeX/mihomo)**
 
 すべての [コントリビューター](https://github.com/Tiam9173/fluxora/graphs/contributors) および利用・参考にしたオープンソースプロジェクトに感謝いたします：
 

@@ -7,7 +7,7 @@
   <strong>Open-source cross-platform Mihomo routing client</strong>
 </p>
 
-**Fluxora is a cross-platform network debugging and rule-based traffic splitting client powered by the Mihomo (Clash Meta) core and refactored from an early version of FlClash.**
+**Fluxora is a cross-platform network debugging and rule-based traffic splitting client powered by the Mihomo (Clash Meta) core. It is an independent continuation of the Bettbox project.**
 
 Guided by the principle of "clear and reliable routing", Fluxora is designed as a calm, precise control surface for Mihomo. Core features and implementation goals: high-FPS fluid animations in the foreground, zero-impact power saving in the background, and a lightweight client that runs stably and reliably over the long term.
 
@@ -28,7 +28,9 @@ Our vision: Clear routes, calm control.
 
 <div align="left">
 
-[![Telegram Group](https://img.shields.io/badge/Fluxora-Chat-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://github.com/Tiam9173/fluxora/discussions) [![Telegram Channel](https://img.shields.io/badge/Fluxora-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://github.com/Tiam9173/fluxora/discussions)
+[![Telegram Group](https://img.shields.io/badge/Fluxora-Chat-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/Fluxora_Grup) [![Telegram Channel](https://img.shields.io/badge/Fluxora-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/Fluxora_Chanel)
+
+[![GitHub Discussions](https://img.shields.io/badge/Fluxora-Discussions-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Tiam9173/fluxora/discussions)
 
 ---
 ## 🚀 Core Features
@@ -148,7 +150,7 @@ Custom Script UI Adaptation:
   </tr>
 </table>
 
-**[FlClash GUI](https://github.com/chen08209/FlClash)** 〢 **[Mihomo Core](https://github.com/MetaCubeX/mihomo)**
+**[Bettbox](https://github.com/appshubcc/Bettbox)** 〢 **[FlClash GUI](https://github.com/chen08209/FlClash)** 〢 **[Mihomo Core](https://github.com/MetaCubeX/mihomo)**
 
 Open-source projects used or referenced:
 

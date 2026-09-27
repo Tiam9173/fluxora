@@ -453,7 +453,10 @@ _ThemeProps _$ThemePropsFromJson(Map<String, dynamic> json) => _ThemeProps(
         _$DynamicSchemeVariantEnumMap,
         json['schemeVariant'],
       ) ??
-      DynamicSchemeVariant.content,
+      DynamicSchemeVariant.tonalSpot,
+  colorSource:
+      $enumDecodeNullable(_$ColorSourceEnumMap, json['colorSource']) ??
+      ColorSource.fluxora,
   pureBlack: json['pureBlack'] as bool? ?? false,
   textScale: json['textScale'] == null
       ? const TextScale()
@@ -469,6 +472,7 @@ Map<String, dynamic> _$ThemePropsToJson(_ThemeProps instance) =>
       'primaryColors': instance.primaryColors,
       'themeMode': _$ThemeModeEnumMap[instance.themeMode]!,
       'schemeVariant': _$DynamicSchemeVariantEnumMap[instance.schemeVariant]!,
+      'colorSource': _$ColorSourceEnumMap[instance.colorSource]!,
       'pureBlack': instance.pureBlack,
       'textScale': instance.textScale,
       'useDarkIcon': instance.useDarkIcon,
@@ -492,6 +496,12 @@ const _$DynamicSchemeVariantEnumMap = {
   DynamicSchemeVariant.content: 'content',
   DynamicSchemeVariant.rainbow: 'rainbow',
   DynamicSchemeVariant.fruitSalad: 'fruitSalad',
+};
+
+const _$ColorSourceEnumMap = {
+  ColorSource.fluxora: 'fluxora',
+  ColorSource.system: 'system',
+  ColorSource.custom: 'custom',
 };
 
 _ScriptProps _$ScriptPropsFromJson(Map<String, dynamic> json) => _ScriptProps(

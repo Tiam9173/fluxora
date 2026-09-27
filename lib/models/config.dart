@@ -342,7 +342,15 @@ abstract class ThemeProps with _$ThemeProps {
     int? primaryColor,
     @Default(defaultPrimaryColors) List<int> primaryColors,
     @Default(ThemeMode.system) ThemeMode themeMode,
-    @Default(DynamicSchemeVariant.content) DynamicSchemeVariant schemeVariant,
+    @Default(DynamicSchemeVariant.tonalSpot)
+    DynamicSchemeVariant schemeVariant,
+
+    /// Which colour source seeds the `ColorScheme` (D4.2 §5.2).
+    ///
+    /// Defaults to [ColorSource.fluxora] so the brand stays in charge — and so
+    /// configs written before this field existed keep working: `@Default`
+    /// applies whenever the key is absent from JSON.
+    @Default(ColorSource.fluxora) ColorSource colorSource,
     @Default(false) bool pureBlack,
     @Default(TextScale()) TextScale textScale,
     @Default(false) bool useDarkIcon,
@@ -358,10 +366,42 @@ abstract class ThemeProps with _$ThemeProps {
       return defaultThemeProps;
     }
     try {
-      return ThemeProps.fromJson(json);
+      return ThemeProps.fromJson(migrateColorSource(json));
     } catch (_) {
       return defaultThemeProps;
     }
+  }
+
+  /// Back-fills `colorSource` for configs written before D4.4 introduced it,
+  /// **without ever overwriting a colour the user picked themselves**.
+  ///
+  /// | stored config | result |
+  /// | --- | --- |
+  /// | already has `colorSource` | used verbatim — never migrated again |
+  /// | no `colorSource`, `primaryColor` absent/null | `fluxora` |
+  /// | no `colorSource`, `primaryColor == legacyDefaultPrimaryColor` | `fluxora` **and** colour migrated to Flux Cyan |
+  /// | no `colorSource`, any other `primaryColor` | `custom` — the user's colour is preserved |
+  ///
+  /// Idempotent: after the first pass the written config carries `colorSource`,
+  /// so the first branch wins on every later load. Pure function — no I/O, no
+  /// provider, no state.
+  static Map<String, Object?> migrateColorSource(Map<String, Object?> json) {
+    if (json.containsKey('colorSource')) return json;
+
+    final migrated = Map<String, Object?>.from(json);
+    final primaryColor = migrated['primaryColor'];
+    final isLegacyDefault =
+        primaryColor is num && primaryColor.toInt() == legacyDefaultPrimaryColor;
+
+    if (primaryColor == null) {
+      migrated['colorSource'] = ColorSource.fluxora.name;
+    } else if (isLegacyDefault) {
+      migrated['colorSource'] = ColorSource.fluxora.name;
+      migrated['primaryColor'] = defaultPrimaryColor;
+    } else {
+      migrated['colorSource'] = ColorSource.custom.name;
+    }
+    return migrated;
   }
 }
 

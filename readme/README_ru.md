@@ -7,7 +7,7 @@
   <strong>Open-source cross-platform Mihomo routing client</strong>
 </p>
 
-**Fluxora — это мультиплатформенный клиент для отладки сети и маршрутизации трафика на базе правил, созданный на ядре Mihomo (Clash Meta) и переработанный из ранней версии FlClash.**
+**Fluxora — это мультиплатформенный клиент для отладки сети и маршрутизации трафика на базе правил, работающий на ядре Mihomo (Clash Meta). Это независимое продолжение проекта Bettbox.**
 
 Следуя принципу «clear and reliable routing» (Лучший опыт), Fluxora сохраняет отличный UI оригинала, глубоко оптимизируя детали интерфейса и логику функций. Ключевые особенности и цели: высокая частота кадров и плавность на переднем плане, незаметное энергосбережение в фоновом режиме — надёжный клиент Mihomo для долгосрочной стабильной работы с минимальным потреблением ресурсов.
 
@@ -28,7 +28,9 @@
 
 <div align="left">
 
-[![Telegram Group](https://img.shields.io/badge/Fluxora-Chat-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://github.com/Tiam9173/fluxora/discussions) [![Telegram Channel](https://img.shields.io/badge/Fluxora-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://github.com/Tiam9173/fluxora/discussions)
+[![Telegram Group](https://img.shields.io/badge/Fluxora-Chat-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/Fluxora_Grup) [![Telegram Channel](https://img.shields.io/badge/Fluxora-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/Fluxora_Chanel)
+
+[![GitHub Discussions](https://img.shields.io/badge/Fluxora-Discussions-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Tiam9173/fluxora/discussions)
 
 ---
 ## 🚀 Основные особенности
@@ -137,7 +139,7 @@
   </tr>
 </table>
 
-**[FlClash GUI](https://github.com/chen08209/FlClash)** 〢 **[Mihomo Core](https://github.com/MetaCubeX/mihomo)**
+**[Bettbox](https://github.com/appshubcc/Bettbox)** 〢 **[FlClash GUI](https://github.com/chen08209/FlClash)** 〢 **[Mihomo Core](https://github.com/MetaCubeX/mihomo)**
 
 Отдельное спасибо всем [Участникам](https://github.com/Tiam9173/fluxora/graphs/contributors), а также используемым и связанным открытым проектам:
 
