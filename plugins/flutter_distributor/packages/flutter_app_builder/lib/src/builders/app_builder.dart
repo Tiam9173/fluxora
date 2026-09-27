@@ -49,9 +49,9 @@ abstract class AppBuilder {
         buildArguments.add('--$key');
       } else if (value is Map) {
         for (String subKey in value.keys) {
-          if(key == "dart-define"){
+          if (key == "dart-define") {
             buildArguments.add('--$key=$subKey=${value[subKey]}');
-          }else{
+          } else {
             buildArguments.addAll(['--$key', '$subKey=${value[subKey]}']);
           }
         }
@@ -61,10 +61,10 @@ abstract class AppBuilder {
     }
 
     buildArguments.addAll([
-      '--dart-define',
-      'FLUTTER_BUILD_NAME=$appBuildName',
-      '--dart-define',
-      'FLUTTER_BUILD_NUMBER=$appBuildNumber',
+      '--build-name',
+      appBuildName,
+      '--build-number',
+      appBuildNumber,
     ]);
 
     ProcessResult processResult = await flutter.withEnv(environment).build(

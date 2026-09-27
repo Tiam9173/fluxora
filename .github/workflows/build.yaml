@@ -449,7 +449,6 @@ jobs:
         with:
           name: Fluxora-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}
           path: ./dist/*
-          archive: false
           overwrite: true
 
       - name: Upload DEB Artifact
