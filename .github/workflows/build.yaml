@@ -112,7 +112,8 @@ jobs:
             echo "storePassword=${{ secrets.STORE_PASSWORD }}" >> android/local.properties
             echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/local.properties
           else
-            echo "KEYSTORE secret is not configured, skipping signing setup."
+            echo "Error: KEYSTORE secret is not configured. Aborting Android release build to prevent debug signature fallback."
+            exit 1
           fi
           
       - name: Setup Java (Android)
@@ -442,6 +443,25 @@ jobs:
               exit 1
             fi
           fi
+
+      - name: Verify Android APK Signature
+        if: matrix.platform == 'android'
+        shell: bash
+        run: |
+          echo "=== Verifying APK Signature ==="
+          APK_FILE=$(find dist/ -name "*.apk" | head -n 1)
+          if [ -z "$APK_FILE" ]; then
+            echo "Error: No APK found in dist/ directory!"
+            exit 1
+          fi
+          echo "Checking $APK_FILE"
+          APKSIGNER=$(find $ANDROID_SDK_ROOT/build-tools -name apksigner | sort -r | head -n 1)
+          if [ -z "$APKSIGNER" ]; then
+            echo "Error: apksigner not found!"
+            exit 1
+          fi
+          "$APKSIGNER" verify --print-certs "$APK_FILE" || { echo "Signature verification failed!"; exit 1; }
+          echo "Signature verified successfully."
 
       - name: Upload Artifacts (Non-Linux)
         if: matrix.platform != 'linux'
