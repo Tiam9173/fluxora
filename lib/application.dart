@@ -44,7 +44,7 @@ class ApplicationState extends ConsumerState<Application>
     required Brightness brightness,
     int? primaryColor,
   }) {
-    return ref.read(genColorSchemeProvider(brightness));
+    return ref.watch(genColorSchemeProvider(brightness));
   }
 
   @override

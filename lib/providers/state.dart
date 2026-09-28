@@ -747,12 +747,16 @@ ColorScheme genColorScheme(
   final variant = vm3.b;
   final source = ignoreConfig == true ? ColorSource.system : vm3.c;
 
-  // `ThemeProps.primaryColor` → Flux preset, shared by the brand-first modes.
-  final configured = vm3.a == null ? FluxoraColors.fluxCyan : Color(vm3.a!);
+  // `ThemeProps.primaryColor` → Flux preset, falling back to Flux Cyan if null or legacy Bettbox teal.
+  final isLegacyColor = vm3.a != null &&
+      (vm3.a == legacyDefaultPrimaryColor ||
+          vm3.a!.toUnsigned(32) == legacyDefaultPrimaryColor);
+  final configured =
+      (vm3.a == null || isLegacyColor) ? FluxoraColors.fluxCyan : Color(vm3.a!);
 
   final seed = switch (source) {
-    // Brand-first: Android's Material You palette is deliberately bypassed.
-    ColorSource.fluxora => configured,
+    // Brand-first: Android's Material You palette is deliberately bypassed. Always Flux Cyan.
+    ColorSource.fluxora => FluxoraColors.fluxCyan,
     // Material You / system dynamic colour stays fully functional here.
     ColorSource.system =>
       globalState.corePalette?.toColorScheme(brightness: brightness).primary ??

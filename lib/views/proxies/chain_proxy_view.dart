@@ -254,13 +254,17 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
+          // 0. Dynamic Topology Visualization Card
+          _buildTopologyCard(context, config, landingProxies),
+          const SizedBox(height: 12),
+
           // 1. Master enable card
           CommonCard(
             type: CommonCardType.filled,
             child: Column(
               children: [
                 ListItem(
-                  leading: const Icon(Icons.alt_route, size: 28),
+                  leading: const Icon(Icons.alt_route_rounded, size: 28),
                   title: Text(
                     appLocalizations.enableChainProxy,
                     style: const TextStyle(fontWeight: FontWeight.bold),
@@ -268,7 +272,24 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                   subtitle: Text(appLocalizations.enableChainProxyDesc),
                   trailing: Switch(
                     value: config.enable,
-                    onChanged: (val) => chainProxyManager.setEnable(val),
+                    onChanged: (val) async {
+                      if (val) {
+                        final hasActive = landingProxies.any((p) => p.enable);
+                        if (!hasActive) {
+                          HapticFeedback.heavyImpact();
+                          context.showSnackBar('请先添加并启用至少一个落地代理节点');
+                          return;
+                        }
+                        HapticFeedback.lightImpact();
+                        await chainProxyManager.setEnable(true);
+                        if (context.mounted) {
+                          context.showSnackBar('已成功启用链式代理模式');
+                        }
+                      } else {
+                        HapticFeedback.lightImpact();
+                        await chainProxyManager.setEnable(false);
+                      }
+                    },
                   ),
                 ),
               ],
@@ -449,26 +470,24 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
           if (landingProxies.isEmpty)
             CommonCard(
               type: CommonCardType.filled,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-                child: Column(
+              child: FluxoraEmptyState(
+                icon: Icons.alt_route_rounded,
+                title: '尚未配置落地住宅节点',
+                description: appLocalizations.emptyLandingTip,
+                action: Wrap(
+                  spacing: 12,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.center,
                   children: [
-                    Icon(
-                      Icons.router_outlined,
-                      size: 48,
-                      color: context.colorScheme.outline,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      appLocalizations.emptyLandingTip,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: context.colorScheme.outline),
-                    ),
-                    const SizedBox(height: 16),
                     FilledButton.icon(
-                      icon: const Icon(Icons.content_paste),
+                      icon: const Icon(Icons.content_paste_go, size: 18),
                       label: Text(appLocalizations.quickImport),
                       onPressed: _showQuickImportDialog,
+                    ),
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.add, size: 18),
+                      label: Text(appLocalizations.addLandingProxy),
+                      onPressed: () => _showEditProxyDialog(),
                     ),
                   ],
                 ),
@@ -477,13 +496,14 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
           else if (filteredProxies.isEmpty)
             CommonCard(
               type: CommonCardType.filled,
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Center(
-                  child: Text(
-                    '当前筛选条件下没有节点',
-                    style: TextStyle(color: context.colorScheme.outline),
-                  ),
+              child: FluxoraEmptyState(
+                compact: true,
+                icon: Icons.filter_list_off_outlined,
+                title: '当前筛选条件下没有节点',
+                action: TextButton.icon(
+                  icon: const Icon(Icons.refresh, size: 16),
+                  label: const Text('重置筛选'),
+                  onPressed: () => setState(() => _selectedFilter = 0),
                 ),
               ),
             )
@@ -506,6 +526,259 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                   onShowReport: () => _showHealthReportDialog(proxy),
                 ),
               ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTopologyCard(
+    BuildContext context,
+    ChainProxyConfig config,
+    List<LandingProxy> landingProxies,
+  ) {
+    final isReady = config.enable && landingProxies.any((p) => p.enable);
+    final activeLanding = landingProxies.where((p) => p.enable).firstOrNull;
+    final hopLabel = config.defaultDialerProxy.isEmpty
+        ? appLocalizations.followMainSelector
+        : config.defaultDialerProxy;
+
+    return CommonCard(
+      type: CommonCardType.filled,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.hub_rounded,
+                      size: 20,
+                      color: context.colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      '动态链路拓扑',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: isReady
+                        ? Colors.green.withValues(alpha: 0.15)
+                        : context.colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isReady
+                          ? Colors.green.withValues(alpha: 0.5)
+                          : context.colorScheme.outlineVariant,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isReady ? Colors.green : Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        isReady ? '已就绪' : '未启用',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: isReady ? Colors.green : Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+              decoration: BoxDecoration(
+                color: context.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: context.colorScheme.outlineVariant.withValues(alpha: 0.4),
+                ),
+              ),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildTopologyNode(
+                      icon: Icons.devices_rounded,
+                      title: appLocalizations.topologyClient,
+                      subtitle: '设备端',
+                      isActive: true,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: FluxoraFlowIndicator(
+                        state: isReady
+                            ? FluxoraFlowState.connected
+                            : FluxoraFlowState.idle,
+                        width: 36,
+                        height: 12,
+                      ),
+                    ),
+                    _buildTopologyNode(
+                      icon: Icons.alt_route_rounded,
+                      title: appLocalizations.topologyHop,
+                      subtitle: hopLabel,
+                      isActive: isReady,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: FluxoraFlowIndicator(
+                        state: isReady
+                            ? FluxoraFlowState.connected
+                            : FluxoraFlowState.idle,
+                        width: 36,
+                        height: 12,
+                      ),
+                    ),
+                    _buildTopologyNode(
+                      icon: Icons.flight_land_rounded,
+                      title: appLocalizations.topologyLanding,
+                      subtitle: activeLanding?.name ?? '未选择',
+                      isActive: isReady && activeLanding != null,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: FluxoraFlowIndicator(
+                        state: isReady
+                            ? FluxoraFlowState.connected
+                            : FluxoraFlowState.idle,
+                        width: 36,
+                        height: 12,
+                      ),
+                    ),
+                    _buildTopologyNode(
+                      icon: Icons.public_rounded,
+                      title: appLocalizations.topologyTarget,
+                      subtitle: '目标网络',
+                      isActive: isReady,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Theme(
+              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+              child: ExpansionTile(
+                initiallyExpanded: false,
+                tilePadding: EdgeInsets.zero,
+                dense: true,
+                visualDensity: VisualDensity.compact,
+                leading: const Icon(Icons.info_outline, size: 16),
+                title: const Text(
+                  '什么是前置跳板与落地节点？',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+                children: [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(10),
+                    margin: const EdgeInsets.only(top: 4),
+                    decoration: BoxDecoration(
+                      color: context.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text(
+                          '• 前置跳板 (Hop)：由本机连接的首级中继节点，负责第一级网络中转。',
+                          style: TextStyle(fontSize: 11, height: 1.4),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          '• 落地节点 (Landing)：经由跳板中继后发起网络连接的出口节点，向目标端呈现该出口节点网络特征。',
+                          style: TextStyle(fontSize: 11, height: 1.4),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          '• 多跳链路传输：通过前置跳板与落地节点分级路由，实现流量分层转发与网络拓扑解耦。',
+                          style: TextStyle(fontSize: 11, height: 1.4),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTopologyNode({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool isActive,
+  }) {
+    final colorScheme = context.colorScheme;
+    return Container(
+      constraints: const BoxConstraints(minWidth: 64, maxWidth: 96),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+      decoration: BoxDecoration(
+        color: isActive
+            ? colorScheme.primaryContainer.withValues(alpha: 0.3)
+            : colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isActive
+              ? colorScheme.primary.withValues(alpha: 0.4)
+              : colorScheme.outlineVariant.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 18,
+            color: isActive ? colorScheme.primary : colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: isActive ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            subtitle,
+            style: TextStyle(
+              fontSize: 9,
+              color: colorScheme.onSurfaceVariant,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
     );
