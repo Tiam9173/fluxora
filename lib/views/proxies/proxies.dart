@@ -122,18 +122,6 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
               },
             ),
             PopupMenuItemData(
-              icon: Icons.cloud_rounded,
-              label: 'WARP',
-              onPressed: () {
-                showExtend(
-                  context,
-                  builder: (_, type) {
-                    return const WarpView();
-                  },
-                );
-              },
-            ),
-            PopupMenuItemData(
               icon: Icons.alt_route,
               label: appLocalizations.chainProxy,
               onPressed: () {
@@ -145,6 +133,18 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
                       body: const ChainProxyView(),
                       title: appLocalizations.chainProxy,
                     );
+                  },
+                );
+              },
+            ),
+            PopupMenuItemData(
+              icon: Icons.cloud_rounded,
+              label: 'WARP',
+              onPressed: () {
+                showExtend(
+                  context,
+                  builder: (_, type) {
+                    return const WarpView();
                   },
                 );
               },

@@ -931,7 +931,12 @@ class _ColorSourceItem extends ConsumerWidget {
                 ref
                     .read(themeSettingProvider.notifier)
                     .updateState(
-                      (state) => state.copyWith(colorSource: item.colorSource),
+                      (state) => state.copyWith(
+                        colorSource: item.colorSource,
+                        primaryColor: item.colorSource == ColorSource.fluxora
+                            ? defaultPrimaryColor
+                            : state.primaryColor,
+                      ),
                     );
               },
               child: Padding(

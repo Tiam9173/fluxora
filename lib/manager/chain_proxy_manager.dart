@@ -4,7 +4,9 @@ import 'dart:math';
 
 import 'package:fluxora/clash/core.dart';
 import 'package:fluxora/common/common.dart';
+import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/models/chain_proxy.dart';
+import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
@@ -29,7 +31,8 @@ class ChainProxyManager extends ChangeNotifier {
   ChainProxyConfig get config => _config;
   bool get isInitialized => _initialized;
   Map<String, int?> get delays => Map.unmodifiable(_delays);
-  Map<String, ProxyHealthReport> get healthReports => Map.unmodifiable(_healthReports);
+  Map<String, ProxyHealthReport> get healthReports =>
+      Map.unmodifiable(_healthReports);
   bool get isBatchHealthChecking => _isBatchHealthChecking;
   int get batchCheckCompleted => _batchCheckCompleted;
   int get batchCheckTotal => _batchCheckTotal;
@@ -44,7 +47,8 @@ class ChainProxyManager extends ChangeNotifier {
   String? getPrimaryLandingProxyName() {
     final active = _config.landingProxies.where((p) => p.enable).toList();
     if (active.isNotEmpty) return active.first.name;
-    if (_config.landingProxies.isNotEmpty) return _config.landingProxies.first.name;
+    if (_config.landingProxies.isNotEmpty)
+      return _config.landingProxies.first.name;
     return null;
   }
 
@@ -73,7 +77,9 @@ class ChainProxyManager extends ChangeNotifier {
         }
       }
     } catch (e) {
-      commonPrint.log('ChainProxyManager: Failed to load chain_proxies.json: $e');
+      commonPrint.log(
+        'ChainProxyManager: Failed to load chain_proxies.json: $e',
+      );
     } finally {
       _initialized = true;
       notifyListeners();
@@ -87,7 +93,9 @@ class ChainProxyManager extends ChangeNotifier {
       if (!await file.parent.exists()) {
         await file.parent.create(recursive: true);
       }
-      final jsonStr = const JsonEncoder.withIndent('  ').convert(_config.toJson());
+      final jsonStr = const JsonEncoder.withIndent(
+        '  ',
+      ).convert(_config.toJson());
       await file.writeAsString(jsonStr, flush: true);
     } catch (e) {
       commonPrint.log('ChainProxyManager: Failed to save config: $e');
@@ -110,6 +118,101 @@ class ChainProxyManager extends ChangeNotifier {
 
   Future<void> setEnable(bool enable) async {
     await updateConfig((c) => c.copyWith(enable: enable));
+    if (enable) {
+      await _autoSelectChainGroup();
+    }
+  }
+
+  Future<void> _autoSelectChainGroup() async {
+    try {
+      final appController = globalState.appController;
+      final mode = appController.ref.read(patchClashConfigProvider).mode;
+
+      final dedicatedGroupName = _config.dedicatedGroupName.isNotEmpty
+          ? _config.dedicatedGroupName
+          : '🔗 链式代理';
+      final activeLanding = getPrimaryLandingProxyName();
+      final targetProxy = _config.createDedicatedGroup
+          ? dedicatedGroupName
+          : (activeLanding ?? '');
+
+      if (targetProxy.isEmpty) return;
+
+      final batchMap = <String, String>{};
+
+      if (mode == Mode.global) {
+        batchMap['GLOBAL'] = targetProxy;
+      } else if (mode == Mode.rule) {
+        final groups = appController.ref.read(groupsProvider);
+        final selectedMap = appController.ref.read(selectedMapProvider);
+
+        bool isValidSelector(String? name) {
+          if (name == null || name.isEmpty) return false;
+          for (final g in groups) {
+            if (g.name == name && g.type == GroupType.Selector) {
+              return g.all.any((p) => p.name == targetProxy);
+            }
+          }
+          return false;
+        }
+
+        // Priority 1: active outbound selector
+        String? activeOutbound;
+        for (final g in groups) {
+          if (g.name != 'GLOBAL' &&
+              g.name != dedicatedGroupName &&
+              g.name != '✈️ 链式跳板' &&
+              g.type == GroupType.Selector) {
+            activeOutbound = g.name;
+            break;
+          }
+        }
+
+        // Priority 2: GLOBAL 下游 selector
+        String? globalDownstream = selectedMap['GLOBAL'];
+
+        // Priority 3: getCurrentGroupName()
+        String? currentView = appController.getCurrentGroupName();
+
+        String? targetSelector;
+        if (isValidSelector(activeOutbound)) {
+          targetSelector = activeOutbound;
+        } else if (isValidSelector(globalDownstream)) {
+          targetSelector = globalDownstream;
+        } else if (isValidSelector(currentView)) {
+          targetSelector = currentView;
+        }
+
+        if (targetSelector != null) {
+          batchMap[targetSelector] = targetProxy;
+        }
+      }
+
+      if (batchMap.isNotEmpty) {
+        await appController.changeProxiesBatch(batchMap);
+
+        bool verifySelection() {
+          final sm = appController.ref.read(selectedMapProvider);
+          for (final entry in batchMap.entries) {
+            if (sm[entry.key] != entry.value) {
+              return false;
+            }
+          }
+          return true;
+        }
+
+        if (!verifySelection()) {
+          await Future.delayed(const Duration(milliseconds: 500));
+          await appController.changeProxiesBatch(batchMap);
+
+          if (!verifySelection()) {
+            commonPrint.log('Chain proxy auto-select retry failed.');
+          }
+        }
+      }
+    } catch (e, stack) {
+      commonPrint.log('Failed to auto select chain group: $e\n$stack');
+    }
   }
 
   Future<void> setDefaultDialer(String dialer) async {
@@ -131,7 +234,8 @@ class ChainProxyManager extends ChangeNotifier {
   Future<void> addLandingProxies(List<LandingProxy> proxies) async {
     if (proxies.isEmpty) return;
     await updateConfig((c) {
-      final updated = List<LandingProxy>.from(c.landingProxies)..addAll(proxies);
+      final updated = List<LandingProxy>.from(c.landingProxies)
+        ..addAll(proxies);
       return c.copyWith(landingProxies: updated);
     });
   }
@@ -206,7 +310,10 @@ class ChainProxyManager extends ChangeNotifier {
       if (isCoreRunning) {
         final targetFutures = TargetService.values.map((target) async {
           try {
-            final delayRes = await clashCore.getDelay(target.testUrl, proxy.name);
+            final delayRes = await clashCore.getDelay(
+              target.testUrl,
+              proxy.name,
+            );
             final val = delayRes.value;
             if (val != null && val > 0) {
               return TargetHealthResult(
@@ -233,7 +340,10 @@ class ChainProxyManager extends ChangeNotifier {
         final results = await Future.wait(targetFutures);
         final successful = results.where((r) => r.isSuccess).toList();
         final successCount = successful.length;
-        final delays = successful.where((r) => r.delay != null).map((r) => r.delay!).toList();
+        final delays = successful
+            .where((r) => r.delay != null)
+            .map((r) => r.delay!)
+            .toList();
         final minDelay = delays.isNotEmpty ? delays.reduce(min) : null;
         final avgDelay = delays.isNotEmpty
             ? (delays.reduce((a, b) => a + b) / delays.length).round()
@@ -244,7 +354,8 @@ class ChainProxyManager extends ChangeNotifier {
 
         if (successCount >= 5) {
           status = HealthStatus.healthy;
-          diagnosticTips = '全项服务连接顺畅，支持 OpenAI/ChatGPT、TikTok 与跨境电商访问，原生住宅 IP 状态优异。';
+          diagnosticTips =
+              '全项服务连接顺畅，支持 OpenAI/ChatGPT、TikTok 与跨境电商访问，原生住宅 IP 状态优异。';
           setDelayForProxy(proxy.id, minDelay);
         } else if (successCount > 0) {
           status = HealthStatus.warning;
@@ -267,11 +378,12 @@ class ChainProxyManager extends ChangeNotifier {
           if (direct.isAuthError) {
             diagnosticTips = '住宅 IP 账号或密码错误（鉴权失败），请核对供应商密码或白名单设置。';
           } else {
-            final hopName = (proxy.dialerProxy != null && proxy.dialerProxy!.isNotEmpty)
+            final hopName =
+                (proxy.dialerProxy != null && proxy.dialerProxy!.isNotEmpty)
                 ? proxy.dialerProxy!
                 : (_config.defaultDialerProxy.isNotEmpty
-                    ? _config.defaultDialerProxy
-                    : '全局主选择');
+                      ? _config.defaultDialerProxy
+                      : '全局主选择');
             diagnosticTips =
                 '所有目标服务均超时不可达。请确认前置跳板 [$hopName] 是否畅通，或住宅 IP 是否已过期下线。';
           }
@@ -300,12 +412,14 @@ class ChainProxyManager extends ChangeNotifier {
           password: proxy.password,
         );
 
-        final status = direct.isSuccess ? HealthStatus.healthy : HealthStatus.error;
+        final status = direct.isSuccess
+            ? HealthStatus.healthy
+            : HealthStatus.error;
         final diagnosticTips = direct.isSuccess
             ? '直接握手成功（响应时间 ${direct.delay}ms）。建议启动 Fluxora 核心通过跳板节点进行多目标业务体检。'
             : (direct.isAuthError
-                ? '住宅 IP 账号或密码错误（鉴权失败），请核对凭据。'
-                : '${direct.message}。提示：在国内网络直接测试海外住宅IP可能受阻，建议启动 Fluxora 核心通过跳板节点体检。');
+                  ? '住宅 IP 账号或密码错误（鉴权失败），请核对凭据。'
+                  : '${direct.message}。提示：在国内网络直接测试海外住宅IP可能受阻，建议启动 Fluxora 核心通过跳板节点体检。');
 
         final results = [
           TargetHealthResult(
@@ -383,7 +497,9 @@ class ChainProxyManager extends ChangeNotifier {
     }
 
     await updateConfig((c) {
-      final remaining = c.landingProxies.where((p) => !invalidIds.contains(p.id)).toList();
+      final remaining = c.landingProxies
+          .where((p) => !invalidIds.contains(p.id))
+          .toList();
       return c.copyWith(landingProxies: remaining);
     });
 

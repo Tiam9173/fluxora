@@ -372,35 +372,55 @@ abstract class ThemeProps with _$ThemeProps {
     }
   }
 
-  /// Back-fills `colorSource` for configs written before D4.4 introduced it,
+  static bool _isLegacyPrimaryColor(Object? color) {
+    if (color is! num) return false;
+    final val = color.toInt();
+    return val == legacyDefaultPrimaryColor ||
+        val.toUnsigned(32) == legacyDefaultPrimaryColor;
+  }
+
+  /// Back-fills and normalizes `colorSource` and `primaryColor` for legacy configs,
   /// **without ever overwriting a colour the user picked themselves**.
   ///
-  /// | stored config | result |
-  /// | --- | --- |
-  /// | already has `colorSource` | used verbatim — never migrated again |
-  /// | no `colorSource`, `primaryColor` absent/null | `fluxora` |
-  /// | no `colorSource`, `primaryColor == legacyDefaultPrimaryColor` | `fluxora` **and** colour migrated to Flux Cyan |
-  /// | no `colorSource`, any other `primaryColor` | `custom` — the user's colour is preserved |
-  ///
-  /// Idempotent: after the first pass the written config carries `colorSource`,
-  /// so the first branch wins on every later load. Pure function — no I/O, no
-  /// provider, no state.
+  /// Handles unsigned/signed 32-bit legacy Bettbox defaults (0xFF00897B / -16741989),
+  /// normalizes legacy primary colors to [defaultPrimaryColor] (Flux Cyan),
+  /// upgrades legacy Bettbox teal to `fluxora`, and cleans legacy swatches from `primaryColors`.
   static Map<String, Object?> migrateColorSource(Map<String, Object?> json) {
-    if (json.containsKey('colorSource')) return json;
-
     final migrated = Map<String, Object?>.from(json);
-    final primaryColor = migrated['primaryColor'];
-    final isLegacyDefault =
-        primaryColor is num && primaryColor.toInt() == legacyDefaultPrimaryColor;
+    final rawPrimary = migrated['primaryColor'];
+    final isLegacy = _isLegacyPrimaryColor(rawPrimary);
 
-    if (primaryColor == null) {
-      migrated['colorSource'] = ColorSource.fluxora.name;
-    } else if (isLegacyDefault) {
-      migrated['colorSource'] = ColorSource.fluxora.name;
-      migrated['primaryColor'] = defaultPrimaryColor;
+    if (!migrated.containsKey('colorSource')) {
+      if (rawPrimary == null || isLegacy) {
+        migrated['colorSource'] = ColorSource.fluxora.name;
+        migrated['primaryColor'] = defaultPrimaryColor;
+      } else {
+        migrated['colorSource'] = ColorSource.custom.name;
+      }
     } else {
-      migrated['colorSource'] = ColorSource.custom.name;
+      if (isLegacy) {
+        migrated['primaryColor'] = defaultPrimaryColor;
+        if (migrated['colorSource'] == ColorSource.custom.name) {
+          migrated['colorSource'] = ColorSource.fluxora.name;
+        }
+      }
     }
+
+    final rawColors = migrated['primaryColors'];
+    if (rawColors is List) {
+      bool hasLegacy = false;
+      final newColors = rawColors.map((c) {
+        if (_isLegacyPrimaryColor(c)) {
+          hasLegacy = true;
+          return defaultPrimaryColor;
+        }
+        return c;
+      }).toList();
+      if (hasLegacy) {
+        migrated['primaryColors'] = newColors;
+      }
+    }
+
     return migrated;
   }
 }
