@@ -47,8 +47,9 @@ class ChainProxyManager extends ChangeNotifier {
   String? getPrimaryLandingProxyName() {
     final active = _config.landingProxies.where((p) => p.enable).toList();
     if (active.isNotEmpty) return active.first.name;
-    if (_config.landingProxies.isNotEmpty)
+    if (_config.landingProxies.isNotEmpty) {
       return _config.landingProxies.first.name;
+    }
     return null;
   }
 
