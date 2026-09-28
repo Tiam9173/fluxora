@@ -14,7 +14,11 @@ val mStoreFile = file("keystore.jks")
 val mStorePassword: String? = localProperties.getProperty("storePassword")?.takeIf { it.isNotBlank() }
 val mKeyAlias: String? = localProperties.getProperty("keyAlias")?.takeIf { it.isNotBlank() }
 val mKeyPassword: String? = localProperties.getProperty("keyPassword")?.takeIf { it.isNotBlank() }
-val isRelease = mStoreFile.exists() && mStoreFile.length() > 0L && mStorePassword != null && mKeyAlias != null && mKeyPassword != null
+
+val isReleaseBuild = gradle.startParameter.taskNames.any { it.contains("Release", ignoreCase = true) }
+if (isReleaseBuild && (!mStoreFile.exists() || mStoreFile.length() == 0L || mStorePassword == null || mKeyAlias == null || mKeyPassword == null)) {
+    throw GradleException("Android Release Signing Error: KEYSTORE, KEY_ALIAS, STORE_PASSWORD, or KEY_PASSWORD configurations are missing. Fallback to debug signing is strictly prohibited.")
+}
 
 android {
     namespace = "io.fluxora.app"
@@ -39,13 +43,11 @@ android {
     }
 
     signingConfigs {
-        if (isRelease) {
-            create("release") {
-                storeFile = mStoreFile
-                storePassword = mStorePassword
-                keyAlias = mKeyAlias
-                keyPassword = mKeyPassword
-            }
+        create("release") {
+            storeFile = mStoreFile
+            storePassword = mStorePassword ?: ""
+            keyAlias = mKeyAlias ?: ""
+            keyPassword = mKeyPassword ?: ""
         }
     }
 
@@ -57,7 +59,7 @@ android {
         release {
             isMinifyEnabled = true
             isDebuggable = false
-            signingConfig = signingConfigs.getByName(if (isRelease) "release" else "debug")
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
