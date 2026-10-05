@@ -25,8 +25,8 @@ on:
 
 env:
   IS_STABLE: ${{ !contains(github.ref, '-') }}
-  IS_PRERELEASE: ${{ contains(github.ref_name, 'pre') }}
-  SHOULD_RELEASE: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && (!contains(github.ref, '-') || contains(github.ref_name, 'pre')) }}
+  IS_PRERELEASE: ${{ contains(github.ref_name, '-rc.') || contains(github.ref_name, 'pre') }}
+  SHOULD_RELEASE: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && (!contains(github.ref, '-') || contains(github.ref_name, '-rc.') || contains(github.ref_name, 'pre')) }}
   GRADLE_OPTS: -Dorg.gradle.vfs.watch=false
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   SENTRY_BACKEND: none
@@ -232,6 +232,10 @@ jobs:
           SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
         run: |
           if (-not $env:SIGNPATH_API_TOKEN) {
+            if ('${{ env.SHOULD_RELEASE }}' -eq 'true') {
+              Write-Error "SIGNPATH_API_TOKEN is not configured. Release builds require Windows code signing. Aborting."
+              exit 1
+            }
             Write-Host "SIGNPATH_API_TOKEN is not configured. Skipping module installation."
             exit 0
           }
@@ -251,7 +255,7 @@ jobs:
             $installerPolicy = "release-signing"
           } elseif ($isPre) {
             $exePolicy = "test-signing"
-            $installerPolicy = "release-signing"
+            $installerPolicy = "test-signing"
           } else {
             $exePolicy = "test-signing"
             $installerPolicy = "test-signing"
@@ -270,7 +274,7 @@ jobs:
           dart setup.dart windows --arch ${{ matrix.arch }} --out core-only ${{ matrix.compatible == true && '--compatible' || '' }}
 
       - name: Upload Unsigned Core
-        if: matrix.platform == 'windows' && env.SIGNPATH_API_TOKEN != ''
+        if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true' && env.SIGNPATH_API_TOKEN != ''
         id: upload-core
         uses: actions/upload-artifact@v7
         with:
@@ -280,13 +284,13 @@ jobs:
           retention-days: 1
 
       - name: Sign Core (Windows)
-        if: matrix.platform == 'windows' && env.SIGNPATH_API_TOKEN != ''
+        if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true' && env.SIGNPATH_API_TOKEN != ''
         uses: signpath/github-action-submit-signing-request@v2
         timeout-minutes: 60
         with:
           api-token: '${{ env.SIGNPATH_API_TOKEN }}'
           github-token: '${{ secrets.GITHUB_TOKEN }}'
-          organization-id: '0d3f8e8e-3f4d-4ac8-ab3f-d6c5c110ab0d'
+          organization-id: '3737f142-dc07-4229-86cd-2548400b69c9'
           project-slug: 'Fluxora'
           signing-policy-slug: '${{ env.EXE_SIGNING_POLICY_SLUG }}'
           github-artifact-id: '${{ steps.upload-core.outputs.artifact-id }}'
@@ -302,7 +306,7 @@ jobs:
           dart setup.dart windows --arch ${{ matrix.arch }} --out helper --core-hash $signedCoreHash ${{ matrix.compatible == true && '--compatible' || '' }}
 
       - name: Upload Unsigned HelperService
-        if: matrix.platform == 'windows' && env.SIGNPATH_API_TOKEN != ''
+        if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true' && env.SIGNPATH_API_TOKEN != ''
         id: upload-helper
         uses: actions/upload-artifact@v7
         with:
@@ -312,13 +316,13 @@ jobs:
           retention-days: 1
 
       - name: Sign HelperService (Windows)
-        if: matrix.platform == 'windows' && env.SIGNPATH_API_TOKEN != ''
+        if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true' && env.SIGNPATH_API_TOKEN != ''
         uses: signpath/github-action-submit-signing-request@v2
         timeout-minutes: 60
         with:
           api-token: '${{ env.SIGNPATH_API_TOKEN }}'
           github-token: '${{ secrets.GITHUB_TOKEN }}'
-          organization-id: '0d3f8e8e-3f4d-4ac8-ab3f-d6c5c110ab0d'
+          organization-id: '3737f142-dc07-4229-86cd-2548400b69c9'
           project-slug: 'Fluxora'
           signing-policy-slug: '${{ env.EXE_SIGNING_POLICY_SLUG }}'
           github-artifact-id: '${{ steps.upload-helper.outputs.artifact-id }}'
@@ -358,7 +362,7 @@ jobs:
           flutter @flutterArgs
 
       - name: Upload Unsigned Fluxora
-        if: matrix.platform == 'windows' && env.SIGNPATH_API_TOKEN != ''
+        if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true' && env.SIGNPATH_API_TOKEN != ''
         id: upload-fluxora
         uses: actions/upload-artifact@v7
         with:
@@ -368,13 +372,13 @@ jobs:
           retention-days: 1
 
       - name: Sign Fluxora (Windows)
-        if: matrix.platform == 'windows' && env.SIGNPATH_API_TOKEN != ''
+        if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true' && env.SIGNPATH_API_TOKEN != ''
         uses: signpath/github-action-submit-signing-request@v2
         timeout-minutes: 60
         with:
           api-token: '${{ env.SIGNPATH_API_TOKEN }}'
           github-token: '${{ secrets.GITHUB_TOKEN }}'
-          organization-id: '0d3f8e8e-3f4d-4ac8-ab3f-d6c5c110ab0d'
+          organization-id: '3737f142-dc07-4229-86cd-2548400b69c9'
           project-slug: 'Fluxora'
           signing-policy-slug: '${{ env.EXE_SIGNING_POLICY_SLUG }}'
           github-artifact-id: '${{ steps.upload-fluxora.outputs.artifact-id }}'
@@ -395,7 +399,7 @@ jobs:
           dart windows/packaging/exe/package_windows.dart --arch ${{ matrix.arch }} ${{ matrix.compatible == true && '--compatible' || '' }} --env ${{ env.IS_STABLE == 'true' && 'stable' || 'pre' }}
 
       - name: Find Installer Path
-        if: matrix.platform == 'windows' && env.SIGNPATH_API_TOKEN != ''
+        if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true' && env.SIGNPATH_API_TOKEN != ''
         shell: pwsh
         run: |
           $desc = if ('${{ matrix.compatible }}' -eq 'true') { "${{ matrix.arch }}-compatible" } else { "${{ matrix.arch }}" }
@@ -404,7 +408,7 @@ jobs:
           echo "INSTALLER_FILENAME=$(Split-Path -Leaf $installer)" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Upload Unsigned Installer
-        if: matrix.platform == 'windows' && env.SIGNPATH_API_TOKEN != ''
+        if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true' && env.SIGNPATH_API_TOKEN != ''
         id: upload-installer
         uses: actions/upload-artifact@v7
         with:
@@ -414,13 +418,13 @@ jobs:
           retention-days: 1
 
       - name: Sign Installer (Windows)
-        if: matrix.platform == 'windows' && env.SIGNPATH_API_TOKEN != ''
+        if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true' && env.SIGNPATH_API_TOKEN != ''
         uses: signpath/github-action-submit-signing-request@v2
         timeout-minutes: 60
         with:
           api-token: '${{ env.SIGNPATH_API_TOKEN }}'
           github-token: '${{ secrets.GITHUB_TOKEN }}'
-          organization-id: '0d3f8e8e-3f4d-4ac8-ab3f-d6c5c110ab0d'
+          organization-id: '3737f142-dc07-4229-86cd-2548400b69c9'
           project-slug: 'Fluxora'
           signing-policy-slug: '${{ env.INSTALLER_SIGNING_POLICY_SLUG }}'
           github-artifact-id: '${{ steps.upload-installer.outputs.artifact-id }}'
@@ -428,7 +432,7 @@ jobs:
           output-artifact-directory: 'dist'
       
       - name: Clean up intermediate unsigned artifacts
-        if: always() && matrix.platform == 'windows' && env.SIGNPATH_API_TOKEN != ''
+        if: always() && matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true' && env.SIGNPATH_API_TOKEN != ''
         continue-on-error: true
         uses: geekyeggo/delete-artifact@v6
         with:
