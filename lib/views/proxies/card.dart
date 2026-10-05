@@ -40,10 +40,7 @@ class ProxyCard extends StatelessWidget {
   static final Map<String, bool> _emojiMatchCache = {};
 
   static bool _hasEmoji(String name) {
-    return _emojiMatchCache.putIfAbsent(
-      name,
-      () => _emojiRegex.hasMatch(name),
-    );
+    return _emojiMatchCache.putIfAbsent(name, () => _emojiRegex.hasMatch(name));
   }
 
   final String groupName;
@@ -189,17 +186,15 @@ class ProxyCard extends StatelessWidget {
 
   bool _isSelectedProxy(WidgetRef ref) {
     return ref.watch(
-      getSelectedProxyNameProvider(groupName).select(
-        (name) => name == proxy.name,
-      ),
+      getSelectedProxyNameProvider(
+        groupName,
+      ).select((name) => name == proxy.name),
     );
   }
 
   bool _isComputedMatch(WidgetRef ref) {
     return ref.watch(
-      getProxyNameProvider(groupName).select(
-        (name) => name == proxy.name,
-      ),
+      getProxyNameProvider(groupName).select((name) => name == proxy.name),
     );
   }
 
@@ -207,8 +202,24 @@ class ProxyCard extends StatelessWidget {
     final isComputedSelected = groupType.isComputedSelected;
     final isSelector = groupType == GroupType.Selector;
     if (isComputedSelected || isSelector) {
-      final nextProxyName = proxy.name;
       final appController = globalState.appController;
+
+      bool isUnlock = false;
+      if (isComputedSelected) {
+        final currentProfile = ref.read(currentProfileProvider);
+        if (currentProfile?.selectedMap[groupName] == proxy.name) {
+          isUnlock = true;
+        }
+      }
+
+      if (isUnlock) {
+        appController.updateCurrentSelectedMap(groupName, '');
+        // Just unlock. We don't need to change Mihomo state explicitly because
+        // updateGroups will stop enforcing the lock and Mihomo will auto-select naturally.
+        return;
+      }
+
+      final nextProxyName = proxy.name;
       final chainConfig = chainProxyManager.config;
       final dedicatedGroupName = chainConfig.dedicatedGroupName.isNotEmpty
           ? chainConfig.dedicatedGroupName
@@ -218,11 +229,13 @@ class ProxyCard extends StatelessWidget {
       final bool isLandingProxy = chainProxyManager.isLandingProxy(proxy.name);
       final bool isDedicatedGroup = proxy.name == dedicatedGroupName;
       final bool isHopGroup = groupName == hopGroupName;
-      final bool isAirportProxy = !isLandingProxy && !isDedicatedGroup && !isHopGroup;
+      final bool isAirportProxy =
+          !isLandingProxy && !isDedicatedGroup && !isHopGroup;
 
       final groups = ref.read(groupsProvider);
 
-      if (chainConfig.enable && (isLandingProxy || groupName == dedicatedGroupName)) {
+      if (chainConfig.enable &&
+          (isLandingProxy || groupName == dedicatedGroupName)) {
         final landingProxyName = isLandingProxy ? proxy.name : nextProxyName;
         if (landingProxyName.isNotEmpty) {
           final batchMap = <String, String>{};
@@ -231,7 +244,8 @@ class ProxyCard extends StatelessWidget {
           }
 
           for (final g in groups) {
-            if (g.name == dedicatedGroupName || g.name == hopGroupName) continue;
+            if (g.name == dedicatedGroupName || g.name == hopGroupName)
+              continue;
             if (g.type != GroupType.Selector) continue;
 
             final hasDedicated = g.all.any((p) => p.name == dedicatedGroupName);
@@ -241,12 +255,16 @@ class ProxyCard extends StatelessWidget {
                 : (hasLanding ? landingProxyName : null);
 
             if (targetToSelect != null) {
-              final isMainOrGlobal = g.name == 'GLOBAL' ||
+              final isMainOrGlobal =
+                  g.name == 'GLOBAL' ||
                   g.name.contains('节点选择') ||
                   g.name.contains('Proxy') ||
                   g.name.contains('PROXY') ||
                   g.name.contains('选择') ||
-                  g.name == groups.firstWhereOrNull((grp) => grp.name != 'GLOBAL')?.name;
+                  g.name ==
+                      groups
+                          .firstWhereOrNull((grp) => grp.name != 'GLOBAL')
+                          ?.name;
               if (isMainOrGlobal || g.name == groupName) {
                 batchMap[g.name] = targetToSelect;
               }
@@ -254,9 +272,13 @@ class ProxyCard extends StatelessWidget {
           }
 
           batchMap[groupName] = isLandingProxy
-              ? (groups.firstWhereOrNull((g) => g.name == groupName)?.all.any((p) => p.name == dedicatedGroupName) == true
-                  ? dedicatedGroupName
-                  : landingProxyName)
+              ? (groups
+                            .firstWhereOrNull((g) => g.name == groupName)
+                            ?.all
+                            .any((p) => p.name == dedicatedGroupName) ==
+                        true
+                    ? dedicatedGroupName
+                    : landingProxyName)
               : landingProxyName;
 
           await appController.changeProxiesBatch(batchMap);
@@ -264,7 +286,8 @@ class ProxyCard extends StatelessWidget {
         }
       } else if (chainConfig.enable && isDedicatedGroup) {
         final currentProfile = ref.read(currentProfileProvider);
-        final selectedLanding = currentProfile?.selectedMap[dedicatedGroupName] ??
+        final selectedLanding =
+            currentProfile?.selectedMap[dedicatedGroupName] ??
             chainProxyManager.getPrimaryLandingProxyName();
 
         final batchMap = <String, String>{};
@@ -274,10 +297,14 @@ class ProxyCard extends StatelessWidget {
         batchMap[groupName] = dedicatedGroupName;
 
         for (final g in groups) {
-          if (g.name == groupName || g.name == dedicatedGroupName || g.name == hopGroupName) continue;
+          if (g.name == groupName ||
+              g.name == dedicatedGroupName ||
+              g.name == hopGroupName)
+            continue;
           if (g.type != GroupType.Selector) continue;
           if (g.all.any((p) => p.name == dedicatedGroupName)) {
-            final isMainOrGlobal = g.name == 'GLOBAL' ||
+            final isMainOrGlobal =
+                g.name == 'GLOBAL' ||
                 g.name.contains('节点选择') ||
                 g.name.contains('Proxy') ||
                 g.name.contains('PROXY') ||
@@ -290,10 +317,10 @@ class ProxyCard extends StatelessWidget {
 
         await appController.changeProxiesBatch(batchMap);
         return;
-      } else if (chainConfig.enable && isAirportProxy && nextProxyName.isNotEmpty) {
-        final batchMap = <String, String>{
-          groupName: nextProxyName,
-        };
+      } else if (chainConfig.enable &&
+          isAirportProxy &&
+          nextProxyName.isNotEmpty) {
+        final batchMap = <String, String>{groupName: nextProxyName};
         if (chainConfig.defaultDialerProxy.isEmpty &&
             groups.any((g) => g.name == hopGroupName)) {
           batchMap[hopGroupName] = nextProxyName;
@@ -316,8 +343,8 @@ class ProxyCard extends StatelessWidget {
     return Consumer(
       builder: (_, ref, child) {
         final isSelected = _isSelectedProxy(ref);
-        final isComputedMatch = groupType.isComputedSelected &&
-            _isComputedMatch(ref);
+        final isComputedMatch =
+            groupType.isComputedSelected && _isComputedMatch(ref);
         final subGroupIcon = _subGroupIcon(ref);
 
         // D4.7: the card body is now a FluxoraProxyTile.
@@ -375,11 +402,12 @@ class _ProxyDesc extends ConsumerWidget {
           .where((p) => p.name == proxy.name)
           .firstOrNull;
       if (landing != null) {
-        final hop = (landing.dialerProxy != null && landing.dialerProxy!.isNotEmpty)
+        final hop =
+            (landing.dialerProxy != null && landing.dialerProxy!.isNotEmpty)
             ? landing.dialerProxy!
             : (chainConfig.defaultDialerProxy.isNotEmpty
-                ? chainConfig.defaultDialerProxy
-                : '跟随主选择');
+                  ? chainConfig.defaultDialerProxy
+                  : '跟随主选择');
         return _ProxyMetaTag('🔗 跳板: $hop');
       }
     }

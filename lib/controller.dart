@@ -102,14 +102,16 @@ class AppController {
   }
 
   void changeProxyDebounce(String groupName, String proxyName) {
-    debouncer.call(FunctionTag.changeProxy, (
-      String groupName,
-      String proxyName,
-    ) async {
-      await changeProxy(groupName: groupName, proxyName: proxyName);
-      await updateGroups();
-      addCheckIp();
-    }, args: [groupName, proxyName], duration: const Duration(milliseconds: 50));
+    debouncer.call(
+      FunctionTag.changeProxy,
+      (String groupName, String proxyName) async {
+        await changeProxy(groupName: groupName, proxyName: proxyName);
+        await updateGroups();
+        addCheckIp();
+      },
+      args: [groupName, proxyName],
+      duration: const Duration(milliseconds: 50),
+    );
   }
 
   void _invalidateCoreReads() {
@@ -375,8 +377,9 @@ class AppController {
 
   Future<bool> _shouldUpdateDashboardTick() async {
     if (system.isDesktop) {
-      final isPinned =
-          _ref.read(windowSettingProvider.select((s) => s.isPinned));
+      final isPinned = _ref.read(
+        windowSettingProvider.select((s) => s.isPinned),
+      );
       if (isPinned) return true;
       if (await window?.isVisible == false) return false;
       if (await window?.isMinimized == true) return false;
@@ -476,9 +479,9 @@ class AppController {
     _updatingProfileIds.add(profile.id);
     try {
       final newProfile = await profile.update(validate: validate);
-      _ref.read(profilesProvider.notifier).setProfile(
-            newProfile.copyWith(isUpdating: false),
-          );
+      _ref
+          .read(profilesProvider.notifier)
+          .setProfile(newProfile.copyWith(isUpdating: false));
       if (profile.id == _ref.read(currentProfileIdProvider)) {
         applyProfileDebounce(silence: true);
       }
@@ -898,12 +901,32 @@ class AppController {
           final oldGroup = currentGroups.firstWhereOrNull(
             (g) => g.name == newGroup.name,
           );
-          if (oldGroup != null &&
-              newGroup.type == GroupType.Selector &&
-              newGroup.now != oldGroup.now) {
-            if (selectedMap[newGroup.name] != newGroup.realNow) {
-              selectedMap[newGroup.name] = newGroup.realNow;
-              hasChanged = true;
+
+          if (newGroup.type == GroupType.Selector) {
+            if (oldGroup != null && newGroup.now != oldGroup.now) {
+              if (selectedMap[newGroup.name] != newGroup.realNow) {
+                selectedMap[newGroup.name] = newGroup.realNow;
+                hasChanged = true;
+              }
+            }
+          } else if (newGroup.type.isComputedSelected) {
+            final lockedProxyName = selectedMap[newGroup.name];
+            if (lockedProxyName != null &&
+                lockedProxyName.isNotEmpty &&
+                lockedProxyName != newGroup.now) {
+              if (newGroup.all.any((p) => p.name == lockedProxyName)) {
+                Future.microtask(
+                  () => clashCore.changeProxy(
+                    ChangeProxyParams(
+                      groupName: newGroup.name,
+                      proxyName: lockedProxyName,
+                    ),
+                  ),
+                );
+              } else {
+                selectedMap.remove(newGroup.name);
+                hasChanged = true;
+              }
             }
           }
         }
@@ -1105,9 +1128,7 @@ class AppController {
     commonPrint.log('clear preferences');
     globalState.config = Config(
       themeProps: defaultThemeProps,
-      networkProps: defaultNetworkProps.copyWith(
-        systemProxy: system.isDesktop,
-      ),
+      networkProps: defaultNetworkProps.copyWith(systemProxy: system.isDesktop),
     );
   }
 
@@ -1525,8 +1546,9 @@ class AppController {
         ageSecretKey: ageSecretKey,
       ).update();
       if (globalState.navigatorKey.currentState?.canPop() ?? false) {
-        globalState.navigatorKey.currentState
-            ?.popUntil((route) => route.isFirst);
+        globalState.navigatorKey.currentState?.popUntil(
+          (route) => route.isFirst,
+        );
       }
       toProfiles();
       await addProfile(profile);
@@ -1699,8 +1721,12 @@ class AppController {
     final currentProfile = _ref.read(currentProfileProvider);
     if (currentProfile != null &&
         currentProfile.selectedMap[groupName] != proxyName) {
-      final SelectedMap selectedMap = Map.from(currentProfile.selectedMap)
-        ..[groupName] = proxyName;
+      final SelectedMap selectedMap = Map.from(currentProfile.selectedMap);
+      if (proxyName.isEmpty) {
+        selectedMap.remove(groupName);
+      } else {
+        selectedMap[groupName] = proxyName;
+      }
       _ref
           .read(profilesProvider.notifier)
           .setProfile(currentProfile.copyWith(selectedMap: selectedMap));
@@ -1730,10 +1756,12 @@ class AppController {
         ? chainConfig.dedicatedGroupName
         : '🔗 链式代理';
 
-    final hasDedicatedSelected = selectedMap.values.any((val) =>
-        val == dedicatedGroupName ||
-        chainProxyManager.isLandingProxy(val));
-    final activeLanding = selectedMap[dedicatedGroupName] ??
+    final hasDedicatedSelected = selectedMap.values.any(
+      (val) =>
+          val == dedicatedGroupName || chainProxyManager.isLandingProxy(val),
+    );
+    final activeLanding =
+        selectedMap[dedicatedGroupName] ??
         chainProxyManager.getPrimaryLandingProxyName();
 
     final batchMap = <String, String>{};
@@ -1749,24 +1777,33 @@ class AppController {
       }
     } else if (mode == Mode.rule) {
       final globalSelected = selectedMap[GroupName.GLOBAL.name];
-      final isChainInGlobal = globalSelected == dedicatedGroupName ||
-          (globalSelected != null && chainProxyManager.isLandingProxy(globalSelected));
+      final isChainInGlobal =
+          globalSelected == dedicatedGroupName ||
+          (globalSelected != null &&
+              chainProxyManager.isLandingProxy(globalSelected));
       if (isChainInGlobal && chainConfig.enable) {
         final groups = _ref.read(groupsProvider);
         final target = chainConfig.createDedicatedGroup
             ? dedicatedGroupName
             : (activeLanding ?? '');
         if (target.isNotEmpty) {
-          final mainGroups = groups.where((g) =>
-              g.name != 'GLOBAL' &&
-              g.name != dedicatedGroupName &&
-              g.name != '✈️ 链式跳板' &&
-              g.type == GroupType.Selector);
+          final mainGroups = groups.where(
+            (g) =>
+                g.name != 'GLOBAL' &&
+                g.name != dedicatedGroupName &&
+                g.name != '✈️ 链式跳板' &&
+                g.type == GroupType.Selector,
+          );
           for (final mg in mainGroups) {
-            final hasDedicated = mg.all.any((p) => p.name == dedicatedGroupName);
-            final hasLanding = mg.all.any((p) => p.name == (activeLanding ?? ''));
+            final hasDedicated = mg.all.any(
+              (p) => p.name == dedicatedGroupName,
+            );
+            final hasLanding = mg.all.any(
+              (p) => p.name == (activeLanding ?? ''),
+            );
             if (hasDedicated || hasLanding) {
-              final toSelect = (chainConfig.createDedicatedGroup && hasDedicated)
+              final toSelect =
+                  (chainConfig.createDedicatedGroup && hasDedicated)
                   ? dedicatedGroupName
                   : (activeLanding ?? '');
               if (toSelect.isNotEmpty) {
@@ -1786,7 +1823,9 @@ class AppController {
           ChangeProxyParams(groupName: entry.key, proxyName: entry.value),
         );
       } catch (e) {
-        commonPrint.log('Failed to sync proxy in changeMode for ${entry.key}: $e');
+        commonPrint.log(
+          'Failed to sync proxy in changeMode for ${entry.key}: $e',
+        );
       }
     }
 
@@ -2233,7 +2272,8 @@ class AppController {
           final vpnPropsJson = configJson['vpnProps'];
           if (vpnPropsJson != null && vpnPropsJson is Map) {
             final accessControlPropsJson = vpnPropsJson['accessControlProps'];
-            if (accessControlPropsJson != null && accessControlPropsJson is Map) {
+            if (accessControlPropsJson != null &&
+                accessControlPropsJson is Map) {
               accessControl = AccessControl.fromJson(
                 Map<String, dynamic>.from(accessControlPropsJson),
               );
@@ -2456,8 +2496,6 @@ class AppController {
     // Ensure current profile exists
     _ensureCurrentProfile(profiles);
   }
-
-
 
   Future<T?> safeRun<T>(
     FutureOr<T> Function() futureFunction, {

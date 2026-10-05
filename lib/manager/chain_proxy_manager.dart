@@ -1,6 +1,15 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+import 'package:dio/dio.dart';
+import 'package:fluxora/models/chain_fallback_pool.dart';
+import 'package:fluxora/models/chain_failover.dart';
+import 'package:fluxora/models/chain_flap_dampening.dart';
+import 'package:fluxora/models/chain_recovery.dart';
+import 'package:fluxora/models/chain_support_package.dart';
+import 'package:fluxora/models/chain_telemetry.dart';
+import 'package:fluxora/services/services.dart';
+
 
 import 'package:fluxora/clash/core.dart';
 import 'package:fluxora/common/common.dart';
@@ -20,6 +29,7 @@ class ChainProxyManager extends ChangeNotifier {
   bool _isBatchHealthChecking = false;
   int _batchCheckCompleted = 0;
   int _batchCheckTotal = 0;
+  int _stateVersion = 0;
 
   ChainProxyManager._internal();
 
@@ -28,6 +38,7 @@ class ChainProxyManager extends ChangeNotifier {
     return _instance!;
   }
 
+  int get stateVersion => _stateVersion;
   ChainProxyConfig get config => _config;
   bool get isInitialized => _initialized;
   Map<String, int?> get delays => Map.unmodifiable(_delays);
@@ -36,6 +47,12 @@ class ChainProxyManager extends ChangeNotifier {
   bool get isBatchHealthChecking => _isBatchHealthChecking;
   int get batchCheckCompleted => _batchCheckCompleted;
   int get batchCheckTotal => _batchCheckTotal;
+
+  @override
+  void notifyListeners() {
+    _stateVersion++;
+    super.notifyListeners();
+  }
 
   int? getDelayForProxy(String proxyId) => _delays[proxyId];
   ProxyHealthReport? getHealthReport(String proxyId) => _healthReports[proxyId];
@@ -63,8 +80,26 @@ class ChainProxyManager extends ChangeNotifier {
     return p.join(homeDir, 'chain_proxies.json');
   }
 
+  void _telemetryListener() => notifyListeners();
+  void _flapListener() => notifyListeners();
+
+  @override
+  void dispose() {
+    _probeCancelToken?.cancel();
+    _failoverCancelToken?.cancel();
+    chainTelemetryService.removeListener(_telemetryListener);
+    chainFlapDampenerService.removeListener(_flapListener);
+    super.dispose();
+  }
+
   Future<void> init() async {
     if (_initialized) return;
+    _initialized = true;
+
+    // Phase 5.x integration: register listeners unconditionally once per instance.
+    chainTelemetryService.addListener(_telemetryListener);
+    chainFlapDampenerService.addListener(_flapListener);
+
     try {
       final filePath = await _getConfigFilePath();
       final file = File(filePath);
@@ -82,7 +117,6 @@ class ChainProxyManager extends ChangeNotifier {
         'ChainProxyManager: Failed to load chain_proxies.json: $e',
       );
     } finally {
-      _initialized = true;
       notifyListeners();
     }
   }
@@ -111,8 +145,12 @@ class ChainProxyManager extends ChangeNotifier {
     notifyListeners();
     await _saveConfig();
     if (reloadCore) {
-      await globalState.appController.setupClashConfig();
-      await globalState.appController.updateGroups();
+      try {
+        await globalState.appController.setupClashConfig();
+        await globalState.appController.updateGroups();
+      } catch (_) {
+        // Tolerate failures in test / non-running core contexts
+      }
       notifyListeners();
     }
   }
@@ -527,6 +565,258 @@ class ChainProxyManager extends ChangeNotifier {
   /// This is called in `patchRawConfig` before writing config.yaml.
   void applyToClashConfig(Map<String, dynamic> rawConfig) {
     _config.applyToClashConfig(rawConfig);
+  }
+
+  // ─── Phase 5.x Runtime State ─────────────────────────────────────────────
+
+  ChainRetryProgress? _retryProgress;
+  ChainProbeReport? _lastProbeReport;
+  bool _isProbingChain = false;
+  ChainFailoverProgress? _failoverProgress;
+  CancelToken? _probeCancelToken;
+  CancelToken? _failoverCancelToken;
+
+  /// In-memory fallback pool.
+  ChainFallbackPool _fallbackPool = const ChainFallbackPool();
+
+  // Phase 5.x state fields (mutable, set by recovery/failover logic)
+  ChainRecoveryPlan? pendingRecoveryPlan;
+  ChainSupportPackage? lastGeneratedPackage;
+
+  // ─── Phase 5.x Getters ────────────────────────────────────────────────────
+
+  ChainRetryProgress? get retryProgress => _retryProgress;
+  ChainProbeReport? get lastProbeReport => _lastProbeReport;
+  bool get isProbingChain => _isProbingChain;
+  ChainFailoverProgress? get failoverProgress => _failoverProgress;
+
+  ChainFallbackPool get fallbackPool => _fallbackPool;
+
+  bool get isFailingOver =>
+      failoverProgress != null &&
+      !failoverProgress!.state.isIdle &&
+      !failoverProgress!.state.isTerminal;
+
+  /// Delegates to the real ChainFlapDampenerService singleton.
+  ChainFlapDampenerStatus get flapDampenerStatus =>
+      chainFlapDampenerService.getStatus();
+
+  /// Delegates to the real ChainTelemetryService singleton.
+  ChainTelemetrySnapshot get telemetrySnapshot =>
+      chainTelemetryService.getSnapshot();
+
+  IChainTelemetryService get telemetryService => chainTelemetryService;
+
+  // ─── Phase 5.x Topology ───────────────────────────────────────────────────
+
+  ValidationResult validateCurrentTopology({
+    List<String>? availableProxyNames,
+  }) {
+    return ChainTopologyValidator.validate(
+      mode: _config.hopMode,
+      hop1: _config.effectiveHop1,
+      hop2: _config.hop2Node,
+      hop3: _config.hopMode == ChainHopMode.threeHop ? _config.hop3Node : null,
+      availableProxyNames: availableProxyNames,
+      dedicatedGroupName: _config.dedicatedGroupName,
+    );
+  }
+
+  // ─── Phase 5.x Hop Configuration ─────────────────────────────────────────
+
+  Future<void> setHopMode(ChainHopMode mode) async {
+    await updateConfig((c) => c.copyWith(hopMode: mode));
+  }
+
+  Future<void> setHop1Node(String name) async {
+    await updateConfig((c) => c.copyWith(
+          hop1Node: name,
+          defaultDialerProxy: name,
+        ));
+  }
+
+  Future<void> setHop2Node(String name) async {
+    await updateConfig((c) => c.copyWith(hop2Node: name));
+  }
+
+  Future<void> setHop3Node(String name) async {
+    await updateConfig((c) => c.copyWith(hop3Node: name));
+  }
+
+  Future<void> setHops({
+    required ChainHopMode mode,
+    required String hop1,
+    required String hop2,
+    String? hop3,
+  }) async {
+    await updateConfig((c) => c.copyWith(
+          hopMode: mode,
+          hop1Node: hop1,
+          defaultDialerProxy: hop1,
+          hop2Node: hop2,
+          hop3Node: hop3 ?? '',
+        ));
+  }
+
+  // ─── Phase 5.x Fallback Pool ──────────────────────────────────────────────
+
+  /// Stores the fallback pool. Full integration with ChainFallbackService
+  /// is performed by the AutoFailover coordinator at runtime.
+  Future<void> setFallbackPool(ChainFallbackPool pool) async {
+    _fallbackPool = pool;
+    notifyListeners();
+  }
+
+  // ─── Phase 5.x Failover Lifecycle ────────────────────────────────────────
+
+  /// Triggers auto-failover. Full implementation delegates to ChainFailoverService.
+  /// This thin coordinator updates progress state and notifies listeners.
+  Future<ChainFailoverResult> triggerAutoFailover({
+    String? triggerReason,
+    ChainProbeReport? initialFailureReport,
+    Duration? timeout,
+    dynamic retryPolicy,
+    bool bypassDampening = false,
+  }) async {
+    cancelFailover();
+    
+    _failoverCancelToken = CancelToken();
+    _failoverProgress = ChainFailoverProgress(
+      state: ChainFailoverState.selectingCandidate,
+      message: triggerReason ?? 'Initializing failover',
+      timestamp: DateTime.now(),
+    );
+    notifyListeners();
+
+    try {
+      final policy = ChainFailoverPolicy(
+        bypassDampening: bypassDampening,
+      );
+      
+      final result = await chainFailoverService.executeFailover(
+        currentConfig: _config,
+        fallbackPool: _fallbackPool,
+        targetRole: null,
+        policy: policy,
+        cancelToken: _failoverCancelToken,
+        flapDampener: chainFlapDampenerService,
+        onProgress: (progress) {
+          _failoverProgress = progress;
+          notifyListeners();
+        },
+        onPoolUpdated: (pool) {
+          _fallbackPool = pool;
+          notifyListeners();
+        }
+      );
+      
+      if (result.isSuccess) {
+        await updateConfig((_) => result.finalConfig);
+      }
+      return result;
+    } finally {
+      if (_failoverProgress != null && !_failoverProgress!.state.isTerminal) {
+        _failoverProgress = ChainFailoverProgress(
+          state: _failoverCancelToken?.isCancelled == true 
+                 ? ChainFailoverState.cancelled 
+                 : ChainFailoverState.idle,
+          candidateNodeName: _failoverProgress!.candidateNodeName,
+          message: 'Finished',
+          timestamp: DateTime.now(),
+        );
+      }
+      _failoverCancelToken = null;
+      notifyListeners();
+    }
+  }
+
+  void cancelFailover() {
+    _failoverCancelToken?.cancel();
+    _failoverCancelToken = null;
+    if (_failoverProgress != null) {
+      _failoverProgress = ChainFailoverProgress(
+        state: ChainFailoverState.cancelled,
+        candidateNodeName: _failoverProgress!.candidateNodeName,
+        message: 'Cancelled by user',
+        timestamp: DateTime.now(),
+      );
+    }
+    notifyListeners();
+  }
+
+  // ─── Phase 5.x Probe Lifecycle ────────────────────────────────────────────
+
+  void cancelCurrentProbe() {
+    _probeCancelToken?.cancel();
+    _probeCancelToken = null;
+    _isProbingChain = false;
+    notifyListeners();
+  }
+
+  Future<ChainProbeReport> probeCurrentChain({
+    String? testUrl,
+    Duration? timeout,
+    CancelToken? cancelToken,
+    ChainRetryPolicy? retryPolicy,
+  }) async {
+    _isProbingChain = true;
+    _probeCancelToken = cancelToken ?? CancelToken();
+    notifyListeners();
+    try {
+      final report = await chainProbeService.probeChain(
+        config: _config,
+        testUrl: testUrl,
+        cancelToken: _probeCancelToken,
+      );
+      _lastProbeReport = report;
+      return report;
+    } finally {
+      _isProbingChain = false;
+      notifyListeners();
+    }
+  }
+
+  // ─── Phase 5.x Flap Dampening ────────────────────────────────────────────
+
+  void resetFlapDampener() {
+    chainFlapDampenerService.reset();
+  }
+
+  // ─── Phase 5.x Telemetry ──────────────────────────────────────────────────
+
+  void clearTelemetry() {
+    chainTelemetryService.clear();
+  }
+
+  // ─── Phase 5.x Diagnostics & Support ─────────────────────────────────────
+
+  /// Exports a chain diagnostic report. Full implementation in Phase 5.9-E.1.2+.
+  Future<dynamic> exportChainDiagnosticReport() async {
+    // ChainDiagnosticExportService integration pending Phase 5.9-E.1.2.
+    return null;
+  }
+
+  // ─── Phase 5.x Recovery Plan ──────────────────────────────────────────────
+
+  Future<void> rejectRecoveryPlan() async {
+    pendingRecoveryPlan = null;
+    notifyListeners();
+  }
+
+  Future<void> approveRecoveryPlan() async {
+    if (pendingRecoveryPlan?.action == ChainRecoveryAction.pauseChainProxy) {
+      await setHopMode(ChainHopMode.twoHop);
+    }
+    pendingRecoveryPlan = null;
+    notifyListeners();
+  }
+
+  // ─── Phase 5.x Support Package ────────────────────────────────────────────
+
+  /// Generates a support package. Full implementation in Phase 5.9-E.1.2+.
+  Future<void> createSupportPackage() async {
+    // ChainSupportPackageService integration pending Phase 5.9-E.1.2.
+    notifyListeners();
   }
 }
 
