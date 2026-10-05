@@ -26,7 +26,7 @@ To ensure that only trusted and reviewed code gets signed, the project enforces 
 The signing process is strictly automated to prevent tampering. Manual code signing by individual developers is not permitted for official releases.
 
 - **CI/CD Automation**: All signing operations are fully automated via GitHub Actions (e.g., `.github/workflows/build.yaml`).
-- **Trigger Conditions**: Signing is only triggered during the official release process, specifically when pushing a new version tag (e.g., `v1.*.*`).
+- **Trigger Conditions**: Signing is only triggered during the official release process, specifically when pushing a new version tag — either a stable release tag (e.g., `v1.2.3`) or a release-candidate tag (e.g., `v1.2.3-rc.1`). Signing is **not** performed for `workflow_dispatch` runs or branch builds. The precise tag rules and per-release-type signing policies are defined in [Release Types & Tagging](#6-release-types--tagging).
 - **Ephemeral Environments**: All builds are compiled on ephemeral, isolated GitHub-hosted runners.
 - **SignPath Integration**: Once the unsigned artifacts are compiled, the GitHub Action submits them to SignPath via their official API/Action. SignPath verifies the origin (GitHub Actions OIDC or API Token) and signs the artifacts.
 - **Distribution**: The signed artifacts are automatically downloaded back to the runner and uploaded to the GitHub Releases page.
@@ -37,3 +37,48 @@ If a security breach, unauthorized commit, or private key compromise (related to
 1. Maintainers will immediately revoke any exposed tokens.
 2. If malicious code was signed, maintainers will immediately contact the SignPath Foundation to request the revocation of the code signing certificate.
 3. An advisory will be published on the GitHub repository to notify users.
+
+## 6. Release Types & Tagging
+
+This section defines which release types exist, how they are tagged, and which of them
+produce signed Windows artifacts and/or a GitHub Release.
+
+### 6.1 Stable Release
+
+- **Tag format**: `vX.Y.Z` (e.g., `v1.2.3`)
+- **Windows signing**: **YES**
+- **Signing policy (executables)**: `release-signing`
+- **Signing policy (installer)**: `release-signing`
+- **GitHub Release**: **YES**
+- **GitHub Pre-release**: NO
+
+### 6.2 Release Candidate (RC)
+
+- **Tag format**: `vX.Y.Z-rc.N` (e.g., `v1.2.3-rc.1`, `v1.2.3-rc.2`)
+- **Windows signing**: **YES**
+- **Signing policy (executables)**: `test-signing`
+- **Signing policy (installer)**: `test-signing`
+- **GitHub Release**: **YES**
+- **GitHub Pre-release**: **YES**
+
+### 6.3 Manual and Branch Builds
+
+| Trigger | Build | Windows signing | GitHub Release |
+| --- | --- | --- | --- |
+| `workflow_dispatch` | YES | **NO** | NO |
+| Branch push (e.g., `develop/*`) | Per workflow trigger configuration | **NO** | NO |
+
+Manual and branch builds are validation builds. They are never code-signed and must never
+be published as official release artifacts.
+
+### 6.4 Beta / Alpha
+
+`beta` and `alpha` tag forms (e.g., `v1.2.3-beta.1`, `v1.2.3-alpha.1`) are **not supported**
+release types for Fluxora. No signing policy and no release process is defined for them.
+
+### 6.5 Unsigned Release Prohibition
+
+A **Stable** or **Release Candidate** release **must not** be published as an official
+distribution if Windows code signing did not take place. If the SignPath API token is not
+configured, a release build fails fast instead of silently publishing unsigned Windows
+artifacts.
