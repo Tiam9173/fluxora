@@ -10,6 +10,9 @@ import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluxora/models/chain_fallback_pool.dart';
+import 'package:fluxora/views/proxies/intelligent_node_picker_sheet.dart';
+
 
 class ChainProxyView extends ConsumerStatefulWidget {
   const ChainProxyView({super.key});
@@ -27,107 +30,28 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
     chainProxyManager.init();
   }
 
-  void _showHopPickerSheet({
+  void _showIntelligentHopPicker({
+    required String title,
     required String currentHop,
+    required Set<String> excludedHops,
     required Function(String) onSelect,
+    required FallbackCandidateRole role,
+    bool allowDirect = true,
+    bool allowFollowMain = false,
   }) {
-    final groups = ref.read(groupsProvider);
-    final groupNames = groups
-        .map((g) => g.name)
-        .where((name) => name != '🔗 链式代理')
-        .toList();
-
-    final allProxies = <String>{};
-    for (final g in groups) {
-      if (g.name == '🔗 链式代理') continue;
-      for (final p in g.all) {
-        if (p.name != 'DIRECT' &&
-            p.name != 'REJECT' &&
-            p.name != 'REJECT-DROP' &&
-            p.name != 'PASS') {
-          allProxies.add(p.name);
-        }
-      }
-    }
-    final proxyList = allProxies.toList()..sort();
-
     showSheet(
       context: context,
       props: SheetProps(isScrollControlled: true),
       builder: (ctx, type) {
-        return AdaptiveSheetScaffold(
-          type: type,
-          title: appLocalizations.defaultDialerProxy,
-          body: ListView(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            children: [
-              ListTile(
-                leading: const Icon(Icons.auto_mode, color: Colors.blue),
-                title: Text(appLocalizations.followMainSelector),
-                subtitle: Text(appLocalizations.defaultDialerProxyDesc),
-                trailing: currentHop.isEmpty
-                    ? const Icon(Icons.check, color: Colors.blue)
-                    : null,
-                onTap: () {
-                  onSelect('');
-                  Navigator.of(ctx).pop();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.directions, color: Colors.green),
-                title: Text(appLocalizations.directConnection),
-                trailing: currentHop == 'DIRECT'
-                    ? const Icon(Icons.check, color: Colors.blue)
-                    : null,
-                onTap: () {
-                  onSelect('DIRECT');
-                  Navigator.of(ctx).pop();
-                },
-              ),
-              if (groupNames.isNotEmpty) ...[
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Text(
-                    '策略组',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                  ),
-                ),
-                for (final g in groupNames)
-                  ListTile(
-                    leading: const Icon(Icons.folder_outlined),
-                    title: Text(g),
-                    trailing: currentHop == g
-                        ? const Icon(Icons.check, color: Colors.blue)
-                        : null,
-                    onTap: () {
-                      onSelect(g);
-                      Navigator.of(ctx).pop();
-                    },
-                  ),
-              ],
-              if (proxyList.isNotEmpty) ...[
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Text(
-                    '具体节点',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                  ),
-                ),
-                for (final p in proxyList)
-                  ListTile(
-                    leading: const Icon(Icons.cloud_outlined),
-                    title: Text(p),
-                    trailing: currentHop == p
-                        ? const Icon(Icons.check, color: Colors.blue)
-                        : null,
-                    onTap: () {
-                      onSelect(p);
-                      Navigator.of(ctx).pop();
-                    },
-                  ),
-              ],
-            ],
-          ),
+        return IntelligentNodePickerSheet(
+          title: title,
+          currentHop: currentHop,
+          excludedHops: excludedHops,
+          allowDirect: allowDirect,
+          allowFollowMain: allowFollowMain,
+          onSelect: onSelect,
+          role: role,
+          sheetType: type,
         );
       },
     );
@@ -316,10 +240,15 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                   ),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {
-                    _showHopPickerSheet(
-                      currentHop: config.defaultDialerProxy,
-                      onSelect: (hop) => chainProxyManager.setDefaultDialer(hop),
-                    );
+                    _showIntelligentHopPicker(
+                        title: appLocalizations.defaultDialerProxy,
+                        currentHop: config.defaultDialerProxy,
+                        excludedHops: const {},
+                        role: FallbackCandidateRole.entry,
+                        allowDirect: true,
+                        allowFollowMain: true,
+                        onSelect: (hop) => chainProxyManager.setDefaultDialer(hop),
+                      );
                   },
                 ),
                 const Divider(height: 1, indent: 16, endIndent: 16),

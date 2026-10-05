@@ -8,7 +8,9 @@ String _generateUuidV4() {
   final bytes = List.generate(16, (_) => random.nextInt(256));
   bytes[6] = (bytes[6] & 0x0F) | 0x40;
   bytes[8] = (bytes[8] & 0x3F) | 0x80;
-  final hex = bytes.map((byte) => byte.toRadixString(16).padLeft(2, '0')).join();
+  final hex = bytes
+      .map((byte) => byte.toRadixString(16).padLeft(2, '0'))
+      .join();
   return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20, 32)}';
 }
 
@@ -249,6 +251,260 @@ class LandingProxy {
   }
 }
 
+enum ChainHopMode {
+  twoHop('两跳模式', 2),
+  threeHop('三跳模式', 3);
+
+  final String label;
+  final int hopCount;
+
+  const ChainHopMode(this.label, this.hopCount);
+
+  static ChainHopMode fromString(String? val) {
+    if (val == null) return ChainHopMode.twoHop;
+    final lower = val.toLowerCase().trim();
+    return switch (lower) {
+      'threehop' || '3hop' || 'three_hop' || 'three' => ChainHopMode.threeHop,
+      _ => ChainHopMode.twoHop,
+    };
+  }
+}
+
+class ValidationResult {
+  final bool isValid;
+  final String errorCode;
+  final String message;
+  final int? affectedHop;
+
+  const ValidationResult._({
+    required this.isValid,
+    required this.errorCode,
+    required this.message,
+    this.affectedHop,
+  });
+
+  factory ValidationResult.valid() => const ValidationResult._(
+    isValid: true,
+    errorCode: 'NONE',
+    message: '链路拓扑有效',
+  );
+
+  factory ValidationResult.error({
+    required String errorCode,
+    required String message,
+    int? affectedHop,
+  }) => ValidationResult._(
+    isValid: false,
+    errorCode: errorCode,
+    message: message,
+    affectedHop: affectedHop,
+  );
+
+  @override
+  String toString() => isValid
+      ? 'ValidationResult(valid)'
+      : 'ValidationResult(error: $errorCode, hop: $affectedHop, message: $message)';
+}
+
+class ChainTopologyValidator {
+  static const Set<String> _reservedSystemNames = {
+    'DIRECT',
+    'REJECT',
+    'REJECT-DROP',
+    'PASS',
+    'GLOBAL',
+    '🔗 链式代理',
+    '✈️ 链式跳板',
+  };
+
+  /// Validates a chain proxy configuration topology.
+  static ValidationResult validate({
+    required ChainHopMode mode,
+    required String hop1,
+    required String hop2,
+    String? hop3,
+    List<String>? availableProxyNames,
+    Map<String, String>? dialerProxyMap,
+    String? dedicatedGroupName,
+  }) {
+    final h1 = hop1.trim();
+    final h2 = hop2.trim();
+    final h3 = hop3?.trim() ?? '';
+
+    // 1. Empty checks
+    if (h1.isEmpty) {
+      return ValidationResult.error(
+        errorCode: 'EMPTY_HOP',
+        message: '第一跳节点不能为空',
+        affectedHop: 1,
+      );
+    }
+
+    if (h2.isEmpty) {
+      return ValidationResult.error(
+        errorCode: 'EMPTY_HOP',
+        message: mode == ChainHopMode.threeHop
+            ? '第二跳（中转）节点不能为空'
+            : '第二跳（出口）节点不能为空',
+        affectedHop: 2,
+      );
+    }
+
+    if (mode == ChainHopMode.threeHop && h3.isEmpty) {
+      return ValidationResult.error(
+        errorCode: 'EMPTY_HOP',
+        message: '第三跳（出口）节点不能为空',
+        affectedHop: 3,
+      );
+    }
+
+    // 2. Reserved system names & self-reference checks
+    final reserved = {..._reservedSystemNames};
+    if (dedicatedGroupName != null && dedicatedGroupName.trim().isNotEmpty) {
+      reserved.add(dedicatedGroupName.trim());
+    }
+
+    // Note: DIRECT is allowed as a dialer if user intentionally wants direct connection for hop1
+    if (reserved.contains(h1) && h1 != 'DIRECT') {
+      return ValidationResult.error(
+        errorCode: 'SELF_REFERENCE',
+        message: '第一跳不能使用系统保留组名或链式组名 [$h1]',
+        affectedHop: 1,
+      );
+    }
+    if (reserved.contains(h2)) {
+      return ValidationResult.error(
+        errorCode: 'SELF_REFERENCE',
+        message: '第二跳不能使用系统保留组名或链式组名 [$h2]',
+        affectedHop: 2,
+      );
+    }
+    if (mode == ChainHopMode.threeHop && reserved.contains(h3)) {
+      return ValidationResult.error(
+        errorCode: 'SELF_REFERENCE',
+        message: '第三跳不能使用系统保留组名或链式组名 [$h3]',
+        affectedHop: 3,
+      );
+    }
+
+    // 3. Duplicate hops checks
+    if (h1 == h2) {
+      return ValidationResult.error(
+        errorCode: 'DUPLICATE_HOP',
+        message: '第一跳与第二跳不能使用同一个节点 [$h1]',
+        affectedHop: 2,
+      );
+    }
+
+    if (mode == ChainHopMode.threeHop) {
+      if (h1 == h3) {
+        return ValidationResult.error(
+          errorCode: 'DUPLICATE_HOP',
+          message: '第一跳与第三跳不能使用同一个节点 [$h1]',
+          affectedHop: 3,
+        );
+      }
+      if (h2 == h3) {
+        return ValidationResult.error(
+          errorCode: 'DUPLICATE_HOP',
+          message: '第二跳与第三跳不能使用同一个节点 [$h2]',
+          affectedHop: 3,
+        );
+      }
+    }
+
+    // 4. Availability checks (if available list provided)
+    if (availableProxyNames != null && availableProxyNames.isNotEmpty) {
+      final availableSet = availableProxyNames.toSet();
+      if (h1 != 'DIRECT' && !availableSet.contains(h1)) {
+        return ValidationResult.error(
+          errorCode: 'NODE_NOT_FOUND',
+          message: '第一跳节点 [$h1] 不存在于当前可用代理列表中',
+          affectedHop: 1,
+        );
+      }
+      if (!availableSet.contains(h2)) {
+        return ValidationResult.error(
+          errorCode: 'NODE_NOT_FOUND',
+          message: '第二跳节点 [$h2] 不存在于当前可用代理列表中',
+          affectedHop: 2,
+        );
+      }
+      if (mode == ChainHopMode.threeHop && !availableSet.contains(h3)) {
+        return ValidationResult.error(
+          errorCode: 'NODE_NOT_FOUND',
+          message: '第三跳节点 [$h3] 不存在于当前可用代理列表中',
+          affectedHop: 3,
+        );
+      }
+    }
+
+    // 5. Explicit DAG Cycle Detection (DFS)
+    final edges = <String, Set<String>>{};
+    void addEdge(String from, String to) {
+      if (to.isEmpty || to == 'DIRECT') return;
+      edges.putIfAbsent(from, () => <String>{}).add(to);
+    }
+
+    // In chain proxy:
+    // Hop 2 dials Hop 1: Hop 2 -> Hop 1
+    addEdge(h2, h1);
+    if (mode == ChainHopMode.threeHop) {
+      // Hop 3 dials Hop 2: Hop 3 -> Hop 2
+      addEdge(h3, h2);
+    }
+
+    // Add any external dialer proxy edges if provided
+    if (dialerProxyMap != null) {
+      for (final entry in dialerProxyMap.entries) {
+        addEdge(entry.key, entry.value);
+      }
+    }
+
+    // DFS with 3-color cycle detection
+    // 0: unvisited, 1: visiting (in current path), 2: visited
+    final state = <String, int>{};
+    final path = <String>[];
+    String? cycleReport;
+
+    bool dfs(String node) {
+      state[node] = 1;
+      path.add(node);
+
+      final neighbors = edges[node] ?? const <String>{};
+      for (final next in neighbors) {
+        final nextState = state[next] ?? 0;
+        if (nextState == 1) {
+          final cycleStart = path.indexOf(next);
+          final cycleNodes = path.sublist(cycleStart)..add(next);
+          cycleReport = cycleNodes.join(' ➜ ');
+          return true;
+        } else if (nextState == 0) {
+          if (dfs(next)) return true;
+        }
+      }
+
+      path.removeLast();
+      state[node] = 2;
+      return false;
+    }
+
+    for (final node in edges.keys) {
+      if ((state[node] ?? 0) == 0) {
+        if (dfs(node)) {
+          return ValidationResult.error(
+            errorCode: 'CIRCULAR_DEPENDENCY',
+            message: '检测到循环代理依赖: $cycleReport',
+            affectedHop: mode == ChainHopMode.threeHop ? 3 : 2,
+          );
+        }
+      }
+    }
+
+    return ValidationResult.valid();
+  }
+}
+
 class ChainProxyConfig {
   final bool enable;
   final String defaultDialerProxy;
@@ -257,6 +513,10 @@ class ChainProxyConfig {
   final String dedicatedGroupName;
   final bool preventWebRtcLeak;
   final List<LandingProxy> landingProxies;
+  final ChainHopMode hopMode;
+  final String hop1Node;
+  final String hop2Node;
+  final String hop3Node;
 
   const ChainProxyConfig({
     this.enable = false,
@@ -266,7 +526,24 @@ class ChainProxyConfig {
     this.dedicatedGroupName = '🔗 链式代理',
     this.preventWebRtcLeak = true,
     this.landingProxies = const [],
+    this.hopMode = ChainHopMode.twoHop,
+    this.hop1Node = '',
+    this.hop2Node = '',
+    this.hop3Node = '',
   });
+
+  /// Effective entry proxy name (Hop 1)
+  String get effectiveHop1 =>
+      hop1Node.isNotEmpty ? hop1Node : defaultDialerProxy;
+
+  /// Effective exit proxy name depending on mode
+  String get effectiveExitNode {
+    if (hopMode == ChainHopMode.threeHop) {
+      return hop3Node;
+    }
+    if (hop2Node.isNotEmpty) return hop2Node;
+    return landingProxies.where((p) => p.enable).firstOrNull?.name ?? '';
+  }
 
   ChainProxyConfig copyWith({
     bool? enable,
@@ -276,6 +553,10 @@ class ChainProxyConfig {
     String? dedicatedGroupName,
     bool? preventWebRtcLeak,
     List<LandingProxy>? landingProxies,
+    ChainHopMode? hopMode,
+    String? hop1Node,
+    String? hop2Node,
+    String? hop3Node,
   }) {
     return ChainProxyConfig(
       enable: enable ?? this.enable,
@@ -285,6 +566,10 @@ class ChainProxyConfig {
       dedicatedGroupName: dedicatedGroupName ?? this.dedicatedGroupName,
       preventWebRtcLeak: preventWebRtcLeak ?? this.preventWebRtcLeak,
       landingProxies: landingProxies ?? this.landingProxies,
+      hopMode: hopMode ?? this.hopMode,
+      hop1Node: hop1Node ?? this.hop1Node,
+      hop2Node: hop2Node ?? this.hop2Node,
+      hop3Node: hop3Node ?? this.hop3Node,
     );
   }
 
@@ -297,29 +582,45 @@ class ChainProxyConfig {
       'dedicatedGroupName': dedicatedGroupName,
       'preventWebRtcLeak': preventWebRtcLeak,
       'landingProxies': landingProxies.map((e) => e.toJson()).toList(),
+      'hopMode': hopMode.name,
+      'hop1Node': hop1Node,
+      'hop2Node': hop2Node,
+      'hop3Node': hop3Node,
     };
   }
 
   factory ChainProxyConfig.fromJson(Map<String, dynamic>? json) {
     if (json == null) return const ChainProxyConfig();
     final list = json['landingProxies'];
+    final legacyDialer = json['defaultDialerProxy']?.toString() ?? '';
+    final h1 = json['hop1Node']?.toString() ?? legacyDialer;
     return ChainProxyConfig(
       enable: json['enable'] == true,
-      defaultDialerProxy: json['defaultDialerProxy']?.toString() ?? '',
+      defaultDialerProxy: legacyDialer,
       autoInjectGroups: json['autoInjectGroups'] != false,
       createDedicatedGroup: json['createDedicatedGroup'] != false,
-      dedicatedGroupName: json['dedicatedGroupName']?.toString().isNotEmpty == true
+      dedicatedGroupName:
+          json['dedicatedGroupName']?.toString().isNotEmpty == true
           ? json['dedicatedGroupName'].toString()
           : '🔗 链式代理',
       preventWebRtcLeak: json['preventWebRtcLeak'] != false,
       landingProxies: list is List
           ? list
-              .whereType<Map>()
-              .map((e) => LandingProxy.fromJson(Map<String, dynamic>.from(e)))
-              .toList()
+                .whereType<Map>()
+                .map((e) => LandingProxy.fromJson(Map<String, dynamic>.from(e)))
+                .toList()
           : const [],
+      hopMode: ChainHopMode.fromString(json['hopMode']?.toString()),
+      hop1Node: h1,
+      hop2Node: json['hop2Node']?.toString() ?? '',
+      hop3Node: json['hop3Node']?.toString() ?? '',
     );
   }
+
+  static String transitShadowName(String nodeName) => '🔗中转·$nodeName';
+  static String exitShadowName(String nodeName) => '🔗出口·$nodeName';
+  static bool isShadowNodeName(String name) =>
+      name.startsWith('🔗中转·') || name.startsWith('🔗出口·');
 
   void applyToClashConfig(Map<String, dynamic> rawConfig) {
     // 1. WebRTC Leak Prevention: Injects high-priority STUN/TURN blocking rules for all nodes
@@ -353,51 +654,78 @@ class ChainProxyConfig {
       ];
 
       final existingRuleSet = rulesList.map((e) => e.toString().trim()).toSet();
-      final rulesToInsert = webRtcRules.where((r) => !existingRuleSet.contains(r)).toList();
+      final rulesToInsert = webRtcRules
+          .where((r) => !existingRuleSet.contains(r))
+          .toList();
       rulesList.insertAll(0, rulesToInsert);
       rawConfig['rules'] = rulesList;
     }
 
-    if (!enable) return;
+    final rawProxies = rawConfig['proxies'];
+    final rawGroups = rawConfig['proxy-groups'];
+
+    // 2. Clean teardown when disabled
+    if (!enable) {
+      if (rawProxies is List) {
+        rawProxies.removeWhere(
+          (p) =>
+              p is Map &&
+              (p['name']?.toString().startsWith('🔗中转·') == true ||
+                  p['name']?.toString().startsWith('🔗出口·') == true),
+        );
+      }
+      if (rawGroups is List) {
+        rawGroups.removeWhere(
+          (g) =>
+              g is Map &&
+              (g['name'] == dedicatedGroupName || g['name'] == '✈️ 链式跳板'),
+        );
+        for (final g in rawGroups) {
+          if (g is Map && g['proxies'] is List) {
+            (g['proxies'] as List).removeWhere(
+              (p) =>
+                  p == dedicatedGroupName ||
+                  p == '✈️ 链式跳板' ||
+                  (p is String &&
+                      (p.startsWith('🔗中转·') || p.startsWith('🔗出口·'))),
+            );
+          }
+        }
+      }
+      return;
+    }
 
     final activeLandings = landingProxies.where((p) => p.enable).toList();
-    if (activeLandings.isEmpty) return;
 
-    // Ensure proxies list
-    final rawProxies = rawConfig['proxies'];
+    final bool hasThreeHopNodes =
+        hopMode == ChainHopMode.threeHop &&
+        hop2Node.trim().isNotEmpty &&
+        hop3Node.trim().isNotEmpty;
+    final bool hasTwoHopNodes =
+        hopMode == ChainHopMode.twoHop && hop2Node.trim().isNotEmpty;
+    final bool hasLandingProxies = activeLandings.isNotEmpty;
+
+    if (!hasThreeHopNodes && !hasTwoHopNodes && !hasLandingProxies) {
+      return;
+    }
+
     final List<dynamic> proxiesList = (rawProxies is List)
         ? List<dynamic>.from(rawProxies)
         : <dynamic>[];
     rawConfig['proxies'] = proxiesList;
 
-    // Collect existing airport/outbound proxy names BEFORE injecting any landing proxies
-    final List<String> airportProxyNames = [];
-    final Set<String> existingProxyOrGroupNames = {
-      'DIRECT',
-      'REJECT',
-      'REJECT-DROP',
-      'GLOBAL',
-    };
+    // Clean up any stale shadow nodes before re-injecting
+    proxiesList.removeWhere(
+      (p) =>
+          p is Map &&
+          (p['name']?.toString().startsWith('🔗中转·') == true ||
+              p['name']?.toString().startsWith('🔗出口·') == true),
+    );
 
-    for (final item in proxiesList) {
-      if (item is Map && item['name'] != null) {
-        final name = item['name'].toString();
-        airportProxyNames.add(name);
-        existingProxyOrGroupNames.add(name);
-      }
-    }
-
-    final rawGroups = rawConfig['proxy-groups'];
     final List<dynamic> groupList = (rawGroups is List)
         ? List<dynamic>.from(rawGroups)
         : <dynamic>[];
     rawConfig['proxy-groups'] = groupList;
-
-    for (final group in groupList) {
-      if (group is Map && group['name'] != null) {
-        existingProxyOrGroupNames.add(group['name'].toString());
-      }
-    }
 
     // Performance, throughput & latency acceleration for multi-hop chain proxies
     rawConfig['tcp-concurrent'] = true;
@@ -405,29 +733,38 @@ class ChainProxyConfig {
     rawConfig['keep-alive-idle'] = 600;
     rawConfig['keep-alive-interval'] = 15;
 
-    // Determine dedicated hop group for loop-free dialer-proxy
+    final List<String> airportProxyNames = [];
+    final Map<String, Map<String, dynamic>> proxyConfigMap = {};
+    for (final item in proxiesList) {
+      if (item is Map && item['name'] != null) {
+        final name = item['name'].toString();
+        airportProxyNames.add(name);
+        proxyConfigMap[name] = Map<String, dynamic>.from(item);
+      }
+    }
+
+    for (final landing in activeLandings) {
+      proxyConfigMap[landing.name] = landing.toMihomoProxyMap('DIRECT');
+    }
+
     const String dedicatedHopGroupName = '✈️ 链式跳板';
-    String configuredHop = defaultDialerProxy.trim();
+    final String hop1 = effectiveHop1.trim();
 
-    // Check if configuredHop is a specific existing airport proxy
-    final bool isHopSpecificProxy = configuredHop.isNotEmpty &&
-        configuredHop.toUpperCase() != 'DIRECT' &&
-        airportProxyNames.contains(configuredHop);
+    final bool isHopSpecificProxy =
+        hop1.isNotEmpty &&
+        hop1.toUpperCase() != 'DIRECT' &&
+        airportProxyNames.contains(hop1);
+    final bool isHopDirect = hop1.toUpperCase() == 'DIRECT';
 
-    final bool isHopDirect = configuredHop.toUpperCase() == 'DIRECT';
-
-    // If configuredHop is empty or not a valid single proxy, we use dedicatedHopGroupName
     final String fallbackHop = (isHopSpecificProxy || isHopDirect)
-        ? configuredHop
+        ? hop1
         : dedicatedHopGroupName;
 
-    // Create the dedicated hop group if fallbackHop is dedicatedHopGroupName
-    if (fallbackHop == dedicatedHopGroupName) {
+    void ensureDedicatedHopGroup() {
       final existingHopIndex = groupList.indexWhere(
         (g) => g is Map && g['name'] == dedicatedHopGroupName,
       );
 
-      // Filter out non-proxy informational / dummy notice nodes
       bool isInformationalName(String name) {
         final lower = name.toLowerCase();
         return lower.contains('剩余') ||
@@ -459,8 +796,8 @@ class ChainProxyConfig {
       final hopProxies = cleanAirportProxyNames.isNotEmpty
           ? List<dynamic>.from(cleanAirportProxyNames)
           : (airportProxyNames.isNotEmpty
-              ? List<dynamic>.from(airportProxyNames)
-              : <dynamic>['DIRECT']);
+                ? List<dynamic>.from(airportProxyNames)
+                : <dynamic>['DIRECT']);
 
       final hopGroupMap = <String, dynamic>{
         'name': dedicatedHopGroupName,
@@ -473,33 +810,118 @@ class ChainProxyConfig {
       } else {
         groupList.add(hopGroupMap);
       }
-      existingProxyOrGroupNames.add(dedicatedHopGroupName);
     }
 
     final injectedProxyNames = <String>[];
 
-    for (final landing in activeLandings) {
-      String effectiveHop;
-      if (landing.dialerProxy != null && landing.dialerProxy!.trim().isNotEmpty) {
-        effectiveHop = landing.dialerProxy!.trim();
-      } else {
-        effectiveHop = fallbackHop;
+    if (hopMode == ChainHopMode.threeHop && hasThreeHopNodes) {
+      final validation = ChainTopologyValidator.validate(
+        mode: ChainHopMode.threeHop,
+        hop1: fallbackHop,
+        hop2: hop2Node.trim(),
+        hop3: hop3Node.trim(),
+        dedicatedGroupName: dedicatedGroupName,
+      );
+
+      if (!validation.isValid) {
+        return;
       }
 
-      // If effectiveHop is not found in airport proxies and not dedicatedHopGroupName and not DIRECT:
+      if (fallbackHop == dedicatedHopGroupName) {
+        ensureDedicatedHopGroup();
+      }
+
+      final h2Name = hop2Node.trim();
+      final h3Name = hop3Node.trim();
+      final h2Config = proxyConfigMap[h2Name];
+      final h3Config = proxyConfigMap[h3Name];
+
+      if (h2Config != null && h3Config != null) {
+        // Shadow Transit Node (Hop 2)
+        final shadowTransitName = transitShadowName(h2Name);
+        final shadowTransit = Map<String, dynamic>.from(h2Config);
+        shadowTransit['name'] = shadowTransitName;
+        if (fallbackHop != 'DIRECT') {
+          shadowTransit['dialer-proxy'] = fallbackHop;
+        } else {
+          shadowTransit.remove('dialer-proxy');
+        }
+        proxiesList.add(shadowTransit);
+
+        // Shadow Exit Node (Hop 3)
+        final shadowExitName = exitShadowName(h3Name);
+        final shadowExit = Map<String, dynamic>.from(h3Config);
+        shadowExit['name'] = shadowExitName;
+        shadowExit['dialer-proxy'] = shadowTransitName;
+        proxiesList.add(shadowExit);
+
+        injectedProxyNames.add(shadowExitName);
+      }
+    } else if (hopMode == ChainHopMode.twoHop && hasTwoHopNodes) {
+      final validation = ChainTopologyValidator.validate(
+        mode: ChainHopMode.twoHop,
+        hop1: fallbackHop,
+        hop2: hop2Node.trim(),
+        dedicatedGroupName: dedicatedGroupName,
+      );
+
+      if (!validation.isValid) {
+        return;
+      }
+
+      if (fallbackHop == dedicatedHopGroupName) {
+        ensureDedicatedHopGroup();
+      }
+
+      final h2Name = hop2Node.trim();
+      final landingMatch = activeLandings
+          .where((p) => p.name == h2Name)
+          .firstOrNull;
+      if (landingMatch != null) {
+        final proxyMap = landingMatch.toMihomoProxyMap(fallbackHop);
+        proxiesList.add(proxyMap);
+        injectedProxyNames.add(landingMatch.name);
+      } else {
+        final h2Config = proxyConfigMap[h2Name];
+        if (h2Config != null) {
+          final shadowExitName = exitShadowName(h2Name);
+          final shadowExit = Map<String, dynamic>.from(h2Config);
+          shadowExit['name'] = shadowExitName;
+          if (fallbackHop != 'DIRECT') {
+            shadowExit['dialer-proxy'] = fallbackHop;
+          } else {
+            shadowExit.remove('dialer-proxy');
+          }
+          proxiesList.add(shadowExit);
+          injectedProxyNames.add(shadowExitName);
+        }
+      }
+    }
+
+    // Also support any active landing proxies not already injected
+    for (final landing in activeLandings) {
+      if (injectedProxyNames.contains(landing.name)) continue;
+      String effectiveHop =
+          (landing.dialerProxy != null &&
+              landing.dialerProxy!.trim().isNotEmpty)
+          ? landing.dialerProxy!.trim()
+          : fallbackHop;
       if (effectiveHop != 'DIRECT' &&
           effectiveHop != dedicatedHopGroupName &&
           !airportProxyNames.contains(effectiveHop)) {
         effectiveHop = fallbackHop;
       }
 
+      if (effectiveHop == dedicatedHopGroupName) {
+        ensureDedicatedHopGroup();
+      }
+
       final proxyMap = landing.toMihomoProxyMap(effectiveHop);
       proxiesList.add(proxyMap);
       injectedProxyNames.add(landing.name);
-      existingProxyOrGroupNames.add(landing.name);
     }
 
-    // Group integration
+    // Dedicated Group & Global / Selector Integration
     if (injectedProxyNames.isNotEmpty) {
       final effectiveDedicatedGroupName = dedicatedGroupName.isNotEmpty
           ? dedicatedGroupName
@@ -512,10 +934,7 @@ class ChainProxyConfig {
         final dedicatedGroupMap = <String, dynamic>{
           'name': effectiveDedicatedGroupName,
           'type': 'select',
-          'proxies': [
-            ...injectedProxyNames,
-            'DIRECT',
-          ],
+          'proxies': [...injectedProxyNames, 'DIRECT'],
         };
 
         if (existingIndex != -1) {
@@ -531,14 +950,15 @@ class ChainProxyConfig {
         }
       }
 
-      // 1. Ensure GLOBAL group has access to dedicated group and landing proxies
+      // 1. Ensure GLOBAL group has access to dedicated group and injected proxies
       final globalGroup = groupList.firstWhere(
         (g) => g is Map && g['name'] == 'GLOBAL',
         orElse: () => null,
       );
       if (globalGroup is Map && globalGroup['proxies'] is List) {
         final gProxies = List<dynamic>.from(globalGroup['proxies'] as List);
-        if (createDedicatedGroup && !gProxies.contains(effectiveDedicatedGroupName)) {
+        if (createDedicatedGroup &&
+            !gProxies.contains(effectiveDedicatedGroupName)) {
           gProxies.add(effectiveDedicatedGroupName);
         }
         for (final name in injectedProxyNames) {
@@ -583,14 +1003,13 @@ class ChainProxyConfig {
                 ? List<dynamic>.from(g['proxies'] as List)
                 : <dynamic>[];
 
-            // Add dedicated group choice if created
-            if (createDedicatedGroup && !groupProxies.contains(effectiveDedicatedGroupName)) {
+            if (createDedicatedGroup &&
+                !groupProxies.contains(effectiveDedicatedGroupName)) {
               groupProxies.add(effectiveDedicatedGroupName);
             }
 
             for (final name in injectedProxyNames) {
               if (!groupProxies.contains(name)) {
-                // ALWAYS APPEND to the end, never insert at 0 to avoid hijacking defaults
                 groupProxies.add(name);
               }
             }
@@ -602,14 +1021,19 @@ class ChainProxyConfig {
       rawConfig['proxy-groups'] = groupList;
     }
 
-    // Ensure solid bootstrap DNS resolution and fake-ip-filter for proxy domains
+    // DNS resolution & fake-ip-filter for landing proxies
     final dns = rawConfig['dns'];
     if (dns is Map) {
       final psn = dns['proxy-server-nameserver'];
       final List<dynamic> psnList = (psn is List)
           ? List<dynamic>.from(psn)
           : (psn is String ? [psn] : <dynamic>[]);
-      for (final s in ['223.5.5.5', '119.29.29.29', '114.114.114.114', 'system://']) {
+      for (final s in [
+        '223.5.5.5',
+        '119.29.29.29',
+        '114.114.114.114',
+        'system://',
+      ]) {
         if (!psnList.contains(s)) {
           psnList.add(s);
         }
@@ -620,7 +1044,12 @@ class ChainProxyConfig {
       final List<dynamic> defNsList = (defNs is List)
           ? List<dynamic>.from(defNs)
           : (defNs is String ? [defNs] : <dynamic>[]);
-      for (final s in ['223.5.5.5', '119.29.29.29', '114.114.114.114', 'system://']) {
+      for (final s in [
+        '223.5.5.5',
+        '119.29.29.29',
+        '114.114.114.114',
+        'system://',
+      ]) {
         if (!defNsList.contains(s)) {
           defNsList.add(s);
         }
@@ -633,7 +1062,9 @@ class ChainProxyConfig {
           : (fif is String ? [fif] : <dynamic>[]);
       for (final landing in activeLandings) {
         final server = landing.server.trim();
-        if (server.isNotEmpty && !server.contains(':') && InternetAddress.tryParse(server) == null) {
+        if (server.isNotEmpty &&
+            !server.contains(':') &&
+            InternetAddress.tryParse(server) == null) {
           if (!fifList.contains(server)) fifList.add(server);
           if (!fifList.contains('+.$server')) fifList.add('+.$server');
         }
@@ -652,9 +1083,7 @@ class LandingProxyParser {
     r'^([^:\s]+):([^@\s]+)@([a-zA-Z0-9.\-_]+):(\d{1,5})$',
   );
 
-  static final RegExp _ipPortReg = RegExp(
-    r'^([a-zA-Z0-9.\-_]+):(\d{1,5})$',
-  );
+  static final RegExp _ipPortReg = RegExp(r'^([a-zA-Z0-9.\-_]+):(\d{1,5})$');
 
   static List<LandingProxy> parseText(String input, {String? dialerProxy}) {
     final results = <LandingProxy>[];
@@ -715,8 +1144,10 @@ class LandingProxyParser {
         final rest = line.substring(5);
         final tagIndex = rest.indexOf('#');
         var base64Part = tagIndex != -1 ? rest.substring(0, tagIndex) : rest;
-        var tag = tagIndex != -1 ? Uri.decodeComponent(rest.substring(tagIndex + 1)) : '';
-        
+        var tag = tagIndex != -1
+            ? Uri.decodeComponent(rest.substring(tagIndex + 1))
+            : '';
+
         final decoded = utf8.decode(base64Decode(base64.normalize(base64Part)));
         final match = _userPassIpPortReg.firstMatch(decoded);
         if (match != null) {
@@ -797,31 +1228,11 @@ enum TargetService {
     'https://cp.cloudflare.com/generate_204',
     '基础网络与 CDN 连通',
   ),
-  google(
-    'Google',
-    'https://www.google.com/generate_204',
-    '谷歌搜索与基础生态',
-  ),
-  openai(
-    'OpenAI / ChatGPT',
-    'https://chatgpt.com',
-    'ChatGPT 与大模型交互',
-  ),
-  tiktok(
-    'TikTok',
-    'https://www.tiktok.com',
-    '海外短视频与社媒运营',
-  ),
-  amazon(
-    'Amazon',
-    'https://www.amazon.com',
-    '跨境电商与海淘支付',
-  ),
-  youtube(
-    'YouTube',
-    'https://www.youtube.com/generate_204',
-    '4K 流媒体与音视频传输',
-  );
+  google('Google', 'https://www.google.com/generate_204', '谷歌搜索与基础生态'),
+  openai('OpenAI / ChatGPT', 'https://chatgpt.com', 'ChatGPT 与大模型交互'),
+  tiktok('TikTok', 'https://www.tiktok.com', '海外短视频与社媒运营'),
+  amazon('Amazon', 'https://www.amazon.com', '跨境电商与海淘支付'),
+  youtube('YouTube', 'https://www.youtube.com/generate_204', '4K 流媒体与音视频传输');
 
   final String label;
   final String testUrl;
@@ -844,11 +1255,11 @@ class TargetHealthResult {
   });
 
   Map<String, dynamic> toJson() => {
-        'service': service.name,
-        'delay': delay,
-        'isSuccess': isSuccess,
-        if (error != null) 'error': error,
-      };
+    'service': service.name,
+    'delay': delay,
+    'isSuccess': isSuccess,
+    if (error != null) 'error': error,
+  };
 
   factory TargetHealthResult.fromJson(Map<String, dynamic> json) {
     return TargetHealthResult(
@@ -913,15 +1324,15 @@ class ProxyHealthReport {
   }
 
   Map<String, dynamic> toJson() => {
-        'proxyId': proxyId,
-        'proxyName': proxyName,
-        'status': status.name,
-        'targets': targets.map((t) => t.toJson()).toList(),
-        'diagnosticTips': diagnosticTips,
-        'testedAt': testedAt.toIso8601String(),
-        'minDelay': minDelay,
-        'avgDelay': avgDelay,
-      };
+    'proxyId': proxyId,
+    'proxyName': proxyName,
+    'status': status.name,
+    'targets': targets.map((t) => t.toJson()).toList(),
+    'diagnosticTips': diagnosticTips,
+    'testedAt': testedAt.toIso8601String(),
+    'minDelay': minDelay,
+    'avgDelay': avgDelay,
+  };
 
   factory ProxyHealthReport.fromJson(Map<String, dynamic> json) {
     final targetList = json['targets'];
@@ -934,12 +1345,17 @@ class ProxyHealthReport {
       ),
       targets: targetList is List
           ? targetList
-              .whereType<Map>()
-              .map((e) => TargetHealthResult.fromJson(Map<String, dynamic>.from(e)))
-              .toList()
+                .whereType<Map>()
+                .map(
+                  (e) =>
+                      TargetHealthResult.fromJson(Map<String, dynamic>.from(e)),
+                )
+                .toList()
           : const [],
       diagnosticTips: json['diagnosticTips']?.toString() ?? '',
-      testedAt: DateTime.tryParse(json['testedAt']?.toString() ?? '') ?? DateTime.now(),
+      testedAt:
+          DateTime.tryParse(json['testedAt']?.toString() ?? '') ??
+          DateTime.now(),
       minDelay: json['minDelay'] as int?,
       avgDelay: json['avgDelay'] as int?,
     );
@@ -983,7 +1399,14 @@ class DirectSocketVerifier {
           isAuthError: res.isAuthError,
         );
       } else if (protocol == ChainProxyProtocol.http) {
-        final res = await _verifyHttp(socket, server, port, username, password, timeout);
+        final res = await _verifyHttp(
+          socket,
+          server,
+          port,
+          username,
+          password,
+          timeout,
+        );
         sw.stop();
         return DirectCheckResult(
           isSuccess: res.isSuccess,
@@ -1013,10 +1436,7 @@ class DirectSocketVerifier {
       );
     } catch (e) {
       sw.stop();
-      return DirectCheckResult(
-        isSuccess: false,
-        message: '测试异常: $e',
-      );
+      return DirectCheckResult(isSuccess: false, message: '测试异常: $e');
     } finally {
       try {
         await socket?.close();
@@ -1025,7 +1445,8 @@ class DirectSocketVerifier {
     }
   }
 
-  static Future<({bool isSuccess, String message, bool isAuthError})> _verifySocks5(
+  static Future<({bool isSuccess, String message, bool isAuthError})>
+  _verifySocks5(
     Socket socket,
     String username,
     String password,
@@ -1037,20 +1458,12 @@ class DirectSocketVerifier {
 
     final resp = await _readExactBytes(socket, 2, timeout);
     if (resp.length < 2 || resp[0] != 0x05) {
-      return (
-        isSuccess: false,
-        message: '非标准 SOCKS5 协议响应',
-        isAuthError: false,
-      );
+      return (isSuccess: false, message: '非标准 SOCKS5 协议响应', isAuthError: false);
     }
 
     final method = resp[1];
     if (method == 0xFF) {
-      return (
-        isSuccess: false,
-        message: 'SOCKS5 服务端拒绝认证方法',
-        isAuthError: true,
-      );
+      return (isSuccess: false, message: 'SOCKS5 服务端拒绝认证方法', isAuthError: true);
     }
 
     if (method == 0x02) {
@@ -1090,7 +1503,8 @@ class DirectSocketVerifier {
     );
   }
 
-  static Future<({bool isSuccess, String message, bool isAuthError})> _verifyHttp(
+  static Future<({bool isSuccess, String message, bool isAuthError})>
+  _verifyHttp(
     Socket socket,
     String server,
     int port,
@@ -1116,7 +1530,11 @@ class DirectSocketVerifier {
     if (respLine.contains('200')) {
       return (isSuccess: true, message: 'HTTP 代理握手成功', isAuthError: false);
     } else if (respLine.contains('407')) {
-      return (isSuccess: false, message: 'HTTP 代理鉴权失败 (407 账号或密码错误)', isAuthError: true);
+      return (
+        isSuccess: false,
+        message: 'HTTP 代理鉴权失败 (407 账号或密码错误)',
+        isAuthError: true,
+      );
     } else {
       return (
         isSuccess: false,
@@ -1141,20 +1559,24 @@ class DirectSocketVerifier {
       }
     });
 
-    sub = socket.listen((data) {
-      buffer.addAll(data);
-      if (buffer.length >= count && !completer.isCompleted) {
+    sub = socket.listen(
+      (data) {
+        buffer.addAll(data);
+        if (buffer.length >= count && !completer.isCompleted) {
+          timer.cancel();
+          completer.complete(buffer.sublist(0, count));
+          sub?.cancel();
+        }
+      },
+      onError: (_) {
         timer.cancel();
-        completer.complete(buffer.sublist(0, count));
-        sub?.cancel();
-      }
-    }, onError: (_) {
-      timer.cancel();
-      if (!completer.isCompleted) completer.complete(buffer);
-    }, onDone: () {
-      timer.cancel();
-      if (!completer.isCompleted) completer.complete(buffer);
-    });
+        if (!completer.isCompleted) completer.complete(buffer);
+      },
+      onDone: () {
+        timer.cancel();
+        if (!completer.isCompleted) completer.complete(buffer);
+      },
+    );
 
     final res = await completer.future;
     timer.cancel();
@@ -1173,21 +1595,27 @@ class DirectSocketVerifier {
       }
     });
 
-    sub = socket.listen((data) {
-      buffer.addAll(data);
-      final text = utf8.decode(buffer, allowMalformed: true);
-      if (text.contains('\n') && !completer.isCompleted) {
+    sub = socket.listen(
+      (data) {
+        buffer.addAll(data);
+        final text = utf8.decode(buffer, allowMalformed: true);
+        if (text.contains('\n') && !completer.isCompleted) {
+          timer.cancel();
+          completer.complete(text.split('\n').first);
+          sub.cancel();
+        }
+      },
+      onError: (_) {
         timer.cancel();
-        completer.complete(text.split('\n').first);
-        sub.cancel();
-      }
-    }, onError: (_) {
-      timer.cancel();
-      if (!completer.isCompleted) completer.complete(utf8.decode(buffer, allowMalformed: true));
-    }, onDone: () {
-      timer.cancel();
-      if (!completer.isCompleted) completer.complete(utf8.decode(buffer, allowMalformed: true));
-    });
+        if (!completer.isCompleted)
+          completer.complete(utf8.decode(buffer, allowMalformed: true));
+      },
+      onDone: () {
+        timer.cancel();
+        if (!completer.isCompleted)
+          completer.complete(utf8.decode(buffer, allowMalformed: true));
+      },
+    );
 
     final res = await completer.future;
     timer.cancel();
@@ -1195,4 +1623,3 @@ class DirectSocketVerifier {
     return res;
   }
 }
-
