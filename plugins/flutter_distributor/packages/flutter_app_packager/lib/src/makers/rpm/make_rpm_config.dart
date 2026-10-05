@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_app_packager/src/api/app_package_maker.dart';
+import 'package:pub_semver/pub_semver.dart';
 
 class MakeRPMConfig extends MakeConfig {
   MakeRPMConfig({
@@ -106,7 +107,7 @@ class MakeRPMConfig extends MakeConfig {
       'SPEC': {
         'preamble': {
           'Name': appName,
-          'Version': appVersion.toString(),
+          'Version': rpmVersionString(appVersion),
           'Release':
               "${appVersion.build.isNotEmpty ? appVersion.build.first : "1"}%{?dist}",
           'Summary': summary ?? pubspec.description,
@@ -232,4 +233,14 @@ class MakeRpmConfigLoader extends DefaultMakeConfigLoader {
     );
     return MakeRPMConfig.fromJson(map).copyWith(baseMakeConfig);
   }
+}
+
+/// RPM's `Version` tag must not contain '-' (it separates Version from
+/// Release). Pre-release segments are joined with '~' — RPM's "sorts
+/// before" marker — so `1.1.0-rc.1` becomes `1.1.0~rc.1`. Build metadata
+/// is already carried by the `Release` tag and is not repeated here.
+String rpmVersionString(Version version) {
+  final core = '${version.major}.${version.minor}.${version.patch}';
+  if (version.preRelease.isEmpty) return core;
+  return '$core~${version.preRelease.join('.')}';
 }
