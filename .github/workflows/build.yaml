@@ -418,6 +418,7 @@ jobs:
           if ($unsigned -gt 0) { Write-Error "$unsigned target(s) carry no Authenticode signature."; exit 1 }
           Write-Host "All Windows targets carry an Authenticode (SHA-256) signature from the self-signed Fluxora code signing certificate."
           Write-Host "Note: TrustedByWindows is expected to be false for a self-signed certificate - the artifacts are cryptographically signed but not chained to a public CA."
+          exit 0
       
       - name: Clean up Signing Certificate (Windows)
         if: always() && matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true'
