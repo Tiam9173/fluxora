@@ -281,11 +281,12 @@ jobs:
           name: unsigned-core-${{ matrix.arch }}-${{ matrix.compatible }}
           path: libclash/windows/FluxoraCore.exe
           if-no-files-found: error
+          archive: false
           retention-days: 1
 
       - name: Sign Core (Windows)
         if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true' && env.SIGNPATH_API_TOKEN != ''
-        uses: signpath/github-action-submit-signing-request@v2
+        uses: signpath/github-action-submit-signing-request@v3
         timeout-minutes: 60
         with:
           api-token: '${{ env.SIGNPATH_API_TOKEN }}'
@@ -295,6 +296,7 @@ jobs:
           signing-policy-slug: '${{ env.EXE_SIGNING_POLICY_SLUG }}'
           github-artifact-id: '${{ steps.upload-core.outputs.artifact-id }}'
           wait-for-completion: true
+          skip-decompress: true
           output-artifact-directory: 'libclash/windows'
 
       - name: Build HelperService (Windows)
@@ -313,11 +315,12 @@ jobs:
           name: unsigned-helper-${{ matrix.arch }}-${{ matrix.compatible }}
           path: libclash/windows/FluxoraHelperService.exe
           if-no-files-found: error
+          archive: false
           retention-days: 1
 
       - name: Sign HelperService (Windows)
         if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true' && env.SIGNPATH_API_TOKEN != ''
-        uses: signpath/github-action-submit-signing-request@v2
+        uses: signpath/github-action-submit-signing-request@v3
         timeout-minutes: 60
         with:
           api-token: '${{ env.SIGNPATH_API_TOKEN }}'
@@ -327,6 +330,7 @@ jobs:
           signing-policy-slug: '${{ env.EXE_SIGNING_POLICY_SLUG }}'
           github-artifact-id: '${{ steps.upload-helper.outputs.artifact-id }}'
           wait-for-completion: true
+          skip-decompress: true
           output-artifact-directory: 'libclash/windows'
 
       - name: Build Fluxora (Windows)
@@ -369,11 +373,12 @@ jobs:
           name: unsigned-fluxora-${{ matrix.arch }}-${{ matrix.compatible }}
           path: build/windows/${{ matrix.arch == 'arm64' && 'arm64' || 'x64' }}/runner/Release/Fluxora.exe
           if-no-files-found: error
+          archive: false
           retention-days: 1
 
       - name: Sign Fluxora (Windows)
         if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true' && env.SIGNPATH_API_TOKEN != ''
-        uses: signpath/github-action-submit-signing-request@v2
+        uses: signpath/github-action-submit-signing-request@v3
         timeout-minutes: 60
         with:
           api-token: '${{ env.SIGNPATH_API_TOKEN }}'
@@ -383,6 +388,7 @@ jobs:
           signing-policy-slug: '${{ env.EXE_SIGNING_POLICY_SLUG }}'
           github-artifact-id: '${{ steps.upload-fluxora.outputs.artifact-id }}'
           wait-for-completion: true
+          skip-decompress: true
           output-artifact-directory: 'build/windows/${{ matrix.arch == ''arm64'' && ''arm64'' || ''x64'' }}/runner/Release'
 
       - name: Package Windows Application
@@ -415,11 +421,12 @@ jobs:
           name: unsigned-installer-${{ matrix.arch }}-${{ matrix.compatible }}
           path: ${{ env.INSTALLER_PATH }}
           if-no-files-found: error
+          archive: false
           retention-days: 1
 
       - name: Sign Installer (Windows)
         if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true' && env.SIGNPATH_API_TOKEN != ''
-        uses: signpath/github-action-submit-signing-request@v2
+        uses: signpath/github-action-submit-signing-request@v3
         timeout-minutes: 60
         with:
           api-token: '${{ env.SIGNPATH_API_TOKEN }}'
@@ -429,6 +436,7 @@ jobs:
           signing-policy-slug: '${{ env.INSTALLER_SIGNING_POLICY_SLUG }}'
           github-artifact-id: '${{ steps.upload-installer.outputs.artifact-id }}'
           wait-for-completion: true
+          skip-decompress: true
           output-artifact-directory: 'dist'
       
       - name: Clean up intermediate unsigned artifacts
