@@ -30,7 +30,6 @@ env:
   GRADLE_OPTS: -Dorg.gradle.vfs.watch=false
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   SENTRY_BACKEND: none
-  SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
   IPINFO_TOKEN: ${{ secrets.IPINFO_TOKEN || vars.IPINFO_TOKEN }}
   
 jobs:
@@ -225,45 +224,44 @@ jobs:
           dart run build_runner build -d
           dart setup.dart ${{ matrix.platform }} --arch ${{ matrix.arch }} ${{ env.IS_STABLE == 'true' && '--env stable' || '' }} ${{ matrix.compatible == true && '--compatible' || '' }}
 
-      - name: Install SignPath (Windows)
-        if: matrix.platform == 'windows'
+      - name: Restore Signing Certificate (Windows)
+        if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true'
         shell: pwsh
         env:
-          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+          WINDOWS_SIGNING_PFX_B64: ${{ secrets.WINDOWS_SIGNING_PFX_B64 }}
+          WINDOWS_SIGNING_PFX_PASSWORD: ${{ secrets.WINDOWS_SIGNING_PFX_PASSWORD }}
         run: |
-          if (-not $env:SIGNPATH_API_TOKEN) {
-            if ('${{ env.SHOULD_RELEASE }}' -eq 'true') {
-              Write-Error "SIGNPATH_API_TOKEN is not configured. Release builds require Windows code signing. Aborting."
-              exit 1
-            }
-            Write-Host "SIGNPATH_API_TOKEN is not configured. Skipping module installation."
-            exit 0
+          if (-not $env:WINDOWS_SIGNING_PFX_B64) {
+            Write-Error "WINDOWS_SIGNING_PFX_B64 is not configured. Windows release builds require code signing. Aborting."
+            exit 1
           }
-          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-          Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted
-          Install-Module -Name SignPath -Force -Scope CurrentUser -Repository PSGallery
+          if (-not $env:WINDOWS_SIGNING_PFX_PASSWORD) {
+            Write-Error "WINDOWS_SIGNING_PFX_PASSWORD is not configured. Windows release builds require code signing. Aborting."
+            exit 1
+          }
+          $pfxPath = Join-Path $env:RUNNER_TEMP 'fluxora-signing.pfx'
+          [IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String($env:WINDOWS_SIGNING_PFX_B64))
+          "FLUXORA_PFX_PATH=$pfxPath" | Out-File -FilePath $env:GITHUB_ENV -Append
+          Write-Host "Windows signing certificate restored to a temporary path under RUNNER_TEMP (contents are never logged)."
 
-      - name: Set Signing Policy Slug (Windows)
-        if: matrix.platform == 'windows'
+      - name: Locate SignTool (Windows)
+        if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true'
         shell: pwsh
         run: |
-          $isStable = '${{ env.IS_STABLE }}' -eq 'true'
-          $isPre = '${{ env.IS_PRERELEASE }}' -eq 'true'
-
-          if ($isStable) {
-            $exePolicy = "release-signing"
-            $installerPolicy = "release-signing"
-          } elseif ($isPre) {
-            $exePolicy = "test-signing"
-            $installerPolicy = "test-signing"
-          } else {
-            $exePolicy = "test-signing"
-            $installerPolicy = "test-signing"
+          $roots = @(
+            "${env:ProgramFiles(x86)}\Windows Kits\10\bin",
+            "$env:ProgramFiles\Windows Kits\10\bin"
+          )
+          $signtool = Get-ChildItem -Path $roots -Recurse -Filter 'signtool.exe' -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match '\\x64\\signtool\.exe$' } |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1
+          if (-not $signtool) {
+            Write-Error "signtool.exe was not found in the Windows SDK on this runner. Aborting."
+            exit 1
           }
-          Write-Host "Setting EXE_SIGNING_POLICY_SLUG to $exePolicy"
-          Write-Host "Setting INSTALLER_SIGNING_POLICY_SLUG to $installerPolicy"
-          "EXE_SIGNING_POLICY_SLUG=$exePolicy" | Out-File -FilePath $env:GITHUB_ENV -Append
-          "INSTALLER_SIGNING_POLICY_SLUG=$installerPolicy" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "FLUXORA_SIGNTOOL=$($signtool.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append
+          Write-Host "Using SignTool: $($signtool.FullName)"
 
       - name: Build Core (Windows)
         if: matrix.platform == 'windows'
@@ -273,31 +271,17 @@ jobs:
           dart run build_runner build -d
           dart setup.dart windows --arch ${{ matrix.arch }} --out core-only ${{ matrix.compatible == true && '--compatible' || '' }}
 
-      - name: Upload Unsigned Core
-        if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true' && env.SIGNPATH_API_TOKEN != ''
-        id: upload-core
-        uses: actions/upload-artifact@v7
-        with:
-          name: unsigned-core-${{ matrix.arch }}-${{ matrix.compatible }}
-          path: libclash/windows/FluxoraCore.exe
-          if-no-files-found: error
-          archive: false
-          retention-days: 1
-
       - name: Sign Core (Windows)
-        if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true' && env.SIGNPATH_API_TOKEN != ''
-        uses: signpath/github-action-submit-signing-request@v3
-        timeout-minutes: 60
-        with:
-          api-token: '${{ env.SIGNPATH_API_TOKEN }}'
-          github-token: '${{ secrets.GITHUB_TOKEN }}'
-          organization-id: '3737f142-dc07-4229-86cd-2548400b69c9'
-          project-slug: 'Fluxora'
-          signing-policy-slug: '${{ env.EXE_SIGNING_POLICY_SLUG }}'
-          github-artifact-id: '${{ steps.upload-core.outputs.artifact-id }}'
-          wait-for-completion: true
-          skip-decompress: true
-          output-artifact-directory: 'libclash/windows'
+        if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true'
+        shell: pwsh
+        env:
+          WINDOWS_SIGNING_PFX_PASSWORD: ${{ secrets.WINDOWS_SIGNING_PFX_PASSWORD }}
+        run: |
+          $target = 'libclash/windows/FluxoraCore.exe'
+          if (-not (Test-Path $target)) { Write-Error "Signing target not found: $target"; exit 1 }
+          & $env:FLUXORA_SIGNTOOL sign /fd SHA256 /f $env:FLUXORA_PFX_PATH /p $env:WINDOWS_SIGNING_PFX_PASSWORD /tr 'http://timestamp.digicert.com' /td SHA256 $target
+          if ($LASTEXITCODE -ne 0) { Write-Error "SignTool failed for $target (exit $LASTEXITCODE)"; exit 1 }
+          Write-Host "Signed: $target"
 
       - name: Build HelperService (Windows)
         if: matrix.platform == 'windows'
@@ -307,31 +291,17 @@ jobs:
           Write-Host "Signed Core SHA256 (TOKEN for Helper): $signedCoreHash"
           dart setup.dart windows --arch ${{ matrix.arch }} --out helper --core-hash $signedCoreHash ${{ matrix.compatible == true && '--compatible' || '' }}
 
-      - name: Upload Unsigned HelperService
-        if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true' && env.SIGNPATH_API_TOKEN != ''
-        id: upload-helper
-        uses: actions/upload-artifact@v7
-        with:
-          name: unsigned-helper-${{ matrix.arch }}-${{ matrix.compatible }}
-          path: libclash/windows/FluxoraHelperService.exe
-          if-no-files-found: error
-          archive: false
-          retention-days: 1
-
       - name: Sign HelperService (Windows)
-        if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true' && env.SIGNPATH_API_TOKEN != ''
-        uses: signpath/github-action-submit-signing-request@v3
-        timeout-minutes: 60
-        with:
-          api-token: '${{ env.SIGNPATH_API_TOKEN }}'
-          github-token: '${{ secrets.GITHUB_TOKEN }}'
-          organization-id: '3737f142-dc07-4229-86cd-2548400b69c9'
-          project-slug: 'Fluxora'
-          signing-policy-slug: '${{ env.EXE_SIGNING_POLICY_SLUG }}'
-          github-artifact-id: '${{ steps.upload-helper.outputs.artifact-id }}'
-          wait-for-completion: true
-          skip-decompress: true
-          output-artifact-directory: 'libclash/windows'
+        if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true'
+        shell: pwsh
+        env:
+          WINDOWS_SIGNING_PFX_PASSWORD: ${{ secrets.WINDOWS_SIGNING_PFX_PASSWORD }}
+        run: |
+          $target = 'libclash/windows/FluxoraHelperService.exe'
+          if (-not (Test-Path $target)) { Write-Error "Signing target not found: $target"; exit 1 }
+          & $env:FLUXORA_SIGNTOOL sign /fd SHA256 /f $env:FLUXORA_PFX_PATH /p $env:WINDOWS_SIGNING_PFX_PASSWORD /tr 'http://timestamp.digicert.com' /td SHA256 $target
+          if ($LASTEXITCODE -ne 0) { Write-Error "SignTool failed for $target (exit $LASTEXITCODE)"; exit 1 }
+          Write-Host "Signed: $target"
 
       - name: Build Fluxora (Windows)
         if: matrix.platform == 'windows'
@@ -365,31 +335,17 @@ jobs:
           
           flutter @flutterArgs
 
-      - name: Upload Unsigned Fluxora
-        if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true' && env.SIGNPATH_API_TOKEN != ''
-        id: upload-fluxora
-        uses: actions/upload-artifact@v7
-        with:
-          name: unsigned-fluxora-${{ matrix.arch }}-${{ matrix.compatible }}
-          path: build/windows/${{ matrix.arch == 'arm64' && 'arm64' || 'x64' }}/runner/Release/Fluxora.exe
-          if-no-files-found: error
-          archive: false
-          retention-days: 1
-
       - name: Sign Fluxora (Windows)
-        if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true' && env.SIGNPATH_API_TOKEN != ''
-        uses: signpath/github-action-submit-signing-request@v3
-        timeout-minutes: 60
-        with:
-          api-token: '${{ env.SIGNPATH_API_TOKEN }}'
-          github-token: '${{ secrets.GITHUB_TOKEN }}'
-          organization-id: '3737f142-dc07-4229-86cd-2548400b69c9'
-          project-slug: 'Fluxora'
-          signing-policy-slug: '${{ env.EXE_SIGNING_POLICY_SLUG }}'
-          github-artifact-id: '${{ steps.upload-fluxora.outputs.artifact-id }}'
-          wait-for-completion: true
-          skip-decompress: true
-          output-artifact-directory: 'build/windows/${{ matrix.arch == ''arm64'' && ''arm64'' || ''x64'' }}/runner/Release'
+        if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true'
+        shell: pwsh
+        env:
+          WINDOWS_SIGNING_PFX_PASSWORD: ${{ secrets.WINDOWS_SIGNING_PFX_PASSWORD }}
+        run: |
+          $target = 'build/windows/${{ matrix.arch == 'arm64' && 'arm64' || 'x64' }}/runner/Release/Fluxora.exe'
+          if (-not (Test-Path $target)) { Write-Error "Signing target not found: $target"; exit 1 }
+          & $env:FLUXORA_SIGNTOOL sign /fd SHA256 /f $env:FLUXORA_PFX_PATH /p $env:WINDOWS_SIGNING_PFX_PASSWORD /tr 'http://timestamp.digicert.com' /td SHA256 $target
+          if ($LASTEXITCODE -ne 0) { Write-Error "SignTool failed for $target (exit $LASTEXITCODE)"; exit 1 }
+          Write-Host "Signed: $target"
 
       - name: Package Windows Application
         if: matrix.platform == 'windows'
@@ -405,7 +361,7 @@ jobs:
           dart windows/packaging/exe/package_windows.dart --arch ${{ matrix.arch }} ${{ matrix.compatible == true && '--compatible' || '' }} --env ${{ env.IS_STABLE == 'true' && 'stable' || 'pre' }}
 
       - name: Find Installer Path
-        if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true' && env.SIGNPATH_API_TOKEN != ''
+        if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true'
         shell: pwsh
         run: |
           $desc = if ('${{ matrix.compatible }}' -eq 'true') { "${{ matrix.arch }}-compatible" } else { "${{ matrix.arch }}" }
@@ -413,43 +369,67 @@ jobs:
           echo "INSTALLER_PATH=$installer" | Out-File -FilePath $env:GITHUB_ENV -Append
           echo "INSTALLER_FILENAME=$(Split-Path -Leaf $installer)" | Out-File -FilePath $env:GITHUB_ENV -Append
 
-      - name: Upload Unsigned Installer
-        if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true' && env.SIGNPATH_API_TOKEN != ''
-        id: upload-installer
-        uses: actions/upload-artifact@v7
-        with:
-          name: unsigned-installer-${{ matrix.arch }}-${{ matrix.compatible }}
-          path: ${{ env.INSTALLER_PATH }}
-          if-no-files-found: error
-          archive: false
-          retention-days: 1
-
       - name: Sign Installer (Windows)
-        if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true' && env.SIGNPATH_API_TOKEN != ''
-        uses: signpath/github-action-submit-signing-request@v3
-        timeout-minutes: 60
-        with:
-          api-token: '${{ env.SIGNPATH_API_TOKEN }}'
-          github-token: '${{ secrets.GITHUB_TOKEN }}'
-          organization-id: '3737f142-dc07-4229-86cd-2548400b69c9'
-          project-slug: 'Fluxora'
-          signing-policy-slug: '${{ env.INSTALLER_SIGNING_POLICY_SLUG }}'
-          github-artifact-id: '${{ steps.upload-installer.outputs.artifact-id }}'
-          wait-for-completion: true
-          skip-decompress: true
-          output-artifact-directory: 'dist'
+        if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true'
+        shell: pwsh
+        env:
+          WINDOWS_SIGNING_PFX_PASSWORD: ${{ secrets.WINDOWS_SIGNING_PFX_PASSWORD }}
+        run: |
+          $target = $env:INSTALLER_PATH
+          if (-not $target) { Write-Error "INSTALLER_PATH is not set."; exit 1 }
+          if (-not (Test-Path $target)) { Write-Error "Signing target not found: $target"; exit 1 }
+          & $env:FLUXORA_SIGNTOOL sign /fd SHA256 /f $env:FLUXORA_PFX_PATH /p $env:WINDOWS_SIGNING_PFX_PASSWORD /tr 'http://timestamp.digicert.com' /td SHA256 $target
+          if ($LASTEXITCODE -ne 0) { Write-Error "SignTool failed for $target (exit $LASTEXITCODE)"; exit 1 }
+          Write-Host "Signed: $target"
+
+      - name: Verify Windows Signatures
+        if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true'
+        shell: pwsh
+        run: |
+          $targets = @(
+            'libclash/windows/FluxoraCore.exe',
+            'libclash/windows/FluxoraHelperService.exe',
+            'build/windows/${{ matrix.arch == 'arm64' && 'arm64' || 'x64' }}/runner/Release/Fluxora.exe'
+          )
+          if ($env:INSTALLER_PATH) { $targets += $env:INSTALLER_PATH }
+
+          $missing = 0
+          $unsigned = 0
+          foreach ($t in $targets) {
+            Write-Host "=== $t ==="
+            if (-not (Test-Path $t)) { Write-Error "File not found: $t"; $missing++; continue }
+
+            & $env:FLUXORA_SIGNTOOL verify /pa /v $t 2>&1 | ForEach-Object { Write-Host "  $_" }
+            Write-Host "  (signtool verify exit code: $LASTEXITCODE - a self-signed certificate is not chained to a public CA, so a non-zero code here is expected and is NOT a signing failure)"
+
+            $sig = Get-AuthenticodeSignature -FilePath $t
+            Write-Host "  Status            : $($sig.Status)"
+            Write-Host "  StatusMessage     : $($sig.StatusMessage)"
+            if ($sig.SignerCertificate) {
+              Write-Host "  Signer Subject    : $($sig.SignerCertificate.Subject)"
+              Write-Host "  Signer Thumbprint : $($sig.SignerCertificate.Thumbprint)"
+            } else {
+              Write-Error "No Authenticode signer certificate found on $t"
+              $unsigned++
+            }
+          }
+
+          if ($missing -gt 0) { Write-Error "$missing signing target(s) are missing."; exit 1 }
+          if ($unsigned -gt 0) { Write-Error "$unsigned target(s) carry no Authenticode signature."; exit 1 }
+          Write-Host "All Windows targets carry an Authenticode (SHA-256) signature from the self-signed Fluxora code signing certificate."
+          Write-Host "Note: TrustedByWindows is expected to be false for a self-signed certificate - the artifacts are cryptographically signed but not chained to a public CA."
       
-      - name: Clean up intermediate unsigned artifacts
-        if: always() && matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true' && env.SIGNPATH_API_TOKEN != ''
+      - name: Clean up Signing Certificate (Windows)
+        if: always() && matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true'
         continue-on-error: true
-        uses: geekyeggo/delete-artifact@v6
-        with:
-          name: |
-            unsigned-core-${{ matrix.arch }}-${{ matrix.compatible }}
-            unsigned-helper-${{ matrix.arch }}-${{ matrix.compatible }}
-            unsigned-fluxora-${{ matrix.arch }}-${{ matrix.compatible }}
-            unsigned-installer-${{ matrix.arch }}-${{ matrix.compatible }}
-          failOnError: false
+        shell: pwsh
+        run: |
+          if ($env:FLUXORA_PFX_PATH -and (Test-Path $env:FLUXORA_PFX_PATH)) {
+            Remove-Item -Force $env:FLUXORA_PFX_PATH
+            Write-Host "Temporary signing certificate removed from RUNNER_TEMP."
+          } else {
+            Write-Host "No temporary signing certificate to remove."
+          }
       
       - name: Verify Core Permissions (Linux)
         if: matrix.platform == 'linux' && matrix.compatible != true
