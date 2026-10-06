@@ -55,17 +55,17 @@ class _IntelligentNodePickerSheetState
               segments: const [
                 ButtonSegment(
                   value: 'adaptive',
-                  label: Text('鏅鸿兘'),
+                  label: Text('智能'),
                   icon: Icon(Icons.auto_awesome),
                 ),
                 ButtonSegment(
                   value: 'latency',
-                  label: Text('寤惰繜'),
+                  label: Text('延迟'),
                   icon: Icon(Icons.speed),
                 ),
                 ButtonSegment(
                   value: 'name',
-                  label: Text('鍚嶇О'),
+                  label: Text('名称'),
                   icon: Icon(Icons.sort_by_alpha),
                 ),
               ],
