@@ -321,6 +321,10 @@ jobs:
           
           $flutterArgs = @(
             "build", "windows", "--release", "--verbose",
+            # Keep the native resources (Runner.rc FILEVERSION/ProductVersion, fed by
+            # FLUTTER_VERSION which Flutter derives from pubspec.yaml) on the same
+            # version as the tag-driven runtime APP_VERSION.
+            "--build-name=$version",
             "--dart-define=CORE_SHA256=$coreHash",
             "--dart-define=APP_ENV=$appEnv",
             "--dart-define=APP_VERSION=$version",
