@@ -30,73 +30,73 @@ enum ManualProtocol {
 
 extension ManualProtocolExt on ManualProtocol {
   String get displayName => switch (this) {
-        ManualProtocol.vmess => 'VMess',
-        ManualProtocol.vless => 'VLESS',
-        ManualProtocol.ss => 'Shadowsocks',
-        ManualProtocol.ssr => 'ShadowsocksR',
-        ManualProtocol.trojan => 'Trojan',
-        ManualProtocol.trojanGo => 'Trojan Go',
-        ManualProtocol.hysteria => 'Hysteria',
-        ManualProtocol.hysteria2 => 'Hysteria 2',
-        ManualProtocol.tuic => 'TUIC',
-        ManualProtocol.wireguard => 'WireGuard',
-        ManualProtocol.amneziaWg => 'AmneziaWG 2/3',
-        ManualProtocol.snell => 'Snell',
-        ManualProtocol.ssh => 'SSH',
-        ManualProtocol.shadowTls => 'ShadowTLS',
-        ManualProtocol.juicity => 'Juicity',
-        ManualProtocol.naive => 'Naïve (NaiveProxy)',
-        ManualProtocol.socks5 => 'SOCKS5',
-        ManualProtocol.http => 'HTTP(S)',
-        ManualProtocol.direct => 'Direct (直连)',
-        ManualProtocol.custom => 'Custom Config (自定义配置)',
-      };
+    ManualProtocol.vmess => 'VMess',
+    ManualProtocol.vless => 'VLESS',
+    ManualProtocol.ss => 'Shadowsocks',
+    ManualProtocol.ssr => 'ShadowsocksR',
+    ManualProtocol.trojan => 'Trojan',
+    ManualProtocol.trojanGo => 'Trojan Go',
+    ManualProtocol.hysteria => 'Hysteria',
+    ManualProtocol.hysteria2 => 'Hysteria 2',
+    ManualProtocol.tuic => 'TUIC',
+    ManualProtocol.wireguard => 'WireGuard',
+    ManualProtocol.amneziaWg => 'AmneziaWG 2/3',
+    ManualProtocol.snell => 'Snell',
+    ManualProtocol.ssh => 'SSH',
+    ManualProtocol.shadowTls => 'ShadowTLS',
+    ManualProtocol.juicity => 'Juicity',
+    ManualProtocol.naive => 'Naïve (NaiveProxy)',
+    ManualProtocol.socks5 => 'SOCKS5',
+    ManualProtocol.http => 'HTTP(S)',
+    ManualProtocol.direct => 'Direct (直连)',
+    ManualProtocol.custom => 'Custom Config (自定义配置)',
+  };
 
   String get typeKey => switch (this) {
-        ManualProtocol.vmess => 'vmess',
-        ManualProtocol.vless => 'vless',
-        ManualProtocol.ss => 'ss',
-        ManualProtocol.ssr => 'ssr',
-        ManualProtocol.trojan => 'trojan',
-        ManualProtocol.trojanGo => 'trojan',
-        ManualProtocol.hysteria => 'hysteria',
-        ManualProtocol.hysteria2 => 'hysteria2',
-        ManualProtocol.tuic => 'tuic',
-        ManualProtocol.wireguard => 'wireguard',
-        ManualProtocol.amneziaWg => 'wireguard',
-        ManualProtocol.snell => 'snell',
-        ManualProtocol.ssh => 'ssh',
-        ManualProtocol.shadowTls => 'shadow-tls',
-        ManualProtocol.juicity => 'juicity',
-        ManualProtocol.naive => 'http',
-        ManualProtocol.socks5 => 'socks5',
-        ManualProtocol.http => 'http',
-        ManualProtocol.direct => 'direct',
-        ManualProtocol.custom => 'custom',
-      };
+    ManualProtocol.vmess => 'vmess',
+    ManualProtocol.vless => 'vless',
+    ManualProtocol.ss => 'ss',
+    ManualProtocol.ssr => 'ssr',
+    ManualProtocol.trojan => 'trojan',
+    ManualProtocol.trojanGo => 'trojan',
+    ManualProtocol.hysteria => 'hysteria',
+    ManualProtocol.hysteria2 => 'hysteria2',
+    ManualProtocol.tuic => 'tuic',
+    ManualProtocol.wireguard => 'wireguard',
+    ManualProtocol.amneziaWg => 'wireguard',
+    ManualProtocol.snell => 'snell',
+    ManualProtocol.ssh => 'ssh',
+    ManualProtocol.shadowTls => 'shadow-tls',
+    ManualProtocol.juicity => 'juicity',
+    ManualProtocol.naive => 'http',
+    ManualProtocol.socks5 => 'socks5',
+    ManualProtocol.http => 'http',
+    ManualProtocol.direct => 'direct',
+    ManualProtocol.custom => 'custom',
+  };
 
   Color get badgeColor => switch (this) {
-        ManualProtocol.vmess => Colors.deepPurple,
-        ManualProtocol.vless => Colors.blue,
-        ManualProtocol.ss => Colors.teal,
-        ManualProtocol.ssr => Colors.cyan,
-        ManualProtocol.trojan => Colors.orange,
-        ManualProtocol.trojanGo => Colors.deepOrange,
-        ManualProtocol.hysteria => Colors.pink,
-        ManualProtocol.hysteria2 => Colors.red,
-        ManualProtocol.tuic => Colors.amber.shade800,
-        ManualProtocol.wireguard => Colors.green,
-        ManualProtocol.amneziaWg => Colors.lightGreen.shade800,
-        ManualProtocol.snell => Colors.indigo,
-        ManualProtocol.ssh => Colors.brown,
-        ManualProtocol.shadowTls => Colors.purple,
-        ManualProtocol.juicity => Colors.lime.shade900,
-        ManualProtocol.naive => Colors.blueGrey,
-        ManualProtocol.socks5 => Colors.blueGrey.shade600,
-        ManualProtocol.http => Colors.grey.shade700,
-        ManualProtocol.direct => Colors.green.shade700,
-        ManualProtocol.custom => Colors.grey.shade600,
-      };
+    ManualProtocol.vmess => Colors.deepPurple,
+    ManualProtocol.vless => Colors.blue,
+    ManualProtocol.ss => Colors.teal,
+    ManualProtocol.ssr => Colors.cyan,
+    ManualProtocol.trojan => Colors.orange,
+    ManualProtocol.trojanGo => Colors.deepOrange,
+    ManualProtocol.hysteria => Colors.pink,
+    ManualProtocol.hysteria2 => Colors.red,
+    ManualProtocol.tuic => Colors.amber.shade800,
+    ManualProtocol.wireguard => Colors.green,
+    ManualProtocol.amneziaWg => Colors.lightGreen.shade800,
+    ManualProtocol.snell => Colors.indigo,
+    ManualProtocol.ssh => Colors.brown,
+    ManualProtocol.shadowTls => Colors.purple,
+    ManualProtocol.juicity => Colors.lime.shade900,
+    ManualProtocol.naive => Colors.blueGrey,
+    ManualProtocol.socks5 => Colors.blueGrey.shade600,
+    ManualProtocol.http => Colors.grey.shade700,
+    ManualProtocol.direct => Colors.green.shade700,
+    ManualProtocol.custom => Colors.grey.shade600,
+  };
 }
 
 class ManualProxyHelper {
@@ -138,7 +138,9 @@ class ManualProxyHelper {
         return _parseHysteria(raw);
       } else if (raw.startsWith('tuic://')) {
         return _parseTUIC(raw);
-      } else if (raw.startsWith('awg://') || raw.startsWith('amnezia://') || raw.startsWith('amneziawg://')) {
+      } else if (raw.startsWith('awg://') ||
+          raw.startsWith('amnezia://') ||
+          raw.startsWith('amneziawg://')) {
         return _parseAmneziaWG(raw);
       } else if (raw.startsWith('wireguard://')) {
         return _parseWireGuard(raw);
@@ -146,13 +148,17 @@ class ManualProxyHelper {
         return _parseSnell(raw);
       } else if (raw.startsWith('ssh://')) {
         return _parseSSH(raw);
-      } else if (raw.startsWith('shadow-tls://') || raw.startsWith('shadowtls://')) {
+      } else if (raw.startsWith('shadow-tls://') ||
+          raw.startsWith('shadowtls://')) {
         return _parseShadowTLS(raw);
       } else if (raw.startsWith('juicity://')) {
         return _parseJuicity(raw);
-      } else if (raw.startsWith('naive+https://') || raw.startsWith('naive://')) {
+      } else if (raw.startsWith('naive+https://') ||
+          raw.startsWith('naive://')) {
         return _parseNaive(raw);
-      } else if (raw.startsWith('socks5://') || raw.startsWith('socks://') || raw.startsWith('socks4://')) {
+      } else if (raw.startsWith('socks5://') ||
+          raw.startsWith('socks://') ||
+          raw.startsWith('socks4://')) {
         return _parseSocks5(raw);
       } else if (raw.startsWith('http://') || raw.startsWith('https://')) {
         return _parseHttp(raw);
@@ -335,7 +341,9 @@ class ManualProxyHelper {
     if (net == 'ws') {
       map['network'] = 'ws';
       final wsOpts = <String, dynamic>{};
-      if (path != null && path.isNotEmpty) wsOpts['path'] = Uri.decodeComponent(path);
+      if (path != null && path.isNotEmpty) {
+        wsOpts['path'] = Uri.decodeComponent(path);
+      }
       if (host != null && host.isNotEmpty) {
         wsOpts['headers'] = {'Host': host};
       }
@@ -350,7 +358,9 @@ class ManualProxyHelper {
     } else if (net == 'httpupgrade') {
       map['network'] = 'httpupgrade';
       final huOpts = <String, dynamic>{};
-      if (path != null && path.isNotEmpty) huOpts['path'] = Uri.decodeComponent(path);
+      if (path != null && path.isNotEmpty) {
+        huOpts['path'] = Uri.decodeComponent(path);
+      }
       if (host != null && host.isNotEmpty) {
         huOpts['headers'] = {'Host': host};
       }
@@ -508,7 +518,9 @@ class ManualProxyHelper {
     if (net == 'ws') {
       map['network'] = 'ws';
       final wsOpts = <String, dynamic>{};
-      if (path != null && path.isNotEmpty) wsOpts['path'] = Uri.decodeComponent(path);
+      if (path != null && path.isNotEmpty) {
+        wsOpts['path'] = Uri.decodeComponent(path);
+      }
       if (host != null && host.isNotEmpty) {
         wsOpts['headers'] = {'Host': host};
       }
@@ -570,7 +582,9 @@ class ManualProxyHelper {
         : 'Hysteria_${server}_$port';
     final query = parsedUri.queryParameters;
 
-    final auth = parsedUri.userInfo.isNotEmpty ? parsedUri.userInfo : (query['auth'] ?? query['auth_str'] ?? '');
+    final auth = parsedUri.userInfo.isNotEmpty
+        ? parsedUri.userInfo
+        : (query['auth'] ?? query['auth_str'] ?? '');
     final up = query['up'] ?? '30 Mbps';
     final down = query['down'] ?? '100 Mbps';
     final sni = query['sni'] ?? query['peer'];
@@ -595,7 +609,9 @@ class ManualProxyHelper {
   }
 
   static Map<String, dynamic>? _parseHysteria2(String rawUri) {
-    final prefix = rawUri.startsWith('hysteria2://') ? 'hysteria2://' : 'hy2://';
+    final prefix = rawUri.startsWith('hysteria2://')
+        ? 'hysteria2://'
+        : 'hy2://';
     final parsedUri = Uri.parse(rawUri.replaceFirst(prefix, 'http://'));
     final password = parsedUri.userInfo;
     final server = parsedUri.host;
@@ -754,7 +770,10 @@ class ManualProxyHelper {
       map['preshared-key'] = presharedKey;
     }
     if (reservedStr != null && reservedStr.isNotEmpty) {
-      final parts = reservedStr.split(',').map((e) => int.tryParse(e.trim()) ?? 0).toList();
+      final parts = reservedStr
+          .split(',')
+          .map((e) => int.tryParse(e.trim()) ?? 0)
+          .toList();
       map['reserved'] = parts;
     }
 
@@ -770,7 +789,9 @@ class ManualProxyHelper {
         : 'Snell_${server}_$port';
     final query = parsedUri.queryParameters;
 
-    final psk = parsedUri.userInfo.isNotEmpty ? parsedUri.userInfo : (query['psk'] ?? '');
+    final psk = parsedUri.userInfo.isNotEmpty
+        ? parsedUri.userInfo
+        : (query['psk'] ?? '');
     final version = int.tryParse(query['version'] ?? '4') ?? 4;
     final obfsMode = query['obfs'] ?? query['mode'];
     final obfsHost = query['host'];
@@ -823,7 +844,9 @@ class ManualProxyHelper {
   }
 
   static Map<String, dynamic>? _parseShadowTLS(String rawUri) {
-    final prefix = rawUri.startsWith('shadow-tls://') ? 'shadow-tls://' : 'shadowtls://';
+    final prefix = rawUri.startsWith('shadow-tls://')
+        ? 'shadow-tls://'
+        : 'shadowtls://';
     final parsedUri = Uri.parse(rawUri.replaceFirst(prefix, 'http://'));
     final server = parsedUri.host;
     final port = parsedUri.port == 0 ? 443 : parsedUri.port;
@@ -832,7 +855,9 @@ class ManualProxyHelper {
         : 'ShadowTLS_${server}_$port';
     final query = parsedUri.queryParameters;
 
-    final password = parsedUri.userInfo.isNotEmpty ? parsedUri.userInfo : (query['password'] ?? '');
+    final password = parsedUri.userInfo.isNotEmpty
+        ? parsedUri.userInfo
+        : (query['password'] ?? '');
     final sni = query['sni'] ?? query['host'] ?? '';
     final version = int.tryParse(query['version'] ?? '3') ?? 3;
 
@@ -869,7 +894,8 @@ class ManualProxyHelper {
 
     final sni = query['sni'] ?? '';
     final cc = query['congestion_control'] ?? 'bbr';
-    final allowInsecure = query['allow_insecure'] == '1' || query['allow_insecure'] == 'true';
+    final allowInsecure =
+        query['allow_insecure'] == '1' || query['allow_insecure'] == 'true';
 
     return <String, dynamic>{
       'name': name,
@@ -885,7 +911,9 @@ class ManualProxyHelper {
   }
 
   static Map<String, dynamic>? _parseNaive(String rawUri) {
-    final prefix = rawUri.startsWith('naive+https://') ? 'naive+https://' : 'naive://';
+    final prefix = rawUri.startsWith('naive+https://')
+        ? 'naive+https://'
+        : 'naive://';
     final parsedUri = Uri.parse(rawUri.replaceFirst(prefix, 'http://'));
     final server = parsedUri.host;
     final port = parsedUri.port == 0 ? 443 : parsedUri.port;
@@ -982,11 +1010,10 @@ class ManualProxyHelper {
 
   static Map<String, dynamic>? _parseDirect(String rawUri) {
     final parsed = Uri.parse(rawUri);
-    final name = parsed.fragment.isNotEmpty ? Uri.decodeComponent(parsed.fragment) : 'DIRECT_NODE';
-    return <String, dynamic>{
-      'name': name,
-      'type': 'direct',
-    };
+    final name = parsed.fragment.isNotEmpty
+        ? Uri.decodeComponent(parsed.fragment)
+        : 'DIRECT_NODE';
+    return <String, dynamic>{'name': name, 'type': 'direct'};
   }
 
   static Map<String, dynamic>? _parseRawYamlOrJson(String raw) {
@@ -1005,7 +1032,9 @@ class ManualProxyHelper {
   // --- Profile YAML Helpers ---
 
   /// Reads profile YAML and extracts existing proxies as a List of Maps.
-  static Future<List<Map<String, dynamic>>> getProfileProxies(Profile profile) async {
+  static Future<List<Map<String, dynamic>>> getProfileProxies(
+    Profile profile,
+  ) async {
     try {
       final file = await profile.getFile();
       if (!await file.exists()) return [];
@@ -1057,25 +1086,33 @@ class ManualProxyHelper {
       if (pName.isEmpty) continue;
       newNames.add(pName);
       // Remove existing proxy with same name if any
-      currentProxies.removeWhere((item) => item is Map && item['name'] == pName);
+      currentProxies.removeWhere(
+        (item) => item is Map && item['name'] == pName,
+      );
       currentProxies.add(newP);
     }
     configMap['proxies'] = currentProxies;
 
     // Ensure proxy-groups list has standard groups containing these proxies
-    if (configMap['proxy-groups'] is! List || (configMap['proxy-groups'] as List).isEmpty) {
+    if (configMap['proxy-groups'] is! List ||
+        (configMap['proxy-groups'] as List).isEmpty) {
       configMap['proxy-groups'] = [
         {
           'name': 'PROXY',
           'type': 'select',
           'proxies': [...newNames, 'DIRECT'],
-        }
+        },
       ];
     } else {
       final groups = configMap['proxy-groups'] as List;
       for (final g in groups) {
-        if (g is Map && (g['type'] == 'select' || g['type'] == 'url-test' || g['type'] == 'fallback')) {
-          final pList = g['proxies'] is List ? List<dynamic>.from(g['proxies'] as List) : <dynamic>[];
+        if (g is Map &&
+            (g['type'] == 'select' ||
+                g['type'] == 'url-test' ||
+                g['type'] == 'fallback')) {
+          final pList = g['proxies'] is List
+              ? List<dynamic>.from(g['proxies'] as List)
+              : <dynamic>[];
           for (final n in newNames) {
             if (!pList.contains(n)) {
               pList.insert(0, n);
@@ -1097,7 +1134,10 @@ class ManualProxyHelper {
   }
 
   /// Deletes a proxy from a Profile's YAML file by name.
-  static Future<Profile> deleteProxyFromProfile(Profile profile, String proxyName) async {
+  static Future<Profile> deleteProxyFromProfile(
+    Profile profile,
+    String proxyName,
+  ) async {
     final file = await profile.getFile();
     String content = await file.exists() ? await file.readAsString() : '';
     if (content.trim().isEmpty) return profile;

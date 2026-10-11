@@ -23,6 +23,8 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
+import '../support/temp_dir_cleanup.dart';
+
 class FakeWindowsPathProviderPlatform extends Fake
     with MockPlatformInterfaceMixin
     implements PathProviderPlatform {
@@ -73,6 +75,19 @@ void main() {
     windowsSandboxDir = await Directory.systemTemp.createTemp(
       'windows_runtime_validation_',
     );
+    // P1.1-F group isolation: ChainProxyManager.init() must never read or write
+    // the developer's real %APPDATA%\Fluxora data directory. On Windows,
+    // AppPath._internal() resolves the data dir from
+    // Platform.environment['APPDATA'] and IGNORES the faked
+    // PathProviderPlatform, so faking path_provider alone does NOT sandbox
+    // chain_proxies.json / chain_fallback_pool.json / chain_reliability_stats.json.
+    // The only reliable seam is the *FilePathOverride statics.
+    ChainProxyManager.configFilePathOverride =
+        p.join(windowsSandboxDir.path, 'chain_proxies.json');
+    ChainProxyManager.fallbackPoolFilePathOverride =
+        p.join(windowsSandboxDir.path, 'chain_fallback_pool.json');
+    ChainProxyManager.reliabilityStatsFilePathOverride =
+        p.join(windowsSandboxDir.path, 'chain_reliability_stats.json');
     PathProviderPlatform.instance = FakeWindowsPathProviderPlatform(
       windowsSandboxDir,
     );
@@ -92,6 +107,12 @@ void main() {
 
   tearDownAll(() async {
     chainProbeService.customDelayTesterOverride = null;
+    // P2.3-C: stop + flush the debounced reliability write while the override
+    // still points at the sandbox dir, so nothing writes into it at delete time.
+    await chainProxyManager.flushReliabilityStats();
+    ChainProxyManager.configFilePathOverride = null;
+    ChainProxyManager.fallbackPoolFilePathOverride = null;
+    ChainProxyManager.reliabilityStatsFilePathOverride = null;
 
     // Safety restore: restore user config to original state
     if (originalProdConfigContent != null && await prodConfigFile.exists()) {
@@ -103,9 +124,7 @@ void main() {
       } catch (_) {}
     }
 
-    if (await windowsSandboxDir.exists()) {
-      await windowsSandboxDir.delete(recursive: true);
-    }
+    await deleteTempDirWithRetry(windowsSandboxDir);
   });
 
   group('Phase 5.2-B — Windows Desktop Runtime Validation Suite', () {
@@ -798,9 +817,16 @@ void main() {
       '22. Windows In-Flight Cancellation: Active probe & failover abort safely on command',
       () async {
         final manager = ChainProxyManager();
+        // `ChainProxyManager` is a process-wide singleton, so `_config` is
+        // shared across every test in this file. Test 12 ("Windows 3-Hop
+        // Topology") calls `setHops(mode: threeHop, …)`, and `copyWith` below
+        // would otherwise inherit that stale `hopMode` -> the topology would
+        // fail validation and the failover would terminate immediately. Pin the
+        // mode explicitly to what this test actually exercises (two-hop).
         await manager.updateConfig(
           (c) => c.copyWith(
             enable: true,
+            hopMode: ChainHopMode.twoHop,
             hop1Node: 'win_entry',
             hop2Node: 'win_exit',
           ),

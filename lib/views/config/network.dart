@@ -1,7 +1,13 @@
+import 'dart:async';
+
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/enum/enum.dart';
+import 'package:fluxora/l10n/system_proxy_l10n.dart';
+import 'package:fluxora/l10n/tun_l10n.dart';
 import 'package:fluxora/models/models.dart';
 import 'package:fluxora/providers/providers.dart';
+import 'package:fluxora/services/system_proxy_readback.dart';
+import 'package:fluxora/services/tun_readback.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
@@ -61,7 +67,17 @@ class TUNItem extends ConsumerWidget {
 
     return ListItem.switchItem(
       title: Text(appLocalizations.tun),
-      subtitle: Text(appLocalizations.tunDesc),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(appLocalizations.tunDesc),
+          const SizedBox(height: 4),
+          // P2.6-F: the switch above is the *desired* state; this line reports
+          // the OS's *actual* state. The two are never conflated.
+          const TunStatusLine(),
+        ],
+      ),
       delegate: SwitchDelegate(
         value: enable,
         onChanged: (value) async {
@@ -70,6 +86,122 @@ class TUNItem extends ConsumerWidget {
               .updateState((state) => state.copyWith.tun(enable: value));
         },
       ),
+    );
+  }
+}
+
+/// P2.6-F: the "desired vs actual" indicator for desktop TUN.
+///
+/// Mirrors [SystemProxyStatusLine]: it reads `TunReadbackService.instance` — the
+/// single readback owner — so the switch and the status line can never disagree
+/// about what the OS actually has. It never fabricates ON: `unknown` and
+/// `unsupported` are shown as such.
+///
+/// The readback is triggered from `initState` (never from `build()`), so a
+/// rebuild can never spawn an OS query.
+class TunStatusLine extends ConsumerStatefulWidget {
+  const TunStatusLine({super.key});
+
+  @override
+  ConsumerState<TunStatusLine> createState() => _TunStatusLineState();
+}
+
+class _TunStatusLineState extends ConsumerState<TunStatusLine> {
+  @override
+  void initState() {
+    super.initState();
+    // One observation on first display — never from `build()`. Only if nothing
+    // has been observed yet, so several mounts do not each trigger their own.
+    if (TunReadbackService.instance.lastReadback.value == null) {
+      unawaited(TunReadbackService.instance.read());
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final desired = ref.watch(
+      patchClashConfigProvider.select((state) => state.tun.enable),
+    );
+    final service = TunReadbackService.instance;
+
+    return ValueListenableBuilder<bool>(
+      valueListenable: service.isChecking,
+      builder: (context, checking, _) {
+        return ValueListenableBuilder<TunReadback?>(
+          valueListenable: service.lastReadback,
+          builder: (context, readback, _) {
+            return _buildStatus(
+              context,
+              resolveTunStatus(
+                desiredEnabled: desired,
+                checking: checking,
+                readback: readback,
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildStatus(BuildContext context, TunStatusKind status) {
+    final (IconData? icon, String text, Color color) = switch (status) {
+      TunStatusKind.notChecked => (
+        null,
+        '',
+        context.colorScheme.onSurfaceVariant,
+      ),
+      TunStatusKind.checking => (
+        Icons.sync,
+        appLocalizations.tunChecking,
+        context.colorScheme.onSurfaceVariant,
+      ),
+      TunStatusKind.unsupported => (
+        Icons.info_outline,
+        appLocalizations.tunUnsupported,
+        context.colorScheme.onSurfaceVariant,
+      ),
+      TunStatusKind.unknown => (
+        Icons.help_outline,
+        appLocalizations.tunUnknown,
+        context.colorScheme.onSurfaceVariant,
+      ),
+      TunStatusKind.on => (
+        Icons.check_circle_outline,
+        appLocalizations.tunActualOn,
+        context.colorScheme.primary,
+      ),
+      TunStatusKind.off => (
+        Icons.radio_button_unchecked,
+        appLocalizations.tunActualOff,
+        context.colorScheme.onSurfaceVariant,
+      ),
+      TunStatusKind.mismatchOn => (
+        Icons.warning_amber_rounded,
+        appLocalizations.tunMismatchOn,
+        context.colorScheme.error,
+      ),
+      TunStatusKind.mismatchOff => (
+        Icons.warning_amber_rounded,
+        appLocalizations.tunMismatchOff,
+        context.colorScheme.error,
+      ),
+    };
+
+    if (icon == null) return const SizedBox.shrink();
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: color),
+        const SizedBox(width: 4),
+        Flexible(
+          child: Text(
+            text,
+            style: context.textTheme.bodySmall?.copyWith(color: color),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -130,6 +262,137 @@ class VpnSystemProxyItem extends ConsumerWidget {
   }
 }
 
+/// P2.5-B (CF-3): the single, shared "desired vs actual" indicator.
+///
+/// Both the Network settings page and the dashboard read the **same** source —
+/// `SystemProxyReadbackService.instance` — so they can never disagree about
+/// what the OS actually has. It never fabricates ON: `unknown` / `unsupported`
+/// are shown as such.
+///
+/// The readback is triggered from `initState` (never from `build()`), so a
+/// rebuild can never spawn an OS query.
+class SystemProxyStatusLine extends ConsumerStatefulWidget {
+  const SystemProxyStatusLine({super.key, this.compact = false});
+
+  /// Compact mode renders a bare icon (with a tooltip) instead of icon + text,
+  /// for the height-constrained dashboard card.
+  final bool compact;
+
+  @override
+  ConsumerState<SystemProxyStatusLine> createState() =>
+      _SystemProxyStatusLineState();
+}
+
+class _SystemProxyStatusLineState extends ConsumerState<SystemProxyStatusLine> {
+  @override
+  void initState() {
+    super.initState();
+    // One observation on first display — never from `build()`. Only if nothing
+    // has been observed yet, so the settings page and the dashboard do not each
+    // trigger their own. The shared service is the single readback owner.
+    if (SystemProxyReadbackService.instance.lastReadback.value == null) {
+      unawaited(SystemProxyReadbackService.instance.read());
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final desired = ref.watch(
+      networkSettingProvider.select((state) => state.systemProxy),
+    );
+    final service = SystemProxyReadbackService.instance;
+
+    return ValueListenableBuilder<bool>(
+      valueListenable: service.isChecking,
+      builder: (context, checking, _) {
+        return ValueListenableBuilder<SystemProxyReadback?>(
+          valueListenable: service.lastReadback,
+          builder: (context, readback, _) {
+            return _buildStatus(
+              context,
+              resolveSystemProxyStatus(
+                desiredEnabled: desired,
+                checking: checking,
+                readback: readback,
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildStatus(BuildContext context, SystemProxyStatusKind status) {
+    final (IconData? icon, String text, Color color) = switch (status) {
+      SystemProxyStatusKind.notChecked => (
+        null,
+        '',
+        context.colorScheme.onSurfaceVariant,
+      ),
+      SystemProxyStatusKind.checking => (
+        Icons.sync,
+        appLocalizations.systemProxyChecking,
+        context.colorScheme.onSurfaceVariant,
+      ),
+      SystemProxyStatusKind.unsupported => (
+        Icons.info_outline,
+        appLocalizations.systemProxyUnsupported,
+        context.colorScheme.onSurfaceVariant,
+      ),
+      SystemProxyStatusKind.unknown => (
+        Icons.help_outline,
+        appLocalizations.systemProxyUnknown,
+        context.colorScheme.onSurfaceVariant,
+      ),
+      SystemProxyStatusKind.on => (
+        Icons.check_circle_outline,
+        appLocalizations.systemProxyActualOn,
+        context.colorScheme.primary,
+      ),
+      SystemProxyStatusKind.off => (
+        Icons.radio_button_unchecked,
+        appLocalizations.systemProxyActualOff,
+        context.colorScheme.onSurfaceVariant,
+      ),
+      SystemProxyStatusKind.mismatchOn => (
+        Icons.warning_amber_rounded,
+        appLocalizations.systemProxyMismatchOn,
+        context.colorScheme.error,
+      ),
+      SystemProxyStatusKind.mismatchOff => (
+        Icons.warning_amber_rounded,
+        appLocalizations.systemProxyMismatchOff,
+        context.colorScheme.error,
+      ),
+    };
+
+    if (icon == null) return const SizedBox.shrink();
+    if (widget.compact) {
+      // Only surface mismatches / unknowns on the compact dashboard card; the
+      // "matched" states are already conveyed by the switch itself.
+      if (status == SystemProxyStatusKind.on ||
+          status == SystemProxyStatusKind.off) {
+        return const SizedBox.shrink();
+      }
+      return Tooltip(message: text, child: Icon(icon, size: 16, color: color));
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: color),
+        const SizedBox(width: 4),
+        Flexible(
+          child: Text(
+            text,
+            style: context.textTheme.bodySmall?.copyWith(color: color),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class SystemProxyItem extends ConsumerWidget {
   const SystemProxyItem({super.key});
 
@@ -141,13 +404,23 @@ class SystemProxyItem extends ConsumerWidget {
 
     return ListItem.switchItem(
       title: Text(appLocalizations.systemProxy),
-      subtitle: Text(appLocalizations.systemProxyDesc),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(appLocalizations.systemProxyDesc),
+          const SizedBox(height: 4),
+          const SystemProxyStatusLine(),
+        ],
+      ),
       delegate: SwitchDelegate(
         value: systemProxy,
         onChanged: (bool value) async {
-          ref
-              .read(networkSettingProvider.notifier)
-              .updateState((state) => state.copyWith(systemProxy: value));
+          // P2.5-B (CF-3): route through the controller so the OS readback
+          // always runs. Writing the desired provider directly here would skip
+          // the observation and leave the UI unable to tell "requested" from
+          // "actually applied".
+          await globalState.appController.setSystemProxy(value);
         },
       ),
     );

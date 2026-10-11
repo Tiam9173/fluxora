@@ -100,7 +100,11 @@ class _SmartAutoStopManagerState extends ConsumerState<SmartAutoStopManager> {
       results,
     ) {
       _onConnectivityChanged(results);
-    });
+    },
+    // P2.6-A: the connectivity EventChannel can deliver an error (e.g. no plugin
+    // implementation). Without a handler that becomes an unhandled async error —
+    // the same case `NetworkFingerprintProvider.start()` already guards.
+    onError: (_) {});
   }
 
   void _onSettingsChanged() {
@@ -129,7 +133,12 @@ class _SmartAutoStopManagerState extends ConsumerState<SmartAutoStopManager> {
     final currentSequence = ++_checkSequence;
 
     Future.delayed(const Duration(milliseconds: 1000), () async {
-      if (currentSequence != _checkSequence) {
+      // P2.6-A: a queued check must be invalidated by BOTH a newer check
+      // (sequence) and teardown (`mounted`). `_checkSequence` is the existing
+      // stale-result token; `dispose()` bumps it so every already-queued
+      // callback sees a stale sequence. The `mounted` half additionally covers
+      // the window between teardown and the sequence check.
+      if (!mounted || currentSequence != _checkSequence) {
         commonPrint.log('Smart Auto Stop: Skipping outdated network check');
         return;
       }
@@ -138,7 +147,12 @@ class _SmartAutoStopManagerState extends ConsumerState<SmartAutoStopManager> {
   }
 
   Future<void> _checkCurrentNetwork() async {
+    // P2.6-A: `_checkCurrentNetwork` is also reachable directly
+    // (`_onSettingsChanged`) and can be queued on `_checkLock` while the State
+    // is being disposed — never touch `ref` after teardown.
+    if (!mounted) return;
     await _checkLock.synchronized(() async {
+      if (!mounted) return;
       final vpnProps = ref.read(vpnSettingProvider);
       if (!vpnProps.smartAutoStop) return;
 
@@ -163,6 +177,11 @@ class _SmartAutoStopManagerState extends ConsumerState<SmartAutoStopManager> {
         commonPrint.log('Smart Auto Stop: No IP/Gateway found. Skipping.');
         return;
       }
+
+      // P2.6-A: the IP/gateway lookups above are `await`s — the State can be
+      // disposed while they are in flight, so re-check before reading state or
+      // mutating `ref` (this is the last point before the transition logic).
+      if (!mounted) return;
 
       // Match: any IP hits an IP rule, or any gateway hits a gateway rule
       final shouldStop =
@@ -271,7 +290,17 @@ class _SmartAutoStopManagerState extends ConsumerState<SmartAutoStopManager> {
 
   @override
   void dispose() {
-    _connectivitySubscription?.cancel();
+    // P2.6-A: invalidate every queued / in-flight debounced check BEFORE tearing
+    // the listeners down. `_checkSequence` is the existing stale-result token
+    // used by `_debouncedCheckCurrentNetwork`; bumping it here makes any
+    // already-scheduled 1s callback bail out instead of calling
+    // `_checkCurrentNetwork()` against a disposed `ref`/State. (The callback's
+    // own `mounted` check covers the remaining window.)
+    _checkSequence++;
+    // An EventChannel cancel can complete with an error when the plugin is
+    // unavailable; swallow it so teardown never produces an unhandled async
+    // error (same guard as `NetworkFingerprintProvider.stop()`).
+    unawaited(_connectivitySubscription?.cancel().catchError((_) {}));
     service?.removeNativeEventCallback(_nativeEventCallback);
     super.dispose();
   }

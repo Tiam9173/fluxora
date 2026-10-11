@@ -9,10 +9,7 @@ import 'package:yaml/yaml.dart';
 class ProfileNodesView extends StatefulWidget {
   final Profile profile;
 
-  const ProfileNodesView({
-    super.key,
-    required this.profile,
-  });
+  const ProfileNodesView({super.key, required this.profile});
 
   @override
   State<ProfileNodesView> createState() => _ProfileNodesViewState();
@@ -48,7 +45,10 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
     );
     if (confirm != true) return;
 
-    final updated = await ManualProxyHelper.deleteProxyFromProfile(_profile, proxyName);
+    final updated = await ManualProxyHelper.deleteProxyFromProfile(
+      _profile,
+      proxyName,
+    );
     setState(() => _profile = updated);
     await _loadProxies();
     if (mounted) {
@@ -101,7 +101,9 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
                     icon: const Icon(Icons.paste_rounded, size: 16),
                     label: const Text('从剪贴板粘贴'),
                     onPressed: () async {
-                      final data = await Clipboard.getData(Clipboard.kTextPlain);
+                      final data = await Clipboard.getData(
+                        Clipboard.kTextPlain,
+                      );
                       if (data?.text != null) {
                         controller.text = data!.text!;
                       }
@@ -129,10 +131,11 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
                 }
                 Navigator.of(ctx).pop();
                 setState(() => _isLoading = true);
-                final updated = await ManualProxyHelper.addOrUpdateProxiesToProfile(
-                  _profile,
-                  parsedList,
-                );
+                final updated =
+                    await ManualProxyHelper.addOrUpdateProxiesToProfile(
+                      _profile,
+                      parsedList,
+                    );
                 setState(() => _profile = updated);
                 await _loadProxies();
                 if (mounted) {
@@ -234,117 +237,120 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _proxies.isEmpty
-              ? Center(
-                  child: Column(
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.dns_outlined,
+                    size: 64,
+                    color: colorScheme.outline.withValues(alpha: 0.5),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    '当前分组内暂无节点',
+                    style: context.textTheme.titleMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '点击右下方「手动添加节点」或右上角「批量导入链接」',
+                    style: context.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.outline,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        Icons.dns_outlined,
-                        size: 64,
-                        color: colorScheme.outline.withValues(alpha: 0.5),
+                      FilledButton.tonalIcon(
+                        icon: const Icon(Icons.link_rounded),
+                        label: const Text('导入分享链接'),
+                        onPressed: _showBatchImportDialog,
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        '当前分组内暂无节点',
-                        style: context.textTheme.titleMedium?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '点击右下方「手动添加节点」或右上角「批量导入链接」',
-                        style: context.textTheme.bodySmall?.copyWith(
-                          color: colorScheme.outline,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          FilledButton.tonalIcon(
-                            icon: const Icon(Icons.link_rounded),
-                            label: const Text('导入分享链接'),
-                            onPressed: _showBatchImportDialog,
-                          ),
-                          const SizedBox(width: 12),
-                          FilledButton.icon(
-                            icon: const Icon(Icons.edit_rounded),
-                            label: const Text('手动录入'),
-                            onPressed: _showAddManualNodeDialog,
-                          ),
-                        ],
+                      const SizedBox(width: 12),
+                      FilledButton.icon(
+                        icon: const Icon(Icons.edit_rounded),
+                        label: const Text('手动录入'),
+                        onPressed: _showAddManualNodeDialog,
                       ),
                     ],
                   ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  itemCount: _proxies.length,
-                  itemBuilder: (ctx, index) {
-                    final p = _proxies[index];
-                    final name = p['name']?.toString() ?? '未命名节点';
-                    final type = p['type']?.toString().toUpperCase() ?? 'PROXY';
-                    final server = p['server']?.toString() ?? '';
-                    final port = p['port']?.toString() ?? '';
-                    final protoColor = _getProtocolColor(type);
+                ],
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              itemCount: _proxies.length,
+              itemBuilder: (ctx, index) {
+                final p = _proxies[index];
+                final name = p['name']?.toString() ?? '未命名节点';
+                final type = p['type']?.toString().toUpperCase() ?? 'PROXY';
+                final server = p['server']?.toString() ?? '';
+                final port = p['port']?.toString() ?? '';
+                final protoColor = _getProtocolColor(type);
 
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 10),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(
-                          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(
+                      color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                    ),
+                  ),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 6,
+                    ),
+                    leading: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: protoColor.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: protoColor.withValues(alpha: 0.4),
                         ),
                       ),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 6,
-                        ),
-                        leading: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: protoColor.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(
-                              color: protoColor.withValues(alpha: 0.4),
-                            ),
-                          ),
-                          child: Text(
-                            type,
-                            style: TextStyle(
-                              color: protoColor,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                        title: Text(
-                          name,
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        subtitle: Text(
-                          server.isNotEmpty ? '$server:$port' : '自定义配置节点',
-                          style: TextStyle(
-                            color: colorScheme.outline,
-                            fontSize: 13,
-                          ),
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
-                          tooltip: '删除节点',
-                          onPressed: () => _handleDeleteProxy(name),
+                      child: Text(
+                        type,
+                        style: TextStyle(
+                          color: protoColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
                         ),
                       ),
-                    );
-                  },
-                ),
+                    ),
+                    title: Text(
+                      name,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    subtitle: Text(
+                      server.isNotEmpty ? '$server:$port' : '自定义配置节点',
+                      style: TextStyle(
+                        color: colorScheme.outline,
+                        fontSize: 13,
+                      ),
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(
+                        Icons.delete_outline_rounded,
+                        color: Colors.redAccent,
+                      ),
+                      tooltip: '删除节点',
+                      onPressed: () => _handleDeleteProxy(name),
+                    ),
+                  ),
+                );
+              },
+            ),
     );
   }
 }
@@ -353,10 +359,7 @@ class _ManualNodeFormDialog extends StatefulWidget {
   final Profile profile;
   final ValueChanged<Profile> onSaved;
 
-  const _ManualNodeFormDialog({
-    required this.profile,
-    required this.onSaved,
-  });
+  const _ManualNodeFormDialog({required this.profile, required this.onSaved});
 
   @override
   State<_ManualNodeFormDialog> createState() => _ManualNodeFormDialogState();
@@ -502,7 +505,8 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
           _nameCtrl.text = 'DIRECT_NODE';
           break;
         case ManualProtocol.custom:
-          _customConfigCtrl.text = 'name: CustomNode\ntype: vless\nserver: 1.2.3.4\nport: 443\nuuid: 00000000-0000-0000-0000-000000000000';
+          _customConfigCtrl.text =
+              'name: CustomNode\ntype: vless\nserver: 1.2.3.4\nport: 443\nuuid: 00000000-0000-0000-0000-000000000000';
           break;
       }
     });
@@ -516,12 +520,17 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
           return ManualProxyHelper.deepConvertYamlMap(loaded);
         }
       } catch (_) {}
-      return {'name': 'Custom_${DateTime.now().millisecondsSinceEpoch}', 'type': 'direct'};
+      return {
+        'name': 'Custom_${DateTime.now().millisecondsSinceEpoch}',
+        'type': 'direct',
+      };
     }
 
     if (_protocol == ManualProtocol.direct) {
       return {
-        'name': _nameCtrl.text.trim().isNotEmpty ? _nameCtrl.text.trim() : 'DIRECT_NODE',
+        'name': _nameCtrl.text.trim().isNotEmpty
+            ? _nameCtrl.text.trim()
+            : 'DIRECT_NODE',
         'type': 'direct',
       };
     }
@@ -559,8 +568,10 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
           map['skip-cert-verify'] = _skipCertVerify;
           if (sni.isNotEmpty) map['servername'] = sni;
           map['reality-opts'] = {
-            if (_pbkCtrl.text.trim().isNotEmpty) 'public-key': _pbkCtrl.text.trim(),
-            if (_sidCtrl.text.trim().isNotEmpty) 'short-id': _sidCtrl.text.trim(),
+            if (_pbkCtrl.text.trim().isNotEmpty)
+              'public-key': _pbkCtrl.text.trim(),
+            if (_sidCtrl.text.trim().isNotEmpty)
+              'short-id': _sidCtrl.text.trim(),
           };
           map['client-fingerprint'] = 'chrome';
         }
@@ -604,12 +615,16 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
         break;
 
       case ManualProtocol.ss:
-        map['cipher'] = _cipherCtrl.text.trim().isNotEmpty ? _cipherCtrl.text.trim() : 'aes-256-gcm';
+        map['cipher'] = _cipherCtrl.text.trim().isNotEmpty
+            ? _cipherCtrl.text.trim()
+            : 'aes-256-gcm';
         map['password'] = secret;
         break;
 
       case ManualProtocol.ssr:
-        map['cipher'] = _cipherCtrl.text.trim().isNotEmpty ? _cipherCtrl.text.trim() : 'aes-256-cfb';
+        map['cipher'] = _cipherCtrl.text.trim().isNotEmpty
+            ? _cipherCtrl.text.trim()
+            : 'aes-256-cfb';
         map['password'] = secret;
         map['protocol'] = 'auth_aes128_md5';
         map['obfs'] = 'tls1.2_ticket_auth';
@@ -639,8 +654,12 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
 
       case ManualProtocol.hysteria:
         map['auth_str'] = secret;
-        map['up'] = _flowCtrl.text.trim().isNotEmpty ? _flowCtrl.text.trim() : '30 Mbps';
-        map['down'] = _cipherCtrl.text.trim().isNotEmpty ? _cipherCtrl.text.trim() : '100 Mbps';
+        map['up'] = _flowCtrl.text.trim().isNotEmpty
+            ? _flowCtrl.text.trim()
+            : '30 Mbps';
+        map['down'] = _cipherCtrl.text.trim().isNotEmpty
+            ? _cipherCtrl.text.trim()
+            : '100 Mbps';
         if (sni.isNotEmpty) map['sni'] = sni;
         if (path.isNotEmpty) map['obfs'] = path;
         map['protocol'] = 'udp';
@@ -665,7 +684,9 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
       case ManualProtocol.wireguard:
         map['private-key'] = secret;
         map['public-key'] = _pbkCtrl.text.trim();
-        map['ip'] = _pathCtrl.text.trim().isNotEmpty ? _pathCtrl.text.trim() : '10.0.0.2';
+        map['ip'] = _pathCtrl.text.trim().isNotEmpty
+            ? _pathCtrl.text.trim()
+            : '10.0.0.2';
         map['remote-dns-resolve'] = true;
         break;
 
@@ -673,7 +694,9 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
         map['type'] = 'wireguard';
         map['private-key'] = secret;
         map['public-key'] = _pbkCtrl.text.trim();
-        map['ip'] = _pathCtrl.text.trim().isNotEmpty ? _pathCtrl.text.trim() : '10.0.0.2';
+        map['ip'] = _pathCtrl.text.trim().isNotEmpty
+            ? _pathCtrl.text.trim()
+            : '10.0.0.2';
         map['remote-dns-resolve'] = true;
         map['jc'] = int.tryParse(_jcCtrl.text.trim()) ?? 4;
         map['jmin'] = int.tryParse(_jminCtrl.text.trim()) ?? 40;
@@ -698,7 +721,9 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
         break;
 
       case ManualProtocol.ssh:
-        map['username'] = _hostCtrl.text.trim().isNotEmpty ? _hostCtrl.text.trim() : 'root';
+        map['username'] = _hostCtrl.text.trim().isNotEmpty
+            ? _hostCtrl.text.trim()
+            : 'root';
         map['password'] = secret;
         break;
 
@@ -728,7 +753,9 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
       case ManualProtocol.socks5:
       case ManualProtocol.http:
         if (secret.isNotEmpty) map['password'] = secret;
-        if (_hostCtrl.text.trim().isNotEmpty) map['username'] = _hostCtrl.text.trim();
+        if (_hostCtrl.text.trim().isNotEmpty) {
+          map['username'] = _hostCtrl.text.trim();
+        }
         if (_security == 'tls') map['tls'] = true;
         break;
 
@@ -764,7 +791,10 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                 decoration: const InputDecoration(
                   labelText: '节点协议 (Protocol)',
                   border: OutlineInputBorder(),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                 ),
                 items: ManualProtocol.values.map((p) {
                   return DropdownMenuItem(
@@ -803,7 +833,8 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                   maxLines: 10,
                   decoration: const InputDecoration(
                     labelText: '自定义配置 (YAML / JSON)',
-                    hintText: 'name: Custom_01\ntype: wireguard\nserver: 1.2.3.4\n...',
+                    hintText:
+                        'name: Custom_01\ntype: wireguard\nserver: 1.2.3.4\n...',
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -865,7 +896,8 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                     decoration: InputDecoration(
                       labelText: switch (_protocol) {
                         ManualProtocol.vless || ManualProtocol.vmess => 'UUID',
-                        ManualProtocol.wireguard || ManualProtocol.amneziaWg => '私钥 (Private Key)',
+                        ManualProtocol.wireguard ||
+                        ManualProtocol.amneziaWg => '私钥 (Private Key)',
                         ManualProtocol.snell => 'PSK 预共享密钥',
                         _ => '密码 (Password / Auth)',
                       },
@@ -910,11 +942,21 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                           ),
                           items: const [
                             DropdownMenuItem(value: 'tcp', child: Text('TCP')),
-                            DropdownMenuItem(value: 'ws', child: Text('WebSocket')),
-                            DropdownMenuItem(value: 'grpc', child: Text('gRPC')),
-                            DropdownMenuItem(value: 'httpupgrade', child: Text('HTTPUpgrade')),
+                            DropdownMenuItem(
+                              value: 'ws',
+                              child: Text('WebSocket'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'grpc',
+                              child: Text('gRPC'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'httpupgrade',
+                              child: Text('HTTPUpgrade'),
+                            ),
                           ],
-                          onChanged: (val) => setState(() => _network = val ?? 'tcp'),
+                          onChanged: (val) =>
+                              setState(() => _network = val ?? 'tcp'),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -927,12 +969,22 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                             border: OutlineInputBorder(),
                           ),
                           items: [
-                            const DropdownMenuItem(value: 'none', child: Text('None (明文)')),
-                            const DropdownMenuItem(value: 'tls', child: Text('TLS')),
+                            const DropdownMenuItem(
+                              value: 'none',
+                              child: Text('None (明文)'),
+                            ),
+                            const DropdownMenuItem(
+                              value: 'tls',
+                              child: Text('TLS'),
+                            ),
                             if (_protocol == ManualProtocol.vless)
-                              const DropdownMenuItem(value: 'reality', child: Text('REALITY')),
+                              const DropdownMenuItem(
+                                value: 'reality',
+                                child: Text('REALITY'),
+                              ),
                           ],
-                          onChanged: (val) => setState(() => _security = val ?? 'none'),
+                          onChanged: (val) =>
+                              setState(() => _security = val ?? 'none'),
                         ),
                       ),
                     ],
@@ -953,11 +1005,18 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                             border: OutlineInputBorder(),
                           ),
                           items: const [
-                            DropdownMenuItem(value: 'none', child: Text('None (关闭)')),
-                            DropdownMenuItem(value: 'http', child: Text('HTTP')),
+                            DropdownMenuItem(
+                              value: 'none',
+                              child: Text('None (关闭)'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'http',
+                              child: Text('HTTP'),
+                            ),
                             DropdownMenuItem(value: 'tls', child: Text('TLS')),
                           ],
-                          onChanged: (val) => setState(() => _security = val ?? 'none'),
+                          onChanged: (val) =>
+                              setState(() => _security = val ?? 'none'),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -977,7 +1036,8 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                 ],
 
                 // REALITY fields
-                if (_protocol == ManualProtocol.vless && _security == 'reality') ...[
+                if (_protocol == ManualProtocol.vless &&
+                    _security == 'reality') ...[
                   TextField(
                     controller: _pbkCtrl,
                     decoration: const InputDecoration(
@@ -1014,7 +1074,8 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                 ],
 
                 // SNI field for TLS / REALITY / Trojan / Hysteria / Juicity / ShadowTLS / Naive
-                if ((_protocol == ManualProtocol.vless && _security != 'none') ||
+                if ((_protocol == ManualProtocol.vless &&
+                        _security != 'none') ||
                     (_protocol == ManualProtocol.vmess && _security == 'tls') ||
                     _protocol == ManualProtocol.trojan ||
                     _protocol == ManualProtocol.trojanGo ||
@@ -1024,7 +1085,8 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                     _protocol == ManualProtocol.shadowTls ||
                     _protocol == ManualProtocol.juicity ||
                     _protocol == ManualProtocol.naive ||
-                    (_protocol == ManualProtocol.snell && _security != 'none')) ...[
+                    (_protocol == ManualProtocol.snell &&
+                        _security != 'none')) ...[
                   TextField(
                     controller: _sniCtrl,
                     decoration: const InputDecoration(
@@ -1037,7 +1099,9 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                 ],
 
                 // WebSocket Path / Host
-                if (_network == 'ws' || _network == 'httpupgrade' || _protocol == ManualProtocol.trojanGo) ...[
+                if (_network == 'ws' ||
+                    _network == 'httpupgrade' ||
+                    _protocol == ManualProtocol.trojanGo) ...[
                   Row(
                     children: [
                       Expanded(
@@ -1066,7 +1130,8 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                 ],
 
                 // SS / SSR Cipher
-                if (_protocol == ManualProtocol.ss || _protocol == ManualProtocol.ssr) ...[
+                if (_protocol == ManualProtocol.ss ||
+                    _protocol == ManualProtocol.ssr) ...[
                   TextField(
                     controller: _cipherCtrl,
                     decoration: const InputDecoration(
@@ -1109,7 +1174,8 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                 ],
 
                 // WireGuard & AmneziaWG fields
-                if (_protocol == ManualProtocol.wireguard || _protocol == ManualProtocol.amneziaWg) ...[
+                if (_protocol == ManualProtocol.wireguard ||
+                    _protocol == ManualProtocol.amneziaWg) ...[
                   TextField(
                     controller: _pbkCtrl,
                     decoration: const InputDecoration(
@@ -1201,13 +1267,49 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Expanded(child: TextField(controller: _h1Ctrl, decoration: const InputDecoration(labelText: 'H1', hintText: '1', border: OutlineInputBorder()))),
+                      Expanded(
+                        child: TextField(
+                          controller: _h1Ctrl,
+                          decoration: const InputDecoration(
+                            labelText: 'H1',
+                            hintText: '1',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
                       const SizedBox(width: 6),
-                      Expanded(child: TextField(controller: _h2Ctrl, decoration: const InputDecoration(labelText: 'H2', hintText: '2', border: OutlineInputBorder()))),
+                      Expanded(
+                        child: TextField(
+                          controller: _h2Ctrl,
+                          decoration: const InputDecoration(
+                            labelText: 'H2',
+                            hintText: '2',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
                       const SizedBox(width: 6),
-                      Expanded(child: TextField(controller: _h3Ctrl, decoration: const InputDecoration(labelText: 'H3', hintText: '3', border: OutlineInputBorder()))),
+                      Expanded(
+                        child: TextField(
+                          controller: _h3Ctrl,
+                          decoration: const InputDecoration(
+                            labelText: 'H3',
+                            hintText: '3',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
                       const SizedBox(width: 6),
-                      Expanded(child: TextField(controller: _h4Ctrl, decoration: const InputDecoration(labelText: 'H4', hintText: '4', border: OutlineInputBorder()))),
+                      Expanded(
+                        child: TextField(
+                          controller: _h4Ctrl,
+                          decoration: const InputDecoration(
+                            labelText: 'H4',
+                            hintText: '4',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -1223,7 +1325,10 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   title: const Text('跳过证书校验 (Skip Cert Verify)'),
-                  subtitle: const Text('解决自签证书或 TLS 握手报错', style: TextStyle(fontSize: 11)),
+                  subtitle: const Text(
+                    '解决自签证书或 TLS 握手报错',
+                    style: TextStyle(fontSize: 11),
+                  ),
                   value: _skipCertVerify,
                   onChanged: (v) => setState(() => _skipCertVerify = v),
                 ),

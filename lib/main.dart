@@ -22,6 +22,7 @@ import 'common/common.dart';
 import 'common/external_control.dart';
 import 'common/network_matcher.dart';
 import 'models/models.dart';
+import 'services/network_fingerprint_provider.dart';
 
 ReceivePort? _serviceReceiverPort;
 ReceivePort? _messageReceiverPort;
@@ -29,6 +30,16 @@ ReceivePort? _messageReceiverPort;
 Future<void> main(List<String> args) async {
   globalState.isService = false;
   WidgetsFlutterBinding.ensureInitialized();
+
+  // P2.2: start the network-context fingerprint before any reliability sample
+  // can be recorded, so the first real event already lands in the correct
+  // `statsByContext` bucket. Best-effort — a connectivity failure falls back to
+  // `unknown_default` and must never block app startup.
+  try {
+    networkFingerprintProvider.start();
+  } catch (e) {
+    commonPrint.log('Failed to start network fingerprint provider: $e');
+  }
 
   if (system.isDesktop &&
       (args.contains('--exit') || args.contains('--restart'))) {
@@ -131,9 +142,7 @@ Future<void> _service(List<String> flags) async {
           if (candidateIps.isEmpty && candidateGateways.isEmpty) return;
 
           final shouldStop =
-              candidateIps.any(
-                (ip) => NetworkMatcher.matchAny(ip, networks),
-              ) ||
+              candidateIps.any((ip) => NetworkMatcher.matchAny(ip, networks)) ||
               candidateGateways.any(
                 (gw) => NetworkMatcher.matchAnyGateway(gw, networks),
               );
@@ -219,7 +228,7 @@ Future<void> _service(List<String> flags) async {
           params,
           globalState.getCoreState(),
         );
-        debugPrint(res);
+        commonPrint.log(res);
         if (res.isNotEmpty) {
           commonPrint.log('QuickStart failed with error: $res');
           await vpn?.stop();
@@ -327,8 +336,8 @@ class _VpnListenerWithService with VpnListener {
   const _VpnListenerWithService({
     required Function(String dns) onDnsChanged,
     required Function() onNetworkChanged,
-  })  : _onDnsChanged = onDnsChanged,
-        _onNetworkChanged = onNetworkChanged;
+  }) : _onDnsChanged = onDnsChanged,
+       _onNetworkChanged = onNetworkChanged;
 
   @override
   void onDnsChanged(String dns) {

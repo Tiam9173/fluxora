@@ -1,6 +1,5 @@
 import 'package:fluxora/manager/chain_proxy_manager.dart';
 import 'package:fluxora/models/models.dart';
-import 'package:fluxora/models/chain_recovery.dart';
 import 'package:fluxora/models/chain_support_package.dart';
 import 'package:fluxora/services/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -52,11 +51,6 @@ final chainFlapDampenerStatusProvider = Provider<ChainFlapDampenerStatus>((
 final chainTelemetryProvider = Provider<ChainTelemetrySnapshot>((ref) {
   final manager = ref.watch(chainProxyConfigProvider);
   return manager.telemetrySnapshot;
-});
-
-final chainRecoveryProvider = Provider<ChainRecoveryPlan?>((ref) {
-  final manager = ref.watch(chainProxyConfigProvider);
-  return manager.pendingRecoveryPlan;
 });
 
 final chainDiagnosticExporterProvider = Provider<ChainProxyManager>((ref) {

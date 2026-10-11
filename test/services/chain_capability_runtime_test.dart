@@ -10,7 +10,7 @@ void main() {
   });
 
   group('Phase 5.5-C — Capability Intelligence Runtime Verification', () {
-    test('1. unknown node blocked (vless -> hy2)', () {
+    test('1. unknown node NOT blocked (vless -> hy2)', () {
       final entryConfig = {'type': 'vless', 'server': 'A'};
       final exitConfig = {'type': 'hysteria2', 'server': 'B'};
 
@@ -22,8 +22,11 @@ void main() {
         exitProfile,
       );
 
-      expect(result.compatible, isFalse);
-      expect(result.reason, equals('ENTRY_UDP_CAPABILITY_UNKNOWN'));
+      // P1.2: `unknown` = insufficient evidence, not `unsupported`. It must not
+      // be a hard reject — only explicit negative evidence (unsupported /
+      // runtimeRejected) blocks a candidate.
+      expect(result.compatible, isTrue);
+      expect(result.reason, isNot('ENTRY_UDP_CAPABILITY_UNKNOWN'));
     });
 
     test('2. configDeclared udp=true allowed', () {
@@ -47,14 +50,19 @@ void main() {
 
       // Initially unknown
       var entryProfile = ChainCapabilityService.getCapability(entryConfig);
-      expect(entryProfile.evidence, equals(CapabilityEvidenceType.unknown));
+      expect(entryProfile.udp.evidence, equals(CapabilityEvidenceType.unknown));
 
       // Simulate runtime verification success
-      final verifiedProfile = ProtocolCapabilityProfile.withEvidence(
+      final verifiedProfile = ProtocolCapabilityProfile(
         protocol: 'vless',
-        udpCapability: CapabilityStatus.verifiedSupported,
-        tcpCapability: CapabilityStatus.verifiedSupported,
-        evidence: CapabilityEvidenceType.runtimeVerified,
+        tcp: const CapabilityState(
+          status: CapabilityStatus.verifiedSupported,
+          evidence: CapabilityEvidenceType.runtimeVerified,
+        ),
+        udp: const CapabilityState(
+          status: CapabilityStatus.verifiedSupported,
+          evidence: CapabilityEvidenceType.runtimeVerified,
+        ),
       );
 
       final cacheKey = ChainCapabilityCacheService.generateKey(entryConfig);
@@ -62,7 +70,7 @@ void main() {
 
       entryProfile = ChainCapabilityService.getCapability(entryConfig);
       expect(
-        entryProfile.evidence,
+        entryProfile.udp.evidence,
         equals(CapabilityEvidenceType.runtimeVerified),
       );
 
@@ -81,11 +89,16 @@ void main() {
       final exitConfig = {'type': 'hysteria2', 'server': 'B'};
 
       // Simulate runtime verification failure (node lies about UDP)
-      final rejectedProfile = ProtocolCapabilityProfile.withEvidence(
+      final rejectedProfile = ProtocolCapabilityProfile(
         protocol: 'vless',
-        udpCapability: CapabilityStatus.verifiedUnsupported,
-        tcpCapability: CapabilityStatus.verifiedSupported,
-        evidence: CapabilityEvidenceType.runtimeRejected,
+        tcp: const CapabilityState(
+          status: CapabilityStatus.verifiedSupported,
+          evidence: CapabilityEvidenceType.runtimeRejected,
+        ),
+        udp: const CapabilityState(
+          status: CapabilityStatus.verifiedUnsupported,
+          evidence: CapabilityEvidenceType.runtimeRejected,
+        ),
       );
 
       final cacheKey = ChainCapabilityCacheService.generateKey(entryConfig);
@@ -94,7 +107,7 @@ void main() {
       final entryProfile = ChainCapabilityService.getCapability(entryConfig);
       // Priority: runtimeRejected > configDeclared
       expect(
-        entryProfile.evidence,
+        entryProfile.udp.evidence,
         equals(CapabilityEvidenceType.runtimeRejected),
       );
 
@@ -111,11 +124,16 @@ void main() {
     test('5. expired evidence returns unknown', () {
       final entryConfig = {'type': 'vless', 'server': 'A'};
 
-      final verifiedProfile = ProtocolCapabilityProfile.withEvidence(
+      final verifiedProfile = ProtocolCapabilityProfile(
         protocol: 'vless',
-        udpCapability: CapabilityStatus.verifiedSupported,
-        tcpCapability: CapabilityStatus.verifiedSupported,
-        evidence: CapabilityEvidenceType.runtimeVerified,
+        tcp: const CapabilityState(
+          status: CapabilityStatus.verifiedSupported,
+          evidence: CapabilityEvidenceType.runtimeVerified,
+        ),
+        udp: const CapabilityState(
+          status: CapabilityStatus.verifiedSupported,
+          evidence: CapabilityEvidenceType.runtimeVerified,
+        ),
       );
 
       final cacheKey = ChainCapabilityCacheService.generateKey(entryConfig);
@@ -128,7 +146,7 @@ void main() {
       );
 
       final entryProfile = ChainCapabilityService.getCapability(entryConfig);
-      expect(entryProfile.evidence, equals(CapabilityEvidenceType.expired));
+      expect(entryProfile.udp.evidence, equals(CapabilityEvidenceType.expired));
 
       final exitProfile = ChainCapabilityService.getCapability({
         'type': 'hysteria2',
@@ -146,11 +164,16 @@ void main() {
     test('6. cache invalidates after node mutation', () {
       final entryConfig = {'type': 'vless', 'server': 'A', 'port': 443};
 
-      final verifiedProfile = ProtocolCapabilityProfile.withEvidence(
+      final verifiedProfile = ProtocolCapabilityProfile(
         protocol: 'vless',
-        udpCapability: CapabilityStatus.verifiedSupported,
-        tcpCapability: CapabilityStatus.verifiedSupported,
-        evidence: CapabilityEvidenceType.runtimeVerified,
+        tcp: const CapabilityState(
+          status: CapabilityStatus.verifiedSupported,
+          evidence: CapabilityEvidenceType.runtimeVerified,
+        ),
+        udp: const CapabilityState(
+          status: CapabilityStatus.verifiedSupported,
+          evidence: CapabilityEvidenceType.runtimeVerified,
+        ),
       );
 
       final cacheKey = ChainCapabilityCacheService.generateKey(entryConfig);
@@ -163,7 +186,7 @@ void main() {
       );
 
       // Cache miss -> fallback to baseline (unknown)
-      expect(mutatedProfile.evidence, equals(CapabilityEvidenceType.unknown));
+      expect(mutatedProfile.udp.evidence, equals(CapabilityEvidenceType.unknown));
     });
 
     test('7. cache fingerprint collision protection', () {
@@ -194,7 +217,8 @@ void main() {
       );
       expect(edge1.compatible, isTrue);
 
-      // Edge 2: Relay -> Exit (HY2 requires UDP, Socks5 baseline is verifiedSupported)
+      // Edge 2: Relay -> Exit (HY2 requires UDP; Socks5 baseline is `unknown`,
+      // which is insufficient evidence, not a hard reject)
       final edge2 = ChainCompatibilityValidator.validateEdge(
         relayProfile,
         exitProfile,
@@ -214,8 +238,13 @@ void main() {
           'type': 'vless',
           'server': 'A',
           'udp': true,
-        }, // configDeclared (PASS)
-        {'name': 'C2', 'type': 'vless', 'server': 'B'}, // unknown (BLOCK)
+        }, // configDeclared supported (PASS)
+        {
+          'name': 'C2',
+          'type': 'vless',
+          'server': 'B',
+          'udp': false,
+        }, // explicitly unsupported (BLOCK)
         {
           'name': 'C3',
           'type': 'vless',
@@ -224,11 +253,16 @@ void main() {
       ];
 
       // Simulate C3 runtime verified
-      final c3Profile = ProtocolCapabilityProfile.withEvidence(
+      final c3Profile = ProtocolCapabilityProfile(
         protocol: 'vless',
-        udpCapability: CapabilityStatus.verifiedSupported,
-        tcpCapability: CapabilityStatus.verifiedSupported,
-        evidence: CapabilityEvidenceType.runtimeVerified,
+        tcp: const CapabilityState(
+          status: CapabilityStatus.verifiedSupported,
+          evidence: CapabilityEvidenceType.runtimeVerified,
+        ),
+        udp: const CapabilityState(
+          status: CapabilityStatus.verifiedSupported,
+          evidence: CapabilityEvidenceType.runtimeVerified,
+        ),
       );
       ChainCapabilityCacheService.set(
         ChainCapabilityCacheService.generateKey(candidates[2]),
@@ -260,6 +294,7 @@ void main() {
         'type': 'vless',
         'server': 'A',
         'password': 'SECRET_PASSWORD',
+        'udp': false,
       };
       final exitConfig = {'type': 'hysteria2'};
 
@@ -271,12 +306,183 @@ void main() {
         exitProfile,
       );
 
-      // Error message should just say ENTRY_UDP_CAPABILITY_UNKNOWN and blocking protocol
-      expect(result.reason, equals('ENTRY_UDP_CAPABILITY_UNKNOWN'));
+      // Explicitly-unsupported UDP still yields an ENUM-based reason and
+      // blocking protocol (P1.2: `unknown` no longer blocks, so this case uses
+      // a genuine negative-evidence config).
+      expect(result.reason, equals('ENTRY_UDP_UNSUPPORTED'));
       expect(result.blockingProtocol, equals('vless'));
 
       // Ensure no password leakage in the profile string
       expect(entryProfile.toString(), isNot(contains('SECRET_PASSWORD')));
+    });
+
+    // ── K4-C1: `_highest` tie-break ─────────────────────────────────────────
+    test('11. K4-C1: a tie resolves to the current config, not the cache', () {
+      // Same node identity (cache key unchanged) ⇒ the cache is hit. The cache
+      // carries `udp: true` (configDeclared/verifiedSupported) while the
+      // *current* config declares `udp: false`
+      // (configDeclared/verifiedUnsupported). Same evidence priority ⇒ tie.
+      final entryConfig = {'type': 'vless', 'server': 'A', 'udp': false};
+
+      final cachedProfile = ProtocolCapabilityProfile(
+        protocol: 'vless',
+        udp: const CapabilityState(
+          status: CapabilityStatus.verifiedSupported,
+          evidence: CapabilityEvidenceType.configDeclared,
+        ),
+      );
+      ChainCapabilityCacheService.set(
+        ChainCapabilityCacheService.generateKey(entryConfig),
+        cachedProfile,
+      );
+
+      final entryProfile = ChainCapabilityService.getCapability(entryConfig);
+
+      // Before P1.2-K4-C1 the cached `verifiedSupported` won the tie and the new
+      // `udp: false` declaration stayed masked for the whole TTL window.
+      expect(
+        entryProfile.udp.evidence,
+        equals(CapabilityEvidenceType.configDeclared),
+      );
+      expect(
+        entryProfile.udp.status,
+        equals(CapabilityStatus.verifiedUnsupported),
+        reason: 'the current config declaration must win the tie',
+      );
+
+      // ...and the failover gate now sees the real declaration.
+      final exitProfile = ChainCapabilityService.getCapability({
+        'type': 'hysteria2',
+        'server': 'B',
+      });
+      final result = ChainCompatibilityValidator.validateEdge(
+        entryProfile,
+        exitProfile,
+      );
+      expect(result.compatible, isFalse);
+      expect(result.reason, equals('ENTRY_UDP_UNSUPPORTED'));
+    });
+
+    test('12. K4-C1: higher cached evidence still wins (no over-correction)', () {
+      final entryConfig = {'type': 'vless', 'server': 'A', 'udp': false};
+
+      final verifiedProfile = ProtocolCapabilityProfile(
+        protocol: 'vless',
+        tcp: const CapabilityState(
+          status: CapabilityStatus.verifiedSupported,
+          evidence: CapabilityEvidenceType.runtimeVerified,
+        ),
+        udp: const CapabilityState(
+          status: CapabilityStatus.verifiedSupported,
+          evidence: CapabilityEvidenceType.runtimeVerified,
+        ),
+      );
+      ChainCapabilityCacheService.set(
+        ChainCapabilityCacheService.generateKey(entryConfig),
+        verifiedProfile,
+      );
+
+      final entryProfile = ChainCapabilityService.getCapability(entryConfig);
+
+      // runtimeVerified (4) > configDeclared (2): runtime evidence must still
+      // override the config declaration — the tie fix must not break this.
+      expect(
+        entryProfile.udp.evidence,
+        equals(CapabilityEvidenceType.runtimeVerified),
+      );
+      expect(
+        entryProfile.udp.status,
+        equals(CapabilityStatus.verifiedSupported),
+      );
+      expect(
+        entryProfile.tcp.evidence,
+        equals(CapabilityEvidenceType.runtimeVerified),
+      );
+    });
+
+    // ── P1.3-B (K4-C2): canonical cache identity ────────────────────────────
+    test('13. K4-C2: distinct credentials produce distinct cache keys', () {
+      // The key is a canonical fingerprint of the whole config, so two nodes
+      // that differ only by `username` must NOT share a capability entry.
+      // Before P1.3-B both hashed to `sha256('socks5|x|443||pw')`.
+      final a = {
+        'type': 'socks5',
+        'server': 'x',
+        'port': 443,
+        'username': 'userA',
+        'password': 'pw',
+      };
+      final b = {
+        'type': 'socks5',
+        'server': 'x',
+        'port': 443,
+        'username': 'userB',
+        'password': 'pw',
+      };
+
+      expect(
+        ChainCapabilityCacheService.generateKey(a),
+        isNot(ChainCapabilityCacheService.generateKey(b)),
+      );
+
+      // Same for a transport-level difference (`flow`) on identical credentials.
+      final flowVision = {
+        'type': 'vless',
+        'server': 'x',
+        'port': 443,
+        'uuid': 'U',
+        'flow': 'xtls-rprx-vision',
+      };
+      final flowNone = {...flowVision, 'flow': 'none'};
+      expect(
+        ChainCapabilityCacheService.generateKey(flowVision),
+        isNot(ChainCapabilityCacheService.generateKey(flowNone)),
+      );
+    });
+
+    test('14. K4-C2: key is insertion-order stable and ignores non-identity keys',
+        () {
+      final ordered = {
+        'type': 'vless',
+        'server': 'x',
+        'port': 443,
+        'uuid': 'U',
+        'flow': 'xtls-rprx-vision',
+      };
+      final shuffled = {
+        'flow': 'xtls-rprx-vision',
+        'uuid': 'U',
+        'port': 443,
+        'server': 'x',
+        'type': 'vless',
+      };
+
+      // Canonical key sorting ⇒ logically equal configs hash identically.
+      expect(
+        ChainCapabilityCacheService.generateKey(ordered),
+        ChainCapabilityCacheService.generateKey(shuffled),
+      );
+
+      // `name` is not identity: a rename must keep the same entry.
+      expect(
+        ChainCapabilityCacheService.generateKey({...ordered, 'name': 'whatever'}),
+        ChainCapabilityCacheService.generateKey(ordered),
+      );
+
+      // `dialer-proxy` is routing topology, not identity.
+      expect(
+        ChainCapabilityCacheService.generateKey({
+          ...ordered,
+          'dialer-proxy': '🔗 链式代理',
+        }),
+        ChainCapabilityCacheService.generateKey(ordered),
+      );
+
+      // ...but a different server MUST change the key.
+      expect(
+        ChainCapabilityCacheService.generateKey({...ordered, 'server': 'y'}),
+        isNot(ChainCapabilityCacheService.generateKey(ordered)),
+      );
     });
   });
 }

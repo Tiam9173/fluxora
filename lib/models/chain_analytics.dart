@@ -136,8 +136,9 @@ class ChainIntelligenceSnapshot {
       }
 
       // Score penalties
-      if (event.type == ChainTelemetryEventType.failoverSuccess)
+      if (event.type == ChainTelemetryEventType.failoverSuccess) {
         failoverCount++;
+      }
       if (event.type == ChainTelemetryEventType.flapSuppressed) flapCount++;
     }
 

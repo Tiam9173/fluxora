@@ -18,6 +18,8 @@ import 'package:fluxora/services/chain_telemetry_service.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
+import '../support/temp_dir_cleanup.dart';
+
 class FakePathProviderPlatform extends Fake
     with MockPlatformInterfaceMixin
     implements PathProviderPlatform {
@@ -55,7 +57,26 @@ class FakePathProviderPlatform extends Fake
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  setUpAll(() {
+  late Directory isolatedDataDir;
+
+  setUpAll(() async {
+    // P1.1-F group isolation: ChainProxyManager.init() must never read or write
+    // the developer's real %APPDATA%\Fluxora data directory. On Windows,
+    // AppPath._internal() resolves the data dir from
+    // Platform.environment['APPDATA'] and IGNORES the faked
+    // PathProviderPlatform, so faking path_provider alone does NOT sandbox
+    // chain_proxies.json / chain_fallback_pool.json / chain_reliability_stats.json.
+    // The only reliable seam is the *FilePathOverride statics.
+    isolatedDataDir = await Directory.systemTemp.createTemp(
+      'fluxora_runtime_lifecycle_',
+    );
+    ChainProxyManager.configFilePathOverride =
+        '${isolatedDataDir.path}/chain_proxies.json';
+    ChainProxyManager.fallbackPoolFilePathOverride =
+        '${isolatedDataDir.path}/chain_fallback_pool.json';
+    ChainProxyManager.reliabilityStatsFilePathOverride =
+        '${isolatedDataDir.path}/chain_reliability_stats.json';
+
     PathProviderPlatform.instance = FakePathProviderPlatform();
     chainProbeService.customDelayTesterOverride = (proxy, url) async {
       await Future.delayed(const Duration(milliseconds: 50));
@@ -63,8 +84,18 @@ void main() {
     };
   });
 
-  tearDownAll(() {
+  tearDownAll(() async {
     chainProbeService.customDelayTesterOverride = null;
+    // P2.3-C: `setFallbackPool` / failover arm a 2s debounced reliability write.
+    // Stop + flush it while the override still points at the isolated dir — this
+    // cancels the debounce timer, so nothing can still be writing into the
+    // directory when it is deleted (Windows errno 32 on a held handle).
+    await chainProxyManager.flushReliabilityStats();
+    // Restore overrides *after* the flush, *before* the delete.
+    ChainProxyManager.configFilePathOverride = null;
+    ChainProxyManager.fallbackPoolFilePathOverride = null;
+    ChainProxyManager.reliabilityStatsFilePathOverride = null;
+    await deleteTempDirWithRetry(isolatedDataDir);
   });
 
   group('Phase 5.1-B — Runtime Lifecycle & Resource Hardening Tests', () {

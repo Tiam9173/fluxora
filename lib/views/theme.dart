@@ -27,13 +27,6 @@ class ThemeModeItem {
   });
 }
 
-class FontFamilyItem {
-  final FontFamily fontFamily;
-  final String label;
-
-  const FontFamilyItem({required this.fontFamily, required this.label});
-}
-
 /// One option of the D4.8 colour-source selector.
 class ColorSourceItem {
   final ColorSource colorSource;
@@ -326,7 +319,10 @@ class _PrimaryColorItemState extends ConsumerState<_PrimaryColorItem> {
         return true;
       },
       child: ItemCard(
-        info: Info(label: appLocalizations.colorSchemes, iconData: Icons.palette),
+        info: Info(
+          label: appLocalizations.colorSchemes,
+          iconData: Icons.palette,
+        ),
         actions: genActions([
           if (_removablePrimaryColor == null)
             FilledButton(
@@ -500,7 +496,6 @@ class _HarmonyFontItem extends ConsumerWidget {
     );
   }
 }
-
 
 class _DarkIconItem extends ConsumerWidget {
   const _DarkIconItem();

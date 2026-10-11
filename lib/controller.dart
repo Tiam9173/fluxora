@@ -29,13 +29,28 @@ import 'common/archive.dart' show restoreBackupFiles;
 import 'common/common.dart';
 import 'common/flclash_database_extractor.dart';
 import 'manager/chain_proxy_manager.dart';
+import 'services/network_fingerprint_provider.dart';
+import 'services/system_proxy_readback.dart';
+import 'services/tun_readback.dart';
 import 'models/models.dart';
 import 'views/profiles/override_profile.dart';
 
 class AppController {
   int? lastProfileModified;
 
-  final BuildContext context;
+  /// P2.6-D: the context this controller navigates / shows dialogs with.
+  ///
+  /// It starts as the `Application` widget context (set in `initState`, so that
+  /// `globalState.appController` — and therefore `globalState.isInit` — is valid
+  /// from the very first frame) and is re-targeted **once** from
+  /// `ApplicationState._initApp` at the mounted navigator context, which is the
+  /// only one with a `Navigator` / `Theme` above it.
+  ///
+  /// Deliberately non-final: the application lifecycle must own exactly **one**
+  /// `AppController`, so the context is rebound rather than the controller
+  /// rebuilt (see [rebindContext]).
+  BuildContext context;
+
   final WidgetRef _ref;
   WidgetRef get ref => _ref;
 
@@ -52,6 +67,18 @@ class AppController {
   Timer? _idleGcTimer;
 
   AppController(this.context, WidgetRef ref) : _ref = ref;
+
+  /// P2.6-D: re-targets this controller at [newContext] **without** creating a
+  /// new instance.
+  ///
+  /// Callers must use this instead of `AppController(newContext, ref)`. A second
+  /// instance would orphan the first one and split the per-instance guards
+  /// (`_coreLifecycleLock`, `_coreGeneration`, `_isUpdatingGroups`,
+  /// `_updatingProfileIds`) across two objects, silently breaking the
+  /// single-flight and stale-result guarantees they exist to provide.
+  void rebindContext(BuildContext newContext) {
+    context = newContext;
+  }
 
   DateTime _lastModeChangeTime = DateTime.fromMillisecondsSinceEpoch(0);
 
@@ -604,6 +631,13 @@ class AppController {
       await prefs?.setBool('is_tun_running', realTunEnable);
     }
     scheduleIdleGc();
+    // P2.6-F: the OS TUN interface is created/destroyed asynchronously by the
+    // core, so observe the *actual* state after a bounded settle instead of
+    // immediately (which would read a transient, misleading `disabled`).
+    // Fire-and-forget and strictly read-only.
+    if (system.isDesktop) {
+      unawaited(_observeTun());
+    }
   }
 
   Future<Result<bool>> _requestAdmin(bool enableTun) async {
@@ -740,23 +774,47 @@ class AppController {
   }
 
   Future<void> autoUpdateProfiles() async {
-    for (final profile in _ref.read(profilesProvider)) {
-      if (!_isProfileUpdateNeeded(profile)) continue;
-      try {
-        await updateProfile(profile, validate: false);
-      } catch (e) {
-        commonPrint.log(
-          '[AutoUpdate] Failed to update ${profile.label ?? profile.id}: ${e.formatErrorLog}',
-        );
+    // P2.6-D: the loop head used to read the provider *outside* any boundary, so
+    // a throwing read (e.g. the provider container is already disposed) escaped
+    // the method entirely. Both call sites are fire-and-forget — the 24h timer
+    // in `application.dart` and `init()` below — so it surfaced as an unhandled
+    // async error with no `await` above it to catch it.
+    //
+    // Reading inside an explicit boundary keeps the previous outcome (the run is
+    // abandoned) while making it diagnosable instead of fatal. The per-profile
+    // `try` is unchanged, so one bad profile still does not stop the others.
+    try {
+      for (final profile in _ref.read(profilesProvider)) {
+        if (!_isProfileUpdateNeeded(profile)) continue;
+        try {
+          await updateProfile(profile, validate: false);
+        } catch (e) {
+          commonPrint.log(
+            '[AutoUpdate] Failed to update ${profile.label ?? profile.id}: ${e.formatErrorLog}',
+          );
+        }
       }
+    } catch (e, stackTrace) {
+      commonPrint.log('[AutoUpdate] Failed to read profiles: $e\n$stackTrace');
     }
   }
 
   Future<void> checkAndUpdateMissedProfiles() async {
     final profilesToUpdate = <Profile>[];
-    for (final profile in _ref.read(profilesProvider)) {
-      if (!_isProfileUpdateNeeded(profile)) continue;
-      profilesToUpdate.add(profile);
+    // P2.6-D: same loop-head read boundary as `autoUpdateProfiles()`. Its caller
+    // (`AppStateManager`) also invokes this fire-and-forget, so an escaping read
+    // error became an unhandled async error. Returning here keeps the previous
+    // behaviour — the throw aborted the run before `_syncExternalProviders()`.
+    try {
+      for (final profile in _ref.read(profilesProvider)) {
+        if (!_isProfileUpdateNeeded(profile)) continue;
+        profilesToUpdate.add(profile);
+      }
+    } catch (e, stackTrace) {
+      commonPrint.log(
+        '[MissedUpdate] Failed to read profiles: $e\n$stackTrace',
+      );
+      return;
     }
     if (profilesToUpdate.isNotEmpty) {
       var updated = false;
@@ -982,17 +1040,26 @@ class AppController {
   }
 
   Future<void> updateProfiles() async {
-    for (final profile in _ref.read(profilesProvider)) {
-      if (profile.type == ProfileType.file) {
-        continue;
+    // P2.6-D: third and last loop-head provider read of the same shape — kept
+    // consistent with `autoUpdateProfiles()` / `checkAndUpdateMissedProfiles()`
+    // so that no profile-update loop reads the provider outside a boundary.
+    try {
+      for (final profile in _ref.read(profilesProvider)) {
+        if (profile.type == ProfileType.file) {
+          continue;
+        }
+        try {
+          await updateProfile(profile);
+        } catch (e) {
+          commonPrint.log(
+            '[UpdateProfiles] Failed to update ${profile.label ?? profile.id}: ${e.formatErrorLog}',
+          );
+        }
       }
-      try {
-        await updateProfile(profile);
-      } catch (e) {
-        commonPrint.log(
-          '[UpdateProfiles] Failed to update ${profile.label ?? profile.id}: ${e.formatErrorLog}',
-        );
-      }
+    } catch (e, stackTrace) {
+      commonPrint.log(
+        '[UpdateProfiles] Failed to read profiles: $e\n$stackTrace',
+      );
     }
   }
 
@@ -1093,6 +1160,19 @@ class AppController {
         }
       }
       stopWakelockAutoRecovery();
+      // P2.5-F: stop runtime observers BEFORE flushing persistence or closing
+      // the core. Both of these own live resources that previously outlived the
+      // app:
+      //  * the chain health-check `Timer.periodic` would otherwise keep firing
+      //    after shutdown — probing the (already closing) core and potentially
+      //    triggering an automatic failover while the controller is exiting;
+      //  * the network-fingerprint `StreamSubscription` on connectivity was
+      //    started in `main()` but never cancelled.
+      // Ordering note: this runs *before* `flushReliabilityStats()` so no new
+      // sample can be produced while the flush is in progress, but the flush
+      // still happens while its producer (`ChainProxyManager`) is alive.
+      chainProxyManager.stopChainHealthCheck();
+      networkFingerprintProvider.stop();
       await globalState.handleBackground();
       if (system.isDesktop) {
         final prefs = await preferences.sharedPreferencesCompleter.future;
@@ -1101,6 +1181,18 @@ class AppController {
       await savePreferences();
       if (proxy != null) {
         await proxy!.stopProxy();
+      }
+      // P2.3-A (B-2): flush the debounced chain-reliability statistics before
+      // teardown. `ChainProxyManager` writes them behind a 2s debounce, so any
+      // sample recorded inside the last window would otherwise be lost on exit.
+      // Bounded by a timeout (and wrapped) so a slow or failing write can never
+      // block or delay shutdown indefinitely.
+      try {
+        await chainProxyManager
+            .flushReliabilityStats()
+            .timeout(const Duration(seconds: 2));
+      } catch (e) {
+        commonPrint.log('Failed to flush reliability stats on exit: $e');
       }
       await clashCore.shutdown();
       if (clashService != null) {
@@ -1696,12 +1788,127 @@ class AppController {
     }
   }
 
+  /// P2.5-B (CF-3): bounded settle window between the OS SET (performed
+  /// asynchronously by `ProxyManager`) and the readback, plus the number of
+  /// confirm attempts. Bounded on purpose — never an open-ended poll.
+  static const Duration _systemProxySetSettle = Duration(milliseconds: 400);
+  static const int _systemProxyConfirmAttempts = 2;
+
+  /// Tray / hotkey entry point: flips the desired state through
+  /// [setSystemProxy] so the readback always runs (the toggle must not write
+  /// the provider directly).
   void updateSystemProxy() {
+    final next = !_ref.read(networkSettingProvider).systemProxy;
+    unawaited(setSystemProxy(next));
+  }
+
+  /// P2.5-B (CF-3): explicit, value-based desired-state setter.
+  ///
+  /// This is the ONLY entry point the system-proxy switches may use — writing
+  /// `networkSettingProvider` directly would skip the OS readback and leave the
+  /// UI unable to tell "requested" from "actually applied".
+  ///
+  /// The OS SET itself is performed asynchronously by `ProxyManager`'s listener
+  /// on `proxyStateProvider`; we give that a bounded moment and then observe, so
+  /// the published state is the *post-SET* one. A failed or unavailable
+  /// observation yields `unknown` — never a fabricated success.
+  Future<void> setSystemProxy(bool enabled) async {
+    final changed = _ref.read(networkSettingProvider).systemProxy != enabled;
     _ref
         .read(networkSettingProvider.notifier)
-        .updateState(
-          (state) => state.copyWith(systemProxy: !state.systemProxy),
+        .updateState((state) => state.copyWith(systemProxy: enabled));
+
+    // Retry once so a slow platform backend does not surface a transient false
+    // mismatch. The desired state is already applied — this only affects how
+    // long the *observation* takes, never the switch itself.
+    final attempts = changed ? _systemProxyConfirmAttempts : 1;
+    for (var attempt = 1; attempt <= attempts; attempt++) {
+      await Future<void>.delayed(_systemProxySetSettle);
+      if (await _observeSystemProxy(enabled)) return;
+    }
+  }
+
+  /// Observes the OS state once and logs the outcome. Returns `true` when the
+  /// result is conclusive (matched, unknown or unsupported) so the caller can
+  /// stop retrying.
+  ///
+  /// Strictly read-only: it never mutates the desired state
+  /// (`networkSettingProvider`), the chain config, the fallback pool or the
+  /// reliability statistics — it only observes and logs.
+  Future<bool> _observeSystemProxy(bool desiredEnabled) async {
+    try {
+      final readback = await SystemProxyReadbackService.instance.read();
+
+      if (readback.actualState == SystemProxyActualState.unknown) {
+        commonPrint.log(
+          'SystemProxy readback unknown (${readback.platform}): '
+          '${readback.error}',
         );
+        return true;
+      }
+      if (readback.matchesDesired(desiredEnabled: desiredEnabled)) return true;
+
+      commonPrint.log(
+        'SystemProxy mismatch: desired=$desiredEnabled '
+        'actual=${readback.actualState} (${readback.host}:${readback.port})',
+      );
+      return false;
+    } catch (e) {
+      // `read()` never throws; this is belt-and-braces so a UI-triggered
+      // observation can never surface an unhandled async error.
+      commonPrint.log('SystemProxy readback failed: $e');
+      return true;
+    }
+  }
+
+  /// P2.6-F: bounded settle window + confirm attempts between flipping the
+  /// desired TUN state and observing the OS — the same shape as
+  /// [setSystemProxy]. The OS TUN interface is created/destroyed asynchronously
+  /// by the core, so observing immediately would report a transient (and
+  /// misleading) `disabled`.
+  ///
+  /// Bounded on purpose — never an open-ended poll.
+  static const Duration _tunSetSettle = Duration(milliseconds: 600);
+  static const int _tunConfirmAttempts = 4;
+
+  /// P2.6-F: observes the OS's **actual** TUN state and logs the outcome.
+  ///
+  /// Only "desired ON, interface not up *yet*" is treated as transient and
+  /// retried within the bounded window; `enabled`, `unknown`, `unsupported` and
+  /// a `disabled` observation while OFF was requested are all conclusive.
+  ///
+  /// Strictly read-only: it never mutates the desired state
+  /// (`patchClashConfigProvider`), the core config, the chain config, the
+  /// fallback pool, the reliability statistics or persistence — it only
+  /// observes and logs. Never throws.
+  Future<void> _observeTun() async {
+    if (!system.isDesktop) return;
+    final desired = _ref.read(patchClashConfigProvider).tun.enable;
+    for (var attempt = 1; attempt <= _tunConfirmAttempts; attempt++) {
+      await Future<void>.delayed(_tunSetSettle);
+      try {
+        final readback = await TunReadbackService.instance.read();
+        final transient =
+            desired && readback.actualState == TunActualState.disabled;
+        if (!transient) {
+          if (readback.actualState == TunActualState.unknown) {
+            commonPrint.log(
+              'TUN readback unknown (${readback.platform}): ${readback.error}',
+            );
+          }
+          return;
+        }
+      } catch (e) {
+        // `read()` never throws; this is belt-and-braces so a TUN change can
+        // never surface an unhandled async error.
+        commonPrint.log('TUN readback failed: $e');
+        return;
+      }
+    }
+    commonPrint.log(
+      'TUN readback: desired=ON but the OS interface is still absent '
+      '($_tunConfirmAttempts attempts)',
+    );
   }
 
   Future<List<Package>> getPackages({bool forceRefresh = false}) async {

@@ -4,13 +4,17 @@ import 'dart:io';
 
 import 'package:archive/archive.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' as flutter_riverpod;
+import 'package:fluxora/controller.dart';
+import 'package:fluxora/state.dart';
+import 'package:fluxora/providers/providers.dart';
+import 'package:fluxora/models/models.dart';
+import 'package:fluxora/enum/enum.dart';
+
 import 'package:fluxora/manager/chain_proxy_manager.dart';
 import 'package:fluxora/models/chain_decision.dart';
-import 'package:fluxora/models/chain_fallback_pool.dart';
-import 'package:fluxora/models/chain_flap_dampening.dart';
 import 'package:fluxora/models/chain_insight.dart';
-import 'package:fluxora/models/chain_proxy.dart';
-import 'package:fluxora/models/chain_telemetry.dart';
 import 'package:fluxora/services/atomic_config_storage.dart';
 import 'package:fluxora/services/chain_flap_dampener_service.dart';
 import 'package:fluxora/services/chain_probe_service.dart';
@@ -70,10 +74,18 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 10));
       return 120;
     };
+    // This suite drives `updateConfig` / `setHops`, which reload the running
+    // core. The real reload path reaches `AppController.updateGroups` →
+    // `clashCore` → `ClashService`, which tries to spawn the desktop core
+    // binary (`FluxoraDevCore.exe`) — absent in a unit-test environment, so the
+    // reload would throw a ProcessException. The core reload is irrelevant to
+    // what this suite validates, so it is stubbed out for the whole file.
+    ChainProxyManager.coreConfigReloadOverride = () async {};
   });
 
   tearDownAll(() async {
     chainProbeService.customDelayTesterOverride = null;
+    ChainProxyManager.coreConfigReloadOverride = null;
     if (await androidSandboxDir.exists()) {
       await androidSandboxDir.delete(recursive: true);
     }
@@ -182,62 +194,95 @@ void main() {
     // ══════════════════════════════════════════════════════════════════════════
     // 3. Android Background & Lifecycle State Switch
     // ══════════════════════════════════════════════════════════════════════════
-    test(
+    testWidgets(
       '4. App Background Switch: Active probe and failover cancel tokens abort safely',
-      () async {
-        final manager = ChainProxyManager();
-        await manager.updateConfig(
-          (c) => c.copyWith(
-            enable: true,
-            hop1Node: 'android_entry',
-            hop2Node: 'android_exit',
-          ),
-          reloadCore: false,
-        );
-
-        // 1. Launch probe while in foreground
-        final probeFuture = manager.probeCurrentChain(
-          timeout: const Duration(seconds: 5),
-        );
-        expect(manager.isProbingChain, isTrue);
-
-        // Simulate App sent to background -> onPause / onStop / dispose cancels active probe
-        manager.cancelCurrentProbe();
-        expect(manager.isProbingChain, isFalse);
-
-        final probeReport = await probeFuture;
-        expect(probeReport.isCancelled, isTrue);
-
-        // 2. Launch failover while in foreground
-        manager.setFallbackPool(
-          ChainFallbackPool(
-            exitCandidates: [
-              ChainFallbackCandidate(
-                nodeName: 'candidate_exit_1',
-                role: FallbackCandidateRole.exit,
-              ),
+      (tester) async {
+        await tester.pumpWidget(
+          flutter_riverpod.ProviderScope(
+            overrides: [
+              groupsProvider.overrideWithValue([
+                Group(
+                  name: 'Proxy',
+                  type: GroupType.Selector,
+                  // The chain config below references `android_entry` /
+                  // `android_exit`. When `availableProxyNames` is non-null the
+                  // fallback selector runs the topology validator, which
+                  // rejects any hop that is missing from this list — so the
+                  // current hops must be present here, otherwise every
+                  // candidate is excluded (`TOPOLOGY_CONFLICT`) and the
+                  // failover fails synchronously with no candidates.
+                  all: [
+                    Proxy(name: 'android_entry', type: 'ss'),
+                    Proxy(name: 'android_exit', type: 'ss'),
+                    Proxy(name: 'candidate_exit_1', type: 'ss'),
+                  ],
+                  now: '',
+                ),
+              ]),
             ],
+            child: flutter_riverpod.Consumer(
+              builder: (context, ref, _) {
+                globalState.appController = AppController(context, ref);
+                return Container();
+              },
+            ),
           ),
         );
 
-        final failoverFuture = manager.triggerAutoFailover(
-          initialFailureReport: ChainProbeReport(
-            mode: ChainHopMode.twoHop,
-            isOverallHealthy: false,
-            healthStatus: ChainHealthStatus.failed,
-            failureHop: 2,
-            hops: const [],
-            timestamp: DateTime.now(),
-          ),
-        );
-        expect(manager.isFailingOver, isTrue);
+        await tester.runAsync(() async {
+          final manager = ChainProxyManager();
+          await manager.updateConfig(
+            (c) => c.copyWith(
+              enable: true,
+              hop1Node: 'android_entry',
+              hop2Node: 'android_exit',
+            ),
+            reloadCore: false,
+          );
 
-        // Simulate App sent to background / view unmounted
-        manager.cancelFailover();
-        expect(manager.isFailingOver, isFalse);
+          // 1. Launch probe while in foreground
+          final probeFuture = manager.probeCurrentChain(
+            timeout: const Duration(seconds: 5),
+          );
+          expect(manager.isProbingChain, isTrue);
 
-        final failoverResult = await failoverFuture;
-        expect(failoverResult.isCancelled, isTrue);
+          // Simulate App sent to background -> onPause / onStop / dispose cancels active probe
+          manager.cancelCurrentProbe();
+          expect(manager.isProbingChain, isFalse);
+
+          final probeReport = await probeFuture;
+          expect(probeReport.isCancelled, isTrue);
+
+          // 2. Launch failover while in foreground
+          manager.setFallbackPool(
+            ChainFallbackPool(
+              exitCandidates: [
+                ChainFallbackCandidate(
+                  nodeName: 'candidate_exit_1',
+                  role: FallbackCandidateRole.exit,
+                ),
+              ],
+            ),
+          );
+
+          final failoverFuture = manager.triggerAutoFailover(
+            initialFailureReport: ChainProbeReport(
+              mode: ChainHopMode.twoHop,
+              isOverallHealthy: false,
+              healthStatus: ChainHealthStatus.failed,
+              failureHop: 2,
+              hops: const [],
+              timestamp: DateTime.now(),
+            ),
+          );
+          expect(manager.isFailingOver, isTrue);
+
+          manager.cancelFailover();
+          expect(manager.isFailingOver, isFalse);
+
+          final failoverResult = await failoverFuture;
+          expect(failoverResult.isCancelled, isTrue);
+        });
       },
     );
 
@@ -416,7 +461,13 @@ void main() {
 
         const policy = ChainFlapDampeningPolicy(
           penaltyPerFlap: 1000,
-          suppressThreshold: 2000,
+          // P1.6: keep two flaps strictly below the threshold. At 2000 the
+          // second flap landed exactly on it, and `_penalty >= suppressThreshold`
+          // only evaluated to "not suppressed" when time-based decay happened to
+          // shave a fraction off — so the test flaked whenever both flaps shared
+          // a clock tick. 2500 leaves a 500-point margin and no longer depends on
+          // decay. Product semantics (`>=`) are unchanged.
+          suppressThreshold: 2500,
           reuseThreshold: 500,
         );
 
@@ -427,8 +478,8 @@ void main() {
           toNode: 'exit_node_B',
           policy: policy,
         );
-        expect(dampener.status.isSuppressed, isFalse);
-        expect(dampener.status.currentPenalty, closeTo(1000.0, 5.0));
+        expect(dampener.getStatus(policy: policy).isSuppressed, isFalse);
+        expect(dampener.getStatus(policy: policy).currentPenalty, closeTo(1000.0, 5.0));
 
         // Flap 2
         dampener.recordFlap(
@@ -437,8 +488,8 @@ void main() {
           toNode: 'exit_node_A',
           policy: policy,
         );
-        expect(dampener.status.isSuppressed, isFalse);
-        expect(dampener.status.currentPenalty, closeTo(2000.0, 5.0));
+        expect(dampener.getStatus(policy: policy).isSuppressed, isFalse);
+        expect(dampener.getStatus(policy: policy).currentPenalty, closeTo(2000.0, 5.0));
 
         // Flap 3 -> exceeds threshold, becomes suppressed
         dampener.recordFlap(
@@ -447,13 +498,13 @@ void main() {
           toNode: 'exit_node_B',
           policy: policy,
         );
-        expect(dampener.status.isSuppressed, isTrue);
-        expect(dampener.status.currentPenalty, closeTo(3000.0, 5.0));
+        expect(dampener.getStatus(policy: policy).isSuppressed, isTrue);
+        expect(dampener.getStatus(policy: policy).currentPenalty, closeTo(3000.0, 5.0));
 
         // Reset restores normal operational state
         dampener.reset();
-        expect(dampener.status.isSuppressed, isFalse);
-        expect(dampener.status.currentPenalty, 0.0);
+        expect(dampener.getStatus(policy: policy).isSuppressed, isFalse);
+        expect(dampener.getStatus(policy: policy).currentPenalty, 0.0);
       },
     );
 

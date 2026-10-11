@@ -156,9 +156,7 @@ class CommonCard extends StatelessWidget {
     return BorderSide(
       color: isSelected
           ? colorScheme.primary
-          : colorScheme.outlineVariant.withValues(
-              alpha: isLight ? 0.45 : 0.25,
-            ),
+          : colorScheme.outlineVariant.withValues(alpha: isLight ? 0.45 : 0.25),
     );
   }
 
@@ -245,30 +243,6 @@ class SelectIcon extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(4),
         child: const Icon(Icons.check, size: 16),
-      ),
-    );
-  }
-}
-
-class SettingsBlock extends StatelessWidget {
-  final String title;
-  final List<Widget> settings;
-
-  const SettingsBlock({super.key, required this.title, required this.settings});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.all(8),
-      child: Column(
-        children: [
-          InfoHeader(info: Info(label: title)),
-          Card(
-            color: context.colorScheme.surfaceContainer,
-            clipBehavior: Clip.antiAlias,
-            child: Column(children: settings),
-          ),
-        ],
       ),
     );
   }

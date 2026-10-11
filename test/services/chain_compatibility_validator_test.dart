@@ -53,41 +53,40 @@ void main() {
     });
 
     test(
-      '6. UDP conditional -> UDP required (VLESS -> Hysteria2) -> Incompatible',
+      '6. UDP unknown -> UDP required (VLESS -> Hysteria2) -> not auto-rejected',
       () {
         final res = ChainCompatibilityValidator.validateEdge(
           p('vless'),
           p('hysteria2'),
         );
-        expect(res.compatible, isFalse);
-        expect(res.reason, 'ENTRY_UDP_CAPABILITY_UNKNOWN');
-        expect(res.blockingProtocol, 'vless');
+        // P1.2: `unknown` = insufficient evidence, NOT `unsupported`. It must
+        // not be a hard reject — runtime health / probe decides behaviour.
+        expect(res.compatible, isTrue);
+        expect(res.reason, isNot('ENTRY_UDP_CAPABILITY_UNKNOWN'));
       },
     );
 
     test(
-      '7. UDP conditional -> UDP required (VMess -> TUIC) -> Incompatible',
+      '7. UDP unknown -> UDP required (VMess -> TUIC) -> not auto-rejected',
       () {
         final res = ChainCompatibilityValidator.validateEdge(
           p('vmess'),
           p('tuic'),
         );
-        expect(res.compatible, isFalse);
-        expect(res.reason, 'ENTRY_UDP_CAPABILITY_UNKNOWN');
-        expect(res.blockingProtocol, 'vmess');
+        expect(res.compatible, isTrue);
+        expect(res.reason, isNot('ENTRY_UDP_CAPABILITY_UNKNOWN'));
       },
     );
 
     test(
-      '8. Unknown -> UDP required (unknown_proxy -> WireGuard) -> Incompatible',
+      '8. UDP unknown -> UDP required (unknown_proxy -> WireGuard) -> not auto-rejected',
       () {
         final res = ChainCompatibilityValidator.validateEdge(
           p('unknown_proxy'),
           p('wireguard'),
         );
-        expect(res.compatible, isFalse);
-        expect(res.reason, 'ENTRY_UDP_CAPABILITY_UNKNOWN');
-        expect(res.blockingProtocol, 'unknown_proxy');
+        expect(res.compatible, isTrue);
+        expect(res.reason, isNot('ENTRY_UDP_CAPABILITY_UNKNOWN'));
       },
     );
 

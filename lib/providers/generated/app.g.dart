@@ -92,7 +92,7 @@ final class LogsProvider extends $NotifierProvider<Logs, FixedList<Log>> {
   }
 }
 
-String _$logsHash() => r'8a29db395e07246d5e825b4f7f3de6025cbc4bac';
+String _$logsHash() => r'a48078e47a9ea398684a6e3208502e38a082339e';
 
 abstract class _$Logs extends $Notifier<FixedList<Log>> {
   FixedList<Log> build();
@@ -144,7 +144,7 @@ final class RequestsProvider
   }
 }
 
-String _$requestsHash() => r'571bd35e2f40137b64cb903e059c0bf7583dbcf5';
+String _$requestsHash() => r'aa96444ea6fb8b4f6e0d87b80b410dc50d1d45e2';
 
 abstract class _$Requests extends $Notifier<FixedList<TrackerInfo>> {
   FixedList<TrackerInfo> build();
@@ -701,47 +701,6 @@ final class IsMobileViewProvider extends $FunctionalProvider<bool, bool, bool>
 
 String _$isMobileViewHash() => r'110d5cbf01a55981c95a434c796600757118ec79';
 
-@ProviderFor(viewHeight)
-final viewHeightProvider = ViewHeightProvider._();
-
-final class ViewHeightProvider
-    extends $FunctionalProvider<double, double, double>
-    with $Provider<double> {
-  ViewHeightProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'viewHeightProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$viewHeightHash();
-
-  @$internal
-  @override
-  $ProviderElement<double> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
-
-  @override
-  double create(Ref ref) {
-    return viewHeight(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(double value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<double>(value),
-    );
-  }
-}
-
-String _$viewHeightHash() => r'410aee5b41388226ab16737f0e85a56f7e9fe801';
-
 @ProviderFor(Init)
 final initProvider = InitProvider._();
 
@@ -1196,60 +1155,6 @@ abstract class _$DelayDataSource extends $Notifier<DelayMap> {
             as $ClassProviderElement<
               AnyNotifier<DelayMap, DelayMap>,
               DelayMap,
-              Object?,
-              Object?
-            >;
-    return element.handleCreate(ref, build);
-  }
-}
-
-@ProviderFor(SystemUiOverlayStyleState)
-final systemUiOverlayStyleStateProvider = SystemUiOverlayStyleStateProvider._();
-
-final class SystemUiOverlayStyleStateProvider
-    extends $NotifierProvider<SystemUiOverlayStyleState, SystemUiOverlayStyle> {
-  SystemUiOverlayStyleStateProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'systemUiOverlayStyleStateProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$systemUiOverlayStyleStateHash();
-
-  @$internal
-  @override
-  SystemUiOverlayStyleState create() => SystemUiOverlayStyleState();
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(SystemUiOverlayStyle value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<SystemUiOverlayStyle>(value),
-    );
-  }
-}
-
-String _$systemUiOverlayStyleStateHash() =>
-    r'4420d92227ae617ce685c8943dda64f29f57d5d1';
-
-abstract class _$SystemUiOverlayStyleState
-    extends $Notifier<SystemUiOverlayStyle> {
-  SystemUiOverlayStyle build();
-  @$mustCallSuper
-  @override
-  WhenComplete runBuild() {
-    final ref = this.ref as $Ref<SystemUiOverlayStyle, SystemUiOverlayStyle>;
-    final element =
-        ref.element
-            as $ClassProviderElement<
-              AnyNotifier<SystemUiOverlayStyle, SystemUiOverlayStyle>,
-              SystemUiOverlayStyle,
               Object?,
               Object?
             >;

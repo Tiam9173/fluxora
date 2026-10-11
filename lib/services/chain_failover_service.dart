@@ -1,4 +1,5 @@
 import '../models/chain_reliability_stats.dart';
+import '../common/common.dart';
 import '../services/network_fingerprint_provider.dart';
 import '../models/protocol_capability.dart';
 
@@ -9,6 +10,8 @@ import 'dart:math' as math;
 import 'package:dio/dio.dart';
 
 import 'package:fluxora/models/chain_fallback_pool.dart';
+
+import 'package:fluxora/models/latency_state.dart';
 
 import 'package:fluxora/models/chain_failover.dart';
 
@@ -211,6 +214,20 @@ class ChainFailoverService implements IChainFailoverService {
 
     ChainProbeReport? initialFailureReport,
   }) async {
+    // Yield once before doing any work.
+    //
+    // The early-exit paths below (disabled chain / already-cancelled token /
+    // no eligible candidate / dampened) are fully synchronous, so without this
+    // yield an entire failover session could finish *inside* the
+    // `triggerAutoFailover(...)` call — the caller would never observe the
+    // session as in-flight (`isFailingOver == true`), the UI could never show
+    // progress, and a `cancelFailover()` issued right after the trigger would
+    // race an already-finished session. Yielding makes the session start
+    // asynchronously, which is the contract callers and the UI rely on. The
+    // bound `cancelToken` above is unaffected, so an immediate cancel still
+    // wins (checked first, below).
+    await Future<void>.value();
+
     // 0. 妫€鏌ユ槸鍚﹀紑鍚摼寮忎唬鐞嗭細鍏ㄥ眬鍏抽棴鐘舵€佷笅绂佹鎵ц Failover
 
     if (!currentConfig.enable) {
@@ -225,7 +242,7 @@ class ChainFailoverService implements IChainFailoverService {
       return ChainFailoverResult.cancelled(
         originalConfig: currentConfig,
 
-        reason: cancelToken?.cancelError?.message ?? '鎵ц鍓嶅凡鍙栨秷',
+        reason: cancelToken?.cancelError?.message ?? '执行前已取消',
       );
     }
 
@@ -238,7 +255,7 @@ class ChainFailoverService implements IChainFailoverService {
         ChainFailoverProgress(
           state: ChainFailoverState.retrying,
 
-          message: '鍘熼摼璺娴嬪紓甯革紝姝ｅ湪鎵ц鏈夐檺閲嶈瘯...',
+          message: '原链路检测异常，正在执行有限重试...',
 
           timestamp: DateTime.now(),
         ),
@@ -256,7 +273,7 @@ class ChainFailoverService implements IChainFailoverService {
         return ChainFailoverResult.cancelled(
           originalConfig: currentConfig,
 
-          reason: '閲嶈瘯闃舵宸茶鍙栨秷',
+          reason: '重试阶段已被取消',
         );
       }
     }
@@ -273,7 +290,7 @@ class ChainFailoverService implements IChainFailoverService {
         ChainFailoverProgress(
           state: ChainFailoverState.failoverSuccess,
 
-          message: '鍘熼摼璺噸璇曞悗鎭㈠姝ｅ父锛屾棤闇€鍒囨崲澶囩敤鑺傜偣',
+          message: '原链路重试后恢复正常，无需切换备用节点',
 
           lastReport: lastReport,
 
@@ -292,7 +309,7 @@ class ChainFailoverService implements IChainFailoverService {
       return ChainFailoverResult.cancelled(
         originalConfig: currentConfig,
 
-        reason: 'garbled',
+        reason: '故障转移在抖动抑制检查前被取消',
       );
     }
 
@@ -304,7 +321,7 @@ class ChainFailoverService implements IChainFailoverService {
       final verdict = activeDampener.evaluate(policy: policy.flapPolicy);
 
       if (verdict.isDampened) {
-        final reason = verdict.reason ?? '瑙﹀彂楂橀閾捐矾鎶栧姩鎶戝埗淇濇姢';
+        final reason = verdict.reason ?? '触发高频链路抖动抑制保护';
 
         onProgress?.call(
           ChainFailoverProgress(
@@ -358,7 +375,7 @@ class ChainFailoverService implements IChainFailoverService {
 
         role: role,
 
-        message: '鍘熼摼璺噸璇曡€楀敖锛屾鍦ㄤ紭閫?[${role.label}] 澶囩敤鍊欓€夎妭鐐?..',
+        message: '原链路重试耗尽，正在优选 [${role.label}] 备用候选节点...',
 
         lastReport: lastReport,
 
@@ -383,6 +400,18 @@ class ChainFailoverService implements IChainFailoverService {
     final rawCandidateList = selectionResult.rankedCandidates;
 
     if (rawCandidateList.isEmpty) {
+      // A failover that cannot even pick a candidate is worth a diagnostic:
+      // it means every pool entry was rejected (disabled / missing from the
+      // available-node list / cooldown / topology conflict / …). The
+      // `explanation` names the exclusion reasons.
+      commonPrint.log(
+        'ChainFailoverService: no eligible [$role] candidate '
+        '(hopMode=${currentConfig.hopMode}, '
+        'hop1=${currentConfig.effectiveHop1}, '
+        'hop2=${currentConfig.hop2Node}, '
+        'availableProxyNames=$availableProxyNames): '
+        '${selectionResult.explanation}',
+      );
       onProgress?.call(
         ChainFailoverProgress(
           state: ChainFailoverState.failoverFailed,
@@ -390,7 +419,7 @@ class ChainFailoverService implements IChainFailoverService {
           role: role,
 
           message:
-              '鏈壘鍒板彲鐢ㄧ殑 [${role.label}] 澶囩敤鍊欓€夎妭鐐?(${selectionResult.explanation})',
+              '未找到可用的 [${role.label}] 备用候选节点 (${selectionResult.explanation})',
 
           lastReport: lastReport,
 
@@ -417,7 +446,7 @@ class ChainFailoverService implements IChainFailoverService {
       return ChainFailoverResult.cancelled(
         originalConfig: currentConfig,
 
-        reason: '鍊欓€変紭閫夊悗宸茶鍙栨秷',
+        reason: '候选优选后已被取消',
       );
     }
 
@@ -451,7 +480,7 @@ class ChainFailoverService implements IChainFailoverService {
 
           attemptedNodeNames: List.unmodifiable(attemptedNames),
 
-          reason: '灏濊瘯鍊欓€夎妭鐐瑰墠宸茶鍙栨秷',
+          reason: '尝试候选节点前已被取消',
         );
       }
 
@@ -489,7 +518,7 @@ class ChainFailoverService implements IChainFailoverService {
 
           totalCandidates: maxToTry,
 
-          message: '姝ｅ湪鏋勫缓鍊欓€夐摼璺嫇鎵?[$candidateName] (${i + 1}/$maxToTry)...',
+          message: '正在构建候选链路拓扑 [$candidateName] (${i + 1}/$maxToTry)...',
 
           timestamp: DateTime.now(),
         ),
@@ -529,7 +558,7 @@ class ChainFailoverService implements IChainFailoverService {
 
           totalCandidates: maxToTry,
 
-          message: '姝ｅ湪鏍￠獙鍊欓€夐摼璺嫇鎵?[$candidateName]...',
+          message: '正在校验候选链路拓扑 [$candidateName]...',
 
           timestamp: DateTime.now(),
         ),
@@ -581,7 +610,7 @@ class ChainFailoverService implements IChainFailoverService {
 
           attemptedNodeNames: List.unmodifiable(attemptedNames),
 
-          reason: '搴旂敤鍊欓€夊墠宸茶鍙栨秷',
+          reason: '应用候选前已被取消',
         );
       }
 
@@ -602,7 +631,7 @@ class ChainFailoverService implements IChainFailoverService {
 
             totalCandidates: maxToTry,
 
-            message: '姝ｅ湪鐑噸杞藉€欓€夐厤缃?[$candidateName]...',
+            message: '正在热重载候选配置 [$candidateName]...',
 
             timestamp: DateTime.now(),
           ),
@@ -633,7 +662,28 @@ class ChainFailoverService implements IChainFailoverService {
         if (executor != null) {
           try {
             await executor.rollbackToOriginal(currentConfig, cancelToken);
-          } catch (_) {}
+          } catch (rollbackErr) {
+            // P2.6-B: a failed cleanup rollback must never be swallowed — it is
+            // a rollback failure, not a plain apply failure.
+            onProgress?.call(
+              ChainFailoverProgress(
+                state: ChainFailoverState.rollbackFailed,
+                role: role,
+                candidateNodeName: candidateName,
+                message: '回滚原链路严重失败: $rollbackErr',
+                failureReason: 'ROLLBACK_EXCEPTION',
+                timestamp: DateTime.now(),
+              ),
+            );
+            return ChainFailoverResult.rollbackFailed(
+              originalConfig: currentConfig,
+              attemptedCandidatesCount: attemptedNames.length,
+              attemptedNodeNames: List.unmodifiable(attemptedNames),
+              rollbackError: rollbackErr.toString(),
+              rootCause:
+                  '候选节点 [$candidateName] 失败且回滚原配置遭遇异常: $rollbackErr',
+            );
+          }
         }
 
         currentPool = _updateCandidateStats(
@@ -661,7 +711,28 @@ class ChainFailoverService implements IChainFailoverService {
         if (candidateApplied && executor != null) {
           try {
             await executor.rollbackToOriginal(currentConfig, null);
-          } catch (_) {}
+          } catch (rollbackErr) {
+            // P2.6-B: cancelled after apply + failed rollback → the rollback
+            // failure wins; never report a clean cancellation.
+            onProgress?.call(
+              ChainFailoverProgress(
+                state: ChainFailoverState.rollbackFailed,
+                role: role,
+                candidateNodeName: candidateName,
+                message: '回滚原链路严重失败: $rollbackErr',
+                failureReason: 'ROLLBACK_EXCEPTION',
+                timestamp: DateTime.now(),
+              ),
+            );
+            return ChainFailoverResult.rollbackFailed(
+              originalConfig: currentConfig,
+              attemptedCandidatesCount: attemptedNames.length,
+              attemptedNodeNames: List.unmodifiable(attemptedNames),
+              rollbackError: rollbackErr.toString(),
+              rootCause:
+                  '候选节点 [$candidateName] 失败且回滚原配置遭遇异常: $rollbackErr',
+            );
+          }
         }
 
         return ChainFailoverResult.cancelled(
@@ -671,7 +742,7 @@ class ChainFailoverService implements IChainFailoverService {
 
           attemptedNodeNames: List.unmodifiable(attemptedNames),
 
-          reason: 'garbled',
+          reason: '候选应用后、探测前被取消',
         );
       }
 
@@ -689,7 +760,7 @@ class ChainFailoverService implements IChainFailoverService {
 
           totalCandidates: maxToTry,
 
-          message: '姝ｅ湪楠岃瘉鏂板€欓€夐摼璺?[$candidateName]...',
+          message: '正在验证新候选链路 [$candidateName]...',
 
           timestamp: DateTime.now(),
         ),
@@ -724,7 +795,7 @@ class ChainFailoverService implements IChainFailoverService {
 
           errorCode: ChainProbeErrorCodes.unknown,
 
-          rootCauseAnalysis: '鍊欓€夋帰娴嬫墽琛屽紓甯? $probeErr',
+          rootCauseAnalysis: '候选探测执行异常: $probeErr',
 
           timestamp: DateTime.now(),
         );
@@ -736,7 +807,29 @@ class ChainFailoverService implements IChainFailoverService {
         if (executor != null) {
           try {
             await executor.rollbackToOriginal(currentConfig, null);
-          } catch (_) {}
+          } catch (rollbackErr) {
+            // P2.6-B: cancelled during probe + failed rollback → the rollback
+            // failure wins; never report a clean cancellation.
+            onProgress?.call(
+              ChainFailoverProgress(
+                state: ChainFailoverState.rollbackFailed,
+                role: role,
+                candidateNodeName: candidateName,
+                message: '回滚原链路严重失败: $rollbackErr',
+                failureReason: 'ROLLBACK_EXCEPTION',
+                timestamp: DateTime.now(),
+              ),
+            );
+            return ChainFailoverResult.rollbackFailed(
+              originalConfig: currentConfig,
+              attemptedCandidatesCount: attemptedNames.length,
+              attemptedNodeNames: List.unmodifiable(attemptedNames),
+              rollbackError: rollbackErr.toString(),
+              lastProbeReport: candidateReport,
+              rootCause:
+                  '候选节点 [$candidateName] 失败且回滚原配置遭遇异常: $rollbackErr',
+            );
+          }
         }
 
         return ChainFailoverResult.cancelled(
@@ -746,7 +839,7 @@ class ChainFailoverService implements IChainFailoverService {
 
           attemptedNodeNames: List.unmodifiable(attemptedNames),
 
-          reason: 'garbled',
+          reason: '候选探测期间被取消',
         );
       }
 
@@ -772,7 +865,7 @@ class ChainFailoverService implements IChainFailoverService {
 
             totalCandidates: maxToTry,
 
-            message: '鍊欓€夎妭鐐?[$candidateName] 楠岃瘉閫氳繃锛屾鍦ㄦ彁浜ゆ晠闅滆浆绉?..',
+            message: '候选节点 [$candidateName] 验证通过，正在提交故障转移...',
 
             lastReport: candidateReport,
 
@@ -783,7 +876,30 @@ class ChainFailoverService implements IChainFailoverService {
         // 鎻愪氦閰嶇疆涓庢寔涔呭寲
 
         if (executor != null) {
-          await executor.commitSuccess(candidateConfig);
+          try {
+            await executor.commitSuccess(candidateConfig);
+          } catch (commitErr) {
+            // P2.6-B (E-2): a switch that was never persisted must not be
+            // reported as a success. Roll the runtime back to the original
+            // chain (best-effort) and surface a `failed` result whose
+            // rootCause carries 'Commit'. The exception must not escape as an
+            // unhandled async error.
+            if (executor != null) {
+              try {
+                await executor.rollbackToOriginal(currentConfig, null);
+              } catch (_) {
+                // The commit failure is the primary cause; a failed cleanup
+                // rollback must not mask it.
+              }
+            }
+            return ChainFailoverResult.failed(
+              originalConfig: currentConfig,
+              attemptedCandidatesCount: attemptedNames.length,
+              attemptedNodeNames: List.unmodifiable(attemptedNames),
+              lastProbeReport: candidateReport,
+              rootCause: 'Commit persistence failed: $commitErr',
+            );
+          }
         }
 
         // 璁板綍鎶栧姩鍒囨祦浜嬩欢 (Phase 3.2-D)
@@ -815,6 +931,17 @@ class ChainFailoverService implements IChainFailoverService {
 
         // 鏇存柊澶囩敤姹犳垚鍔熺粺璁?
 
+        // P1.3-C4-Step3: attach the candidate's OWN hop latency (node scope).
+        // No matching hop ⇒ no per-node evidence for this attempt ⇒ the
+        // node-scope observation is left untouched (never guessed).
+        HopProbeState? matchedHop;
+        for (final h in candidateReport.hops) {
+          if (h.nodeName == candidateName) {
+            matchedHop = h;
+            break;
+          }
+        }
+
         currentPool = _updateCandidateStats(
           pool: currentPool,
 
@@ -827,6 +954,10 @@ class ChainFailoverService implements IChainFailoverService {
           health: candidateReport.healthStatus,
 
           latencyMs: candidateReport.totalChainLatencyMs,
+
+          nodeLatencyMs: matchedHop?.latencyMs,
+
+          nodeTestedAt: matchedHop?.testedAt,
 
           cooldownDuration: policy.fallbackPolicy.cooldownDuration,
         );
@@ -841,7 +972,7 @@ class ChainFailoverService implements IChainFailoverService {
 
             role: role.name,
 
-            message: '鏁呴殰杞Щ鎴愬姛锛屽凡骞虫粦鍒囨崲鑷?[$candidateName]',
+            message: '故障转移成功，已平滑切换至 [$candidateName]',
 
             metadata: {
               'attemptedCandidatesCount': attemptedNames.length,
@@ -863,7 +994,7 @@ class ChainFailoverService implements IChainFailoverService {
 
             totalCandidates: maxToTry,
 
-            message: '鏁呴殰杞Щ鎴愬姛锛屽凡骞虫粦鍒囨崲鑷?[$candidateName]',
+            message: '故障转移成功，已平滑切换至 [$candidateName]',
 
             lastReport: candidateReport,
 
@@ -900,7 +1031,7 @@ class ChainFailoverService implements IChainFailoverService {
             totalCandidates: maxToTry,
 
             message:
-                '鍊欓€夎妭鐐?[$candidateName] 楠岃瘉鏈€氳繃 (${candidateReport.rootCauseAnalysis ?? "杩炴帴瓒呮椂"})锛屾鍦ㄥ洖婊?..',
+                '候选节点 [$candidateName] 验证未通过 (${candidateReport.rootCauseAnalysis ?? "连接超时"})，正在回滚...',
 
             lastReport: candidateReport,
 
@@ -922,7 +1053,7 @@ class ChainFailoverService implements IChainFailoverService {
 
             totalCandidates: maxToTry,
 
-            message: '姝ｅ湪鍥炴粴鍘熼摼璺厤缃?..',
+            message: '正在回滚原链路配置...',
 
             timestamp: DateTime.now(),
           ),
@@ -958,7 +1089,7 @@ class ChainFailoverService implements IChainFailoverService {
 
                 candidateNodeName: candidateName,
 
-                message: '鍥炴粴鍘熼摼璺弗閲嶅け璐? $rollbackErr',
+                message: '回滚原链路严重失败: $rollbackErr',
 
                 failureReason: 'ROLLBACK_EXCEPTION',
 
@@ -978,7 +1109,7 @@ class ChainFailoverService implements IChainFailoverService {
               lastProbeReport: candidateReport,
 
               rootCause:
-                  '鍊欓€夎妭鐐?[$candidateName] 澶辫触涓斿洖婊氬師閰嶇疆閬亣寮傚父: $rollbackErr',
+                  '候选节点 [$candidateName] 失败且回滚原配置遭遇异常: $rollbackErr',
             );
           }
         }
@@ -1013,7 +1144,7 @@ class ChainFailoverService implements IChainFailoverService {
 
         role: role,
 
-        message: '鎵€鏈夊鐢ㄥ€欓€夎妭鐐瑰潎灏濊瘯瀹屾瘯涓斾笉鍙敤锛屾晠闅滆浆绉诲け璐',
+        message: '所有备用候选节点均尝试完毕且不可用，故障转移失败',
 
         lastReport: lastReport,
 
@@ -1051,6 +1182,12 @@ class ChainFailoverService implements IChainFailoverService {
 
     int? latencyMs,
 
+    // P1.3-C4-Step3: the candidate's OWN hop latency, when the probe report
+    // contained that hop. `null` means "no per-node evidence for this attempt"
+    // — the node-scope observation is then left untouched (never guessed).
+    int? nodeLatencyMs,
+    DateTime? nodeTestedAt,
+
     required Duration cooldownDuration,
   }) {
     List<ChainFallbackCandidate> updateList(List<ChainFallbackCandidate> list) {
@@ -1065,7 +1202,7 @@ class ChainFailoverService implements IChainFailoverService {
           final updatedStats = currentStats.recordEvent(
             isSuccess: isSuccess,
             now: DateTime.now(),
-            lambda: 0.0288,
+            lambda: ChainReliabilityStats.decayLambda,
           );
 
           final newStatsByContext = Map<String, ChainReliabilityStats>.from(
@@ -1073,10 +1210,36 @@ class ChainFailoverService implements IChainFailoverService {
           );
           newStatsByContext[fingerprint] = updatedStats;
 
+          // P1.3-C4-Step3: record the observation together with its scope /
+          // source / network context. Read paths still use `latencyMs` (the
+          // compat shim below) — switching them is Step5, so this step changes
+          // **no** behaviour. An absent hop leaves the node-scope observation
+          // untouched rather than guessing one.
+          final chainLatency = latencyMs == null
+              ? c.chainLatency
+              : LatencyState(
+                  latencyMs: latencyMs,
+                  scope: LatencyScope.chain,
+                  source: LatencySource.failover,
+                  testedAt: DateTime.now(),
+                  fingerprint: fingerprint,
+                );
+          final nodeLatency = (nodeLatencyMs == null || nodeTestedAt == null)
+              ? c.nodeLatency
+              : LatencyState(
+                  latencyMs: nodeLatencyMs,
+                  scope: LatencyScope.node,
+                  source: LatencySource.failover,
+                  testedAt: nodeTestedAt,
+                  fingerprint: fingerprint,
+                );
+
           return c.copyWith(
             health: health,
             latencyMs: latencyMs ?? c.latencyMs,
             lastChecked: DateTime.now(),
+            nodeLatency: nodeLatency,
+            chainLatency: chainLatency,
             statsByContext: newStatsByContext,
             cooldownUntil: !isSuccess
                 ? DateTime.now().add(cooldownDuration)

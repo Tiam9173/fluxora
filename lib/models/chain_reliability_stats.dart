@@ -3,6 +3,11 @@ import 'package:flutter/foundation.dart';
 
 @immutable
 class ChainReliabilityStats {
+  /// Shared decay constant for every production writer (≈ 24 h half-life,
+  /// `ln(2)/24`). Kept here so the probe write-back and the failover write-back
+  /// cannot drift into two differently-decayed histories for the same node.
+  static const double decayLambda = 0.0288;
+
   final double weightedSuccess;
   final double weightedFailure;
   final int consecutiveFailures;
@@ -81,6 +86,40 @@ class ChainReliabilityStats {
       lastUpdated: lastUpdated ?? this.lastUpdated,
       totalSamples: totalSamples ?? this.totalSamples,
       networkFingerprint: networkFingerprint ?? this.networkFingerprint,
+    );
+  }
+
+  /// P2.1: durable form of a single reliability sample aggregate.
+  ///
+  /// Only the long-lived counters are written — no transient runtime state.
+  Map<String, dynamic> toJson() => {
+    'weightedSuccess': weightedSuccess,
+    'weightedFailure': weightedFailure,
+    'consecutiveFailures': consecutiveFailures,
+    'totalSamples': totalSamples,
+    'lastUpdated': lastUpdated.toIso8601String(),
+    'networkFingerprint': networkFingerprint,
+  };
+
+  /// P2.1: tolerant decode — missing / wrongly-typed fields fall back to safe
+  /// defaults instead of throwing, so a partially corrupt file can never block
+  /// application startup.
+  factory ChainReliabilityStats.fromJson(
+    Map<dynamic, dynamic> json, {
+    String? fallbackFingerprint,
+  }) {
+    return ChainReliabilityStats(
+      weightedSuccess: (json['weightedSuccess'] as num?)?.toDouble() ?? 0.0,
+      weightedFailure: (json['weightedFailure'] as num?)?.toDouble() ?? 0.0,
+      consecutiveFailures: (json['consecutiveFailures'] as num?)?.toInt() ?? 0,
+      lastUpdated:
+          DateTime.tryParse(json['lastUpdated']?.toString() ?? '') ??
+          DateTime.now(),
+      totalSamples: (json['totalSamples'] as num?)?.toInt() ?? 0,
+      networkFingerprint:
+          json['networkFingerprint']?.toString() ??
+          fallbackFingerprint ??
+          '',
     );
   }
 }

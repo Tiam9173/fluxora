@@ -95,6 +95,11 @@ class GlobalState {
 
   bool get isStart => startTime != null && startTime!.isBeforeNow;
 
+  /// Whether [appController] has been bound. Production binds it once in
+  /// `application.dart`; unit tests that never boot the app must not be forced
+  /// to construct an [AppController] just to read global state.
+  bool get hasAppController => _appController != null;
+
   AppController get appController => _appController!;
 
   set appController(AppController appController) {
@@ -286,6 +291,9 @@ class GlobalState {
     _syncVpnState();
   }
 
+  @visibleForTesting
+  Future<void> testSyncVpnState() => _syncVpnState();
+
   Future<void> _syncVpnState() async {
     if (!system.isAndroid) return;
     try {
@@ -372,7 +380,14 @@ class GlobalState {
     await startUpdateTasks(tasks);
   }
 
+  @visibleForTesting
+  DateTime? testStartTimeOverride;
+
   Future updateStartTime() async {
+    if (testStartTimeOverride != null) {
+      startTime = testStartTimeOverride;
+      return;
+    }
     startTime = await clashLib?.getRunTime();
   }
 
