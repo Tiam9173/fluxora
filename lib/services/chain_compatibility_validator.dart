@@ -42,8 +42,11 @@ class ChainCompatibilityValidator {
     final requiresUdp = _requiresUdp(exitProfile.protocol);
 
     if (requiresUdp) {
-      if (entryProfile.udpCapability == CapabilityStatus.verifiedUnsupported) {
-        if (entryProfile.evidence == CapabilityEvidenceType.runtimeRejected) {
+      // P1.2-F: the gate must read the **UDP** dimension. Reading a
+      // profile-level evidence used to let a TCP/TLS rejection block a node's
+      // UDP eligibility.
+      if (entryProfile.udp.status == CapabilityStatus.verifiedUnsupported) {
+        if (entryProfile.udp.evidence == CapabilityEvidenceType.runtimeRejected) {
           return CompatibilityResult.incompatible(
             reason: 'ENTRY_UDP_RUNTIME_REJECTED',
             requiredTransport: 'UDP',
@@ -55,18 +58,9 @@ class ChainCompatibilityValidator {
           requiredTransport: 'UDP',
           blockingProtocol: entryProfile.protocol,
         );
-      } else if (entryProfile.udpCapability !=
-              CapabilityStatus.verifiedSupported ||
-          entryProfile.evidence == CapabilityEvidenceType.expired) {
-        if (entryProfile.evidence == CapabilityEvidenceType.expired) {
-          return CompatibilityResult.incompatible(
-            reason: 'ENTRY_UDP_CAPABILITY_EXPIRED',
-            requiredTransport: 'UDP',
-            blockingProtocol: entryProfile.protocol,
-          );
-        }
+      } else if (entryProfile.udp.evidence == CapabilityEvidenceType.expired) {
         return CompatibilityResult.incompatible(
-          reason: 'ENTRY_UDP_CAPABILITY_UNKNOWN',
+          reason: 'ENTRY_UDP_CAPABILITY_EXPIRED',
           requiredTransport: 'UDP',
           blockingProtocol: entryProfile.protocol,
         );

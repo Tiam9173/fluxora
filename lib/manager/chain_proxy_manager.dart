@@ -1,14 +1,17 @@
+import 'package:fluxora/models/protocol_capability.dart';
+import 'package:fluxora/models/chain_fallback_pool.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'package:dio/dio.dart';
-import 'package:fluxora/models/chain_fallback_pool.dart';
 import 'package:fluxora/models/chain_failover.dart';
 import 'package:fluxora/models/chain_flap_dampening.dart';
 import 'package:fluxora/models/chain_recovery.dart';
 import 'package:fluxora/models/chain_support_package.dart';
 import 'package:fluxora/models/chain_telemetry.dart';
 import 'package:fluxora/services/services.dart';
+import 'package:fluxora/services/chain_support_package_service.dart';
+import 'package:fluxora/services/chain_diagnostic_export_service.dart';
 
 
 import 'package:fluxora/clash/core.dart';
@@ -18,9 +21,54 @@ import 'package:fluxora/models/chain_proxy.dart';
 import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
 import 'package:flutter/foundation.dart';
+
+import 'package:fluxora/services/chain_reliability_stats_persistence.dart';
+import 'package:fluxora/services/network_fingerprint_provider.dart';
+import 'package:fluxora/services/core_health_service.dart';
+import 'package:fluxora/services/atomic_config_storage.dart';
+import 'package:fluxora/services/persistence_schema.dart';
+import 'package:fluxora/models/chain_reliability_stats.dart';
+import 'package:fluxora/services/chain_capability_probe_service.dart';
+import 'package:fluxora/services/chain_probe_service.dart';
+import 'package:fluxora/services/chain_capability_service.dart';
+
+import 'package:fluxora/models/protocol_capability.dart';
+import 'dart:async';
 import 'package:path/path.dart' as p;
 
+@visibleForTesting
 class ChainProxyManager extends ChangeNotifier {
+
+  static Duration autoHealthCheckInterval = const Duration(minutes: 1);
+  static const capabilityProbeTimeout = Duration(seconds: 10);
+  static bool? coreRunningOverride;
+
+  @visibleForTesting
+  static Future<ChainProbeReport> Function(ChainProxyConfig)? chainProbeOverride;
+  @visibleForTesting
+  static IChainFailoverExecutor Function(IChainFailoverExecutor)? failoverExecutorWrapper;
+
+  /// Test-only seam overriding the runtime config reload performed by
+  /// [_reloadRuntimeConfig] (the failover executor's apply / rollback path).
+  /// Production never sets it; it lets tests drive the reload's success or
+  /// failure without a live Mihomo core.
+  @visibleForTesting
+  static Future<void> Function()? coreConfigReloadOverride;
+  
+  bool get isAutoHealthCheckRunning => _chainHealthTimer != null && _chainHealthTimer!.isActive;
+  int get consecutiveHealthCheckFailures => _consecutiveHealthCheckFailures;
+
+  /// P1.5-A: the auto-failover skip diagnosis currently in effect
+  /// (`null` = auto failover is not being skipped).
+  ///
+  /// The 1-minute health-check loop evaluates the gate on **every** tick, so the
+  /// diagnosis is re-logged only when it **changes** — see
+  /// [_reportAutoFailoverSkip]. Read-only: tests assert the state here, while
+  /// `debugPrint` counting proves how often it was actually emitted.
+  @visibleForTesting
+  String? get autoFailoverSkipDiagnosis => _lastAutoFailoverSkipDiagnosis;
+
+  
   static ChainProxyManager? _instance;
   ChainProxyConfig _config = const ChainProxyConfig();
   bool _initialized = false;
@@ -76,8 +124,76 @@ class ChainProxyManager extends ChangeNotifier {
   }
 
   Future<String> _getConfigFilePath() async {
+    final override = configFilePathOverride;
+    if (override != null) return override;
     final homeDir = await appPath.homeDirPath;
     return p.join(homeDir, 'chain_proxies.json');
+  }
+
+  /// Absolute path of the persisted fallback pool configuration.
+  Future<String> _getFallbackPoolFilePath() async {
+    final override = fallbackPoolFilePathOverride;
+    if (override != null) return override;
+    final homeDir = await appPath.homeDirPath;
+    return p.join(homeDir, 'chain_fallback_pool.json');
+  }
+
+  /// Absolute path of the persisted reliability-stats file, or `null` when it
+  /// must not be touched (unit tests without an explicit override).
+  Future<String?> _getReliabilityStatsFilePath() async {
+    final override = reliabilityStatsFilePathOverride;
+    if (override != null) return override;
+    if (Platform.environment.containsKey('FLUTTER_TEST')) return null;
+    final homeDir = await appPath.homeDirPath;
+    return p.join(homeDir, 'chain_reliability_stats.json');
+  }
+
+  /// Applies restored reliability statistics onto the pool's **existing**
+  /// candidates only (role → nodeName must match). Nodes present in the stats
+  /// file but absent from the pool are ignored, so a stale entry can never
+  /// resurrect a removed candidate.
+  ChainFallbackPool _applyRestoredReliabilityStats(
+    ChainFallbackPool pool,
+    Map<FallbackCandidateRole, Map<String, Map<String, ChainReliabilityStats>>>
+    byRole,
+  ) {
+    List<ChainFallbackCandidate> apply(
+      List<ChainFallbackCandidate> candidates,
+      FallbackCandidateRole role,
+    ) {
+      final byNode = byRole[role];
+      if (byNode == null || byNode.isEmpty) return candidates;
+      return <ChainFallbackCandidate>[
+        for (final c in candidates)
+          byNode.containsKey(c.nodeName)
+              ? c.copyWith(statsByContext: byNode[c.nodeName]!)
+              : c,
+      ];
+    }
+
+    return pool.copyWith(
+      entryCandidates: apply(pool.entryCandidates, FallbackCandidateRole.entry),
+      relayCandidates: apply(pool.relayCandidates, FallbackCandidateRole.relay),
+      exitCandidates: apply(pool.exitCandidates, FallbackCandidateRole.exit),
+    );
+  }
+
+  /// Persists the fallback pool **configuration only**
+  /// (`nodeName` / `role` / `enabled` / `priority`).
+  ///
+  /// Runtime telemetry (`health` / `latencyMs` / `lastChecked` /
+  /// `statsByContext` / `cooldownUntil`) is RAM-only and is never written to
+  /// disk. Write failures propagate: a failed persist must never be mistaken
+  /// for a successful one.
+  Future<void> _saveFallbackPool() async {
+    final filePath = await _getFallbackPoolFilePath();
+    // P2.4-A: crash-safe atomic write (tmp → validate → .bak → rename), and the
+    // failure is allowed to propagate — a failed persist must never be mistaken
+    // for a successful one (P2.5-E).
+    await AtomicConfigStorage(filePath).save(<String, dynamic>{
+      ..._fallbackPool.toJson(),
+      PersistenceSchema.versionKey: PersistenceSchema.currentVersion,
+    });
   }
 
   void _telemetryListener() => notifyListeners();
@@ -85,8 +201,16 @@ class ChainProxyManager extends ChangeNotifier {
 
   @override
   void dispose() {
+    // P2.3-B (P-1): stop any in-flight runtime capability probe from writing
+    // back into now-invalid state. This only adds a guard — the existing
+    // teardown order/semantics are unchanged.
+    _disposed = true;
     _probeCancelToken?.cancel();
     _failoverCancelToken?.cancel();
+    stopChainHealthCheck();
+    _consecutiveHealthCheckFailures = 0;
+    _reliabilityPersistTimer?.cancel();
+    _reliabilityPersistTimer = null;
     chainTelemetryService.removeListener(_telemetryListener);
     chainFlapDampenerService.removeListener(_flapListener);
     super.dispose();
@@ -102,15 +226,14 @@ class ChainProxyManager extends ChangeNotifier {
 
     try {
       final filePath = await _getConfigFilePath();
-      final file = File(filePath);
-      if (await file.exists()) {
-        final content = await file.readAsString();
-        if (content.trim().isNotEmpty) {
-          final jsonMap = jsonDecode(content);
-          if (jsonMap is Map<String, dynamic>) {
-            _config = ChainProxyConfig.fromJson(jsonMap);
-          }
-        }
+      // P2.5-A: read through the shared atomic storage so a missing / corrupt
+      // primary recovers from `.bak` / orphan `.tmp`. P2.5-C: the schema
+      // predicate rejects an unsupported primary without clobbering it.
+      final jsonMap = await AtomicConfigStorage(filePath).load(
+        accept: PersistenceSchema.accepts,
+      );
+      if (jsonMap != null) {
+        _config = ChainProxyConfig.fromJson(jsonMap);
       }
     } catch (e) {
       commonPrint.log(
@@ -119,21 +242,96 @@ class ChainProxyManager extends ChangeNotifier {
     } finally {
       notifyListeners();
     }
+
+    // Restore the persisted fallback pool configuration so a curated pool
+    // survives a restart. Runtime telemetry is never restored from disk.
+    try {
+      final poolPath = await _getFallbackPoolFilePath();
+      final poolJson = await AtomicConfigStorage(poolPath).load(
+        accept: PersistenceSchema.accepts,
+      );
+      if (poolJson != null) {
+        _fallbackPool = ChainFallbackPool.fromJson(poolJson);
+      }
+    } catch (e) {
+      commonPrint.log(
+        'ChainProxyManager: Failed to load chain_fallback_pool.json: $e',
+      );
+    }
+
+    // Restore the durable reliability statistics (P2.1 / P2.5-A) and apply them
+    // **only** to candidates that already exist in the pool: a stats entry for a
+    // node that is no longer a candidate must never materialise a ghost node.
+    try {
+      final statsPath = await _getReliabilityStatsFilePath();
+      if (statsPath != null) {
+        final byRole = await const ChainReliabilityStatsPersistence().load(
+          statsPath,
+        );
+        if (byRole.isNotEmpty) {
+          _fallbackPool = _applyRestoredReliabilityStats(_fallbackPool, byRole);
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      commonPrint.log(
+        'ChainProxyManager: Failed to load chain_reliability_stats.json: $e',
+      );
+    }
+
+    // Build the initial per-node capability view from the active profile so
+    // adaptive ranking has real capability state from startup. Fire-and-forget:
+    // this reads the profile through the core, and must therefore never block
+    // or fail `init()`. The runtime probes are started by
+    // `refreshCapabilityProfiles` itself.
+    unawaited(refreshCapabilityProfiles());
   }
 
   Future<void> _saveConfig() async {
+    final filePath = await _getConfigFilePath();
+    // P2.4-A: crash-safe atomic write (tmp → validate → .bak → rename).
+    // P2.5-E: the failure propagates — a config that never landed must not be
+    // reported as a successful save (no false success).
+    await AtomicConfigStorage(filePath).save(<String, dynamic>{
+      ..._config.toJson(),
+      PersistenceSchema.versionKey: PersistenceSchema.currentVersion,
+    });
+  }
+
+  /// Applies the current [_config] to the running core.
+  ///
+  /// A reload failure must reach the caller instead of being swallowed —
+  /// otherwise a candidate that never actually applied would be treated as
+  /// applied (and could then be committed): a "false success". When no app has
+  /// booted (`globalState.appController` throws — unit tests and very early
+  /// startup) there is no runtime to reload, so this is a no-op rather than a
+  /// failure; once the app IS booted, any failure is logged **and rethrown**.
+  Future<void> _reloadRuntimeConfig() async {
     try {
-      final filePath = await _getConfigFilePath();
-      final file = File(filePath);
-      if (!await file.parent.exists()) {
-        await file.parent.create(recursive: true);
+      final override = coreConfigReloadOverride;
+      if (override != null) {
+        await override();
+        return;
       }
-      final jsonStr = const JsonEncoder.withIndent(
-        '  ',
-      ).convert(_config.toJson());
-      await file.writeAsString(jsonStr, flush: true);
-    } catch (e) {
-      commonPrint.log('ChainProxyManager: Failed to save config: $e');
+
+      dynamic appController;
+      try {
+        appController = globalState.appController;
+      } catch (_) {
+        return; // app not booted -> nothing to reload (not a failure)
+      }
+
+      await appController.setupClashConfig();
+      await appController.updateGroups();
+      // The core config was just (re)loaded — rebuild the capability view.
+      // `refreshCapabilityProfiles` is itself best-effort (it catches and logs
+      // internally), so it never turns into a reload failure.
+      await refreshCapabilityProfiles();
+    } catch (e, stackTrace) {
+      commonPrint.log(
+        'ChainProxyManager: core config reload failed: $e\n$stackTrace',
+      );
+      rethrow;
     }
   }
 
@@ -145,12 +343,11 @@ class ChainProxyManager extends ChangeNotifier {
     notifyListeners();
     await _saveConfig();
     if (reloadCore) {
-      try {
-        await globalState.appController.setupClashConfig();
-        await globalState.appController.updateGroups();
-      } catch (_) {
-        // Tolerate failures in test / non-running core contexts
-      }
+      // P2.4-C: a reload failure must reach the caller instead of being
+      // swallowed — otherwise a config that never actually applied would be
+      // treated as applied (a "false success"). `_reloadRuntimeConfig` is a
+      // no-op when the app has not booted, and rethrows real failures.
+      await _reloadRuntimeConfig();
       notifyListeners();
     }
   }
@@ -579,9 +776,43 @@ class ChainProxyManager extends ChangeNotifier {
   /// In-memory fallback pool.
   ChainFallbackPool _fallbackPool = const ChainFallbackPool();
 
+  int _consecutiveHealthCheckFailures = 0;
+
+  /// P1.5-A: the last auto-failover skip diagnosis written to the log, so a
+  /// persistent condition (e.g. an exhausted candidate pool) is reported **once**
+  /// rather than on every 1-minute health-check tick.
+  String? _lastAutoFailoverSkipDiagnosis;
+  Timer? _chainHealthTimer;
+  Timer? _reliabilityPersistTimer;
+
+  /// Authoritative "un-persisted reliability samples exist" marker.
+  ///
+  /// It is set the moment a persist becomes pending — *before* the
+  /// `_initialized` guard in [_scheduleReliabilityPersist] — and cleared by
+  /// [flushReliabilityStats]. The debounce `Timer` alone cannot express this
+  /// state: it is only armed once the manager is initialized.
+  bool _reliabilityPersistDirty = false;
+  bool _disposed = false;
+  static List<dynamic>? capabilityProbeSourceOverride;
+  final Map<String, ProtocolCapabilityProfile> _capabilityProfiles = {};
+  int _capabilityRevision = 0;
+  final Set<String> _capabilityProbesInFlight = {};
+
+  /// P1.2-K3 (S1): bumped by [refreshCapabilityProfiles] every time the
+  /// capability view is rebuilt. A probe captures it on start and discards its
+  /// result if the view has been rebuilt since — otherwise a stale probe (born
+  /// from the previous config, carrying the previous `udp` declaration) would
+  /// overwrite the new baseline by node name and feed a wrong declaration into
+  /// the failover compatibility gate.
+  int _capabilityViewGeneration = 0;
+
   // Phase 5.x state fields (mutable, set by recovery/failover logic)
   ChainRecoveryPlan? pendingRecoveryPlan;
   ChainSupportPackage? lastGeneratedPackage;
+
+  /// Absolute path of the real ZIP written by [createSupportPackage]. `null`
+  /// until a package has actually been produced.
+  String? lastGeneratedPackagePath;
 
   // ─── Phase 5.x Getters ────────────────────────────────────────────────────
 
@@ -669,6 +900,46 @@ class ChainProxyManager extends ChangeNotifier {
 
   // ─── Phase 5.x Failover Lifecycle ────────────────────────────────────────
 
+  /// Applies [cfg] to the running core **without persisting it**.
+  ///
+  /// This is the failover executor's `onApply` / `onRollback` path: a candidate
+  /// is only committed to disk (see [_commitConfig]) once it has been proven
+  /// healthy.
+  Future<void> _applyConfigRuntime(ChainProxyConfig cfg) async {
+    _config = cfg;
+    notifyListeners();
+    // A runtime reload failure must be observed here, otherwise a candidate
+    // that never actually applied would be treated as applied (and could then
+    // be committed).
+    await _reloadRuntimeConfig();
+    notifyListeners();
+  }
+
+  /// Commits [cfg]: updates memory **and** persists it to `chain_proxies.json`.
+  Future<void> _commitConfig(ChainProxyConfig cfg) async {
+    _config = cfg;
+    notifyListeners();
+    await _saveConfig();
+  }
+
+  /// Builds the real production executor (the existing
+  /// [DelegateChainFailoverExecutor], wired to this manager's runtime
+  /// apply / probe / rollback / commit paths).
+  IChainFailoverExecutor _buildFailoverExecutor(ChainFailoverPolicy policy) {
+    final real = DelegateChainFailoverExecutor(
+      onApply: (cfg, _) => _applyConfigRuntime(cfg),
+      onProbe: (cfg, token) => chainProbeService.probeChain(
+        config: cfg,
+        timeout: policy.probeTimeout,
+        cancelToken: token,
+      ),
+      onRollback: (cfg, _) => _applyConfigRuntime(cfg),
+      onCommit: (cfg) => _commitConfig(cfg),
+    );
+    final wrapper = failoverExecutorWrapper;
+    return wrapper != null ? wrapper(real) : real;
+  }
+
   /// Triggers auto-failover. Full implementation delegates to ChainFailoverService.
   /// This thin coordinator updates progress state and notifies listeners.
   Future<ChainFailoverResult> triggerAutoFailover({
@@ -678,8 +949,17 @@ class ChainProxyManager extends ChangeNotifier {
     dynamic retryPolicy,
     bool bypassDampening = false,
   }) async {
-    cancelFailover();
-    
+    // P1.1-F single-flight: while a failover session is already active, a
+    // second trigger is rejected outright — it must NOT cancel, take over, or
+    // supersede the running session. The rejection reason is carried in the
+    // returned result's `rootCause`.
+    if (isFailingOver) {
+      return ChainFailoverResult.cancelled(
+        originalConfig: _config,
+        reason: '已有故障转移正在执行，已拒绝重复触发',
+      );
+    }
+
     _failoverCancelToken = CancelToken();
     _failoverProgress = ChainFailoverProgress(
       state: ChainFailoverState.selectingCandidate,
@@ -698,8 +978,16 @@ class ChainProxyManager extends ChangeNotifier {
         fallbackPool: _fallbackPool,
         targetRole: null,
         policy: policy,
+        availableProxyNames: _availableProxyNames(),
+        availableProxyProfiles: _capabilityProfiles.isEmpty
+            ? null
+            : Map<String, ProtocolCapabilityProfile>.of(_capabilityProfiles),
         cancelToken: _failoverCancelToken,
+        executor: _buildFailoverExecutor(policy),
         flapDampener: chainFlapDampenerService,
+        // Forward the report the health check already produced: without it,
+        // `executeFailover` would fall back to a real network retry/probe.
+        initialFailureReport: initialFailureReport,
         onProgress: (progress) {
           _failoverProgress = progress;
           notifyListeners();
@@ -707,9 +995,11 @@ class ChainProxyManager extends ChangeNotifier {
         onPoolUpdated: (pool) {
           _fallbackPool = pool;
           notifyListeners();
-        }
+          // Failover records reliability samples too — persist (debounced).
+          _scheduleReliabilityPersist();
+        },
       );
-      
+
       if (result.isSuccess) {
         await updateConfig((_) => result.finalConfig);
       }
@@ -744,8 +1034,7 @@ class ChainProxyManager extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ─── Phase 5.x Probe Lifecycle ────────────────────────────────────────────
-
+  // ─── Phase 5.x Probe Lifecycle ─────────────────────────────────────────────
   void cancelCurrentProbe() {
     _probeCancelToken?.cancel();
     _probeCancelToken = null;
@@ -763,12 +1052,16 @@ class ChainProxyManager extends ChangeNotifier {
     _probeCancelToken = cancelToken ?? CancelToken();
     notifyListeners();
     try {
-      final report = await chainProbeService.probeChain(
-        config: _config,
-        testUrl: testUrl,
-        cancelToken: _probeCancelToken,
-      );
+      final override = chainProbeOverride;
+      final report = override != null
+          ? await override(_config)
+          : await chainProbeService.probeChain(
+              config: _config,
+              testUrl: testUrl,
+              cancelToken: _probeCancelToken,
+            );
       _lastProbeReport = report;
+      _writeBackProbeResultsToCandidates(report);
       return report;
     } finally {
       _isProbingChain = false;
@@ -791,9 +1084,11 @@ class ChainProxyManager extends ChangeNotifier {
   // ─── Phase 5.x Diagnostics & Support ─────────────────────────────────────
 
   /// Exports a chain diagnostic report. Full implementation in Phase 5.9-E.1.2+.
-  Future<dynamic> exportChainDiagnosticReport() async {
-    // ChainDiagnosticExportService integration pending Phase 5.9-E.1.2.
-    return null;
+  /// P2.5-D: delegates to the REAL [ChainDiagnosticExportService] — the report
+  /// is built from this manager's REAL telemetry ([telemetrySnapshot]) and REAL
+  /// chain config, and a real Markdown file is written to disk.
+  Future<File?> exportChainDiagnosticReport() {
+    return chainDiagnosticExportService.exportReport(this);
   }
 
   // ─── Phase 5.x Recovery Plan ──────────────────────────────────────────────
@@ -813,11 +1108,619 @@ class ChainProxyManager extends ChangeNotifier {
 
   // ─── Phase 5.x Support Package ────────────────────────────────────────────
 
-  /// Generates a support package. Full implementation in Phase 5.9-E.1.2+.
+  /// Generates a support package (a real ZIP) through the existing real
+  /// service.
+  ///
+  /// On success the produced package and its real file path are published on
+  /// [lastGeneratedPackage] / [lastGeneratedPackagePath]. On failure nothing is
+  /// fabricated and the error propagates to the caller (the UI surfaces it).
   Future<void> createSupportPackage() async {
-    // ChainSupportPackageService integration pending Phase 5.9-E.1.2.
+    final package = await chainSupportPackageService.createPackage(this);
+    final file = await chainSupportPackageService.exportPackage(package);
+    lastGeneratedPackage = package;
+    lastGeneratedPackagePath = file.path;
     notifyListeners();
+  }
+
+  int get capabilityRevision => _capabilityRevision;
+
+  /// Per-node capability view (nodeName -> profile), built from the REAL profile
+  /// config. Empty until [refreshCapabilityProfiles] succeeds.
+  Map<String, ProtocolCapabilityProfile> get capabilityProfiles =>
+      Map.unmodifiable(_capabilityProfiles);
+  void stopChainHealthCheck() {
+    _chainHealthTimer?.cancel();
+    _chainHealthTimer = null;
+    _consecutiveHealthCheckFailures = 0;
+    // P1.5-A: a stopped loop has no skip state to report — reset silently (no
+    // log line; this is a lifecycle reset, not a diagnosis transition).
+    _lastAutoFailoverSkipDiagnosis = null;
+  }
+  
+  /// Test seam: redirects `chain_proxies.json` away from the real
+  /// application data directory. `null` in production.
+  @visibleForTesting
+  static String? configFilePathOverride;
+
+  /// Test seam: redirects `chain_fallback_pool.json` away from the real
+  /// application data directory. `null` in production.
+  @visibleForTesting
+  static String? fallbackPoolFilePathOverride;
+  @visibleForTesting
+  static String? reliabilityStatsFilePathOverride;
+
+  /// Runs the real chain probe for the node that currently occupies [role].
+  ///
+  /// The runtime only supports probing the **configured chain**, so that is the
+  /// probe this entry performs — the node card offers the button only for the
+  /// node that currently occupies [role], and the chain probe is what produces
+  /// that node's hop result. Results flow through the existing write-back
+  /// ([_writeBackProbeResultsToCandidates]), which attributes each hop to the
+  /// matching pool candidate by name; nothing is fabricated and no other node is
+  /// credited.
+  ///
+  /// A probe already in flight is never restarted, so a repeated trigger cannot
+  /// record the same probe twice.
+  Future<void> testSingleProxy({
+    required String nodeName,
+    required FallbackCandidateRole role,
+  }) async {
+    final current = switch (role) {
+      FallbackCandidateRole.entry => _config.effectiveHop1,
+      FallbackCandidateRole.relay => _config.hop2Node,
+      FallbackCandidateRole.exit => _config.effectiveExitNode,
+    };
+    // The caller's node no longer occupies this hop: there is nothing to probe,
+    // and probing the chain would attribute another node's result to it.
+    if (current.trim() != nodeName.trim()) return;
+    if (_isProbingChain) return;
+    await probeCurrentChain();
+  }
+
+
+  List<String>? _availableProxyNames() {
+    // `null` means "do not filter by available names" (see
+    // ChainFallbackService.selectCandidates). When the app is not booted
+    // (unit tests), there is no AppController to read groups from.
+    if (!globalState.hasAppController) return null;
+    try {
+      final groups = globalState.appController.ref.read(groupsProvider);
+      return groups.expand((g) => g.all.map((p) => p.name)).toList();
+    } catch (_) {
+      // The group view is not readable (e.g. a torn-down ProviderScope).
+      // `null` degrades to "do not filter" rather than aborting the caller —
+      // a synchronous throw here would otherwise unwind `triggerAutoFailover`
+      // before it has even started, leaving a misleading "not failing over"
+      // state.
+      return null;
+    }
+  }
+
+  /// Read-only view of the node names currently available for chain hops.
+  ///
+  /// Exposes the same source the failover path already trusts
+  /// ([_availableProxyNames]): the names of every proxy in the live group view,
+  /// which is also what the node picker offers. B3's hop-configuration UI needs
+  /// it to run [ChainTopologyValidator.validate] against the real node set
+  /// before a hop is written.
+  ///
+  /// `null` means the set could not be read (app not booted, or the group view
+  /// is not readable). Callers must treat that as "availability unknown" — not
+  /// as "every node is available" — and refuse to report success.
+  List<String>? get availableProxyNames => _availableProxyNames();
+
+  void startChainHealthCheck() {
+    if (_chainHealthTimer != null) {
+      _chainHealthTimer!.cancel();
+    }
+    _consecutiveHealthCheckFailures = 0;
+    _chainHealthTimer = Timer.periodic(autoHealthCheckInterval, (_) {
+      runChainHealthCheck();
+    });
+  }
+
+
+  Future<void> runChainHealthCheck() async {
+    if (!_config.autoFailover || !_config.enable || _isProbingChain || isFailingOver) return;
+    
+    final bool coreRunning = await _isCoreReady();
+    if (!coreRunning) return;
+
+    final report = await probeCurrentChain();
+    await _maybeAutoFailover(report);
+  }
+
+  /// P2.4-E (CF-5): the core is "ready" only when its API actually answers —
+  /// `appState.runTime != null` is *local* bookkeeping and cannot tell a healthy
+  /// core from a killed one.
+  ///
+  /// * an explicit `coreRunningOverride` (test seam) wins outright;
+  /// * `running` → ready; `stopped` / `starting` / `unreachable` → not ready;
+  /// * `unknown` (a platform with no desktop core service, e.g. Android) →
+  ///   falls back to the local start flag and **never** optimistically assumes
+  ///   ready.
+  Future<bool> _isCoreReady() async {
+    final override = coreRunningOverride;
+    if (override != null) return override;
+
+    final result = await CoreHealthService.instance.check();
+    if (result.state == CoreHealthState.running) return true;
+    if (result.state == CoreHealthState.unknown) {
+      try {
+        return globalState.isStart;
+      } catch (_) {
+        return false;
+      }
+    }
+    return false;
+  }
+
+  /// P1.5-A: reports **why** automatic failover was skipped.
+  ///
+  /// The three reasons are mutually exclusive within one pass — decided by
+  /// nesting depth inside [_maybeAutoFailover], so only the outermost failing
+  /// gate is reported:
+  ///   1. `failureHop 未提供` — role is indeterminate, nothing can be replaced
+  ///   2. `无可用候选`        — the enabled candidate pool for that role is empty
+  ///   3. `抖动抑制中`        — the flap dampener suppressed this pass
+  ///
+  /// A diagnosis is written only when it **differs** from the previous pass, so a
+  /// persistent condition (an exhausted pool re-evaluated every minute) logs
+  /// once instead of once per tick.
+  void _reportAutoFailoverSkip(String reason) {
+    if (_lastAutoFailoverSkipDiagnosis == reason) return;
+    _lastAutoFailoverSkipDiagnosis = reason;
+    commonPrint.log('ChainProxyManager: auto failover skipped — $reason');
+  }
+
+  /// P1.5-A: clears the skip diagnosis after a genuine recovery, logging once.
+  ///
+  /// Only reached for `healthy` — see the caller. `degraded` / `cancelled` /
+  /// `unknown` / `checking` deliberately keep the existing diagnosis, since a
+  /// still-impaired (or undetermined) chain does not prove the skip reason has
+  /// gone away.
+  void _clearAutoFailoverSkipDiagnosis() {
+    if (_lastAutoFailoverSkipDiagnosis == null) return;
+    _lastAutoFailoverSkipDiagnosis = null;
+    commonPrint.log('ChainProxyManager: auto failover skip cleared');
+  }
+
+  Future<void> _maybeAutoFailover(ChainProbeReport report) async {
+    if (report.status == ChainHealthStatus.failed || report.status == ChainHealthStatus.unavailable) {
+      _consecutiveHealthCheckFailures++;
+      if (_consecutiveHealthCheckFailures >= 2) {
+        // The failing hop index is the authoritative signal for *which* role to
+        // replace. Without it (null) the role is indeterminate, so the
+        // automatic trigger must not fire.
+        final int? failureHopIndex = report.failureHop;
+        if (failureHopIndex != null) {
+          final role = ChainFailoverService.deduceRoleFromFailureHop(
+            _config.hopMode,
+            failureHopIndex,
+          );
+          final candidates = _fallbackPool
+              .getCandidatesByRole(role)
+              .where((c) => c.enabled)
+              .toList();
+          if (candidates.isNotEmpty) {
+            final dampening = chainFlapDampenerService.evaluate();
+            if (!dampening.isDampened) {
+              // Await the session so a single health-check pass is a complete,
+              // observable unit (apply → probe → commit/rollback). The
+              // `isFailingOver` guard already makes re-entrancy impossible, and
+              // the periodic timer simply runs one tick longer.
+              try {
+                await triggerAutoFailover(
+                  triggerReason: 'Auto failover triggered',
+                  initialFailureReport: report,
+                  bypassDampening: false,
+                );
+              } catch (e) {
+                commonPrint.log('ChainProxyManager: auto failover failed: $e');
+              }
+            } else {
+              _reportAutoFailoverSkip('抖动抑制中 (dampened)');
+            }
+          } else {
+            _reportAutoFailoverSkip('无可用候选 (role=${role.name})');
+          }
+        } else {
+          _reportAutoFailoverSkip(
+            'failureHop 未提供，无法判定需替换的角色 '
+            '(hopMode=${_config.hopMode.name}, status=${report.status.name})',
+          );
+        }
+      }
+    } else {
+      _consecutiveHealthCheckFailures = 0;
+      // P1.5-A: only a genuinely healthy report clears the diagnosis. This else
+      // branch is "not failed/unavailable" — it also covers `degraded`,
+      // `cancelled`, `unknown` and `checking`, none of which proves the original
+      // skip reason has gone away.
+      if (report.status == ChainHealthStatus.healthy) {
+        _clearAutoFailoverSkipDiagnosis();
+      }
+    }
+  }
+
+  void _scheduleReliabilityPersist() {
+    _reliabilityPersistDirty = true;
+    if (!_initialized) return;
+    _reliabilityPersistTimer?.cancel();
+    _reliabilityPersistTimer = Timer(const Duration(seconds: 2), () {
+      _reliabilityPersistTimer = null;
+      unawaited(flushReliabilityStats());
+    });
+  }
+
+  Future<bool> flushReliabilityStats() async {
+    _reliabilityPersistTimer?.cancel();
+    _reliabilityPersistTimer = null;
+    _reliabilityPersistDirty = false;
+    try {
+      final overridePath = reliabilityStatsFilePathOverride;
+      String filePath;
+      if (overridePath != null) {
+        filePath = overridePath;
+      } else {
+        final resolved = await _getReliabilityStatsFilePath();
+        if (resolved == null) return true;
+        filePath = resolved;
+      }
+      
+      final mapToSave = <FallbackCandidateRole, Map<String, Map<String, ChainReliabilityStats>>>{};
+      mapToSave[FallbackCandidateRole.entry] = { for (var c in _fallbackPool.entryCandidates) c.nodeName: c.statsByContext };
+      mapToSave[FallbackCandidateRole.relay] = { for (var c in _fallbackPool.relayCandidates) c.nodeName: c.statsByContext };
+      mapToSave[FallbackCandidateRole.exit] = { for (var c in _fallbackPool.exitCandidates) c.nodeName: c.statsByContext };
+      
+      const service = ChainReliabilityStatsPersistence();
+      return await service.save(filePath, mapToSave);
+    } catch (e) {
+      commonPrint.log('ChainProxyManager: Failed to flush reliability stats: $e');
+      return false;
+    }
+  }
+
+  Future<void> refreshCapabilityProfiles() async {
+    if (_disposed) return;
+    // P1.2-K3 (S1): a new capability view version begins here. Probes started
+    // against the previous view must not write back into this one.
+    _capabilityViewGeneration++;
+    try {
+    
+      final targets = <dynamic>[];
+    
+      if (capabilityProbeSourceOverride != null) {
+        targets.addAll(capabilityProbeSourceOverride!);
+      } else {
+        final currentProfileId = globalState.config.currentProfileId;
+        if (currentProfileId == null || currentProfileId.isEmpty) return;
+      
+        final configMap = await globalState.getProfileConfig(currentProfileId);
+        final proxies = configMap['proxies'];
+        if (proxies is! List) return;
+        targets.addAll(proxies);
+      }
+    
+      final currentNames = <String>{};
+      for (final proxy in targets) {
+        if (proxy is! Map) continue;
+        final nodeName = proxy['name']?.toString() ?? '';
+        if (nodeName.isEmpty) continue;
+        currentNames.add(nodeName);
+      
+        final capability = ChainCapabilityService.getCapability(proxy);
+        _capabilityProfiles[nodeName] = capability;
+      }
+
+      // P1.2-G7 (H2): the capability view means "the current config is the
+      // truth". Entries for nodes that no longer exist must not linger: they are
+      // never consumed today (a ghost is not read by any consumer), but they are
+      // unbounded retention, and they make `availableProxyProfiles` — which is
+      // handed to failover — carry names the config no longer has. Pruning here
+      // is therefore behaviour-neutral by construction.
+      _capabilityProfiles.removeWhere((name, _) => !currentNames.contains(name));
+    
+      _capabilityRevision++;
+      notifyListeners();
+    
+      unawaited(_startRuntimeCapabilityProbes(targets));
+    } catch (e) {
+      // Best-effort by contract: a core/read failure here must never break the
+      // caller (`_reloadRuntimeConfig`), nor surface as an unhandled async error
+      // from the fire-and-forget call in `init()`. The previous capability view
+      // is deliberately left untouched.
+      commonPrint.log(
+        'ChainProxyManager: refreshCapabilityProfiles failed: $e',
+      );
+    }
+  }
+  
+  Future<void> _startRuntimeCapabilityProbes(List<dynamic> targets) async {
+    // P1.2-G3 (K1): bound the fan-out. The previous `for` + `unawaited` fired
+    // one probe per node at once, so the in-flight count grew linearly with the
+    // subscription size (hundreds of simultaneous native `getDelay` calls on
+    // startup). Reuse the governor the UI delay test already honours
+    // (`ProxiesStyle.concurrencyLimit`) and the existing `Iterable.batch`
+    // helper — no new concurrency primitive is introduced.
+    //
+    // Per-node single-flight is unchanged: a node already in flight is filtered
+    // out *before* the batches are formed.
+    //
+    // P1.2-K3 (S1): every probe in this batch belongs to the capability view
+    // that is current *now*; a later `refreshCapabilityProfiles` invalidates it.
+    final generation = _capabilityViewGeneration;
+    final pending = <Map<dynamic, dynamic>>[];
+    for (final proxy in targets) {
+      if (proxy is! Map) continue;
+      final nodeName = proxy['name']?.toString() ?? '';
+      if (nodeName.isEmpty) continue;
+      if (_capabilityProbesInFlight.contains(nodeName)) continue;
+      _capabilityProbesInFlight.add(nodeName);
+      pending.add(proxy);
+    }
+
+    final configuredLimit = globalState.config.proxiesStyle.concurrencyLimit;
+    final limit = configuredLimit > 0 ? configuredLimit : 250;
+
+    // Still fire-and-forget for the caller (`unawaited` at the call site):
+    // awaiting batch-by-batch does not delay `refreshCapabilityProfiles`.
+    for (final batch in pending.batch(limit)) {
+      // P1.2-K3 (S2): a disposed manager must not start further batches. This
+      // cannot cancel the probes already in flight (a native `getDelay` call is
+      // not cancellable) — it only stops *new* ones from being issued.
+      if (_disposed) break;
+      await Future.wait(batch.map((proxy) async {
+        final nodeName = proxy['name']?.toString() ?? '';
+        try {
+          final profile = await ChainCapabilityProbeService.probeAndVerify(
+            proxy,
+            timeout: capabilityProbeTimeout,
+          );
+          if (_disposed) return;
+          // P1.2-K3 (S1): the capability view was rebuilt while this probe was
+          // in flight. The result describes the *previous* config (including its
+          // declared `udp`), so writing it back by node name would overwrite the
+          // new baseline — discard it instead.
+          if (generation != _capabilityViewGeneration) return;
+          // Only a probe that actually changed the capability view may bump
+          // the revision. An inconclusive probe (e.g. a failed/timeout probe
+          // that returns the unchanged `unknown` baseline) must not churn the
+          // ranking with a phantom state change.
+          final current = _capabilityProfiles[nodeName];
+          final changed = current == null ||
+              current.tcp.evidence != profile.tcp.evidence ||
+              current.tls.evidence != profile.tls.evidence ||
+              current.udp.evidence != profile.udp.evidence;
+          if (!changed) return;
+          _capabilityProfiles[nodeName] = profile;
+          _capabilityRevision++;
+          notifyListeners();
+        } catch (_) {
+        } finally {
+          _capabilityProbesInFlight.remove(nodeName);
+        }
+      }));
+    }
+  }
+
+  Future<void> updateFallbackPool(ChainFallbackPool Function(ChainFallbackPool) updater) async {
+    _fallbackPool = updater(_fallbackPool);
+    notifyListeners();
+    await _saveFallbackPool();
+    _scheduleReliabilityPersist();
+  }
+
+  Future<void> setAutoFailover(bool enable) async {
+    await updateConfig((c) => c.copyWith(autoFailover: enable));
+    if (enable) {
+      startChainHealthCheck();
+    } else {
+      stopChainHealthCheck();
+    }
+  }
+
+
+  /// 把一次链路探测的结果**按节点名**归属到 fallback pool 的候选上。
+  ///
+  /// **P1.3-C1 — 写入边界（重要，勿误解为「候选状态的统一回写」）**：
+  ///  * 本函数**只**累积 `statsByContext`（reliability 样本，按当前 network
+  ///    fingerprint 分桶）；
+  ///  * **不写** `candidate.health` / `candidate.latencyMs` /
+  ///    `candidate.lastChecked` —— 这三个字段目前**只**由 failover 路径写入
+  ///    （`ChainFailoverService._updateCandidateStats`）；
+  ///  * **覆盖范围**：`report.hops` 只包含**当前生效链路**的跳（最多 3 跳），
+  ///    因此一次回写最多命中 ≤3 个候选；pool 内其余候选**不会**因健康检查而更新。
+  ///
+  /// 完整的 latency / health 统一状态（**谁拥有**该值、覆盖哪些候选、粒度是
+  /// 单跳还是链总、以及 timestamp / fingerprint 生命周期）在当前生产路径中
+  /// **未覆盖**，需要在 **P1.3-C Score Model Evolution** 中统一设计，
+  /// 而不是在本函数内补写字段。
+  void _writeBackProbeResultsToCandidates(ChainProbeReport report, {FallbackCandidateRole? role}) {
+    if (_probeCancelToken?.isCancelled == true) return;
+    // A cancelled probe carries no evidence about the chain, so it must not
+    // move the reliability counters. The cancel may be carried by the report
+    // itself (the probe observed the token) rather than by our token.
+    if (report.isCancelled ||
+        report.healthStatus == ChainHealthStatus.cancelled) {
+      return;
+    }
+    
+    final now = DateTime.now();
+
+    List<ChainFallbackCandidate> processCandidates(List<ChainFallbackCandidate> candidates, FallbackCandidateRole currentRole) {
+      if (role != null && currentRole != role) return candidates;
+      
+      return candidates.map((c) {
+        HopProbeState? matchedHop;
+        for (final h in report.hops) {
+           if (h.nodeName == c.nodeName) {
+             matchedHop = h;
+             break;
+           }
+        }
+        if (matchedHop == null) return c;
+        
+        // P2.2: reliability samples are keyed by the CURRENT network
+        // fingerprint, so a transport change routes later samples into a new
+        // context instead of merging every network into one bucket.
+        final context = networkFingerprintProvider.getCurrentFingerprint();
+        
+        // Same classification and decay semantics as the failover writer
+        // (`ChainFailoverService._updateCandidateStats`), so one node has one
+        // history regardless of which path observed it.
+        final bool? isSuccess = switch (matchedHop.healthStatus) {
+          ChainHealthStatus.healthy || ChainHealthStatus.degraded => true,
+          ChainHealthStatus.failed || ChainHealthStatus.unavailable => false,
+          // unknown / checking / cancelled carry no evidence — recording either
+          // outcome would fabricate a sample.
+          _ => null,
+        };
+        if (isSuccess == null) return c;
+
+        final newStats = (c.statsByContext[context] ??
+                ChainReliabilityStats.initial(networkFingerprint: context))
+            .recordEvent(
+              isSuccess: isSuccess,
+              now: now,
+              lambda: ChainReliabilityStats.decayLambda,
+            );
+        final newMap = Map<String, ChainReliabilityStats>.from(c.statsByContext);
+        newMap[context] = newStats;
+        
+        return c.copyWith(
+          statsByContext: newMap,
+          
+        );
+      }).toList();
+    }
+
+    _fallbackPool = _fallbackPool.copyWith(
+      entryCandidates: processCandidates(_fallbackPool.entryCandidates, FallbackCandidateRole.entry),
+      relayCandidates: processCandidates(_fallbackPool.relayCandidates, FallbackCandidateRole.relay),
+      exitCandidates: processCandidates(_fallbackPool.exitCandidates, FallbackCandidateRole.exit),
+    );
+    
+    notifyListeners();
+    _scheduleReliabilityPersist();
+  }
+
+  /// Whether a reliability sample is awaiting persistence.
+  ///
+  /// Reflects the real internal state (see [_reliabilityPersistDirty]); it is
+  /// never a constant.
+  bool get hasPendingReliabilityPersist => _reliabilityPersistDirty;
+
+  /// Adds a candidate to the fallback pool by node name + role.
+  ///
+  /// Idempotent: adding the same [nodeName] under the same [role] twice leaves
+  /// a single entry. A blank / whitespace-only node name is ignored.
+  Future<void> addFallbackCandidate({
+    required String nodeName,
+    required FallbackCandidateRole role,
+  }) async {
+    final name = nodeName.trim();
+    if (name.isEmpty) return;
+    await updateFallbackPool((pool) {
+      final candidates = _candidatesForRole(pool, role);
+      if (candidates.any((c) => c.nodeName == name)) return pool;
+      candidates.add(ChainFallbackCandidate(nodeName: name, role: role));
+      return _withReplacedRoleCandidates(pool, role, candidates);
+    });
+  }
+
+  List<ChainFallbackCandidate> _candidatesForRole(ChainFallbackPool pool, FallbackCandidateRole role) {
+    if (role == FallbackCandidateRole.entry) return List.from(pool.entryCandidates);
+    if (role == FallbackCandidateRole.relay) return List.from(pool.relayCandidates);
+    if (role == FallbackCandidateRole.exit) return List.from(pool.exitCandidates);
+    return [];
+  }
+
+  ChainFallbackPool _withReplacedRoleCandidates(ChainFallbackPool pool, FallbackCandidateRole role, List<ChainFallbackCandidate> candidates) {
+    if (role == FallbackCandidateRole.entry) return pool.copyWith(entryCandidates: candidates);
+    if (role == FallbackCandidateRole.relay) return pool.copyWith(relayCandidates: candidates);
+    if (role == FallbackCandidateRole.exit) return pool.copyWith(exitCandidates: candidates);
+    return pool;
+  }
+
+  /// Removes a candidate. Only the matching role bucket is touched — the same
+  /// node name may legitimately exist under another role.
+  Future<void> removeFallbackCandidate({
+    required String nodeName,
+    required FallbackCandidateRole role,
+  }) async {
+    await updateFallbackPool((pool) {
+      final candidates = _candidatesForRole(pool, role);
+      candidates.removeWhere((c) => c.nodeName == nodeName);
+      return _withReplacedRoleCandidates(pool, role, candidates);
+    });
+  }
+
+  /// Toggles `enabled` on the matching candidate.
+  Future<void> setFallbackCandidateEnabled({
+    required String nodeName,
+    required FallbackCandidateRole role,
+    required bool enabled,
+  }) async {
+    await updateFallbackPool((pool) {
+      final candidates = _candidatesForRole(pool, role);
+      final index = candidates.indexWhere((c) => c.nodeName == nodeName);
+      if (index != -1) {
+        candidates[index] = candidates[index].copyWith(enabled: enabled);
+        return _withReplacedRoleCandidates(pool, role, candidates);
+      }
+      return pool;
+    });
+  }
+
+  /// Moves a candidate between role buckets and re-tags its `role` field.
+  Future<void> setFallbackCandidateRole({
+    required String nodeName,
+    required FallbackCandidateRole fromRole,
+    required FallbackCandidateRole toRole,
+  }) async {
+    if (fromRole == toRole) return;
+    await updateFallbackPool((pool) {
+      final fromCandidates = _candidatesForRole(pool, fromRole);
+      final index = fromCandidates.indexWhere((c) => c.nodeName == nodeName);
+      if (index != -1) {
+        final candidate = fromCandidates.removeAt(index);
+        final toCandidates = _candidatesForRole(pool, toRole);
+        if (!toCandidates.any((c) => c.nodeName == nodeName)) {
+          toCandidates.add(candidate.copyWith(role: toRole));
+        }
+        return _withReplacedRoleCandidates(
+          _withReplacedRoleCandidates(pool, fromRole, fromCandidates),
+          toRole,
+          toCandidates,
+        );
+      }
+      return pool;
+    });
+  }
+
+  @visibleForTesting
+  void applyRestoredReliabilityStatsForTest(
+      Map<FallbackCandidateRole, Map<String, Map<String, ChainReliabilityStats>>> loaded) {
+    _fallbackPool = _fallbackPool.copyWith(
+      entryCandidates: _injectStats(_fallbackPool.entryCandidates, loaded[FallbackCandidateRole.entry]),
+      relayCandidates: _injectStats(_fallbackPool.relayCandidates, loaded[FallbackCandidateRole.relay]),
+      exitCandidates: _injectStats(_fallbackPool.exitCandidates, loaded[FallbackCandidateRole.exit]),
+    );
+  }
+
+  List<ChainFallbackCandidate> _injectStats(
+      List<ChainFallbackCandidate> candidates, Map<String, Map<String, ChainReliabilityStats>>? stats) {
+    if (stats == null) return candidates;
+    return candidates.map((c) {
+      final nodeStats = stats[c.nodeName];
+      if (nodeStats != null) {
+        return c.copyWith(statsByContext: nodeStats);
+      }
+      return c;
+    }).toList();
   }
 }
 
 final chainProxyManager = ChainProxyManager();
+

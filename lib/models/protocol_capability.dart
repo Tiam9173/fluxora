@@ -32,58 +32,88 @@ extension CapabilityEvidenceTypeExtension on CapabilityEvidenceType {
   }
 }
 
-class ProtocolCapabilityProfile {
-  final String protocol;
-  final CapabilityStatus udpCapability;
-  final CapabilityStatus tcpCapability;
+/// P1.2-F: the state of a **single** capability dimension.
+///
+/// Before P1.2-F the profile carried one profile-level `evidence` shared by TCP,
+/// TLS and UDP. That made a TCP/TLS probe relabel the UDP declaration (and vice
+/// versa) — see `P1.2-E_CAPABILITY_EVIDENCE_PASSIVE_UDP_AUDIT.md`. Evidence is
+/// now owned by the dimension it actually describes.
+class CapabilityState {
+  /// Whether the capability is confirmed / rejected / still unknown.
+  final CapabilityStatus status;
+
+  /// What the [status] is based on. `unknown` evidence never claims support.
   final CapabilityEvidenceType evidence;
 
-  const ProtocolCapabilityProfile({
-    required this.protocol,
-    required this.udpCapability,
-    required this.tcpCapability,
-    required this.evidence,
+  const CapabilityState({
+    this.status = CapabilityStatus.unknown,
+    this.evidence = CapabilityEvidenceType.unknown,
   });
 
-  factory ProtocolCapabilityProfile.unknown(String protocol) {
-    return ProtocolCapabilityProfile(
-      protocol: protocol,
-      udpCapability: CapabilityStatus.unknown,
-      tcpCapability: CapabilityStatus.unknown,
-      evidence: CapabilityEvidenceType.unknown,
-    );
-  }
-
-  factory ProtocolCapabilityProfile.withEvidence({
-    required String protocol,
-    required CapabilityStatus udpCapability,
-    required CapabilityStatus tcpCapability,
-    required CapabilityEvidenceType evidence,
-  }) {
-    return ProtocolCapabilityProfile(
-      protocol: protocol,
-      udpCapability: udpCapability,
-      tcpCapability: tcpCapability,
-      evidence: evidence,
-    );
-  }
-
-  ProtocolCapabilityProfile copyWith({
-    String? protocol,
-    CapabilityStatus? udpCapability,
-    CapabilityStatus? tcpCapability,
+  CapabilityState copyWith({
+    CapabilityStatus? status,
     CapabilityEvidenceType? evidence,
   }) {
-    return ProtocolCapabilityProfile(
-      protocol: protocol ?? this.protocol,
-      udpCapability: udpCapability ?? this.udpCapability,
-      tcpCapability: tcpCapability ?? this.tcpCapability,
+    return CapabilityState(
+      status: status ?? this.status,
       evidence: evidence ?? this.evidence,
     );
   }
 
   @override
+  String toString() => 'CapabilityState(status: $status, evidence: $evidence)';
+}
+
+/// Per-node capability profile.
+///
+/// Every dimension defaults to `unknown` / `unknown` — a capability is never
+/// assumed supported without evidence.
+class ProtocolCapabilityProfile {
+  final String protocol;
+
+  /// TCP reachability, verified by the real delay probe (`clashCore.getDelay`).
+  final CapabilityState tcp;
+
+  /// TLS capability.
+  ///
+  /// Only ever `verifiedSupported`, and only from a **runtime** probe whose test
+  /// URL was `https://` — a completed HTTPS round-trip proves the TLS handshake
+  /// succeeded through the node (the core performs a real HTTP HEAD with a TLS
+  /// transport). A probe *failure* never marks TLS `verifiedUnsupported`: it may
+  /// have failed at the TCP / DNS / timeout layer instead.
+  final CapabilityState tls;
+
+  /// UDP forwarding capability. Currently only ever `configDeclared` (the
+  /// `udp` key of the node config); no runtime UDP probe exists yet.
+  final CapabilityState udp;
+
+  const ProtocolCapabilityProfile({
+    required this.protocol,
+    this.tcp = const CapabilityState(),
+    this.tls = const CapabilityState(),
+    this.udp = const CapabilityState(),
+  });
+
+  factory ProtocolCapabilityProfile.unknown(String protocol) {
+    return ProtocolCapabilityProfile(protocol: protocol);
+  }
+
+  ProtocolCapabilityProfile copyWith({
+    String? protocol,
+    CapabilityState? tcp,
+    CapabilityState? tls,
+    CapabilityState? udp,
+  }) {
+    return ProtocolCapabilityProfile(
+      protocol: protocol ?? this.protocol,
+      tcp: tcp ?? this.tcp,
+      tls: tls ?? this.tls,
+      udp: udp ?? this.udp,
+    );
+  }
+
+  @override
   String toString() {
-    return 'ProtocolCapabilityProfile(protocol: $protocol, udp: $udpCapability, tcp: $tcpCapability, evidence: $evidence)';
+    return 'ProtocolCapabilityProfile(protocol: $protocol, tcp: $tcp, tls: $tls, udp: $udp)';
   }
 }

@@ -484,7 +484,8 @@ class BuildCommand extends Command {
 
     final appDevArg = Build.isDev ? ' --build-dart-define=APP_DEV=true' : '';
 
-    final appVersion = Platform.environment['APP_BUILD_NAME'] ??
+    final appVersion =
+        Platform.environment['APP_BUILD_NAME'] ??
         Platform.environment['APP_VERSION'] ??
         '';
     final appVersionArg = appVersion.isNotEmpty
@@ -799,7 +800,8 @@ class AutoBuildCommand extends Command {
   AutoBuildCommand() {
     argParser.addOption(
       'device-id',
-      help: 'Target Flutter device ID (e.g. from \${command:flutter.getSelectedDeviceId})',
+      help:
+          'Target Flutter device ID (e.g. from \${command:flutter.getSelectedDeviceId})',
     );
     argParser.addOption(
       'arch',
@@ -858,7 +860,9 @@ class AutoBuildCommand extends Command {
     } else if (rawDeviceId == 'chrome' ||
         rawDeviceId == 'edge' ||
         rawDeviceId == 'web-server') {
-      print('Web device "$rawDeviceId" does not require core binary. Skipping.');
+      print(
+        'Web device "$rawDeviceId" does not require core binary. Skipping.',
+      );
       return;
     } else if (rawDeviceId.isEmpty) {
       if (Platform.isWindows) {
@@ -872,26 +876,25 @@ class AutoBuildCommand extends Command {
       }
       archName ??= 'auto';
     } else {
-      final res = await Process.run(
-        'flutter',
-        ['devices', '--machine'],
-        runInShell: true,
-      );
+      final res = await Process.run('flutter', [
+        'devices',
+        '--machine',
+      ], runInShell: true);
       if (res.exitCode != 0) {
         throw 'Failed to execute "flutter devices --machine": ${res.stderr}';
       }
       final jsonList = jsonDecode(res.stdout.toString()) as List<dynamic>;
       final device = jsonList.cast<Map<String, dynamic>?>().firstWhere(
-            (d) => d?['id'] == rawDeviceId,
-            orElse: () => null,
-          );
+        (d) => d?['id'] == rawDeviceId,
+        orElse: () => null,
+      );
 
       if (device == null) {
         throw 'Device "$rawDeviceId" not found in flutter devices list.';
       }
 
-      final targetPlatform =
-          (device['targetPlatform'] as String? ?? '').toLowerCase();
+      final targetPlatform = (device['targetPlatform'] as String? ?? '')
+          .toLowerCase();
       if (targetPlatform.startsWith('android')) {
         target = Target.android;
         if (archName == null) {

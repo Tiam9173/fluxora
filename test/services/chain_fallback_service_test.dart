@@ -1313,7 +1313,7 @@ void main() {
         final pool = ChainFallbackPool(
           entryCandidates: [
             ChainFallbackCandidate(
-              nodeName: 'Incompatible-VLESS',
+              nodeName: 'Incompatible-HTTP',
               role: FallbackCandidateRole.entry,
               health: ChainHealthStatus.healthy,
               latencyMs: 10,
@@ -1356,7 +1356,9 @@ void main() {
           role: FallbackCandidateRole.entry,
           pool: pool,
           availableProxyProfiles: {
-            'Incompatible-VLESS': p('vless'),
+            // P1.2: `unknown` no longer blocks, so a genuinely-incompatible node
+            // must carry real negative evidence (http → verifiedUnsupported).
+            'Incompatible-HTTP': p('http'),
             'Compatible-HY2': p('hysteria2'),
             'Exit-HY2': p('hysteria2'),
           },
@@ -1367,7 +1369,7 @@ void main() {
         expect(
           result.excluded.any(
             (e) =>
-                e.candidate.nodeName == 'Incompatible-VLESS' &&
+                e.candidate.nodeName == 'Incompatible-HTTP' &&
                 e.reasonCode == 'PROTOCOL_INCOMPATIBLE',
           ),
           isTrue,
@@ -1380,7 +1382,7 @@ void main() {
       final pool = ChainFallbackPool(
         relayCandidates: [
           ChainFallbackCandidate(
-            nodeName: 'Middle-VMess',
+            nodeName: 'Middle-HTTP',
             role: FallbackCandidateRole.relay,
             health: ChainHealthStatus.healthy,
             statsByContext: {
@@ -1423,7 +1425,9 @@ void main() {
         pool: pool,
         availableProxyProfiles: {
           'Entry-VLESS': p('vless'),
-          'Middle-VMess': p('vmess'),
+          // P1.2: `unknown` no longer blocks; a genuinely-incompatible relay
+          // must carry real negative evidence (http → verifiedUnsupported).
+          'Middle-HTTP': p('http'),
           'Middle-SOCKS5': p('socks5'),
           'Exit-TUIC': p('tuic'),
         },
@@ -1433,7 +1437,7 @@ void main() {
       expect(
         result.excluded.any(
           (e) =>
-              e.candidate.nodeName == 'Middle-VMess' &&
+              e.candidate.nodeName == 'Middle-HTTP' &&
               e.reasonCode == 'PROTOCOL_INCOMPATIBLE',
         ),
         isTrue,

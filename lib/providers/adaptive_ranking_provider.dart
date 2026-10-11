@@ -1,10 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/chain_proxy_node_view_model.dart';
 import '../models/chain_fallback_pool.dart';
+import '../models/latency_freshness.dart';
+import '../models/latency_state.dart';
 import '../services/chain_adaptive_score_service.dart';
 import '../services/chain_capability_service.dart';
+import '../services/proxy_semantic_classifier.dart';
 import '../manager/chain_proxy_manager.dart';
-import '../providers/state.dart';
 import '../providers/providers.dart';
 import '../models/common.dart';
 import '../models/chain_proxy.dart';
@@ -27,13 +29,26 @@ final adaptiveRankingProvider =
   final groups = ref.watch(groupsProvider);
   final selectedMap = ref.watch(selectedMapProvider);
   final manager = ref.watch(chainProxyConfigProvider.select((_) => chainProxyManager));
+  // P1.2-A: rebuild (and invalidate the cache) when the config-level capability
+  // view changes.
+  final capabilityRevision = ref.watch(
+    chainProxyConfigProvider.select((m) => m.capabilityRevision),
+  );
+  // P1.3: rebuild when the manager bumps `stateVersion`. Reliability samples are
+  // written via `setFallbackPool` → `notifyListeners`, which bumps it. This
+  // closes the loop: sample → stateVersion → provider rebuild → (cache already
+  // invalidated by invalidateRole) → fresh stats → new ranking.
+  final stateVersion = ref.watch(
+    chainProxyConfigProvider.select((m) => m.stateVersion),
+  );
   final fingerprint = networkFingerprintProvider.getCurrentFingerprint();
   
   // Create a robust fingerprint based on the latest reactive states.
   // Any change to these inputs effectively forms a new fingerprint, guaranteeing a cache miss.
   final stateFingerprint = [
     fingerprint,
-    manager.stateVersion.toString(),
+    stateVersion.toString(),
+    capabilityRevision.toString(),
     selectedMap.keys.map((k) => '$k=${selectedMap[k]}').join(','),
     groups.fold<int>(0, (h, g) => h ^ g.all.length).toString(),
   ].join('|');
@@ -52,17 +67,11 @@ final adaptiveRankingProvider =
       for (final g in groups) {
         if (g.name != 'GLOBAL') {
           for (final p in g.all) {
-            if (p.type != 'URLTest' &&
-                p.type != 'Fallback' &&
-                p.type != 'LoadBalance' &&
-                p.type != 'Selector' &&
-                p.type != 'Direct' &&
-                p.type != 'Reject' &&
-                p.name != 'DIRECT' &&
-                p.name != 'REJECT' &&
-                p.name != 'REJECT-DROP' &&
-                p.name != 'PASS' &&
-                !ChainProxyConfig.isShadowNodeName(p.name)) {
+            // B4: the single shared classification rule — built-in policies,
+            // proxy groups and shadow nodes are not ordinary nodes. Subscription
+            // "information" nodes are deliberately NOT name-filtered here; they
+            // stay selectable so P1.1-D2 can keep collecting real samples.
+            if (ChainProxyConfig.isSelectableProxy(name: p.name, type: p.type)) {
               allProxies.add(p);
             }
           }
@@ -102,8 +111,14 @@ final adaptiveRankingProvider =
           candidate = ChainFallbackCandidate(nodeName: proxy.name, role: role);
         }
 
-        final profile = ChainCapabilityService.getBaselineCapability(proxy.type);
-        final evidence = profile.evidence;
+        // P1.2-A: prefer the real config-level capability view
+        // (configDeclared / runtime evidence) over the static protocol baseline.
+        final profile =
+            chainProxyManager.capabilityProfiles[proxy.name] ??
+            ChainCapabilityService.getBaselineCapability(proxy.type);
+        // P1.2-F: the badge reports the probe-derived (TCP) evidence; the
+        // profile no longer carries a single evidence value.
+        final evidence = profile.tcp.evidence;
 
         final score = ChainAdaptiveScoreService.calculateNodeScore(
           candidate: candidate,
@@ -113,32 +128,66 @@ final adaptiveRankingProvider =
 
         final isLocked = selectedMap.containsValue(proxy.name);
 
+        // Derived presentation flags (never persisted): the node counts as
+        // observed only when real telemetry samples exist for this network
+        // context. `totalSamples` is the sample counter used above for
+        // `globalTotalTrials`.
+        final nodeStats = candidate.statsByContext[fingerprint];
+        final hasObservedTelemetry = (nodeStats?.totalSamples ?? 0) > 0;
+
+        // P1.1-D2: behavioural availability classification from the same real
+        // telemetry. Presentation-only — never persisted, never mutates the
+        // candidate.
+        final semanticType = ProxySemanticClassifier.classify(nodeStats);
+
         viewModels.add(ChainProxyNodeViewModel(
           proxy: proxy,
           nodeName: proxy.name,
           score: score,
           health: candidate.health,
-          latencyMs: candidate.latencyMs,
+          // P1.3-C4-Step5 (Q4 = change the source only): the card represents a
+          // **node**, so it must show that node's own hop latency — not
+          // `candidate.latencyMs`, which is the compat shim holding the
+          // *chain* total (`totalChainLatencyMs`, itself the last hop's delay).
+          //
+          // Freshness-gated: missing / stale / foreign-network / wrong-scope all
+          // collapse to `null`, which the card already renders as "unknown".
+          // Deliberately NOT back-filled from `chainLatency` — a different
+          // measurement would be mislabelled as this node's own.
+          latencyMs: LatencyFreshness.visibleLatencyMs(
+            state: candidate.nodeLatency,
+            now: DateTime.now(),
+            currentFingerprint: fingerprint,
+            expectedScope: LatencyScope.node,
+          ),
           capabilityEvidence: evidence,
           isLocked: isLocked,
           isFailoverCandidate:
               allPoolCandidates.any((c) => c.nodeName == proxy.name),
+          hasObservedTelemetry: hasObservedTelemetry,
+          semanticType: semanticType,
         ));
       }
 
       if (sortMode == 'latency') {
-        viewModels.sort((a, b) {
-          final aLat = a.latencyMs ?? 99999;
-          final bLat = b.latencyMs ?? 99999;
-          if (aLat != bLat) return aLat.compareTo(bLat);
-          return a.nodeName.compareTo(b.nodeName);
-        });
+        // P1.3-C4-Step5 (Q1 + Q7): the rule now lives in the view model so it is
+        // independently testable, and it sorts by the **node's own** latency.
+        // Valid values first (ascending); unknowns last, in a stable name order.
+        viewModels.sort(ChainProxyNodeViewModel.compareByLatency);
       } else if (sortMode == 'name') {
         viewModels.sort((a, b) => a.nodeName.compareTo(b.nodeName));
       } else {
         viewModels.sort((a, b) => a.compareTo(b));
       }
-      return viewModels;
+
+      // P1.1-D2: keep the chosen sort order, but always sink behaviourally
+      // non-connectable nodes to the bottom. They are annotated, never hidden.
+      final List<ChainProxyNodeViewModel> ordered = [];
+      final List<ChainProxyNodeViewModel> sunk = [];
+      for (final vm in viewModels) {
+        (vm.isNonConnectable ? sunk : ordered).add(vm);
+      }
+      return [...ordered, ...sunk];
     },
   );
 });

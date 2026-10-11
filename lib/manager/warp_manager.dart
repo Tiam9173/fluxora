@@ -5,6 +5,7 @@ import 'package:fluxora/clash/core.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/common/curve25519.dart';
 import 'package:fluxora/models/warp_config.dart';
+import 'package:fluxora/services/atomic_config_storage.dart';
 import 'package:fluxora/state.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
@@ -30,7 +31,17 @@ class WarpManager extends ChangeNotifier {
   bool get isTesting => _isTesting;
   bool get isRegistering => _isRegistering;
 
+  /// P2.8-B: test-only seam so persistence tests never touch the real
+  /// application data directory. Production never sets it.
+  ///
+  /// It overrides only the **path** — production always persists through the
+  /// shared [AtomicConfigStorage]; there is no test-only save implementation.
+  @visibleForTesting
+  static String? configFilePathOverride;
+
   Future<String> _getConfigFilePath() async {
+    final override = configFilePathOverride;
+    if (override != null && override.isNotEmpty) return override;
     final homeDir = await appPath.homeDirPath;
     return p.join(homeDir, 'warp_config.json');
   }
@@ -39,19 +50,23 @@ class WarpManager extends ChangeNotifier {
     if (_initialized) return;
     try {
       final filePath = await _getConfigFilePath();
-      final file = File(filePath);
-      if (await file.exists()) {
-        final content = await file.readAsString();
-        if (content.trim().isNotEmpty) {
-          final jsonMap = jsonDecode(content);
-          if (jsonMap is Map<String, dynamic>) {
-            _config = WarpConfig.fromJson(jsonMap);
-          }
-        }
+      // P2.8-B: read through the shared `AtomicConfigStorage`, so a crash
+      // during a previous save recovers from `.bak` / an orphan `.tmp`.
+      final jsonMap = await AtomicConfigStorage(filePath).load();
+      if (jsonMap != null) {
+        _config = WarpConfig.fromJson(jsonMap);
       } else {
-        // First-time setup: automatically pre-generate keys
+        // First-time setup: automatically pre-generate keys. If the very first
+        // write fails the keys stay in memory (the app still works) and the
+        // failure is logged — there is no previous persisted state to protect.
         _config = WarpConfig.generateNew();
-        await _saveConfig();
+        try {
+          await _saveConfig(_config.toJson());
+        } catch (e) {
+          commonPrint.log(
+            'WarpManager: initial warp_config.json write failed: $e',
+          );
+        }
       }
     } catch (e) {
       commonPrint.log('WarpManager: Failed to load warp_config.json: $e');
@@ -64,18 +79,28 @@ class WarpManager extends ChangeNotifier {
     }
   }
 
-  Future<void> _saveConfig() async {
+  /// P2.8-B: persists [config] through the shared [AtomicConfigStorage]
+  /// (tmp → validate → `.bak` → atomic rename), then **rethrows** on failure.
+  ///
+  /// Before P2.8-B this was a bare `File.writeAsString` inside a
+  /// `catch → log` block, so a failed write still returned normally and the
+  /// caller believed the change had landed. The failure is now logged **and**
+  /// propagated, and the user is told the change did not take effect.
+  Future<void> _saveConfig(Map<String, dynamic> config) async {
     try {
       final filePath = await _getConfigFilePath();
-      final file = File(filePath);
-      if (!await file.parent.exists()) {
-        await file.parent.create(recursive: true);
-      }
-      final jsonStr =
-          const JsonEncoder.withIndent('  ').convert(_config.toJson());
-      await file.writeAsString(jsonStr, flush: true);
+      await AtomicConfigStorage(filePath).save(config);
     } catch (e) {
       commonPrint.log('WarpManager: Failed to save config: $e');
+      // Best-effort user notice — it must NEVER mask the real failure.
+      // `globalState.showNotifier` goes through `GlobalKey.currentContext`,
+      // which itself throws when no widget binding is initialized (unit tests,
+      // headless startup), so it is contained here rather than left to replace
+      // the save error with a binding error.
+      try {
+        globalState.showNotifier('WARP 配置保存失败，更改未生效');
+      } catch (_) {}
+      rethrow;
     }
   }
 
@@ -83,9 +108,15 @@ class WarpManager extends ChangeNotifier {
     WarpConfig Function(WarpConfig current) updater, {
     bool reloadCore = true,
   }) async {
-    _config = updater(_config);
+    final updated = updater(_config);
+    // P2.8-B: persist BEFORE committing to memory (and before notifying the
+    // UI). The old order notified listeners *then* swallowed the write
+    // failure, so the UI showed a new value the disk never received
+    // ("false success"). Saving first means a failure leaves `_config` and the
+    // UI untouched, so there is nothing to roll back.
+    await _saveConfig(updated.toJson());
+    _config = updated;
     notifyListeners();
-    await _saveConfig();
     if (reloadCore) {
       try {
         await globalState.appController.setupClashConfig();

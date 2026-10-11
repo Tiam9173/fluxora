@@ -2,9 +2,9 @@ import 'package:fluxora/common/common.dart';
 import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/l10n/chain_proxy_l10n.dart';
 import 'package:fluxora/manager/chain_proxy_manager.dart';
+import 'package:fluxora/models/chain_failover.dart';
 import 'package:fluxora/models/chain_proxy.dart';
 import 'package:fluxora/providers/chain_proxy.dart';
-import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +13,92 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluxora/models/chain_fallback_pool.dart';
 import 'package:fluxora/views/proxies/intelligent_node_picker_sheet.dart';
 
+
+Set<String>? chainNodeUniverse(Set<String> nodeNames) {
+  if (nodeNames.isEmpty) {
+    return null;
+  }
+  return nodeNames;
+}
+
+bool isFallbackCandidateStale(Set<String>? universe, String nodeName) {
+  if (universe == null) {
+    return false;
+  }
+  return !universe.contains(nodeName);
+}
+
+/// B3 — whether [config] is driven by the `hop1Node`/`hop2Node`/`hop3Node`
+/// fields, and so has to pass [ChainTopologyValidator] before it is written.
+///
+/// A two-hop config with no `hop2Node` is the landing-proxy chain, which the
+/// validator does not model: it requires `hop2` to be non-empty, so validating
+/// it would report `EMPTY_HOP` for the working production configuration.
+bool usesHopFieldChain(ChainProxyConfig config) =>
+    config.hopMode == ChainHopMode.threeHop ||
+    config.hop2Node.trim().isNotEmpty;
+
+/// B3 — whether the config claims three hops but has not had both of them
+/// chosen yet.
+///
+/// This drives the topology card's "三跳链路未完整" warning, and it is why an
+/// `EMPTY_HOP` from the validator is treated as work in progress rather than a
+/// rejected node (see [hopChainValidationError]).
+bool isThreeHopIncomplete(ChainProxyConfig config) =>
+    config.hopMode == ChainHopMode.threeHop &&
+    (config.hop2Node.trim().isEmpty || config.hop3Node.trim().isEmpty);
+
+/// B3 — the validator errors that mean `ChainProxyConfig.applyToClashConfig`
+/// would drop the chain instead of generating it.
+///
+/// `EMPTY_HOP` is deliberately absent: the two hop rows are filled one at a
+/// time, so the first pick always leaves the other hop empty, and blocking that
+/// would deadlock the pickers. An incomplete chain is surfaced by
+/// [isThreeHopIncomplete] instead, so it is never read as a finished three-hop.
+const Set<String> _blockingHopErrorCodes = {
+  'DUPLICATE_HOP',
+  'SELF_REFERENCE',
+  'NODE_NOT_FOUND',
+  'CIRCULAR_DEPENDENCY',
+};
+
+/// B3 — the pre-write gate for a hop configuration.
+///
+/// Returns the message to show the user, or `null` when [candidate] may be
+/// applied. Pure on purpose (no manager, no `BuildContext`) so the decision can
+/// be pinned by tests, like [isFallbackCandidateStale] above.
+///
+/// `ChainProxyConfig.applyToClashConfig` silently injects nothing when a hop
+/// node is missing from the proxy map, and it is never handed an
+/// `availableProxyNames` list, so it cannot report that itself. Checking here,
+/// against the same node set the picker offers, is what stops the UI from
+/// saving a chain that never got generated.
+///
+/// [availableProxyNames] `null` means the node set could not be read: the
+/// structural checks still run, but availability is left unverified, so a
+/// `null` result must not be read as "verified" — see `_hopConfigError`.
+String? hopChainValidationError(
+  ChainProxyConfig candidate,
+  List<String>? availableProxyNames,
+) {
+  if (!usesHopFieldChain(candidate)) return null;
+
+  final result = ChainTopologyValidator.validate(
+    mode: candidate.hopMode,
+    hop1: candidate.effectiveHop1,
+    hop2: candidate.hop2Node,
+    hop3: candidate.hopMode == ChainHopMode.threeHop
+        ? candidate.hop3Node
+        : null,
+    availableProxyNames: availableProxyNames,
+    dedicatedGroupName: candidate.dedicatedGroupName,
+  );
+  if (result.isValid) return null;
+
+  return _blockingHopErrorCodes.contains(result.errorCode)
+      ? result.message
+      : null;
+}
 
 class ChainProxyView extends ConsumerStatefulWidget {
   const ChainProxyView({super.key});
@@ -54,6 +140,115 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
           sheetType: type,
         );
       },
+    );
+  }
+
+  /// Validates a prospective hop configuration **before** it is written, using
+  /// the node set the manager can actually see.
+  ///
+  /// Returns the message to show, or `null` when the config is safe to apply.
+  String? _hopConfigError(ChainProxyConfig candidate) {
+    if (!usesHopFieldChain(candidate)) return null;
+
+    final available = ref.read(chainProxyConfigProvider).availableProxyNames;
+    final error = hopChainValidationError(candidate, available);
+    if (error != null) return error;
+
+    // The node list was unreadable, so availability was skipped entirely. Never
+    // report success for a chain whose nodes were not actually verified.
+    if (available == null) return appLocalizations.chainHopUnavailable;
+    return null;
+  }
+
+  /// Switches the hop count, keeping the hop-2/hop-3 fields consistent.
+  ///
+  /// Returning to two hops clears both fields in the same write: leaving
+  /// hop2Node populated would flip the two-hop chain onto the shadow-exit path
+  /// (`ChainProxyConfig.hasTwoHopNodes`) instead of the landing-proxy chain the
+  /// user came back to. Clearing first would work too, but costs three core
+  /// reloads and passes through invalid intermediate states; `updateConfig` is
+  /// the single atomic write the named setters are thin wrappers over.
+  Future<void> _onHopModeChanged(ChainHopMode mode) async {
+    final manager = ref.read(chainProxyConfigProvider);
+    if (mode == manager.config.hopMode) return;
+
+    if (mode == ChainHopMode.twoHop) {
+      await manager.updateConfig(
+        (c) => c.copyWith(
+          hopMode: ChainHopMode.twoHop,
+          hop2Node: '',
+          hop3Node: '',
+        ),
+      );
+      return;
+    }
+
+    // Three hops need a relay and an exit. The two rows appear right after this,
+    // and the topology card flags the chain as incomplete until both are set.
+    await manager.setHopMode(ChainHopMode.threeHop);
+  }
+
+  /// Writes [nodeName] into the hop-2 (relay) or hop-3 (exit) slot.
+  ///
+  /// The candidate config is validated first, so a rejected or stale node never
+  /// reaches disk.
+  Future<void> _selectHopNode({
+    required FallbackCandidateRole role,
+    required String nodeName,
+  }) async {
+    final manager = ref.read(chainProxyConfigProvider);
+    final current = manager.config;
+    final candidate = role == FallbackCandidateRole.relay
+        ? current.copyWith(hop2Node: nodeName)
+        : current.copyWith(hop3Node: nodeName);
+
+    final error = _hopConfigError(candidate);
+    if (error != null) {
+      if (mounted) context.showSnackBar(error);
+      return;
+    }
+
+    if (role == FallbackCandidateRole.relay) {
+      await manager.setHop2Node(nodeName);
+    } else {
+      await manager.setHop3Node(nodeName);
+    }
+  }
+
+  /// One selectable hop slot (relay or exit), reusing the existing node picker.
+  ///
+  /// `DIRECT` is not offered: it is a reserved system name that the topology
+  /// validator rejects for every hop but the first.
+  Widget _buildHopNodeRow({
+    required IconData icon,
+    required String title,
+    required String nodeName,
+    required FallbackCandidateRole role,
+    required Set<String> excludedHops,
+  }) {
+    final selected = nodeName.trim().isNotEmpty;
+    return ListItem(
+      leading: Icon(icon),
+      title: Text(title),
+      subtitle: Text(
+        selected ? nodeName : appLocalizations.chainHopNotSelected,
+        style: TextStyle(
+          color: selected
+              ? context.colorScheme.primary
+              : context.colorScheme.error,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => _showIntelligentHopPicker(
+        title: title,
+        currentHop: nodeName,
+        excludedHops: excludedHops,
+        role: role,
+        allowDirect: false,
+        allowFollowMain: false,
+        onSelect: (name) => _selectHopNode(role: role, nodeName: name),
+      ),
     );
   }
 
@@ -221,11 +416,58 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
           ),
           const SizedBox(height: 12),
 
+          // 1b. Manual failover card (P1.1-F)
+          _buildFailoverCard(context, config),
+          const SizedBox(height: 12),
+
           // 2. Default Hop & Integration settings
           CommonCard(
             type: CommonCardType.filled,
             child: Column(
               children: [
+                // B3: hop count. Reuses the existing ChainHopMode model; the two
+                // extra rows below appear only in three-hop mode.
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.route_outlined, size: 20),
+                          const SizedBox(width: 12),
+                          Text(
+                            appLocalizations.chainHopMode,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        appLocalizations.chainHopModeDesc,
+                        style: context.textTheme.bodySmall,
+                      ),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: double.infinity,
+                        child: SegmentedButton<ChainHopMode>(
+                          segments: [
+                            for (final m in ChainHopMode.values)
+                              ButtonSegment<ChainHopMode>(
+                                value: m,
+                                label: Text(m.label),
+                              ),
+                          ],
+                          selected: {config.hopMode},
+                          showSelectedIcon: false,
+                          onSelectionChanged: (selection) =>
+                              _onHopModeChanged(selection.first),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1, indent: 16, endIndent: 16),
                 ListItem(
                   leading: const Icon(Icons.hub_outlined),
                   title: Text(appLocalizations.defaultDialerProxy),
@@ -251,6 +493,28 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                       );
                   },
                 ),
+                // B3: three-hop relay + exit. Hidden in two-hop mode, where the
+                // landing-proxy chain keeps managing the exit.
+                if (config.hopMode == ChainHopMode.threeHop) ...[
+                  const Divider(height: 1, indent: 16, endIndent: 16),
+                  _buildHopNodeRow(
+                    icon: Icons.swap_horiz_rounded,
+                    title: appLocalizations.chainHopRelayNode,
+                    nodeName: config.hop2Node,
+                    role: FallbackCandidateRole.relay,
+                    excludedHops: {config.effectiveHop1, config.hop3Node}
+                      ..removeWhere((n) => n.trim().isEmpty),
+                  ),
+                  const Divider(height: 1, indent: 16, endIndent: 16),
+                  _buildHopNodeRow(
+                    icon: Icons.flight_land_rounded,
+                    title: appLocalizations.chainHopExitNode,
+                    nodeName: config.hop3Node,
+                    role: FallbackCandidateRole.exit,
+                    excludedHops: {config.effectiveHop1, config.hop2Node}
+                      ..removeWhere((n) => n.trim().isEmpty),
+                  ),
+                ],
                 const Divider(height: 1, indent: 16, endIndent: 16),
                 ListItem(
                   leading: const Icon(Icons.layers_outlined),
@@ -460,6 +724,154 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
     );
   }
 
+  /// P1.1-F — manual failover entry point.
+  ///
+  /// There is deliberately **no automatic trigger** here: the health-check
+  /// timer owns that (P1.1-F2). The button is enabled only when the chain is
+  /// enabled, at least one usable fallback candidate exists, and no session is
+  /// already running. While a session runs it is disabled and shows the live
+  /// `progress.message`; the outcome is surfaced through `result.rootCause`.
+  Widget _buildFailoverCard(BuildContext context, ChainProxyConfig config) {
+    final ChainFailoverProgress? progress = ref.watch(
+      chainFailoverProgressProvider,
+    );
+    final isFailingOver = ref.watch(isFailingOverProvider);
+    final pool = ref.watch(chainProxyConfigProvider).fallbackPool;
+
+    final hasCandidate = <ChainFallbackCandidate>[
+      ...pool.entryCandidates,
+      ...pool.relayCandidates,
+      ...pool.exitCandidates,
+    ].any((c) => c.enabled);
+
+    final canTrigger = config.enable && hasCandidate && !isFailingOver;
+
+    final String subtitle;
+    if (isFailingOver && progress != null) {
+      subtitle = progress.message;
+    } else if (!config.enable) {
+      subtitle = '请先启用链式代理';
+    } else if (!hasCandidate) {
+      subtitle = '尚未配置可用的备用候选节点';
+    } else {
+      subtitle = '检测到链路异常时可手动切换至备用候选节点';
+    }
+
+    // P1.3-B: the pool is the failover input, so it is managed here. Only the
+    // roles the current hop mode actually uses are offered.
+    final roles = config.hopMode == ChainHopMode.threeHop
+        ? const [
+            FallbackCandidateRole.entry,
+            FallbackCandidateRole.relay,
+            FallbackCandidateRole.exit,
+          ]
+        : const [
+            FallbackCandidateRole.entry,
+            FallbackCandidateRole.exit,
+          ];
+
+    return CommonCard(
+      type: CommonCardType.filled,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ListItem(
+            leading: const Icon(Icons.swap_horiz_rounded, size: 28),
+            title: const Text(
+              '故障转移',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: Text(subtitle),
+          ),
+          const SizedBox(height: 8),
+          // Without candidates the chain probe has no pool candidate to credit
+          // and failover has nothing to switch to, so the pool is editable here.
+          for (final role in roles)
+            _buildPoolRoleRow(context, role, pool.getCandidatesByRole(role)),
+          const SizedBox(height: 8),
+          FilledButton.icon(
+            onPressed: canTrigger ? _triggerFailover : null,
+            icon: isFailingOver
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.play_arrow_rounded),
+            label: Text(isFailingOver ? '故障转移执行中...' : '立即故障转移'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// One editable role bucket of the fallback pool. Adding reuses the existing
+  /// node picker; the manager keeps it idempotent and persists it.
+  Widget _buildPoolRoleRow(
+    BuildContext context,
+    FallbackCandidateRole role,
+    List<ChainFallbackCandidate> candidates,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 64,
+            child: Text(
+              role.label,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+          Expanded(
+            child: Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (final c in candidates)
+                  InputChip(
+                    label: Text(c.nodeName),
+                    onDeleted: () => chainProxyManager.removeFallbackCandidate(
+                      nodeName: c.nodeName,
+                      role: role,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline),
+            tooltip: '添加${role.label}候选',
+            onPressed: () => _showIntelligentHopPicker(
+              title: '添加${role.label}备用候选',
+              currentHop: '',
+              excludedHops: candidates.map((c) => c.nodeName).toSet(),
+              role: role,
+              allowDirect: false,
+              onSelect: (name) => chainProxyManager.addFallbackCandidate(
+                nodeName: name,
+                role: role,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _triggerFailover() async {
+    final manager = ref.read(chainProxyConfigProvider);
+    final result = await manager.triggerAutoFailover(
+      triggerReason: '用户手动触发故障转移',
+      bypassDampening: true,
+    );
+    if (!mounted) return;
+    final message = result.isSuccess
+        ? '故障转移成功，已平滑切换至 [${result.switchedNodeName}]'
+        : '故障转移失败：${result.rootCause}';
+    context.showSnackBar(message);
+  }
+
   Widget _buildTopologyCard(
     BuildContext context,
     ChainProxyConfig config,
@@ -470,6 +882,22 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
     final hopLabel = config.defaultDialerProxy.isEmpty
         ? appLocalizations.followMainSelector
         : config.defaultDialerProxy;
+
+    // B3: three hops insert a relay between the dialer and the exit. The exit
+    // node is hop3Node in three-hop mode (`ChainProxyConfig.effectiveExitNode`)
+    // and the active landing proxy in two-hop mode.
+    final isThreeHop = config.hopMode == ChainHopMode.threeHop;
+    final hasRelay = config.hop2Node.trim().isNotEmpty;
+    final hasThreeHopExit = config.hop3Node.trim().isNotEmpty;
+    final relayLabel = hasRelay
+        ? config.hop2Node
+        : appLocalizations.chainHopNotSelected;
+    final exitLabel = isThreeHop
+        ? (hasThreeHopExit
+              ? config.hop3Node
+              : appLocalizations.chainHopNotSelected)
+        : (activeLanding?.name ?? appLocalizations.chainHopNotSelected);
+    final hasExit = isThreeHop ? hasThreeHopExit : activeLanding != null;
 
     return CommonCard(
       type: CommonCardType.filled,
@@ -580,11 +1008,29 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                         height: 12,
                       ),
                     ),
+                    if (isThreeHop) ...[
+                      _buildTopologyNode(
+                        icon: Icons.swap_horiz_rounded,
+                        title: appLocalizations.topologyRelay,
+                        subtitle: relayLabel,
+                        isActive: isReady && hasRelay,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: FluxoraFlowIndicator(
+                          state: isReady && hasRelay
+                              ? FluxoraFlowState.connected
+                              : FluxoraFlowState.idle,
+                          width: 36,
+                          height: 12,
+                        ),
+                      ),
+                    ],
                     _buildTopologyNode(
                       icon: Icons.flight_land_rounded,
                       title: appLocalizations.topologyLanding,
-                      subtitle: activeLanding?.name ?? '未选择',
-                      isActive: isReady && activeLanding != null,
+                      subtitle: exitLabel,
+                      isActive: isReady && hasExit,
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -606,6 +1052,46 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                 ),
               ),
             ),
+            // B3: an incomplete three-hop chain generates no shadow nodes at
+            // all, so say so here rather than letting the card read as ready.
+            if (isThreeHopIncomplete(config)) ...[
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: context.colorScheme.errorContainer.withValues(
+                    alpha: 0.4,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: context.colorScheme.error.withValues(alpha: 0.4),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      size: 16,
+                      color: context.colorScheme.error,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        appLocalizations.chainHopIncomplete,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: context.colorScheme.onErrorContainer,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 10),
             Theme(
               data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
@@ -1948,4 +2434,3 @@ class _ProxyHealthReportDialog extends ConsumerWidget {
     );
   }
 }
-

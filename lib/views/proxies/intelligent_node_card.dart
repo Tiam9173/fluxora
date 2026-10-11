@@ -8,6 +8,9 @@ import 'package:fluxora/widgets/fluxora/fluxora_proxy_tile.dart';
 import 'package:fluxora/widgets/fluxora/fluxora_status.dart';
 import 'package:fluxora/widgets/fluxora/fluxora_latency_badge.dart';
 import 'package:fluxora/l10n/chain_proxy_l10n.dart';
+import 'package:fluxora/models/chain_fallback_pool.dart';
+import 'package:fluxora/models/chain_proxy.dart';
+import 'package:fluxora/providers/chain_proxy.dart';
 import 'package:fluxora/providers/providers.dart';
 
 class IntelligentNodeCard extends ConsumerWidget {
@@ -17,6 +20,11 @@ class IntelligentNodeCard extends ConsumerWidget {
   final bool? forceSelected;
   final bool isDisabled;
 
+  /// Role this candidate is being ranked for. When null, no health-check entry
+  /// is rendered (the card cannot know whether the node belongs to the active
+  /// chain).
+  final FallbackCandidateRole? role;
+
   const IntelligentNodeCard({
     super.key,
     required this.viewModel,
@@ -24,6 +32,7 @@ class IntelligentNodeCard extends ConsumerWidget {
     this.onTap,
     this.forceSelected,
     this.isDisabled = false,
+    this.role,
   });
 
   FluxoraStatusKind _mapHealthToStatus(ChainHealthStatus health) {
@@ -118,7 +127,17 @@ class IntelligentNodeCard extends ConsumerWidget {
     final List<Widget> badges = [];
 
     // 1. Adaptive Score
-    if (viewModel.score != null) {
+    // When no telemetry has been observed yet, `viewModel.score` is the scoring
+    // service's initial prior (0.6*50 + 0.3*50 + 0.1*20 = 47), not a
+    // measurement of this node. Rendering "Score: 47" would mislead users into
+    // reading it as a real rating, so present it as "not yet rated" instead.
+    if (viewModel.isUntested) {
+      badges.add(_MiniBadge(
+        icon: Icons.auto_awesome_outlined,
+        text: '暂无评分',
+        color: colorScheme.onSurfaceVariant,
+      ));
+    } else if (viewModel.score != null) {
       badges.add(_MiniBadge(
         icon: Icons.auto_awesome,
         text: 'Score: ${viewModel.score!.totalScore.toStringAsFixed(0)}',
@@ -142,12 +161,33 @@ class IntelligentNodeCard extends ConsumerWidget {
     ));
 
     // 3. Reliability
-    if (viewModel.score != null && viewModel.score!.reliabilityScore > 0) {
+    // Same reasoning as the score badge: with zero samples the reliability
+    // figure is the Laplace prior (confidence 0.5 → 50%), not an observed
+    // success rate.
+    if (viewModel.isUntested) {
+      badges.add(_MiniBadge(
+        icon: Icons.shield_outlined,
+        text: '暂无数据',
+        color: colorScheme.onSurfaceVariant,
+      ));
+    } else if (viewModel.score != null && viewModel.score!.reliabilityScore > 0) {
       badges.add(_MiniBadge(
         icon: Icons.shield_outlined,
         text: '${viewModel.score!.reliabilityScore.toInt()}%',
         color: colorScheme.onSecondaryContainer,
         backgroundColor: colorScheme.secondaryContainer,
+      ));
+    }
+
+    // 3b. P1.1-D2 — behavioural availability. Only rendered when real behaviour
+    // has proven the node non-connectable (≥3 consecutive real failures with
+    // zero successes); untested nodes are never flagged.
+    if (viewModel.isNonConnectable) {
+      badges.add(_MiniBadge(
+        icon: Icons.link_off,
+        text: '疑似不可用',
+        color: colorScheme.onErrorContainer,
+        backgroundColor: colorScheme.errorContainer,
       ));
     }
 
@@ -242,7 +282,74 @@ class IntelligentNodeCard extends ConsumerWidget {
       );
     }
 
-    return tile;
+    // ── Real health-check entry (GAP-3) ─────────────────────────────────────
+    // `probeCurrentChain()` probes the *configured* chain, so only a node that
+    // currently participates in that chain may be probed. The busy state comes
+    // from the existing manager flag (never a local flag), and the results are
+    // produced by the Round A write-back — the UI never writes health/latency/
+    // score itself.
+    if (role == null) return tile;
+
+    final manager = ref.watch(chainProxyConfigProvider);
+    final config = manager.config;
+    final bool isProbing = ref.watch(isProbingChainProvider);
+
+    final bool isCurrentChainNode;
+    switch (role!) {
+      case FallbackCandidateRole.entry:
+        isCurrentChainNode = config.effectiveHop1.trim() == viewModel.nodeName;
+        break;
+      case FallbackCandidateRole.relay:
+        isCurrentChainNode =
+            config.hopMode == ChainHopMode.threeHop &&
+            config.hop2Node.trim() == viewModel.nodeName;
+        break;
+      case FallbackCandidateRole.exit:
+        isCurrentChainNode =
+            config.effectiveExitNode.trim() == viewModel.nodeName;
+        break;
+    }
+
+    final Widget probeAction;
+    if (!isCurrentChainNode) {
+      probeAction = TextButton(
+        onPressed: () =>
+            context.showSnackBar('请先将该节点设为当前链路节点后再体检'),
+        child: const Text('设为当前链路后体检'),
+      );
+    } else if (isProbing) {
+      probeAction = const TextButton(
+        onPressed: null,
+        child: Text('体检中…'),
+      );
+    } else {
+      probeAction = FilledButton.tonal(
+        onPressed: () async {
+          try {
+            await manager.testSingleProxy(
+              nodeName: viewModel.nodeName,
+              role: role!,
+            );
+          } catch (e) {
+            if (context.mounted) {
+              context.showSnackBar('体检失败：$e');
+            }
+          }
+        },
+        child: Text(viewModel.isUntested ? '立即体检' : '重新体检'),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        tile,
+        Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Align(alignment: Alignment.centerRight, child: probeAction),
+        ),
+      ],
+    );
   }
 }
 

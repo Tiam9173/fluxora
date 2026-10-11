@@ -132,11 +132,17 @@ class AdaptiveSheetScaffold extends StatelessWidget {
       ]),
     );
     final content = bottomSheet
-        ? Container(
+        // B4.1: the sheet background must live on a `Material`, not on a
+        // `Container` with a `BoxDecoration`. A decorated box here sits
+        // *between* the sheet's `ListTile`s and their nearest `Material`, which
+        // hides their ink splashes and trips Flutter's
+        // `ListTile background color or ink splashes may be invisible` assertion
+        // (`material/list_tile.dart` `_findIntermediateWidget`).
+        ? Material(
+            color: backgroundColor,
             clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(28.0)),
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(28.0),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,

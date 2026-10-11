@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import '../services/network_fingerprint_provider.dart';
 import '../models/chain_score.dart';
 import '../models/chain_fallback_pool.dart';
+import '../models/latency_freshness.dart';
 import '../models/protocol_capability.dart';
 
 class ChainAdaptiveScoreService {
@@ -12,6 +13,9 @@ class ChainAdaptiveScoreService {
     ProtocolCapabilityProfile? capabilityProfile,
     double flapPenalty = 0.0,
     int globalTotalTrials = 0,
+    // P1.3-C4-Step4: injectable clock so the freshness gate is deterministically
+    // testable. `null` keeps the production behaviour (`DateTime.now()`).
+    DateTime? now,
   }) {
     final fingerprint = networkFingerprintProvider.getCurrentFingerprint();
     final stats =
@@ -40,9 +44,9 @@ class ChainAdaptiveScoreService {
     if (stats.consecutiveFailures > 0) {
       // 0.9 for 1 fail, 0.6 for 3, 0.2 for 5+
       // Using formula: max(0.2, 1.0 - (consecutiveFailures * 0.1) - some extra penalty for higher numbers?)
-      if (stats.consecutiveFailures == 1)
+      if (stats.consecutiveFailures == 1) {
         stabilityMultiplier = 0.9;
-      else if (stats.consecutiveFailures == 2)
+      } else if (stats.consecutiveFailures == 2)
         stabilityMultiplier = 0.8;
       else if (stats.consecutiveFailures == 3)
         stabilityMultiplier = 0.6;
@@ -57,15 +61,54 @@ class ChainAdaptiveScoreService {
 
     // 2. Latency score (0-100)
     // Assume 1000ms is the max acceptable latency for scoring normalization
-    double latencyScore = 50.0; // default unknown
-    if (candidate.latencyMs != null && candidate.latencyMs! >= 0) {
-      latencyScore = (100.0 - (candidate.latencyMs! / 10.0)).clamp(0.0, 100.0);
+    double latencyScore = LatencyFreshness.neutralScore; // default unknown
+
+    // P1.3-C4-Step4 — freshness gate (D-1 / D-3 / F-2).
+    //
+    // β compat migration: a candidate with **no** structured LatencyState keeps
+    // the legacy shim behaviour verbatim, so nothing that never went through the
+    // Step3 failover write loses its latency differentiation. Only candidates
+    // that DO carry `chainLatency` are gated.
+    //
+    // `chainLatency` (not `nodeLatency`) is read here: the shim `latencyMs` is the
+    // chain total (`chain_failover_service.dart:956`), so chain scope is what the
+    // current score actually consumes. Scope-aware reads are Step5.
+    final chainLatency = candidate.chainLatency;
+    if (chainLatency == null) {
+      // β — unchanged legacy path (same guard, same formula).
+      final shim = candidate.latencyMs;
+      if (shim != null && shim >= 0) {
+        latencyScore = LatencyFreshness.rawScore(shim);
+      }
+    } else if (chainLatency.latencyMs < 0) {
+      // Non-positive latency is not a usable observation: the legacy path's
+      // `>= 0` guard parked it at the neutral score, and the probe itself treats
+      // `<= 0` as unhealthy (`chain_probe_service.dart:734`). Falling through to
+      // `rawScore` would clamp a negative value to a *perfect* 100 instead.
+      latencyScore = LatencyFreshness.neutralScore;
+    } else {
+      final freshness = LatencyFreshness.evaluate(
+        state: chainLatency,
+        now: now ?? DateTime.now(),
+        currentFingerprint: fingerprint,
+      );
+      latencyScore = switch (freshness) {
+        LatencyFreshness.trusted =>
+          LatencyFreshness.rawScore(chainLatency.latencyMs),
+        LatencyFreshness.degraded => LatencyFreshness.degrade(
+          LatencyFreshness.rawScore(chainLatency.latencyMs),
+        ),
+        LatencyFreshness.unknown => LatencyFreshness.neutralScore,
+      };
     }
 
     // 3. Capability confidence
     double capabilityScore = 20.0; // unknown default
     if (capabilityProfile != null) {
-      switch (capabilityProfile.evidence) {
+      // P1.2-F: `capabilityScore` measures confidence in the probe-derived
+      // reachability data → read the TCP dimension. UDP is intentionally not a
+      // ranking signal (P1.2-E).
+      switch (capabilityProfile.tcp.evidence) {
         case CapabilityEvidenceType.runtimeVerified:
           capabilityScore = 100.0;
           break;

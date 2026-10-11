@@ -20,6 +20,7 @@ on:
           - android
           - all
           - windows
+          - windows-amd64
           - macos
           - linux
 
@@ -27,6 +28,7 @@ env:
   IS_STABLE: ${{ !contains(github.ref, '-') }}
   IS_PRERELEASE: ${{ contains(github.ref_name, '-rc.') || contains(github.ref_name, 'pre') }}
   SHOULD_RELEASE: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && (!contains(github.ref, '-') || contains(github.ref_name, '-rc.') || contains(github.ref_name, 'pre')) }}
+  SHOULD_SIGN: ${{ (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) || (github.event_name == 'workflow_dispatch' && inputs.release_validation == true) }}
   GRADLE_OPTS: -Dorg.gradle.vfs.watch=false
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   SENTRY_BACKEND: none
@@ -62,7 +64,13 @@ jobs:
             {'platform': 'linux', 'os': 'ubuntu-22.04', 'arch': 'amd64', 'compatible': True}
           ]
           if target and target != 'all':
-            filtered = [m for m in all_matrix if m['platform'] == target]
+            if target == 'windows-amd64':
+              filtered = [m for m in all_matrix
+                          if m['platform'] == 'windows'
+                          and m.get('arch') == 'amd64'
+                          and not m.get('compatible', False)]
+            else:
+              filtered = [m for m in all_matrix if m['platform'] == target]
           else:
             filtered = all_matrix
           matrix_json = json.dumps({'include': filtered})
@@ -225,7 +233,7 @@ jobs:
           dart setup.dart ${{ matrix.platform }} --arch ${{ matrix.arch }} ${{ env.IS_STABLE == 'true' && '--env stable' || '' }} ${{ matrix.compatible == true && '--compatible' || '' }}
 
       - name: Restore Signing Certificate (Windows)
-        if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true'
+        if: matrix.platform == 'windows' && env.SHOULD_SIGN == 'true'
         shell: pwsh
         env:
           WINDOWS_SIGNING_PFX_B64: ${{ secrets.WINDOWS_SIGNING_PFX_B64 }}
@@ -245,7 +253,7 @@ jobs:
           Write-Host "Windows signing certificate restored to a temporary path under RUNNER_TEMP (contents are never logged)."
 
       - name: Locate SignTool (Windows)
-        if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true'
+        if: matrix.platform == 'windows' && env.SHOULD_SIGN == 'true'
         shell: pwsh
         run: |
           $roots = @(
@@ -272,7 +280,7 @@ jobs:
           dart setup.dart windows --arch ${{ matrix.arch }} --out core-only ${{ matrix.compatible == true && '--compatible' || '' }}
 
       - name: Sign Core (Windows)
-        if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true'
+        if: matrix.platform == 'windows' && env.SHOULD_SIGN == 'true'
         shell: pwsh
         env:
           WINDOWS_SIGNING_PFX_PASSWORD: ${{ secrets.WINDOWS_SIGNING_PFX_PASSWORD }}
@@ -292,7 +300,7 @@ jobs:
           dart setup.dart windows --arch ${{ matrix.arch }} --out helper --core-hash $signedCoreHash ${{ matrix.compatible == true && '--compatible' || '' }}
 
       - name: Sign HelperService (Windows)
-        if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true'
+        if: matrix.platform == 'windows' && env.SHOULD_SIGN == 'true'
         shell: pwsh
         env:
           WINDOWS_SIGNING_PFX_PASSWORD: ${{ secrets.WINDOWS_SIGNING_PFX_PASSWORD }}
@@ -340,7 +348,7 @@ jobs:
           flutter @flutterArgs
 
       - name: Sign Fluxora (Windows)
-        if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true'
+        if: matrix.platform == 'windows' && env.SHOULD_SIGN == 'true'
         shell: pwsh
         env:
           WINDOWS_SIGNING_PFX_PASSWORD: ${{ secrets.WINDOWS_SIGNING_PFX_PASSWORD }}
@@ -365,7 +373,7 @@ jobs:
           dart windows/packaging/exe/package_windows.dart --arch ${{ matrix.arch }} ${{ matrix.compatible == true && '--compatible' || '' }} --env ${{ env.IS_STABLE == 'true' && 'stable' || 'pre' }}
 
       - name: Find Installer Path
-        if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true'
+        if: matrix.platform == 'windows' && env.SHOULD_SIGN == 'true'
         shell: pwsh
         run: |
           $desc = if ('${{ matrix.compatible }}' -eq 'true') { "${{ matrix.arch }}-compatible" } else { "${{ matrix.arch }}" }
@@ -374,7 +382,7 @@ jobs:
           echo "INSTALLER_FILENAME=$(Split-Path -Leaf $installer)" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Sign Installer (Windows)
-        if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true'
+        if: matrix.platform == 'windows' && env.SHOULD_SIGN == 'true'
         shell: pwsh
         env:
           WINDOWS_SIGNING_PFX_PASSWORD: ${{ secrets.WINDOWS_SIGNING_PFX_PASSWORD }}
@@ -387,7 +395,7 @@ jobs:
           Write-Host "Signed: $target"
 
       - name: Verify Windows Signatures
-        if: matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true'
+        if: matrix.platform == 'windows' && env.SHOULD_SIGN == 'true'
         shell: pwsh
         run: |
           $targets = @(
@@ -425,7 +433,7 @@ jobs:
           exit 0
       
       - name: Clean up Signing Certificate (Windows)
-        if: always() && matrix.platform == 'windows' && env.SHOULD_RELEASE == 'true'
+        if: always() && matrix.platform == 'windows' && env.SHOULD_SIGN == 'true'
         continue-on-error: true
         shell: pwsh
         run: |

@@ -1,5 +1,7 @@
 import 'package:fluxora/common/common.dart';
+import 'package:fluxora/manager/chain_proxy_manager.dart';
 import 'package:fluxora/manager/warp_manager.dart';
+import 'package:fluxora/models/chain_proxy.dart';
 import 'package:fluxora/models/warp_config.dart';
 import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/providers/warp.dart';
@@ -26,31 +28,46 @@ class _WarpViewState extends ConsumerState<WarpView> {
   }
 
   void _showHopPickerSheet({
+    required WarpConfig config,
     required String currentHop,
     required Function(String) onSelect,
   }) {
+    // B4.1: derive the internal group names from live state instead of
+    // hard-coding them — the chain group and the WARP exit group are both
+    // user-configurable (`ChainProxyConfig.dedicatedGroupName` /
+    // `WarpConfig.dedicatedGroupName`), so a literal would silently stop
+    // matching once the user renames them.
+    final chainGroupName = chainProxyManager.config.dedicatedGroupName;
+    final warpExitGroupName = config.dedicatedGroupName;
+    // The WARP hop group is the single exception: its only definition is a
+    // function-local `const` inside `warp_config.dart` that is not exported, so
+    // there is no accessible source to reference.
+    const warpHopGroupName = '✈️ WARP跳板';
+
+    bool isInternalGroup(String name) =>
+        name == chainGroupName ||
+        name == warpExitGroupName ||
+        name == warpHopGroupName;
+
     final groups = ref.read(groupsProvider);
     final groupNames = groups
         .map((g) => g.name)
-        .where((name) =>
-            name != '🔗 链式代理' &&
-            name != '🛡️ WARP 出口' &&
-            name != '✈️ WARP跳板')
+        .where((name) => !isInternalGroup(name))
         .toList();
 
     final allProxies = <String>{};
     for (final g in groups) {
-      if (g.name == '🔗 链式代理' ||
-          g.name == '🛡️ WARP 出口' ||
-          g.name == '✈️ WARP跳板') {
+      if (isInternalGroup(g.name)) {
         continue;
       }
       for (final p in g.all) {
-        if (p.name != 'DIRECT' &&
-            p.name != 'REJECT' &&
-            p.name != 'REJECT-DROP' &&
-            p.name != 'PASS' &&
-            p.name != WarpConfig.defaultProxyName) {
+        // B4.1: reuse the shared classification rule — built-in policies
+        // (DIRECT / REJECT / PASS / COMPATIBLE …), proxy groups and chain shadow
+        // nodes are not ordinary nodes; unknown types are kept. The WARP-specific
+        // exclusion is retained, but against the LIVE `proxyName` so a renamed
+        // WARP outbound can never be offered as its own dialer.
+        if (ChainProxyConfig.isSelectableProxy(name: p.name, type: p.type) &&
+            p.name != config.proxyName) {
           allProxies.add(p.name);
         }
       }
@@ -440,10 +457,18 @@ class _WarpViewState extends ConsumerState<WarpView> {
             FilledButton(
               onPressed: () {
                 warpManager.setNoise(
-                  count: countCtrl.text.trim().isEmpty ? '1-3' : countCtrl.text.trim(),
-                  mode: modeCtrl.text.trim().isEmpty ? 'm4' : modeCtrl.text.trim(),
-                  size: sizeCtrl.text.trim().isEmpty ? '10-30' : sizeCtrl.text.trim(),
-                  delay: delayCtrl.text.trim().isEmpty ? '10-30' : delayCtrl.text.trim(),
+                  count: countCtrl.text.trim().isEmpty
+                      ? '1-3'
+                      : countCtrl.text.trim(),
+                  mode: modeCtrl.text.trim().isEmpty
+                      ? 'm4'
+                      : modeCtrl.text.trim(),
+                  size: sizeCtrl.text.trim().isEmpty
+                      ? '10-30'
+                      : sizeCtrl.text.trim(),
+                  delay: delayCtrl.text.trim().isEmpty
+                      ? '10-30'
+                      : delayCtrl.text.trim(),
                 );
                 Navigator.of(ctx).pop();
                 context.showSnackBar('噪声参数已保存');
@@ -501,8 +526,9 @@ class _WarpViewState extends ConsumerState<WarpView> {
               final lic = ctrl.text.trim();
               Navigator.of(ctx).pop();
               context.showSnackBar('正在通过官方接口绑定密钥...');
-              final success =
-                  await warpManager.registerCloudflareAccount(license: lic);
+              final success = await warpManager.registerCloudflareAccount(
+                license: lic,
+              );
               if (mounted) {
                 if (success) {
                   context.showSnackBar('🎉 WARP+ 许可证激活成功！');
@@ -569,8 +595,10 @@ class _WarpViewState extends ConsumerState<WarpView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+        Text(
+          label,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+        ),
         const SizedBox(height: 4),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -687,11 +715,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
       );
     }
 
-    return CommonScaffold(
-      title: 'WARP',
-      actions: actions,
-      body: body,
-    );
+    return CommonScaffold(title: 'WARP', actions: actions, body: body);
   }
 
   Widget _buildGuideCard(ColorScheme colorScheme) {
@@ -710,8 +734,11 @@ class _WarpViewState extends ConsumerState<WarpView> {
           children: [
             Row(
               children: [
-                Icon(Icons.lightbulb_outline,
-                    color: colorScheme.primary, size: 20),
+                Icon(
+                  Icons.lightbulb_outline,
+                  color: colorScheme.primary,
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   '💡 使用场景与路由模式原理',
@@ -752,26 +779,20 @@ class _WarpViewState extends ConsumerState<WarpView> {
     final statusText = isWarp
         ? (isPlus ? 'WARP+ 极速加速激活 (warp=plus)' : 'WARP 正常接管保护中 (warp=on)')
         : (report == null
-            ? '尚未进行真实有效性检测'
-            : (report.isSuccess ? '直连或普通代理 (warp=off)' : '连接未完成或检测超时'));
+              ? '尚未进行真实有效性检测'
+              : (report.isSuccess ? '直连或普通代理 (warp=off)' : '连接未完成或检测超时'));
 
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: BorderSide(
-          color: badgeColor.withValues(alpha: 0.6),
-          width: 1.5,
-        ),
+        side: BorderSide(color: badgeColor.withValues(alpha: 0.6), width: 1.5),
       ),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           gradient: LinearGradient(
-            colors: [
-              badgeColor.withValues(alpha: 0.12),
-              colorScheme.surface,
-            ],
+            colors: [badgeColor.withValues(alpha: 0.12), colorScheme.surface],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -815,7 +836,9 @@ class _WarpViewState extends ConsumerState<WarpView> {
                 if (report?.latencyMs != null)
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.green.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(12),
@@ -918,8 +941,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
                             ),
                           )
                         : const Icon(Icons.flash_on, size: 18),
-                    label: Text(
-                        isTesting ? '正在深度诊断...' : '⚡ 一键检测 WARP 真实状态'),
+                    label: Text(isTesting ? '正在深度诊断...' : '⚡ 一键检测 WARP 真实状态'),
                     onPressed: isTesting
                         ? null
                         : () async {
@@ -927,10 +949,12 @@ class _WarpViewState extends ConsumerState<WarpView> {
                             if (mounted) {
                               if (res.isWarpActive) {
                                 context.showSnackBar(
-                                    '🎉 诊断成功！WARP 已生效 (机房: ${res.colo}, 出口: ${res.ip})');
+                                  '🎉 诊断成功！WARP 已生效 (机房: ${res.colo}, 出口: ${res.ip})',
+                                );
                               } else if (res.isSuccess) {
                                 context.showSnackBar(
-                                    '提示：已连接出口 ${res.ip}，但未检测到 WARP 签名，请确认跳板配置');
+                                  '提示：已连接出口 ${res.ip}，但未检测到 WARP 签名，请确认跳板配置',
+                                );
                               } else {
                                 context.showSnackBar(res.googleStatus);
                               }
@@ -1047,8 +1071,10 @@ class _WarpViewState extends ConsumerState<WarpView> {
             leading: Icon(Icons.build_rounded, color: colorScheme.primary),
             title: const Text('生成 WARP 配置'),
             subtitle: isRegistering
-                ? const Text('正在向 Cloudflare 官方注册设备并生成密钥...',
-                    style: TextStyle(fontSize: 12, color: Colors.blue))
+                ? const Text(
+                    '正在向 Cloudflare 官方注册设备并生成密钥...',
+                    style: TextStyle(fontSize: 12, color: Colors.blue),
+                  )
                 : Text(
                     config.accountId.isNotEmpty
                         ? '设备已就绪 (ID: ${config.accountId})，点击可重新生成'
@@ -1099,11 +1125,13 @@ class _WarpViewState extends ConsumerState<WarpView> {
               config.licenseKey.isEmpty
                   ? '未设置'
                   : (config.accountType == 'plus'
-                      ? '👑 WARP+ (已激活): ${config.licenseKey}'
-                      : config.licenseKey),
+                        ? '👑 WARP+ (已激活): ${config.licenseKey}'
+                        : config.licenseKey),
               style: TextStyle(
                 fontSize: 12,
-                color: config.licenseKey.isEmpty ? Colors.grey : colorScheme.primary,
+                color: config.licenseKey.isEmpty
+                    ? Colors.grey
+                    : colorScheme.primary,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -1115,7 +1143,10 @@ class _WarpViewState extends ConsumerState<WarpView> {
 
           // 5. 优选 IP
           ListTile(
-            leading: Icon(Icons.auto_awesome_rounded, color: colorScheme.primary),
+            leading: Icon(
+              Icons.auto_awesome_rounded,
+              color: colorScheme.primary,
+            ),
             title: const Text('优选 IP'),
             subtitle: Text(
               config.cleanIp.isEmpty ? 'auto' : config.cleanIp,
@@ -1154,7 +1185,10 @@ class _WarpViewState extends ConsumerState<WarpView> {
 
           // 8. 噪声模式
           ListTile(
-            leading: Icon(Icons.mode_standby_rounded, color: colorScheme.primary),
+            leading: Icon(
+              Icons.mode_standby_rounded,
+              color: colorScheme.primary,
+            ),
             title: const Text('噪声模式'),
             subtitle: Text(
               config.noiseMode,
@@ -1167,7 +1201,10 @@ class _WarpViewState extends ConsumerState<WarpView> {
 
           // 9. 噪声大小
           ListTile(
-            leading: Icon(Icons.compare_arrows_rounded, color: colorScheme.primary),
+            leading: Icon(
+              Icons.compare_arrows_rounded,
+              color: colorScheme.primary,
+            ),
             title: const Text('噪声大小'),
             subtitle: Text(
               config.noiseSize,
@@ -1260,11 +1297,17 @@ class _WarpViewState extends ConsumerState<WarpView> {
                       title: Text(
                         m.label,
                         style: const TextStyle(
-                            fontWeight: FontWeight.w600, fontSize: 14),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
                       ),
-                      subtitle: Text(m.description,
-                          style: const TextStyle(
-                              fontSize: 12, color: Colors.grey)),
+                      subtitle: Text(
+                        m.description,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
                       value: m,
                     ),
                 ],
@@ -1280,8 +1323,8 @@ class _WarpViewState extends ConsumerState<WarpView> {
     final hopName = config.defaultDialerProxy.isEmpty
         ? '⚡ 跟随后台主选择 (自动匹配当前机场节点)'
         : (config.defaultDialerProxy == 'DIRECT'
-            ? 'DIRECT (直连 Cloudflare)'
-            : '✈️ 指定前置节点: ${config.defaultDialerProxy}');
+              ? 'DIRECT (直连 Cloudflare)'
+              : '✈️ 指定前置节点: ${config.defaultDialerProxy}');
 
     return Card(
       elevation: 0,
@@ -1303,13 +1346,12 @@ class _WarpViewState extends ConsumerState<WarpView> {
         trailing: const Icon(Icons.arrow_forward_ios, size: 14),
         onTap: () {
           _showHopPickerSheet(
+            config: config,
             currentHop: config.defaultDialerProxy,
             onSelect: (selected) {
               warpManager.setDefaultDialer(selected);
               context.showSnackBar(
-                selected.isEmpty
-                    ? '已设为跟随后台主选择'
-                    : '已指定前置跳板为 $selected',
+                selected.isEmpty ? '已设为跟随后台主选择' : '已指定前置跳板为 $selected',
               );
             },
           );
@@ -1343,19 +1385,26 @@ class _WarpViewState extends ConsumerState<WarpView> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.badge_outlined,
-                        color: colorScheme.primary, size: 20),
+                    Icon(
+                      Icons.badge_outlined,
+                      color: colorScheme.primary,
+                      size: 20,
+                    ),
                     const SizedBox(width: 8),
                     const Text(
                       'WARP 凭据与高级详情',
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
                     ),
                   ],
                 ),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: colorScheme.primaryContainer,
                     borderRadius: BorderRadius.circular(8),

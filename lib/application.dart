@@ -19,6 +19,33 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'controller.dart';
 import 'pages/pages.dart';
 
+/// P2.6-D: error boundary for fire-and-forget background tasks.
+///
+/// `unawaited(...)` only silences the "discarded future" signal — it does **not**
+/// stop an async failure from becoming an *unhandled* async error. A `Timer`
+/// callback has no `await` boundary above it, so a failure there surfaces as a
+/// raw zone error instead of a diagnosable log line.
+///
+/// This keeps the task fire-and-forget (the caller is never awaited, so startup
+/// and the timer loop are not blocked) while making a failure observable. The
+/// error is **not** swallowed: it is handed to [onError] when provided, and
+/// logged otherwise.
+Future<void> runDetachedTask(
+  Future<void> Function() task, {
+  String label = 'detached task',
+  void Function(Object error, StackTrace stackTrace)? onError,
+}) async {
+  try {
+    await task();
+  } catch (error, stackTrace) {
+    if (onError != null) {
+      onError(error, stackTrace);
+      return;
+    }
+    commonPrint.log('[$label] failed: $error\n$stackTrace');
+  }
+}
+
 class Application extends ConsumerStatefulWidget {
   const Application({super.key});
 
@@ -68,7 +95,16 @@ class ApplicationState extends ConsumerState<Application>
   Future<void> _initApp() async {
     final currentContext = globalState.navigatorKey.currentContext;
     if (currentContext != null && currentContext != context) {
-      globalState.appController = AppController(currentContext, ref);
+      // P2.6-D: re-target the single controller at the mounted navigator context
+      // instead of constructing a second `AppController`.
+      //
+      // The second construction used to replace the instance created in
+      // `initState` and orphan it. That is not merely a wasted allocation: every
+      // per-instance guard (`_coreLifecycleLock`, `_coreGeneration`, the
+      // in-flight `_isUpdatingGroups` / `_updatingProfileIds` state) is per
+      // object, so the single-flight and stale-result guarantees were silently
+      // split across two controllers for the rest of the session.
+      globalState.appController.rebindContext(currentContext);
     }
     await globalState.appController.init();
     try {
@@ -133,7 +169,16 @@ class ApplicationState extends ConsumerState<Application>
   void _autoUpdateProfilesTask() {
     _autoUpdateProfilesTaskTimer = Timer.periodic(
       const Duration(hours: 24),
-      (_) => unawaited(globalState.appController.autoUpdateProfiles()),
+      // P2.6-D: fire-and-forget by design (the 24h tick must not be blocked),
+      // but routed through an explicit boundary: a `Timer` callback has no
+      // `await` above it, so a bare `unawaited(...)` let a failure escape as an
+      // unhandled async error.
+      (_) => unawaited(
+        runDetachedTask(
+          globalState.appController.autoUpdateProfiles,
+          label: 'profile auto-update',
+        ),
+      ),
     );
   }
 
@@ -324,10 +369,7 @@ class ApplicationState extends ConsumerState<Application>
                     color: Colors.black87,
                     borderRadius: BorderRadius.all(Radius.circular(10)),
                   ),
-                  textStyle: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                  ),
+                  textStyle: TextStyle(color: Colors.white, fontSize: 12),
                 ),
               ),
               darkTheme: ThemeData(
@@ -427,10 +469,7 @@ class ApplicationState extends ConsumerState<Application>
                     color: Colors.black87,
                     borderRadius: BorderRadius.all(Radius.circular(10)),
                   ),
-                  textStyle: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                  ),
+                  textStyle: TextStyle(color: Colors.white, fontSize: 12),
                 ),
               ),
               home: child!,

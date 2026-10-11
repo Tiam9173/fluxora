@@ -29,6 +29,7 @@ class _ChainDiagnosticPanelState extends ConsumerState<ChainDiagnosticPanel> {
     try {
       final file = await chainProxyManager.exportChainDiagnosticReport();
       if (!mounted) return;
+      if (file == null) return;
       context.showSnackBar('Report exported: ${file.path}');
     } catch (e) {
       if (!mounted) return;

@@ -92,7 +92,6 @@ dev_dependencies:
   riverpod_generator: ^4.0.8
   intl_utils: ^2.8.16
   liquid_engine: ^0.2.2
-
 flutter:
   generate: true
   uses-material-design: true

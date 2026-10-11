@@ -22,6 +22,8 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
+import '../support/temp_dir_cleanup.dart';
+
 class FakeCrossPlatformPathProviderPlatform extends Fake
     with MockPlatformInterfaceMixin
     implements PathProviderPlatform {
@@ -72,6 +74,19 @@ void main() {
     stressSandboxDir = await Directory.systemTemp.createTemp(
       'fluxora_stress_sandbox_',
     );
+    // P1.1-F group isolation: ChainProxyManager.init() must never read or write
+    // the developer's real %APPDATA%\Fluxora data directory. On Windows,
+    // AppPath._internal() resolves the data dir from
+    // Platform.environment['APPDATA'] and IGNORES the faked
+    // PathProviderPlatform, so faking path_provider alone does NOT sandbox
+    // chain_proxies.json / chain_fallback_pool.json / chain_reliability_stats.json.
+    // The only reliable seam is the *FilePathOverride statics.
+    ChainProxyManager.configFilePathOverride =
+        p.join(stressSandboxDir.path, 'chain_proxies.json');
+    ChainProxyManager.fallbackPoolFilePathOverride =
+        p.join(stressSandboxDir.path, 'chain_fallback_pool.json');
+    ChainProxyManager.reliabilityStatsFilePathOverride =
+        p.join(stressSandboxDir.path, 'chain_reliability_stats.json');
     PathProviderPlatform.instance = FakeCrossPlatformPathProviderPlatform(
       stressSandboxDir,
     );
@@ -95,6 +110,12 @@ void main() {
 
   tearDownAll(() async {
     chainProbeService.customDelayTesterOverride = null;
+    // P2.3-C: stop + flush the debounced reliability write while the override
+    // still points at the sandbox dir, so nothing writes into it at delete time.
+    await chainProxyManager.flushReliabilityStats();
+    ChainProxyManager.configFilePathOverride = null;
+    ChainProxyManager.fallbackPoolFilePathOverride = null;
+    ChainProxyManager.reliabilityStatsFilePathOverride = null;
 
     // Safety restore: return production config to pristine state
     if (originalProdConfigContent != null && await prodConfigFile.exists()) {
@@ -106,9 +127,7 @@ void main() {
       } catch (_) {}
     }
 
-    if (await stressSandboxDir.exists()) {
-      await stressSandboxDir.delete(recursive: true);
-    }
+    await deleteTempDirWithRetry(stressSandboxDir);
   });
 
   group('Phase 5.2-C — Cross-Platform Stress & Long-Running Validation', () {
@@ -255,7 +274,7 @@ void main() {
       );
 
       test(
-        '6. Triggering new failover session supersedes preceding active session without residue',
+        '6. Second failover trigger is rejected while a session is active (single-flight)',
         () async {
           final manager = ChainProxyManager();
           await manager.updateConfig(
@@ -286,16 +305,21 @@ void main() {
           final session1 = manager.triggerAutoFailover(bypassDampening: true);
           expect(manager.isFailingOver, isTrue);
 
-          // Immediately start session 2 (superseding session 1)
+          // P1.1-F single-flight: while session 1 is active, a second trigger is
+          // rejected outright — it must NOT cancel, take over, or supersede
+          // session 1. (The rejection reason is carried in res2.rootCause.)
           final session2 = manager.triggerAutoFailover(bypassDampening: true);
           expect(manager.isFailingOver, isTrue);
 
-          // Session 1 must be cancelled
+          // Session 1 keeps running and completes normally (not superseded).
           final res1 = await session1;
-          expect(res1.isCancelled, isTrue);
+          expect(res1.isCancelled, isFalse);
 
+          // Session 2 was rejected before attempting any candidate.
           final res2 = await session2;
-          expect(res2.isSuccess || res2.isCancelled, isTrue);
+          expect(res2.isCancelled, isTrue);
+          expect(res2.attemptedCandidatesCount, 0);
+
           expect(manager.isFailingOver, isFalse);
         },
       );

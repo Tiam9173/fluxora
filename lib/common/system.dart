@@ -11,6 +11,7 @@ import 'package:fluxora/helper/helper.dart';
 import 'package:fluxora/plugins/app.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/widgets/input.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart';
 import 'package:synchronized/synchronized.dart';
@@ -25,15 +26,20 @@ class System {
     return _instance!;
   }
 
+  /// Test-only seam pinning the reported platform (production uses
+  /// Platform.operatingSystem).
+  @visibleForTesting
+  static String? platformOverride;
+
   bool get isDesktop => isWindows || isMacOS || isLinux;
 
-  bool get isWindows => Platform.isWindows;
+  bool get isWindows => platformOverride == 'windows' || (platformOverride == null && Platform.isWindows);
 
-  bool get isMacOS => Platform.isMacOS;
+  bool get isMacOS => platformOverride == 'macos' || (platformOverride == null && Platform.isMacOS);
 
-  bool get isAndroid => Platform.isAndroid;
+  bool get isAndroid => platformOverride == 'android' || (platformOverride == null && Platform.isAndroid);
 
-  bool get isLinux => Platform.isLinux;
+  bool get isLinux => platformOverride == 'linux' || (platformOverride == null && Platform.isLinux);
 
   Future<int> get version async {
     final deviceInfo = await DeviceInfoPlugin().deviceInfo;

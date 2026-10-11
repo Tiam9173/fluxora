@@ -577,11 +577,11 @@ class ChainFallbackService implements IChainFallbackService {
       );
 
       explanationBuffer.write(
-        '宸叉垚鍔熶粠澶囩敤姹犱腑?[${role.label}] 浼橀€夊€欓€夎妭鐐? [${selected.nodeName}] (鍋ュ悍鐘舵€? ${selected.health.label}, 浼樺厛绾? ${selected.priority}',
+        '已成功从备用池中为 [${role.label}] 优选候选节点: [${selected.nodeName}] (健康状态: ${selected.health.label}, 优先级: ${selected.priority}',
       );
 
       if (selected.latencyMs != null && selected.latencyMs! > 0) {
-        explanationBuffer.write(', 寤惰? ${selected.latencyMs}ms');
+        explanationBuffer.write(', 延迟 ${selected.latencyMs}ms');
       }
 
       explanationBuffer.write(' (未配置任何备用节点或全不符合要求)');
@@ -607,7 +607,7 @@ class ChainFallbackService implements IChainFallbackService {
       explanationBuffer.write(' (未配置任何备用节点或全不符合要求)');
 
       if (excluded.isNotEmpty) {
-        explanationBuffer.write(' 鎺掗櫎鍘熷洜鎽樿  ? ');
+        explanationBuffer.write(' 排除原因摘要: ');
 
         explanationBuffer.write(
           excluded

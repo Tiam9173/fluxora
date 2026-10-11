@@ -46,12 +46,16 @@ void main() {
 
     // Scenario A: S S S S S
     var cA = makeCandidate('A');
-    for (int i = 0; i < 5; i++) cA = record(cA, true);
+    for (int i = 0; i < 5; i++) {
+      cA = record(cA, true);
+    }
     printScore('Scenario A', cA);
 
     // Scenario B: F F F F F
     var cB = makeCandidate('B');
-    for (int i = 0; i < 5; i++) cB = record(cB, false);
+    for (int i = 0; i < 5; i++) {
+      cB = record(cB, false);
+    }
     printScore('Scenario B', cB);
 
     // Scenario C: S F S F S F S F
@@ -64,14 +68,22 @@ void main() {
 
     // Scenario D: 100 S then 20 F
     var cD = makeCandidate('D');
-    for (int i = 0; i < 100; i++) cD = record(cD, true);
-    for (int i = 0; i < 20; i++) cD = record(cD, false);
+    for (int i = 0; i < 100; i++) {
+      cD = record(cD, true);
+    }
+    for (int i = 0; i < 20; i++) {
+      cD = record(cD, false);
+    }
     printScore('Scenario D', cD);
 
     // Scenario E: 20 F then 100 S
     var cE = makeCandidate('E');
-    for (int i = 0; i < 20; i++) cE = record(cE, false);
-    for (int i = 0; i < 100; i++) cE = record(cE, true);
+    for (int i = 0; i < 20; i++) {
+      cE = record(cE, false);
+    }
+    for (int i = 0; i < 100; i++) {
+      cE = record(cE, true);
+    }
     printScore('Scenario E', cE);
 
     // Flapping S F S F (100 times) then S S S

@@ -156,11 +156,16 @@ void main() {
       );
 
       final unverified = ProtocolCapabilityProfile.unknown('vless');
-      final verified = ProtocolCapabilityProfile.withEvidence(
+      final verified = ProtocolCapabilityProfile(
         protocol: 'vless',
-        udpCapability: CapabilityStatus.verifiedSupported,
-        tcpCapability: CapabilityStatus.verifiedSupported,
-        evidence: CapabilityEvidenceType.runtimeVerified,
+        tcp: const CapabilityState(
+          status: CapabilityStatus.verifiedSupported,
+          evidence: CapabilityEvidenceType.runtimeVerified,
+        ),
+        udp: const CapabilityState(
+          status: CapabilityStatus.verifiedSupported,
+          evidence: CapabilityEvidenceType.runtimeVerified,
+        ),
       );
 
       final scoreUnverified = ChainAdaptiveScoreService.calculateNodeScore(
@@ -176,7 +181,7 @@ void main() {
     });
 
     test(
-      '6. unknown capability rejected before scoring (Compatibility Gate)',
+      '6. unknown capability is NOT rejected before scoring (Compatibility Gate)',
       () {
         final unverified = ProtocolCapabilityProfile.unknown('vless');
         final exitProfile = ProtocolCapabilityProfile.unknown('hysteria2');
@@ -184,7 +189,8 @@ void main() {
           unverified,
           exitProfile,
         );
-        expect(result.compatible, isFalse);
+        // P1.2: `unknown` = insufficient evidence, not `unsupported`.
+        expect(result.compatible, isTrue);
       },
     );
 

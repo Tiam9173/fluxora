@@ -4,7 +4,6 @@ import 'package:fluxora/models/chain_proxy_node_view_model.dart';
 import 'package:fluxora/services/chain_adaptive_ranking_cache_service.dart';
 import 'package:fluxora/models/common.dart';
 import 'package:fluxora/models/chain_score.dart';
-import 'package:fluxora/models/protocol_capability.dart';
 
 void main() {
   group('Phase 5.9-E.1.2 — Adaptive Ranking Cache', () {

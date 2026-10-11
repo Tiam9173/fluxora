@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/providers/config.dart';
+import 'package:fluxora/state.dart';
 import 'package:fluxora/views/config/network.dart';
 import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
@@ -139,16 +142,25 @@ class SystemProxyButton extends StatelessWidget {
                     networkSettingProvider.select((state) => state.systemProxy),
                   );
 
-                  return Switch(
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    value: systemProxy,
-                    onChanged: (value) {
-                      ref
-                          .read(networkSettingProvider.notifier)
-                          .updateState(
-                            (state) => state.copyWith(systemProxy: value),
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // P2.5-B (CF-3): the SAME actual-state source as the
+                      // Network settings page. Compact mode only surfaces
+                      // mismatch / unknown so the fixed-height card never grows.
+                      const SystemProxyStatusLine(compact: true),
+                      Switch(
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        value: systemProxy,
+                        onChanged: (value) {
+                          // Route through the controller so the OS readback
+                          // always runs (never write the provider directly).
+                          unawaited(
+                            globalState.appController.setSystemProxy(value),
                           );
-                    },
+                        },
+                      ),
+                    ],
                   );
                 },
               ),

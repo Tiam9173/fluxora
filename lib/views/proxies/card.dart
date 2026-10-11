@@ -60,13 +60,10 @@ class ProxyCard extends StatelessWidget {
 
   Measure get measure => globalState.measure;
 
-  bool get _isNonTestableProxy {
-    final name = proxy.name.toUpperCase();
-    return name == 'REJECT' ||
-        name == 'REJECT-DROP' ||
-        name == 'PASS' ||
-        proxy.type.toUpperCase() == 'REMATCH';
-  }
+  // B4: delegates to the single shared rule so the card's bolt button cannot
+  // offer a delay test for `DIRECT`, a proxy group or a shadow node.
+  bool get _isNonTestableProxy =>
+      !ChainProxyConfig.isSelectableProxy(name: proxy.name, type: proxy.type);
 
   void _handleTestCurrentDelay() {
     if (_isNonTestableProxy) return;
@@ -244,8 +241,9 @@ class ProxyCard extends StatelessWidget {
           }
 
           for (final g in groups) {
-            if (g.name == dedicatedGroupName || g.name == hopGroupName)
+            if (g.name == dedicatedGroupName || g.name == hopGroupName) {
               continue;
+            }
             if (g.type != GroupType.Selector) continue;
 
             final hasDedicated = g.all.any((p) => p.name == dedicatedGroupName);
@@ -299,8 +297,9 @@ class ProxyCard extends StatelessWidget {
         for (final g in groups) {
           if (g.name == groupName ||
               g.name == dedicatedGroupName ||
-              g.name == hopGroupName)
+              g.name == hopGroupName) {
             continue;
+          }
           if (g.type != GroupType.Selector) continue;
           if (g.all.any((p) => p.name == dedicatedGroupName)) {
             final isMainOrGlobal =

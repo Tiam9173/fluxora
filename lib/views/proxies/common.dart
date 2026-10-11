@@ -83,7 +83,8 @@ double getItemHeight(ProxyCardType proxyCardType) {
   final baseHeight =
       16 + measure.bodyMediumHeight * 2 + measure.bodySmallHeight + 8 + 4;
   return switch (proxyCardType) {
-    ProxyCardType.expand => baseHeight - measure.bodySmallHeight + measure.labelSmallHeight * 2 + 4,
+    ProxyCardType.expand =>
+      baseHeight - measure.bodySmallHeight + measure.labelSmallHeight * 2 + 4,
     ProxyCardType.shrink => baseHeight,
     ProxyCardType.min => baseHeight - measure.bodyMediumHeight,
   };
@@ -123,19 +124,13 @@ Future<Delay> _testProxyDelay(DelayTestTarget target) {
   });
 }
 
-bool _isNonTestableProxyName(String proxyName) {
-  final name = proxyName.toUpperCase();
-  return name == 'REJECT' || name == 'REJECT-DROP' || name == 'PASS';
-}
-
-bool _isNonTestableProxyType(String proxyType) {
-  return proxyType.toUpperCase() == 'REMATCH';
-}
-
-bool _isNonTestableProxy(Proxy proxy) {
-  return _isNonTestableProxyName(proxy.name) ||
-      _isNonTestableProxyType(proxy.type);
-}
+/// B4: delegates to the single shared rule ([ChainProxyConfig.isSelectableProxy])
+/// so the delay-test path can no longer diverge from the node picker's filter.
+/// Previously this used its own, narrower list that omitted `DIRECT` and every
+/// group type, so "测速" issued real requests for `DIRECT` and nested-group
+/// members.
+bool _isNonTestableProxy(Proxy proxy) =>
+    !ChainProxyConfig.isSelectableProxy(name: proxy.name, type: proxy.type);
 
 String? _getProxyType(String proxyName) {
   final groups = globalState.appController.getCurrentGroups();
@@ -166,9 +161,12 @@ Future<void> delayTest(
         state.testUrl.getSafeValue(testUrl ?? ''),
       );
       final name = state.proxyName;
+      // B4: same shared rule, now also applied to the *resolved* proxy name.
       if (name.isEmpty ||
-          _isNonTestableProxyName(name) ||
-          _isNonTestableProxyType(_getProxyType(name) ?? '')) {
+          !ChainProxyConfig.isSelectableProxy(
+            name: name,
+            type: _getProxyType(name) ?? '',
+          )) {
         continue;
       }
       targets.add(DelayTestTarget(name: name, url: url));

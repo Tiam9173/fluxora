@@ -31,6 +31,10 @@ void main() {
         capabilityEvidence: CapabilityEvidenceType.runtimeVerified,
         isLocked: false,
         isFailoverCandidate: false,
+        // This fixture represents a node with real observed telemetry, so the
+        // card must render the measured Score / Reliability rather than the
+        // "not yet probed" placeholders.
+        hasObservedTelemetry: true,
       );
     });
 
@@ -143,9 +147,58 @@ void main() {
         proxy: const Proxy(name: 'Test', type: 'SS'),
         nodeName: 'Test',
         score: null,
+        // `Score: --` is the "telemetry observed but no score object" branch.
+        // With no telemetry the card renders the "not yet rated" placeholder
+        // instead, which is covered separately below.
+        hasObservedTelemetry: true,
       );
       await tester.pumpWidget(createTestableWidget(vm));
       expect(find.text('Score: --'), findsOneWidget);
+    });
+
+    testWidgets('13. Untested node shows 暂无评分 instead of a prior score', (
+      tester,
+    ) async {
+      final vm = ChainProxyNodeViewModel(
+        proxy: const Proxy(name: 'Test', type: 'SS'),
+        nodeName: 'Test',
+        // No telemetry observed yet: the underlying ChainScore is only the
+        // scoring service's initial prior (47), which must not be presented as
+        // a measured rating.
+        score: const ChainScore(
+          totalScore: 47.0,
+          confidence: 0.5,
+          reliabilityScore: 50.0,
+          capabilityScore: 20.0,
+          latencyScore: 50.0,
+          flapPenalty: 0,
+          hopPenalty: 0,
+        ),
+      );
+      await tester.pumpWidget(createTestableWidget(vm));
+      expect(find.text('暂无评分'), findsOneWidget);
+      expect(find.text('Score: 47'), findsNothing);
+    });
+
+    testWidgets('14. Untested node shows 暂无数据 instead of a prior reliability', (
+      tester,
+    ) async {
+      final vm = ChainProxyNodeViewModel(
+        proxy: const Proxy(name: 'Test', type: 'SS'),
+        nodeName: 'Test',
+        score: const ChainScore(
+          totalScore: 47.0,
+          confidence: 0.5,
+          reliabilityScore: 50.0,
+          capabilityScore: 20.0,
+          latencyScore: 50.0,
+          flapPenalty: 0,
+          hopPenalty: 0,
+        ),
+      );
+      await tester.pumpWidget(createTestableWidget(vm));
+      expect(find.text('暂无数据'), findsOneWidget);
+      expect(find.text('50%'), findsNothing);
     });
 
     testWidgets('13. Null Latency', (tester) async {

@@ -518,6 +518,7 @@ class ChainProxyConfig {
   final String hop2Node;
   final String hop3Node;
 
+  final bool autoFailover;
   const ChainProxyConfig({
     this.enable = false,
     this.defaultDialerProxy = '',
@@ -530,6 +531,7 @@ class ChainProxyConfig {
     this.hop1Node = '',
     this.hop2Node = '',
     this.hop3Node = '',
+    this.autoFailover = false,
   });
 
   /// Effective entry proxy name (Hop 1)
@@ -557,6 +559,7 @@ class ChainProxyConfig {
     String? hop1Node,
     String? hop2Node,
     String? hop3Node,
+    bool? autoFailover,
   }) {
     return ChainProxyConfig(
       enable: enable ?? this.enable,
@@ -570,6 +573,7 @@ class ChainProxyConfig {
       hop1Node: hop1Node ?? this.hop1Node,
       hop2Node: hop2Node ?? this.hop2Node,
       hop3Node: hop3Node ?? this.hop3Node,
+      autoFailover: autoFailover ?? this.autoFailover,
     );
   }
 
@@ -586,6 +590,7 @@ class ChainProxyConfig {
       'hop1Node': hop1Node,
       'hop2Node': hop2Node,
       'hop3Node': hop3Node,
+      'autoFailover': autoFailover,
     };
   }
 
@@ -614,6 +619,7 @@ class ChainProxyConfig {
       hop1Node: h1,
       hop2Node: json['hop2Node']?.toString() ?? '',
       hop3Node: json['hop3Node']?.toString() ?? '',
+      autoFailover: json['autoFailover'] == true,
     );
   }
 
@@ -621,6 +627,58 @@ class ChainProxyConfig {
   static String exitShadowName(String nodeName) => '🔗出口·$nodeName';
   static bool isShadowNodeName(String name) =>
       name.startsWith('🔗中转·') || name.startsWith('🔗出口·');
+
+  /// B4 — the **single** shared rule for "may this object be treated as an
+  /// ordinary proxy node (selectable in the picker, testable by the delay
+  /// test)?".
+  ///
+  /// Every node list / delay-test entry point MUST use this predicate instead
+  /// of maintaining its own condition list (see
+  /// `B4_SUBSCRIPTION_PSEUDO_NODE_AUDIT.md` §7 — four duplicated rule-sets).
+  ///
+  /// Returns `false` for:
+  ///   · built-in policies — `DIRECT`, `REJECT`, `REJECT-DROP`, `PASS`,
+  ///     `COMPATIBLE` (matched case-insensitively, on **name** and on **type**);
+  ///   · proxy groups and their nested members — `Selector`, `URLTest`,
+  ///     `Fallback`, `LoadBalance`;
+  ///   · the rule-provider pseudo type `REMATCH`;
+  ///   · chain shadow nodes ([isShadowNodeName]).
+  ///
+  /// Returns `true` for every ordinary proxy — **including** subscription
+  /// "information" nodes (剩余流量 / 套餐到期 / 节点超时请手动更新订阅 …).
+  /// Those MUST stay selectable and testable: P1.1-D2 classifies them from
+  /// *real behavioural samples*, so a name blacklist here would both contradict
+  /// the P1.1-C proof and starve the classifier.
+  ///
+  /// Unknown / unrecognised types are **kept** (conservative): this predicate
+  /// only ever removes objects the project has explicitly identified as
+  /// non-proxy, never objects it merely does not understand.
+  static bool isSelectableProxy({required String name, required String type}) {
+    final normalizedName = name.trim().toUpperCase();
+    final normalizedType = type.trim().toUpperCase();
+    if (_nonSelectableNamesAndTypes.contains(normalizedName)) return false;
+    if (_nonSelectableNamesAndTypes.contains(normalizedType)) return false;
+    return !isShadowNodeName(name);
+  }
+
+  /// Names **and** types that are never an ordinary proxy. Group types come
+  /// from `GroupTypeExtension.valueList`; the policy names are the same set the
+  /// config generator already protects (`lib/state.dart` `protectedNames`).
+  static const Set<String> _nonSelectableNamesAndTypes = {
+    // built-in policies
+    'DIRECT',
+    'REJECT',
+    'REJECT-DROP',
+    'PASS',
+    'COMPATIBLE',
+    // proxy-group types (a member with one of these is itself a group)
+    'SELECTOR',
+    'URLTEST',
+    'FALLBACK',
+    'LOADBALANCE',
+    // rule-provider pseudo type
+    'REMATCH',
+  };
 
   void applyToClashConfig(Map<String, dynamic> rawConfig) {
     // 1. WebRTC Leak Prevention: Injects high-priority STUN/TURN blocking rules for all nodes
@@ -1607,13 +1665,15 @@ class DirectSocketVerifier {
       },
       onError: (_) {
         timer.cancel();
-        if (!completer.isCompleted)
+        if (!completer.isCompleted) {
           completer.complete(utf8.decode(buffer, allowMalformed: true));
+        }
       },
       onDone: () {
         timer.cancel();
-        if (!completer.isCompleted)
+        if (!completer.isCompleted) {
           completer.complete(utf8.decode(buffer, allowMalformed: true));
+        }
       },
     );
 

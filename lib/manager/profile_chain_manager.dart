@@ -1,7 +1,5 @@
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:fluxora/common/common.dart';
+import 'package:fluxora/services/atomic_config_storage.dart';
 import 'package:fluxora/state.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
@@ -76,50 +74,70 @@ class ProfileChainManager extends ChangeNotifier {
     return _chains[profileId] ?? ProfileChainConfig(profileId: profileId);
   }
 
+  /// P2.8-B: test-only seam so persistence tests never touch the real
+  /// application data directory. Production never sets it.
+  ///
+  /// It overrides only the **path** — production always persists through the
+  /// shared [AtomicConfigStorage]; there is no test-only save implementation.
+  @visibleForTesting
+  static String? configFilePathOverride;
+
   Future<String> _getConfigFilePath() async {
+    final override = configFilePathOverride;
+    if (override != null && override.isNotEmpty) return override;
     final homeDir = await appPath.homeDirPath;
     return p.join(homeDir, 'profile_chains.json');
+  }
+
+  /// P2.8-B: persists [chains] through the shared [AtomicConfigStorage]
+  /// (tmp → validate → `.bak` → atomic rename), then **rethrows** on failure.
+  ///
+  /// Before P2.8-B this was a bare `File.writeAsString` inside a
+  /// `catch → log` block, so a failed write still returned normally and the
+  /// caller believed the change had landed. The failure is now logged **and**
+  /// propagated, and the user is told the change did not take effect.
+  Future<void> _saveConfig(Map<String, ProfileChainConfig> chains) async {
+    try {
+      final filePath = await _getConfigFilePath();
+      await AtomicConfigStorage(filePath)
+          .save(chains.map((k, v) => MapEntry(k, v.toJson())));
+    } catch (e) {
+      commonPrint.log('ProfileChainManager: Failed to save config: $e');
+      // Best-effort user notice — it must NEVER mask the real failure.
+      // `globalState.showNotifier` goes through `GlobalKey.currentContext`,
+      // which itself throws when no widget binding is initialized (unit tests,
+      // headless startup), so it is contained here rather than left to replace
+      // the save error with a binding error.
+      try {
+        globalState.showNotifier('链路配置保存失败，更改未生效');
+      } catch (_) {}
+      rethrow;
+    }
   }
 
   Future<void> init() async {
     if (_initialized) return;
     try {
       final filePath = await _getConfigFilePath();
-      final file = File(filePath);
-      if (await file.exists()) {
-        final content = await file.readAsString();
-        if (content.trim().isNotEmpty) {
-          final jsonMap = jsonDecode(content);
-          if (jsonMap is Map<String, dynamic>) {
-            _chains = jsonMap.map(
-              (k, v) => MapEntry(
-                k,
-                ProfileChainConfig.fromJson(Map<String, dynamic>.from(v as Map)),
-              ),
-            );
-          }
-        }
+      // P2.8-B: read through the shared `AtomicConfigStorage`, so a crash
+      // during a previous save recovers from `.bak` / an orphan `.tmp` instead
+      // of silently starting from an empty map.
+      final jsonMap = await AtomicConfigStorage(filePath).load();
+      if (jsonMap != null) {
+        _chains = jsonMap.map(
+          (k, v) => MapEntry(
+            k,
+            ProfileChainConfig.fromJson(Map<String, dynamic>.from(v as Map)),
+          ),
+        );
       }
     } catch (e) {
-      commonPrint.log('ProfileChainManager: Failed to load profile_chains.json: $e');
+      commonPrint.log(
+        'ProfileChainManager: Failed to load profile_chains.json: $e',
+      );
     } finally {
       _initialized = true;
       notifyListeners();
-    }
-  }
-
-  Future<void> _saveConfig() async {
-    try {
-      final filePath = await _getConfigFilePath();
-      final file = File(filePath);
-      if (!await file.parent.exists()) {
-        await file.parent.create(recursive: true);
-      }
-      final jsonMap = _chains.map((k, v) => MapEntry(k, v.toJson()));
-      final jsonStr = const JsonEncoder.withIndent('  ').convert(jsonMap);
-      await file.writeAsString(jsonStr, flush: true);
-    } catch (e) {
-      commonPrint.log('ProfileChainManager: Failed to save config: $e');
     }
   }
 
@@ -131,10 +149,16 @@ class ProfileChainManager extends ChangeNotifier {
   }) async {
     final current = getChain(profileId);
     final updated = updater(current);
-    _chains[profileId] = updated;
+    // P2.8-B: persist BEFORE committing to memory. The old order mutated
+    // `_chains` first and swallowed the write failure, so a failed save left
+    // memory/UI showing a change the disk never received ("false success").
+    // Saving first means a failure leaves the in-memory state untouched, so
+    // there is nothing to roll back.
+    final next = {..._chains, profileId: updated};
     if (save) {
-      await _saveConfig();
+      await _saveConfig(next);
     }
+    _chains = next;
     notifyListeners();
 
     if (reloadCore) {

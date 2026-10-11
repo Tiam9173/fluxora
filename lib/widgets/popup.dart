@@ -81,18 +81,6 @@ class CommonPopupRoute<T> extends PopupRoute<T> {
   Duration get transitionDuration => const Duration(milliseconds: 150);
 }
 
-class PopupController extends ValueNotifier<bool> {
-  PopupController() : super(false);
-
-  void open() {
-    value = true;
-  }
-
-  void close() {
-    value = false;
-  }
-}
-
 typedef PopupOpen = Function({Offset offset});
 
 class CommonPopupBox extends StatefulWidget {

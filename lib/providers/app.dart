@@ -66,14 +66,18 @@ final filteredLogsProvider = Provider<List<Log>>((ref) {
 
   return logs.where((item) {
     if (query.isNotEmpty) {
-      final matchesQuery = item.payload.toLowerCase().contains(query) ||
+      final matchesQuery =
+          item.payload.toLowerCase().contains(query) ||
           item.logLevel.name.toLowerCase().contains(query) ||
           item.dateTime.toLowerCase().contains(query);
       if (!matchesQuery) return false;
     }
     if (keywords.isNotEmpty) {
-      final itemStr = '${item.payload} ${item.logLevel.name} ${item.dateTime}'.toLowerCase();
-      final matchesKeywords = keywords.every((keyword) => itemStr.contains(keyword.toLowerCase()));
+      final itemStr = '${item.payload} ${item.logLevel.name} ${item.dateTime}'
+          .toLowerCase();
+      final matchesKeywords = keywords.every(
+        (keyword) => itemStr.contains(keyword.toLowerCase()),
+      );
       if (!matchesKeywords) return false;
     }
     return true;
@@ -123,7 +127,8 @@ final filteredRequestsProvider = Provider<List<TrackerInfo>>((ref) {
       final destinationIPText = item.metadata.destinationIP.toLowerCase();
       final processText = item.metadata.process.toLowerCase();
       final chainsText = item.chains.join('').toLowerCase();
-      final matchesQuery = networkText.contains(query) ||
+      final matchesQuery =
+          networkText.contains(query) ||
           hostText.contains(query) ||
           destinationIPText.contains(query) ||
           processText.contains(query) ||
@@ -300,11 +305,6 @@ bool isMobileView(Ref ref) {
 }
 
 @riverpod
-double viewHeight(Ref ref) {
-  return ref.watch(viewSizeProvider).height;
-}
-
-@riverpod
 class Init extends _$Init with AutoDisposeNotifierMixin {
   @override
   bool build() {
@@ -437,22 +437,6 @@ class DelayDataSource extends _$DelayDataSource with AutoDisposeNotifierMixin {
   }
 }
 
-@riverpod
-class SystemUiOverlayStyleState extends _$SystemUiOverlayStyleState
-    with AutoDisposeNotifierMixin {
-  @override
-  SystemUiOverlayStyle build() {
-    return globalState.appState.systemUiOverlayStyle;
-  }
-
-  @override
-  onUpdate(value) {
-    globalState.appState = globalState.appState.copyWith(
-      systemUiOverlayStyle: value,
-    );
-  }
-}
-
 /// Provider to track if VPN was stopped by Smart Auto Stop feature.
 /// This is used to show different notification content when smart-stopped.
 @Riverpod(keepAlive: true)
@@ -471,7 +455,9 @@ class IsSmartStopped extends _$IsSmartStopped {
 final connectionsProvider = StateProvider<List<TrackerInfo>>((ref) => []);
 final connectionsSearchProvider = StateProvider<String>((ref) => '');
 final connectionsKeywordsProvider = StateProvider<List<String>>((ref) => []);
-final connectionsSortProvider = StateProvider<ConnectionsSortType>((ref) => ConnectionsSortType.creationTime);
+final connectionsSortProvider = StateProvider<ConnectionsSortType>(
+  (ref) => ConnectionsSortType.creationTime,
+);
 
 final filteredConnectionsProvider = Provider<List<TrackerInfo>>((ref) {
   final connections = ref.watch(connectionsProvider);
@@ -485,7 +471,8 @@ final filteredConnectionsProvider = Provider<List<TrackerInfo>>((ref) {
       final destinationIPText = item.metadata.destinationIP.toLowerCase();
       final processText = item.metadata.process.toLowerCase();
       final chainsText = item.chains.join('').toLowerCase();
-      final matchesQuery = networkText.contains(query) ||
+      final matchesQuery =
+          networkText.contains(query) ||
           hostText.contains(query) ||
           destinationIPText.contains(query) ||
           processText.contains(query) ||

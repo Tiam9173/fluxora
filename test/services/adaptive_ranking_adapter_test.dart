@@ -1,12 +1,9 @@
-﻿import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:fluxora/models/chain_proxy_node_view_model.dart';
-import 'package:fluxora/providers/adaptive_ranking_provider.dart';
-import 'package:fluxora/models/chain_fallback_pool.dart';
 import 'package:fluxora/models/protocol_capability.dart';
 import 'package:fluxora/models/chain_score.dart';
-import 'package:fluxora/services/chain_probe_service.dart';
 import 'package:fluxora/models/common.dart';
+import 'package:fluxora/services/chain_probe_service.dart';
 
 void main() {
   group('Phase 5.9-E.1.1 — Adaptive Ranking Adapter & ViewModel', () {
@@ -126,6 +123,105 @@ void main() {
             hopPenalty: 0),
       );
       expect(newProxy.isExploration, true);
+    });
+
+    // ── P1.3-A1: health-aware ordering ──────────────────────────────────────
+    test('6. A1: a healthy node outranks a higher-scoring failed node', () {
+      // Health is now the FIRST key, exactly as `ChainFallbackService`
+      // orders candidates before scoring them.
+      final failedHighScore = ChainProxyNodeViewModel(
+        proxy: const Proxy(name: 'NodeA', type: 'SS'),
+        nodeName: 'NodeA',
+        health: ChainHealthStatus.failed,
+        score: const ChainScore(
+            totalScore: 95.0,
+            confidence: 0.95,
+            reliabilityScore: 95.0,
+            capabilityScore: 0,
+            latencyScore: 0,
+            flapPenalty: 0,
+            hopPenalty: 0),
+      );
+      final healthyLowerScore = ChainProxyNodeViewModel(
+        proxy: const Proxy(name: 'NodeB', type: 'SS'),
+        nodeName: 'NodeB',
+        health: ChainHealthStatus.healthy,
+        score: const ChainScore(
+            totalScore: 80.0,
+            confidence: 0.8,
+            reliabilityScore: 80.0,
+            capabilityScore: 0,
+            latencyScore: 0,
+            flapPenalty: 0,
+            hopPenalty: 0),
+      );
+
+      final list = [failedHighScore, healthyLowerScore]
+        ..sort((x, y) => x.compareTo(y));
+      expect(
+        list.first.nodeName,
+        'NodeB',
+        reason: 'health decides before score, matching the failover ordering',
+      );
+    });
+
+    test('7. A1: equal health keeps the previous score ordering', () {
+      // Both healthy ⇒ the health key is a no-op and the pre-existing
+      // capability → score → name order (and the score itself) is unchanged.
+      ChainProxyNodeViewModel node(String name, double score) =>
+          ChainProxyNodeViewModel(
+            proxy: Proxy(name: name, type: 'SS'),
+            nodeName: name,
+            health: ChainHealthStatus.healthy,
+            score: ChainScore(
+                totalScore: score,
+                confidence: score / 100,
+                reliabilityScore: score,
+                capabilityScore: 0,
+                latencyScore: 0,
+                flapPenalty: 0,
+                hopPenalty: 0),
+          );
+
+      final list = [node('Low', 80), node('High', 90)]
+        ..sort((x, y) => x.compareTo(y));
+      expect(list.first.nodeName, 'High');
+      expect(list.last.nodeName, 'Low');
+    });
+
+    test('8. A1: unknown is not treated as failed', () {
+      // `unknown` (3) must rank ABOVE `failed` (4) — the same tiering failover
+      // uses, so a never-probed node is not punished as if it had failed.
+      final unknown = ChainProxyNodeViewModel(
+        proxy: const Proxy(name: 'NodeA', type: 'SS'),
+        nodeName: 'NodeA',
+        health: ChainHealthStatus.unknown,
+        score: const ChainScore(
+            totalScore: 50.0,
+            confidence: 0.5,
+            reliabilityScore: 50.0,
+            capabilityScore: 0,
+            latencyScore: 0,
+            flapPenalty: 0,
+            hopPenalty: 0),
+      );
+      final failed = ChainProxyNodeViewModel(
+        proxy: const Proxy(name: 'NodeB', type: 'SS'),
+        nodeName: 'NodeB',
+        health: ChainHealthStatus.failed,
+        score: const ChainScore(
+            totalScore: 90.0,
+            confidence: 0.9,
+            reliabilityScore: 90.0,
+            capabilityScore: 0,
+            latencyScore: 0,
+            flapPenalty: 0,
+            hopPenalty: 0),
+      );
+
+      final list = [failed, unknown]..sort((x, y) => x.compareTo(y));
+      expect(list.first.nodeName, 'NodeA');
+      expect(list.last.nodeName, 'NodeB');
     });
   });
 }
