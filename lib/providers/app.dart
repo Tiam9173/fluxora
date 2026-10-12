@@ -346,6 +346,28 @@ class SortNum extends _$SortNum with AutoDisposeNotifierMixin {
   int add() => state++;
 }
 
+/// RC.7 — direction of the proxies page's delay sort.
+///
+/// Deliberately a **standalone, RAM-only** provider instead of a new field on
+/// the Freezed `ProxiesStyleSetting` / `ProxiesTabState` models: adding a field
+/// there would require regenerating the `.freezed.dart` sources, and the
+/// direction is a view preference that does not need to survive a restart.
+///
+/// `false` = ascending (the existing behaviour), `true` = descending. Unknown /
+/// failed delays sink to the end in **both** directions — see
+/// `AppController._sortOfDelay`.
+final delaySortDescendingProvider =
+    NotifierProvider<DelaySortDescending, bool>(DelaySortDescending.new);
+
+class DelaySortDescending extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void toggle() => state = !state;
+
+  void set(bool value) => state = value;
+}
+
 @riverpod
 class CheckIpNum extends _$CheckIpNum with AutoDisposeNotifierMixin {
   @override

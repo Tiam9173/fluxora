@@ -1733,18 +1733,39 @@ class AppController {
     );
   }
 
-  int _delayValue(int? delay) =>
-      (delay == null || delay == -1) ? 1 << 30 : delay;
+  /// The rank an unusable delay collapses to. `null` (never tested) and `-1`
+  /// (the failure sentinel written by `_testProxyDelay`) both map here.
+  static const int _unknownDelay = 1 << 30;
 
-  List<Proxy> _sortOfDelay({required List<Proxy> proxies, String? testUrl}) {
+  int _delayValue(int? delay) =>
+      (delay == null || delay == -1) ? _unknownDelay : delay;
+
+  /// Sorts by delay. [descending] reverses the **measured** values only.
+  ///
+  /// RC.7: an unknown / failed delay always sinks to the end, in both
+  /// directions — flipping to descending must not float unmeasured nodes to the
+  /// top, where they would read as the fastest ones.
+  List<Proxy> _sortOfDelay({
+    required List<Proxy> proxies,
+    String? testUrl,
+    bool descending = false,
+  }) {
     return List.of(proxies)..sort((a, b) {
-      final aDelay = _ref.read(
-        getDelayProvider(proxyName: a.name, testUrl: testUrl),
+      final aValue = _delayValue(
+        _ref.read(getDelayProvider(proxyName: a.name, testUrl: testUrl)),
       );
-      final bDelay = _ref.read(
-        getDelayProvider(proxyName: b.name, testUrl: testUrl),
+      final bValue = _delayValue(
+        _ref.read(getDelayProvider(proxyName: b.name, testUrl: testUrl)),
       );
-      return _delayValue(aDelay).compareTo(_delayValue(bDelay));
+
+      final aUnknown = aValue == _unknownDelay;
+      final bUnknown = bValue == _unknownDelay;
+      if (aUnknown && bUnknown) return 0;
+      if (aUnknown) return 1;
+      if (bUnknown) return -1;
+
+      final comparison = aValue.compareTo(bValue);
+      return descending ? -comparison : comparison;
     });
   }
 
@@ -1752,10 +1773,15 @@ class AppController {
     required List<Proxy> proxies,
     required ProxiesSortType sortType,
     String? testUrl,
+    bool delayDescending = false,
   }) {
     return switch (sortType) {
       ProxiesSortType.none => proxies,
-      ProxiesSortType.delay => _sortOfDelay(proxies: proxies, testUrl: testUrl),
+      ProxiesSortType.delay => _sortOfDelay(
+        proxies: proxies,
+        testUrl: testUrl,
+        descending: delayDescending,
+      ),
       ProxiesSortType.name => _sortOfName(proxies),
     };
   }
