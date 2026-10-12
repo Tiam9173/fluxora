@@ -730,7 +730,12 @@ class Utils {
       }
     }
     
-    return const Locale('zh', 'CN');
+    // Fall back to English, not Chinese. An unsupported system language, an
+    // unset locale and the POSIX `C` locale must all start in English:
+    // AppImageHub runs the AppImage under the `C` locale and rejects a
+    // screenshot whose text is not English.
+    // https://github.com/AppImage/appimage.github.io/pull/5901
+    return const Locale('en');
   }
 
   Locale? getLocaleForString(String? localString) {
