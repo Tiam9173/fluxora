@@ -105,6 +105,7 @@ class ProxiesSetting extends StatelessWidget {
               final sortType = ref.watch(
                 proxiesStyleSettingProvider.select((state) => state.sortType),
               );
+              final delayDescending = ref.watch(delaySortDescendingProvider);
               return Wrap(
                 spacing: 16,
                 children: [
@@ -123,6 +124,22 @@ class ProxiesSetting extends StatelessWidget {
                             });
                         ref.read(sortNumProvider.notifier).add();
                       },
+                    ),
+                  // RC.7: the direction only means something for the delay sort,
+                  // so it is shown only while that sort is active. Unknown /
+                  // failed delays stay at the end in both directions.
+                  if (sortType == ProxiesSortType.delay)
+                    SettingInfoCard(
+                      Info(
+                        label: delayDescending ? '降序' : '升序',
+                        iconData: delayDescending
+                            ? Icons.arrow_downward
+                            : Icons.arrow_upward,
+                      ),
+                      isSelected: true,
+                      onPressed: () => ref
+                          .read(delaySortDescendingProvider.notifier)
+                          .toggle(),
                     ),
                 ],
               );

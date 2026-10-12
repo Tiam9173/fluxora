@@ -222,6 +222,9 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
     );
     final sortNum =
         ref.watch(proxiesTabStateProvider.select((state) => state.sortNum));
+    // RC.7: the delay sort's direction. A standalone provider so the Freezed
+    // `ProxiesTabState` did not have to change.
+    final delayDescending = ref.watch(delaySortDescendingProvider);
 
     if (groups.isEmpty) {
       return NullStatus(
@@ -251,6 +254,7 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
           cardType: cardType,
           sortType: sortType,
           sortNum: sortNum,
+          delayDescending: delayDescending,
         ),
       );
     }).toList();
@@ -359,6 +363,7 @@ class ProxyGroupView extends ConsumerStatefulWidget {
   final ProxyCardType cardType;
   final ProxiesSortType sortType;
   final num sortNum;
+  final bool delayDescending;
 
   const ProxyGroupView({
     super.key,
@@ -367,6 +372,7 @@ class ProxyGroupView extends ConsumerStatefulWidget {
     required this.cardType,
     required this.sortType,
     required this.sortNum,
+    this.delayDescending = false,
   });
 
   @override
@@ -383,6 +389,7 @@ class _ProxyGroupViewState extends ConsumerState<ProxyGroupView> {
   List<Proxy>? _lastProxies;
   String? _lastTestUrl;
   num? _lastSortNum;
+  bool? _lastDelayDescending;
 
   List<Proxy> _getSortedProxies() {
     final group = widget.group;
@@ -390,14 +397,19 @@ class _ProxyGroupViewState extends ConsumerState<ProxyGroupView> {
     final proxies = group.all;
     final testUrl = group.testUrl;
     final sortNum = widget.sortNum;
+    final delayDescending = widget.delayDescending;
     if (_cachedSortedProxies != null &&
         _lastSortType == sortType &&
         _lastTestUrl == testUrl &&
         _lastProxies == proxies &&
-        _lastSortNum == sortNum) {
+        _lastSortNum == sortNum &&
+        // RC.7: the direction is part of the cache identity — without it a
+        // toggle would keep serving the previous order.
+        _lastDelayDescending == delayDescending) {
       return _cachedSortedProxies!;
     }
     _lastSortType = sortType;
+    _lastDelayDescending = delayDescending;
     _lastTestUrl = testUrl;
     _lastProxies = proxies;
     _lastSortNum = sortNum;
@@ -405,6 +417,7 @@ class _ProxyGroupViewState extends ConsumerState<ProxyGroupView> {
       proxies: proxies,
       sortType: sortType,
       testUrl: testUrl,
+      delayDescending: delayDescending,
     );
     return _cachedSortedProxies!;
   }
