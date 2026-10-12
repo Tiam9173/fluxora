@@ -75,42 +75,48 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
           ),
           content: SizedBox(
             width: 480,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  '支持单条/多行链接或 YAML/JSON 节点片段：\n'
-                  'vmess://, vless://, ss://, ssr://, trojan://, trojan-go://, hy2://, hysteria://, tuic://, '
-                  'wireguard://, awg://, snell://, ssh://, shadow-tls://, juicity://, naive://, socks5://, http://, direct://',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: controller,
-                  maxLines: 8,
-                  decoration: const InputDecoration(
-                    hintText: '在此粘贴节点分享链接或节点配置 (YAML/JSON)...',
-                    border: OutlineInputBorder(),
+            // RC.7: this content is taller than a small window (the protocol
+            // list plus an 8-line input) and `AlertDialog` does not scroll its
+            // content, so it used to overflow by up to 497 px. Same treatment as
+            // `_ManualNodeFormDialog` below.
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '支持单条/多行链接或 YAML/JSON 节点片段：\n'
+                    'vmess://, vless://, ss://, ssr://, trojan://, trojan-go://, hy2://, hysteria://, tuic://, '
+                    'wireguard://, awg://, snell://, ssh://, shadow-tls://, juicity://, naive://, socks5://, http://, direct://',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton.icon(
-                    icon: const Icon(Icons.paste_rounded, size: 16),
-                    label: const Text('从剪贴板粘贴'),
-                    onPressed: () async {
-                      final data = await Clipboard.getData(
-                        Clipboard.kTextPlain,
-                      );
-                      if (data?.text != null) {
-                        controller.text = data!.text!;
-                      }
-                    },
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: controller,
+                    maxLines: 8,
+                    decoration: const InputDecoration(
+                      hintText: '在此粘贴节点分享链接或节点配置 (YAML/JSON)...',
+                      border: OutlineInputBorder(),
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      icon: const Icon(Icons.paste_rounded, size: 16),
+                      label: const Text('从剪贴板粘贴'),
+                      onPressed: () async {
+                        final data = await Clipboard.getData(
+                          Clipboard.kTextPlain,
+                        );
+                        if (data?.text != null) {
+                          controller.text = data!.text!;
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           actions: [
@@ -787,6 +793,10 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
               // Protocol Picker
               DropdownButtonFormField<ManualProtocol>(
                 key: ValueKey(_protocol),
+                // RC.7: without this the button sizes to its content and the
+                // decorator's internal Row overflows by up to 181 px in a
+                // narrow window.
+                isExpanded: true,
                 initialValue: _protocol,
                 decoration: const InputDecoration(
                   labelText: '节点协议 (Protocol)',
@@ -935,6 +945,8 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                       Expanded(
                         child: DropdownButtonFormField<String>(
                           key: ValueKey('net_$_network'),
+                          // RC.7: see the protocol picker above.
+                          isExpanded: true,
                           initialValue: _network,
                           decoration: const InputDecoration(
                             labelText: '传输层 (Network)',
@@ -963,6 +975,8 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                       Expanded(
                         child: DropdownButtonFormField<String>(
                           key: ValueKey('sec_$_security'),
+                          // RC.7: see the protocol picker above.
+                          isExpanded: true,
                           initialValue: _security,
                           decoration: const InputDecoration(
                             labelText: '安全/TLS (Security)',
