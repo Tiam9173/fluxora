@@ -43,6 +43,16 @@ class _IntelligentNodePickerSheetState
     final params = (role: widget.role, sortMode: _sortMode);
     final viewModels = ref.watch(adaptiveRankingProvider(params));
 
+    // P2 (option 3): 「延迟」 sorts by each node's **own** latency, which only
+    // exists once a real measurement has been recorded. With no measurement the
+    // list silently falls back to name order — which reads as "sorted by
+    // latency" when nothing was measured. Say so instead of implying the nodes
+    // were probed. Deliberately NOT a silent switch to the Smart order: the
+    // fallback stays the same stable, predictable name order the comparator
+    // defines, and this banner explains why.
+    final bool hasAnyLatency = viewModels.any((vm) => vm.latencyMs != null);
+    final bool showNoLatencyHint = _sortMode == 'latency' && !hasAnyLatency;
+
     return AdaptiveSheetScaffold(
       type: widget.sheetType,
       title: widget.title,
@@ -78,6 +88,29 @@ class _IntelligentNodePickerSheetState
             ),
           ),
           const Divider(height: 1),
+          if (showNoLatencyHint)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      '暂无延迟数据：尚未测得任何节点延迟，当前按名称排序',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           // List
           Expanded(
             child: ListView.builder(

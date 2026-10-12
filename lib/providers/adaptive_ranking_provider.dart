@@ -173,6 +173,12 @@ final adaptiveRankingProvider =
         // P1.3-C4-Step5 (Q1 + Q7): the rule now lives in the view model so it is
         // independently testable, and it sorts by the **node's own** latency.
         // Valid values first (ascending); unknowns last, in a stable name order.
+        //
+        // P2 (option 3): when NO node has a usable latency the list therefore
+        // falls back to that name order — a stable, predictable rule, never a
+        // fabricated 0 ms and never a silent switch to the Smart order. The
+        // picker surfaces a 「暂无延迟数据」 hint for exactly that case, so the
+        // fallback is visible instead of being mistaken for real latency sorting.
         viewModels.sort(ChainProxyNodeViewModel.compareByLatency);
       } else if (sortMode == 'name') {
         viewModels.sort((a, b) => a.nodeName.compareTo(b.nodeName));

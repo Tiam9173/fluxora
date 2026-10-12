@@ -238,6 +238,37 @@ void main() {
           .toSet();
       expect(names, isNot(contains('GLOBAL')));
     });
+
+    // ── P2 (option 3): the 「延迟」 mode must not pretend it has data ─────────
+    test('P2 — latency mode with nothing measured keeps the name-order fallback',
+        () {
+      const latencyParams = (
+        role: FallbackCandidateRole.entry,
+        sortMode: 'latency',
+      );
+      final latencyViewModels = container.read(
+        adaptiveRankingProvider(latencyParams),
+      );
+
+      // No `nodeLatency` has ever been recorded for these nodes, so every card
+      // reports "unknown" instead of a fabricated number.
+      expect(
+        latencyViewModels.every((vm) => vm.latencyMs == null),
+        isTrue,
+        reason: 'a missing measurement must stay null, never be back-filled',
+      );
+
+      // …and the order is the documented stable fallback: exactly the name order
+      // the 「名称」 mode produces — NOT the Smart order, and not a silent
+      // re-sort by a value that does not exist.
+      expect(
+        latencyViewModels.map((vm) => vm.nodeName).toList(),
+        container
+            .read(adaptiveRankingProvider(params))
+            .map((vm) => vm.nodeName)
+            .toList(),
+      );
+    });
   });
 
   // ── 3. structural guard: the four call sites share one rule ───────────────

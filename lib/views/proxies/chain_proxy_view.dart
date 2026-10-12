@@ -11,6 +11,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluxora/models/chain_fallback_pool.dart';
+import 'package:fluxora/models/latency_freshness.dart';
+import 'package:fluxora/services/chain_probe_service.dart';
 import 'package:fluxora/views/proxies/intelligent_node_picker_sheet.dart';
 
 
@@ -26,6 +28,127 @@ bool isFallbackCandidateStale(Set<String>? universe, String nodeName) {
     return false;
   }
   return !universe.contains(nodeName);
+}
+
+/// P3 — the visual state of one topology node, derived from the **real** probe
+/// report (`chainProbeReportProvider`) rather than from "is the chain enabled".
+///
+/// A small enum plus pure resolvers below, so the mapping is unit-testable
+/// without a widget harness.
+enum TopologySegmentState {
+  /// The report says this node's own hop probed healthy.
+  healthy,
+
+  /// The report says this node's hop failed / timed out, or `failureHop` names
+  /// it. Always a **confirmed** per-hop signal — a whole-chain failure alone
+  /// never marks a specific hop.
+  failed,
+
+  /// A probe is in flight.
+  checking,
+
+  /// A report exists but carries no usable result for this node.
+  unknown,
+
+  /// No usable report at all: never probed, chain disabled, or report stale.
+  notProbed,
+}
+
+/// P3 — resolves one topology node's state from the real probe report.
+///
+/// Matching is by **node name first**: the report's hop order and the card's
+/// visual order are separate concerns, and an incomplete chain can leave a node
+/// unprobed. Only when the report carries **no hop list at all** (a
+/// topology-level rejection) does the resolver fall back to [hopIndex], which
+/// the caller derives from the **current** hop mode.
+///
+/// `failureHop` is the authoritative failure signal — `chain_probe_service.dart`
+/// sets it to the index of the hop whose own probe failed — so it outranks a
+/// per-hop status.
+///
+/// Staleness reuses the project's frozen freshness bound
+/// ([LatencyFreshness.degradedMaxAge], 30 min) instead of inventing a second
+/// policy: an older report is no longer evidence of anything.
+TopologySegmentState resolveTopologySegmentState({
+  required String nodeName,
+  required int hopIndex,
+  required ChainProbeReport? report,
+  DateTime? now,
+}) {
+  if (report == null) return TopologySegmentState.notProbed;
+
+  final DateTime effectiveNow = now ?? DateTime.now();
+  if (effectiveNow.difference(report.timestamp) >
+      LatencyFreshness.degradedMaxAge) {
+    return TopologySegmentState.notProbed;
+  }
+
+  if (report.isCancelled ||
+      report.healthStatus == ChainHealthStatus.cancelled) {
+    return TopologySegmentState.unknown;
+  }
+
+  final int? failureHop = report.failureHop;
+  final String trimmed = nodeName.trim();
+
+  if (trimmed.isNotEmpty) {
+    for (final HopProbeState hop in report.hops) {
+      if (hop.nodeName.trim() != trimmed) continue;
+      if (failureHop != null && hop.hopIndex == failureHop) {
+        return TopologySegmentState.failed;
+      }
+      if (hop.status == HopProbeStatus.checking) {
+        return TopologySegmentState.checking;
+      }
+      if (hop.healthStatus == ChainHealthStatus.failed ||
+          hop.healthStatus == ChainHealthStatus.unavailable) {
+        return TopologySegmentState.failed;
+      }
+      // `degraded` means the transport is established (only the exit-IP lookup
+      // failed — see `chain_probe_service.dart`), so the hop itself is usable.
+      if (hop.healthStatus == ChainHealthStatus.healthy ||
+          hop.healthStatus == ChainHealthStatus.degraded) {
+        return TopologySegmentState.healthy;
+      }
+      return TopologySegmentState.unknown;
+    }
+  }
+
+  // No hop entry matched by name. Only a **topology-level rejection** (an empty
+  // hop list) still names the offending hop through `failureHop`; with a
+  // populated list an unmatched name simply means "no evidence for this node",
+  // which must not be turned into a fabricated failure.
+  if (report.hops.isEmpty) {
+    if (failureHop != null && failureHop == hopIndex) {
+      return TopologySegmentState.failed;
+    }
+    if (report.healthStatus == ChainHealthStatus.checking) {
+      return TopologySegmentState.checking;
+    }
+  }
+  return TopologySegmentState.unknown;
+}
+
+/// P3 — the flow state of the segment between two topology nodes.
+///
+/// A segment is as bad as its worst probed end: error wins, then "checking",
+/// then "healthy". When neither end has evidence the segment stays neutral
+/// (`idle`) — it is never green.
+FluxoraFlowState topologySegmentFlow(
+  TopologySegmentState a,
+  TopologySegmentState b,
+) {
+  final Set<TopologySegmentState> states = {a, b};
+  if (states.contains(TopologySegmentState.failed)) {
+    return FluxoraFlowState.error;
+  }
+  if (states.contains(TopologySegmentState.checking)) {
+    return FluxoraFlowState.connecting;
+  }
+  if (states.contains(TopologySegmentState.healthy)) {
+    return FluxoraFlowState.connected;
+  }
+  return FluxoraFlowState.idle;
 }
 
 /// B3 — whether [config] is driven by the `hop1Node`/`hop2Node`/`hop3Node`
@@ -160,32 +283,16 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
     return null;
   }
 
-  /// Switches the hop count, keeping the hop-2/hop-3 fields consistent.
+  /// Switches the hop count.
   ///
-  /// Returning to two hops clears both fields in the same write: leaving
-  /// hop2Node populated would flip the two-hop chain onto the shadow-exit path
-  /// (`ChainProxyConfig.hasTwoHopNodes`) instead of the landing-proxy chain the
-  /// user came back to. Clearing first would work too, but costs three core
-  /// reloads and passes through invalid intermediate states; `updateConfig` is
-  /// the single atomic write the named setters are thin wrappers over.
+  /// The exit-node migration lives in [ChainProxyManager.setHopMode] so every
+  /// caller shares it: switching modes must carry the previous exit into the
+  /// field the new mode reads, never reinterpret it or drop it.
   Future<void> _onHopModeChanged(ChainHopMode mode) async {
     final manager = ref.read(chainProxyConfigProvider);
     if (mode == manager.config.hopMode) return;
 
-    if (mode == ChainHopMode.twoHop) {
-      await manager.updateConfig(
-        (c) => c.copyWith(
-          hopMode: ChainHopMode.twoHop,
-          hop2Node: '',
-          hop3Node: '',
-        ),
-      );
-      return;
-    }
-
-    // Three hops need a relay and an exit. The two rows appear right after this,
-    // and the topology card flags the chain as incomplete until both are set.
-    await manager.setHopMode(ChainHopMode.threeHop);
+    await manager.setHopMode(mode);
   }
 
   /// Writes [nodeName] into the hop-2 (relay) or hop-3 (exit) slot.
@@ -784,6 +891,30 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
             subtitle: Text(subtitle),
           ),
           const SizedBox(height: 8),
+          // P0: the automatic failover loop previously had no user-facing
+          // control, so the feature could never be turned on at all. This switch
+          // is the only writer of `config.autoFailover`; toggling it persists the
+          // flag and starts / stops the health-check loop (see
+          // `ChainProxyManager.setAutoFailover`).
+          ListItem(
+            leading: Icon(
+              config.autoFailover
+                  ? Icons.autorenew
+                  : Icons.pause_circle_outline,
+            ),
+            title: const Text('自动故障转移'),
+            subtitle: Text(
+              config.autoFailover
+                  ? '链路连续异常时自动切换至备用候选节点'
+                  : '已关闭：仅可通过下方按钮手动切换',
+            ),
+            trailing: Switch(
+              value: config.autoFailover,
+              onChanged: (val) => chainProxyManager.setAutoFailover(val),
+            ),
+          ),
+          const Divider(height: 1, indent: 16, endIndent: 16),
+          const SizedBox(height: 8),
           // Without candidates the chain probe has no pool candidate to credit
           // and failover has nothing to switch to, so the pool is editable here.
           for (final role in roles)
@@ -878,26 +1009,116 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
     List<LandingProxy> landingProxies,
   ) {
     final isReady = config.enable && landingProxies.any((p) => p.enable);
-    final activeLanding = landingProxies.where((p) => p.enable).firstOrNull;
     final hopLabel = config.defaultDialerProxy.isEmpty
         ? appLocalizations.followMainSelector
         : config.defaultDialerProxy;
 
     // B3: three hops insert a relay between the dialer and the exit. The exit
-    // node is hop3Node in three-hop mode (`ChainProxyConfig.effectiveExitNode`)
-    // and the active landing proxy in two-hop mode.
+    // node is `ChainProxyConfig.effectiveExitNode` — hop3Node in three-hop mode,
+    // hop2Node / the active landing proxy in two-hop mode. That is the node the
+    // probe actually measured, so label and probed status agree.
     final isThreeHop = config.hopMode == ChainHopMode.threeHop;
     final hasRelay = config.hop2Node.trim().isNotEmpty;
-    final hasThreeHopExit = config.hop3Node.trim().isNotEmpty;
     final relayLabel = hasRelay
         ? config.hop2Node
         : appLocalizations.chainHopNotSelected;
-    final exitLabel = isThreeHop
-        ? (hasThreeHopExit
-              ? config.hop3Node
-              : appLocalizations.chainHopNotSelected)
-        : (activeLanding?.name ?? appLocalizations.chainHopNotSelected);
-    final hasExit = isThreeHop ? hasThreeHopExit : activeLanding != null;
+    final exitName = config.effectiveExitNode.trim();
+    final exitLabel = exitName.isEmpty
+        ? appLocalizations.chainHopNotSelected
+        : exitName;
+
+    // P3: per-node state comes from the REAL probe report — never from "the
+    // chain is enabled". When the chain is off nothing is probed, so every
+    // segment is forced to `notProbed` instead of showing a stale green.
+    final ChainProbeReport? probeReport = ref.watch(chainProbeReportProvider);
+
+    TopologySegmentState probedState(String name, int hopIndex) {
+      if (!config.enable) return TopologySegmentState.notProbed;
+      if (name.trim().isEmpty) return TopologySegmentState.notProbed;
+      return resolveTopologySegmentState(
+        nodeName: name,
+        hopIndex: hopIndex,
+        report: probeReport,
+      );
+    }
+
+    final TopologySegmentState entryState = probedState(
+      config.effectiveHop1,
+      1,
+    );
+    final TopologySegmentState relayState = probedState(config.hop2Node, 2);
+    final TopologySegmentState exitState = probedState(
+      exitName,
+      isThreeHop ? 3 : 2,
+    );
+    // The client and the target are not chain hops, so nothing ever probes
+    // them: they stay neutral and can never turn the card green on their own.
+    const TopologySegmentState edgeState = TopologySegmentState.notProbed;
+
+    // P3: an explicit per-hop summary, so a coloured row is never read as an
+    // end-to-end availability proof — the probe measures each hop on its own.
+    final List<({String label, String name, TopologySegmentState state})>
+    probedSegments = [
+      (
+        label: appLocalizations.topologyHop,
+        name: config.effectiveHop1,
+        state: entryState,
+      ),
+      if (isThreeHop)
+        (
+          label: appLocalizations.topologyRelay,
+          name: config.hop2Node,
+          state: relayState,
+        ),
+      (
+        label: appLocalizations.topologyLanding,
+        name: exitName,
+        state: exitState,
+      ),
+    ];
+
+    ({String label, String name, TopologySegmentState state})? failedSegment;
+    for (final segment in probedSegments) {
+      if (segment.state == TopologySegmentState.failed) {
+        failedSegment = segment;
+        break;
+      }
+    }
+    final bool anyChecking = probedSegments.any(
+      (s) => s.state == TopologySegmentState.checking,
+    );
+    final bool allHealthy = probedSegments.every(
+      (s) => s.state == TopologySegmentState.healthy,
+    );
+    final bool noEvidence = probedSegments.every(
+      (s) =>
+          s.state == TopologySegmentState.notProbed ||
+          s.state == TopologySegmentState.unknown,
+    );
+
+    String? probeNoticeText;
+    IconData probeNoticeIcon = Icons.info_outline;
+    Color probeNoticeColor = context.colorScheme.onSurfaceVariant;
+    if (config.enable) {
+      if (failedSegment != null) {
+        probeNoticeText =
+            '${failedSegment.label}（${failedSegment.name}）探测失败，该段链路不可用';
+        probeNoticeIcon = Icons.error_outline;
+        probeNoticeColor = context.colorScheme.error;
+      } else if (anyChecking) {
+        probeNoticeText = '链路探测中…';
+        probeNoticeIcon = Icons.sync;
+        probeNoticeColor = context.colorScheme.primary;
+      } else if (noEvidence) {
+        probeNoticeText = '尚未探测：颜色仅表示配置，不代表链路健康';
+      } else if (allHealthy) {
+        probeNoticeText = '逐跳探测通过；端到端出口可用性请以实际访问为准';
+        probeNoticeIcon = Icons.check_circle_outline;
+        probeNoticeColor = context.colorScheme.primary;
+      } else {
+        probeNoticeText = '部分链路缺少探测结果：未探测的节点保持中性色';
+      }
+    }
 
     return CommonCard(
       type: CommonCardType.filled,
@@ -980,14 +1201,12 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                       icon: Icons.devices_rounded,
                       title: appLocalizations.topologyClient,
                       subtitle: '设备端',
-                      isActive: true,
+                      state: edgeState,
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                       child: FluxoraFlowIndicator(
-                        state: isReady
-                            ? FluxoraFlowState.connected
-                            : FluxoraFlowState.idle,
+                        state: topologySegmentFlow(edgeState, entryState),
                         width: 36,
                         height: 12,
                       ),
@@ -996,14 +1215,15 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                       icon: Icons.alt_route_rounded,
                       title: appLocalizations.topologyHop,
                       subtitle: hopLabel,
-                      isActive: isReady,
+                      state: entryState,
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                       child: FluxoraFlowIndicator(
-                        state: isReady
-                            ? FluxoraFlowState.connected
-                            : FluxoraFlowState.idle,
+                        state: topologySegmentFlow(
+                          entryState,
+                          isThreeHop ? relayState : exitState,
+                        ),
                         width: 36,
                         height: 12,
                       ),
@@ -1013,14 +1233,12 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                         icon: Icons.swap_horiz_rounded,
                         title: appLocalizations.topologyRelay,
                         subtitle: relayLabel,
-                        isActive: isReady && hasRelay,
+                        state: relayState,
                       ),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 4),
                         child: FluxoraFlowIndicator(
-                          state: isReady && hasRelay
-                              ? FluxoraFlowState.connected
-                              : FluxoraFlowState.idle,
+                          state: topologySegmentFlow(relayState, exitState),
                           width: 36,
                           height: 12,
                         ),
@@ -1030,14 +1248,12 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                       icon: Icons.flight_land_rounded,
                       title: appLocalizations.topologyLanding,
                       subtitle: exitLabel,
-                      isActive: isReady && hasExit,
+                      state: exitState,
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                       child: FluxoraFlowIndicator(
-                        state: isReady
-                            ? FluxoraFlowState.connected
-                            : FluxoraFlowState.idle,
+                        state: topologySegmentFlow(exitState, edgeState),
                         width: 36,
                         height: 12,
                       ),
@@ -1046,12 +1262,31 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                       icon: Icons.public_rounded,
                       title: appLocalizations.topologyTarget,
                       subtitle: '目标网络',
-                      isActive: isReady,
+                      state: edgeState,
                     ),
                   ],
                 ),
               ),
             ),
+            // P3: the real per-hop probe outcome, stated in words. The colours
+            // above carry the same information, but a legend keeps "probed
+            // healthy" from being read as "the whole chain is proven usable".
+            if (probeNoticeText != null) ...[
+              const SizedBox(height: 8),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(probeNoticeIcon, size: 14, color: probeNoticeColor),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      probeNoticeText,
+                      style: TextStyle(fontSize: 11, color: probeNoticeColor),
+                    ),
+                  ),
+                ],
+              ),
+            ],
             // B3: an incomplete three-hop chain generates no shadow nodes at
             // all, so say so here rather than letting the card read as ready.
             if (isThreeHopIncomplete(config)) ...[
@@ -1143,42 +1378,61 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
     );
   }
 
+  /// P3 — one topology node, coloured by its **real** probed state.
+  ///
+  /// `healthy` / `checking` keep the card's existing accent (「正常：保持现有配色」),
+  /// a confirmed failure is red, and `unknown` / `notProbed` stay neutral — an
+  /// unproven segment must never read as green.
   Widget _buildTopologyNode({
     required IconData icon,
     required String title,
     required String subtitle,
-    required bool isActive,
+    required TopologySegmentState state,
   }) {
     final colorScheme = context.colorScheme;
+    final bool isFailed = state == TopologySegmentState.failed;
+    final bool isEvidence =
+        state == TopologySegmentState.healthy ||
+        state == TopologySegmentState.checking;
+    final bool isEmphasised = isFailed || isEvidence;
+
+    final Color background = isFailed
+        ? colorScheme.errorContainer.withValues(alpha: 0.3)
+        : isEvidence
+        ? colorScheme.primaryContainer.withValues(alpha: 0.3)
+        : colorScheme.surfaceContainer;
+    final Color borderColor = isFailed
+        ? colorScheme.error.withValues(alpha: 0.6)
+        : isEvidence
+        ? colorScheme.primary.withValues(alpha: 0.4)
+        : colorScheme.outlineVariant.withValues(alpha: 0.3);
+    final Color accentColor = isFailed
+        ? colorScheme.error
+        : isEvidence
+        ? colorScheme.primary
+        : colorScheme.onSurfaceVariant;
+
     return Container(
       constraints: const BoxConstraints(minWidth: 64, maxWidth: 96),
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
       decoration: BoxDecoration(
-        color: isActive
-            ? colorScheme.primaryContainer.withValues(alpha: 0.3)
-            : colorScheme.surfaceContainer,
+        color: background,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: isActive
-              ? colorScheme.primary.withValues(alpha: 0.4)
-              : colorScheme.outlineVariant.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: borderColor),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 18,
-            color: isActive ? colorScheme.primary : colorScheme.onSurfaceVariant,
-          ),
+          Icon(icon, size: 18, color: accentColor),
           const SizedBox(height: 4),
           Text(
             title,
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.bold,
-              color: isActive ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
+              color: isEmphasised
+                  ? colorScheme.onSurface
+                  : colorScheme.onSurfaceVariant,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,

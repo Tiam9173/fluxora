@@ -98,6 +98,13 @@ class ChainProxyManager extends ChangeNotifier {
 
   @override
   void notifyListeners() {
+    // P0 hardening: `dispose()` can now race an in-flight health check, because
+    // the periodic loop actually runs in production for the first time. A tick
+    // that is already suspended inside `runChainHealthCheck()` would otherwise
+    // notify a disposed ChangeNotifier (which throws) from a fire-and-forget
+    // timer callback, i.e. an unhandled async error. Notifying after dispose is
+    // meaningless anyway, so drop it.
+    if (_disposed) return;
     _stateVersion++;
     super.notifyListeners();
   }
@@ -285,6 +292,11 @@ class ChainProxyManager extends ChangeNotifier {
     // or fail `init()`. The runtime probes are started by
     // `refreshCapabilityProfiles` itself.
     unawaited(refreshCapabilityProfiles());
+
+    // P0: a persisted `autoFailover: true` must actually resume the loop after a
+    // restart. Before this, nothing in production ever started the loop, so the
+    // automatic failover path was unreachable even though the flag was stored.
+    _syncChainHealthCheck();
   }
 
   Future<void> _saveConfig() async {
@@ -357,6 +369,9 @@ class ChainProxyManager extends ChangeNotifier {
     if (enable) {
       await _autoSelectChainGroup();
     }
+    // P0: `enable` is one of the two inputs that decide whether the automatic
+    // failover loop runs, so every toggle must reconcile the loop.
+    _syncChainHealthCheck();
   }
 
   Future<void> _autoSelectChainGroup() async {
@@ -855,8 +870,41 @@ class ChainProxyManager extends ChangeNotifier {
 
   // ─── Phase 5.x Hop Configuration ─────────────────────────────────────────
 
+  /// Switches the hop count, **migrating the exit node** between the two modes.
+  ///
+  /// Two-hop keeps the exit in `hop2Node`; three-hop keeps the relay in
+  /// `hop2Node` and the exit in `hop3Node`. A bare `hopMode` write would
+  /// silently reinterpret the previous exit as the relay and leave the chain
+  /// with no exit at all — and the UI used to clear both fields, destroying the
+  /// user's exit configuration outright.
+  ///
+  /// Only the exit is migrated: two-hop has no relay, so there is no field to
+  /// carry one across a round trip.
   Future<void> setHopMode(ChainHopMode mode) async {
-    await updateConfig((c) => c.copyWith(hopMode: mode));
+    if (mode == _config.hopMode) return;
+
+    await updateConfig((c) {
+      if (mode == ChainHopMode.twoHop) {
+        // Three-hop keeps the exit in `hop3Node`; restore it into `hop2Node`.
+        // Nothing to restore → leave `hop2Node` untouched rather than wiping it.
+        final String exit = c.hop3Node.trim();
+        return c.copyWith(
+          hopMode: ChainHopMode.twoHop,
+          hop2Node: exit.isNotEmpty ? exit : c.hop2Node,
+          hop3Node: '',
+        );
+      }
+
+      // Entering three hops: move the two-hop exit into `hop3Node` and clear the
+      // relay slot for the user to pick. An empty `hop2Node` means there is
+      // nothing to migrate, so both fields are left exactly as they are.
+      final String previousExit = c.hop2Node.trim();
+      return c.copyWith(
+        hopMode: ChainHopMode.threeHop,
+        hop2Node: previousExit.isEmpty ? c.hop2Node : '',
+        hop3Node: previousExit.isEmpty ? c.hop3Node : previousExit,
+      );
+    });
   }
 
   Future<void> setHop1Node(String name) async {
@@ -1219,8 +1267,38 @@ class ChainProxyManager extends ChangeNotifier {
     });
   }
 
+  /// P0: the single reconciliation point for the automatic failover loop.
+  ///
+  /// The periodic health check is the **only** production driver of automatic
+  /// failover ([runChainHealthCheck] → [_maybeAutoFailover] →
+  /// [triggerAutoFailover]). It must therefore be (re)started from every
+  /// lifecycle entry that can turn it on:
+  ///
+  ///   * [init]              — restoring a persisted `autoFailover: true`
+  ///   * [setEnable]         — enabling/disabling the chain itself
+  ///   * [setAutoFailover]   — the explicit user toggle
+  ///
+  /// It is deliberately **not** called from [updateConfig]: that runs on every
+  /// config write (hop edits, failover commits) and restarting the timer there
+  /// would reset `_consecutiveHealthCheckFailures`, delaying detection.
+  ///
+  /// An already-running loop is left untouched, so repeated calls are
+  /// idempotent and never reset the consecutive-failure counter.
+  void _syncChainHealthCheck() {
+    final bool shouldRun = _config.autoFailover && _config.enable;
+    if (shouldRun) {
+      if (!isAutoHealthCheckRunning) {
+        startChainHealthCheck();
+      }
+    } else if (isAutoHealthCheckRunning) {
+      stopChainHealthCheck();
+    }
+  }
+
 
   Future<void> runChainHealthCheck() async {
+    // P0 hardening: a tick that fired just before `dispose()` must do no work.
+    if (_disposed) return;
     if (!_config.autoFailover || !_config.enable || _isProbingChain || isFailingOver) return;
     
     final bool coreRunning = await _isCoreReady();
@@ -1513,11 +1591,10 @@ class ChainProxyManager extends ChangeNotifier {
 
   Future<void> setAutoFailover(bool enable) async {
     await updateConfig((c) => c.copyWith(autoFailover: enable));
-    if (enable) {
-      startChainHealthCheck();
-    } else {
-      stopChainHealthCheck();
-    }
+    // P0: route through the single reconciliation point instead of starting the
+    // timer unconditionally. The loop only makes sense while the chain itself is
+    // enabled, and `setEnable(true)` will start it as soon as that happens.
+    _syncChainHealthCheck();
   }
 
 
