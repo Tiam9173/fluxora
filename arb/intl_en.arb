@@ -363,6 +363,8 @@
   "formatError": "Please check the format",
   "healthCheckTimeout": "Timeout",
   "healthCheckTimeoutDesc": "Node health check timeout",
+  "hideTimeoutProxies": "Hide timed-out nodes",
+  "hideTimeoutProxiesDesc": "Leave out nodes whose last delay test timed out",
   "concurrencyLimit": "Concurrency Limit",
   "concurrencyLimitDesc": "Maximum concurrent delay tests",
   "notRecommended": "Not Recommended",

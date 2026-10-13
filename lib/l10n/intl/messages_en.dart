@@ -1263,6 +1263,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "serviceRunning": MessageLookupByLibrary.simpleMessage("Service Running"),
     "settings": MessageLookupByLibrary.simpleMessage("Settings"),
     "show": MessageLookupByLibrary.simpleMessage("Show"),
+    "hideTimeoutProxies": MessageLookupByLibrary.simpleMessage(
+      "Hide timed-out nodes",
+    ),
+    "hideTimeoutProxiesDesc": MessageLookupByLibrary.simpleMessage(
+      "Leave out nodes whose last delay test timed out",
+    ),
     "showHiddenItems": MessageLookupByLibrary.simpleMessage(
       "Show Hidden Items",
     ),

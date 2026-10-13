@@ -30,6 +30,80 @@ List<Group> getVisibleGroups({
   return modeGroups.where((group) => group.hidden != true).toList();
 }
 
+/// RC.9 — built-in adapters whose delay probe always fails, so a timeout says
+/// nothing about them and they must never be hidden.
+const unprobeableProxyTypes = {
+  'REJECT',
+  'REJECTDROP',
+  'PASS',
+  'PASSRULE',
+  'REMATCH',
+  'COMPATIBLE',
+  'DNS',
+};
+
+/// RC.9 — hide the proxies whose **last** delay test timed out.
+///
+/// A proxy is dropped only when a delay value exists for it AND that value is
+/// **negative**:
+///
+///  * `null` — never tested → **kept** (an untested node is not a timed-out
+///    node; hiding it would silently remove nodes the user never measured);
+///  * `0`    — a test is in flight → **kept** (must not be read as a timeout);
+///  * `< 0`  — timeout / unreachable → **hidden**;
+///  * `> 0`  — measured milliseconds → **kept**.
+///
+/// Invariants:
+///  * the currently selected proxy is **never** hidden;
+///  * unprobeable built-in adapters ([unprobeableProxyTypes]) are never hidden;
+///  * a group whose members would all be hidden falls back to its full member
+///    list, so no empty group can appear;
+///  * nested groups are resolved through the existing [_getProxyCardState]
+///    resolver — this deliberately does **not** re-implement that logic.
+List<Group> computeHideTimeout({
+  required List<Group> groups,
+  required List<Group> allGroups,
+  required DelayMap delayMap,
+  required SelectedMap selectedMap,
+  required String defaultTestUrl,
+}) {
+  final resolved = <String, ProxyCardState>{};
+  final proxyTypes = {
+    for (final group in allGroups)
+      for (final proxy in group.all) proxy.name: proxy.type.toUpperCase(),
+  };
+  return groups.map((group) {
+    final groupTestUrl = group.testUrl.getSafeValue(defaultTestUrl);
+    final liveGroup = allGroups.getGroup(group.name) ?? group;
+    final selectedName = liveGroup.getCurrentSelectedName(
+      selectedMap[group.name] ?? '',
+    );
+    final visible = group.all.where((proxy) {
+      if (proxy.name == selectedName) return true;
+      final state = resolved.putIfAbsent(
+        proxy.name,
+        () => _getProxyCardState(
+          allGroups,
+          selectedMap,
+          ProxyCardState(proxyName: proxy.name),
+        ),
+      );
+      if (unprobeableProxyTypes.contains(proxyTypes[state.proxyName])) {
+        return true;
+      }
+      final delay =
+          delayMap[state.testUrl.getSafeValue(groupTestUrl)]?[state.proxyName];
+      // Only a definite negative measurement is a timeout. `null` (never
+      // tested) and `0` (test in flight) are both kept — unlike FlClash, whose
+      // delay map uses 0 for "no data"; Fluxora's convention is
+      // `null` = untested / `0` = testing / `< 0` = timeout / `> 0` = ms.
+      final isTimeout = delay != null && delay < 0;
+      return !isTimeout;
+    }).toList();
+    return group.copyWith(all: visible.isEmpty ? group.all : visible);
+  }).toList();
+}
+
 @riverpod
 Config configState(Ref ref) {
   final themeProps = ref.watch(themeSettingProvider);
@@ -86,6 +160,32 @@ GroupsState currentGroupsState(Ref ref) {
       mode: mode,
       groups: groups,
       showHiddenItems: showHiddenItems,
+    ),
+  );
+}
+
+/// RC.9 — the group list as the **proxies page** should show it.
+///
+/// Sits between [currentGroupsState] and [filterGroupsState] so the timed-out
+/// node filtering only affects the proxies page: the tray keeps consuming
+/// [currentGroupsState] and therefore never loses a node the user may need to
+/// switch back to.
+@riverpod
+GroupsState visibleGroupsState(Ref ref) {
+  final currentGroups = ref.watch(currentGroupsStateProvider);
+  final hideTimeoutProxies = ref.watch(
+    proxiesStyleSettingProvider.select((state) => state.hideTimeoutProxies),
+  );
+  if (!hideTimeoutProxies) {
+    return currentGroups;
+  }
+  return GroupsState(
+    value: computeHideTimeout(
+      groups: currentGroups.value,
+      allGroups: ref.watch(groupsProvider),
+      delayMap: ref.watch(delayDataSourceProvider),
+      selectedMap: ref.watch(selectedMapProvider),
+      defaultTestUrl: ref.watch(getRealTestUrlProvider()),
     ),
   );
 }
@@ -305,7 +405,7 @@ ProfilesSelectorState profilesSelectorState(Ref ref) {
 
 @riverpod
 GroupsState filterGroupsState(Ref ref, String query) {
-  final currentGroups = ref.watch(currentGroupsStateProvider);
+  final currentGroups = ref.watch(visibleGroupsStateProvider);
   if (query.isEmpty) {
     return currentGroups;
   }

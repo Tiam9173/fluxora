@@ -318,6 +318,7 @@ abstract class ProxiesStyle with _$ProxiesStyle {
     @Default({}) Map<String, String> iconMap,
     @Default(250) int concurrencyLimit,
     @Default(false) bool showHiddenItems,
+    @Default(false) bool hideTimeoutProxies,
     @Default(false) bool hasCustomizedStyle,
   }) = _ProxiesStyle;
 

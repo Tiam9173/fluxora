@@ -5469,6 +5469,26 @@ class AppLocalizations {
     return Intl.message('Wrap Lines', name: 'lineWrap', desc: '', args: []);
   }
 
+  /// `Hide timed-out nodes`
+  String get hideTimeoutProxies {
+    return Intl.message(
+      'Hide timed-out nodes',
+      name: 'hideTimeoutProxies',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Leave out nodes whose last delay test timed out`
+  String get hideTimeoutProxiesDesc {
+    return Intl.message(
+      'Leave out nodes whose last delay test timed out',
+      name: 'hideTimeoutProxiesDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Show Hidden Items`
   String get showHiddenItems {
     return Intl.message(

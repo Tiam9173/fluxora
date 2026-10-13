@@ -788,6 +788,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "serviceRunning": MessageLookupByLibrary.simpleMessage("服务正在运行中"),
     "settings": MessageLookupByLibrary.simpleMessage("设置"),
     "show": MessageLookupByLibrary.simpleMessage("显示"),
+    "hideTimeoutProxies": MessageLookupByLibrary.simpleMessage("隐藏超时节点"),
+    "hideTimeoutProxiesDesc": MessageLookupByLibrary.simpleMessage("不显示上次延迟测试超时的节点"),
     "showHiddenItems": MessageLookupByLibrary.simpleMessage("显示隐藏项"),
     "showMenu": MessageLookupByLibrary.simpleMessage("打开菜单"),
     "showPanel": MessageLookupByLibrary.simpleMessage("显示窗口"),
