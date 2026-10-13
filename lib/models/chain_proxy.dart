@@ -543,7 +543,27 @@ class ChainProxyConfig {
     if (hopMode == ChainHopMode.threeHop) {
       return hop3Node;
     }
-    if (hop2Node.isNotEmpty) return hop2Node;
+    // RC.10-A.4.5 — in two-hop mode `hop2Node` is the exit, but it is only
+    // usable when it is actually one of the configured landing proxies: that
+    // list is what the chain injects into the core, so a name outside it can
+    // never resolve and every probe would keep failing against a proxy that
+    // does not exist (a legacy `hop3Node` leaves exactly such a name behind
+    // after the three-hop → two-hop migration).
+    //
+    // The reference is only treated as stale when the config actually declares
+    // landing proxies — with an empty landing list there is nothing to validate
+    // against, so the configured exit is kept exactly as before.
+    //
+    // An unresolvable reference falls back to the active landing proxy. When
+    // there is none, the result is the same empty string this getter already
+    // returned — "no usable exit" stays honest, nothing is fabricated, and a
+    // node's own delay is never treated as proof the whole chain works.
+    final String explicit = hop2Node.trim();
+    if (explicit.isNotEmpty &&
+        (landingProxies.isEmpty ||
+            landingProxies.any((p) => p.name == explicit))) {
+      return explicit;
+    }
     return landingProxies.where((p) => p.enable).firstOrNull?.name ?? '';
   }
 

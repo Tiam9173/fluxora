@@ -176,6 +176,68 @@ void main() {
     });
   });
 
+  // ── C. entry fields and special values survive the migration ─────────────
+  group('P1 — three-hop → two-hop leaves the entry fields untouched', () {
+    test('hop1Node and defaultDialerProxy are not rewritten', () async {
+      final manager = await arrange(threeHop(relay: 'SG-01', exit: 'US-01'));
+
+      await manager.setHopMode(ChainHopMode.twoHop);
+
+      expect(manager.config.hop1Node, 'HK-01');
+      expect(manager.config.defaultDialerProxy, 'HK-01');
+      expect(manager.config.effectiveHop1, 'HK-01');
+    });
+
+    test('a DIRECT entry survives the migration', () async {
+      final manager = await arrange(
+        const ChainProxyConfig(
+          enable: true,
+          hopMode: ChainHopMode.threeHop,
+          hop1Node: 'DIRECT',
+          defaultDialerProxy: 'DIRECT',
+          hop2Node: 'SG-01',
+          hop3Node: 'US-01',
+        ),
+      );
+
+      await manager.setHopMode(ChainHopMode.twoHop);
+
+      expect(manager.config.hop1Node, 'DIRECT');
+      expect(manager.config.defaultDialerProxy, 'DIRECT');
+      expect(manager.config.effectiveHop1, 'DIRECT');
+    });
+
+    test('an empty entry (follow main) survives the migration', () async {
+      final manager = await arrange(
+        const ChainProxyConfig(
+          enable: true,
+          hopMode: ChainHopMode.threeHop,
+          hop2Node: 'SG-01',
+          hop3Node: 'US-01',
+        ),
+      );
+
+      await manager.setHopMode(ChainHopMode.twoHop);
+
+      expect(manager.config.hop1Node, isEmpty);
+      expect(manager.config.defaultDialerProxy, isEmpty);
+      expect(manager.config.effectiveHop1, isEmpty);
+    });
+
+    test('the former relay stored in hop2Node is overwritten by the exit',
+        () async {
+      // Documents the one lossy part of the migration: two-hop has no relay
+      // slot, so a stored relay cannot be carried across a round trip.
+      final manager = await arrange(threeHop(relay: 'SG-01', exit: 'US-01'));
+
+      await manager.setHopMode(ChainHopMode.twoHop);
+
+      expect(manager.config.hopMode, ChainHopMode.twoHop);
+      expect(manager.config.hop2Node, 'US-01');
+      expect(manager.config.hop3Node, isEmpty);
+    });
+  });
+
   // ── B. generated Mihomo config ────────────────────────────────────────────
   group('P1 — the generated Mihomo config follows the migration', () {
     Map<String, dynamic> sampleConfig() => <String, dynamic>{
@@ -279,6 +341,92 @@ void main() {
         ),
         isFalse,
       );
+    });
+  });
+
+  // ── D. RC.10-A.4.5 — a stale exit reference must not stay a probe target ──
+
+  LandingProxy landing(String name, {bool enable = true}) => LandingProxy(
+    id: 'landing-$name',
+    name: name,
+    server: '127.0.0.1',
+    port: 1080,
+    enable: enable,
+  );
+
+  group('RC.10-A.4.5 — a stale two-hop exit falls back to a landing proxy', () {
+    test('the migration keeps the legacy exit name but stops using it',
+        () async {
+      // The legacy exit is kept in `hop2Node` — the migration rule must not
+      // destroy it — but once the config declares landing proxies and the name
+      // is not one of them, it can no longer be the effective exit.
+      final manager = await arrange(
+        threeHop(relay: 'SG-01', exit: 'US-01').copyWith(
+          landingProxies: [landing('us8 -1')],
+        ),
+      );
+
+      await manager.setHopMode(ChainHopMode.twoHop);
+
+      expect(manager.config.hopMode, ChainHopMode.twoHop);
+      expect(manager.config.hop2Node, 'US-01');
+      expect(manager.config.effectiveExitNode, 'us8 -1');
+    });
+
+    test('an active landing proxy becomes the fallback candidate', () async {
+      final manager = await arrange(
+        ChainProxyConfig(
+          enable: true,
+          hopMode: ChainHopMode.twoHop,
+          hop1Node: 'HK-01',
+          defaultDialerProxy: 'HK-01',
+          hop2Node: 'residential_exit_us',
+          landingProxies: [landing('us8 -1')],
+        ),
+      );
+
+      expect(manager.config.effectiveExitNode, 'us8 -1');
+    });
+
+    test('a valid landing exit still wins over the fallback', () async {
+      final manager = await arrange(
+        ChainProxyConfig(
+          enable: true,
+          hopMode: ChainHopMode.twoHop,
+          hop1Node: 'HK-01',
+          defaultDialerProxy: 'HK-01',
+          hop2Node: 'us9',
+          landingProxies: [landing('us8 -1'), landing('us9')],
+        ),
+      );
+
+      expect(manager.config.effectiveExitNode, 'us9');
+    });
+
+    test('no usable candidate yields no exit rather than a fabricated one',
+        () async {
+      final manager = await arrange(
+        ChainProxyConfig(
+          enable: true,
+          hopMode: ChainHopMode.twoHop,
+          hop1Node: 'HK-01',
+          defaultDialerProxy: 'HK-01',
+          hop2Node: 'residential_exit_us',
+          landingProxies: [landing('us8 -1', enable: false)],
+        ),
+      );
+
+      expect(manager.config.effectiveExitNode, isEmpty);
+    });
+
+    test('the RC.10-A.3 entry-field invariant is not regressed', () async {
+      final manager = await arrange(threeHop(relay: 'SG-01', exit: 'US-01'));
+
+      await manager.setHopMode(ChainHopMode.twoHop);
+
+      expect(manager.config.hop1Node, 'HK-01');
+      expect(manager.config.defaultDialerProxy, 'HK-01');
+      expect(manager.config.effectiveHop1, 'HK-01');
     });
   });
 }

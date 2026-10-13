@@ -1930,6 +1930,16 @@ class AppLocalizations {
   }
 
   /// `Check Failed`
+  /// `Probe chain`
+  String get chainProbeNow {
+    return Intl.message(
+      'Probe chain',
+      name: 'chainProbeNow',
+      desc: '',
+      args: [],
+    );
+  }
+
   String get checkError {
     return Intl.message('Check Failed', name: 'checkError', desc: '', args: []);
   }

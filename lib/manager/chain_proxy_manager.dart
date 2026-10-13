@@ -250,6 +250,61 @@ class ChainProxyManager extends ChangeNotifier {
       notifyListeners();
     }
 
+    // RC.10-A.4.2 — normalise a legacy three-hop configuration once the
+    // persisted config has been decoded. RC.10-A removed the hop-count
+    // selector, so a stored `threeHop` would otherwise keep the topology card
+    // rendering a relay node the UI can no longer manage.
+    //
+    // Reuses `setHopMode`, which migrates the exit from `hop3Node` back into
+    // `hop2Node` and clears `hop3Node`. A former relay stored in `hop2Node` is
+    // therefore overwritten: two-hop has no relay slot to carry it across, and
+    // that is the existing, documented migration rule.
+    //
+    // Only an actual `threeHop` config is touched — an already-two-hop config
+    // takes neither the reload nor the write path (`setHopMode` also has its
+    // own idempotence guard).
+    //
+    // `setHopMode` reaches `_reloadRuntimeConfig`, which rethrows a real core
+    // reload failure. `init()` is awaited on the service path, so an unguarded
+    // failure there would abort startup; the migration is therefore contained:
+    // the config is already persisted at this point, and the next start simply
+    // retries from the migrated state.
+    if (_config.hopMode == ChainHopMode.threeHop) {
+      try {
+        await setHopMode(ChainHopMode.twoHop);
+      } catch (e) {
+        commonPrint.log(
+          'ChainProxyManager: three-hop normalisation failed: $e',
+        );
+      }
+    }
+
+    // RC.10-A.4.5 — surface, but do NOT destroy, a stale two-hop exit
+    // reference.
+    //
+    // After the migration above (or from any older config) `hop2Node` can name
+    // a landing proxy that no longer exists — the legacy `hop3Node` value is
+    // exactly such a case. Deleting it here would be unsafe: `init()` cannot
+    // enumerate the runtime proxy set (that needs a live core), so a name
+    // missing from the *landing* list cannot be proven dead — it might be a
+    // subscription node the user picked deliberately.
+    //
+    // The read path handles it instead: `ChainProxyConfig.effectiveExitNode`
+    // falls back to the active landing proxy whenever `hop2Node` does not
+    // resolve. Nothing has to be rewritten, the user's stored value survives,
+    // and `hop1Node` / `defaultDialerProxy` / `enable` plus the DIRECT and
+    // empty-string semantics are untouched.
+    if (_config.hopMode == ChainHopMode.twoHop) {
+      final String exit = _config.hop2Node.trim();
+      if (exit.isNotEmpty &&
+          !_config.landingProxies.any((p) => p.name == exit)) {
+        commonPrint.log(
+          'ChainProxyManager: hop2Node "$exit" is not in the landing list; '
+          'effectiveExitNode falls back to the active landing proxy',
+        );
+      }
+    }
+
     // Restore the persisted fallback pool configuration so a curated pool
     // survives a restart. Runtime telemetry is never restored from disk.
     try {
