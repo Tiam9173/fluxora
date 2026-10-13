@@ -1,152 +1,184 @@
-<h4 align="right">
-  <a href="../README.md">简体中文</a> | <a href="README_en.md">English</a> | <a href="README_ru.md">Русский</a> | <strong>فارسی</strong> | <a href="README_ja.md">日本語</a> | <a href="README_ko.md">한국어</a>
-</h4>
+<div align="center">
 
-<h1 align="center">⚡ Fluxora</h1>
-<p align="center">
-  <strong>Open-source cross-platform Mihomo routing client</strong>
-</p>
+<img src="../assets/images/fluxora_mark.svg" alt="Fluxora" width="104" height="104">
 
-**Fluxora یک کلاینت چندسکویی برای دیباگ شبکه و تقسیم ترافیک بر اساس قوانین است که با هسته Mihomo (Clash Meta) کار می‌کند و ادامهٔ مستقل پروژه Bettbox است.**
+# Fluxora 流序
 
-با پایبندی به اصل "clear and reliable routing"، Fluxora ضمن حفظ رابط کاربری جذاب نسخه اصلی، جزئیات و منطق برنامه را عمیقاً بهینه‌سازی کرده است. ویژگی‌های کلیدی و اهداف تحقق: روانی با نرخ فریم بالا در پیش‌زمینه و عملکرد بی‌صدا و کم‌مصرف در پس‌زمینه — کلاینتی با تجربه کاربری بهتر که با مصرف منابع اندک، عملکرد پایدار و طولانی‌مدتی را برای Mihomo ارائه می‌دهد.
+**Make routing legible. — مسیریابی روشن، کنترلی آرام.**
 
-Fluxora یعنی: Make routing legible. - تجربه برتر، آماده استفاده.
+کلاینت متن‌باز و چندسکویی مسیریابی شبکه بر پایهٔ Mihomo.
+پروفایل‌ها، اتصال‌ها، قوانین و وضعیت ترافیک — در یک رابط کاربری سنجیده، روشن و قابل بازبینی.
 
-چشم‌انداز ما: Clear routes, calm control.
+[![License](https://img.shields.io/badge/license-GPL--3.0-29D6C7?style=flat-square)](../LICENSE)
+[![Platforms](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux%20%7C%20Android-4C8DFF?style=flat-square)](#پلتفرمهای-پشتیبانیشده)
+[![Stars](https://img.shields.io/github/stars/Tiam9173/fluxora?style=flat-square&color=7C75FF&label=stars)](https://github.com/Tiam9173/fluxora/stargazers)
 
-[![Latest Release](https://img.shields.io/github/v/release/Tiam9173/fluxora?style=for-the-badge&logo=github&color=238636&label=Release)](https://github.com/Tiam9173/fluxora/releases/latest) [![Core](https://img.shields.io/github/v/release/MetaCubeX/mihomo?style=for-the-badge&logo=go&logoColor=white&color=8A2BE2&label=Mihomo)](https://github.com/MetaCubeX/mihomo/releases/latest)
+<!-- زبان مستندات / Documentation language -->
 
-<p align="center">
-  <img src="../assets/images/fluxora_mark.svg" alt="Fluxora" />
-</p>
+[![简体中文](https://img.shields.io/badge/简体中文-29D6C7?style=flat-square)](../README.md)
+[![English](https://img.shields.io/badge/English-4C8DFF?style=flat-square)](../README_en.md)
+[![日本語](https://img.shields.io/badge/日本語-7C75FF?style=flat-square)](README_ja.md)
+[![한국어](https://img.shields.io/badge/한국어-FF6B9D?style=flat-square)](README_ko.md)
+[![Русский](https://img.shields.io/badge/Русский-FFB020?style=flat-square)](README_ru.md)
+[![فارسی](https://img.shields.io/badge/فارسی-فعلی-56C1FF?style=flat-square)](README_fa.md)
 
----
-### ✈️ جامعه تلگرام
+**[دانلود](#دانلود)** · **[گزارش مشکل](https://github.com/Tiam9173/fluxora/issues)** · **[مشارکت](#مشارکت)** · **[مجوز](../LICENSE)**
+
+📢 **[کانال رسمی Telegram](https://t.me/Fluxora_Chanel)** · 💬 **[گروه رسمی Telegram](https://t.me/Fluxora_Grup)**
 
 </div>
 
-<div align="left">
-
-[![Telegram Group](https://img.shields.io/badge/Fluxora-Chat-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/Fluxora_Grup) [![Telegram Channel](https://img.shields.io/badge/Fluxora-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/Fluxora_Chanel)
-
-[![GitHub Discussions](https://img.shields.io/badge/Fluxora-Discussions-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Tiam9173/fluxora/discussions)
-
----
-## 🚀 ویژگی‌های اصلی
-
-* **آماده استفاده**: مدیریت پایدار دسترسی‌ها و تجربه روان TUN/VPN همراه با بهینه‌سازی‌های پیش‌فرض برای استفاده فوری.
-* **رابط کاربری ظریف**: بهینه‌سازی دقیق UI و تعاملات. انیمیشن‌های نرخ‌فریم بالا، مصرف انرژی بسیار پایین در موبایل و حداقل بار روی دسکتاپ.
-* **امنیت بالا**: بروزرسانی همگام با شاخه اصلی Mihomo و اعمال کنترل و تایید سخت‌گیرانه دسترسی‌ها در تمامی پلتفرم‌ها.
-* **پایداری فوق‌العاده**: مدیریت سناریوهای پیچیده همراه با اعتبارسنجی دوگانه فایل پیکربندی برای پایداری در حد سازمانی.
-* **اولویت با عملکرد**: پشتیبانی نیتیو از ARM64 در دسکتاپ، سطح‌بندی سخت‌افزاری و بهینه‌سازی فلاتر جهت گرفتن حداکثر توان از سخت‌افزار.
-* **ابزارهای هوشمند**: شروع/توقف هوشمند چندسکویی، پشتیبانی از حالت خواب اندروید، غیرفعال‌سازی QUIC با یک کلیک و منوی پیشرفته تسک‌بار.
-* **تنظیمات بصری**: تنظیم راحت پارامترها از طریق UI با اعمال آنی تغییرات — بدون نیاز به ویرایش دستی فایل‌ها.
-* **ویجت‌های داشبورد**: ویجت‌های شیک داخلی برای مانیتورینگ زنده سرعت شبکه و وضعیت سیستم در صفحه اصلی.
-* **شخصی‌سازی**: تم‌های رنگی متنوع، آیکون‌ها و عنوان‌های سفارشی همراه با ۱۰ انیمیشن تست سرعت پویا.
-* **انعطاف‌پذیری بالا**: پشتیبانی از UI تقسیم ترافیک برای تمامی اسکریپت‌های JS همراه با کلیدهای بصری سفارشی.
-* **ویرایشگر حرفه‌ای**: ویرایشگر داخلی code-forge بازنویسی شده با عملکرد بالا در تمامی پلتفرم‌ها هم‌سطح IDE‌های حرفه‌ای.
-* **پشتیبانی از دستگاه‌های قدیمی**: نگهداری مستمر نسخه‌های Compatible برای سیستم‌عامل‌ها و سخت‌افزارهای قدیمی جهت افزایش طول عمر دستگاه.
-* **حریم خصوصی کامل**: متن‌باز، بدون تبلیغات، فرآیند شفاف CI/CD و بدون هیچ‌گونه جمع‌آوری داده در پس‌زمینه.
-* **جامعه‌محور**: ارزیابی دقیق بازخوردها و اولویت‌دهی به گزارش‌های باکیفیت. صدای شما شنیده می‌شود.
-
----
-</div>
-
-## 🛠️ نصب و دانلود
-
-لطفاً برای دانلود آخرین فایل نصب مناسب سیستم خود به صفحه **[[انتشارها (Releases)]](https://github.com/Tiam9173/fluxora/releases)** مراجعه کنید.
-
-
-* **پلتفرم‌های دسکتاپ**: 
-**Windows 8.1+:** (x64/arm64)
-**Linux Kernel 5.4+:** (x64/arm64)
-**macOS 10.15+:** (Intel/Apple Silicon)
-* **اندروید 8.0+**: Android (ARMv8 / ARMv7 / x86_64 / Universal)
-* **تلویزیون اندروید (Android TV)**: پشتیبانی کامل، ARMv7 32-bit اختیاری
-* **سیستم‌عامل HarmonyOS NEXT**: لطفاً همراه با برنامه [[ZhuoYiTong]](https://harmonyos.cool/android-app) استفاده کنید.
-
-**سایر روش‌های نصب:**<br>
-**آرچ لینوکس (ArchLinux):** <code>yay -S fluxora-bin</code> یا <code>paru -S fluxora-bin</code> (نگهداری توسط [lyj404](https://github.com/lyj404/fluxora-aur))<br>
-**AMD64=v1:** <code>yay -S fluxora-compatible-bin</code> یا <code>paru -S fluxora-compatible-bin</code> (نگهداری توسط [VillagerTom](https://github.com/VillagerTom))
-
----
-## ❓ سوالات متداول
-
-1. **مشکلات نصب، راه‌اندازی و امنیت**:
-   - دستگاه‌های اندرویدی: **از اعطای دسترسی‌های پس‌زمینه و حداقل سیستم‌عامل (Android 8.0+) مطمئن شوید**.
-   - سیستم‌های قدیمی: بررسی کنید آیا سیستم شما **نیازمند دانلود نسخه Compatible است**.
-   - **امنیت: پروژه Fluxora کاملاً متن‌باز است و ممیزی امنیتی Signpath را با موفقیت گذرانده است.**
-
-2. **مشکلات رایج دسکتاپ**:
-   - دسترسی مدیریت در ویندوز: به صورت خودکار در هنگام نصب انجام می‌شود — **نیازی به تایید دستی نیست**.
-   - عدم امکان فعال‌سازی کارت شبکه مجازی TUN: در macOS/Linux **از ورود رمز عبور صحیح اطمینان حاصل کنید**.
-   - سایر خطاها: لطفاً اطلاعات دیباگ را ارسال کرده و **از عدم اجرای پروکسی‌های همزمان مطمئن شوید**.
-   - در صورت تداوم مشکل، یک ISSUE ثبت کنید.
-
-3. **نکات مهم نصب در macOS**:
-   - فایل متناسب با پلتفرم خود (Intel / Apple Silicon) را دانلود کرده و `Fluxora-macos-xx.dmg` را باز کنید.
-   - آیکون Fluxora را به پوشه `Applications` منتقل کنید.
-   - **میانبر زدن بلاک امنیتی Gatekeeper در هنگام نصب یا بروزرسانی** ([به دلیل عدم خرید گواهی رسمی توسعه‌دهنده اپل](https://support.apple.com/en-us/102445)):
-     - **روش پیشنهادی**: در پوشه Applications، **روی آیکون Fluxora راست‌کلیک کنید**، گزینه **"Open"** را انتخاب کرده و مجدداً روی **"Open"** کلیک کنید.
-     - **روش جایگزین**: در صورت مسدود بودن، به System Settings -> Privacy & Security رفته و روی **"Open Anyway"** کلیک کنید.
-   - در اولین فعال‌سازی حالت TUN، رمز عبور کاربر فعال سیستم مک خود را وارد کنید تا اجازه پیکربندی شبکه داده شود.
-
-4. **عدم امکان وارد کردن اشتراک**:
-   - **لطفاً ابتدا لینک را ریست کنید** تا از فعال بودن آن مطمئن شوید.
-   - در صورت تداوم مشکل، ابتدا با ارائه‌دهنده سرویس خود تماس بگیرید؛ اگر مشکل از برنامه باشد، یک ISSUE ثبت کنید.
-
 ---
 
-## 💻 توسعه و ساخت
+## انجمن رسمی
 
-نمونه در ویندوز:
+- 📢 **[کانال رسمی Telegram](https://t.me/Fluxora_Chanel)** —— به‌روزرسانی‌های Fluxora، خبرهای انتشار نسخه و رویدادهای پروژه
+- 💬 **[گروه رسمی Telegram](https://t.me/Fluxora_Grup)** —— گفت‌وگوی جمعی، گزارش مشکل و تبادل تجربهٔ استفاده
 
-* نیاز به سیستم ویندوز (OS ≥ Windows 10)
-* ابزارها: Git, Visual Studio, Flutter 3.44.x, Golang, Inno Setup, Rust
+## چرا Fluxora
+
+بیشتر کلاینت‌های پروکسی «وصل شدن» را پایان کار می‌دانند و قوانین، گزارش‌ها و وضعیت اتصال‌ها را در لایه‌های تودرتوی زیرمنو انبار می‌کنند. Fluxora برعکس عمل می‌کند: **نخست وضعیت را دیدنی می‌کند، سپس دسترسی به عملیات را ممکن.**
+
+بر پایهٔ هستهٔ Mihomo (Clash Meta) و ساخته‌شده با Flutter، روی دسکتاپ و موبایل یک ساختار اطلاعاتی یکسان ارائه می‌دهد——داشبورد، پروکسی، پروفایل‌ها، ابزارها، گزارش‌ها، درخواست‌ها، منابع، اسکریپت‌ها و اتصال‌ها؛ نُه صفحه که هرکدام نقش خود را دارند، بدون انبوه‌سازی و بدون پنهان‌کاری.
+
+طراحی از سه اصل پیروی می‌کند: **سنجیدگی** (بدون انیمیشن‌های تزئینی و جلوه‌های نئونی)، **روشنی** (وضعیت همیشه از عملیات چشمگیرتر است)، **قابل بازبینی** (متن‌باز، بدون سامانهٔ حساب کاربری، بدون وابستگی بستهٔ اعلام‌نشده).
+
+Fluxora یک محصول مستقل است و هیچ رابطهٔ رسمی با هیچ پروژهٔ بالادستی ندارد. خاستگاه و تعهدات مجوز آن به‌طور کامل در [NOTICE](../NOTICE) ثبت شده است.
+
+## مزیت‌های کلیدی
+
+- **رابط کاربری مدرن** — سامانهٔ طراحی Material 3 و نشانه‌های طراحی یکپارچه (رنگ / اندازهٔ قلم / فاصله‌ها / گردی گوشه‌ها / حرکت). این یک بازنویسی سطحی از رابط بالادستی نیست.
+- **یکدستی میان سکوها** — Windows، macOS، Linux و Android همان کد Flutter و همان ساختار اطلاعاتی را به اشتراک می‌گذارند.
+- **کنترل کامل پروکسی** — سه حالت خروج: قانون / سراسری / مستقیم؛ انتخاب گروه پروکسی، سنجش تأخیر، پروکسی زنجیره‌ای با رلهٔ پیشین و رلهٔ خروجی.
+- **تصاحب شبکه** — کارت شبکهٔ مجازی TUN و پروکسی سیستم؛ اقامت دائمی در سینی سیستم و میان‌برهای سراسری روی دسکتاپ.
+- **سامانهٔ پوسته** — روشن / تیره / هم‌راه با سیستم، حالت سیاه مطلق، ۷ مجموعه رنگ برند؛ در Android پشتیبانی از رنگ‌های پویا Material You.
+- **متن‌باز و قابل بازبینی** — GPL-3.0. هسته، موتور اسکریپت و وابستگی‌ها همه قابل بررسی‌اند و هیچ سامانهٔ حساب ابری وجود ندارد.
+
+## قابلیت‌ها
+
+### اتصال
+- پروکسی سیستم (دسکتاپ)
+- کارت شبکهٔ مجازی TUN (همراه با انتخاب نوع پشته و حالت مسیریابی)
+- حالت‌های خروج: قانون / سراسری / مستقیم
+- فهرست اتصال‌ها با ترافیک زنده و بستن اتصال
+- راه‌اندازی و توقف هوشمند: با اتصال به شبکهٔ مشخص، سرویس پروکسی خودکار متوقف می‌شود
+
+### نودها
+- گروه‌های پروکسی: انتخاب / سنجش خودکار سرعت / انتقال در خطا / توازن بار
+- سنجش تأخیر و جابه‌جایی میان نودها
+- پروکسی زنجیره‌ای (رلهٔ پیشین / رلهٔ خروجی)
+
+### پیکربندی
+- مدیریت چند پروفایل (فایل محلی / پیوند اشتراک)
+- درون‌ریزی و به‌روزرسانی پروفایل، منابع قوانین (rule providers)
+
+### ابزارها
+- بررسی شبکه، آی‌پی داخلی، بررسی رفع محدودیت رسانه
+- بازنویسی DNS، بازنویسی Sniffer، بازنویسی NTP
+- کلید IPv6، مصرف حافظه، آمار ترافیک
+- گزارش‌ها، ثبت درخواست‌ها، عیب‌یابی اتصال
+- اسکریپت‌های JavaScript (پردازش قوانین و پیکربندی)
+
+### شخصی‌سازی
+- روشن / تیره / هم‌راه با سیستم
+- حالت سیاه مطلق (OLED)
+- ۷ مجموعه رنگ برند + رنگ اصلی دلخواه
+- رنگ‌های پویا Material You در Android
+- سینی سیستم، میان‌برهای سراسری و اجرای خودکار در دسکتاپ
+
+## رابط کاربری
+
+![صفحه اصلی Fluxora](../snapshots/home.png)
+
+## پلتفرمهای پشتیبانیشده
+
+| پلتفرم | وضعیت |
+|---|---|
+| Windows 10 / 11 | پشتیبانی می‌شود |
+| macOS 12+ | پشتیبانی می‌شود |
+| Linux | پشتیبانی می‌شود |
+| Android 8.0+ | پشتیبانی می‌شود |
+| iOS | کلاینت رسمی ندارد |
+
+## دانلود
+
+نسخهٔ پایدار به‌زودی منتشر می‌شود. پس از انتشار، بسته‌های نصب یک‌جا در **[GitHub Releases](https://github.com/Tiam9173/fluxora/releases)** قرار می‌گیرند و نام‌گذاری آن‌ها به شکل `Fluxora-<version>-<platform>` خواهد بود.
+
+در حال حاضر این مخزن **هنوز هیچ انتشار رسمی ندارد**؛ بنابراین در پایین پیوند قابل کلیکی برای بستهٔ نصب وجود ندارد——پس از انتشار به صفحهٔ Releases بازگردید.
+
+## نصب
+
+### Windows
+1. بستهٔ همراه (portable) ویندوز را از Releases دانلود کنید (`*-windows-amd64-portable.zip`).
+2. آن را در هر پوشه‌ای باز کنید (نیازی به نصب نیست).
+3. فایل `Fluxora.exe` را اجرا کنید.
+
+> برنامهٔ نصب (جادوگر `.exe`) هنوز در حال آماده‌سازی است؛ در حال حاضر از بستهٔ همراه استفاده کنید.
+
+### Android
+فایل APK متناسب با معماری دستگاه را از Releases دانلود و به‌صورت دستی نصب کنید، یا منتظر نسخهٔ فروشگاه برنامه بمانید.
+
+### Linux
+فایل AppImage / deb / rpm را از Releases دانلود کنید (بسته به محتوای انتشار).
+
+### macOS
+فایل DMG متناسب با معماری دستگاه را از Releases دانلود کنید.
+
+> بسته‌های نصب رسمی Linux و macOS هنوز ساخته نشده‌اند؛ محتوای واقعی صفحهٔ Releases را مبنا بگیرید.
+
+## پرسش‌های متداول
+
+### Fluxora چیست؟
+یک کلاینت متن‌باز و چندسکویی مسیریابی شبکه بر پایهٔ هستهٔ Mihomo (Clash Meta) که با Flutter ساخته شده است.
+
+### از چه پلتفرم‌هایی پشتیبانی می‌کند؟
+Windows، macOS، Linux و Android. برای iOS در حال حاضر کلاینت رسمی وجود ندارد و در برنامه‌های کنونی هم گنجانده نشده است.
+
+### رابطهٔ Fluxora با پروژه‌های بالادستی چیست؟
+Fluxora یک **محصول مستقل** است و انتشار رسمی هیچ پروژهٔ بالادستی نیست. این پروژه ادامهٔ مستقل Bettbox است و برند، رابط کاربری، سامانهٔ طراحی و اجزای ویندوز بر همان پایه و به‌صورت مستقل توسعه یافته‌اند. خاستگاه کامل و تعهدات مجوز در [NOTICE](../NOTICE) آمده است.
+
+### متن‌باز است؟ با چه مجوزی؟
+متن‌باز است و از **GPL-3.0** استفاده می‌کند. متن کامل در [LICENSE](../LICENSE) آمده است.
+
+### چگونه پیکربندی را درون‌ریزی کنم؟
+در صفحهٔ «پروفایل‌ها» پیوند اشتراک را بیفزایید یا فایل پیکربندی محلی را درون‌ریزی کنید و پس از انتخاب، اتصال برقرار می‌شود. درون‌ریزی مستقیم با پیوند `fluxora://install-config` نیز پشتیبانی می‌شود.
+
+### تفاوت TUN و پروکسی سیستم چیست؟
+پروکسی سیستم تنها بر برنامه‌هایی اثر می‌گذارد که تنظیمات پروکسی سیستم را رعایت می‌کنند. TUN از طریق کارت شبکهٔ مجازی ترافیک را در لایه‌ای پایین‌تر تصاحب می‌کند، بنابراین گسترهٔ بیشتری دارد و معمولاً به دسترسی مدیر نیاز دارد. در دسکتاپ هر دو را می‌توان جداگانه خاموش و روشن کرد.
+
+### چرا برای برخی پلتفرم‌ها بستهٔ نصب وجود ندارد؟
+هر بستهٔ انتشار به محیط ساخت خود نیاز دارد (Linux به زنجیرهٔ ابزار GTK و macOS به امضا و تأیید Xcode). این‌ها همراه نخستین انتشار پایدار به‌تدریج تکمیل می‌شوند.
+
+### آیا داده‌های من گردآوری می‌شود؟
+نه. Fluxora سرویس حساب ابری ارائه نمی‌دهد و ارسال آمار هم در آن تعبیه نشده است. اشتراک‌ها، قوانین و درخواست‌های شبکه تنها بر پایهٔ پیکربندی‌ای که خودتان انتخاب می‌کنید تعیین می‌شوند.
+
+## توسعه
+
+**پیش‌نیازها**: Flutter (همراه با Dart)، Android SDK/NDK و JDK، و ابزارهای ساخت سکوی هدف (در ویندوز Visual Studio Build Tools، در macOS Xcode و در Linux کتابخانه‌های توسعهٔ GTK). هستهٔ پروکسی و Helper اجزایی به Go / Rust هستند و به زنجیرهٔ ابزار مربوط خود نیاز دارند.
+
 ```bash
-* flutter pub get
-* dart .\setup.dart windows --arch amd64 --out core (فقط هسته اصلی)
-* dart .\setup.dart windows --arch amd64 --out app --compatible (نسخه Compatible اختیاری)
-* خروجی در پوشه `dist/` قرار می‌گیرد
+git clone https://github.com/Tiam9173/fluxora.git
+cd fluxora
+flutter pub get
+dart run build_runner build -d
+flutter run            # یا flutter build windows --release
 ```
 
-سفارشی‌سازی UI اسکریپت:
+## مشارکت
 
-* از نسخه v1.18.8، برنامه Fluxora از اسکریپت‌های سفارشی پشتیبانی می‌کند. برای نمونه **[مخزن اسکریپت AIsouler](https://github.com/AIsouler/MyClash)** کافیست کد زیر را در سطر اول اسکریپت قرار دهید:
-* <code>const Compatible_With_Fluxora = { ruleOptionsEnable: true };</code>
+از ثبت Issue، بهبود مستندات، رفع اشکال و مشارکت در کد استقبال می‌کنیم:
 
----
+- **گزارش اشکال / پیشنهاد قابلیت** → [Issues](https://github.com/Tiam9173/fluxora/issues)
+- **مشارکت در کد** → [Pull Requests](https://github.com/Tiam9173/fluxora/pulls)
 
-### ☕ حمایت مالی
+پیش از ارسال تغییرات مطمئن شوید که وابستگی بستهٔ اعلام‌نشده‌ای اضافه نمی‌کنید و اعلان‌های مجوز GPL یا اشخاص ثالث را حذف نمی‌کنید.
 
-**در صورت تمایل می‌توانید از توسعه پروژه حمایت کنید:**
+## مجوز و تبار پروژه
 
-* TRON (TRC-20):   <code>TCkTtZfF2WrciZLaJj3e1aqrh3zdTnCkDa</code>
-* Bitcoin: <code>bc1qu950cl6035qvllmzk6cfw3l30j2lg3cq9n6g6h</code>
----
+Fluxora is distributed under the GNU General Public License v3.0. See [LICENSE](../LICENSE).
 
-## 🙏 قدردانی
+Fluxora includes and interoperates with open-source components, including the [Mihomo](https://github.com/MetaCubeX/mihomo) core and other Flutter, Go, Rust, and platform libraries. Their applicable copyright notices and licenses remain in their respective source directories and distribution metadata. See [NOTICE](../NOTICE) and the relevant component license files.
 
-<table>
-  <tr>
-    <td>
-      <img alt="SignPath" src="https://signpath.org/assets/favicon-50x50.png" />
-    </td>
-    <td>
-    Free code signing on Windows provided by <a href="https://signpath.io">SignPath.io</a>, certificate by <a href="https://signpath.org/">SignPath Foundation</a>
-    </td>
-  </tr>
-</table>
+Fluxora is an independent continuation of the [Bettbox](https://github.com/appshubcc/Bettbox) project. Project lineage: **FlClash → Bettbox → Fluxora**. Fluxora's branding, UI, design system and Windows components were developed independently on that base, starting 2026-09-25. See [NOTICE](../NOTICE) for the full attribution record.
 
-**[Bettbox](https://github.com/appshubcc/Bettbox)** 〢 **[FlClash GUI](https://github.com/chen08209/FlClash)** 〢 **[Mihomo Core](https://github.com/MetaCubeX/mihomo)**
-
-تشکر ویژه از تمامی [مشارکت‌کنندگان](https://github.com/Tiam9173/fluxora/graphs/contributors) و پروژه‌های متن‌باز استفاده‌شده یا ارجاع‌داده‌شده:
-
-[Zashboard](https://github.com/Zephyruso/zashboard), [CMFA](https://github.com/MetaCubeX/ClashMetaForAndroid), [Sparkle](https://github.com/xishang0128/sparkle), [SFA](https://github.com/SagerNet/sing-box-for-android), [HUSI](https://github.com/xchacha20-poly1305/husi), [V2rayN](https://github.com/2dust/v2rayN)
-
----
-
-## 📄 مجوز
-
-مجوز GPL-3.0
+Fluxora is an independent product identity. This repository does not present itself as an official product of any upstream project.
