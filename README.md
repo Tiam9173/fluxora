@@ -13,6 +13,15 @@
 [![Platforms](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux%20%7C%20Android-4C8DFF?style=flat-square)](#支持平台)
 [![Stars](https://img.shields.io/github/stars/Tiam9173/fluxora?style=flat-square&color=7C75FF&label=stars)](https://github.com/Tiam9173/fluxora/stargazers)
 
+<!-- 文档语言 / Documentation language -->
+
+[![简体中文](https://img.shields.io/badge/简体中文-当前-29D6C7?style=flat-square)](README.md)
+[![English](https://img.shields.io/badge/English-4C8DFF?style=flat-square)](README_en.md)
+[![日本語](https://img.shields.io/badge/日本語-7C75FF?style=flat-square)](readme/README_ja.md)
+[![한국어](https://img.shields.io/badge/한국어-FF6B9D?style=flat-square)](readme/README_ko.md)
+[![Русский](https://img.shields.io/badge/Русский-FFB020?style=flat-square)](readme/README_ru.md)
+[![فارسی](https://img.shields.io/badge/فارسی-56C1FF?style=flat-square)](readme/README_fa.md)
+
 **[下载](#下载)** · **[问题反馈](https://github.com/Tiam9173/fluxora/issues)** · **[参与贡献](#参与贡献)** · **[许可证](LICENSE)**
 
 📢 **[官方 Telegram 频道](https://t.me/Fluxora_Chanel)** · 💬 **[官方 Telegram 群组](https://t.me/Fluxora_Grup)**
@@ -79,7 +88,7 @@ Fluxora 是一个独立产品，与任何上游项目没有官方关联。它的
 
 ## 产品界面
 
-> 界面截图与演示动画正在整理中，将在首个正式版本发布时一并补充。
+![Fluxora 首页](snapshots/home.png)
 
 ## 支持平台
 
@@ -142,28 +151,6 @@ Fluxora 是**独立产品**，不是任何上游项目的官方发布。它是 B
 
 ### 会收集我的数据吗？
 不会。Fluxora 不提供云端账号服务，也没有内置统计上报。订阅、规则与网络请求完全由你选择的配置决定。
-
-## Roadmap
-
-### 已完成
-- Fluxora 独立品牌迁移（名称 / 图标 / 包标识 / URL Scheme）
-- Material 3 设计体系与设计令牌（色彩 / 字号 / 间距 / 圆角 / 动效）
-- 主题系统：浅色 / 深色 / 纯黑 / 7 套品牌预设 / 动态取色
-- Dashboard、代理与节点界面重做
-- Windows 回环豁免工具自研实现（`FluxoraLoopbackManager`）
-- 发行打包基础（三平台许可材料随包分发）
-
-### 进行中
-- Windows 安装程序（Inno Setup）与便携包发布
-- Linux / macOS 发行包构建与验证
-- README 与产品截图补全
-
-### 计划中
-- 正式发布首个版本
-- 更多平台的发行渠道
-- 应用内自动更新
-- 文档与多语言完善
-- 社区贡献流程建设
 
 ## 开发
 
