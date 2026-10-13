@@ -285,6 +285,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainProxyDesc": MessageLookupByLibrary.simpleMessage(
       "Configure an entry hop and a static residential landing IP",
     ),
+    "chainProbeNow": MessageLookupByLibrary.simpleMessage("Probe chain"),
     "checkError": MessageLookupByLibrary.simpleMessage("Check Failed"),
     "checkFailed": MessageLookupByLibrary.simpleMessage("Timeout"),
     "checkOrAddProfile": MessageLookupByLibrary.simpleMessage(

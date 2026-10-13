@@ -528,7 +528,13 @@ class ChainFailoverService implements IChainFailoverService {
 
       if (currentConfig.hopMode == ChainHopMode.twoHop) {
         if (role == FallbackCandidateRole.entry) {
-          candidateConfig = currentConfig.copyWith(hop1Node: candidateName);
+          // RC.10-A.3 — keep both entry fields in step. `effectiveHop1`
+          // prefers `hop1Node`, so writing only `hop1Node` left the UI reading
+          // the stale `defaultDialerProxy` while the probe used the candidate.
+          candidateConfig = currentConfig.copyWith(
+            hop1Node: candidateName,
+            defaultDialerProxy: candidateName,
+          );
         } else if (role == FallbackCandidateRole.exit) {
           candidateConfig = currentConfig.copyWith(hop2Node: candidateName);
         } else {
@@ -538,7 +544,11 @@ class ChainFailoverService implements IChainFailoverService {
         }
       } else {
         if (role == FallbackCandidateRole.entry) {
-          candidateConfig = currentConfig.copyWith(hop1Node: candidateName);
+          // RC.10-A.3 — same reasoning as the two-hop branch above.
+          candidateConfig = currentConfig.copyWith(
+            hop1Node: candidateName,
+            defaultDialerProxy: candidateName,
+          );
         } else if (role == FallbackCandidateRole.relay) {
           candidateConfig = currentConfig.copyWith(hop2Node: candidateName);
         } else {

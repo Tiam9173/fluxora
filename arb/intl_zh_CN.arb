@@ -229,6 +229,7 @@
   "externalResources": "外部资源",
   "checking": "检测中...",
   "country": "区域",
+  "chainProbeNow": "探测链路",
   "checkError": "检测失败",
   "search": "搜索",
   "replace": "替换",

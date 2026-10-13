@@ -342,6 +342,10 @@ void main() {
 
       expect(result.isSuccess, isTrue);
       expect(committedConfig?.hop1Node, equals('HK-Entry-New'));
+      // RC.10-A.3 — the entry replacement must update both fields, otherwise
+      // the UI keeps reading the stale `defaultDialerProxy` while the probe
+      // (which prefers `hop1Node`) uses the new candidate.
+      expect(committedConfig?.defaultDialerProxy, equals('HK-Entry-New'));
       expect(committedConfig?.hop2Node, equals('US-Resi-01'));
     });
 
@@ -458,6 +462,8 @@ void main() {
 
       expect(result.isSuccess, isTrue);
       expect(committedConfig?.hop1Node, equals('TW-Entry-New'));
+      // RC.10-A.3 — same invariant as the two-hop entry case above.
+      expect(committedConfig?.defaultDialerProxy, equals('TW-Entry-New'));
       expect(committedConfig?.hop2Node, equals('JP-Relay-01'));
       expect(committedConfig?.hop3Node, equals('US-Exit-01'));
     });

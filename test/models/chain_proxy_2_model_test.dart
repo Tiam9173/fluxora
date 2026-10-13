@@ -103,5 +103,57 @@ void main() {
       expect(ChainProxyConfig.isShadowNodeName('HK-BGP-01'), isFalse);
       expect(ChainProxyConfig.isShadowNodeName('DIRECT'), isFalse);
     });
+
+    // ── RC.10-A.4.5 — a two-hop exit must resolve to a real landing proxy ──
+
+    LandingProxy landing(String name, {bool enable = true}) => LandingProxy(
+      id: 'landing-$name',
+      name: name,
+      server: '127.0.0.1',
+      port: 1080,
+      enable: enable,
+    );
+
+    test('TC-MOD-05: 两跳出口存在于落地列表时直接采用', () {
+      final config = ChainProxyConfig(
+        hopMode: ChainHopMode.twoHop,
+        hop2Node: 'us8 -1',
+        landingProxies: [landing('us8 -1'), landing('us9', enable: false)],
+      );
+
+      expect(config.effectiveExitNode, equals('us8 -1'));
+    });
+
+    test('TC-MOD-06: 两跳出口不在落地列表时回退到启用的落地节点', () {
+      // `residential_exit_us` is the stale legacy `hop3Node` value: it is not
+      // a landing proxy, so it can never resolve in the core.
+      final config = ChainProxyConfig(
+        hopMode: ChainHopMode.twoHop,
+        hop2Node: 'residential_exit_us',
+        landingProxies: [landing('us8 -1')],
+      );
+
+      expect(config.effectiveExitNode, equals('us8 -1'));
+    });
+
+    test('TC-MOD-07: 没有有效候选时返回空串，不伪造出口', () {
+      final config = ChainProxyConfig(
+        hopMode: ChainHopMode.twoHop,
+        hop2Node: 'residential_exit_us',
+        landingProxies: [landing('us8 -1', enable: false)],
+      );
+
+      expect(config.effectiveExitNode, isEmpty);
+    });
+
+    test('TC-MOD-08: 三跳模式仍返回 hop3Node，不受本次改动影响', () {
+      const config = ChainProxyConfig(
+        hopMode: ChainHopMode.threeHop,
+        hop2Node: 'SG-Relay-01',
+        hop3Node: 'US-Exit-01',
+      );
+
+      expect(config.effectiveExitNode, equals('US-Exit-01'));
+    });
   });
 }

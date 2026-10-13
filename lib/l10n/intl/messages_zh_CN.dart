@@ -170,6 +170,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "categoryGaming": MessageLookupByLibrary.simpleMessage("游戏中心"),
     "categorySocial": MessageLookupByLibrary.simpleMessage("社区平台"),
     "categoryStreaming": MessageLookupByLibrary.simpleMessage("流媒体"),
+    "chainProbeNow": MessageLookupByLibrary.simpleMessage("探测链路"),
     "checkError": MessageLookupByLibrary.simpleMessage("检测失败"),
     "checkFailed": MessageLookupByLibrary.simpleMessage("Timeout"),
     "checkOrAddProfile": MessageLookupByLibrary.simpleMessage("请先添加配置"),

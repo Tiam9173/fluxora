@@ -199,7 +199,7 @@ const Set<String> _blockingHopErrorCodes = {
 ///
 /// [availableProxyNames] `null` means the node set could not be read: the
 /// structural checks still run, but availability is left unverified, so a
-/// `null` result must not be read as "verified" — see `_hopConfigError`.
+/// `null` result must not be read as "verified".
 String? hopChainValidationError(
   ChainProxyConfig candidate,
   List<String>? availableProxyNames,
@@ -263,99 +263,6 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
           sheetType: type,
         );
       },
-    );
-  }
-
-  /// Validates a prospective hop configuration **before** it is written, using
-  /// the node set the manager can actually see.
-  ///
-  /// Returns the message to show, or `null` when the config is safe to apply.
-  String? _hopConfigError(ChainProxyConfig candidate) {
-    if (!usesHopFieldChain(candidate)) return null;
-
-    final available = ref.read(chainProxyConfigProvider).availableProxyNames;
-    final error = hopChainValidationError(candidate, available);
-    if (error != null) return error;
-
-    // The node list was unreadable, so availability was skipped entirely. Never
-    // report success for a chain whose nodes were not actually verified.
-    if (available == null) return appLocalizations.chainHopUnavailable;
-    return null;
-  }
-
-  /// Switches the hop count.
-  ///
-  /// The exit-node migration lives in [ChainProxyManager.setHopMode] so every
-  /// caller shares it: switching modes must carry the previous exit into the
-  /// field the new mode reads, never reinterpret it or drop it.
-  Future<void> _onHopModeChanged(ChainHopMode mode) async {
-    final manager = ref.read(chainProxyConfigProvider);
-    if (mode == manager.config.hopMode) return;
-
-    await manager.setHopMode(mode);
-  }
-
-  /// Writes [nodeName] into the hop-2 (relay) or hop-3 (exit) slot.
-  ///
-  /// The candidate config is validated first, so a rejected or stale node never
-  /// reaches disk.
-  Future<void> _selectHopNode({
-    required FallbackCandidateRole role,
-    required String nodeName,
-  }) async {
-    final manager = ref.read(chainProxyConfigProvider);
-    final current = manager.config;
-    final candidate = role == FallbackCandidateRole.relay
-        ? current.copyWith(hop2Node: nodeName)
-        : current.copyWith(hop3Node: nodeName);
-
-    final error = _hopConfigError(candidate);
-    if (error != null) {
-      if (mounted) context.showSnackBar(error);
-      return;
-    }
-
-    if (role == FallbackCandidateRole.relay) {
-      await manager.setHop2Node(nodeName);
-    } else {
-      await manager.setHop3Node(nodeName);
-    }
-  }
-
-  /// One selectable hop slot (relay or exit), reusing the existing node picker.
-  ///
-  /// `DIRECT` is not offered: it is a reserved system name that the topology
-  /// validator rejects for every hop but the first.
-  Widget _buildHopNodeRow({
-    required IconData icon,
-    required String title,
-    required String nodeName,
-    required FallbackCandidateRole role,
-    required Set<String> excludedHops,
-  }) {
-    final selected = nodeName.trim().isNotEmpty;
-    return ListItem(
-      leading: Icon(icon),
-      title: Text(title),
-      subtitle: Text(
-        selected ? nodeName : appLocalizations.chainHopNotSelected,
-        style: TextStyle(
-          color: selected
-              ? context.colorScheme.primary
-              : context.colorScheme.error,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      trailing: const Icon(Icons.chevron_right),
-      onTap: () => _showIntelligentHopPicker(
-        title: title,
-        currentHop: nodeName,
-        excludedHops: excludedHops,
-        role: role,
-        allowDirect: false,
-        allowFollowMain: false,
-        onSelect: (name) => _selectHopNode(role: role, nodeName: name),
-      ),
     );
   }
 
@@ -508,6 +415,22 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                         }
                         HapticFeedback.lightImpact();
                         await chainProxyManager.setEnable(true);
+                        // RC.10-A — probe once right after the chain turns on.
+                        // Fire-and-forget on purpose: a failed probe must not
+                        // roll the enable state back, and the UI must not block
+                        // on a multi-second probe before confirming. The
+                        // manager has no re-entrancy guard of its own, so skip
+                        // when a probe is already running.
+                        if (!chainProxyManager.isProbingChain) {
+                          chainProxyManager.probeCurrentChain().then(
+                            (_) {},
+                            onError: (Object error) {
+                              commonPrint.log(
+                                'ChainProxyView: probe after enable failed: $error',
+                              );
+                            },
+                          );
+                        }
                         if (context.mounted) {
                           context.showSnackBar('已成功启用链式代理模式');
                         }
@@ -532,49 +455,8 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
             type: CommonCardType.filled,
             child: Column(
               children: [
-                // B3: hop count. Reuses the existing ChainHopMode model; the two
-                // extra rows below appear only in three-hop mode.
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.route_outlined, size: 20),
-                          const SizedBox(width: 12),
-                          Text(
-                            appLocalizations.chainHopMode,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        appLocalizations.chainHopModeDesc,
-                        style: context.textTheme.bodySmall,
-                      ),
-                      const SizedBox(height: 10),
-                      SizedBox(
-                        width: double.infinity,
-                        child: SegmentedButton<ChainHopMode>(
-                          segments: [
-                            for (final m in ChainHopMode.values)
-                              ButtonSegment<ChainHopMode>(
-                                value: m,
-                                label: Text(m.label),
-                              ),
-                          ],
-                          selected: {config.hopMode},
-                          showSelectedIcon: false,
-                          onSelectionChanged: (selection) =>
-                              _onHopModeChanged(selection.first),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(height: 1, indent: 16, endIndent: 16),
+                // RC.10-A: the hop-count selector is gone — the chain is
+                // two-hop only (dialer -> landing), matching the original UI.
                 ListItem(
                   leading: const Icon(Icons.hub_outlined),
                   title: Text(appLocalizations.defaultDialerProxy),
@@ -596,32 +478,17 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                         role: FallbackCandidateRole.entry,
                         allowDirect: true,
                         allowFollowMain: true,
-                        onSelect: (hop) => chainProxyManager.setDefaultDialer(hop),
+                        // RC.10-A.3 — `effectiveHop1` prefers `hop1Node`, so
+                        // updating only `defaultDialerProxy` left the probe (and
+                        // the topology failure label) pointing at the previous
+                        // entry node. `setHop1Node` writes both fields, keeping
+                        // node / '' (follow main) / DIRECT semantics intact.
+                        onSelect: (hop) => chainProxyManager.setHop1Node(hop),
                       );
                   },
                 ),
-                // B3: three-hop relay + exit. Hidden in two-hop mode, where the
-                // landing-proxy chain keeps managing the exit.
-                if (config.hopMode == ChainHopMode.threeHop) ...[
-                  const Divider(height: 1, indent: 16, endIndent: 16),
-                  _buildHopNodeRow(
-                    icon: Icons.swap_horiz_rounded,
-                    title: appLocalizations.chainHopRelayNode,
-                    nodeName: config.hop2Node,
-                    role: FallbackCandidateRole.relay,
-                    excludedHops: {config.effectiveHop1, config.hop3Node}
-                      ..removeWhere((n) => n.trim().isEmpty),
-                  ),
-                  const Divider(height: 1, indent: 16, endIndent: 16),
-                  _buildHopNodeRow(
-                    icon: Icons.flight_land_rounded,
-                    title: appLocalizations.chainHopExitNode,
-                    nodeName: config.hop3Node,
-                    role: FallbackCandidateRole.exit,
-                    excludedHops: {config.effectiveHop1, config.hop2Node}
-                      ..removeWhere((n) => n.trim().isEmpty),
-                  ),
-                ],
+                // RC.10-A: the three-hop relay/exit rows are removed with the
+                // hop-count selector; the landing-proxy chain manages the exit.
                 const Divider(height: 1, indent: 16, endIndent: 16),
                 ListItem(
                   leading: const Icon(Icons.layers_outlined),
@@ -866,16 +733,11 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
 
     // P1.3-B: the pool is the failover input, so it is managed here. Only the
     // roles the current hop mode actually uses are offered.
-    final roles = config.hopMode == ChainHopMode.threeHop
-        ? const [
-            FallbackCandidateRole.entry,
-            FallbackCandidateRole.relay,
-            FallbackCandidateRole.exit,
-          ]
-        : const [
-            FallbackCandidateRole.entry,
-            FallbackCandidateRole.exit,
-          ];
+    // RC.10-A: three-hop is no longer offered, so only the two-hop roles remain.
+    final roles = const [
+      FallbackCandidateRole.entry,
+      FallbackCandidateRole.exit,
+    ];
 
     return CommonCard(
       type: CommonCardType.filled,
@@ -1174,7 +1036,6 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Row(
                   children: [
@@ -1190,6 +1051,9 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                     ),
                   ],
                 ),
+                const Spacer(),
+                _buildChainProbeButton(context),
+                const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
@@ -1429,6 +1293,42 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
   /// `healthy` / `checking` keep the card's existing accent (「正常：保持现有配色」),
   /// a confirmed failure is red, and `unknown` / `notProbed` stay neutral — an
   /// unproven segment must never read as green.
+  /// RC.10-A — the manual chain probe button, placed just left of the
+  /// "已就绪" badge inside the topology card header.
+  ///
+  /// Reuses the existing probe state ([isProbingChainProvider]) so the button
+  /// can never drift from what the card renders, and calls the real
+  /// [ChainProxyManager.probeCurrentChain]. The manager has no re-entrancy
+  /// guard, so the button is disabled while a probe runs.
+  Widget _buildChainProbeButton(BuildContext context) {
+    final isProbing = ref.watch(isProbingChainProvider);
+    return IconButton(
+      icon: isProbing
+          ? const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.radar_rounded, size: 20),
+      tooltip: appLocalizations.chainProbeNow,
+      visualDensity: VisualDensity.compact,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+      onPressed: isProbing
+          ? null
+          : () {
+              chainProxyManager.probeCurrentChain().then(
+                (_) {},
+                onError: (Object error) {
+                  commonPrint.log(
+                    'ChainProxyView: manual chain probe failed: $error',
+                  );
+                },
+              );
+            },
+    );
+  }
+
   Widget _buildTopologyNode({
     required IconData icon,
     required String title,

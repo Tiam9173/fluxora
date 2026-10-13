@@ -229,6 +229,7 @@
   "externalResources": "External Resources",
   "checking": "Checking...",
   "country": "Country",
+  "chainProbeNow": "Probe chain",
   "checkError": "Check Failed",
   "search": "Search",
   "replace": "Replace",
