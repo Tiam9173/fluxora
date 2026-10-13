@@ -88,7 +88,7 @@ Fluxora یک محصول مستقل است و هیچ رابطهٔ رسمی با �
 
 ## رابط کاربری
 
-![تصویر](https://picui.ogmua.cn/s1/2026/09/27/6ab8c17a5eab1.webp)
+![صفحه اصلی Fluxora](../snapshots/fluxora-home.png)
 
 ## پلتفرمهای پشتیبانیشده
 

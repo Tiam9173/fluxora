@@ -88,7 +88,7 @@ Fluxora is an independent product with no official affiliation to any upstream p
 
 ## Screenshots
 
-> UI screenshots and a demo animation are being prepared, and will be added alongside the first stable release.
+![Fluxora home](snapshots/fluxora-home.png)
 
 ## Supported platforms
 

@@ -88,7 +88,7 @@ Fluxora — самостоятельный продукт и не имеет о�
 
 ## Интерфейс
 
-![Скриншот](https://picui.ogmua.cn/s1/2026/09/27/6ab8c17a5eab1.webp)
+![Главная Fluxora](../snapshots/fluxora-home.png)
 
 ## Поддерживаемые платформы
 

@@ -88,7 +88,7 @@ Fluxora는 독립적인 제품이며 어떤 업스트림 프로젝트와도 공�
 
 ## 제품 화면
 
-![스크린샷](https://picui.ogmua.cn/s1/2026/09/27/6ab8c17a5eab1.webp)
+![Fluxora 홈](../snapshots/fluxora-home.png)
 
 ## 지원 플랫폼
 
