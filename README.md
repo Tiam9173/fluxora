@@ -88,7 +88,7 @@ Fluxora 是一个独立产品，与任何上游项目没有官方关联。它的
 
 ## 产品界面
 
-![Fluxora 首页](snapshots/fluxora-home.png)
+![Fluxora 首页](snapshots/home.png)
 
 ## 支持平台
 

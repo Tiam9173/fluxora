@@ -88,7 +88,7 @@ Fluxora は独立したプロダクトであり、いかなる上流プロジェ
 
 ## スクリーンショット
 
-![Fluxora ホーム](../snapshots/fluxora-home.png)
+![Fluxora ホーム](../snapshots/home.png)
 
 ## 対応プラットフォーム
 

@@ -88,7 +88,7 @@ Fluxora یک محصول مستقل است و هیچ رابطهٔ رسمی با �
 
 ## رابط کاربری
 
-![صفحه اصلی Fluxora](../snapshots/fluxora-home.png)
+![صفحه اصلی Fluxora](../snapshots/home.png)
 
 ## پلتفرمهای پشتیبانیشده
 
