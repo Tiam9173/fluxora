@@ -129,20 +129,39 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              _buildHopNode('设备应用', '本机', Colors.grey),
-                              const Icon(Icons.arrow_forward_rounded, size: 14, color: Colors.grey),
-                              _buildHopNode(
-                                '前置代理',
-                                _config.preProxy?.isNotEmpty == true ? _config.preProxy! : '直连 (无)',
-                                _config.preProxy?.isNotEmpty == true ? Colors.blue : Colors.grey,
+                              // RC.8: each node is `Flexible` so the row shrinks
+                              // with the dialog instead of overflowing. The bare
+                              // Row overflowed by 112 px at 360 px width.
+                              Flexible(
+                                child: _buildHopNode(
+                                  '设备应用',
+                                  '本机',
+                                  Colors.grey,
+                                ),
                               ),
                               const Icon(Icons.arrow_forward_rounded, size: 14, color: Colors.grey),
-                              _buildHopNode('订阅节点', '本组节点', Colors.teal),
+                              Flexible(
+                                child: _buildHopNode(
+                                  '前置代理',
+                                  _config.preProxy?.isNotEmpty == true ? _config.preProxy! : '直连 (无)',
+                                  _config.preProxy?.isNotEmpty == true ? Colors.blue : Colors.grey,
+                                ),
+                              ),
                               const Icon(Icons.arrow_forward_rounded, size: 14, color: Colors.grey),
-                              _buildHopNode(
-                                '落地出口',
-                                _config.landingProxy?.isNotEmpty == true ? _config.landingProxy! : '默认 (无)',
-                                _config.landingProxy?.isNotEmpty == true ? Colors.deepPurple : Colors.grey,
+                              Flexible(
+                                child: _buildHopNode(
+                                  '订阅节点',
+                                  '本组节点',
+                                  Colors.teal,
+                                ),
+                              ),
+                              const Icon(Icons.arrow_forward_rounded, size: 14, color: Colors.grey),
+                              Flexible(
+                                child: _buildHopNode(
+                                  '落地出口',
+                                  _config.landingProxy?.isNotEmpty == true ? _config.landingProxy! : '默认 (无)',
+                                  _config.landingProxy?.isNotEmpty == true ? Colors.deepPurple : Colors.grey,
+                                ),
                               ),
                             ],
                           ),
@@ -180,6 +199,10 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
                       key: ValueKey('preProxy_${_config.preProxy}'),
+                      // RC.8: without this the button sizes to its content and
+                      // InputDecorator's internal Row overflows in a narrow
+                      // window (measured 99 px at 360 px width).
+                      isExpanded: true,
                       initialValue: _config.preProxy != null && _candidateProxies.contains(_config.preProxy)
                           ? _config.preProxy
                           : (_config.preProxy?.isNotEmpty == true ? 'CUSTOM' : 'NONE'),
@@ -241,6 +264,8 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
                       key: ValueKey('landingProxy_${_config.landingProxy}'),
+                      // RC.8: see the pre-proxy picker above.
+                      isExpanded: true,
                       initialValue: _config.landingProxy != null && _candidateProxies.contains(_config.landingProxy)
                           ? _config.landingProxy
                           : (_config.landingProxy?.isNotEmpty == true ? 'CUSTOM' : 'NONE'),
@@ -332,11 +357,16 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
               fontWeight: FontWeight.bold,
               color: color,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
         const SizedBox(height: 3),
-        SizedBox(
-          width: 68,
+        // RC.8: a hard `SizedBox(width: 68)` refused to shrink, which is what
+        // forced the row past the dialog width. `maxWidth` keeps the layout but
+        // lets the node contract.
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 68),
           child: Text(
             subtitle,
             textAlign: TextAlign.center,

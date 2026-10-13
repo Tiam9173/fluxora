@@ -330,4 +330,129 @@ extension ChainProxyLocalizations on AppLocalizations {
     name: 'topologyRelay',
     desc: 'Relay node in the topology diagram',
   );
+
+  // ── RC.8: proxies sort direction + failover card copy ──────────────
+  String get ascending => Intl.message(
+    '升序',
+    name: 'ascending',
+    desc: 'Delay sort ascending',
+  );
+
+  String get descending => Intl.message(
+    '降序',
+    name: 'descending',
+    desc: 'Delay sort descending',
+  );
+
+  String get failover => Intl.message(
+    '故障转移',
+    name: 'failover',
+    desc: 'Failover section title',
+  );
+
+  String get failoverEnableFirst => Intl.message(
+    '请先启用链式代理',
+    name: 'failoverEnableFirst',
+    desc: 'Failover requires the chain to be enabled',
+  );
+
+  String get failoverNoCandidates => Intl.message(
+    '尚未配置可用的备用候选节点',
+    name: 'failoverNoCandidates',
+    desc: 'No usable backup candidate configured',
+  );
+
+  String get failoverManualHint => Intl.message(
+    '检测到链路异常时可手动切换至备用候选节点',
+    name: 'failoverManualHint',
+    desc: 'Manual failover hint',
+  );
+
+  String get autoFailover => Intl.message(
+    '自动故障转移',
+    name: 'autoFailover',
+    desc: 'Automatic failover switch title',
+  );
+
+  String get autoFailoverOnDesc => Intl.message(
+    '链路连续异常时自动切换至备用候选节点',
+    name: 'autoFailoverOnDesc',
+    desc: 'Automatic failover enabled description',
+  );
+
+  String get autoFailoverOffDesc => Intl.message(
+    '已关闭：仅可通过下方按钮手动切换',
+    name: 'autoFailoverOffDesc',
+    desc: 'Automatic failover disabled description',
+  );
+
+  String get failoverTrigger => Intl.message(
+    '立即故障转移',
+    name: 'failoverTrigger',
+    desc: 'Trigger failover now button',
+  );
+
+  String get failoverInProgress => Intl.message(
+    '故障转移执行中...',
+    name: 'failoverInProgress',
+    desc: 'Failover in progress',
+  );
+
+  String get failoverTriggerReason => Intl.message(
+    '用户手动触发故障转移',
+    name: 'failoverTriggerReason',
+    desc: 'Trigger reason for a manual failover',
+  );
+
+  String get failoverNoCandidatesAdvice => Intl.message(
+    '请在上方为至少一个角色添加备用候选节点，然后重试',
+    name: 'failoverNoCandidatesAdvice',
+    desc: 'Advice shown when no candidate exists',
+  );
+
+  String get roleEntry => Intl.message(
+    '入口节点',
+    name: 'roleEntry',
+    desc: 'Fallback candidate role: entry',
+  );
+
+  String get roleRelay => Intl.message(
+    '中转节点',
+    name: 'roleRelay',
+    desc: 'Fallback candidate role: relay',
+  );
+
+  String get roleExit => Intl.message(
+    '落地出口',
+    name: 'roleExit',
+    desc: 'Fallback candidate role: exit',
+  );
+
+  String addRoleCandidate(String role) => Intl.message(
+    '添加 $role 候选',
+    name: 'addRoleCandidate',
+    desc: 'Tooltip for adding a role candidate',
+    args: [role],
+  );
+
+  String addRoleFallbackCandidate(String role) => Intl.message(
+    '添加 $role 备用候选',
+    name: 'addRoleFallbackCandidate',
+    desc: 'Title for adding a fallback candidate',
+    args: [role],
+  );
+
+  String failoverSuccess(String node) => Intl.message(
+    '故障转移成功，已平滑切换至 [$node]',
+    name: 'failoverSuccess',
+    desc: 'Failover succeeded',
+    args: [node],
+  );
+
+  String failoverFailed(String reason) => Intl.message(
+    '故障转移失败：$reason',
+    name: 'failoverFailed',
+    desc: 'Failover failed',
+    args: [reason],
+  );
 }
