@@ -35,6 +35,30 @@ target_compile_definitions(FluxoraLoopbackManager PRIVATE
   _WIN32_WINNT=0x0A00
 )
 
+# Version metadata for resource.rc.
+#
+# When built as part of the Flutter Windows app the Flutter tool has already
+# written FLUTTER_VERSION / FLUTTER_VERSION_MAJOR / _MINOR / _PATCH / _BUILD
+# into windows/flutter/ephemeral/generated_config.cmake, which sets them in the
+# parent (windows/) directory scope before this subdirectory is added. Forward
+# them so resource.rc reports the same version as Fluxora.exe (Runner.rc).
+# Standalone builds leave them undefined and resource.rc falls back to 1.0.0.0.
+if(DEFINED FLUTTER_VERSION)
+  target_compile_definitions(FluxoraLoopbackManager PRIVATE
+    "FLUXORA_VERSION=\"${FLUTTER_VERSION}\""
+  )
+endif()
+
+if(DEFINED FLUTTER_VERSION_MAJOR AND DEFINED FLUTTER_VERSION_MINOR
+   AND DEFINED FLUTTER_VERSION_PATCH AND DEFINED FLUTTER_VERSION_BUILD)
+  target_compile_definitions(FluxoraLoopbackManager PRIVATE
+    "FLUXORA_VERSION_MAJOR=${FLUTTER_VERSION_MAJOR}"
+    "FLUXORA_VERSION_MINOR=${FLUTTER_VERSION_MINOR}"
+    "FLUXORA_VERSION_PATCH=${FLUTTER_VERSION_PATCH}"
+    "FLUXORA_VERSION_BUILD=${FLUTTER_VERSION_BUILD}"
+  )
+endif()
+
 # comctl32 for the list view, shell32 for CommandLineToArgvW, advapi32 for SID
 # helpers, user32/gdi32 for the window itself.
 target_link_libraries(FluxoraLoopbackManager PRIVATE
