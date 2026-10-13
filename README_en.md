@@ -13,6 +13,15 @@ Profiles, connections, rules and traffic state — in one restrained, legible, a
 [![Platforms](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux%20%7C%20Android-4C8DFF?style=flat-square)](#supported-platforms)
 [![Stars](https://img.shields.io/github/stars/Tiam9173/fluxora?style=flat-square&color=7C75FF&label=stars)](https://github.com/Tiam9173/fluxora/stargazers)
 
+<!-- 文档语言 / Documentation language -->
+
+[![简体中文](https://img.shields.io/badge/简体中文-29D6C7?style=flat-square)](README.md)
+[![English](https://img.shields.io/badge/English-Current-4C8DFF?style=flat-square)](README_en.md)
+[![日本語](https://img.shields.io/badge/日本語-7C75FF?style=flat-square)](readme/README_ja.md)
+[![한국어](https://img.shields.io/badge/한국어-FF6B9D?style=flat-square)](readme/README_ko.md)
+[![Русский](https://img.shields.io/badge/Русский-FFB020?style=flat-square)](readme/README_ru.md)
+[![فارسی](https://img.shields.io/badge/فارسی-56C1FF?style=flat-square)](readme/README_fa.md)
+
 **[Download](#download)** · **[Issues](https://github.com/Tiam9173/fluxora/issues)** · **[Contributing](#contributing)** · **[License](LICENSE)**
 
 📢 **[Official Telegram Channel](https://t.me/Fluxora_Chanel)** · 💬 **[Official Telegram Group](https://t.me/Fluxora_Grup)**
@@ -142,28 +151,6 @@ Each platform's package needs its own build environment (Linux needs the GTK too
 
 ### Does Fluxora collect my data?
 No. There is no cloud account service and no built-in telemetry. Subscriptions, rules and network requests are entirely determined by the configuration you choose.
-
-## Roadmap
-
-### Done
-- Independent Fluxora branding (name, icon, package identifiers, URL scheme)
-- Material 3 design system and tokens (colour, type, spacing, radius, motion)
-- Theme system: light / dark / pure black / 7 presets / dynamic colour
-- Dashboard, proxy and node UI redesign
-- Self-built Windows loopback exemption tool (`FluxoraLoopbackManager`)
-- Release packaging groundwork (licence material shipped with each bundle)
-
-### In progress
-- Windows installer (Inno Setup) and portable release
-- Linux / macOS package builds and verification
-- README and product screenshots
-
-### Planned
-- First stable release
-- Additional distribution channels
-- In-app auto-update
-- Documentation and localisation
-- Community contribution process
 
 ## Development
 
