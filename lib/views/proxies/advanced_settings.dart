@@ -19,6 +19,7 @@ class ProxiesAdvancedSettings extends ConsumerWidget {
           const _ConcurrencyLimitItem(),
           const _HealthCheckTimeoutItem(),
           const _DelayAnimationItem(),
+          const _HideTimeoutProxiesItem(),
         ],
       ),
     );
@@ -204,6 +205,38 @@ class _HealthCheckTimeoutItem extends ConsumerWidget {
                 .updateState((_) => value);
             globalState.appController.applyProfileDebounce();
           }
+        },
+      ),
+    );
+  }
+}
+
+/// RC.9 — hide the proxies whose last delay test timed out.
+///
+/// Purely a display preference stored in [ProxiesStyle]; it is applied by
+/// `visibleGroupsState` and therefore only affects the proxies page.
+class _HideTimeoutProxiesItem extends ConsumerWidget {
+  const _HideTimeoutProxiesItem();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final hideTimeoutProxies = ref.watch(
+      proxiesStyleSettingProvider.select((state) => state.hideTimeoutProxies),
+    );
+
+    return ListItem(
+      leading: const Icon(Icons.visibility_off_outlined),
+      title: Text(appLocalizations.hideTimeoutProxies),
+      subtitle: Text(appLocalizations.hideTimeoutProxiesDesc),
+      trailing: Switch(
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        value: hideTimeoutProxies,
+        onChanged: (value) {
+          ref
+              .read(proxiesStyleSettingProvider.notifier)
+              .updateState(
+                (state) => state.copyWith(hideTimeoutProxies: value),
+              );
         },
       ),
     );

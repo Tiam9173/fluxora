@@ -363,6 +363,8 @@
   "formatError": "请检查格式是否正确",
   "healthCheckTimeout": "超时时间",
   "healthCheckTimeoutDesc": "节点健康检查超时时间",
+  "hideTimeoutProxies": "隐藏超时节点",
+  "hideTimeoutProxiesDesc": "不显示上次延迟测试超时的节点",
   "concurrencyLimit": "并发限制",
   "concurrencyLimitDesc": "延迟测试的最大并发数量",
   "notRecommended": "不推荐",

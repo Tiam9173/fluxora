@@ -92,6 +92,68 @@ final class CurrentGroupsStateProvider
 String _$currentGroupsStateHash() =>
     r'f97e7d4a45fdbc18c23d2837224369193c6ad2e3';
 
+/// RC.9 — the group list as the **proxies page** should show it.
+///
+/// Sits between [currentGroupsState] and [filterGroupsState] so the timed-out
+/// node filtering only affects the proxies page: the tray keeps consuming
+/// [currentGroupsState] and therefore never loses a node the user may need to
+/// switch back to.
+
+@ProviderFor(visibleGroupsState)
+final visibleGroupsStateProvider = VisibleGroupsStateProvider._();
+
+/// RC.9 — the group list as the **proxies page** should show it.
+///
+/// Sits between [currentGroupsState] and [filterGroupsState] so the timed-out
+/// node filtering only affects the proxies page: the tray keeps consuming
+/// [currentGroupsState] and therefore never loses a node the user may need to
+/// switch back to.
+
+final class VisibleGroupsStateProvider
+    extends $FunctionalProvider<GroupsState, GroupsState, GroupsState>
+    with $Provider<GroupsState> {
+  /// RC.9 — the group list as the **proxies page** should show it.
+  ///
+  /// Sits between [currentGroupsState] and [filterGroupsState] so the timed-out
+  /// node filtering only affects the proxies page: the tray keeps consuming
+  /// [currentGroupsState] and therefore never loses a node the user may need to
+  /// switch back to.
+  VisibleGroupsStateProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'visibleGroupsStateProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$visibleGroupsStateHash();
+
+  @$internal
+  @override
+  $ProviderElement<GroupsState> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  GroupsState create(Ref ref) {
+    return visibleGroupsState(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(GroupsState value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<GroupsState>(value),
+    );
+  }
+}
+
+String _$visibleGroupsStateHash() =>
+    r'f064555529b2244b6966c03be3bfccbb98fdda61';
+
 @ProviderFor(navigationItemsState)
 final navigationItemsStateProvider = NavigationItemsStateProvider._();
 
@@ -630,7 +692,7 @@ final class FilterGroupsStateProvider
   }
 }
 
-String _$filterGroupsStateHash() => r'31e2e642a456991cc2d103627efacb75d796791c';
+String _$filterGroupsStateHash() => r'79b9f61c5be845ea5f14d4cc99b82b4883c4feb6';
 
 final class FilterGroupsStateFamily extends $Family
     with $FunctionalFamilyOverride<GroupsState, String> {
