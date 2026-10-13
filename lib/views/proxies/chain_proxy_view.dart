@@ -857,11 +857,11 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
     if (isFailingOver && progress != null) {
       subtitle = progress.message;
     } else if (!config.enable) {
-      subtitle = '请先启用链式代理';
+      subtitle = appLocalizations.failoverEnableFirst;
     } else if (!hasCandidate) {
-      subtitle = '尚未配置可用的备用候选节点';
+      subtitle = appLocalizations.failoverNoCandidates;
     } else {
-      subtitle = '检测到链路异常时可手动切换至备用候选节点';
+      subtitle = appLocalizations.failoverManualHint;
     }
 
     // P1.3-B: the pool is the failover input, so it is managed here. Only the
@@ -884,9 +884,9 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
         children: [
           ListItem(
             leading: const Icon(Icons.swap_horiz_rounded, size: 28),
-            title: const Text(
-              '故障转移',
-              style: TextStyle(fontWeight: FontWeight.bold),
+            title: Text(
+              appLocalizations.failover,
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             subtitle: Text(subtitle),
           ),
@@ -902,11 +902,11 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                   ? Icons.autorenew
                   : Icons.pause_circle_outline,
             ),
-            title: const Text('自动故障转移'),
+            title: Text(appLocalizations.autoFailover),
             subtitle: Text(
               config.autoFailover
-                  ? '链路连续异常时自动切换至备用候选节点'
-                  : '已关闭：仅可通过下方按钮手动切换',
+                  ? appLocalizations.autoFailoverOnDesc
+                  : appLocalizations.autoFailoverOffDesc,
             ),
             trailing: Switch(
               value: config.autoFailover,
@@ -919,6 +919,32 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
           // and failover has nothing to switch to, so the pool is editable here.
           for (final role in roles)
             _buildPoolRoleRow(context, role, pool.getCandidatesByRole(role)),
+          // RC.8: with an empty pool the button below can only fail, so say what
+          // to do about it. The advice points at the `+` controls directly above
+          // — the real UI — rather than inventing a navigation entry.
+          if (config.enable && !hasCandidate)
+            Padding(
+              padding: const EdgeInsets.only(top: 4, bottom: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.info_outline_rounded,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      appLocalizations.failoverNoCandidatesAdvice,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           const SizedBox(height: 8),
           FilledButton.icon(
             onPressed: canTrigger ? _triggerFailover : null,
@@ -929,11 +955,28 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.play_arrow_rounded),
-            label: Text(isFailingOver ? '故障转移执行中...' : '立即故障转移'),
+            label: Text(
+              isFailingOver
+                  ? appLocalizations.failoverInProgress
+                  : appLocalizations.failoverTrigger,
+            ),
           ),
         ],
       ),
     );
+  }
+
+  /// Localized label of a fallback-pool role.
+  ///
+  /// `FallbackCandidateRole.label` is a hard-coded Chinese string baked into the
+  /// enum, so the view maps the role to an l10n key instead of showing it
+  /// verbatim. The enum itself is left untouched.
+  String _roleLabel(FallbackCandidateRole role) {
+    return switch (role) {
+      FallbackCandidateRole.entry => appLocalizations.roleEntry,
+      FallbackCandidateRole.relay => appLocalizations.roleRelay,
+      FallbackCandidateRole.exit => appLocalizations.roleExit,
+    };
   }
 
   /// One editable role bucket of the fallback pool. Adding reuses the existing
@@ -950,7 +993,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
           SizedBox(
             width: 64,
             child: Text(
-              role.label,
+              _roleLabel(role),
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
@@ -972,9 +1015,9 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
           ),
           IconButton(
             icon: const Icon(Icons.add_circle_outline),
-            tooltip: '添加${role.label}候选',
+            tooltip: appLocalizations.addRoleCandidate(_roleLabel(role)),
             onPressed: () => _showIntelligentHopPicker(
-              title: '添加${role.label}备用候选',
+              title: appLocalizations.addRoleFallbackCandidate(_roleLabel(role)),
               currentHop: '',
               excludedHops: candidates.map((c) => c.nodeName).toSet(),
               role: role,
@@ -993,13 +1036,16 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
   Future<void> _triggerFailover() async {
     final manager = ref.read(chainProxyConfigProvider);
     final result = await manager.triggerAutoFailover(
-      triggerReason: '用户手动触发故障转移',
+      triggerReason: appLocalizations.failoverTriggerReason,
       bypassDampening: true,
     );
     if (!mounted) return;
+    // The message is built from the REAL result — never from an assumed one.
+    // `rootCause` is kept verbatim so a failure still says what actually
+    // happened instead of a generic apology.
     final message = result.isSuccess
-        ? '故障转移成功，已平滑切换至 [${result.switchedNodeName}]'
-        : '故障转移失败：${result.rootCause}';
+        ? appLocalizations.failoverSuccess(result.switchedNodeName ?? '')
+        : appLocalizations.failoverFailed(result.rootCause ?? '');
     context.showSnackBar(message);
   }
 
