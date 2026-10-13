@@ -6,13 +6,41 @@
  * No third-party names, icons or version metadata are used here.
  */
 
+#include <winver.h>
+
 #define IDI_FLUXORA_LOOPBACK 101
 
 IDI_FLUXORA_LOOPBACK ICON "../runner/resources/app_icon.ico"
 
+/* Version metadata.
+ *
+ * winver.h (included above) defines VS_VERSION_INFO as the numeric resource id
+ * 1, which is the id the Win32 version APIs read. Without it the block is
+ * stored under the literal string name "VS_VERSION_INFO" and every version API
+ * (GetFileVersionInfoSizeW, Explorer's Details tab, ...) reports nothing.
+ *
+ * The values follow the same source the Windows runner uses
+ * (windows/runner/Runner.rc): FLUTTER_VERSION and FLUTTER_VERSION_MAJOR /
+ * _MINOR / _PATCH / _BUILD, which the Flutter tool writes into
+ * windows/flutter/ephemeral/generated_config.cmake and which
+ * windows/fluxora_loopback/CMakeLists.txt forwards as FLUXORA_VERSION*.
+ * Standalone builds (no Flutter) fall back to 1.0.0.0.
+ */
+#ifdef FLUXORA_VERSION_MAJOR
+#define VERSION_AS_NUMBER FLUXORA_VERSION_MAJOR,FLUXORA_VERSION_MINOR,FLUXORA_VERSION_PATCH,FLUXORA_VERSION_BUILD
+#else
+#define VERSION_AS_NUMBER 1,0,0,0
+#endif
+
+#ifdef FLUXORA_VERSION
+#define VERSION_AS_STRING FLUXORA_VERSION
+#else
+#define VERSION_AS_STRING "1.0.0"
+#endif
+
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,0,0
- PRODUCTVERSION 1,0,0,0
+ FILEVERSION VERSION_AS_NUMBER
+ PRODUCTVERSION VERSION_AS_NUMBER
  FILEFLAGSMASK 0x3fL
  FILEFLAGS 0x0L
  FILEOS 0x40004L
@@ -25,12 +53,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Fluxora"
             VALUE "FileDescription", "Fluxora Loopback Manager"
-            VALUE "FileVersion", "1.0.0.0"
+            VALUE "FileVersion", VERSION_AS_STRING
             VALUE "InternalName", "FluxoraLoopbackManager"
             VALUE "LegalCopyright", "Copyright (C) 2026 Fluxora Contributors. GPL-3.0-or-later."
             VALUE "OriginalFilename", "FluxoraLoopbackManager.exe"
             VALUE "ProductName", "Fluxora Loopback Manager"
-            VALUE "ProductVersion", "1.0.0.0"
+            VALUE "ProductVersion", VERSION_AS_STRING
         END
     END
     BLOCK "VarFileInfo"

@@ -359,6 +359,18 @@ jobs:
           if ($LASTEXITCODE -ne 0) { Write-Error "SignTool failed for $target (exit $LASTEXITCODE)"; exit 1 }
           Write-Host "Signed: $target"
 
+      - name: Sign Loopback Manager (Windows)
+        if: matrix.platform == 'windows' && env.SHOULD_SIGN == 'true'
+        shell: pwsh
+        env:
+          WINDOWS_SIGNING_PFX_PASSWORD: ${{ secrets.WINDOWS_SIGNING_PFX_PASSWORD }}
+        run: |
+          $target = 'build/windows/${{ matrix.arch == 'arm64' && 'arm64' || 'x64' }}/runner/Release/FluxoraLoopbackManager.exe'
+          if (-not (Test-Path $target)) { Write-Error "Signing target not found: $target"; exit 1 }
+          & $env:FLUXORA_SIGNTOOL sign /fd SHA256 /f $env:FLUXORA_PFX_PATH /p $env:WINDOWS_SIGNING_PFX_PASSWORD /tr 'http://timestamp.digicert.com' /td SHA256 $target
+          if ($LASTEXITCODE -ne 0) { Write-Error "SignTool failed for $target (exit $LASTEXITCODE)"; exit 1 }
+          Write-Host "Signed: $target"
+
       - name: Package Windows Application
         if: matrix.platform == 'windows'
         shell: bash
@@ -401,7 +413,8 @@ jobs:
           $targets = @(
             'libclash/windows/FluxoraCore.exe',
             'libclash/windows/FluxoraHelperService.exe',
-            'build/windows/${{ matrix.arch == 'arm64' && 'arm64' || 'x64' }}/runner/Release/Fluxora.exe'
+            'build/windows/${{ matrix.arch == 'arm64' && 'arm64' || 'x64' }}/runner/Release/Fluxora.exe',
+            'build/windows/${{ matrix.arch == 'arm64' && 'arm64' || 'x64' }}/runner/Release/FluxoraLoopbackManager.exe'
           )
           if ($env:INSTALLER_PATH) { $targets += $env:INSTALLER_PATH }
 
