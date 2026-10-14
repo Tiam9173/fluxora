@@ -843,6 +843,14 @@ class ChainProxyManager extends ChangeNotifier {
   CancelToken? _probeCancelToken;
   CancelToken? _failoverCancelToken;
 
+  /// RC.10-C.1 — id of the probe session that currently owns the shared probe
+  /// state ([_isProbingChain] / [_probeCancelToken] / [_lastProbeReport]).
+  ///
+  /// [probeCurrentChain] takes the next id synchronously, so a superseded probe
+  /// can never publish a stale report, reset the busy flag under its successor,
+  /// or drive automatic failover on behalf of the newer probe.
+  int _probeGeneration = 0;
+
   /// In-memory fallback pool.
   ChainFallbackPool _fallbackPool = const ChainFallbackPool();
 
@@ -1151,8 +1159,14 @@ class ChainProxyManager extends ChangeNotifier {
     CancelToken? cancelToken,
     ChainRetryPolicy? retryPolicy,
   }) async {
+    // RC.10-C.1 — a new probe supersedes the previous one. The old token is
+    // cancelled *before* the field is replaced: silently overwriting it would
+    // orphan the token, and `cancelCurrentProbe()` could never reach it again.
+    _probeCancelToken?.cancel();
+    final int generation = ++_probeGeneration;
+    final CancelToken token = cancelToken ?? CancelToken();
+    _probeCancelToken = token;
     _isProbingChain = true;
-    _probeCancelToken = cancelToken ?? CancelToken();
     notifyListeners();
     try {
       final override = chainProbeOverride;
@@ -1161,14 +1175,24 @@ class ChainProxyManager extends ChangeNotifier {
           : await chainProbeService.probeChain(
               config: _config,
               testUrl: testUrl,
-              cancelToken: _probeCancelToken,
+              cancelToken: token,
             );
-      _lastProbeReport = report;
-      _writeBackProbeResultsToCandidates(report);
+      // RC.10-C.1 — only the owning probe may publish. A superseded probe's
+      // report is stale evidence: it must not overwrite the newer report, write
+      // back to the candidate pool, or be handed to the failover decision.
+      if (generation == _probeGeneration) {
+        _lastProbeReport = report;
+        _writeBackProbeResultsToCandidates(report);
+      }
       return report;
     } finally {
-      _isProbingChain = false;
-      notifyListeners();
+      // RC.10-C.1 — only the owning probe may clear the busy flag; otherwise a
+      // slow predecessor finishing first would report "not probing" while its
+      // successor is still running.
+      if (generation == _probeGeneration) {
+        _isProbingChain = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -1355,11 +1379,22 @@ class ChainProxyManager extends ChangeNotifier {
     // P0 hardening: a tick that fired just before `dispose()` must do no work.
     if (_disposed) return;
     if (!_config.autoFailover || !_config.enable || _isProbingChain || isFailingOver) return;
-    
+
     final bool coreRunning = await _isCoreReady();
     if (!coreRunning) return;
 
+    // RC.10-C.1 — `_isCoreReady()` awaits a real core-API call, so the guard
+    // above is stale once we resume: a manual probe (or another tick) may have
+    // started in the meantime. Re-check before starting our own probe.
+    if (_isProbingChain || isFailingOver) return;
+
+    // `probeCurrentChain` takes the next id synchronously, so this is exactly
+    // the id our own probe will own.
+    final int probeGeneration = _probeGeneration + 1;
     final report = await probeCurrentChain();
+    // A newer probe superseded ours: its report is stale evidence and must not
+    // drive automatic failover.
+    if (_probeGeneration != probeGeneration) return;
     await _maybeAutoFailover(report);
   }
 

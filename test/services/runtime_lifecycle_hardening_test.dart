@@ -1,4 +1,5 @@
 // ignore_for_file: depend_on_referenced_packages
+import 'dart:async';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
@@ -710,6 +711,209 @@ void main() {
 
         // Flap maxHistoryEvents bound check (<= 50)
         expect(flapStatus.recentEvents.length, lessThanOrEqualTo(50));
+      },
+    );
+  });
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // RC.10-C.1 — probe concurrency safety
+  //
+  // `probeCurrentChain()` owns shared state (`_isProbingChain` /
+  // `_probeCancelToken` / `_lastProbeReport`), and `runChainHealthCheck()`
+  // awaits `_isCoreReady()` between its guard and its probe. These tests pin the
+  // ownership rules: a superseded probe must not publish a stale report, must
+  // not clear the busy flag under its successor, must not write stale evidence
+  // back into the fallback pool, and must not drive automatic failover.
+  // ────────────────────────────────────────────────────────────────────────────
+  group('RC.10-C.1 — probe concurrency safety', () {
+    late ChainProxyManager manager;
+    final List<Completer<ChainProbeReport>> gates = [];
+
+    /// A minimal, identifiable report. `rootCauseAnalysis` carries the tag, so a
+    /// test can tell exactly which probe's report ended up in the manager.
+    ChainProbeReport taggedReport(
+      String tag, {
+      HopProbeStatus status = HopProbeStatus.healthy,
+    }) => ChainProbeReport(
+      mode: ChainHopMode.twoHop,
+      isOverallHealthy: status == HopProbeStatus.healthy,
+      hops: [
+        HopProbeState(
+          hopIndex: 1,
+          role: HopRole.hop1Entry,
+          nodeName: 'node1',
+          nodeAddress: '127.0.0.1',
+          status: status,
+        ),
+      ],
+      rootCauseAnalysis: tag,
+      timestamp: DateTime.now(),
+    );
+
+    /// Blocks every probe until the test releases its gate, in call order.
+    void installGatedProbe() {
+      ChainProxyManager.chainProbeOverride = (cfg) {
+        final gate = Completer<ChainProbeReport>();
+        gates.add(gate);
+        return gate.future;
+      };
+    }
+
+    setUp(() async {
+      gates.clear();
+      ChainProxyManager.coreRunningOverride = true;
+      manager = ChainProxyManager();
+      manager.stopChainHealthCheck();
+      await manager.updateConfig(
+        (c) => c.copyWith(enable: true, hop1Node: 'node1', hop2Node: 'node2'),
+        reloadCore: false,
+      );
+    });
+
+    tearDown(() {
+      manager.stopChainHealthCheck();
+      ChainProxyManager.chainProbeOverride = null;
+      ChainProxyManager.coreRunningOverride = null;
+      gates.clear();
+    });
+
+    test('C1. A superseded probe cannot publish its stale report', () async {
+      installGatedProbe();
+
+      // `ChainProxyManager` is a singleton, so the report carried over from an
+      // earlier test is the value the stale probe must leave untouched.
+      final before = manager.lastProbeReport;
+
+      final first = manager.probeCurrentChain();
+      expect(manager.isProbingChain, isTrue);
+      expect(gates.length, 1);
+
+      // A second probe supersedes the first.
+      final second = manager.probeCurrentChain();
+      expect(gates.length, 2);
+
+      // The superseded probe finishes first.
+      gates[0].complete(taggedReport('stale'));
+      await first;
+      expect(
+        manager.lastProbeReport,
+        same(before),
+        reason: 'a superseded probe must not publish its report',
+      );
+
+      gates[1].complete(taggedReport('fresh'));
+      await second;
+      expect(manager.lastProbeReport?.rootCauseAnalysis, equals('fresh'));
+    });
+
+    test(
+      'C2. runChainHealthCheck does not start a probe when one is already in '
+      'flight',
+      () async {
+        installGatedProbe();
+        await manager.updateConfig(
+          (c) => c.copyWith(autoFailover: true),
+          reloadCore: false,
+        );
+        // Drive the tick explicitly; keep the periodic timer out of the way.
+        manager.stopChainHealthCheck();
+
+        // The automatic tick passes its first guard and suspends inside
+        // `_isCoreReady()`.
+        final tick = manager.runChainHealthCheck();
+
+        // A manual probe starts inside that window.
+        final manual = manager.probeCurrentChain();
+        expect(gates.length, 1);
+
+        // Let the suspended tick resume: it must re-check the probe state.
+        await Future<void>.delayed(Duration.zero);
+        expect(
+          gates.length,
+          1,
+          reason: 'the tick must not start a competing probe after its await',
+        );
+
+        for (final gate in gates) {
+          if (!gate.isCompleted) gate.complete(taggedReport('manual'));
+        }
+        await manual;
+        await tick;
+        expect(manager.isProbingChain, isFalse);
+      },
+    );
+
+    test(
+      'C3. A superseded probe cannot clear the busy flag of its successor',
+      () async {
+        installGatedProbe();
+
+        final first = manager.probeCurrentChain();
+        final second = manager.probeCurrentChain();
+        expect(manager.isProbingChain, isTrue);
+
+        // The older probe finishes while the newer one is still running.
+        gates[0].complete(taggedReport('stale'));
+        await first;
+        expect(
+          manager.isProbingChain,
+          isTrue,
+          reason: 'the newer probe is still in flight',
+        );
+
+        gates[1].complete(taggedReport('fresh'));
+        await second;
+        expect(manager.isProbingChain, isFalse);
+      },
+    );
+
+    test(
+      'C4. A superseded probe does not write stale evidence back to the pool',
+      () async {
+        installGatedProbe();
+        await manager.setFallbackPool(
+          const ChainFallbackPool(
+            entryCandidates: [
+              ChainFallbackCandidate(
+                nodeName: 'node1',
+                role: FallbackCandidateRole.entry,
+              ),
+            ],
+          ),
+        );
+
+        final first = manager.probeCurrentChain();
+        final second = manager.probeCurrentChain();
+
+        // The superseded probe reports a TIMEOUT for node1 …
+        gates[0].complete(taggedReport('stale', status: HopProbeStatus.timeout));
+        await first;
+
+        // … and that stale evidence must not reach the candidate pool.
+        expect(
+          manager.fallbackPool.entryCandidates.single.statsByContext,
+          isEmpty,
+          reason: 'a superseded probe must not write back stale evidence',
+        );
+
+        // The owning probe reports node1 healthy.
+        gates[1].complete(taggedReport('fresh'));
+        await second;
+
+        final stats = manager
+            .fallbackPool
+            .entryCandidates
+            .single
+            .statsByContext
+            .values
+            .single;
+        expect(
+          stats.totalSamples,
+          1,
+          reason: 'only the owning probe may contribute a sample',
+        );
+        expect(stats.weightedFailure, equals(0));
+        expect(stats.weightedSuccess, greaterThan(0));
       },
     );
   });
