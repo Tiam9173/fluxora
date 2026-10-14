@@ -155,5 +155,31 @@ void main() {
 
       expect(config.effectiveExitNode, equals('US-Exit-01'));
     });
+
+    test('TC-MOD-09: 显式出口在列表中但被禁用时回退到启用的落地节点', () {
+      // RC.10-B.1 — a disabled landing is never injected into the core, so it
+      // cannot serve as a usable exit even though its name is still listed.
+      final config = ChainProxyConfig(
+        hopMode: ChainHopMode.twoHop,
+        hop2Node: 'us8 -1',
+        landingProxies: [
+          landing('us8 -1', enable: false),
+          landing('us9'),
+        ],
+      );
+
+      expect(config.effectiveExitNode, equals('us9'));
+      // Reading must never rewrite the stored value.
+      expect(config.hop2Node, equals('us8 -1'));
+    });
+
+    test('TC-MOD-10: 未配置落地列表时保留既有显式出口语义', () {
+      const config = ChainProxyConfig(
+        hopMode: ChainHopMode.twoHop,
+        hop2Node: 'US-01',
+      );
+
+      expect(config.effectiveExitNode, equals('US-01'));
+    });
   });
 }
