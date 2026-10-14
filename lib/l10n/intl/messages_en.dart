@@ -20,52 +20,57 @@ typedef String MessageIfAbsent(String messageStr, List<dynamic> args);
 class MessageLookup extends MessageLookupByLibrary {
   String get localeName => 'en';
 
-  static String m0(count) => "${Intl.plural(count, one: 'day', other: 'days')}";
+  static String m0(role) => "Add ${role} candidate";
 
-  static String m1(label) => "Delete selected ${label}?";
+  static String m1(role) => "Add ${role} backup candidate";
 
-  static String m2(label) => "Delete current ${label}?";
+  static String m2(completed, total) => "Checking (${completed}/${total})…";
 
-  static String m3(label) => "${label} cannot be empty";
+  static String m3(count) => "Cleared ${count} invalid nodes";
 
-  static String m4(label) => "${label} already exists";
+  static String m4(count) => "${Intl.plural(count, one: 'day', other: 'days')}";
 
-  static String m5(count) =>
+  static String m5(label) => "Delete selected ${label}?";
+
+  static String m6(label) => "Delete current ${label}?";
+
+  static String m7(label) => "${label} cannot be empty";
+
+  static String m8(label) => "${label} already exists";
+
+  static String m9(reason) => "Failover failed: ${reason}";
+
+  static String m10(node) => "Failover succeeded, switched to [${node}]";
+
+  static String m11(count) =>
       "${Intl.plural(count, one: 'hour', other: 'hours')}";
 
-  static String m6(count) => "${count}";
+  static String m12(count) => "Imported ${count} landing proxy nodes";
 
-  static String m7(count) =>
+  static String m13(count) => "${count}";
+
+  static String m14(count) =>
       "${Intl.plural(count, one: 'minute', other: 'minutes')}";
 
-  static String m8(count) =>
+  static String m15(count) =>
       "${Intl.plural(count, one: 'month', other: 'months')}";
 
-  static String m9(label) => "No ${label}";
+  static String m16(label) => "No ${label}";
 
-  static String m10(label) => "${label} must be a number";
+  static String m17(label) => "${label} must be a number";
 
-  static String m11(label) =>
+  static String m18(label) =>
       "${label} must be between 1024 and 49151, 0 to disable";
 
-  static String m12(statusCode) =>
+  static String m19(statusCode) =>
       "Failed to import profile. Please check your network status or try resetting the subscription link ( HTTP error code: ${statusCode} )";
 
-  static String m13(count) => "${count} items selected";
+  static String m20(count) => "${count} items selected";
 
-  static String m14(label) => "${label} must be a URL";
+  static String m21(label) => "${label} must be a URL";
 
-  static String m15(count) =>
+  static String m22(count) =>
       "${Intl.plural(count, one: 'year', other: 'years')}";
-
-  static String m16(completed, total) => "Checking ($completed/$total)\u2026";
-  static String m17(count) => "Cleared $count invalid nodes";
-  static String m18(count) => "Imported $count landing proxy nodes";
-
-  static String m19(role) => "Add $role candidate";
-  static String m20(role) => "Add $role backup candidate";
-  static String m21(node) => "Failover succeeded, switched to [$node]";
-  static String m22(reason) => "Failover failed: $reason";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -93,8 +98,8 @@ class MessageLookup extends MessageLookupByLibrary {
       "Add Landing Proxy",
     ),
     "addProfile": MessageLookupByLibrary.simpleMessage("Add Profile"),
-    "addRoleCandidate": m19,
-    "addRoleFallbackCandidate": m20,
+    "addRoleCandidate": m0,
+    "addRoleFallbackCandidate": m1,
     "addRule": MessageLookupByLibrary.simpleMessage("Add Rule"),
     "addTunnel": MessageLookupByLibrary.simpleMessage("Add Forwarding"),
     "addedOriginRules": MessageLookupByLibrary.simpleMessage(
@@ -220,7 +225,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "basicConfigDesc": MessageLookupByLibrary.simpleMessage(
       "Global core settings",
     ),
-    "batchCheckingProgress": m16,
+    "batchCheckingProgress": m2,
     "batteryOptimization": MessageLookupByLibrary.simpleMessage(
       "Battery Optimization",
     ),
@@ -281,11 +286,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainHopUnavailable": MessageLookupByLibrary.simpleMessage(
       "Could not read the list of available nodes, so node availability could not be verified",
     ),
+    "chainProbeNow": MessageLookupByLibrary.simpleMessage("Probe chain"),
     "chainProxy": MessageLookupByLibrary.simpleMessage("Chain Proxy"),
     "chainProxyDesc": MessageLookupByLibrary.simpleMessage(
       "Configure an entry hop and a static residential landing IP",
     ),
-    "chainProbeNow": MessageLookupByLibrary.simpleMessage("Probe chain"),
     "checkError": MessageLookupByLibrary.simpleMessage("Check Failed"),
     "checkFailed": MessageLookupByLibrary.simpleMessage("Timeout"),
     "checkOrAddProfile": MessageLookupByLibrary.simpleMessage(
@@ -313,7 +318,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "clearInvalidProxies": MessageLookupByLibrary.simpleMessage(
       "Remove unavailable nodes",
     ),
-    "clearedInvalidCount": m17,
+    "clearedInvalidCount": m3,
     "clipboard": MessageLookupByLibrary.simpleMessage("Clipboard"),
     "clipboardDesc": MessageLookupByLibrary.simpleMessage(
       "Get profile link from clipboard",
@@ -395,7 +400,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Manually switch dark app icon",
     ),
     "dashboard": MessageLookupByLibrary.simpleMessage("Home"),
-    "days": m0,
+    "days": m4,
     "dedicatedGroup": MessageLookupByLibrary.simpleMessage(
       "Create a dedicated chain proxy group",
     ),
@@ -423,8 +428,8 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "delaySort": MessageLookupByLibrary.simpleMessage("Sort by Delay"),
     "delete": MessageLookupByLibrary.simpleMessage("Delete"),
-    "deleteMultipTip": m1,
-    "deleteTip": m2,
+    "deleteMultipTip": m5,
+    "deleteTip": m6,
     "deleteTunnel": MessageLookupByLibrary.simpleMessage("Delete Forwarding"),
     "desc": MessageLookupByLibrary.simpleMessage(
       "Fluxora is based on the powerful and flexible Mihomo (Clash.Meta) proxy kernel, dedicated to a superior user experience. Our vision: Clear routes, calm control",
@@ -498,7 +503,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "emptyLandingTip": MessageLookupByLibrary.simpleMessage(
       "No residential landing nodes yet. Paste in the common formats used by major residential IP providers (IPRoyal, LunaProxy, Oxylabs and others) to import them in one click.",
     ),
-    "emptyTip": m3,
+    "emptyTip": m7,
     "enableChainProxy": MessageLookupByLibrary.simpleMessage(
       "Enable Chain Proxy",
     ),
@@ -534,7 +539,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "excludeDesc": MessageLookupByLibrary.simpleMessage(
       "Hide app from recent tasks list",
     ),
-    "existsTip": m4,
+    "existsTip": m8,
     "exit": MessageLookupByLibrary.simpleMessage("Exit"),
     "expand": MessageLookupByLibrary.simpleMessage("Standard"),
     "experimental": MessageLookupByLibrary.simpleMessage("Experimental"),
@@ -564,7 +569,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "failoverEnableFirst": MessageLookupByLibrary.simpleMessage(
       "Enable chain proxy first",
     ),
-    "failoverFailed": m22,
+    "failoverFailed": m9,
     "failoverInProgress": MessageLookupByLibrary.simpleMessage("Failing over…"),
     "failoverManualHint": MessageLookupByLibrary.simpleMessage(
       "Switch to a backup candidate manually when the chain fails",
@@ -575,7 +580,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "failoverNoCandidatesAdvice": MessageLookupByLibrary.simpleMessage(
       "Add a backup candidate for at least one role above, then try again",
     ),
-    "failoverSuccess": m21,
+    "failoverSuccess": m10,
     "failoverTrigger": MessageLookupByLibrary.simpleMessage("Fail over now"),
     "failoverTriggerReason": MessageLookupByLibrary.simpleMessage(
       "User triggered failover manually",
@@ -689,6 +694,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "healthUntested": MessageLookupByLibrary.simpleMessage("Not checked"),
     "healthWarning": MessageLookupByLibrary.simpleMessage("Partially limited"),
     "heapObjects": MessageLookupByLibrary.simpleMessage("Objects"),
+    "hideTimeoutProxies": MessageLookupByLibrary.simpleMessage(
+      "Hide timed-out nodes",
+    ),
+    "hideTimeoutProxiesDesc": MessageLookupByLibrary.simpleMessage(
+      "Leave out nodes whose last delay test timed out",
+    ),
     "highPriority": MessageLookupByLibrary.simpleMessage("High Priority"),
     "highPriorityDesc": MessageLookupByLibrary.simpleMessage(
       "Increase priority of main process and core process",
@@ -711,7 +722,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "hotkeyManagementDesc": MessageLookupByLibrary.simpleMessage(
       "Control app via keyboard",
     ),
-    "hours": m5,
+    "hours": m11,
     "httpPortSniffer": MessageLookupByLibrary.simpleMessage(
       "HTTP Port Sniffing",
     ),
@@ -729,7 +740,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "importFile": MessageLookupByLibrary.simpleMessage("Import from File"),
     "importFromCode": MessageLookupByLibrary.simpleMessage("Import from Code"),
     "importFromURL": MessageLookupByLibrary.simpleMessage("Import from URL"),
-    "importSuccessCount": m18,
+    "importSuccessCount": m12,
     "importUrl": MessageLookupByLibrary.simpleMessage("Import from URL"),
     "infiniteTime": MessageLookupByLibrary.simpleMessage("Never Expires"),
     "inheritDefaultDialer": MessageLookupByLibrary.simpleMessage(
@@ -763,7 +774,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Allow IPv6 inbound",
     ),
     "isp": MessageLookupByLibrary.simpleMessage("ISP"),
-    "itemsCount": m6,
+    "itemsCount": m13,
     "just": MessageLookupByLibrary.simpleMessage("Just now"),
     "keepAliveIntervalDesc": MessageLookupByLibrary.simpleMessage(
       "TCP keep-alive interval",
@@ -849,11 +860,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "minimizeOnExitDesc": MessageLookupByLibrary.simpleMessage(
       "Override default exit behavior",
     ),
-    "minutes": m7,
+    "minutes": m14,
     "mixedPort": MessageLookupByLibrary.simpleMessage("Mixed Port"),
     "mode": MessageLookupByLibrary.simpleMessage("Mode"),
     "monochromeScheme": MessageLookupByLibrary.simpleMessage("Monochrome"),
-    "months": m8,
+    "months": m15,
     "more": MessageLookupByLibrary.simpleMessage("More"),
     "moreIpInfo": MessageLookupByLibrary.simpleMessage("More IP Information"),
     "name": MessageLookupByLibrary.simpleMessage("Name"),
@@ -954,8 +965,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "nullProfileDesc": MessageLookupByLibrary.simpleMessage(
       "No profile. Please add one.",
     ),
-    "nullTip": m9,
-    "numberTip": m10,
+    "nullTip": m16,
+    "numberTip": m17,
     "oneColumn": MessageLookupByLibrary.simpleMessage("1 Column"),
     "onlinePanel": MessageLookupByLibrary.simpleMessage("Online Panel"),
     "onlyIcon": MessageLookupByLibrary.simpleMessage("Icon Only"),
@@ -1065,7 +1076,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "portConflictTip": MessageLookupByLibrary.simpleMessage(
       "Please enter a different port",
     ),
-    "portTip": m11,
+    "portTip": m18,
     "powerSwitch": MessageLookupByLibrary.simpleMessage("Power"),
     "preferH3Desc": MessageLookupByLibrary.simpleMessage(
       "Prioritize DoH HTTP/3",
@@ -1090,7 +1101,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "profileHasUpdate": MessageLookupByLibrary.simpleMessage(
       "Profile modified. Disable auto-update?",
     ),
-    "profileImportFailed": m12,
+    "profileImportFailed": m19,
     "profileNameNullValidationDesc": MessageLookupByLibrary.simpleMessage(
       "Please enter a profile name",
     ),
@@ -1258,18 +1269,12 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "selectAll": MessageLookupByLibrary.simpleMessage("Select All"),
     "selected": MessageLookupByLibrary.simpleMessage("Selected"),
-    "selectedCountTitle": m13,
+    "selectedCountTitle": m20,
     "serverAddress": MessageLookupByLibrary.simpleMessage("Server Address"),
     "serviceReady": MessageLookupByLibrary.simpleMessage("Service Ready"),
     "serviceRunning": MessageLookupByLibrary.simpleMessage("Service Running"),
     "settings": MessageLookupByLibrary.simpleMessage("Settings"),
     "show": MessageLookupByLibrary.simpleMessage("Show"),
-    "hideTimeoutProxies": MessageLookupByLibrary.simpleMessage(
-      "Hide timed-out nodes",
-    ),
-    "hideTimeoutProxiesDesc": MessageLookupByLibrary.simpleMessage(
-      "Leave out nodes whose last delay test timed out",
-    ),
     "showHiddenItems": MessageLookupByLibrary.simpleMessage(
       "Show Hidden Items",
     ),
@@ -1521,7 +1526,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "upload": MessageLookupByLibrary.simpleMessage("Upload"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage("Get profile via URL"),
-    "urlTip": m14,
+    "urlTip": m21,
     "useGlobalScriptOverride": MessageLookupByLibrary.simpleMessage(
       "Use Global Script Override",
     ),
@@ -1561,6 +1566,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage(
       "Requires administrator privileges",
     ),
-    "years": m15,
+    "years": m22,
   };
 }

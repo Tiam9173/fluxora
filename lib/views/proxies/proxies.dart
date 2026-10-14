@@ -13,7 +13,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../profiles/scripts.dart'
     show showGroupSwitchOptions, showScriptCustomOptions;
-import 'package:fluxora/l10n/chain_proxy_l10n.dart';
 import 'advanced_settings.dart';
 import 'chain_proxy_view.dart';
 import 'warp_view.dart';

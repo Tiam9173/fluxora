@@ -7,7 +7,6 @@ import 'package:fluxora/services/chain_probe_service.dart';
 import 'package:fluxora/widgets/fluxora/fluxora_proxy_tile.dart';
 import 'package:fluxora/widgets/fluxora/fluxora_status.dart';
 import 'package:fluxora/widgets/fluxora/fluxora_latency_badge.dart';
-import 'package:fluxora/l10n/chain_proxy_l10n.dart';
 import 'package:fluxora/models/chain_fallback_pool.dart';
 import 'package:fluxora/models/chain_proxy.dart';
 import 'package:fluxora/providers/chain_proxy.dart';

@@ -17,7 +17,6 @@ import 'package:fluxora/views/config/general.dart';
 import 'package:fluxora/views/config/network.dart';
 import 'package:fluxora/views/config/ntp.dart';
 import 'package:fluxora/views/config/sniffer.dart';
-import 'package:fluxora/l10n/chain_proxy_l10n.dart';
 import 'package:fluxora/views/config/tunnel.dart';
 import 'package:fluxora/views/connection/connections.dart';
 import 'package:fluxora/views/hotkey.dart';
