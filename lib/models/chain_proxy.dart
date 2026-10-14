@@ -550,6 +550,11 @@ class ChainProxyConfig {
     // does not exist (a legacy `hop3Node` leaves exactly such a name behind
     // after the three-hop → two-hop migration).
     //
+    // RC.10-B.1 — the entry must also be *enabled*: only enabled landings are
+    // injected (`activeLandings` below), so a disabled name would fail the very
+    // same way. A disabled explicit exit therefore falls back to the first
+    // enabled landing proxy instead of being used as-is.
+    //
     // The reference is only treated as stale when the config actually declares
     // landing proxies — with an empty landing list there is nothing to validate
     // against, so the configured exit is kept exactly as before.
@@ -557,11 +562,12 @@ class ChainProxyConfig {
     // An unresolvable reference falls back to the active landing proxy. When
     // there is none, the result is the same empty string this getter already
     // returned — "no usable exit" stays honest, nothing is fabricated, and a
-    // node's own delay is never treated as proof the whole chain works.
+    // node's own delay is never treated as proof the whole chain works. The
+    // stored `hop2Node` value itself is never rewritten.
     final String explicit = hop2Node.trim();
     if (explicit.isNotEmpty &&
         (landingProxies.isEmpty ||
-            landingProxies.any((p) => p.name == explicit))) {
+            landingProxies.any((p) => p.name == explicit && p.enable))) {
       return explicit;
     }
     return landingProxies.where((p) => p.enable).firstOrNull?.name ?? '';
