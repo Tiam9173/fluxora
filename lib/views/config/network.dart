@@ -2,8 +2,6 @@ import 'dart:async';
 
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/enum/enum.dart';
-import 'package:fluxora/l10n/system_proxy_l10n.dart';
-import 'package:fluxora/l10n/tun_l10n.dart';
 import 'package:fluxora/models/models.dart';
 import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/services/system_proxy_readback.dart';

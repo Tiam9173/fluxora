@@ -20,38 +20,38 @@ typedef String MessageIfAbsent(String messageStr, List<dynamic> args);
 class MessageLookup extends MessageLookupByLibrary {
   String get localeName => 'ja';
 
-  static String m0(count) => "${Intl.plural(count, other: '日')}";
+  static String m4(count) => "${Intl.plural(count, other: '日')}";
 
-  static String m1(label) => "選択した ${label} を削除しますか？";
+  static String m5(label) => "選択した ${label} を削除しますか？";
 
-  static String m2(label) => "選択した ${label} を削除しますか？";
+  static String m6(label) => "選択した ${label} を削除しますか？";
 
-  static String m3(label) => "${label} は必須項目です";
+  static String m7(label) => "${label} は必須項目です";
 
-  static String m4(label) => "${label} はすでに存在します";
+  static String m8(label) => "${label} はすでに存在します";
 
-  static String m5(count) => "${Intl.plural(count, other: '時間')}";
+  static String m11(count) => "${Intl.plural(count, other: '時間')}";
 
-  static String m6(count) => "${count}";
+  static String m13(count) => "${count}";
 
-  static String m7(count) => "${Intl.plural(count, other: '分')}";
+  static String m14(count) => "${Intl.plural(count, other: '分')}";
 
-  static String m8(count) => "${Intl.plural(count, other: 'ヶ月')}";
+  static String m15(count) => "${Intl.plural(count, other: 'ヶ月')}";
 
-  static String m9(label) => "${label} はありません";
+  static String m16(label) => "${label} はありません";
 
-  static String m10(label) => "${label} は数値である必要があります";
+  static String m17(label) => "${label} は数値である必要があります";
 
-  static String m11(label) => "${label} は1024〜49151の範囲で指定してください（0で無効）";
+  static String m18(label) => "${label} は1024〜49151の範囲で指定してください（0で無効）";
 
-  static String m12(statusCode) =>
+  static String m19(statusCode) =>
       "プロファイルのインポートに失敗しました。通信状態を確認するかURLをリセットしてください ( HTTPエラーコード: ${statusCode} )";
 
-  static String m13(count) => "${count} 件選択中";
+  static String m20(count) => "${count} 件選択中";
 
-  static String m14(label) => "${label} は有効なURLである必要があります";
+  static String m21(label) => "${label} は有効なURLである必要があります";
 
-  static String m15(count) => "${Intl.plural(count, other: '年')}";
+  static String m22(count) => "${Intl.plural(count, other: '年')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -265,7 +265,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "darkIcon": MessageLookupByLibrary.simpleMessage("ダークアイコン"),
     "darkIconDesc": MessageLookupByLibrary.simpleMessage("アプリアイコンをダーク系に切り替え"),
     "dashboard": MessageLookupByLibrary.simpleMessage("ホーム"),
-    "days": m0,
+    "days": m4,
     "defaultNameserver": MessageLookupByLibrary.simpleMessage("デフォルトDNSサーバー"),
     "defaultNameserverDesc": MessageLookupByLibrary.simpleMessage(
       "DNSサーバー自体の解決に使用",
@@ -279,8 +279,8 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "delaySort": MessageLookupByLibrary.simpleMessage("レイテンシ順"),
     "delete": MessageLookupByLibrary.simpleMessage("削除"),
-    "deleteMultipTip": m1,
-    "deleteTip": m2,
+    "deleteMultipTip": m5,
+    "deleteTip": m6,
     "deleteTunnel": MessageLookupByLibrary.simpleMessage("転送削除"),
     "desc": MessageLookupByLibrary.simpleMessage(
       "Fluxoraは柔軟で強力なMihomo(Clash.Meta)カーネルを搭載した、快適性を追求したプロキシクライアントです。私たちのビジョン：Clear routes, calm control",
@@ -336,7 +336,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "edit": MessageLookupByLibrary.simpleMessage("編集"),
     "editTunnel": MessageLookupByLibrary.simpleMessage("転送編集"),
-    "emptyTip": m3,
+    "emptyTip": m7,
     "enableCrashReport": MessageLookupByLibrary.simpleMessage("クラッシュ分析"),
     "enableCrashReportDesc": MessageLookupByLibrary.simpleMessage(
       "必要に応じてクラッシュログを送信",
@@ -360,7 +360,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "全無効化せずに中国のQUIC通信を許可",
     ),
     "excludeDesc": MessageLookupByLibrary.simpleMessage("最近のタスク履歴からアプリを隠す"),
-    "existsTip": m4,
+    "existsTip": m8,
     "exit": MessageLookupByLibrary.simpleMessage("終了"),
     "expand": MessageLookupByLibrary.simpleMessage("標準"),
     "experimental": MessageLookupByLibrary.simpleMessage("実験的機能"),
@@ -469,7 +469,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "hotkeyManagementDesc": MessageLookupByLibrary.simpleMessage(
       "キーボードでアプリを操作",
     ),
-    "hours": m5,
+    "hours": m11,
     "httpPortSniffer": MessageLookupByLibrary.simpleMessage("HTTPポート解析"),
     "icmpForwarding": MessageLookupByLibrary.simpleMessage("ICMP転送"),
     "icmpForwardingDesc": MessageLookupByLibrary.simpleMessage(
@@ -502,7 +502,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "ipv6Desc": MessageLookupByLibrary.simpleMessage("IPv6トラフィックの受信を有効化"),
     "ipv6InboundDesc": MessageLookupByLibrary.simpleMessage("IPv6インバウンド通信を許可"),
     "isp": MessageLookupByLibrary.simpleMessage("プロバイダ"),
-    "itemsCount": m6,
+    "itemsCount": m13,
     "just": MessageLookupByLibrary.simpleMessage("たった今"),
     "keepAliveIntervalDesc": MessageLookupByLibrary.simpleMessage(
       "TCP Keep-Alive間隔",
@@ -567,11 +567,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "minimizeOnExitDesc": MessageLookupByLibrary.simpleMessage(
       "デフォルトのウィンドウ閉じる動作を変更",
     ),
-    "minutes": m7,
+    "minutes": m14,
     "mixedPort": MessageLookupByLibrary.simpleMessage("混合ポート (Mixed)"),
     "mode": MessageLookupByLibrary.simpleMessage("モード"),
     "monochromeScheme": MessageLookupByLibrary.simpleMessage("モノクローム"),
-    "months": m8,
+    "months": m15,
     "more": MessageLookupByLibrary.simpleMessage("詳細"),
     "moreIpInfo": MessageLookupByLibrary.simpleMessage("詳細 IP 情報"),
     "name": MessageLookupByLibrary.simpleMessage("名前"),
@@ -652,8 +652,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "nullProfileDesc": MessageLookupByLibrary.simpleMessage(
       "プロファイルがありません。追加してください",
     ),
-    "nullTip": m9,
-    "numberTip": m10,
+    "nullTip": m16,
+    "numberTip": m17,
     "oneColumn": MessageLookupByLibrary.simpleMessage("1列"),
     "onlinePanel": MessageLookupByLibrary.simpleMessage("オンラインパネル"),
     "onlyIcon": MessageLookupByLibrary.simpleMessage("アイコンのみ"),
@@ -739,7 +739,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "portConflictTip": MessageLookupByLibrary.simpleMessage(
       "重複しないポート番号を入力してください",
     ),
-    "portTip": m11,
+    "portTip": m18,
     "powerSwitch": MessageLookupByLibrary.simpleMessage("電源スイッチ"),
     "preferH3Desc": MessageLookupByLibrary.simpleMessage("DoHでHTTP/3を優先使用"),
     "pressKeyboard": MessageLookupByLibrary.simpleMessage("キーを入力してください"),
@@ -754,7 +754,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "profileHasUpdate": MessageLookupByLibrary.simpleMessage(
       "プロファイルが変更されました。自動更新をオフにしますか？",
     ),
-    "profileImportFailed": m12,
+    "profileImportFailed": m19,
     "profileNameNullValidationDesc": MessageLookupByLibrary.simpleMessage(
       "設定名を入力してください",
     ),
@@ -873,7 +873,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "selectAll": MessageLookupByLibrary.simpleMessage("すべて選択"),
     "selected": MessageLookupByLibrary.simpleMessage("選択済み"),
-    "selectedCountTitle": m13,
+    "selectedCountTitle": m20,
     "serviceReady": MessageLookupByLibrary.simpleMessage("サービス準備完了"),
     "serviceRunning": MessageLookupByLibrary.simpleMessage("サービス稼働中"),
     "settings": MessageLookupByLibrary.simpleMessage("設定"),
@@ -1034,7 +1034,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "upload": MessageLookupByLibrary.simpleMessage("送信"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage("URLから設定を取得"),
-    "urlTip": m14,
+    "urlTip": m21,
     "useGlobalScriptOverride": MessageLookupByLibrary.simpleMessage(
       "グローバルスクリプトオーバーライドを使用",
     ),
@@ -1065,6 +1065,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "whitelistMode": MessageLookupByLibrary.simpleMessage("ホワイトリストモード"),
     "writeToSystem": MessageLookupByLibrary.simpleMessage("システムへ適用"),
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage("管理者権限が必要です"),
-    "years": m15,
+    "years": m22,
   };
 }

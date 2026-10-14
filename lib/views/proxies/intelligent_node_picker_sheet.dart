@@ -4,7 +4,6 @@ import 'package:fluxora/common/common.dart';
 import 'package:fluxora/models/chain_fallback_pool.dart';
 import 'package:fluxora/providers/adaptive_ranking_provider.dart';
 import 'package:fluxora/widgets/widgets.dart';
-import 'package:fluxora/l10n/chain_proxy_l10n.dart';
 import 'package:fluxora/views/proxies/intelligent_node_card.dart';
 
 class IntelligentNodePickerSheet extends ConsumerStatefulWidget {

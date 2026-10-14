@@ -5,10 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluxora/common/common.dart';
-import 'package:fluxora/l10n/chain_proxy_l10n.dart';
 import 'package:fluxora/l10n/l10n.dart';
-import 'package:fluxora/l10n/tun_l10n.dart';
-import 'package:fluxora/l10n/system_proxy_l10n.dart';
 
 /// Every key defined by `chain_proxy_l10n.dart`, `tun_l10n.dart` and
 /// `system_proxy_l10n.dart`, read through the real getter.

@@ -1,6 +1,7 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
 import 'intl/messages_all.dart';
 
 // **************************************************************************
@@ -1929,7 +1930,6 @@ class AppLocalizations {
     return Intl.message('Country', name: 'country', desc: '', args: []);
   }
 
-  /// `Check Failed`
   /// `Probe chain`
   String get chainProbeNow {
     return Intl.message(
@@ -1940,6 +1940,7 @@ class AppLocalizations {
     );
   }
 
+  /// `Check Failed`
   String get checkError {
     return Intl.message('Check Failed', name: 'checkError', desc: '', args: []);
   }
@@ -2949,6 +2950,26 @@ class AppLocalizations {
     return Intl.message(
       'Node health check timeout',
       name: 'healthCheckTimeoutDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Hide timed-out nodes`
+  String get hideTimeoutProxies {
+    return Intl.message(
+      'Hide timed-out nodes',
+      name: 'hideTimeoutProxies',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Leave out nodes whose last delay test timed out`
+  String get hideTimeoutProxiesDesc {
+    return Intl.message(
+      'Leave out nodes whose last delay test timed out',
+      name: 'hideTimeoutProxiesDesc',
       desc: '',
       args: [],
     );
@@ -5479,26 +5500,6 @@ class AppLocalizations {
     return Intl.message('Wrap Lines', name: 'lineWrap', desc: '', args: []);
   }
 
-  /// `Hide timed-out nodes`
-  String get hideTimeoutProxies {
-    return Intl.message(
-      'Hide timed-out nodes',
-      name: 'hideTimeoutProxies',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Leave out nodes whose last delay test timed out`
-  String get hideTimeoutProxiesDesc {
-    return Intl.message(
-      'Leave out nodes whose last delay test timed out',
-      name: 'hideTimeoutProxiesDesc',
-      desc: '',
-      args: [],
-    );
-  }
-
   /// `Show Hidden Items`
   String get showHiddenItems {
     return Intl.message(
@@ -6002,6 +6003,916 @@ class AppLocalizations {
   /// `Flagged`
   String get flagged {
     return Intl.message('Flagged', name: 'flagged', desc: '', args: []);
+  }
+
+  /// `Add Landing Proxy`
+  String get addLandingProxy {
+    return Intl.message(
+      'Add Landing Proxy',
+      name: 'addLandingProxy',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Add {role} candidate`
+  String addRoleCandidate(Object role) {
+    return Intl.message(
+      'Add $role candidate',
+      name: 'addRoleCandidate',
+      desc: '',
+      args: [role],
+    );
+  }
+
+  /// `Add {role} backup candidate`
+  String addRoleFallbackCandidate(Object role) {
+    return Intl.message(
+      'Add $role backup candidate',
+      name: 'addRoleFallbackCandidate',
+      desc: '',
+      args: [role],
+    );
+  }
+
+  /// `Ascending`
+  String get ascending {
+    return Intl.message('Ascending', name: 'ascending', desc: '', args: []);
+  }
+
+  /// `Automatic failover`
+  String get autoFailover {
+    return Intl.message(
+      'Automatic failover',
+      name: 'autoFailover',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Off: only the button below can switch manually`
+  String get autoFailoverOffDesc {
+    return Intl.message(
+      'Off: only the button below can switch manually',
+      name: 'autoFailoverOffDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Switches to a backup candidate when the chain keeps failing`
+  String get autoFailoverOnDesc {
+    return Intl.message(
+      'Switches to a backup candidate when the chain keeps failing',
+      name: 'autoFailoverOnDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Auto-inject into the main selector group`
+  String get autoInjectGroups {
+    return Intl.message(
+      'Auto-inject into the main selector group',
+      name: 'autoInjectGroups',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Automatically adds enabled landing proxies to main routing groups such as 「节点选择」`
+  String get autoInjectGroupsDesc {
+    return Intl.message(
+      'Automatically adds enabled landing proxies to main routing groups such as 「节点选择」',
+      name: 'autoInjectGroupsDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Checking ({completed}/{total})…`
+  String batchCheckingProgress(Object completed, Object total) {
+    return Intl.message(
+      'Checking ($completed/$total)…',
+      name: 'batchCheckingProgress',
+      desc: '',
+      args: [completed, total],
+    );
+  }
+
+  /// `Hop 3 (exit node)`
+  String get chainHopExitNode {
+    return Intl.message(
+      'Hop 3 (exit node)',
+      name: 'chainHopExitNode',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Incomplete three-hop chain: select a relay node and an exit node`
+  String get chainHopIncomplete {
+    return Intl.message(
+      'Incomplete three-hop chain: select a relay node and an exit node',
+      name: 'chainHopIncomplete',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Chain Hops`
+  String get chainHopMode {
+    return Intl.message('Chain Hops', name: 'chainHopMode', desc: '', args: []);
+  }
+
+  /// `Two hops: entry hop → landing exit. Three hops inserts an additional relay node.`
+  String get chainHopModeDesc {
+    return Intl.message(
+      'Two hops: entry hop → landing exit. Three hops inserts an additional relay node.',
+      name: 'chainHopModeDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Not selected`
+  String get chainHopNotSelected {
+    return Intl.message(
+      'Not selected',
+      name: 'chainHopNotSelected',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Hop 2 (relay node)`
+  String get chainHopRelayNode {
+    return Intl.message(
+      'Hop 2 (relay node)',
+      name: 'chainHopRelayNode',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Could not read the list of available nodes, so node availability could not be verified`
+  String get chainHopUnavailable {
+    return Intl.message(
+      'Could not read the list of available nodes, so node availability could not be verified',
+      name: 'chainHopUnavailable',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Chain Proxy`
+  String get chainProxy {
+    return Intl.message('Chain Proxy', name: 'chainProxy', desc: '', args: []);
+  }
+
+  /// `Configure an entry hop and a static residential landing IP`
+  String get chainProxyDesc {
+    return Intl.message(
+      'Configure an entry hop and a static residential landing IP',
+      name: 'chainProxyDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Cipher`
+  String get cipher {
+    return Intl.message('Cipher', name: 'cipher', desc: '', args: []);
+  }
+
+  /// `Remove unavailable nodes`
+  String get clearInvalidProxies {
+    return Intl.message(
+      'Remove unavailable nodes',
+      name: 'clearInvalidProxies',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Cleared {count} invalid nodes`
+  String clearedInvalidCount(Object count) {
+    return Intl.message(
+      'Cleared $count invalid nodes',
+      name: 'clearedInvalidCount',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `Remove every residential IP that failed the check?`
+  String get confirmClearInvalid {
+    return Intl.message(
+      'Remove every residential IP that failed the check?',
+      name: 'confirmClearInvalid',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Create a dedicated chain proxy group`
+  String get dedicatedGroup {
+    return Intl.message(
+      'Create a dedicated chain proxy group',
+      name: 'dedicatedGroup',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Adds a standalone 「🔗 链式代理」 policy group card on the proxies page`
+  String get dedicatedGroupDesc {
+    return Intl.message(
+      'Adds a standalone 「🔗 链式代理」 policy group card on the proxies page',
+      name: 'dedicatedGroupDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Default Entry Hop`
+  String get defaultDialerProxy {
+    return Intl.message(
+      'Default Entry Hop',
+      name: 'defaultDialerProxy',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Entry node or policy group that landing proxies use by default (a selector group is recommended)`
+  String get defaultDialerProxyDesc {
+    return Intl.message(
+      'Entry node or policy group that landing proxies use by default (a selector group is recommended)',
+      name: 'defaultDialerProxyDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Descending`
+  String get descending {
+    return Intl.message('Descending', name: 'descending', desc: '', args: []);
+  }
+
+  /// `Diagnostic advice`
+  String get diagnosticAdvice {
+    return Intl.message(
+      'Diagnostic advice',
+      name: 'diagnosticAdvice',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `DIRECT (no hop)`
+  String get directConnection {
+    return Intl.message(
+      'DIRECT (no hop)',
+      name: 'directConnection',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No residential landing nodes yet. Paste in the common formats used by major residential IP providers (IPRoyal, LunaProxy, Oxylabs and others) to import them in one click.`
+  String get emptyLandingTip {
+    return Intl.message(
+      'No residential landing nodes yet. Paste in the common formats used by major residential IP providers (IPRoyal, LunaProxy, Oxylabs and others) to import them in one click.',
+      name: 'emptyLandingTip',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Enable Chain Proxy`
+  String get enableChainProxy {
+    return Intl.message(
+      'Enable Chain Proxy',
+      name: 'enableChainProxy',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Relay through an entry node to reach the landing proxy, bypassing network restrictions while keeping a real residential exit`
+  String get enableChainProxyDesc {
+    return Intl.message(
+      'Relay through an entry node to reach the landing proxy, bypassing network restrictions while keeping a real residential exit',
+      name: 'enableChainProxyDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Failover`
+  String get failover {
+    return Intl.message('Failover', name: 'failover', desc: '', args: []);
+  }
+
+  /// `Enable chain proxy first`
+  String get failoverEnableFirst {
+    return Intl.message(
+      'Enable chain proxy first',
+      name: 'failoverEnableFirst',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Failover failed: {reason}`
+  String failoverFailed(Object reason) {
+    return Intl.message(
+      'Failover failed: $reason',
+      name: 'failoverFailed',
+      desc: '',
+      args: [reason],
+    );
+  }
+
+  /// `Failing over…`
+  String get failoverInProgress {
+    return Intl.message(
+      'Failing over…',
+      name: 'failoverInProgress',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Switch to a backup candidate manually when the chain fails`
+  String get failoverManualHint {
+    return Intl.message(
+      'Switch to a backup candidate manually when the chain fails',
+      name: 'failoverManualHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No backup candidates configured yet`
+  String get failoverNoCandidates {
+    return Intl.message(
+      'No backup candidates configured yet',
+      name: 'failoverNoCandidates',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Add a backup candidate for at least one role above, then try again`
+  String get failoverNoCandidatesAdvice {
+    return Intl.message(
+      'Add a backup candidate for at least one role above, then try again',
+      name: 'failoverNoCandidatesAdvice',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Failover succeeded, switched to [{node}]`
+  String failoverSuccess(Object node) {
+    return Intl.message(
+      'Failover succeeded, switched to [$node]',
+      name: 'failoverSuccess',
+      desc: '',
+      args: [node],
+    );
+  }
+
+  /// `Fail over now`
+  String get failoverTrigger {
+    return Intl.message(
+      'Fail over now',
+      name: 'failoverTrigger',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `User triggered failover manually`
+  String get failoverTriggerReason {
+    return Intl.message(
+      'User triggered failover manually',
+      name: 'failoverTriggerReason',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `All`
+  String get filterAll {
+    return Intl.message('All', name: 'filterAll', desc: '', args: []);
+  }
+
+  /// `Unavailable / not checked`
+  String get filterError {
+    return Intl.message(
+      'Unavailable / not checked',
+      name: 'filterError',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Working only`
+  String get filterHealthy {
+    return Intl.message(
+      'Working only',
+      name: 'filterHealthy',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Follow the current selector group (recommended)`
+  String get followMainSelector {
+    return Intl.message(
+      'Follow the current selector group (recommended)',
+      name: 'followMainSelector',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Connectivity Check`
+  String get healthCheck {
+    return Intl.message(
+      'Connectivity Check',
+      name: 'healthCheck',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Full Check`
+  String get healthCheckAll {
+    return Intl.message(
+      'Full Check',
+      name: 'healthCheckAll',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Unavailable`
+  String get healthError {
+    return Intl.message('Unavailable', name: 'healthError', desc: '', args: []);
+  }
+
+  /// `Working`
+  String get healthHealthy {
+    return Intl.message('Working', name: 'healthHealthy', desc: '', args: []);
+  }
+
+  /// `Residential IP Connectivity Report`
+  String get healthReport {
+    return Intl.message(
+      'Residential IP Connectivity Report',
+      name: 'healthReport',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Not checked`
+  String get healthUntested {
+    return Intl.message(
+      'Not checked',
+      name: 'healthUntested',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Partially limited`
+  String get healthWarning {
+    return Intl.message(
+      'Partially limited',
+      name: 'healthWarning',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Hop`
+  String get hop {
+    return Intl.message('Hop', name: 'hop', desc: '', args: []);
+  }
+
+  /// `Imported {count} landing proxy nodes`
+  String importSuccessCount(Object count) {
+    return Intl.message(
+      'Imported $count landing proxy nodes',
+      name: 'importSuccessCount',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `Inherit the global default hop`
+  String get inheritDefaultDialer {
+    return Intl.message(
+      'Inherit the global default hop',
+      name: 'inheritDefaultDialer',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Paste residential IP details, e.g.\n198.51.100.1:8000:username:password\nor socks5://user:pass@198.51.100.1:8000\nSupports pasting multiple lines at once.`
+  String get inputProxyTextHint {
+    return Intl.message(
+      'Paste residential IP details, e.g.\n198.51.100.1:8000:username:password\nor socks5://user:pass@198.51.100.1:8000\nSupports pasting multiple lines at once.',
+      name: 'inputProxyTextHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Residential Landing Nodes`
+  String get landingProxies {
+    return Intl.message(
+      'Residential Landing Nodes',
+      name: 'landingProxies',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `There are no unavailable nodes right now`
+  String get noInvalidProxies {
+    return Intl.message(
+      'There are no unavailable nodes right now',
+      name: 'noInvalidProxies',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Node Name`
+  String get nodeName {
+    return Intl.message('Node Name', name: 'nodeName', desc: '', args: []);
+  }
+
+  /// `No valid proxy information found. Please check the format.`
+  String get parseNoValidNode {
+    return Intl.message(
+      'No valid proxy information found. Please check the format.',
+      name: 'parseNoValidNode',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Paste from Clipboard`
+  String get pasteFromClipboard {
+    return Intl.message(
+      'Paste from Clipboard',
+      name: 'pasteFromClipboard',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Prevent WebRTC real IP leaks`
+  String get preventWebRtcLeak {
+    return Intl.message(
+      'Prevent WebRTC real IP leaks',
+      name: 'preventWebRtcLeak',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Blocks STUN/TURN probes to stop real public IP exposure, keeping overseas accounts and cross-border e-commerce safe`
+  String get preventWebRtcLeakDesc {
+    return Intl.message(
+      'Blocks STUN/TURN probes to stop real public IP exposure, keeping overseas accounts and cross-border e-commerce safe',
+      name: 'preventWebRtcLeakDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Proxy Protocol`
+  String get protocol {
+    return Intl.message('Proxy Protocol', name: 'protocol', desc: '', args: []);
+  }
+
+  /// `Smart Quick Import`
+  String get quickImport {
+    return Intl.message(
+      'Smart Quick Import',
+      name: 'quickImport',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `One-click import from IP:port:user:password, links and other common formats`
+  String get quickImportDesc {
+    return Intl.message(
+      'One-click import from IP:port:user:password, links and other common formats',
+      name: 'quickImportDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Check again`
+  String get retest {
+    return Intl.message('Check again', name: 'retest', desc: '', args: []);
+  }
+
+  /// `Entry node`
+  String get roleEntry {
+    return Intl.message('Entry node', name: 'roleEntry', desc: '', args: []);
+  }
+
+  /// `Landing exit`
+  String get roleExit {
+    return Intl.message('Landing exit', name: 'roleExit', desc: '', args: []);
+  }
+
+  /// `Relay node`
+  String get roleRelay {
+    return Intl.message('Relay node', name: 'roleRelay', desc: '', args: []);
+  }
+
+  /// `Server Address`
+  String get serverAddress {
+    return Intl.message(
+      'Server Address',
+      name: 'serverAddress',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Specify a dedicated hop`
+  String get specificDialerProxy {
+    return Intl.message(
+      'Specify a dedicated hop',
+      name: 'specificDialerProxy',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The system proxy is actually off`
+  String get systemProxyActualOff {
+    return Intl.message(
+      'The system proxy is actually off',
+      name: 'systemProxyActualOff',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The system proxy is actually on`
+  String get systemProxyActualOn {
+    return Intl.message(
+      'The system proxy is actually on',
+      name: 'systemProxyActualOn',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Actual system status`
+  String get systemProxyActualStatus {
+    return Intl.message(
+      'Actual system status',
+      name: 'systemProxyActualStatus',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Checking the actual system status…`
+  String get systemProxyChecking {
+    return Intl.message(
+      'Checking the actual system status…',
+      name: 'systemProxyChecking',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The system proxy is still on`
+  String get systemProxyMismatchOff {
+    return Intl.message(
+      'The system proxy is still on',
+      name: 'systemProxyMismatchOff',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The setting requests the proxy on, but the system proxy is not actually on`
+  String get systemProxyMismatchOn {
+    return Intl.message(
+      'The setting requests the proxy on, but the system proxy is not actually on',
+      name: 'systemProxyMismatchOn',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Cannot determine the system proxy status`
+  String get systemProxyUnknown {
+    return Intl.message(
+      'Cannot determine the system proxy status',
+      name: 'systemProxyUnknown',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `This platform does not support system proxy status detection`
+  String get systemProxyUnsupported {
+    return Intl.message(
+      'This platform does not support system proxy status detection',
+      name: 'systemProxyUnsupported',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Test All`
+  String get testAll {
+    return Intl.message('Test All', name: 'testAll', desc: '', args: []);
+  }
+
+  /// `Test connectivity`
+  String get testCurrentProxy {
+    return Intl.message(
+      'Test connectivity',
+      name: 'testCurrentProxy',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Checking…`
+  String get testingHealth {
+    return Intl.message('Checking…', name: 'testingHealth', desc: '', args: []);
+  }
+
+  /// `This device`
+  String get topologyClient {
+    return Intl.message(
+      'This device',
+      name: 'topologyClient',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Entry hop`
+  String get topologyHop {
+    return Intl.message('Entry hop', name: 'topologyHop', desc: '', args: []);
+  }
+
+  /// `Residential landing`
+  String get topologyLanding {
+    return Intl.message(
+      'Residential landing',
+      name: 'topologyLanding',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Relay node`
+  String get topologyRelay {
+    return Intl.message(
+      'Relay node',
+      name: 'topologyRelay',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Target service`
+  String get topologyTarget {
+    return Intl.message(
+      'Target service',
+      name: 'topologyTarget',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The system TUN is actually disabled`
+  String get tunActualOff {
+    return Intl.message(
+      'The system TUN is actually disabled',
+      name: 'tunActualOff',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The system TUN is actually enabled`
+  String get tunActualOn {
+    return Intl.message(
+      'The system TUN is actually enabled',
+      name: 'tunActualOn',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Actual TUN status`
+  String get tunActualStatus {
+    return Intl.message(
+      'Actual TUN status',
+      name: 'tunActualStatus',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Checking the actual TUN status…`
+  String get tunChecking {
+    return Intl.message(
+      'Checking the actual TUN status…',
+      name: 'tunChecking',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `TUN is still enabled`
+  String get tunMismatchOff {
+    return Intl.message(
+      'TUN is still enabled',
+      name: 'tunMismatchOff',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The setting requests TUN on, but the system TUN is not actually enabled`
+  String get tunMismatchOn {
+    return Intl.message(
+      'The setting requests TUN on, but the system TUN is not actually enabled',
+      name: 'tunMismatchOn',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Cannot determine the actual TUN status`
+  String get tunUnknown {
+    return Intl.message(
+      'Cannot determine the actual TUN status',
+      name: 'tunUnknown',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `This platform does not report the actual TUN status`
+  String get tunUnsupported {
+    return Intl.message(
+      'This platform does not report the actual TUN status',
+      name: 'tunUnsupported',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `UDP Forwarding`
+  String get udpForwarding {
+    return Intl.message(
+      'UDP Forwarding',
+      name: 'udpForwarding',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Turn this off if the residential IP does not support UDP and causes errors`
+  String get udpForwardingDesc {
+    return Intl.message(
+      'Turn this off if the residential IP does not support UDP and causes errors',
+      name: 'udpForwardingDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Username`
+  String get username {
+    return Intl.message('Username', name: 'username', desc: '', args: []);
   }
 }
 

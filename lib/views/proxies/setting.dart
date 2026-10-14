@@ -1,6 +1,5 @@
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/enum/enum.dart';
-import 'package:fluxora/l10n/chain_proxy_l10n.dart';
 import 'package:fluxora/providers/app.dart';
 import 'package:fluxora/providers/config.dart';
 import 'package:fluxora/widgets/widgets.dart';
