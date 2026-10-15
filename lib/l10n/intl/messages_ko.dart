@@ -822,6 +822,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "network": MessageLookupByLibrary.simpleMessage("네트워크"),
     "networkDesc": MessageLookupByLibrary.simpleMessage("네트워크 관련 설정 변경"),
     "networkDetection": MessageLookupByLibrary.simpleMessage("네트워크 진단"),
+    "networkDetectionUrl": MessageLookupByLibrary.simpleMessage("네트워크 감지 URL"),
     "networkErrorRetryLater": MessageLookupByLibrary.simpleMessage(
       "네트워크 오류가 발생했습니다. 나중에 다시 시도해 주세요",
     ),

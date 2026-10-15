@@ -1049,6 +1049,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "network": MessageLookupByLibrary.simpleMessage("Сеть"),
     "networkDesc": MessageLookupByLibrary.simpleMessage("Настройки сети"),
     "networkDetection": MessageLookupByLibrary.simpleMessage("IP сети"),
+    "networkDetectionUrl": MessageLookupByLibrary.simpleMessage(
+      "URL определения сети",
+    ),
     "networkErrorRetryLater": MessageLookupByLibrary.simpleMessage(
       "Ошибка сети, попробуйте позже",
     ),

@@ -748,6 +748,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "network": MessageLookupByLibrary.simpleMessage("網路"),
     "networkDesc": MessageLookupByLibrary.simpleMessage("修改網路相關設定"),
     "networkDetection": MessageLookupByLibrary.simpleMessage("網路檢測"),
+    "networkDetectionUrl": MessageLookupByLibrary.simpleMessage("網路檢測連結"),
     "networkErrorRetryLater": MessageLookupByLibrary.simpleMessage(
       "網路異常，請稍後再試",
     ),

@@ -1,6 +1,7 @@
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/models/models.dart';
+import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
@@ -56,6 +57,26 @@ class _NetworkDetectionState extends ConsumerState<NetworkDetection> {
               onTap: () {
                 Navigator.of(context, rootNavigator: true).pop();
                 detectionState.toggleIpPrivacy();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.link),
+              title: Text(appLocalizations.networkDetectionUrl),
+              subtitle: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Text(
+                  ref.watch(
+                    appSettingProvider.select(
+                      (state) => state.networkDetectionUrl,
+                    ),
+                  ),
+                ),
+              ),
+              onTap: () async {
+                Navigator.of(context, rootNavigator: true).pop();
+                await globalState.showCommonDialog(
+                  child: const _NetworkDetectionUrlDialog(),
+                );
               },
             ),
           ],
@@ -334,6 +355,146 @@ class _NetworkDetectionState extends ConsumerState<NetworkDetection> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _NetworkDetectionUrlDialog extends ConsumerWidget {
+  const _NetworkDetectionUrlDialog();
+
+  @override
+  Widget build(BuildContext context, ref) {
+    final currentUrl = ref.watch(
+      appSettingProvider.select((state) => state.networkDetectionUrl),
+    );
+    final isPresetUrl = presetNetworkDetectionUrls.contains(currentUrl);
+
+    return CommonDialog(
+      title: appLocalizations.networkDetectionUrl,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ...presetNetworkDetectionUrls.map((url) {
+            final isSelected = currentUrl == url;
+            return Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () async {
+                  ref
+                      .read(appSettingProvider.notifier)
+                      .updateState((state) => state.copyWith(networkDetectionUrl: url));
+                  if (context.mounted) {
+                    Navigator.of(context, rootNavigator: true).pop();
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        isSelected
+                            ? Icons.check_circle_rounded
+                            : Icons.circle_outlined,
+                        size: 21,
+                        color: isSelected
+                            ? context.colorScheme.primary
+                            : context.colorScheme.onSurfaceVariant.withValues(
+                                alpha: 0.6,
+                              ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: isSelected
+                            ? SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Text(
+                                  url,
+                                  style: context.textTheme.bodyMedium,
+                                ),
+                              )
+                            : Text(
+                                url,
+                                style: context.textTheme.bodyMedium,
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }),
+          // Custom URL option
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () async {
+                final notifier = ref.read(appSettingProvider.notifier);
+                Navigator.of(context, rootNavigator: true).pop();
+                final customUrl = await globalState.showCommonDialog<String>(
+                  child: InputDialog(
+                    title: appLocalizations.customUrl,
+                    value: isPresetUrl ? '' : currentUrl,
+                    resetValue: defaultNetworkDetectionUrl,
+                    validator: (String? inputValue) {
+                      if (inputValue == null || inputValue.isEmpty) {
+                        return appLocalizations.emptyTip(
+                          appLocalizations.networkDetectionUrl,
+                        );
+                      }
+                      if (!inputValue.isUrl) {
+                        return appLocalizations.urlTip(
+                          appLocalizations.networkDetectionUrl,
+                        );
+                      }
+                      return null;
+                    },
+                  ),
+                );
+
+                if (customUrl != null) {
+                  notifier.updateState(
+                    (state) => state.copyWith(networkDetectionUrl: customUrl),
+                  );
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      !isPresetUrl
+                          ? Icons.check_circle_rounded
+                          : Icons.circle_outlined,
+                      size: 21,
+                      color: !isPresetUrl
+                          ? context.colorScheme.primary
+                          : context.colorScheme.onSurfaceVariant.withValues(
+                              alpha: 0.6,
+                            ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        appLocalizations.customUrl,
+                        style: context.textTheme.bodyMedium,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -923,5 +923,6 @@
   "skipCertVerifyDesc": "خطاهای گواهی خودامضا یا دست‌دادن TLS را برطرف می‌کند",
   "serverAddressRequired": "لطفاً آدرس سرور را وارد کنید",
   "nodeAdded": "گره اضافه شد: {name}",
-  "saveNode": "ذخیره گره"
+  "saveNode": "ذخیره گره",
+  "networkDetectionUrl": "نشانی تشخیص شبکه"
 }

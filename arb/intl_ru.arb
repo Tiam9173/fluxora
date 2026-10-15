@@ -927,5 +927,6 @@
   "skipCertVerifyDesc": "Устраняет ошибки самоподписанных сертификатов и TLS-рукопожатия",
   "serverAddressRequired": "Введите адрес сервера",
   "nodeAdded": "Узел добавлен: {name}",
-  "saveNode": "Сохранить узел"
+  "saveNode": "Сохранить узел",
+  "networkDetectionUrl": "URL определения сети"
 }

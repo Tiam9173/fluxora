@@ -166,6 +166,7 @@ abstract class AppSettingProps with _$AppSettingProps {
     @Default(true) bool openLogs,
     @Default(true) bool closeConnections,
     @Default(defaultTestUrl) String testUrl,
+    @Default(defaultNetworkDetectionUrl) String networkDetectionUrl,
     @Default(false) bool showStartSwitch,
     @Default(true) bool enableNavBarHapticFeedback,
     @Default(true) bool autoCheckUpdate,

@@ -96,6 +96,23 @@ const presetNtpServers = [
   'time.cloudflare.com',
 ];
 
+// Network detection URL (primary IP source)
+// Default must match the previous hardcoded primary source so that
+// behavior is unchanged when the user never configures this.
+const defaultNetworkDetectionUrl = 'http://ip-api.com/json/?lang=zh-CN';
+
+// Preset network detection URLs (deduped from the existing built-in sources)
+const presetNetworkDetectionUrls = [
+  'http://ip-api.com/json/?lang=zh-CN',
+  'http://ip-api.com/json',
+  'https://get.geojs.io/v1/ip/geo.json',
+  'https://myip.ipip.net/json',
+  'https://ip.sb/cdn-cgi/trace',
+  'https://api.ip.sb/cdn-cgi/trace',
+  'https://www.qualcomm.cn/cdn-cgi/trace',
+  'https://www.teamviewer.cn/cdn-cgi/trace',
+];
+
 class CommonFilters {
   static final ImageFilter blur = ImageFilter.blur(
     sigmaX: 2,

@@ -816,6 +816,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "network": MessageLookupByLibrary.simpleMessage("ネットワーク"),
     "networkDesc": MessageLookupByLibrary.simpleMessage("ネットワーク関連設定を変更"),
     "networkDetection": MessageLookupByLibrary.simpleMessage("ネットワーク検出"),
+    "networkDetectionUrl": MessageLookupByLibrary.simpleMessage("ネットワーク検出URL"),
     "networkErrorRetryLater": MessageLookupByLibrary.simpleMessage(
       "ネットワークエラーが発生しました。後でもう一度お試しください",
     ),

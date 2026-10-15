@@ -923,5 +923,6 @@
   "skipCertVerifyDesc": "자체 서명 인증서 또는 TLS 핸드셰이크 오류를 해결합니다",
   "serverAddressRequired": "서버 주소를 입력하세요",
   "nodeAdded": "노드를 추가했습니다: {name}",
-  "saveNode": "노드 저장"
+  "saveNode": "노드 저장",
+  "networkDetectionUrl": "네트워크 감지 URL"
 }

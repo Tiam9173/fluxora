@@ -923,5 +923,6 @@
   "skipCertVerifyDesc": "解决自签证书或 TLS 握手报错",
   "serverAddressRequired": "请填写服务器地址",
   "nodeAdded": "已添加节点: {name}",
-  "saveNode": "保存节点"
+  "saveNode": "保存节点",
+  "networkDetectionUrl": "网络检测链接"
 }
