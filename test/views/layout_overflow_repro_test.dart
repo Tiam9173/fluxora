@@ -78,6 +78,19 @@ void main() {
     Size(1280, 720),
   ];
 
+  // P1 — narrow-screen regression tier for the ChainProxyView topology header.
+  //
+  // The shared [sizes] list above starts at 360 dp, but the topology card header
+  // (Expanded title + probe button + status chip) actually overflowed at 280 dp.
+  // These extra widths are scoped to the ChainProxyView group only: the other
+  // groups in this file are desktop-only dialogs/pages whose minimum supported
+  // width is 360 dp, so widening the shared list would assert behaviour they
+  // never claimed to support. The check itself is unchanged (`takeException`).
+  const List<Size> narrowSizes = [
+    Size(320, 640),
+    Size(280, 560),
+  ];
+
   Future<void> applySize(WidgetTester tester, Size size) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
@@ -542,7 +555,9 @@ void main() {
       defaultDialerProxy: 'HK-01-香港-中转-东京-优化线路-01',
     );
 
-    for (final size in sizes) {
+    // P1: include the narrow tier so the topology-header overflow that only
+    // appeared below 360 dp is permanently covered.
+    for (final size in [...sizes, ...narrowSizes]) {
       testWidgets('two-hop, no overflow at ${size.width}x${size.height}',
           (tester) async {
         await pumpAt(tester, size, twoHop());
