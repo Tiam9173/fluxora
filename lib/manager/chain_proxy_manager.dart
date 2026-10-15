@@ -28,6 +28,8 @@ import 'package:fluxora/services/core_health_service.dart';
 import 'package:fluxora/services/atomic_config_storage.dart';
 import 'package:fluxora/services/persistence_schema.dart';
 import 'package:fluxora/models/chain_reliability_stats.dart';
+import 'package:fluxora/models/latency_freshness.dart';
+import 'package:fluxora/models/latency_state.dart';
 import 'package:fluxora/services/chain_capability_probe_service.dart';
 import 'package:fluxora/services/chain_probe_service.dart';
 import 'package:fluxora/services/chain_capability_service.dart';
@@ -218,6 +220,9 @@ class ChainProxyManager extends ChangeNotifier {
     _consecutiveHealthCheckFailures = 0;
     _reliabilityPersistTimer?.cancel();
     _reliabilityPersistTimer = null;
+    // RC.11-C1: a pending freshness transition must not fire after teardown.
+    _freshnessTickTimer?.cancel();
+    _freshnessTickTimer = null;
     chainTelemetryService.removeListener(_telemetryListener);
     chainFlapDampenerService.removeListener(_flapListener);
     // RC.11-A (F-AR4): drop the transport hook together with the rest of the
@@ -241,6 +246,10 @@ class ChainProxyManager extends ChangeNotifier {
     // bumps `stateVersion`, which is part of the ranking `stateFingerprint`.
     networkFingerprintProvider.onChanged = (_) {
       notifyListeners();
+      // RC.11-C1: a transport change re-scopes every observation, so a pending
+      // freshness transition (computed against the OLD fingerprint) is now
+      // stale and must be recomputed.
+      _scheduleFreshnessTick();
     };
 
     try {
@@ -359,6 +368,10 @@ class ChainProxyManager extends ChangeNotifier {
     // or fail `init()`. The runtime probes are started by
     // `refreshCapabilityProfiles` itself.
     unawaited(refreshCapabilityProfiles());
+
+    // RC.11-C1: the restored pool may already hold gated latency observations,
+    // so arm the first freshness transition from startup.
+    _scheduleFreshnessTick();
 
     // P0: a persisted `autoFailover: true` must actually resume the loop after a
     // restart. Before this, nothing in production ever started the loop, so the
@@ -875,6 +888,145 @@ class ChainProxyManager extends ChangeNotifier {
   Timer? _chainHealthTimer;
   Timer? _reliabilityPersistTimer;
 
+  /// RC.11-C1 (F-AR5) — the single-shot timer that advances `stateVersion` when
+  /// the **next real latency-freshness transition** becomes due.
+  ///
+  /// Time itself is not a Riverpod dependency: `adaptiveRankingProvider` watches
+  /// only `groupsProvider` / `selectedMapProvider` / `capabilityRevision` /
+  /// `stateVersion` / the network fingerprint, and `rankingStateFingerprint`
+  /// carries no time component. So when an observation crosses
+  /// `LatencyFreshness.trustedMaxAge` / `degradedMaxAge` with no other change,
+  /// nothing would re-rank. This timer closes that gap by doing exactly one
+  /// thing at the boundary: `notifyListeners()`. That bumps `stateVersion`,
+  /// which is already a fingerprint input, so the existing cache-miss path
+  /// (NOT a bypass) recomputes the ranking.
+  ///
+  /// It never probes the network and never writes candidate business data.
+  Timer? _freshnessTickTimer;
+
+  /// The delay until the next transition, or `null` when no observation is
+  /// currently in a gated (`trusted` / `degraded`) state.
+  ///
+  /// Exposed for tests so the schedule can be asserted without waiting on a
+  /// real timer. Production callers use [_scheduleFreshnessTick].
+  @visibleForTesting
+  Duration? nextFreshnessTransitionDelay() =>
+      _computeNextFreshnessTransition(_now());
+
+  /// Cancels any armed freshness tick. Exposed for tests so a case can drop the
+  /// timer it caused to be re-armed, without disposing the shared singleton.
+  @visibleForTesting
+  void cancelFreshnessTick() {
+    _freshnessTickTimer?.cancel();
+    _freshnessTickTimer = null;
+  }
+
+  /// Test seam: overrides the clock used by the freshness tick. `null` in
+  /// production, where [now] falls back to `DateTime.now()` — the same optional
+  /// injection pattern `ChainFallbackPolicy.clock` already uses
+  /// (`chain_fallback_service.dart:49/67`).
+  @visibleForTesting
+  static DateTime Function()? freshnessClockOverride;
+
+  /// The clock this tick schedules against. Production default is the wall
+  /// clock; tests inject a controllable one.
+  ///
+  /// Private on purpose: it is only ever called from within this class, so
+  /// marking it `@visibleForTesting` would wrongly flag production use.
+  DateTime _now() =>
+      freshnessClockOverride != null ? freshnessClockOverride!() : DateTime.now();
+
+  /// The delay from [from] until the earliest applicable freshness transition
+  /// among the current candidates, or `null` if none is due.
+  ///
+  /// Only the **gated** states are considered (`evaluate` returning `trusted`
+  /// or `degraded`), because `unknown` is terminal — it can never transition
+  /// again. Thresholds are read from [LatencyFreshness] rather than duplicated;
+  /// the `<=` boundary and the fingerprint / scope checks are exactly those of
+  /// [LatencyFreshness.evaluate], so this schedule can never disagree with the
+  /// gate that produced the value the UI shows.
+  ///
+  /// A 1-second guard is added so a timer that fires slightly early (or a
+  /// still-equal age due to clock granularity) cannot reschedule itself into a
+  /// busy loop.
+  Duration? _computeNextFreshnessTransition(DateTime from) {
+    final String currentFingerprint =
+        networkFingerprintProvider.getCurrentFingerprint();
+    Duration? earliest;
+
+    void consider(LatencyState? state) {
+      if (state == null) return;
+      if (state.scope != LatencyScope.node) return;
+      if (state.fingerprint != currentFingerprint) return;
+
+      final LatencyFreshness freshness = LatencyFreshness.evaluate(
+        state: state,
+        now: from,
+        currentFingerprint: currentFingerprint,
+        expectedScope: LatencyScope.node,
+      );
+
+      // `unknown` is terminal: nothing to schedule. `trusted` → the age at
+      // which it becomes `degraded`; `degraded` → the age at which it becomes
+      // `unknown`.
+      final Duration? boundary;
+      switch (freshness) {
+        case LatencyFreshness.trusted:
+          boundary = LatencyFreshness.trustedMaxAge;
+        case LatencyFreshness.degraded:
+          boundary = LatencyFreshness.degradedMaxAge;
+        case LatencyFreshness.unknown:
+          return;
+      }
+
+      final Duration age = from.difference(state.testedAt);
+      // A negative age is `trusted` by contract but has no well-defined
+      // transition instant off the stored timestamp; skip it rather than
+      // schedule an arbitrary delay.
+      if (age.isNegative) return;
+
+      final Duration delay =
+          (boundary - age) + const Duration(seconds: 1);
+      if (earliest == null || delay < earliest!) earliest = delay;
+    }
+
+    for (final c in _fallbackPool.entryCandidates) {
+      consider(c.nodeLatency);
+    }
+    for (final c in _fallbackPool.relayCandidates) {
+      consider(c.nodeLatency);
+    }
+    for (final c in _fallbackPool.exitCandidates) {
+      consider(c.nodeLatency);
+    }
+    return earliest;
+  }
+
+  /// (Re)arms [_freshnessTickTimer] from the current pool.
+  ///
+  /// Always cancels first, so a repeated call never leaves two live timers;
+  /// when no transition is pending the timer is simply left cancelled (no空转
+  /// polling).
+  void _scheduleFreshnessTick() {
+    _freshnessTickTimer?.cancel();
+    _freshnessTickTimer = null;
+
+    final Duration? delay = _computeNextFreshnessTransition(_now());
+    if (delay == null) return;
+
+    _freshnessTickTimer = Timer(delay, () {
+      // A timer that outlives `dispose()` must do no work. `notifyListeners()`
+      // has its own `_disposed` guard, but skipping here avoids even the
+      // reschedule.
+      if (_disposed) return;
+      // The only effect: advance `stateVersion` through the normal path.
+      notifyListeners();
+      // Re-arm for the following boundary — a single-shot timer would
+      // otherwise stop permanently after one transition.
+      _scheduleFreshnessTick();
+    });
+  }
+
   /// Authoritative "un-persisted reliability samples exist" marker.
   ///
   /// It is set the moment a persist becomes pending — *before* the
@@ -1019,6 +1171,9 @@ class ChainProxyManager extends ChangeNotifier {
   Future<void> setFallbackPool(ChainFallbackPool pool) async {
     _fallbackPool = pool;
     notifyListeners();
+    // RC.11-C1: candidate set changed ⇒ the pending freshness transition may
+    // differ (a new observation shortens it, a removed one drops it).
+    _scheduleFreshnessTick();
   }
 
   // ─── Phase 5.x Failover Lifecycle ────────────────────────────────────────
@@ -1120,6 +1275,10 @@ class ChainProxyManager extends ChangeNotifier {
           notifyListeners();
           // Failover records reliability samples too — persist (debounced).
           _scheduleReliabilityPersist();
+          // RC.11-C1: the failover writer is the ONLY producer of
+          // `nodeLatency`, so this is where a fresh observation actually
+          // appears — re-arm the freshness transition from the new pool.
+          _scheduleFreshnessTick();
         },
       );
 
@@ -1698,6 +1857,9 @@ class ChainProxyManager extends ChangeNotifier {
     notifyListeners();
     await _saveFallbackPool();
     _scheduleReliabilityPersist();
+    // RC.11-C1: this is the other pool write path (`:1117` is the failover
+    // callback), so a freshness transition may have changed with it.
+    _scheduleFreshnessTick();
   }
 
   Future<void> setAutoFailover(bool enable) async {
