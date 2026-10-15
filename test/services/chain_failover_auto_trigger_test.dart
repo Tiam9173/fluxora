@@ -302,6 +302,31 @@ void main() {
       await manager.runChainHealthCheck();
       expect(manager.consecutiveHealthCheckFailures, 0);
     });
+
+    test('I. a redundant start does not reset the failure counter (F-C1)',
+        () async {
+      await enableAuto();
+      await manager.updateFallbackPool((_) => poolWithExit('US-FB-01'));
+
+      // A live loop, started through the same public entry the tests use.
+      manager.startChainHealthCheck();
+      expect(manager.isAutoHealthCheckRunning, isTrue);
+
+      _healthReport = _failed;
+      await manager.runChainHealthCheck();
+      expect(manager.consecutiveHealthCheckFailures, 1);
+
+      // F-C1: a second start must not cancel-and-restart the live loop. Doing so
+      // would reset the consecutive-failure counter and delay detection by a
+      // whole failure window.
+      manager.startChainHealthCheck();
+      expect(
+        manager.consecutiveHealthCheckFailures,
+        1,
+        reason: 'restarting an already-running loop must not reset the counter',
+      );
+      expect(manager.isAutoHealthCheckRunning, isTrue);
+    });
   });
 
   // ── Condition gate ────────────────────────────────────────────────────────

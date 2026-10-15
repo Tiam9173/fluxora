@@ -1516,10 +1516,24 @@ class ChainProxyManager extends ChangeNotifier {
   /// as "every node is available" — and refuse to report success.
   List<String>? get availableProxyNames => _availableProxyNames();
 
+  /// Starts the periodic health-check loop if it is not already running.
+  ///
+  /// F-C1: this is **not** a production entry point. Production turns the loop
+  /// on only through [_syncChainHealthCheck], which gates on the desired config
+  /// state; it is public purely so tests can drive the loop directly, hence
+  /// [visibleForTesting] (a production caller in another library would get an
+  /// `invalid_use_of_visible_for_testing_member` warning).
+  ///
+  /// It is also **self-guarding**: a call while the loop is already live is a
+  /// no-op. Without this, a stray caller could cancel-and-restart a running
+  /// loop and thereby reset [_consecutiveHealthCheckFailures] — which delays
+  /// automatic-failover detection by up to one full failure window. Use
+  /// [stopChainHealthCheck] to end the loop; a later start resets the counter as
+  /// expected.
+  @visibleForTesting
   void startChainHealthCheck() {
-    if (_chainHealthTimer != null) {
-      _chainHealthTimer!.cancel();
-    }
+    if (isAutoHealthCheckRunning) return;
+    _chainHealthTimer?.cancel();
     _consecutiveHealthCheckFailures = 0;
     _chainHealthTimer = Timer.periodic(autoHealthCheckInterval, (_) {
       runChainHealthCheck();
