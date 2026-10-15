@@ -274,11 +274,15 @@ class ProviderItem extends StatelessWidget {
             style: context.textTheme.labelMedium?.toLight,
           ),
           const SizedBox(width: 6),
-          Text(
-            subtitleText,
-            style: context.textTheme.labelMedium?.toLight,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          // P1: Flexible so a long expire descriptor ellipsises instead of
+          // overflowing the row on a narrow phone.
+          Flexible(
+            child: Text(
+              subtitleText,
+              style: context.textTheme.labelMedium?.toLight,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ],

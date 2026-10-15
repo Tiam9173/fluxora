@@ -532,12 +532,19 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                '${appLocalizations.landingProxies} (${landingProxies.length})',
-                style: context.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+              // P1: Expanded so a long localized title ellipsises instead of
+              // pushing the trailing action buttons off-screen on a narrow phone.
+              Expanded(
+                child: Text(
+                  '${appLocalizations.landingProxies} (${landingProxies.length})',
+                  style: context.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
+              const SizedBox(width: 8),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -1036,21 +1043,33 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
           children: [
             Row(
               children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.hub_rounded,
-                      size: 20,
-                      color: context.colorScheme.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      '动态链路拓扑',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                    ),
-                  ],
+                // P1: the title sub-row is wrapped in Expanded (and the title in
+                // Flexible) so the trailing probe button / status chip keep their
+                // intrinsic width on a narrow phone instead of overflowing.
+                Expanded(
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.hub_rounded,
+                        size: 20,
+                        color: context.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      const Flexible(
+                        child: Text(
+                          '动态链路拓扑',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                const Spacer(),
+                const SizedBox(width: 8),
                 _buildChainProbeButton(context),
                 const SizedBox(width: 8),
                 Container(
@@ -2530,7 +2549,15 @@ class _ProxyHealthReportDialog extends ConsumerWidget {
           children: [
             const Icon(Icons.help_outline, color: Colors.grey),
             const SizedBox(width: 8),
-            Text(appLocalizations.healthUntested),
+            // P1: Expanded so a long localized label ellipsises rather than
+            // overflowing this full-width status container.
+            Expanded(
+              child: Text(
+                appLocalizations.healthUntested,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
       );
