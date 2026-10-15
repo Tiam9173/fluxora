@@ -81,7 +81,7 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              '前置与落地代理 · $profileName',
+              appLocalizations.profileChainDialogTitle(profileName),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontSize: 18),
@@ -116,7 +116,7 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                               Icon(Icons.hub_rounded, size: 16, color: colorScheme.primary),
                               const SizedBox(width: 6),
                               Text(
-                                '链式路由拓扑预览',
+                                appLocalizations.chainTopologyPreview,
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 13,
@@ -134,32 +134,32 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                               // Row overflowed by 112 px at 360 px width.
                               Flexible(
                                 child: _buildHopNode(
-                                  '设备应用',
-                                  '本机',
+                                  appLocalizations.chainNodeDeviceApp,
+                                  appLocalizations.chainNodeLocal,
                                   Colors.grey,
                                 ),
                               ),
                               const Icon(Icons.arrow_forward_rounded, size: 14, color: Colors.grey),
                               Flexible(
                                 child: _buildHopNode(
-                                  '前置代理',
-                                  _config.preProxy?.isNotEmpty == true ? _config.preProxy! : '直连 (无)',
+                                  appLocalizations.chainNodePreProxy,
+                                  _config.preProxy?.isNotEmpty == true ? _config.preProxy! : appLocalizations.chainPreProxyNone,
                                   _config.preProxy?.isNotEmpty == true ? Colors.blue : Colors.grey,
                                 ),
                               ),
                               const Icon(Icons.arrow_forward_rounded, size: 14, color: Colors.grey),
                               Flexible(
                                 child: _buildHopNode(
-                                  '订阅节点',
-                                  '本组节点',
+                                  appLocalizations.chainNodeSubscription,
+                                  appLocalizations.chainNodeGroupNodes,
                                   Colors.teal,
                                 ),
                               ),
                               const Icon(Icons.arrow_forward_rounded, size: 14, color: Colors.grey),
                               Flexible(
                                 child: _buildHopNode(
-                                  '落地出口',
-                                  _config.landingProxy?.isNotEmpty == true ? _config.landingProxy! : '默认 (无)',
+                                  appLocalizations.roleExit,
+                                  _config.landingProxy?.isNotEmpty == true ? _config.landingProxy! : appLocalizations.chainLandingProxyNone,
                                   _config.landingProxy?.isNotEmpty == true ? Colors.deepPurple : Colors.grey,
                                 ),
                               ),
@@ -173,8 +173,8 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                     // Enable Switch
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('启用此订阅的分组链式代理'),
-                      subtitle: const Text('支持前置跳板中继与最终落地出口配置'),
+                      title: Text(appLocalizations.enableProfileChain),
+                      subtitle: Text(appLocalizations.enableProfileChainDesc),
                       value: _config.enable,
                       onChanged: (val) {
                         setState(() => _config = _config.copyWith(enable: val));
@@ -184,7 +184,7 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
 
                     // 1. Pre-Proxy (前置代理)
                     Text(
-                      '1. 前置代理 (Pre-Proxy)',
+                      appLocalizations.preProxySectionTitle,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
@@ -193,7 +193,7 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '流量进入订阅节点前，先经由前置节点穿透中继。可用于拯救被封锁的节点。',
+                      appLocalizations.preProxySectionDesc,
                       style: TextStyle(fontSize: 12, color: colorScheme.outline),
                     ),
                     const SizedBox(height: 8),
@@ -211,10 +211,10 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       ),
                       items: [
-                        const DropdownMenuItem(value: 'NONE', child: Text('无 (直连订阅节点)')),
+                        DropdownMenuItem(value: 'NONE', child: Text(appLocalizations.preProxyOptionNone)),
                         for (final p in _candidateProxies)
                           DropdownMenuItem(value: p, child: Text(p, overflow: TextOverflow.ellipsis)),
-                        const DropdownMenuItem(value: 'CUSTOM', child: Text('✏️ 手动输入前置节点名称...')),
+                        DropdownMenuItem(value: 'CUSTOM', child: Text(appLocalizations.preProxyOptionCustom)),
                       ],
                       onChanged: (val) {
                         setState(() {
@@ -235,9 +235,9 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                       const SizedBox(height: 8),
                       TextField(
                         controller: _customPreCtrl,
-                        decoration: const InputDecoration(
-                          labelText: '自定义前置节点名称',
-                          border: OutlineInputBorder(),
+                        decoration: InputDecoration(
+                          labelText: appLocalizations.customPreProxyName,
+                          border: const OutlineInputBorder(),
                         ),
                         onChanged: (v) {
                           _config = _config.copyWith(preProxy: v.trim());
@@ -249,7 +249,7 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
 
                     // 2. Landing Proxy (落地代理)
                     Text(
-                      '2. 落地代理 (Landing Proxy)',
+                      appLocalizations.landingProxySectionTitle,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
@@ -258,7 +258,7 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '订阅节点作为前置跳板，最终以此节点为出口。可用于隐藏机场 IP、套 WARP 防送中、解锁 AI 与流媒体。',
+                      appLocalizations.landingProxySectionDesc,
                       style: TextStyle(fontSize: 12, color: colorScheme.outline),
                     ),
                     const SizedBox(height: 8),
@@ -274,10 +274,10 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       ),
                       items: [
-                        const DropdownMenuItem(value: 'NONE', child: Text('无 (以订阅节点为最终出口)')),
+                        DropdownMenuItem(value: 'NONE', child: Text(appLocalizations.landingProxyOptionNone)),
                         for (final p in _candidateProxies)
                           DropdownMenuItem(value: p, child: Text(p, overflow: TextOverflow.ellipsis)),
-                        const DropdownMenuItem(value: 'CUSTOM', child: Text('✏️ 手动输入落地节点名称...')),
+                        DropdownMenuItem(value: 'CUSTOM', child: Text(appLocalizations.landingProxyOptionCustom)),
                       ],
                       onChanged: (val) {
                         setState(() {
@@ -298,9 +298,9 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                       const SizedBox(height: 8),
                       TextField(
                         controller: _customLandingCtrl,
-                        decoration: const InputDecoration(
-                          labelText: '自定义落地节点名称',
-                          border: OutlineInputBorder(),
+                        decoration: InputDecoration(
+                          labelText: appLocalizations.customLandingProxyName,
+                          border: const OutlineInputBorder(),
                         ),
                         onChanged: (v) {
                           _config = _config.copyWith(landingProxy: v.trim());
@@ -314,7 +314,7 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('取消'),
+          child: Text(appLocalizations.cancel),
         ),
         FilledButton(
           onPressed: () async {
@@ -330,10 +330,10 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
             await profileChainManager.updateChain(widget.profile.id, (_) => toSave);
             if (context.mounted) {
               Navigator.of(context).pop();
-              context.showNotifier('已保存前置与落地代理设置');
+              context.showNotifier(appLocalizations.profileChainSaved);
             }
           },
-          child: const Text('保存并应用'),
+          child: Text(appLocalizations.saveAndApply),
         ),
       ],
     );

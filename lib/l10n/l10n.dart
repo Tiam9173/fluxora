@@ -6919,6 +6919,776 @@ class AppLocalizations {
   String get username {
     return Intl.message('Username', name: 'username', desc: '', args: []);
   }
+
+  /// `Create Empty Group`
+  String get createEmptyGroup {
+    return Intl.message(
+      'Create Empty Group',
+      name: 'createEmptyGroup',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Create a new blank configuration, supporting manual entry and management of self-hosted nodes across all protocols`
+  String get createEmptyGroupDesc {
+    return Intl.message(
+      'Create a new blank configuration, supporting manual entry and management of self-hosted nodes across all protocols',
+      name: 'createEmptyGroupDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Custom Nodes`
+  String get customNodesDefaultName {
+    return Intl.message(
+      'Custom Nodes',
+      name: 'customNodesDefaultName',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `After creating a blank group, you can manually add nodes for each protocol or import share links in bulk with one click.`
+  String get createEmptyGroupHint {
+    return Intl.message(
+      'After creating a blank group, you can manually add nodes for each protocol or import share links in bulk with one click.',
+      name: 'createEmptyGroupHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Group Name`
+  String get groupName {
+    return Intl.message('Group Name', name: 'groupName', desc: '', args: []);
+  }
+
+  /// `Blank group "{name}" created, please add nodes`
+  String createGroupSuccess(Object name) {
+    return Intl.message(
+      'Blank group "$name" created, please add nodes',
+      name: 'createGroupSuccess',
+      desc: '',
+      args: [name],
+    );
+  }
+
+  /// `Failed to create group: {error}`
+  String createGroupFailed(Object error) {
+    return Intl.message(
+      'Failed to create group: $error',
+      name: 'createGroupFailed',
+      desc: '',
+      args: [error],
+    );
+  }
+
+  /// `Pre-proxy & Landing Proxy · {name}`
+  String profileChainDialogTitle(Object name) {
+    return Intl.message(
+      'Pre-proxy & Landing Proxy · $name',
+      name: 'profileChainDialogTitle',
+      desc: '',
+      args: [name],
+    );
+  }
+
+  /// `Chain routing topology preview`
+  String get chainTopologyPreview {
+    return Intl.message(
+      'Chain routing topology preview',
+      name: 'chainTopologyPreview',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Device app`
+  String get chainNodeDeviceApp {
+    return Intl.message(
+      'Device app',
+      name: 'chainNodeDeviceApp',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Local`
+  String get chainNodeLocal {
+    return Intl.message('Local', name: 'chainNodeLocal', desc: '', args: []);
+  }
+
+  /// `Pre-proxy`
+  String get chainNodePreProxy {
+    return Intl.message(
+      'Pre-proxy',
+      name: 'chainNodePreProxy',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Direct (none)`
+  String get chainPreProxyNone {
+    return Intl.message(
+      'Direct (none)',
+      name: 'chainPreProxyNone',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Subscription node`
+  String get chainNodeSubscription {
+    return Intl.message(
+      'Subscription node',
+      name: 'chainNodeSubscription',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Group nodes`
+  String get chainNodeGroupNodes {
+    return Intl.message(
+      'Group nodes',
+      name: 'chainNodeGroupNodes',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Default (none)`
+  String get chainLandingProxyNone {
+    return Intl.message(
+      'Default (none)',
+      name: 'chainLandingProxyNone',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Enable chained proxy for this subscription group`
+  String get enableProfileChain {
+    return Intl.message(
+      'Enable chained proxy for this subscription group',
+      name: 'enableProfileChain',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Supports pre-proxy relay hopping and final landing exit configuration`
+  String get enableProfileChainDesc {
+    return Intl.message(
+      'Supports pre-proxy relay hopping and final landing exit configuration',
+      name: 'enableProfileChainDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `1. Pre-proxy`
+  String get preProxySectionTitle {
+    return Intl.message(
+      '1. Pre-proxy',
+      name: 'preProxySectionTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Before traffic enters the subscription node, it first tunnels through the pre-proxy node. Useful for rescuing blocked nodes.`
+  String get preProxySectionDesc {
+    return Intl.message(
+      'Before traffic enters the subscription node, it first tunnels through the pre-proxy node. Useful for rescuing blocked nodes.',
+      name: 'preProxySectionDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `None (connect directly to subscription node)`
+  String get preProxyOptionNone {
+    return Intl.message(
+      'None (connect directly to subscription node)',
+      name: 'preProxyOptionNone',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `✏️ Manually enter pre-proxy node name...`
+  String get preProxyOptionCustom {
+    return Intl.message(
+      '✏️ Manually enter pre-proxy node name...',
+      name: 'preProxyOptionCustom',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Custom pre-proxy node name`
+  String get customPreProxyName {
+    return Intl.message(
+      'Custom pre-proxy node name',
+      name: 'customPreProxyName',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `2. Landing proxy`
+  String get landingProxySectionTitle {
+    return Intl.message(
+      '2. Landing proxy',
+      name: 'landingProxySectionTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The subscription node acts as the pre-proxy hop, and this node becomes the final exit. Useful for hiding airport IPs, chaining WARP to avoid blocking, and unlocking AI and streaming.`
+  String get landingProxySectionDesc {
+    return Intl.message(
+      'The subscription node acts as the pre-proxy hop, and this node becomes the final exit. Useful for hiding airport IPs, chaining WARP to avoid blocking, and unlocking AI and streaming.',
+      name: 'landingProxySectionDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `None (use subscription node as final exit)`
+  String get landingProxyOptionNone {
+    return Intl.message(
+      'None (use subscription node as final exit)',
+      name: 'landingProxyOptionNone',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `✏️ Manually enter landing node name...`
+  String get landingProxyOptionCustom {
+    return Intl.message(
+      '✏️ Manually enter landing node name...',
+      name: 'landingProxyOptionCustom',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Custom landing node name`
+  String get customLandingProxyName {
+    return Intl.message(
+      'Custom landing node name',
+      name: 'customLandingProxyName',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Pre-proxy and landing proxy settings saved`
+  String get profileChainSaved {
+    return Intl.message(
+      'Pre-proxy and landing proxy settings saved',
+      name: 'profileChainSaved',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Save and apply`
+  String get saveAndApply {
+    return Intl.message(
+      'Save and apply',
+      name: 'saveAndApply',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Confirm deletion`
+  String get confirmDelete {
+    return Intl.message(
+      'Confirm deletion',
+      name: 'confirmDelete',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Are you sure you want to delete node "{name}"?`
+  String confirmDeleteNodeMsg(Object name) {
+    return Intl.message(
+      'Are you sure you want to delete node "$name"?',
+      name: 'confirmDeleteNodeMsg',
+      desc: '',
+      args: [name],
+    );
+  }
+
+  /// `Node deleted: {name}`
+  String nodeDeleted(Object name) {
+    return Intl.message(
+      'Node deleted: $name',
+      name: 'nodeDeleted',
+      desc: '',
+      args: [name],
+    );
+  }
+
+  /// `Batch import share links`
+  String get batchImportShareLinks {
+    return Intl.message(
+      'Batch import share links',
+      name: 'batchImportShareLinks',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Supports single/multi-line links or YAML/JSON node snippets:`
+  String get batchImportSupportHint {
+    return Intl.message(
+      'Supports single/multi-line links or YAML/JSON node snippets:',
+      name: 'batchImportSupportHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Paste node share links or node config (YAML/JSON) here...`
+  String get batchImportPasteHint {
+    return Intl.message(
+      'Paste node share links or node config (YAML/JSON) here...',
+      name: 'batchImportPasteHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No valid node link could be parsed. Please check the format.`
+  String get batchImportParseFailed {
+    return Intl.message(
+      'No valid node link could be parsed. Please check the format.',
+      name: 'batchImportParseFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Successfully imported {count} node(s)`
+  String batchImportSuccess(Object count) {
+    return Intl.message(
+      'Successfully imported $count node(s)',
+      name: 'batchImportSuccess',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `Confirm import`
+  String get confirmImport {
+    return Intl.message(
+      'Confirm import',
+      name: 'confirmImport',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Node management · {name}`
+  String nodeManagement(Object name) {
+    return Intl.message(
+      'Node management · $name',
+      name: 'nodeManagement',
+      desc: '',
+      args: [name],
+    );
+  }
+
+  /// `Batch import links`
+  String get batchImportLinks {
+    return Intl.message(
+      'Batch import links',
+      name: 'batchImportLinks',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Refresh`
+  String get refresh {
+    return Intl.message('Refresh', name: 'refresh', desc: '', args: []);
+  }
+
+  /// `Manually add node`
+  String get manualAddNode {
+    return Intl.message(
+      'Manually add node',
+      name: 'manualAddNode',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No nodes in this group yet`
+  String get noNodesInGroup {
+    return Intl.message(
+      'No nodes in this group yet',
+      name: 'noNodesInGroup',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Tap "Manually add node" at the bottom right or "Batch import links" at the top right`
+  String get noNodesInGroupHint {
+    return Intl.message(
+      'Tap "Manually add node" at the bottom right or "Batch import links" at the top right',
+      name: 'noNodesInGroupHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Import share links`
+  String get importShareLinks {
+    return Intl.message(
+      'Import share links',
+      name: 'importShareLinks',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Manual entry`
+  String get manualEntry {
+    return Intl.message(
+      'Manual entry',
+      name: 'manualEntry',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Unnamed node`
+  String get unnamedNode {
+    return Intl.message(
+      'Unnamed node',
+      name: 'unnamedNode',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Custom config node`
+  String get customConfigNode {
+    return Intl.message(
+      'Custom config node',
+      name: 'customConfigNode',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Delete node`
+  String get deleteNode {
+    return Intl.message('Delete node', name: 'deleteNode', desc: '', args: []);
+  }
+
+  /// `Node protocol`
+  String get nodeProtocol {
+    return Intl.message(
+      'Node protocol',
+      name: 'nodeProtocol',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Enter or paste a complete node YAML or JSON config snippet here:`
+  String get customConfigHintText {
+    return Intl.message(
+      'Enter or paste a complete node YAML or JSON config snippet here:',
+      name: 'customConfigHintText',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Custom config (YAML / JSON)`
+  String get customConfigLabel {
+    return Intl.message(
+      'Custom config (YAML / JSON)',
+      name: 'customConfigLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Node name`
+  String get nodeNameLabel {
+    return Intl.message('Node name', name: 'nodeNameLabel', desc: '', args: []);
+  }
+
+  /// `e.g. Hong Kong 01 - {proto}`
+  String nodeNameHint(Object proto) {
+    return Intl.message(
+      'e.g. Hong Kong 01 - $proto',
+      name: 'nodeNameHint',
+      desc: '',
+      args: [proto],
+    );
+  }
+
+  /// `Server address`
+  String get serverAddressLabel {
+    return Intl.message(
+      'Server address',
+      name: 'serverAddressLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `IP or domain`
+  String get serverAddressHint {
+    return Intl.message(
+      'IP or domain',
+      name: 'serverAddressHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Port`
+  String get portLabel {
+    return Intl.message('Port', name: 'portLabel', desc: '', args: []);
+  }
+
+  /// `Private key`
+  String get privateKey {
+    return Intl.message('Private key', name: 'privateKey', desc: '', args: []);
+  }
+
+  /// `PSK pre-shared key`
+  String get pskKey {
+    return Intl.message(
+      'PSK pre-shared key',
+      name: 'pskKey',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Password`
+  String get passwordAuth {
+    return Intl.message('Password', name: 'passwordAuth', desc: '', args: []);
+  }
+
+  /// `Juicity password (fill UUID above)`
+  String get juicityPassword {
+    return Intl.message(
+      'Juicity password (fill UUID above)',
+      name: 'juicityPassword',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Username (optional)`
+  String get usernameOptional {
+    return Intl.message(
+      'Username (optional)',
+      name: 'usernameOptional',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Network`
+  String get networkLabel {
+    return Intl.message('Network', name: 'networkLabel', desc: '', args: []);
+  }
+
+  /// `Security/TLS`
+  String get securityLabel {
+    return Intl.message(
+      'Security/TLS',
+      name: 'securityLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `None (plaintext)`
+  String get securityNonePlain {
+    return Intl.message(
+      'None (plaintext)',
+      name: 'securityNonePlain',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Obfs mode`
+  String get obfsModeLabel {
+    return Intl.message('Obfs mode', name: 'obfsModeLabel', desc: '', args: []);
+  }
+
+  /// `None (off)`
+  String get obfsNoneOff {
+    return Intl.message('None (off)', name: 'obfsNoneOff', desc: '', args: []);
+  }
+
+  /// `Snell version (1-4)`
+  String get snellVersion {
+    return Intl.message(
+      'Snell version (1-4)',
+      name: 'snellVersion',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `REALITY public key`
+  String get realityPublicKey {
+    return Intl.message(
+      'REALITY public key',
+      name: 'realityPublicKey',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `SNI (ServerName / camouflage domain)`
+  String get sniLabel {
+    return Intl.message(
+      'SNI (ServerName / camouflage domain)',
+      name: 'sniLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Leave blank to default to the server address`
+  String get sniHint {
+    return Intl.message(
+      'Leave blank to default to the server address',
+      name: 'sniHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Cipher`
+  String get cipherLabel {
+    return Intl.message('Cipher', name: 'cipherLabel', desc: '', args: []);
+  }
+
+  /// `Up`
+  String get upLabel {
+    return Intl.message('Up', name: 'upLabel', desc: '', args: []);
+  }
+
+  /// `Down`
+  String get downLabel {
+    return Intl.message('Down', name: 'downLabel', desc: '', args: []);
+  }
+
+  /// `Peer public key`
+  String get peerPublicKey {
+    return Intl.message(
+      'Peer public key',
+      name: 'peerPublicKey',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Local IP`
+  String get localIpLabel {
+    return Intl.message('Local IP', name: 'localIpLabel', desc: '', args: []);
+  }
+
+  /// `AmneziaWG 2/3 obfuscation parameters (Jc / Jmin / Jmax / S1 / S2 / H1-H4)`
+  String get amneziaObfsParams {
+    return Intl.message(
+      'AmneziaWG 2/3 obfuscation parameters (Jc / Jmin / Jmax / S1 / S2 / H1-H4)',
+      name: 'amneziaObfsParams',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Jc (junk packet count)`
+  String get jcLabel {
+    return Intl.message(
+      'Jc (junk packet count)',
+      name: 'jcLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Enable UDP forwarding`
+  String get enableUdpForwarding {
+    return Intl.message(
+      'Enable UDP forwarding',
+      name: 'enableUdpForwarding',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Skip certificate verification`
+  String get skipCertVerify {
+    return Intl.message(
+      'Skip certificate verification',
+      name: 'skipCertVerify',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Fixes self-signed certificate or TLS handshake errors`
+  String get skipCertVerifyDesc {
+    return Intl.message(
+      'Fixes self-signed certificate or TLS handshake errors',
+      name: 'skipCertVerifyDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Please enter the server address`
+  String get serverAddressRequired {
+    return Intl.message(
+      'Please enter the server address',
+      name: 'serverAddressRequired',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Node added: {name}`
+  String nodeAdded(Object name) {
+    return Intl.message(
+      'Node added: $name',
+      name: 'nodeAdded',
+      desc: '',
+      args: [name],
+    );
+  }
+
+  /// `Save node`
+  String get saveNode {
+    return Intl.message('Save node', name: 'saveNode', desc: '', args: []);
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {

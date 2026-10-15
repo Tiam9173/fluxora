@@ -170,8 +170,8 @@ class AddProfileView extends StatelessWidget {
               ),
               ListItem(
                 leading: const Icon(Icons.playlist_add_rounded, color: Colors.blueAccent),
-                title: const Text('新建空白分组'),
-                subtitle: const Text('创建一个新的空白配置，支持手动录入与管理全协议自建节点'),
+                title: Text(appLocalizations.createEmptyGroup),
+                subtitle: Text(appLocalizations.createEmptyGroupDesc),
                 onTap: () => _handleCreateEmptyProfile(context),
               ),
             ],
@@ -182,15 +182,15 @@ class AddProfileView extends StatelessWidget {
   }
 
   Future<void> _handleCreateEmptyProfile(BuildContext ctx) async {
-    final nameCtrl = TextEditingController(text: '自建节点');
+    final nameCtrl = TextEditingController(text: appLocalizations.customNodesDefaultName);
     final confirmed = await showDialog<bool>(
       context: ctx,
       builder: (dialogCtx) => AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.playlist_add_rounded, color: Colors.blueAccent),
-            SizedBox(width: 8),
-            Text('新建空白分组'),
+            const Icon(Icons.playlist_add_rounded, color: Colors.blueAccent),
+            const SizedBox(width: 8),
+            Text(appLocalizations.createEmptyGroup),
           ],
         ),
         content: SizedBox(
@@ -199,17 +199,17 @@ class AddProfileView extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                '创建空白分组后，您可以手动录入各协议节点或一键批量导入分享链接。',
-                style: TextStyle(fontSize: 13, color: Colors.grey),
+              Text(
+                appLocalizations.createEmptyGroupHint,
+                style: const TextStyle(fontSize: 13, color: Colors.grey),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: nameCtrl,
                 autofocus: true,
-                decoration: const InputDecoration(
-                  labelText: '分组名称',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: appLocalizations.groupName,
+                  border: const OutlineInputBorder(),
                 ),
               ),
             ],
@@ -218,18 +218,20 @@ class AddProfileView extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogCtx).pop(false),
-            child: const Text('取消'),
+            child: Text(appLocalizations.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogCtx).pop(true),
-            child: const Text('创建'),
+            child: Text(appLocalizations.create),
           ),
         ],
       ),
     );
 
     if (confirmed != true) return;
-    final groupName = nameCtrl.text.trim().isNotEmpty ? nameCtrl.text.trim() : '自建节点';
+    final groupName = nameCtrl.text.trim().isNotEmpty
+        ? nameCtrl.text.trim()
+        : appLocalizations.customNodesDefaultName;
 
     const initialYaml = '''
 mixed-port: 7890
@@ -258,11 +260,13 @@ rules:
           navState.context,
           ProfileNodesView(profile: savedProfile),
         );
-        navState.context.showNotifier('空白分组 "$groupName" 创建成功，请添加节点');
+        navState.context.showNotifier(
+          appLocalizations.createGroupSuccess(groupName),
+        );
       }
     } catch (e) {
       if (ctx.mounted) {
-        ctx.showSnackBar('创建分组失败: $e');
+        ctx.showSnackBar(appLocalizations.createGroupFailed(e.toString()));
       }
     }
   }

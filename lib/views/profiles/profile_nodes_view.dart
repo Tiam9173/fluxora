@@ -40,8 +40,10 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
 
   Future<void> _handleDeleteProxy(String proxyName) async {
     final confirm = await globalState.showMessage(
-      title: '确认删除',
-      message: TextSpan(text: '确定要删除节点 "$proxyName" 吗？'),
+      title: appLocalizations.confirmDelete,
+      message: TextSpan(
+        text: appLocalizations.confirmDeleteNodeMsg(proxyName),
+      ),
     );
     if (confirm != true) return;
 
@@ -52,7 +54,7 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
     setState(() => _profile = updated);
     await _loadProxies();
     if (mounted) {
-      context.showNotifier('已删除节点: $proxyName');
+      context.showNotifier(appLocalizations.nodeDeleted(proxyName));
     }
     // Reload core if active
     if (globalState.config.currentProfileId == _profile.id) {
@@ -66,11 +68,11 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          title: const Row(
+          title: Row(
             children: [
-              Icon(Icons.link_rounded, color: Colors.blueAccent),
-              SizedBox(width: 8),
-              Text('批量导入分享链接'),
+              const Icon(Icons.link_rounded, color: Colors.blueAccent),
+              const SizedBox(width: 8),
+              Text(appLocalizations.batchImportShareLinks),
             ],
           ),
           content: SizedBox(
@@ -84,19 +86,19 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    '支持单条/多行链接或 YAML/JSON 节点片段：\n'
+                  Text(
+                    '${appLocalizations.batchImportSupportHint}\n'
                     'vmess://, vless://, ss://, ssr://, trojan://, trojan-go://, hy2://, hysteria://, tuic://, '
                     'wireguard://, awg://, snell://, ssh://, shadow-tls://, juicity://, naive://, socks5://, http://, direct://',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: controller,
                     maxLines: 8,
-                    decoration: const InputDecoration(
-                      hintText: '在此粘贴节点分享链接或节点配置 (YAML/JSON)...',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      hintText: appLocalizations.batchImportPasteHint,
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -104,7 +106,7 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
                     alignment: Alignment.centerRight,
                     child: TextButton.icon(
                       icon: const Icon(Icons.paste_rounded, size: 16),
-                      label: const Text('从剪贴板粘贴'),
+                      label: Text(appLocalizations.pasteFromClipboard),
                       onPressed: () async {
                         final data = await Clipboard.getData(
                           Clipboard.kTextPlain,
@@ -122,7 +124,7 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('取消'),
+              child: Text(appLocalizations.cancel),
             ),
             FilledButton(
               onPressed: () async {
@@ -131,7 +133,7 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
                 final parsedList = ManualProxyHelper.parseMultipleLinks(text);
                 if (parsedList.isEmpty) {
                   if (ctx.mounted) {
-                    ctx.showSnackBar('未能解析到有效节点链接，请核对格式');
+                    ctx.showSnackBar(appLocalizations.batchImportParseFailed);
                   }
                   return;
                 }
@@ -145,13 +147,15 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
                 setState(() => _profile = updated);
                 await _loadProxies();
                 if (mounted) {
-                  context.showNotifier('成功导入 ${parsedList.length} 个节点');
+                  context.showNotifier(
+                    appLocalizations.batchImportSuccess(parsedList.length),
+                  );
                 }
                 if (globalState.config.currentProfileId == _profile.id) {
                   globalState.appController.applyProfileDebounce(silence: true);
                 }
               },
-              child: const Text('确认导入'),
+              child: Text(appLocalizations.confirmImport),
             ),
           ],
         );
@@ -221,16 +225,16 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
   Widget build(BuildContext context) {
     final colorScheme = context.colorScheme;
     return CommonScaffold(
-      title: '节点管理 · ${_profile.label ?? _profile.id}',
+      title: appLocalizations.nodeManagement(_profile.label ?? _profile.id),
       actions: [
         IconButton(
           icon: const Icon(Icons.link_rounded),
-          tooltip: '批量导入链接',
+          tooltip: appLocalizations.batchImportLinks,
           onPressed: _showBatchImportDialog,
         ),
         IconButton(
           icon: const Icon(Icons.refresh_rounded),
-          tooltip: '刷新',
+          tooltip: appLocalizations.refresh,
           onPressed: _loadProxies,
         ),
       ],
@@ -238,7 +242,7 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
         heroTag: null,
         onPressed: _showAddManualNodeDialog,
         icon: const Icon(Icons.add_rounded),
-        label: const Text('手动添加节点'),
+        label: Text(appLocalizations.manualAddNode),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -254,14 +258,14 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    '当前分组内暂无节点',
+                    appLocalizations.noNodesInGroup,
                     style: context.textTheme.titleMedium?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '点击右下方「手动添加节点」或右上角「批量导入链接」',
+                    appLocalizations.noNodesInGroupHint,
                     style: context.textTheme.bodySmall?.copyWith(
                       color: colorScheme.outline,
                     ),
@@ -272,13 +276,13 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
                     children: [
                       FilledButton.tonalIcon(
                         icon: const Icon(Icons.link_rounded),
-                        label: const Text('导入分享链接'),
+                        label: Text(appLocalizations.importShareLinks),
                         onPressed: _showBatchImportDialog,
                       ),
                       const SizedBox(width: 12),
                       FilledButton.icon(
                         icon: const Icon(Icons.edit_rounded),
-                        label: const Text('手动录入'),
+                        label: Text(appLocalizations.manualEntry),
                         onPressed: _showAddManualNodeDialog,
                       ),
                     ],
@@ -291,7 +295,8 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
               itemCount: _proxies.length,
               itemBuilder: (ctx, index) {
                 final p = _proxies[index];
-                final name = p['name']?.toString() ?? '未命名节点';
+                final name =
+                    p['name']?.toString() ?? appLocalizations.unnamedNode;
                 final type = p['type']?.toString().toUpperCase() ?? 'PROXY';
                 final server = p['server']?.toString() ?? '';
                 final port = p['port']?.toString() ?? '';
@@ -339,7 +344,9 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     subtitle: Text(
-                      server.isNotEmpty ? '$server:$port' : '自定义配置节点',
+                      server.isNotEmpty
+                          ? '$server:$port'
+                          : appLocalizations.customConfigNode,
                       style: TextStyle(
                         color: colorScheme.outline,
                         fontSize: 13,
@@ -350,7 +357,7 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
                         Icons.delete_outline_rounded,
                         color: Colors.redAccent,
                       ),
-                      tooltip: '删除节点',
+                      tooltip: appLocalizations.deleteNode,
                       onPressed: () => _handleDeleteProxy(name),
                     ),
                   ),
@@ -776,11 +783,11 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Row(
+      title: Row(
         children: [
-          Icon(Icons.edit_note_rounded, color: Colors.blueAccent),
-          SizedBox(width: 8),
-          Text('手动添加节点'),
+          const Icon(Icons.edit_note_rounded, color: Colors.blueAccent),
+          const SizedBox(width: 8),
+          Text(appLocalizations.manualAddNode),
         ],
       ),
       content: SizedBox(
@@ -798,10 +805,10 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                 // narrow window.
                 isExpanded: true,
                 initialValue: _protocol,
-                decoration: const InputDecoration(
-                  labelText: '节点协议 (Protocol)',
-                  border: OutlineInputBorder(),
-                  contentPadding: EdgeInsets.symmetric(
+                decoration: InputDecoration(
+                  labelText: appLocalizations.nodeProtocol,
+                  border: const OutlineInputBorder(),
+                  contentPadding: const EdgeInsets.symmetric(
                     horizontal: 12,
                     vertical: 8,
                   ),
@@ -833,28 +840,28 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
               const SizedBox(height: 12),
 
               if (_protocol == ManualProtocol.custom) ...[
-                const Text(
-                  '在此输入或粘贴完整的节点 YAML 或 JSON 配置片段：',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                Text(
+                  appLocalizations.customConfigHintText,
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
                 const SizedBox(height: 8),
                 TextField(
                   controller: _customConfigCtrl,
                   maxLines: 10,
-                  decoration: const InputDecoration(
-                    labelText: '自定义配置 (YAML / JSON)',
+                  decoration: InputDecoration(
+                    labelText: appLocalizations.customConfigLabel,
                     hintText:
                         'name: Custom_01\ntype: wireguard\nserver: 1.2.3.4\n...',
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
               ] else if (_protocol == ManualProtocol.direct) ...[
                 TextField(
                   controller: _nameCtrl,
-                  decoration: const InputDecoration(
-                    labelText: '节点名称 (Name)',
+                  decoration: InputDecoration(
+                    labelText: appLocalizations.nodeNameLabel,
                     hintText: 'DIRECT_NODE',
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
               ] else ...[
@@ -862,8 +869,10 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                 TextField(
                   controller: _nameCtrl,
                   decoration: InputDecoration(
-                    labelText: '节点名称 (Name)',
-                    hintText: '如: 香港 01 - ${_protocol.displayName}',
+                    labelText: appLocalizations.nodeNameLabel,
+                    hintText: appLocalizations.nodeNameHint(
+                      _protocol.displayName,
+                    ),
                     border: const OutlineInputBorder(),
                   ),
                 ),
@@ -876,10 +885,10 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                       flex: 3,
                       child: TextField(
                         controller: _serverCtrl,
-                        decoration: const InputDecoration(
-                          labelText: '服务器地址 (Server)',
-                          hintText: 'IP 或域名',
-                          border: OutlineInputBorder(),
+                        decoration: InputDecoration(
+                          labelText: appLocalizations.serverAddressLabel,
+                          hintText: appLocalizations.serverAddressHint,
+                          border: const OutlineInputBorder(),
                         ),
                       ),
                     ),
@@ -889,9 +898,9 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                       child: TextField(
                         controller: _portCtrl,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: '端口 (Port)',
-                          border: OutlineInputBorder(),
+                        decoration: InputDecoration(
+                          labelText: appLocalizations.portLabel,
+                          border: const OutlineInputBorder(),
                         ),
                       ),
                     ),
@@ -907,9 +916,9 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                       labelText: switch (_protocol) {
                         ManualProtocol.vless || ManualProtocol.vmess => 'UUID',
                         ManualProtocol.wireguard ||
-                        ManualProtocol.amneziaWg => '私钥 (Private Key)',
-                        ManualProtocol.snell => 'PSK 预共享密钥',
-                        _ => '密码 (Password / Auth)',
+                        ManualProtocol.amneziaWg => appLocalizations.privateKey,
+                        ManualProtocol.snell => appLocalizations.pskKey,
+                        _ => appLocalizations.passwordAuth,
                       },
                       border: const OutlineInputBorder(),
                     ),
@@ -927,8 +936,9 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                     controller: _hostCtrl,
                     decoration: InputDecoration(
                       labelText: switch (_protocol) {
-                        ManualProtocol.juicity => 'Juicity 密码 (上方填写 UUID)',
-                        _ => '用户名 (Username，可选)',
+                        ManualProtocol.juicity =>
+                          appLocalizations.juicityPassword,
+                        _ => appLocalizations.usernameOptional,
                       },
                       border: const OutlineInputBorder(),
                     ),
@@ -948,9 +958,9 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                           // RC.7: see the protocol picker above.
                           isExpanded: true,
                           initialValue: _network,
-                          decoration: const InputDecoration(
-                            labelText: '传输层 (Network)',
-                            border: OutlineInputBorder(),
+                          decoration: InputDecoration(
+                            labelText: appLocalizations.networkLabel,
+                            border: const OutlineInputBorder(),
                           ),
                           items: const [
                             DropdownMenuItem(value: 'tcp', child: Text('TCP')),
@@ -978,14 +988,16 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                           // RC.7: see the protocol picker above.
                           isExpanded: true,
                           initialValue: _security,
-                          decoration: const InputDecoration(
-                            labelText: '安全/TLS (Security)',
-                            border: OutlineInputBorder(),
+                          decoration: InputDecoration(
+                            labelText: appLocalizations.securityLabel,
+                            border: const OutlineInputBorder(),
                           ),
                           items: [
-                            const DropdownMenuItem(
+                            DropdownMenuItem(
                               value: 'none',
-                              child: Text('None (明文)'),
+                              child: Text(
+                                appLocalizations.securityNonePlain,
+                              ),
                             ),
                             const DropdownMenuItem(
                               value: 'tls',
@@ -1014,14 +1026,14 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                         child: DropdownButtonFormField<String>(
                           key: ValueKey('snell_obfs_$_security'),
                           initialValue: _security,
-                          decoration: const InputDecoration(
-                            labelText: '混淆模式 (Obfs Mode)',
-                            border: OutlineInputBorder(),
+                          decoration: InputDecoration(
+                            labelText: appLocalizations.obfsModeLabel,
+                            border: const OutlineInputBorder(),
                           ),
-                          items: const [
+                          items: [
                             DropdownMenuItem(
                               value: 'none',
-                              child: Text('None (关闭)'),
+                              child: Text(appLocalizations.obfsNoneOff),
                             ),
                             DropdownMenuItem(
                               value: 'http',
@@ -1037,10 +1049,10 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                       Expanded(
                         child: TextField(
                           controller: _flowCtrl,
-                          decoration: const InputDecoration(
-                            labelText: 'Snell 版本 (1-4)',
+                          decoration: InputDecoration(
+                            labelText: appLocalizations.snellVersion,
                             hintText: '4',
-                            border: OutlineInputBorder(),
+                            border: const OutlineInputBorder(),
                           ),
                         ),
                       ),
@@ -1054,9 +1066,9 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                     _security == 'reality') ...[
                   TextField(
                     controller: _pbkCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'REALITY 公钥 (Public Key)',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: appLocalizations.realityPublicKey,
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -1103,10 +1115,10 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                         _security != 'none')) ...[
                   TextField(
                     controller: _sniCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'SNI (ServerName / 伪装域名)',
-                      hintText: '留空默认与服务器地址一致',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: appLocalizations.sniLabel,
+                      hintText: appLocalizations.sniHint,
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -1148,10 +1160,10 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                     _protocol == ManualProtocol.ssr) ...[
                   TextField(
                     controller: _cipherCtrl,
-                    decoration: const InputDecoration(
-                      labelText: '加密方式 (Cipher)',
+                    decoration: InputDecoration(
+                      labelText: appLocalizations.cipherLabel,
                       hintText: 'aes-256-gcm / chacha20-poly1305',
-                      border: OutlineInputBorder(),
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -1164,10 +1176,10 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                       Expanded(
                         child: TextField(
                           controller: _flowCtrl,
-                          decoration: const InputDecoration(
-                            labelText: '上行 (Up)',
+                          decoration: InputDecoration(
+                            labelText: appLocalizations.upLabel,
                             hintText: '30 Mbps',
-                            border: OutlineInputBorder(),
+                            border: const OutlineInputBorder(),
                           ),
                         ),
                       ),
@@ -1175,10 +1187,10 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                       Expanded(
                         child: TextField(
                           controller: _cipherCtrl,
-                          decoration: const InputDecoration(
-                            labelText: '下行 (Down)',
+                          decoration: InputDecoration(
+                            labelText: appLocalizations.downLabel,
                             hintText: '100 Mbps',
-                            border: OutlineInputBorder(),
+                            border: const OutlineInputBorder(),
                           ),
                         ),
                       ),
@@ -1192,18 +1204,18 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                     _protocol == ManualProtocol.amneziaWg) ...[
                   TextField(
                     controller: _pbkCtrl,
-                    decoration: const InputDecoration(
-                      labelText: '对端公钥 (Public Key)',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: appLocalizations.peerPublicKey,
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                   const SizedBox(height: 8),
                   TextField(
                     controller: _pathCtrl,
-                    decoration: const InputDecoration(
-                      labelText: '本地 IP (Local IP)',
+                    decoration: InputDecoration(
+                      labelText: appLocalizations.localIpLabel,
                       hintText: '10.0.0.2',
-                      border: OutlineInputBorder(),
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -1211,9 +1223,12 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
 
                 // AmneziaWG 2/3 Obfuscation Parameters
                 if (_protocol == ManualProtocol.amneziaWg) ...[
-                  const Text(
-                    'AmneziaWG 2/3 混淆参数 (Jc / Jmin / Jmax / S1 / S2 / H1-H4)',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  Text(
+                    appLocalizations.amneziaObfsParams,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Row(
@@ -1221,10 +1236,10 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                       Expanded(
                         child: TextField(
                           controller: _jcCtrl,
-                          decoration: const InputDecoration(
-                            labelText: 'Jc (垃圾包数)',
+                          decoration: InputDecoration(
+                            labelText: appLocalizations.jcLabel,
                             hintText: '4',
-                            border: OutlineInputBorder(),
+                            border: const OutlineInputBorder(),
                           ),
                         ),
                       ),
@@ -1332,16 +1347,16 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                 // Options
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('启用 UDP 转发'),
+                  title: Text(appLocalizations.enableUdpForwarding),
                   value: _udp,
                   onChanged: (v) => setState(() => _udp = v),
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('跳过证书校验 (Skip Cert Verify)'),
-                  subtitle: const Text(
-                    '解决自签证书或 TLS 握手报错',
-                    style: TextStyle(fontSize: 11),
+                  title: Text(appLocalizations.skipCertVerify),
+                  subtitle: Text(
+                    appLocalizations.skipCertVerifyDesc,
+                    style: const TextStyle(fontSize: 11),
                   ),
                   value: _skipCertVerify,
                   onChanged: (v) => setState(() => _skipCertVerify = v),
@@ -1354,14 +1369,14 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('取消'),
+          child: Text(appLocalizations.cancel),
         ),
         FilledButton(
           onPressed: () async {
             if (_protocol != ManualProtocol.custom &&
                 _protocol != ManualProtocol.direct &&
                 _serverCtrl.text.trim().isEmpty) {
-              context.showSnackBar('请填写服务器地址');
+              context.showSnackBar(appLocalizations.serverAddressRequired);
               return;
             }
             final proxyMap = _buildProxyMap();
@@ -1373,10 +1388,12 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
             );
             widget.onSaved(updated);
             if (context.mounted) {
-              context.showNotifier('已添加节点: ${proxyMap['name']}');
+              context.showNotifier(
+                appLocalizations.nodeAdded(proxyMap['name']),
+              );
             }
           },
-          child: const Text('保存节点'),
+          child: Text(appLocalizations.saveNode),
         ),
       ],
     );
