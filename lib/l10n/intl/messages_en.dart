@@ -492,6 +492,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Do you want to pass",
     ),
     "domain": MessageLookupByLibrary.simpleMessage("Organization / Domain"),
+    "domainName": MessageLookupByLibrary.simpleMessage("Domain"),
     "doubleBounce": MessageLookupByLibrary.simpleMessage("Double Bounce"),
     "download": MessageLookupByLibrary.simpleMessage("Download"),
     "dozeSuspend": MessageLookupByLibrary.simpleMessage("Doze Support"),

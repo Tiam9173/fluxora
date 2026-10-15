@@ -328,6 +328,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "dnsMode": MessageLookupByLibrary.simpleMessage("DNSモード"),
     "doYouWantToPass": MessageLookupByLibrary.simpleMessage("許可しますか："),
     "domain": MessageLookupByLibrary.simpleMessage("組織 / ドメイン"),
+    "domainName": MessageLookupByLibrary.simpleMessage("ドメイン"),
     "doubleBounce": MessageLookupByLibrary.simpleMessage("ダブルバウンス"),
     "download": MessageLookupByLibrary.simpleMessage("受信"),
     "dozeSuspend": MessageLookupByLibrary.simpleMessage("スリープ連携"),

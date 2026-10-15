@@ -464,7 +464,7 @@
   "fallbackConcurrentDesc": "使用預設 DNS 和 Fallback 同步查詢",
   "geoipCode": "GeoIP 代碼",
   "ipcidr": "IP / 遮罩",
-  "domain": "網域",
+  "domainName": "網域",
   "reset": "重設",
   "action_view": "顯示 / 隱藏",
   "action_start": "啟動 / 停止",
@@ -582,7 +582,6 @@
   "clearData": "清除資料",
   "clearDataTipTitle": "危險操作",
   "clearDataTipDesc": "此操作將會重置應用程式, 請注意備份, 確定要繼續嗎？",
-  "zoom": "縮放",
   "textScale": "文字縮放",
   "trayIconInvert": "托盤反轉",
   "trayIconInvertDesc": "針對目前托盤圖示顏色取反設定",
@@ -681,7 +680,6 @@
   "clear": "清空",
   "back": "返回",
   "closeAll": "關閉全部",
-  "script": "指令碼",
   "moreIpInfo": "更多 IP 資訊",
   "viewDetailedIpData": "檢視詳細 IP 資料",
   "ipAddress": "IP 位址",
@@ -735,6 +733,5 @@
   "notUnlocked": "未解鎖",
   "checkFailed": "Timeout",
   "testing": "檢測中",
-  "other": "其他",
   "flagged": "已標記"
 }
