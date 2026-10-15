@@ -43,12 +43,6 @@ class ChainAdaptiveRankingCacheEntry {
 
 abstract class IChainAdaptiveRankingCacheService {
   void invalidateAll();
-  void invalidateRole(FallbackCandidateRole role);
-  Future<List<ChainProxyNodeViewModel>> getOrComputeAsync({
-    required ChainAdaptiveRankingCacheKey key,
-    required String currentStateFingerprint,
-    required Future<List<ChainProxyNodeViewModel>> Function() compute,
-  });
 
   List<ChainProxyNodeViewModel> getOrComputeSync({
     required ChainAdaptiveRankingCacheKey key,
@@ -62,7 +56,6 @@ abstract class IChainAdaptiveRankingCacheService {
 
 class ChainAdaptiveRankingCacheService implements IChainAdaptiveRankingCacheService {
   final Map<ChainAdaptiveRankingCacheKey, ChainAdaptiveRankingCacheEntry> _cache = {};
-  final Map<ChainAdaptiveRankingCacheKey, Future<List<ChainProxyNodeViewModel>>> _inFlight = {};
   final Map<ChainAdaptiveRankingCacheKey, int> _generationByKey = {};
 
   int _nextGeneration(ChainAdaptiveRankingCacheKey key) {
@@ -76,16 +69,6 @@ class ChainAdaptiveRankingCacheService implements IChainAdaptiveRankingCacheServ
     _cache.clear();
     for (final key in _generationByKey.keys.toList()) {
       _generationByKey[key] = _generationByKey[key]! + 1;
-    }
-  }
-
-  @override
-  void invalidateRole(FallbackCandidateRole role) {
-    _cache.removeWhere((key, _) => key.role == role);
-    for (final key in _generationByKey.keys.toList()) {
-      if (key.role == role) {
-        _generationByKey[key] = _generationByKey[key]! + 1;
-      }
     }
   }
 
@@ -120,48 +103,6 @@ class ChainAdaptiveRankingCacheService implements IChainAdaptiveRankingCacheServ
     }
     
     return List.unmodifiable(result);
-  }
-
-  @override
-  Future<List<ChainProxyNodeViewModel>> getOrComputeAsync({
-    required ChainAdaptiveRankingCacheKey key,
-    required String currentStateFingerprint,
-    required Future<List<ChainProxyNodeViewModel>> Function() compute,
-  }) async {
-    final cached = _cache[key];
-    // Cache Hit Validation: Check fingerprint equality.
-    if (cached != null && cached.stateFingerprint == currentStateFingerprint) {
-      return List.unmodifiable(cached.viewModels); // Immutability requirement
-    }
-
-    // In-flight Deduplication (Concurrency Requirement)
-    if (_inFlight.containsKey(key)) {
-      return _inFlight[key]!;
-    }
-
-    final currentGen = _nextGeneration(key);
-    final computeFuture = compute();
-    _inFlight[key] = computeFuture;
-
-    try {
-      final result = await computeFuture;
-      
-      // Generation Protection: Prevent stale async ranking from overwriting newer cache
-      if (currentGen == _generationByKey[key]) {
-        _cache[key] = ChainAdaptiveRankingCacheEntry(
-          viewModels: List.unmodifiable(result),
-          generation: currentGen,
-          createdAt: DateTime.now(),
-          stateFingerprint: currentStateFingerprint,
-        );
-      }
-      
-      return List.unmodifiable(result);
-    } finally {
-      if (_inFlight[key] == computeFuture) {
-        _inFlight.remove(key);
-      }
-    }
   }
 }
 

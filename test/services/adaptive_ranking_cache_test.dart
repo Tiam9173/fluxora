@@ -171,19 +171,6 @@ void main() {
       expect(computedCount, 2);
     });
 
-    test('11. Hop Role: invalidateRole strictly isolates', () {
-      final keyEntry = ChainAdaptiveRankingCacheKey(role: FallbackCandidateRole.entry, networkFingerprint: 'wifi');
-      final keyExit = ChainAdaptiveRankingCacheKey(role: FallbackCandidateRole.exit, networkFingerprint: 'wifi');
-      
-      cache.getOrComputeSync(key: keyEntry, currentStateFingerprint: 'state1', compute: () => []);
-      cache.getOrComputeSync(key: keyExit, currentStateFingerprint: 'state1', compute: () => []);
-
-      cache.invalidateRole(FallbackCandidateRole.entry);
-
-      expect(cache.hasValidCache(keyEntry, 'state1'), false);
-      expect(cache.hasValidCache(keyExit, 'state1'), true); // Exit remains valid
-    });
-
     test('12. Sort Mode: Different mode acts as different key', () {
       final keyAdaptive = ChainAdaptiveRankingCacheKey(role: FallbackCandidateRole.entry, networkFingerprint: 'wifi', sortMode: 'adaptive');
       final keyLatency = ChainAdaptiveRankingCacheKey(role: FallbackCandidateRole.entry, networkFingerprint: 'wifi', sortMode: 'latency');
@@ -201,45 +188,6 @@ void main() {
       
       expect(() => result.clear(), throwsUnsupportedError);
       expect(() => result.add(result.first), throwsUnsupportedError);
-    });
-
-    test('14. Concurrent Requests: Async requests deduplicate and protect against stale overwrites', () async {
-      final key = ChainAdaptiveRankingCacheKey(role: FallbackCandidateRole.entry, networkFingerprint: 'wifi');
-      var computedCount = 0;
-
-      // Request A (starts, then takes time)
-      final futureA = cache.getOrComputeAsync(key: key, currentStateFingerprint: 'state1', compute: () async {
-        await Future.delayed(const Duration(milliseconds: 50));
-        computedCount++;
-        return [ChainProxyNodeViewModel(proxy: const Proxy(name: 'A', type: 'SS'), nodeName: 'A')];
-      });
-
-      // Request B (starts immediately after, joins in-flight future A)
-      final futureB = cache.getOrComputeAsync(key: key, currentStateFingerprint: 'state1', compute: () async {
-        computedCount++; // should not run
-        return [];
-      });
-
-      final resultA = await futureA;
-      final resultB = await futureB;
-      
-      expect(resultA.first.nodeName, 'A');
-      expect(resultB.first.nodeName, 'A'); // Deduplicated
-      expect(computedCount, 1);
-
-      // Now simulate explicit invalidation DURING a new request
-      final futureC = cache.getOrComputeAsync(key: key, currentStateFingerprint: 'state2', compute: () async {
-        await Future.delayed(const Duration(milliseconds: 50));
-        return [ChainProxyNodeViewModel(proxy: const Proxy(name: 'C', type: 'SS'), nodeName: 'C')];
-      });
-
-      // User navigates away causing invalidation
-      cache.invalidateAll();
-
-      final resultC = await futureC; // This will return its computed value to the caller...
-      // But it should NOT be placed in the cache!
-      expect(resultC.first.nodeName, 'C');
-      expect(cache.hasValidCache(key, 'state2'), false); // The stale async result did not pollute the cache!
     });
 
     test('15. Capability Rejection: Incompatible cached model is never returned after state change', () {
