@@ -14,8 +14,9 @@ import 'package:path/path.dart' as p;
 ///
 /// The production-path group goes through the REAL manager write-back
 /// (`probeCurrentChain` → `_writeBackProbeResultsToCandidates` → `recordEvent`
-/// → `statsByContext` → `setFallbackPool` → debounced persistence) — statistics
-/// are never injected by hand to fake the result.
+/// → `statsByContext` → `_scheduleReliabilityPersist` → debounced persistence).
+/// `setFallbackPool` is memory-only and is NOT on this path. Statistics are
+/// never injected by hand to fake the result.
 void main() {
   late Directory tmp;
   late String statsPath;

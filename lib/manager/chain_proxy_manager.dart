@@ -1166,8 +1166,16 @@ class ChainProxyManager extends ChangeNotifier {
 
   // ─── Phase 5.x Fallback Pool ──────────────────────────────────────────────
 
-  /// Stores the fallback pool. Full integration with ChainFallbackService
-  /// is performed by the AutoFailover coordinator at runtime.
+  /// Stores the fallback pool **in memory only** — it does not persist.
+  ///
+  /// F-E3: this is the runtime/test path, not a production write. Production
+  /// writes the pool through [updateFallbackPool], which also saves to disk and
+  /// schedules the reliability write; calling this one from production would
+  /// silently drop the change on the next restart. It is public purely so tests
+  /// can seed the pool directly, hence [visibleForTesting]. Full integration
+  /// with ChainFallbackService is performed by the AutoFailover coordinator at
+  /// runtime.
+  @visibleForTesting
   Future<void> setFallbackPool(ChainFallbackPool pool) async {
     _fallbackPool = pool;
     notifyListeners();
