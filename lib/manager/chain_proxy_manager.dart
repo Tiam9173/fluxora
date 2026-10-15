@@ -214,6 +214,12 @@ class ChainProxyManager extends ChangeNotifier {
     // back into now-invalid state. This only adds a guard — the existing
     // teardown order/semantics are unchanged.
     _disposed = true;
+    // F-B2: invalidate the in-flight probe session *before* cancelling, so a
+    // probe that ignores the CancelToken and completes after teardown can
+    // neither publish `_lastProbeReport` nor hand its report to the failover
+    // decision. The token is deliberately NOT nulled: the write-back guard
+    // (`_probeCancelToken?.isCancelled == true`) relies on it staying cancelled.
+    _probeGeneration++;
     _probeCancelToken?.cancel();
     _failoverCancelToken?.cancel();
     stopChainHealthCheck();
@@ -1588,7 +1594,11 @@ class ChainProxyManager extends ChangeNotifier {
     // RC.10-C.1 — `_isCoreReady()` awaits a real core-API call, so the guard
     // above is stale once we resume: a manual probe (or another tick) may have
     // started in the meantime. Re-check before starting our own probe.
-    if (_isProbingChain || isFailingOver) return;
+    //
+    // F-B2: teardown may also have run during the await. A probe started now
+    // would take a fresh, un-cancelled token and write back into a disposed
+    // manager, so `_disposed` must be part of the re-check too.
+    if (_disposed || _isProbingChain || isFailingOver) return;
 
     // `probeCurrentChain` takes the next id synchronously, so this is exactly
     // the id our own probe will own.
