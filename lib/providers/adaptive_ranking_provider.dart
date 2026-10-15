@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/chain_proxy_node_view_model.dart';
 import '../models/chain_fallback_pool.dart';
@@ -29,15 +30,17 @@ final adaptiveRankingProvider =
   final groups = ref.watch(groupsProvider);
   final selectedMap = ref.watch(selectedMapProvider);
   final manager = ref.watch(chainProxyConfigProvider.select((_) => chainProxyManager));
-  // P1.2-A: rebuild (and invalidate the cache) when the config-level capability
-  // view changes.
+  // P1.2-A: rebuild when the config-level capability view changes. The revision
+  // feeds `stateFingerprint` below, so a change here produces a cache miss.
   final capabilityRevision = ref.watch(
     chainProxyConfigProvider.select((m) => m.capabilityRevision),
   );
   // P1.3: rebuild when the manager bumps `stateVersion`. Reliability samples are
-  // written via `setFallbackPool` → `notifyListeners`, which bumps it. This
-  // closes the loop: sample → stateVersion → provider rebuild → (cache already
-  // invalidated by invalidateRole) → fresh stats → new ranking.
+  // recorded through the manager (`_writeBackProbeResultsToCandidates`, and
+  // `ChainFailoverService._updateCandidateStats` on the failover path), each
+  // followed by a `notifyListeners()` that bumps it. This closes the loop:
+  // sample → stateVersion → provider rebuild → new `stateFingerprint` below →
+  // cache miss → fresh stats → new ranking.
   final stateVersion = ref.watch(
     chainProxyConfigProvider.select((m) => m.stateVersion),
   );
@@ -45,13 +48,13 @@ final adaptiveRankingProvider =
   
   // Create a robust fingerprint based on the latest reactive states.
   // Any change to these inputs effectively forms a new fingerprint, guaranteeing a cache miss.
-  final stateFingerprint = [
-    fingerprint,
-    stateVersion.toString(),
-    capabilityRevision.toString(),
-    selectedMap.keys.map((k) => '$k=${selectedMap[k]}').join(','),
-    groups.fold<int>(0, (h, g) => h ^ g.all.length).toString(),
-  ].join('|');
+  final stateFingerprint = rankingStateFingerprint(
+    networkFingerprint: fingerprint,
+    stateVersion: stateVersion,
+    capabilityRevision: capabilityRevision,
+    selectedMap: selectedMap,
+    groups: groups,
+  );
 
   final cacheKey = ChainAdaptiveRankingCacheKey(
     role: role,
@@ -197,3 +200,51 @@ final adaptiveRankingProvider =
     },
   );
 });
+
+/// RC.11-A (F-AR1): the ranking cache key's state fingerprint.
+///
+/// Order-independent, and the group component digests the **real node set**.
+/// The previous `groups.fold<int>(0, (h, g) => h ^ g.all.length)` was not
+/// injective — group sizes `{3, 5}` and `{2, 4}` both XOR to `6` — so a node
+/// add/remove could leave the fingerprint unchanged and serve a cache hit whose
+/// `viewModels` still described the **old** node set. Hashing each group's name
+/// together with its member names also catches a same-count replacement, which
+/// a size-only digest cannot see.
+///
+/// Pure and side-effect free, so the collision cases are directly testable.
+@visibleForTesting
+String rankingStateFingerprint({
+  required String networkFingerprint,
+  required int stateVersion,
+  required int capabilityRevision,
+  required Map<String, String> selectedMap,
+  required List<Group> groups,
+}) => [
+  networkFingerprint,
+  stateVersion.toString(),
+  capabilityRevision.toString(),
+  selectedMap.keys.map((k) => '$k=${selectedMap[k]}').join(','),
+  // Sorted before combining, so a mere reordering of the same groups does not
+  // produce a spurious cache miss — the old XOR component was order-independent
+  // too, and that property is worth keeping.
+  //
+  // RC.11-B.2 (F-AR1-EDGE): each group's member names are sorted *before* they
+  // are hashed. `Object.hashAll` is positional, so an unsorted member list made
+  // the group digest sensitive to the mere ORDER of members within a group —
+  // a reordered (but otherwise identical) member list produced a different
+  // fingerprint and therefore a spurious cache miss with a full recompute.
+  // Sorting is the scheme-① fix: the group digest is still fully
+  // order-independent, the strong `SystemHash` mixing is retained (unlike the
+  // weaker `hashAllUnordered`), and duplicates are deliberately NOT removed, so
+  // `[n1, n1, n2]` still hashes differently from `[n1, n2]` — the count
+  // semantics of a repeated member are preserved.
+  Object.hashAll(
+    [
+      for (final g in groups)
+        Object.hash(
+          g.name,
+          Object.hashAll(g.all.map((p) => p.name).toList()..sort()),
+        ),
+    ]..sort(),
+  ).toString(),
+].join('|');

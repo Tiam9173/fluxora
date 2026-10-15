@@ -327,4 +327,144 @@ void main() {
       }
     });
   });
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // RC.11-A (F-AR1) — the ranking fingerprint digests the real node set.
+  //
+  // The previous group component was `fold<int>(0, (h, g) => h ^ g.all.length)`,
+  // which is not injective: group sizes {3, 5} and {2, 4} both XOR to 6. A node
+  // add/remove could therefore leave `stateFingerprint` unchanged and serve a
+  // cache hit whose view models still described the OLD node set.
+  // ────────────────────────────────────────────────────────────────────────────
+  group('RC.11-A (F-AR1) — ranking fingerprint digests the real node set', () {
+    Group groupOf(String name, List<String> nodeNames) => Group(
+      name: name,
+      type: GroupType.Selector,
+      all: [for (final n in nodeNames) Proxy(name: n, type: 'vless')],
+      now: '',
+    );
+
+    String fp(List<Group> groups) => rankingStateFingerprint(
+      networkFingerprint: 'wifi_default',
+      stateVersion: 1,
+      capabilityRevision: 1,
+      selectedMap: const {},
+      groups: groups,
+    );
+
+    test('group sizes that XOR to the same value no longer collide', () {
+      final a = [
+        groupOf('A', ['a1', 'a2', 'a3']),
+        groupOf('B', ['b1', 'b2', 'b3', 'b4', 'b5']),
+      ];
+      final b = [
+        groupOf('A', ['a1', 'a2']),
+        groupOf('B', ['b1', 'b2', 'b3', 'b4']),
+      ];
+      // 3 ^ 5 == 6 == 2 ^ 4 — the old component could not tell these apart.
+      expect(fp(a), isNot(equals(fp(b))));
+    });
+
+    test('a same-count replacement changes the fingerprint', () {
+      expect(
+        fp([groupOf('A', ['n1', 'n2'])]),
+        isNot(equals(fp([groupOf('A', ['n1', 'n3'])]))),
+      );
+    });
+
+    test('the same node set is stable regardless of group order', () {
+      expect(
+        fp([groupOf('A', ['n1', 'n2']), groupOf('B', ['n3'])]),
+        equals(fp([groupOf('B', ['n3']), groupOf('A', ['n1', 'n2'])])),
+      );
+    });
+
+    test('the other fingerprint components still separate the key', () {
+      final groups = [groupOf('A', ['n1'])];
+      expect(
+        fp(groups),
+        isNot(
+          equals(
+            rankingStateFingerprint(
+              networkFingerprint: 'cellular_default',
+              stateVersion: 1,
+              capabilityRevision: 1,
+              selectedMap: const {},
+              groups: groups,
+            ),
+          ),
+        ),
+      );
+      expect(
+        fp(groups),
+        isNot(
+          equals(
+            rankingStateFingerprint(
+              networkFingerprint: 'wifi_default',
+              stateVersion: 2,
+              capabilityRevision: 1,
+              selectedMap: const {},
+              groups: groups,
+            ),
+          ),
+        ),
+      );
+    });
+  });
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // RC.11-B.2 (F-AR1-EDGE) — the fingerprint must also be invariant under a mere
+  // reordering of members *within* a group.
+  //
+  // `Object.hashAll` is positional, so before RC.11-B.2 `[n1, n2]` and `[n2, n1]`
+  // hashed to different group digests. Every other input being equal, that turned
+  // a pure reordering of the same nodes into a different `stateFingerprint` and
+  // therefore a spurious cache miss + full recompute — the F-AR1-EDGE finding.
+  //
+  // The fix sorts each group's member names before hashing. The two cases below
+  // pin both halves of that contract: order no longer matters, but the *count* of
+  // a repeated member still does (sorting must not silently de-duplicate).
+  // ────────────────────────────────────────────────────────────────────────────
+  group('RC.11-B.2 (F-AR1-EDGE) — member order within a group is irrelevant', () {
+    Group groupOf(String name, List<String> nodeNames) => Group(
+      name: name,
+      type: GroupType.Selector,
+      all: [for (final n in nodeNames) Proxy(name: n, type: 'vless')],
+      now: '',
+    );
+
+    String fp(List<Group> groups) => rankingStateFingerprint(
+      networkFingerprint: 'wifi_default',
+      stateVersion: 1,
+      capabilityRevision: 1,
+      selectedMap: const {},
+      groups: groups,
+    );
+
+    test('reordering members inside a group keeps the fingerprint', () {
+      expect(
+        fp([groupOf('A', ['n1', 'n2', 'n3'])]),
+        equals(fp([groupOf('A', ['n3', 'n1', 'n2'])])),
+      );
+      // A second group in the same list must not break the invariance either.
+      expect(
+        fp([groupOf('A', ['n1', 'n2']), groupOf('B', ['n3', 'n4'])]),
+        equals(fp([groupOf('A', ['n2', 'n1']), groupOf('B', ['n4', 'n3'])])),
+      );
+    });
+
+    test('a duplicated member is still counted (sorting does not dedupe)', () {
+      // Sort-then-hash must preserve multiplicity: [n1, n1, n2] describes a
+      // different node set from [n1, n2], so the fingerprints must differ.
+      expect(
+        fp([groupOf('A', ['n1', 'n1', 'n2'])]),
+        isNot(equals(fp([groupOf('A', ['n1', 'n2'])]))),
+      );
+      // And the duplicate is counted regardless of where it appears.
+      expect(
+        fp([groupOf('A', ['n1', 'n1', 'n2'])]),
+        equals(fp([groupOf('A', ['n2', 'n1', 'n1'])])),
+      );
+    });
+  });
 }
