@@ -29,14 +29,10 @@ class ChainAdaptiveRankingCacheKey {
 
 class ChainAdaptiveRankingCacheEntry {
   final List<ChainProxyNodeViewModel> viewModels;
-  final int generation;
-  final DateTime createdAt;
   final String stateFingerprint;
 
   ChainAdaptiveRankingCacheEntry({
     required this.viewModels,
-    required this.generation,
-    required this.createdAt,
     required this.stateFingerprint,
   });
 }
@@ -96,8 +92,6 @@ class ChainAdaptiveRankingCacheService implements IChainAdaptiveRankingCacheServ
     if (currentGen == _generationByKey[key]) {
       _cache[key] = ChainAdaptiveRankingCacheEntry(
         viewModels: List.unmodifiable(result),
-        generation: currentGen,
-        createdAt: DateTime.now(),
         stateFingerprint: currentStateFingerprint,
       );
     }
