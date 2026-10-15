@@ -220,6 +220,9 @@ class ChainProxyManager extends ChangeNotifier {
     _reliabilityPersistTimer = null;
     chainTelemetryService.removeListener(_telemetryListener);
     chainFlapDampenerService.removeListener(_flapListener);
+    // RC.11-A (F-AR4): drop the transport hook together with the rest of the
+    // teardown, so a disposed manager is never notified.
+    networkFingerprintProvider.onChanged = null;
     super.dispose();
   }
 
@@ -230,6 +233,15 @@ class ChainProxyManager extends ChangeNotifier {
     // Phase 5.x integration: register listeners unconditionally once per instance.
     chainTelemetryService.addListener(_telemetryListener);
     chainFlapDampenerService.addListener(_flapListener);
+    // RC.11-A (F-AR4): a transport change must invalidate the ranking cache.
+    // `NetworkFingerprintProvider` has no notifier of its own and the ranking
+    // provider reads the fingerprint imperatively, so without this a
+    // wifi ↔ cellular switch left the node picker on the previous network's
+    // ranking until some unrelated notification arrived. `notifyListeners()`
+    // bumps `stateVersion`, which is part of the ranking `stateFingerprint`.
+    networkFingerprintProvider.onChanged = (_) {
+      notifyListeners();
+    };
 
     try {
       final filePath = await _getConfigFilePath();

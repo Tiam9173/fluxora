@@ -96,6 +96,37 @@ void main() {
       expect(fresh.getCurrentFingerprint(), NetworkFingerprintProvider.unknown);
       fresh.stop();
     });
+
+    // ── RC.11-A (F-AR4) ──────────────────────────────────────────────────────
+    test('H. onChanged fires once per real change and never for a no-op', () {
+      final fired = <String>[];
+      provider.onChanged = fired.add;
+
+      provider.setMockFingerprint(NetworkFingerprintProvider.wifi);
+      expect(fired, [NetworkFingerprintProvider.wifi]);
+
+      // Re-reporting the SAME transport must not notify again.
+      provider.setMockFingerprint(NetworkFingerprintProvider.wifi);
+      expect(fired, [NetworkFingerprintProvider.wifi]);
+
+      provider.setMockFingerprint(NetworkFingerprintProvider.cellular);
+      expect(fired, [
+        NetworkFingerprintProvider.wifi,
+        NetworkFingerprintProvider.cellular,
+      ]);
+    });
+
+    test('I. onChanged is optional — an unsubscribed provider is safe', () {
+      expect(provider.onChanged, isNull);
+      expect(
+        () => provider.setMockFingerprint(NetworkFingerprintProvider.ethernet),
+        returnsNormally,
+      );
+      expect(
+        provider.getCurrentFingerprint(),
+        NetworkFingerprintProvider.ethernet,
+      );
+    });
   });
 
   group('P2.2 network change → reliability context', () {
@@ -203,6 +234,88 @@ void main() {
       expect(byFp.length, 2);
       expect(byFp[NetworkFingerprintProvider.wifi]!.totalSamples, 1);
       expect(byFp[NetworkFingerprintProvider.cellular]!.totalSamples, 1);
+    });
+  });
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // RC.11-A (F-AR4) — a transport change must reach the manager.
+  //
+  // The fingerprint provider has no notifier, and the adaptive ranking provider
+  // reads it imperatively — so a transport change alone used to leave the node
+  // picker on the PREVIOUS network's ranking. `ChainProxyManager.init()` is the
+  // production registration point; this pins that the hook is installed and that
+  // a real change bumps `stateVersion` (a component of the ranking
+  // `stateFingerprint`, which is what forces the cache miss).
+  //
+  // NOTE: `init()` is a one-shot per isolate (`_initialized`), so it is driven
+  // exactly once here — after the groups above have finished.
+  // ────────────────────────────────────────────────────────────────────────────
+  group('RC.11-A (F-AR4) — a transport change reaches the manager', () {
+    late Directory tmp;
+    late ChainProxyManager manager;
+
+    setUp(() async {
+      tmp = Directory.systemTemp.createTempSync('fluxora_rc11a_');
+      ChainProxyManager.configFilePathOverride = p.join(
+        tmp.path,
+        'chain_proxies.json',
+      );
+      ChainProxyManager.fallbackPoolFilePathOverride = p.join(
+        tmp.path,
+        'chain_fallback_pool.json',
+      );
+      ChainProxyManager.reliabilityStatsFilePathOverride = p.join(
+        tmp.path,
+        'chain_reliability_stats.json',
+      );
+      ChainProxyManager.chainProbeOverride = null;
+
+      manager = ChainProxyManager();
+      await manager.init();
+    });
+
+    tearDown(() async {
+      manager.stopChainHealthCheck();
+      await manager.flushReliabilityStats();
+      networkFingerprintProvider.onChanged = null;
+      ChainProxyManager.configFilePathOverride = null;
+      ChainProxyManager.fallbackPoolFilePathOverride = null;
+      ChainProxyManager.reliabilityStatsFilePathOverride = null;
+      ChainProxyManager.chainProbeOverride = null;
+      if (tmp.existsSync()) tmp.deleteSync(recursive: true);
+    });
+
+    test('J. init() installs the hook; a real change bumps stateVersion', () {
+      expect(
+        networkFingerprintProvider.onChanged,
+        isNotNull,
+        reason: 'init() must register the transport hook',
+      );
+
+      // Pin a known baseline first — the fingerprint is process-global, so the
+      // value left by an earlier test is unknown here.
+      networkFingerprintProvider.setMockFingerprint(
+        NetworkFingerprintProvider.bluetooth,
+      );
+      final before = manager.stateVersion;
+
+      networkFingerprintProvider.setMockFingerprint(
+        NetworkFingerprintProvider.wifi,
+      );
+      expect(
+        manager.stateVersion,
+        greaterThan(before),
+        reason:
+            'a transport change must notify the manager so the ranking '
+            'stateFingerprint changes and the cache misses',
+      );
+
+      // A repeat of the SAME transport is a no-op.
+      final afterChange = manager.stateVersion;
+      networkFingerprintProvider.setMockFingerprint(
+        NetworkFingerprintProvider.wifi,
+      );
+      expect(manager.stateVersion, afterChange);
     });
   });
 }

@@ -30,11 +30,32 @@ class NetworkFingerprintProvider implements INetworkFingerprintProvider {
   bool _mockLocked = false;
   StreamSubscription<List<ConnectivityResult>>? _subscription;
 
+  /// RC.11-A (F-AR4): invoked whenever the fingerprint **actually changes**
+  /// (never for a repeat of the same value).
+  ///
+  /// This provider exposes no notifier of its own, and the adaptive ranking
+  /// provider reads the fingerprint imperatively — so a transport change
+  /// (wifi ↔ cellular ↔ ethernet) used to leave the node picker showing the
+  /// **previous** network's ranking until some unrelated notification happened
+  /// to arrive. `ChainProxyManager` subscribes here and routes the change
+  /// through its own `notifyListeners()`, which bumps `stateVersion` — a
+  /// component of the ranking `stateFingerprint` — so the cache misses and the
+  /// list re-ranks against the new network context.
+  void Function(String fingerprint)? onChanged;
+
   /// Test-only: pins the fingerprint so tests stay deterministic. Once called,
   /// real connectivity updates are ignored.
   void setMockFingerprint(String fingerprint) {
     _mockLocked = true;
-    _current = fingerprint;
+    _setCurrent(fingerprint);
+  }
+
+  /// The single mutation point: assign, then notify — but only on a real
+  /// change, so a repeated report of the same transport is a no-op.
+  void _setCurrent(String next) {
+    if (next == _current) return;
+    _current = next;
+    onChanged?.call(next);
   }
 
   /// Starts observing real connectivity. Idempotent; safe to call at app start.
@@ -78,7 +99,7 @@ class NetworkFingerprintProvider implements INetworkFingerprintProvider {
 
   void _apply(List<ConnectivityResult> results) {
     if (_mockLocked) return;
-    _current = fingerprintFor(results);
+    _setCurrent(fingerprintFor(results));
   }
 
   /// Pure, order-independent mapping from a connectivity snapshot to a stable
