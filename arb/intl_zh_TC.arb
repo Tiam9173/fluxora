@@ -653,7 +653,7 @@
   "restartCoreDesc": "是否手動重啟內核？",
   "highRefreshRate": "高重新整理率",
   "highRefreshRateDesc": "啟用裝置最高重新整理率支援",
-  "useGlobalScriptOverride": "使用全域指令碼覆寫",
+  "useGlobalScriptOverride": "使用全域腳本覆寫",
   "profileImportFailed": "配置導入失敗，請檢查網路狀況或嘗試重置訂閱連結( HTTP錯誤代碼: {statusCode} )",
   "authorized": "已授權",
   "unauthorized": "未授權",
