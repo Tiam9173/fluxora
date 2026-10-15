@@ -1161,6 +1161,15 @@ class ChainProxyManager extends ChangeNotifier {
   void cancelCurrentProbe() {
     _probeCancelToken?.cancel();
     _probeCancelToken = null;
+    // RC.10-C.2: invalidate the cancelled session's generation right away.
+    // Without this the publish guard below (`generation == _probeGeneration`)
+    // still passes, so a probe that ignores the CancelToken and completes
+    // normally would publish its report; and because `_probeCancelToken` was
+    // just nulled, the cancel check in `_writeBackProbeResultsToCandidates`
+    // (`_probeCancelToken?.isCancelled == true`) no longer fires either, so that
+    // report could also record reliability samples. Bumping the generation
+    // makes the publish guard fail first, regardless of what the probe does.
+    _probeGeneration++;
     _isProbingChain = false;
     notifyListeners();
   }

@@ -917,4 +917,141 @@ void main() {
       },
     );
   });
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // RC.10-C.2 — cancelled probe cannot publish
+  //
+  // `cancelCurrentProbe()` used to cancel the token and null it without bumping
+  // `_probeGeneration`. The publish guard in `probeCurrentChain()` therefore
+  // still passed for the cancelled session, and nulling `_probeCancelToken` also
+  // defeated the cancel check in `_writeBackProbeResultsToCandidates()`. These
+  // tests park a probe on a `Completer` whose override deliberately IGNORES the
+  // CancelToken — the worst case for the guard — and pin that a cancelled
+  // session can neither publish nor write back.
+  // ────────────────────────────────────────────────────────────────────────────
+  group('RC.10-C.2 — a cancelled probe cannot publish', () {
+    late ChainProxyManager manager;
+    final List<Completer<ChainProbeReport>> gates = [];
+
+    ChainProbeReport taggedReport(
+      String tag, {
+      HopProbeStatus status = HopProbeStatus.healthy,
+    }) => ChainProbeReport(
+      mode: ChainHopMode.twoHop,
+      isOverallHealthy: status == HopProbeStatus.healthy,
+      hops: [
+        HopProbeState(
+          hopIndex: 1,
+          role: HopRole.hop1Entry,
+          nodeName: 'node1',
+          nodeAddress: '127.0.0.1',
+          status: status,
+        ),
+      ],
+      rootCauseAnalysis: tag,
+      timestamp: DateTime.now(),
+    );
+
+    /// The override never inspects the CancelToken: every probe resolves only
+    /// when the test releases its gate, so a cancelled session still completes
+    /// normally.
+    void installGatedProbe() {
+      ChainProxyManager.chainProbeOverride = (cfg) {
+        final gate = Completer<ChainProbeReport>();
+        gates.add(gate);
+        return gate.future;
+      };
+    }
+
+    setUp(() async {
+      gates.clear();
+      ChainProxyManager.coreRunningOverride = true;
+      manager = ChainProxyManager();
+      manager.stopChainHealthCheck();
+      await manager.updateConfig(
+        (c) => c.copyWith(enable: true, hop1Node: 'node1', hop2Node: 'node2'),
+        reloadCore: false,
+      );
+    });
+
+    tearDown(() {
+      manager.stopChainHealthCheck();
+      ChainProxyManager.chainProbeOverride = null;
+      ChainProxyManager.coreRunningOverride = null;
+      gates.clear();
+    });
+
+    test(
+      'C5. A cancelled probe publishes nothing and writes nothing back',
+      () async {
+        installGatedProbe();
+        await manager.setFallbackPool(
+          const ChainFallbackPool(
+            entryCandidates: [
+              ChainFallbackCandidate(
+                nodeName: 'node1',
+                role: FallbackCandidateRole.entry,
+              ),
+            ],
+          ),
+        );
+
+        // Singleton: whatever an earlier test left is the value to preserve.
+        final before = manager.lastProbeReport;
+
+        final probe = manager.probeCurrentChain();
+        expect(manager.isProbingChain, isTrue);
+        expect(gates.length, 1);
+
+        // Cancel while the probe is parked. The override ignores the token, so
+        // the session still completes normally with a HEALTHY report — exactly
+        // the report the guard must refuse to publish.
+        manager.cancelCurrentProbe();
+        expect(manager.isProbingChain, isFalse);
+
+        gates[0].complete(taggedReport('cancelled-late'));
+        await probe;
+
+        expect(
+          manager.lastProbeReport,
+          same(before),
+          reason: 'a cancelled probe must not publish its report',
+        );
+        expect(
+          manager.fallbackPool.entryCandidates.single.statsByContext,
+          isEmpty,
+          reason: 'a cancelled probe must not write back reliability samples',
+        );
+      },
+    );
+
+    test(
+      'C6. A cancelled probe cannot clear the busy flag of a newer session',
+      () async {
+        installGatedProbe();
+
+        final first = manager.probeCurrentChain();
+        manager.cancelCurrentProbe();
+
+        // A new session starts after the cancel.
+        final second = manager.probeCurrentChain();
+        expect(manager.isProbingChain, isTrue);
+        expect(gates.length, 2);
+
+        // The cancelled session finishes while the new one is still parked.
+        gates[0].complete(taggedReport('cancelled-late'));
+        await first;
+        expect(
+          manager.isProbingChain,
+          isTrue,
+          reason: 'the newer session is still in flight',
+        );
+
+        gates[1].complete(taggedReport('fresh'));
+        await second;
+        expect(manager.isProbingChain, isFalse);
+        expect(manager.lastProbeReport?.rootCauseAnalysis, equals('fresh'));
+      },
+    );
+  });
 }
