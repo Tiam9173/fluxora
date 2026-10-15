@@ -7689,6 +7689,16 @@ class AppLocalizations {
   String get saveNode {
     return Intl.message('Save node', name: 'saveNode', desc: '', args: []);
   }
+
+  /// `Network Detection URL`
+  String get networkDetectionUrl {
+    return Intl.message(
+      'Network Detection URL',
+      name: 'networkDetectionUrl',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {

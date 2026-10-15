@@ -1017,6 +1017,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "network": MessageLookupByLibrary.simpleMessage("شبکه"),
     "networkDesc": MessageLookupByLibrary.simpleMessage("تغییر تنظیمات شبکه"),
     "networkDetection": MessageLookupByLibrary.simpleMessage("تست شبکه"),
+    "networkDetectionUrl": MessageLookupByLibrary.simpleMessage(
+      "نشانی تشخیص شبکه",
+    ),
     "networkErrorRetryLater": MessageLookupByLibrary.simpleMessage(
       "خطای شبکه، لطفاً بعداً دوباره امتحان کنید",
     ),

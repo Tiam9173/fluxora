@@ -1011,6 +1011,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "Modify network-related settings",
     ),
     "networkDetection": MessageLookupByLibrary.simpleMessage("Network"),
+    "networkDetectionUrl": MessageLookupByLibrary.simpleMessage(
+      "Network Detection URL",
+    ),
     "networkErrorRetryLater": MessageLookupByLibrary.simpleMessage(
       "Network error, please try again later",
     ),

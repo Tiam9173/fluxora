@@ -923,5 +923,6 @@
   "skipCertVerifyDesc": "Fixes self-signed certificate or TLS handshake errors",
   "serverAddressRequired": "Please enter the server address",
   "nodeAdded": "Node added: {name}",
-  "saveNode": "Save node"
+  "saveNode": "Save node",
+  "networkDetectionUrl": "Network Detection URL"
 }

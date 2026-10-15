@@ -213,13 +213,31 @@ class Request {
     return null;
   }
 
-  List<String> _getPrimaryIpSources() {
+  // Returns the current *built-in* primary IP source for the given locale.
+  // Kept as the fallback when the user has not overridden the URL.
+  String _builtinPrimaryIpSource() {
     final locale = Intl.getCurrentLocale().toLowerCase();
     final isZh = locale.startsWith('zh');
+    return isZh ? 'http://ip-api.com/json/?lang=zh-CN' : 'http://ip-api.com/json';
+  }
+
+  // Reads the user-configured network detection URL (primary source).
+  // Falls back to the locale-aware built-in source when unset/empty/invalid,
+  // so default behavior is unchanged for existing users.
+  String _configuredPrimaryIpSource() {
+    try {
+      final url = globalState.config.appSetting.networkDetectionUrl;
+      if (url.isNotEmpty && url.isUrl) return url;
+    } catch (_) {}
+    return _builtinPrimaryIpSource();
+  }
+
+  List<String> _getPrimaryIpSources() {
+    final primary = _configuredPrimaryIpSource();
     return [
-      isZh ? 'http://ip-api.com/json/?lang=zh-CN' : 'http://ip-api.com/json',
+      primary,
       'https://get.geojs.io/v1/ip/geo.json',
-    ];
+    ].where((e) => e.isNotEmpty).toSet().toList();
   }
 
   final List<String> _domesticIpSources = ['https://myip.ipip.net/json'];

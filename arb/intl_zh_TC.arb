@@ -923,5 +923,6 @@
   "skipCertVerifyDesc": "解決自簽憑證或 TLS 握手報錯",
   "serverAddressRequired": "請填寫伺服器位址",
   "nodeAdded": "已新增節點: {name}",
-  "saveNode": "儲存節點"
+  "saveNode": "儲存節點",
+  "networkDetectionUrl": "網路檢測連結"
 }

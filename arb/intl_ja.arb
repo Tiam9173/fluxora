@@ -923,5 +923,6 @@
   "skipCertVerifyDesc": "自己署名証明書や TLS ハンドシェイクのエラーを解決します",
   "serverAddressRequired": "サーバーアドレスを入力してください",
   "nodeAdded": "ノードを追加しました: {name}",
-  "saveNode": "ノードを保存"
+  "saveNode": "ノードを保存",
+  "networkDetectionUrl": "ネットワーク検出URL"
 }
