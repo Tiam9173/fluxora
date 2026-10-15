@@ -187,6 +187,33 @@ class ChainFallbackService implements IChainFallbackService {
 
     final seenCandidateNames = <String>{};
 
+    // S-1 (T-A): compatibility-gate observability, diagnostic ONLY.
+    //
+    // Counts candidates that actually REACHED the compatibility gate (`:443`)
+    // — i.e. candidates that survived rules 1–9 — and classifies what happened
+    // there. This is deliberately narrow: it does NOT include candidates that
+    // were already excluded before the gate (topology conflict, health, …), so
+    // the denominator always matches the numerator's scope. The two numbers are
+    // written to telemetry metadata only; they never feed ranking, admission or
+    // the failover decision (see RC11C1 §2 Q4 and the T-5 test).
+    //
+    //   compatibilityChecked    —— reached the gate with both profiles known and
+    //                              `validateEdge` returned compatible
+    //   compatibilityUnverified —— reached the gate but was passed through
+    //                              WITHOUT a real verification, because a
+    //                              profile was `null` (single node missing) or
+    //                              the whole table was empty
+    //   (verified-incompatible candidates are NOT counted here — they are
+    //    already recorded as `PROTOCOL_INCOMPATIBLE` in `excluded`)
+    int compatibilityChecked = 0;
+    int compatibilityUnverified = 0;
+    // Cause of the unverified pass-through, when any occurred. `tableEmpty` is
+    // a selection-level cause; `missingProfile` is a candidate-level cause.
+    // They may both be true in one selection; a single candidate is never
+    // counted twice.
+    bool compatibilitySawEmptyTable = false;
+    bool compatibilitySawMissingProfile = false;
+
     for (final candidate in rawCandidates) {
       final name = candidate.nodeName.trim();
 
@@ -484,6 +511,27 @@ class ChainFallbackService implements IChainFallbackService {
           }
         }
 
+        // S-1 (T-A): classify this candidate's gate outcome. `validateEdge`
+        // returns `compatible` for a `null` profile by contract ("Ignore if
+        // unknown or DIRECT", `chain_compatibility_validator.dart:38-40`), so
+        // a `compatible` result is only a REAL verification when every profile
+        // the edge needs was actually present. Otherwise the candidate was
+        // passed through unverified — record that instead of implying it was
+        // checked. Diagnostic only; nothing below branches on these counters.
+        final edgeProfilesKnown =
+            type1 != null &&
+            type2 != null &&
+            (currentConfig.hopMode == ChainHopMode.twoHop || type3 != null);
+
+        if (compatResult.compatible) {
+          if (edgeProfilesKnown) {
+            compatibilityChecked++;
+          } else {
+            compatibilityUnverified++;
+            compatibilitySawMissingProfile = true;
+          }
+        }
+
         if (!compatResult.compatible) {
           excluded.add(
             CandidateExclusionRecord(
@@ -498,6 +546,14 @@ class ChainFallbackService implements IChainFallbackService {
 
           continue;
         }
+      } else {
+        // S-1 (T-A): the whole capability table is absent, so the gate is
+        // skipped entirely. That has the same fail-open outcome as a `null`
+        // profile, so the candidate counts as unverified with the `tableEmpty`
+        // cause. `tableEmpty` is a selection-level cause; the candidate itself
+        // still counts exactly once against `compatibilityUnverified`.
+        compatibilityUnverified++;
+        compatibilitySawEmptyTable = true;
       }
 
       eligible.add(candidate);
@@ -572,6 +628,20 @@ class ChainFallbackService implements IChainFallbackService {
             'priority': selected.priority,
 
             'latencyMs': selected.latencyMs,
+
+            // S-1 (T-A): diagnostic-only compatibility-gate counters.
+            // `compatibilityChecked` + `compatibilityUnverified` are the two
+            // sides of the denominator (candidates that reached the gate);
+            // verified-incompatible candidates live in `excluded` instead.
+            // `compatibilityUnverifiedCause` names why the unverified
+            // pass-through happened, if it did. Never read by the decision
+            // path — see the T-5 test.
+            'compatibilityChecked': compatibilityChecked,
+            'compatibilityUnverified': compatibilityUnverified,
+            'compatibilityUnverifiedCause': _compatibilityCause(
+              tableEmpty: compatibilitySawEmptyTable,
+              missingProfile: compatibilitySawMissingProfile,
+            ),
           },
         ),
       );
@@ -600,6 +670,17 @@ class ChainFallbackService implements IChainFallbackService {
             'poolSize': rawCandidates.length,
 
             'excludedCount': excluded.length,
+
+            // S-1 (T-A): same diagnostic-only counters as the selected branch.
+            // This branch is where a fully-excluded selection lands, so the
+            // "unverified" count can legitimately be 0 while `excluded` carries
+            // the real reasons — the two are never conflated.
+            'compatibilityChecked': compatibilityChecked,
+            'compatibilityUnverified': compatibilityUnverified,
+            'compatibilityUnverifiedCause': _compatibilityCause(
+              tableEmpty: compatibilitySawEmptyTable,
+              missingProfile: compatibilitySawMissingProfile,
+            ),
           },
         ),
       );
@@ -633,6 +714,20 @@ class ChainFallbackService implements IChainFallbackService {
 
       explanation: explanationBuffer.toString(),
     );
+  }
+
+  /// S-1 (T-A): the diagnostic cause label for an unverified compatibility
+  /// pass-through. `null` when every candidate that reached the gate was
+  /// actually verified, so an absent cause means "nothing to report" rather
+  /// than a fabricated value. Both causes can hold at once.
+  static String? _compatibilityCause({
+    required bool tableEmpty,
+    required bool missingProfile,
+  }) {
+    if (tableEmpty && missingProfile) return 'tableEmpty,missingProfile';
+    if (tableEmpty) return 'tableEmpty';
+    if (missingProfile) return 'missingProfile';
+    return null;
   }
 
   /// 纭畾鎬у缁存帓搴忔瘮杈冨櫒
