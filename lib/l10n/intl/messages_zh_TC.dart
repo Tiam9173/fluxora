@@ -942,9 +942,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage("透過 URL 獲取設定檔"),
     "urlTip": m21,
-    "useGlobalScriptOverride": MessageLookupByLibrary.simpleMessage(
-      "使用全域指令碼覆寫",
-    ),
+    "useGlobalScriptOverride": MessageLookupByLibrary.simpleMessage("使用全域腳本覆寫"),
     "useHosts": MessageLookupByLibrary.simpleMessage("使用 Hosts"),
     "useSystemHosts": MessageLookupByLibrary.simpleMessage("使用系統 Hosts"),
     "value": MessageLookupByLibrary.simpleMessage("值"),

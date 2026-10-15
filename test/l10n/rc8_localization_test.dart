@@ -216,4 +216,19 @@ void main() {
       expect(appLocalizations.script, '腳本');
     });
   });
+
+  // RC.12-A — the zh_TC term for "script" is unified on `腳本`.
+  // `useGlobalScriptOverride` was the only remaining key that used `指令碼`,
+  // which is now gone from the zh_TC table; every script-related label reads
+  // `腳本`.
+  group('RC.12-A — zh_TC uses 腳本 consistently for script', () {
+    test('zh_TC', () async {
+      await AppLocalizations.load(const Locale('zh', 'TC'));
+      expect(appLocalizations.useGlobalScriptOverride, '使用全域腳本覆寫');
+      expect(appLocalizations.useGlobalScriptOverride, isNot(contains('指令碼')));
+      expect(appLocalizations.script, '腳本');
+      expect(appLocalizations.scriptDesc, contains('腳本'));
+      expect(appLocalizations.pleaseEnterScriptName, contains('腳本'));
+    });
+  });
 }
