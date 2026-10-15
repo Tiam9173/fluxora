@@ -808,4 +808,60 @@ void main() {
       expect(clearedLogs(), 0);
     });
   });
+
+  // ── F-B2 / H3: dispose() must not let a resumed tick trigger failover ──────
+  //
+  // H4 proves a post-dispose tick does not *start a probe*; that alone does not
+  // prove it cannot *trigger failover*. This test parks the tick PAST the
+  // `_isCoreReady()` re-check — inside the health probe, a real async boundary —
+  // then disposes and releases the probe. The tick must bail at the
+  // `_probeGeneration != probeGeneration` re-check and never reach
+  // `_maybeAutoFailover` → `triggerAutoFailover`.
+  //
+  // The arrangement (failing report ×2 + a valid, enabled exit candidate) is
+  // identical to test G, which proves a tick that *completes* DOES apply
+  // failover (`applyCount > 0`). So `applyCount == 0` here is a real result,
+  // not an accident of an inert setup.
+  //
+  // MUST RUN LAST: `dispose()` tears down the process-wide singleton, so no
+  // later test could use it.
+  group('F-B2 / H3 — dispose() blocks the auto-failover path', () {
+    test('a tick resuming after dispose does not trigger failover', () async {
+      await enableAuto();
+      await manager.updateFallbackPool((_) => poolWithExit('US-FB-01'));
+      _healthReport = _failed;
+      _candidateProbeOverride = (cfg) => _healthy(cfg.hopMode);
+
+      // First tick completes normally: the counter advances to 1 and nothing
+      // switches yet — the exact "armed" state test G triggers from.
+      await manager.runChainHealthCheck();
+      expect(manager.consecutiveHealthCheckFailures, 1);
+      expect(recorder?.applyCount ?? 0, 0);
+
+      // Park the SECOND tick inside the health probe. `probeStarted` fires the
+      // instant the override is invoked, i.e. after the tick has already passed
+      // its entry re-check — so this isolates the generation-bump guard, not
+      // H4's `_disposed` re-check.
+      final probeStarted = Completer<void>();
+      final probeGate = Completer<ChainProbeReport>();
+      ChainProxyManager.chainProbeOverride = (cfg) {
+        if (!probeStarted.isCompleted) probeStarted.complete();
+        return probeGate.future;
+      };
+
+      final tick = manager.runChainHealthCheck();
+      await probeStarted.future; // deterministic: the tick is now parked
+      manager.dispose();
+      if (!probeGate.isCompleted) {
+        probeGate.complete(_failed(ChainHopMode.twoHop));
+      }
+      await tick;
+
+      expect(
+        recorder?.applyCount ?? 0,
+        0,
+        reason: 'a tick that outlives dispose() must not trigger failover',
+      );
+    });
+  });
 }
