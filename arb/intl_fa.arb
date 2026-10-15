@@ -464,7 +464,7 @@
   "fallbackConcurrentDesc": "استعلام همزمان از DNS اصلی و فالبک",
   "geoipCode": "کد GeoIP",
   "ipcidr": "IP / ماسک",
-  "domain": "دامنه",
+  "domainName": "دامنه",
   "reset": "بازنشانی",
   "action_view": "نمایش / پنهان",
   "action_start": "شروع / توقف",
@@ -582,7 +582,6 @@
   "clearData": "پاکسازی داده‌ها",
   "clearDataTipTitle": "عملیات حساس",
   "clearDataTipDesc": "این عملیات تمامی تنظیمات برنامه را بازنشانی می‌کند. آیا مطمئن هستید؟",
-  "zoom": "بزرگنمایی",
   "textScale": "مقیاس متن",
   "trayIconInvert": "معکوس‌سازی آیکون تسک‌بار",
   "trayIconInvertDesc": "معکوس کردن رنگ آیکون تسک‌بار",
@@ -681,7 +680,6 @@
   "clear": "پاک کردن",
   "back": "بازگشت",
   "closeAll": "بستن همه",
-  "script": "اسکریپت",
   "moreIpInfo": "اطلاعات بیشتر IP",
   "viewDetailedIpData": "مشاهده داده‌های دقیق IP",
   "ipAddress": "آدرس IP",
@@ -735,6 +733,5 @@
   "notUnlocked": "مسدود",
   "checkFailed": "Timeout",
   "testing": "در حال بررسی",
-  "other": "سایر",
   "flagged": "نشانه‌گذاری‌شده"
 }

@@ -464,7 +464,7 @@
   "fallbackConcurrentDesc": "기본 DNS와 폴백 DNS 동시 조회",
   "geoipCode": "GeoIP 코드",
   "ipcidr": "IP / 서브넷 마스크",
-  "domain": "도메인",
+  "domainName": "도메인",
   "reset": "초기화",
   "action_view": "표시 / 숨기기",
   "action_start": "시작 / 정지",
@@ -582,7 +582,6 @@
   "clearData": "데이터 삭제",
   "clearDataTipTitle": "위험한 작업",
   "clearDataTipDesc": "앱의 모든 설정이 초기화됩니다. 백업을 확인하세요. 계속하시겠습니까?",
-  "zoom": "확대/축소",
   "textScale": "텍스트 배율",
   "trayIconInvert": "트레이 아이콘 반전",
   "trayIconInvertDesc": "현재 트레이 아이콘 색상 반전 설정",
@@ -681,7 +680,6 @@
   "clear": "지우기",
   "back": "뒤로",
   "closeAll": "모두 닫기",
-  "script": "스크립트",
   "moreIpInfo": "상세 IP 정보",
   "viewDetailedIpData": "상세 IP 데이터 보기",
   "ipAddress": "IP 주소",
@@ -735,6 +733,5 @@
   "notUnlocked": "잠김",
   "checkFailed": "Timeout",
   "testing": "검사 중",
-  "other": "기타",
   "flagged": "표시됨"
 }

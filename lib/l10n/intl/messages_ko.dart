@@ -338,6 +338,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "dnsMode": MessageLookupByLibrary.simpleMessage("DNS 모드"),
     "doYouWantToPass": MessageLookupByLibrary.simpleMessage("다음 요청을 허용하시겠습니까:"),
     "domain": MessageLookupByLibrary.simpleMessage("조직 / 도메인"),
+    "domainName": MessageLookupByLibrary.simpleMessage("도메인"),
     "doubleBounce": MessageLookupByLibrary.simpleMessage("더블 바운스"),
     "download": MessageLookupByLibrary.simpleMessage("다운로드"),
     "dozeSuspend": MessageLookupByLibrary.simpleMessage("절전 모드 연동"),

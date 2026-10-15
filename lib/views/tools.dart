@@ -1105,7 +1105,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
         onTap: (context, _) => _pushPage(context, 'DNS', const DnsListView()),
       ),
       _SearchItem(
-        title: appLocalizations.domain,
+        title: appLocalizations.domainName,
         category: dnsCategory,
         onTap: (context, _) => _pushPage(context, 'DNS', const DnsListView()),
       ),

@@ -844,10 +844,10 @@ class DomainItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListItem.next(
-      title: Text(appLocalizations.domain),
+      title: Text(appLocalizations.domainName),
       delegate: NextDelegate(
         blur: false,
-        title: appLocalizations.domain,
+        title: appLocalizations.domainName,
         widget: Consumer(
           builder: (_, ref, _) {
             final domain = ref.watch(
@@ -856,7 +856,7 @@ class DomainItem extends StatelessWidget {
               ),
             );
             return ListInputPage(
-              title: appLocalizations.domain,
+              title: appLocalizations.domainName,
               items: domain,
               titleBuilder: (item) => Text(item),
               onChange: (items) {

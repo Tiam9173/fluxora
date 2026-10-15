@@ -7,8 +7,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/l10n/l10n.dart';
 
-/// Every key defined by `chain_proxy_l10n.dart`, `tun_l10n.dart` and
-/// `system_proxy_l10n.dart`, read through the real getter.
+/// Every key defined by the generated l10n tables,
+/// read through the real getter.
 final Map<String, String Function(AppLocalizations)> _keys = {
   'chainProxy': (l) => l.chainProxy,
   'chainProxyDesc': (l) => l.chainProxyDesc,
@@ -182,6 +182,38 @@ void main() {
       expect(en, isNot(equals(zh)));
       expect(_cjk.hasMatch(zh), isTrue);
       expect(_cjk.hasMatch(en), isFalse);
+    });
+  });
+
+  // RC.10 — `domain` used to be defined twice with different values (a DNS
+  // filter label and an IP-detail label). The DNS side now has its own
+  // `domainName` key, so `domain` keeps the IP-detail copy.
+  group('RC.10 — domain / domainName resolve to distinct labels', () {
+    test('en', () async {
+      await AppLocalizations.load(const Locale('en'));
+      expect(appLocalizations.domainName, 'Domain');
+      expect(appLocalizations.domain, 'Organization / Domain');
+    });
+
+    test('zh_CN', () async {
+      await AppLocalizations.load(const Locale('zh', 'CN'));
+      expect(appLocalizations.domainName, '域名');
+      expect(appLocalizations.domain, '组织 / 域名');
+    });
+
+    test('zh_TC', () async {
+      await AppLocalizations.load(const Locale('zh', 'TC'));
+      expect(appLocalizations.domainName, '網域');
+      expect(appLocalizations.domain, '組織 / 域名');
+    });
+  });
+
+  // RC.10 — the zh_TC table defined `script` twice (`腳本` / `指令碼`). Only the
+  // `腳本` copy is kept, matching `scriptDesc` and `pleaseEnterScriptName`.
+  group('RC.10 — zh_TC script keeps 腳本', () {
+    test('zh_TC', () async {
+      await AppLocalizations.load(const Locale('zh', 'TC'));
+      expect(appLocalizations.script, '腳本');
     });
   });
 }

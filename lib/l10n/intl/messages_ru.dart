@@ -420,6 +420,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "dnsMode": MessageLookupByLibrary.simpleMessage("Режим DNS"),
     "doYouWantToPass": MessageLookupByLibrary.simpleMessage("Разрешить"),
     "domain": MessageLookupByLibrary.simpleMessage("Домен"),
+    "domainName": MessageLookupByLibrary.simpleMessage("Домен"),
     "doubleBounce": MessageLookupByLibrary.simpleMessage("Двойной отскок"),
     "download": MessageLookupByLibrary.simpleMessage("Загрузка"),
     "dozeSuspend": MessageLookupByLibrary.simpleMessage("Поддержка Doze"),

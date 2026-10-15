@@ -407,6 +407,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "آیا می‌خواهید مجوز دهید برای:",
     ),
     "domain": MessageLookupByLibrary.simpleMessage("سازمان / دامنه"),
+    "domainName": MessageLookupByLibrary.simpleMessage("دامنه"),
     "doubleBounce": MessageLookupByLibrary.simpleMessage("جهش دوگانه"),
     "download": MessageLookupByLibrary.simpleMessage("دانلود"),
     "dozeSuspend": MessageLookupByLibrary.simpleMessage("پشتیبانی از Doze"),

@@ -355,6 +355,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "dnsMode": MessageLookupByLibrary.simpleMessage("DNS模式"),
     "doYouWantToPass": MessageLookupByLibrary.simpleMessage("是否要通过"),
     "domain": MessageLookupByLibrary.simpleMessage("组织 / 域名"),
+    "domainName": MessageLookupByLibrary.simpleMessage("域名"),
     "doubleBounce": MessageLookupByLibrary.simpleMessage("双重弹奏"),
     "download": MessageLookupByLibrary.simpleMessage("下载"),
     "dozeSuspend": MessageLookupByLibrary.simpleMessage("休眠支持"),

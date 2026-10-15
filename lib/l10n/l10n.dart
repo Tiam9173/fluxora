@@ -3885,14 +3885,9 @@ class AppLocalizations {
     return Intl.message('IP/CIDR', name: 'ipcidr', desc: '', args: []);
   }
 
-  /// `Organization / Domain`
-  String get domain {
-    return Intl.message(
-      'Organization / Domain',
-      name: 'domain',
-      desc: '',
-      args: [],
-    );
+  /// `Domain`
+  String get domainName {
+    return Intl.message('Domain', name: 'domainName', desc: '', args: []);
   }
 
   /// `Reset`
@@ -5633,6 +5628,16 @@ class AppLocalizations {
   /// `Continent`
   String get continent {
     return Intl.message('Continent', name: 'continent', desc: '', args: []);
+  }
+
+  /// `Organization / Domain`
+  String get domain {
+    return Intl.message(
+      'Organization / Domain',
+      name: 'domain',
+      desc: '',
+      args: [],
+    );
   }
 
   /// `Copied to clipboard`

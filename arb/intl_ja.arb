@@ -464,7 +464,7 @@
   "fallbackConcurrentDesc": "デフォルトDNSとフォールバックDNSを同時に照会",
   "geoipCode": "GeoIPコード",
   "ipcidr": "IP / サブネットマスク",
-  "domain": "ドメイン",
+  "domainName": "ドメイン",
   "reset": "リセット",
   "action_view": "表示 / 非表示",
   "action_start": "開始 / 停止",
@@ -582,7 +582,6 @@
   "clearData": "データ消去",
   "clearDataTipTitle": "危険な操作",
   "clearDataTipDesc": "アプリのすべての設定がリセットされます。バックアップを確認してください。続行しますか？",
-  "zoom": "ズーム",
   "textScale": "テキスト倍率",
   "trayIconInvert": "トレイアイコン反転",
   "trayIconInvertDesc": "現在のトレイアイコンの色を反転設定",
@@ -681,7 +680,6 @@
   "clear": "消去",
   "back": "戻る",
   "closeAll": "すべて閉じる",
-  "script": "スクリプト",
   "moreIpInfo": "詳細 IP 情報",
   "viewDetailedIpData": "詳細なIPデータを見る",
   "ipAddress": "IP アドレス",
@@ -735,6 +733,5 @@
   "notUnlocked": "未解除",
   "checkFailed": "Timeout",
   "testing": "検出中",
-  "other": "その他",
   "flagged": "フラグ付き"
 }

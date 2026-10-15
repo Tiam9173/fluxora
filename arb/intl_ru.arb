@@ -465,6 +465,7 @@
   "geoipCode": "Код GeoIP",
   "ipcidr": "IP/CIDR",
   "domain": "Домен",
+  "domainName": "Домен",
   "reset": "Сброс",
   "action_view": "Показать/Скрыть",
   "action_start": "Запуск/Остановка",
@@ -583,7 +584,6 @@
   "clearData": "Очистить данные",
   "clearDataTipTitle": "Опасная операция",
   "clearDataTipDesc": "Это действие сбросит настройки приложения. Пожалуйста, сделайте резервную копию. Вы уверены, что хотите продолжить?",
-  "zoom": "Масштаб",
   "textScale": "Масштаб текста",
   "trayIconInvert": "Инвертировать значок трея",
   "trayIconInvertDesc": "Инвертировать цвет текущего значка в трее",
@@ -737,6 +737,5 @@
   "notUnlocked": "Заблокировано",
   "checkFailed": "Timeout",
   "testing": "Проверка",
-  "other": "Другое",
   "flagged": "Помечен"
 }
