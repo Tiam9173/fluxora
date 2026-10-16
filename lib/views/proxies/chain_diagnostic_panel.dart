@@ -69,9 +69,14 @@ class _ChainDiagnosticPanelState extends ConsumerState<ChainDiagnosticPanel> {
                   size: 20,
                 ),
                 const SizedBox(width: 8),
-                const Text(
-                  'Chain Diagnostic',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                // item 4 — unwrapped this card title overflowed at 280/320 dp
+                // under the 1.4x text scale.
+                Flexible(
+                  child: Text(
+                    appLocalizations.chainDiagnosticTitle,
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),
@@ -79,20 +84,28 @@ class _ChainDiagnosticPanelState extends ConsumerState<ChainDiagnosticPanel> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildStat(
-                  'Health',
-                  '${intelligence.healthScore}',
-                  colorScheme,
+                // item 4 — three unbounded stats overflowed the card at 280/320 dp
+                // under the 1.4x text scale; give each a third of the width.
+                Expanded(
+                  child: _buildStat(
+                    appLocalizations.chainHealthLabel,
+                    '${intelligence.healthScore}',
+                    colorScheme,
+                  ),
                 ),
-                _buildStat(
-                  'Events',
-                  '${widget.telemetrySnapshot.totalEvents}',
-                  colorScheme,
+                Expanded(
+                  child: _buildStat(
+                    appLocalizations.chainEventsLabel,
+                    '${widget.telemetrySnapshot.totalEvents}',
+                    colorScheme,
+                  ),
                 ),
-                _buildStat(
-                  'Failures',
-                  '${widget.telemetrySnapshot.failedEvents}',
-                  colorScheme,
+                Expanded(
+                  child: _buildStat(
+                    appLocalizations.chainFailuresLabel,
+                    '${widget.telemetrySnapshot.failedEvents}',
+                    colorScheme,
+                  ),
                 ),
               ],
             ),
@@ -107,7 +120,11 @@ class _ChainDiagnosticPanelState extends ConsumerState<ChainDiagnosticPanel> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.download_outlined, size: 18),
-                label: Text(_isExporting ? 'Exporting...' : 'Export Report'),
+                label: Text(
+                  _isExporting
+                      ? appLocalizations.chainExporting
+                      : appLocalizations.chainExportReport,
+                ),
                 onPressed: _isExporting ? null : _exportReport,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: colorScheme.primaryContainer,

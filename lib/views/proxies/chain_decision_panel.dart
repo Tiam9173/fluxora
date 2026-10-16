@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fluxora/common/common.dart';
 import 'package:fluxora/models/chain_insight.dart';
 import 'package:fluxora/models/chain_decision.dart';
 import 'package:fluxora/models/chain_telemetry.dart';
@@ -38,9 +39,14 @@ class ChainDecisionPanel extends StatelessWidget {
                   size: 20,
                 ),
                 const SizedBox(width: 8),
-                const Text(
-                  'Decision Support',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                // item 4 — unwrapped this card title overflowed at 280/320 dp
+                // under the 1.4x text scale.
+                Flexible(
+                  child: Text(
+                    appLocalizations.chainDecisionSupport,
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),
