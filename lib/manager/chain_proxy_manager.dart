@@ -1362,13 +1362,24 @@ class ChainProxyManager extends ChangeNotifier {
     _probeCancelToken = token;
     _isProbingChain = true;
     notifyListeners();
+
+    // item 3-A — the chain probe must honour the user-configured test URL
+    // (`appSetting.testUrl`, the same one the delay tests use) instead of
+    // silently falling back to the hard-coded gstatic default. Callers that
+    // pass an explicit URL still win. `globalState.config` always resolves to a
+    // default config (state.dart:46), so this is safe before the app boots.
+    final String configuredTestUrl = globalState.config.appSetting.testUrl
+        .trim();
+    final String? effectiveTestUrl = (testUrl == null || testUrl.isEmpty)
+        ? (configuredTestUrl.isEmpty ? null : configuredTestUrl)
+        : testUrl;
     try {
       final override = chainProbeOverride;
       final report = override != null
           ? await override(_config)
           : await chainProbeService.probeChain(
               config: _config,
-              testUrl: testUrl,
+              testUrl: effectiveTestUrl,
               cancelToken: token,
             );
       // RC.10-C.1 — only the owning probe may publish. A superseded probe's

@@ -258,6 +258,44 @@ http://user2:pass2@198.51.100.2:8080#HTTP-Node
       expect(injected['dialer-proxy'], '🇭🇰 香港 01');
     });
 
+    test('item 2 — 当前置跳板指定策略组时，dialer-proxy 采用该组名而非专用跳板组', () {
+      final config = ChainProxyConfig(
+        enable: true,
+        defaultDialerProxy: '🔰 节点选择',
+        createDedicatedGroup: true,
+        autoInjectGroups: true,
+        landingProxies: [
+          LandingProxy.create(
+            name: '美国住宅01',
+            server: '100.1.1.1',
+            port: 8000,
+            enable: true,
+          ),
+        ],
+      );
+
+      final rawConfig = <String, dynamic>{
+        'proxies': [
+          {'name': '🇭🇰 香港 01', 'type': 'ss', 'server': '1.1.1.1', 'port': 8388},
+        ],
+        'proxy-groups': [
+          {
+            'name': '🔰 节点选择',
+            'type': 'select',
+            'proxies': ['🇭🇰 香港 01', 'DIRECT'],
+          },
+        ],
+      };
+
+      config.applyToClashConfig(rawConfig);
+
+      final proxies = rawConfig['proxies'] as List;
+      final injected = proxies.firstWhere((p) => p['name'] == '美国住宅01');
+      // The entry hop names an existing policy group: it must be honoured as the
+      // dialer instead of silently falling back to 「✈️ 链式跳板」.
+      expect(injected['dialer-proxy'], '🔰 节点选择');
+    });
+
     test('当未启用或没有启用的落地代理时，不修改原始配置', () {
       final config = ChainProxyConfig(
         enable: false,
