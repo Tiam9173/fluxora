@@ -53,6 +53,24 @@ class Logs extends _$Logs with AutoDisposeNotifierMixin {
   void clearLogs() {
     state = FixedList(maxLength);
   }
+
+  /// item 6 — replace the whole list, used to seed the buffered log history when
+  /// the Logs page opens.
+  ///
+  /// A **fresh backing list** on purpose: `FixedList.copyWith()` shares the same
+  /// `_list` reference (`common/fixed.dart:31`), so reusing the current state's
+  /// list would leave a stale `_cachedList` on the old wrapper. Assigning `state`
+  /// runs `onUpdate`, which keeps `globalState.appState.logs` in step — so the
+  /// seeded history survives this provider being auto-disposed and rebuilt.
+  ///
+  /// Same deferred-write / `ref.mounted` dance as [addLog]: this can fire from a
+  /// post-frame callback after the page has already gone away.
+  void setLogs(List<Log> logs) {
+    Future.microtask(() {
+      if (!ref.mounted) return;
+      state = FixedList(maxLength, list: [...logs]);
+    });
+  }
 }
 
 // Search and filter providers for logs
