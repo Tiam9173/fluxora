@@ -1009,6 +1009,16 @@ class GlobalState {
       }
     }
 
+    // item 6 (Bettbox 1.19.3) — loopback protection. A packet inside the tunnel
+    // aimed at one of our own listener ports would be routed back into the proxy
+    // itself: no useful work, and a plausible way to spin. Reject it outright.
+    if (config.vpnProps.loopbackProtection) {
+      rules = [
+        ...buildLoopbackRules(patchConfig, isAndroid: system.isAndroid),
+        ...rules,
+      ];
+    }
+
     if (config.vpnProps.disableQuic) {
       // Resolve "follow system" / unset before the language check.
       final isRussian =
@@ -1675,3 +1685,31 @@ class MediaUnlockStateNotifier {
 
 final mediaUnlockState = MediaUnlockStateNotifier();
 
+
+/// item 6 (Bettbox 1.19.3) — the rules that make up loopback protection.
+///
+/// A packet inside the tunnel aimed at one of our own listener ports would be
+/// routed back into the proxy itself: no useful work, and a plausible way to
+/// spin. Both address families are covered because a v6 misroute loops just as
+/// well as a v4 one.
+///
+/// The Android extra blocks the DoT port against TEST-NET-2, which is where the
+/// platform's private-DNS probe lands.
+///
+/// Pure and top-level so the rule text can be asserted directly — the call site
+/// sits in the middle of a large async config patch and is not reachable from a
+/// unit test.
+List<String> buildLoopbackRules(
+  ClashConfig patchConfig, {
+  required bool isAndroid,
+}) {
+  final listenPorts = patchConfig.listenPorts;
+  return [
+    if (listenPorts.isNotEmpty) ...[
+      'AND,((DST-PORT,$listenPorts),(IP-CIDR,127.0.0.0/8,no-resolve)),REJECT',
+      'AND,((DST-PORT,$listenPorts),(IP-CIDR6,::1/128,no-resolve)),REJECT',
+    ],
+    if (isAndroid)
+      'AND,((DST-PORT,853),(IP-CIDR,198.51.100.0/30,no-resolve)),REJECT',
+  ];
+}

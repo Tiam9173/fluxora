@@ -71,6 +71,8 @@
   "enableTraySpeedDesc": "在選單欄顯示上傳和下載速率",
   "excludeChina": "排除國內",
   "excludeChinaDesc": "放行中國 QUIC 流量而非全部停用",
+  "loopbackProtection": "迴環保護",
+  "loopbackProtectionDesc": "阻斷網路錯誤引起的迴環流量",
   "portFallback": "連接埠自動避讓",
   "portFallbackDesc": "設定的連接埠被佔用時，暫時使用其他連接埠",
   "fcmOptimization": "FCM 優化",

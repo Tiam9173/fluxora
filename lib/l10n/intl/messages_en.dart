@@ -998,6 +998,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "loopbackDesc": MessageLookupByLibrary.simpleMessage(
       "UWP loopback unlocking tool",
     ),
+    "loopbackProtection": MessageLookupByLibrary.simpleMessage(
+      "Loopback Protection",
+    ),
+    "loopbackProtectionDesc": MessageLookupByLibrary.simpleMessage(
+      "Block loopback traffic from network errors",
+    ),
     "loose": MessageLookupByLibrary.simpleMessage("Loose"),
     "manualAddNode": MessageLookupByLibrary.simpleMessage("Manually add node"),
     "manualEntry": MessageLookupByLibrary.simpleMessage("Manual entry"),

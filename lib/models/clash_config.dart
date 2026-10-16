@@ -765,3 +765,18 @@ abstract class ClashConfig with _$ClashConfig {
     }
   }
 }
+
+/// item 6 (Bettbox 1.19.3) — the ports the core listens on, as mihomo's
+/// `DST-PORT` expects them (slash separated, zero/unset entries dropped).
+///
+/// Used to build the loopback-protection rules: traffic aimed at our own
+/// listener is what would otherwise loop straight back into the proxy.
+extension ClashConfigListenPorts on ClashConfig {
+  String get listenPorts => {
+    mixedPort,
+    port,
+    socksPort,
+    redirPort,
+    tproxyPort,
+  }.where((port) => port > 0).join('/');
+}

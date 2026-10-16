@@ -71,6 +71,8 @@
   "enableTraySpeedDesc": "在菜单栏显示上传和下载速率",
   "excludeChina": "排除国内",
   "excludeChinaDesc": "放行中国 QUIC 流量而非全部禁用",
+  "loopbackProtection": "回环保护",
+  "loopbackProtectionDesc": "阻断网络错误引起的回环流量",
   "portFallback": "端口自动避让",
   "portFallbackDesc": "配置的端口被占用时，临时使用其他端口",
   "fcmOptimization": "FCM优化",

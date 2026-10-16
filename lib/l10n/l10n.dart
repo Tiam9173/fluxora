@@ -640,6 +640,26 @@ class AppLocalizations {
     );
   }
 
+  /// `Loopback Protection`
+  String get loopbackProtection {
+    return Intl.message(
+      'Loopback Protection',
+      name: 'loopbackProtection',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Block loopback traffic from network errors`
+  String get loopbackProtectionDesc {
+    return Intl.message(
+      'Block loopback traffic from network errors',
+      name: 'loopbackProtectionDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Port Fallback`
   String get portFallback {
     return Intl.message(
