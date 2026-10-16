@@ -28,6 +28,37 @@ class ProfilesView extends ConsumerStatefulWidget {
 class _ProfilesViewState extends ConsumerState<ProfilesView> {
   Function? applyConfigDebounce;
 
+  /// item 6 — inline drag-to-reorder for the subscription grid.
+  final _profilesGridKey = GlobalKey<SuperGridState>();
+
+  /// Persist the order the user just dragged into place.
+  ///
+  /// `SuperGrid` reorders the same `GridItem` objects, and each carries a
+  /// `ValueKey(profile.id)`, so the new order can be read back off the keys. Done
+  /// in a post-frame callback because the drag that triggered this is still
+  /// finishing when `onUpdate` fires.
+  void _handleProfilesReordered() {
+    final ordered = _profilesGridKey.currentState?.children;
+    if (ordered == null) return;
+    final byId = {
+      for (final profile in globalState.config.profiles) profile.id: profile,
+    };
+    final next = <Profile>[];
+    for (final item in ordered) {
+      final id = item.key is ValueKey<String>
+          ? (item.key! as ValueKey<String>).value
+          : null;
+      final profile = id == null ? null : byId[id];
+      if (profile != null) next.add(profile);
+    }
+    // Bail out unless every item mapped back: a partial list would silently drop
+    // subscriptions.
+    if (next.length != ordered.length) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      globalState.appController.setProfiles(next);
+    });
+  }
+
   void _handleShowAddExtendPage() {
     showExtend(
       globalState.navigatorKey.currentState!.context,
@@ -174,20 +205,23 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
                         ? getFloatingBottomBarReserveHeight(context)
                         : 0),
               ),
-              child: Grid(
+              child: SuperGrid(
+                key: _profilesGridKey,
                 mainAxisSpacing: 16,
                 crossAxisSpacing: 16,
                 crossAxisCount: columns,
+                onUpdate: _handleProfilesReordered,
+                // Only the handle drags, so `ProfileItem` keeps its tap (select)
+                // and long-press (edit the subscription file) untouched.
+                dragHandleBuilder: (index) => const _ProfileDragHandle(),
                 children: [
-                  for (
-                    int i = 0;
-                    i < profilesSelectorState.profiles.length;
-                    i++
-                  )
+                  for (final profile in profilesSelectorState.profiles)
                     GridItem(
+                      // Read back by `_handleProfilesReordered` after a reorder.
+                      key: ValueKey(profile.id),
                       child: ProfileItem(
-                        key: Key(profilesSelectorState.profiles[i].id),
-                        profile: profilesSelectorState.profiles[i],
+                        key: Key(profile.id),
+                        profile: profile,
                         groupValue: profilesSelectorState.currentProfileId,
                         onChanged: (profileId) {
                           ref.read(currentProfileIdProvider.notifier).value =
@@ -200,6 +234,31 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// item 6 — the drag handle that `SuperGrid` turns into a drag source.
+///
+/// Deliberately small and in the corner: it is the only part of the card that
+/// starts a drag, so it must read as a distinct affordance rather than inviting
+/// a swipe across the card. The hit area is padded a little beyond the glyph so
+/// it stays comfortable to grab on touch.
+///
+/// Top-level on purpose — a widget class nested inside the page's State would
+/// rebuild with it on every frame and loses const identity.
+class _ProfileDragHandle extends StatelessWidget {
+  const _ProfileDragHandle();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(4),
+      child: Icon(
+        Icons.drag_indicator,
+        size: 18,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
       ),
     );
   }
