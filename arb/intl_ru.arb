@@ -298,6 +298,7 @@
   "style": "Стиль",
   "size": "Высота",
   "delayAnimation": "Анимация задержки",
+  "syncDelayAnimation": "Синхронизировать анимацию с другими страницами",
   "delayAnimationDesc": "Настройка анимации при тестировании",
   "noAnimation": "По умолчанию",
   "rotatingCircle": "Вращающийся круг",

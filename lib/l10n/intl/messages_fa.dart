@@ -1686,6 +1686,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "sync": MessageLookupByLibrary.simpleMessage("همگام‌سازی"),
     "syncAll": MessageLookupByLibrary.simpleMessage("همگام‌سازی همه"),
+    "syncDelayAnimation": MessageLookupByLibrary.simpleMessage(
+      "همگام‌سازی انیمیشن با صفحات دیگر",
+    ),
     "syncFailed": MessageLookupByLibrary.simpleMessage("همگام‌سازی ناموفق بود"),
     "system": MessageLookupByLibrary.simpleMessage("سیستم"),
     "systemApp": MessageLookupByLibrary.simpleMessage("برنامه‌های سیستم"),

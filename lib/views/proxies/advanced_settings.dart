@@ -19,6 +19,7 @@ class ProxiesAdvancedSettings extends ConsumerWidget {
           const _ConcurrencyLimitItem(),
           const _HealthCheckTimeoutItem(),
           const _DelayAnimationItem(),
+          const _SyncDelayAnimationItem(),
           const _HideTimeoutProxiesItem(),
         ],
       ),
@@ -237,6 +238,31 @@ class _HideTimeoutProxiesItem extends ConsumerWidget {
               .updateState(
                 (state) => state.copyWith(hideTimeoutProxies: value),
               );
+        },
+      ),
+    );
+  }
+}
+
+class _SyncDelayAnimationItem extends ConsumerWidget {
+  const _SyncDelayAnimationItem();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final syncDelayAnimation = ref.watch(
+      proxiesStyleSettingProvider.select((state) => state.syncDelayAnimation),
+    );
+
+    return ListItem.switchItem(
+      leading: const Icon(Icons.sync_outlined),
+      title: Text(appLocalizations.syncDelayAnimation),
+      subtitle: Text(appLocalizations.delayAnimationDesc),
+      delegate: SwitchDelegate(
+        value: syncDelayAnimation,
+        onChanged: (bool value) async {
+          ref
+              .read(proxiesStyleSettingProvider.notifier)
+              .updateState((state) => state.copyWith(syncDelayAnimation: value));
         },
       ),
     );

@@ -3,6 +3,7 @@ export 'pop_scope.dart';
 export 'builder.dart';
 export 'card.dart';
 export 'chip.dart';
+export 'delay_animation.dart';
 export 'color_scheme_box.dart';
 export 'disabled_mask.dart';
 export 'fade_box.dart';

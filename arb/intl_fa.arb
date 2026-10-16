@@ -298,6 +298,7 @@
   "style": "سبک",
   "size": "اندازه",
   "delayAnimation": "انیمیشن تست",
+  "syncDelayAnimation": "همگام‌سازی انیمیشن با صفحات دیگر",
   "delayAnimationDesc": "سفارشی‌سازی انیمیشن حین تست تاخیر",
   "noAnimation": "پیش‌فرض",
   "rotatingCircle": "چرخش تک‌دایره",

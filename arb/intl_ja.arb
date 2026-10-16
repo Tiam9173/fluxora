@@ -298,6 +298,7 @@
   "style": "スタイル",
   "size": "サイズ",
   "delayAnimation": "テストアニメーション",
+  "syncDelayAnimation": "アニメーションを他のページに同期",
   "delayAnimationDesc": "テスト中の表示アニメーションを変更",
   "noAnimation": "デフォルト",
   "rotatingCircle": "ローテーション",

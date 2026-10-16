@@ -1197,6 +1197,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "switchToDomesticIp": MessageLookupByLibrary.simpleMessage("獲取國內 IP"),
     "sync": MessageLookupByLibrary.simpleMessage("同步"),
     "syncAll": MessageLookupByLibrary.simpleMessage("全部同步"),
+    "syncDelayAnimation": MessageLookupByLibrary.simpleMessage("同步動畫到其他頁面"),
     "syncFailed": MessageLookupByLibrary.simpleMessage("同步失敗"),
     "system": MessageLookupByLibrary.simpleMessage("系統"),
     "systemApp": MessageLookupByLibrary.simpleMessage("系統應用程式"),

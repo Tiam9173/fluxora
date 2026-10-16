@@ -1327,6 +1327,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "switchToDomesticIp": MessageLookupByLibrary.simpleMessage("国内IPを取得"),
     "sync": MessageLookupByLibrary.simpleMessage("同期"),
     "syncAll": MessageLookupByLibrary.simpleMessage("すべて同期"),
+    "syncDelayAnimation": MessageLookupByLibrary.simpleMessage(
+      "アニメーションを他のページに同期",
+    ),
     "syncFailed": MessageLookupByLibrary.simpleMessage("同期失敗"),
     "system": MessageLookupByLibrary.simpleMessage("システム"),
     "systemApp": MessageLookupByLibrary.simpleMessage("システムアプリ"),

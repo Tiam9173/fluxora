@@ -1648,6 +1648,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "sync": MessageLookupByLibrary.simpleMessage("Sync"),
     "syncAll": MessageLookupByLibrary.simpleMessage("Sync All"),
+    "syncDelayAnimation": MessageLookupByLibrary.simpleMessage(
+      "Sync animation to other pages",
+    ),
     "syncFailed": MessageLookupByLibrary.simpleMessage("Sync Failed"),
     "system": MessageLookupByLibrary.simpleMessage("System"),
     "systemApp": MessageLookupByLibrary.simpleMessage("System App"),

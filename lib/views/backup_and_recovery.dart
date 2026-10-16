@@ -6,6 +6,7 @@ import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/models/models.dart';
 import 'package:fluxora/providers/config.dart';
 import 'package:fluxora/state.dart';
+import 'package:fluxora/widgets/delay_animation.dart';
 import 'package:fluxora/widgets/dialog.dart';
 import 'package:fluxora/widgets/fade_box.dart';
 import 'package:fluxora/widgets/input.dart';
@@ -224,11 +225,14 @@ class BackupAndRecovery extends ConsumerWidget {
                           child: FadeThroughBox(
                             child:
                                 snapshot.connectionState != ConnectionState.done
-                                ? const SizedBox(
+                                ? SizedBox(
                                     width: 12,
                                     height: 12,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 1,
+                                    child: SyncedLoading(
+                                      size: 12,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 1,
+                                      ),
                                     ),
                                   )
                                 : Container(
