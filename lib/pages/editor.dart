@@ -14,7 +14,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:re_highlight/languages/javascript.dart';
 import 'package:re_highlight/languages/yaml.dart';
-import 'package:re_highlight/re_highlight.dart' show Mode;
+import 'package:re_highlight/re_highlight.dart'
+    show HASH_COMMENT_MODE, Mode;
 import 'package:re_highlight/styles/atom-one-dark.dart';
 import 'package:re_highlight/styles/atom-one-light.dart';
 
@@ -24,6 +25,37 @@ const int _kLargeEditableLineThresholdMobile = 5800;
 const int _kLargeEditableLineThresholdDesktop = 5800;
 const Duration _kFindFocusDelay = Duration(milliseconds: 500);
 const Duration _kMinBusyDuration = Duration(milliseconds: 600);
+
+/// item 6 (Bettbox 1.19.4) — YAML with a comment rule that only fires at the
+/// start of a token.
+///
+/// `re_highlight`'s stock `HASH_COMMENT_MODE` is `begin: r'#'` with no
+/// lookbehind, so *any* `#` in a line opens a comment. In a subscription config
+/// that is not a corner case:
+///
+/// ```yaml
+/// password: abc#def        # `#def` is part of the value, not a comment
+/// ```
+///
+/// The rest of the line then highlights as a comment, which is exactly the
+/// "comment and syntax highlighting mis-parsed" bug. The lookbehind
+/// `(?<![^\s])` means "not preceded by a non-whitespace character", so `#`
+/// only starts a comment at line start or after whitespace — `# comment` and
+/// `  # comment` still work, `abc#def` does not.
+///
+/// Only YAML needs this: the JavaScript grammar comments with `//`
+/// (`C_LINE_COMMENT_MODE`), which is unambiguous in that language.
+final _yamlWithSafeComments = Mode(
+  scope: langYaml.scope,
+  name: langYaml.name,
+  caseInsensitive: langYaml.caseInsensitive,
+  contains: [
+    for (final mode in langYaml.contains ?? const <Mode>[])
+      identical(mode, HASH_COMMENT_MODE)
+          ? Mode(scope: 'comment', begin: r'(?<![^\s])#', end: r'$')
+          : mode,
+  ],
+);
 
 class EditorPage extends ConsumerStatefulWidget {
   final String title;
@@ -321,7 +353,7 @@ class _EditorPageState extends ConsumerState<EditorPage> {
     final language = widget.languages.firstOrNull;
     switch (language) {
       case Language.yaml:
-        return langYaml;
+        return _yamlWithSafeComments;
       case Language.javaScript:
         return langJavascript;
       default:
