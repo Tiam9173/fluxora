@@ -12,6 +12,35 @@ import 'package:fluxora/state.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart';
 
+/// item 6 — map one Go-side `logEntry` to a Fluxora [Log].
+///
+/// The Go bridge stamps every history entry with `Time` (ms since epoch),
+/// because mihomo's own `log.Event` carries no timestamp. `Log.fromJson` cannot
+/// be used here: its `dateTime` converter ignores the input and returns
+/// "now" (`_logDateTime` in models/common.dart), which would make the whole
+/// history look like it just happened. Top-level so `Isolate.run` can capture
+/// it.
+Log _logFromHistoryEntry(Map<String, Object?> entry) {
+  final timeMs = entry['Time'];
+  final dateTime = timeMs is int
+      ? DateTime.fromMillisecondsSinceEpoch(timeMs).showFull
+      : DateTime.now().showFull;
+  return Log(
+    logLevel: _logLevelFromName(entry['LogLevel']),
+    payload: entry['Payload']?.toString() ?? '',
+    dateTime: dateTime,
+  );
+}
+
+LogLevel _logLevelFromName(Object? raw) => switch (raw) {
+  'debug' || 'DEBUG' => LogLevel.debug,
+  'info' || 'INFO' => LogLevel.info,
+  'warning' || 'WARNING' => LogLevel.warning,
+  'error' || 'ERROR' => LogLevel.error,
+  'silent' || 'SILENT' => LogLevel.silent,
+  _ => LogLevel.error,
+};
+
 class ClashCore {
   static ClashCore? _instance;
   late ClashHandlerInterface clashInterface;
@@ -354,6 +383,34 @@ class ClashCore {
 
   void stopLog() {
     clashInterface.stopLog();
+  }
+
+  /// item 6 — the buffered log history, so a page opened after the fact can
+  /// catch up on what the core already said.
+  ///
+  /// Decoded inside `Isolate.run` because a long history turns into a large
+  /// JSON blob and this runs on the UI isolate's caller. Any failure degrades to
+  /// an empty list rather than throwing — the log page must keep working.
+  Future<List<Log>> getLogs() async {
+    final res = await clashInterface.getLogs();
+    if (res.isEmpty) {
+      return [];
+    }
+    try {
+      return await Isolate.run<List<Log>>(() {
+        final logsRaw = json.decode(res) as List? ?? [];
+        return logsRaw
+            .map((e) => _logFromHistoryEntry(e as Map<String, Object?>))
+            .toList();
+      });
+    } catch (e) {
+      commonPrint.log('Failed to parse logs: $e');
+      return [];
+    }
+  }
+
+  void clearLogs() {
+    clashInterface.clearLogs();
   }
 
   Future<void> requestGc({bool forceFreeOSMemory = false}) async {
