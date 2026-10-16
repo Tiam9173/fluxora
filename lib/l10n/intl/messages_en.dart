@@ -306,6 +306,27 @@ class MessageLookup extends MessageLookupByLibrary {
     "categoryGaming": MessageLookupByLibrary.simpleMessage("Gaming Center"),
     "categorySocial": MessageLookupByLibrary.simpleMessage("Social Platforms"),
     "categoryStreaming": MessageLookupByLibrary.simpleMessage("Streaming"),
+    "chainAvgLatency": MessageLookupByLibrary.simpleMessage("Avg Latency"),
+    "chainCreateSupportPackage": MessageLookupByLibrary.simpleMessage(
+      "Create Support Package",
+    ),
+    "chainCreatingPackage": MessageLookupByLibrary.simpleMessage("Creating..."),
+    "chainDecisionSupport": MessageLookupByLibrary.simpleMessage(
+      "Decision Support",
+    ),
+    "chainDiagnosticPackage": MessageLookupByLibrary.simpleMessage(
+      "Diagnostic Package",
+    ),
+    "chainDiagnosticTitle": MessageLookupByLibrary.simpleMessage(
+      "Chain Diagnostic",
+    ),
+    "chainEventsLabel": MessageLookupByLibrary.simpleMessage("Events"),
+    "chainExportReport": MessageLookupByLibrary.simpleMessage("Export Report"),
+    "chainExporting": MessageLookupByLibrary.simpleMessage("Exporting..."),
+    "chainFailuresLabel": MessageLookupByLibrary.simpleMessage("Failures"),
+    "chainGeneratedOn": MessageLookupByLibrary.simpleMessage("Generated on"),
+    "chainHealthLabel": MessageLookupByLibrary.simpleMessage("Health"),
+    "chainHealthScore": MessageLookupByLibrary.simpleMessage("Health Score"),
     "chainHopExitNode": MessageLookupByLibrary.simpleMessage(
       "Hop 3 (exit node)",
     ),
@@ -323,6 +344,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainHopUnavailable": MessageLookupByLibrary.simpleMessage(
       "Could not read the list of available nodes, so node availability could not be verified",
     ),
+    "chainIntelAnalytics": MessageLookupByLibrary.simpleMessage(
+      "Intelligence Analytics",
+    ),
     "chainLandingProxyNone": MessageLookupByLibrary.simpleMessage(
       "Default (none)",
     ),
@@ -330,14 +354,24 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainNodeGroupNodes": MessageLookupByLibrary.simpleMessage("Group nodes"),
     "chainNodeLocal": MessageLookupByLibrary.simpleMessage("Local"),
     "chainNodePreProxy": MessageLookupByLibrary.simpleMessage("Pre-proxy"),
+    "chainNodeReliability": MessageLookupByLibrary.simpleMessage(
+      "Node Reliability",
+    ),
     "chainNodeSubscription": MessageLookupByLibrary.simpleMessage(
       "Subscription node",
     ),
+    "chainOpenFolder": MessageLookupByLibrary.simpleMessage("Open Folder"),
+    "chainPackageReady": MessageLookupByLibrary.simpleMessage("Package Ready"),
     "chainPreProxyNone": MessageLookupByLibrary.simpleMessage("Direct (none)"),
     "chainProbeNow": MessageLookupByLibrary.simpleMessage("Probe chain"),
     "chainProxy": MessageLookupByLibrary.simpleMessage("Chain Proxy"),
     "chainProxyDesc": MessageLookupByLibrary.simpleMessage(
       "Configure an entry hop and a static residential landing IP",
+    ),
+    "chainShareLabel": MessageLookupByLibrary.simpleMessage("Share"),
+    "chainSupportTitle": MessageLookupByLibrary.simpleMessage("Chain Support"),
+    "chainTopFailureReason": MessageLookupByLibrary.simpleMessage(
+      "Top Failure Reason",
     ),
     "chainTopologyPreview": MessageLookupByLibrary.simpleMessage(
       "Chain routing topology preview",
@@ -497,6 +531,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "defaultDialerProxyDesc": MessageLookupByLibrary.simpleMessage(
       "Entry node or policy group that landing proxies use by default (a selector group is recommended)",
     ),
+    "defaultGateway": MessageLookupByLibrary.simpleMessage("Default Gateway"),
     "defaultNameserver": MessageLookupByLibrary.simpleMessage(
       "Default Nameserver",
     ),
@@ -857,6 +892,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "intelligentSelected": MessageLookupByLibrary.simpleMessage("Smart Select"),
     "internet": MessageLookupByLibrary.simpleMessage("Internet"),
     "interval": MessageLookupByLibrary.simpleMessage("Interval"),
+    "intranetAndGateway": MessageLookupByLibrary.simpleMessage(
+      "Intranet & Gateway",
+    ),
     "intranetIP": MessageLookupByLibrary.simpleMessage("Local IP"),
     "invalidIpFormat": MessageLookupByLibrary.simpleMessage(
       "Invalid IP or CIDR format",
@@ -866,6 +904,32 @@ class MessageLookup extends MessageLookupByLibrary {
     "ipPrivacyProtection": MessageLookupByLibrary.simpleMessage(
       "Hide IP Display",
     ),
+    "ipRiskAbuse": MessageLookupByLibrary.simpleMessage("Abuse reports"),
+    "ipRiskBlocklists": MessageLookupByLibrary.simpleMessage("Blocklists"),
+    "ipRiskBogon": MessageLookupByLibrary.simpleMessage("Bogon"),
+    "ipRiskEnable": MessageLookupByLibrary.simpleMessage("Enable lookup"),
+    "ipRiskFailed": MessageLookupByLibrary.simpleMessage("Lookup failed"),
+    "ipRiskHosting": MessageLookupByLibrary.simpleMessage("Hosting/DC"),
+    "ipRiskIntel": MessageLookupByLibrary.simpleMessage("IP Risk Intel"),
+    "ipRiskLimits": MessageLookupByLibrary.simpleMessage(
+      "What this data cannot tell",
+    ),
+    "ipRiskMobile": MessageLookupByLibrary.simpleMessage("Mobile"),
+    "ipRiskNotFlagged": MessageLookupByLibrary.simpleMessage("Not flagged"),
+    "ipRiskOpenReport": MessageLookupByLibrary.simpleMessage(
+      "Open full report",
+    ),
+    "ipRiskPrivacyNote": MessageLookupByLibrary.simpleMessage(
+      "Sends your IP to a third party (no privacy policy)",
+    ),
+    "ipRiskProxy": MessageLookupByLibrary.simpleMessage("Proxy"),
+    "ipRiskRelay": MessageLookupByLibrary.simpleMessage("Relay"),
+    "ipRiskSearchEngineBot": MessageLookupByLibrary.simpleMessage("Search bot"),
+    "ipRiskStale": MessageLookupByLibrary.simpleMessage(
+      "Stale — not real-time",
+    ),
+    "ipRiskTor": MessageLookupByLibrary.simpleMessage("Tor"),
+    "ipRiskVpn": MessageLookupByLibrary.simpleMessage("VPN"),
     "ipcidr": MessageLookupByLibrary.simpleMessage("IP/CIDR"),
     "ipv6Desc": MessageLookupByLibrary.simpleMessage(
       "Enable IPv6 traffic routing",
@@ -884,6 +948,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "TCP keep-alive interval",
     ),
     "key": MessageLookupByLibrary.simpleMessage("Key"),
+    "lanShareAddress": MessageLookupByLibrary.simpleMessage(
+      "LAN Share Address",
+    ),
     "landingProxies": MessageLookupByLibrary.simpleMessage(
       "Residential Landing Nodes",
     ),
@@ -1021,6 +1088,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "networkFixDesc": MessageLookupByLibrary.simpleMessage(
       "Fix system network globe icon issue",
     ),
+    "networkInterface": MessageLookupByLibrary.simpleMessage("Interface"),
     "networkLabel": MessageLookupByLibrary.simpleMessage("Network"),
     "networkMatch": MessageLookupByLibrary.simpleMessage("Network Match"),
     "networkMatchHint": MessageLookupByLibrary.simpleMessage(
@@ -1117,6 +1185,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Only record proxy traffic",
     ),
     "openDashboard": MessageLookupByLibrary.simpleMessage("Open Zashboard"),
+    "openGateway": MessageLookupByLibrary.simpleMessage("Open Gateway"),
     "openSettings": MessageLookupByLibrary.simpleMessage("Open Settings"),
     "operatorOrAsn": MessageLookupByLibrary.simpleMessage("Organization / ASN"),
     "options": MessageLookupByLibrary.simpleMessage("Options"),
@@ -1214,6 +1283,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "port": MessageLookupByLibrary.simpleMessage("Port"),
     "portConflictTip": MessageLookupByLibrary.simpleMessage(
       "Please enter a different port",
+    ),
+    "portFallback": MessageLookupByLibrary.simpleMessage("Port Fallback"),
+    "portFallbackDesc": MessageLookupByLibrary.simpleMessage(
+      "Use another port when the configured one is already taken",
     ),
     "portLabel": MessageLookupByLibrary.simpleMessage("Port"),
     "portTip": m26,
@@ -1554,6 +1627,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "syncFailed": MessageLookupByLibrary.simpleMessage("Sync Failed"),
     "system": MessageLookupByLibrary.simpleMessage("System"),
     "systemApp": MessageLookupByLibrary.simpleMessage("System App"),
+    "systemDns": MessageLookupByLibrary.simpleMessage("System DNS"),
     "systemFont": MessageLookupByLibrary.simpleMessage("System Font"),
     "systemProxy": MessageLookupByLibrary.simpleMessage("System Proxy"),
     "systemProxyActualOff": MessageLookupByLibrary.simpleMessage(
@@ -1760,49 +1834,5 @@ class MessageLookup extends MessageLookupByLibrary {
       "Requires administrator privileges",
     ),
     "years": m31,
-    "ipRiskIntel": MessageLookupByLibrary.simpleMessage("IP Risk Intel"),
-    "ipRiskPrivacyNote": MessageLookupByLibrary.simpleMessage("Sends your IP to a third party (no privacy policy)"),
-    "ipRiskEnable": MessageLookupByLibrary.simpleMessage("Enable lookup"),
-    "ipRiskNotFlagged": MessageLookupByLibrary.simpleMessage("Not flagged"),
-    "ipRiskStale": MessageLookupByLibrary.simpleMessage("Stale — not real-time"),
-    "ipRiskVpn": MessageLookupByLibrary.simpleMessage("VPN"),
-    "ipRiskProxy": MessageLookupByLibrary.simpleMessage("Proxy"),
-    "ipRiskTor": MessageLookupByLibrary.simpleMessage("Tor"),
-    "ipRiskHosting": MessageLookupByLibrary.simpleMessage("Hosting/DC"),
-    "ipRiskRelay": MessageLookupByLibrary.simpleMessage("Relay"),
-    "ipRiskMobile": MessageLookupByLibrary.simpleMessage("Mobile"),
-    "ipRiskBogon": MessageLookupByLibrary.simpleMessage("Bogon"),
-    "ipRiskSearchEngineBot": MessageLookupByLibrary.simpleMessage("Search bot"),
-    "ipRiskAbuse": MessageLookupByLibrary.simpleMessage("Abuse reports"),
-    "ipRiskBlocklists": MessageLookupByLibrary.simpleMessage("Blocklists"),
-    "ipRiskLimits": MessageLookupByLibrary.simpleMessage("What this data cannot tell"),
-    "ipRiskOpenReport": MessageLookupByLibrary.simpleMessage("Open full report"),
-    "ipRiskFailed": MessageLookupByLibrary.simpleMessage("Lookup failed"),
-    "chainIntelAnalytics": MessageLookupByLibrary.simpleMessage("Intelligence Analytics"),
-    "chainAvgLatency": MessageLookupByLibrary.simpleMessage("Avg Latency"),
-    "chainTopFailureReason": MessageLookupByLibrary.simpleMessage("Top Failure Reason"),
-    "chainNodeReliability": MessageLookupByLibrary.simpleMessage("Node Reliability"),
-    "chainHealthScore": MessageLookupByLibrary.simpleMessage("Health Score"),
-    "chainDecisionSupport": MessageLookupByLibrary.simpleMessage("Decision Support"),
-    "chainDiagnosticTitle": MessageLookupByLibrary.simpleMessage("Chain Diagnostic"),
-    "chainHealthLabel": MessageLookupByLibrary.simpleMessage("Health"),
-    "chainEventsLabel": MessageLookupByLibrary.simpleMessage("Events"),
-    "chainFailuresLabel": MessageLookupByLibrary.simpleMessage("Failures"),
-    "chainExportReport": MessageLookupByLibrary.simpleMessage("Export Report"),
-    "chainExporting": MessageLookupByLibrary.simpleMessage("Exporting..."),
-    "chainSupportTitle": MessageLookupByLibrary.simpleMessage("Chain Support"),
-    "chainPackageReady": MessageLookupByLibrary.simpleMessage("Package Ready"),
-    "chainGeneratedOn": MessageLookupByLibrary.simpleMessage("Generated on"),
-    "chainOpenFolder": MessageLookupByLibrary.simpleMessage("Open Folder"),
-    "chainShareLabel": MessageLookupByLibrary.simpleMessage("Share"),
-    "chainDiagnosticPackage": MessageLookupByLibrary.simpleMessage("Diagnostic Package"),
-    "chainCreateSupportPackage": MessageLookupByLibrary.simpleMessage("Create Support Package"),
-    "chainCreatingPackage": MessageLookupByLibrary.simpleMessage("Creating..."),
-    "intranetAndGateway": MessageLookupByLibrary.simpleMessage("Intranet & Gateway"),
-    "networkInterface": MessageLookupByLibrary.simpleMessage("Interface"),
-    "defaultGateway": MessageLookupByLibrary.simpleMessage("Default Gateway"),
-    "systemDns": MessageLookupByLibrary.simpleMessage("System DNS"),
-    "openGateway": MessageLookupByLibrary.simpleMessage("Open Gateway"),
-    "lanShareAddress": MessageLookupByLibrary.simpleMessage("LAN Share Address"),
   };
 }

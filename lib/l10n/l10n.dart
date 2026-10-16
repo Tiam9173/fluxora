@@ -640,6 +640,26 @@ class AppLocalizations {
     );
   }
 
+  /// `Port Fallback`
+  String get portFallback {
+    return Intl.message(
+      'Port Fallback',
+      name: 'portFallback',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Use another port when the configured one is already taken`
+  String get portFallbackDesc {
+    return Intl.message(
+      'Use another port when the configured one is already taken',
+      name: 'portFallbackDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `FCM Optimization`
   String get fcmOptimization {
     return Intl.message(
@@ -5210,16 +5230,6 @@ class AppLocalizations {
     );
   }
 
-  /// `Network Type`
-  String get networkType {
-    return Intl.message(
-      'Network Type',
-      name: 'networkType',
-      desc: '',
-      args: [],
-    );
-  }
-
   /// `Proxy Chains`
   String get proxyChains {
     return Intl.message(
@@ -7709,6 +7719,7 @@ class AppLocalizations {
       args: [],
     );
   }
+
   /// `Sends your IP to a third party (no privacy policy)`
   String get ipRiskPrivacyNote {
     return Intl.message(
@@ -7718,6 +7729,7 @@ class AppLocalizations {
       args: [],
     );
   }
+
   /// `Enable lookup`
   String get ipRiskEnable {
     return Intl.message(
@@ -7727,6 +7739,7 @@ class AppLocalizations {
       args: [],
     );
   }
+
   /// `Not flagged`
   String get ipRiskNotFlagged {
     return Intl.message(
@@ -7736,6 +7749,7 @@ class AppLocalizations {
       args: [],
     );
   }
+
   /// `Stale — not real-time`
   String get ipRiskStale {
     return Intl.message(
@@ -7745,33 +7759,22 @@ class AppLocalizations {
       args: [],
     );
   }
+
   /// `VPN`
   String get ipRiskVpn {
-    return Intl.message(
-      'VPN',
-      name: 'ipRiskVpn',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('VPN', name: 'ipRiskVpn', desc: '', args: []);
   }
+
   /// `Proxy`
   String get ipRiskProxy {
-    return Intl.message(
-      'Proxy',
-      name: 'ipRiskProxy',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Proxy', name: 'ipRiskProxy', desc: '', args: []);
   }
+
   /// `Tor`
   String get ipRiskTor {
-    return Intl.message(
-      'Tor',
-      name: 'ipRiskTor',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Tor', name: 'ipRiskTor', desc: '', args: []);
   }
+
   /// `Hosting/DC`
   String get ipRiskHosting {
     return Intl.message(
@@ -7781,33 +7784,22 @@ class AppLocalizations {
       args: [],
     );
   }
+
   /// `Relay`
   String get ipRiskRelay {
-    return Intl.message(
-      'Relay',
-      name: 'ipRiskRelay',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Relay', name: 'ipRiskRelay', desc: '', args: []);
   }
+
   /// `Mobile`
   String get ipRiskMobile {
-    return Intl.message(
-      'Mobile',
-      name: 'ipRiskMobile',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Mobile', name: 'ipRiskMobile', desc: '', args: []);
   }
+
   /// `Bogon`
   String get ipRiskBogon {
-    return Intl.message(
-      'Bogon',
-      name: 'ipRiskBogon',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Bogon', name: 'ipRiskBogon', desc: '', args: []);
   }
+
   /// `Search bot`
   String get ipRiskSearchEngineBot {
     return Intl.message(
@@ -7817,6 +7809,7 @@ class AppLocalizations {
       args: [],
     );
   }
+
   /// `Abuse reports`
   String get ipRiskAbuse {
     return Intl.message(
@@ -7826,6 +7819,7 @@ class AppLocalizations {
       args: [],
     );
   }
+
   /// `Blocklists`
   String get ipRiskBlocklists {
     return Intl.message(
@@ -7835,6 +7829,7 @@ class AppLocalizations {
       args: [],
     );
   }
+
   /// `What this data cannot tell`
   String get ipRiskLimits {
     return Intl.message(
@@ -7844,6 +7839,7 @@ class AppLocalizations {
       args: [],
     );
   }
+
   /// `Open full report`
   String get ipRiskOpenReport {
     return Intl.message(
@@ -7853,6 +7849,7 @@ class AppLocalizations {
       args: [],
     );
   }
+
   /// `Lookup failed`
   String get ipRiskFailed {
     return Intl.message(
@@ -7872,6 +7869,7 @@ class AppLocalizations {
       args: [],
     );
   }
+
   /// `Avg Latency`
   String get chainAvgLatency {
     return Intl.message(
@@ -7881,6 +7879,7 @@ class AppLocalizations {
       args: [],
     );
   }
+
   /// `Top Failure Reason`
   String get chainTopFailureReason {
     return Intl.message(
@@ -7890,6 +7889,7 @@ class AppLocalizations {
       args: [],
     );
   }
+
   /// `Node Reliability`
   String get chainNodeReliability {
     return Intl.message(
@@ -7899,6 +7899,7 @@ class AppLocalizations {
       args: [],
     );
   }
+
   /// `Health Score`
   String get chainHealthScore {
     return Intl.message(
@@ -7908,6 +7909,7 @@ class AppLocalizations {
       args: [],
     );
   }
+
   /// `Decision Support`
   String get chainDecisionSupport {
     return Intl.message(
@@ -7917,6 +7919,7 @@ class AppLocalizations {
       args: [],
     );
   }
+
   /// `Chain Diagnostic`
   String get chainDiagnosticTitle {
     return Intl.message(
@@ -7926,24 +7929,17 @@ class AppLocalizations {
       args: [],
     );
   }
+
   /// `Health`
   String get chainHealthLabel {
-    return Intl.message(
-      'Health',
-      name: 'chainHealthLabel',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Health', name: 'chainHealthLabel', desc: '', args: []);
   }
+
   /// `Events`
   String get chainEventsLabel {
-    return Intl.message(
-      'Events',
-      name: 'chainEventsLabel',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Events', name: 'chainEventsLabel', desc: '', args: []);
   }
+
   /// `Failures`
   String get chainFailuresLabel {
     return Intl.message(
@@ -7953,6 +7949,7 @@ class AppLocalizations {
       args: [],
     );
   }
+
   /// `Export Report`
   String get chainExportReport {
     return Intl.message(
@@ -7962,6 +7959,7 @@ class AppLocalizations {
       args: [],
     );
   }
+
   /// `Exporting...`
   String get chainExporting {
     return Intl.message(
@@ -7971,6 +7969,7 @@ class AppLocalizations {
       args: [],
     );
   }
+
   /// `Chain Support`
   String get chainSupportTitle {
     return Intl.message(
@@ -7980,6 +7979,7 @@ class AppLocalizations {
       args: [],
     );
   }
+
   /// `Package Ready`
   String get chainPackageReady {
     return Intl.message(
@@ -7989,6 +7989,7 @@ class AppLocalizations {
       args: [],
     );
   }
+
   /// `Generated on`
   String get chainGeneratedOn {
     return Intl.message(
@@ -7998,6 +7999,7 @@ class AppLocalizations {
       args: [],
     );
   }
+
   /// `Open Folder`
   String get chainOpenFolder {
     return Intl.message(
@@ -8007,15 +8009,12 @@ class AppLocalizations {
       args: [],
     );
   }
+
   /// `Share`
   String get chainShareLabel {
-    return Intl.message(
-      'Share',
-      name: 'chainShareLabel',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Share', name: 'chainShareLabel', desc: '', args: []);
   }
+
   /// `Diagnostic Package`
   String get chainDiagnosticPackage {
     return Intl.message(
@@ -8025,6 +8024,7 @@ class AppLocalizations {
       args: [],
     );
   }
+
   /// `Create Support Package`
   String get chainCreateSupportPackage {
     return Intl.message(
@@ -8034,11 +8034,22 @@ class AppLocalizations {
       args: [],
     );
   }
+
   /// `Creating...`
   String get chainCreatingPackage {
     return Intl.message(
       'Creating...',
       name: 'chainCreatingPackage',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Network Type`
+  String get networkType {
+    return Intl.message(
+      'Network Type',
+      name: 'networkType',
       desc: '',
       args: [],
     );
@@ -8053,6 +8064,7 @@ class AppLocalizations {
       args: [],
     );
   }
+
   /// `Interface`
   String get networkInterface {
     return Intl.message(
@@ -8062,6 +8074,7 @@ class AppLocalizations {
       args: [],
     );
   }
+
   /// `Default Gateway`
   String get defaultGateway {
     return Intl.message(
@@ -8071,15 +8084,12 @@ class AppLocalizations {
       args: [],
     );
   }
+
   /// `System DNS`
   String get systemDns {
-    return Intl.message(
-      'System DNS',
-      name: 'systemDns',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('System DNS', name: 'systemDns', desc: '', args: []);
   }
+
   /// `Open Gateway`
   String get openGateway {
     return Intl.message(
@@ -8089,6 +8099,7 @@ class AppLocalizations {
       args: [],
     );
   }
+
   /// `LAN Share Address`
   String get lanShareAddress {
     return Intl.message(

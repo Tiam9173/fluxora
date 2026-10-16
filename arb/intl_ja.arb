@@ -71,6 +71,8 @@
   "enableTraySpeedDesc": "メニューバーにアップロード/ダウンロード速度を表示",
   "excludeChina": "中国通信を除外",
   "excludeChinaDesc": "全無効化せずに中国のQUIC通信を許可",
+  "portFallback": "ポートの自動回避",
+  "portFallbackDesc": "設定したポートが使用中のとき、別のポートを一時的に使用します",
   "fcmOptimization": "FCM最適化",
   "fcmOptimizationDesc": "FCM直連時の通信安定性を向上",
   "quickResponse": "高速レスポンス",

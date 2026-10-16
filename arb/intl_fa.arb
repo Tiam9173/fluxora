@@ -71,6 +71,8 @@
   "enableTraySpeedDesc": "نمایش سرعت آپلود و دانلود در نوار منو",
   "excludeChina": "استثنای چین",
   "excludeChinaDesc": "مجاز ساختن ترافیک QUIC چین به جای مسدودی کامل",
+  "portFallback": "جایگزینی پورت",
+  "portFallbackDesc": "اگر پورت تنظیم‌شده اشغال باشد، از پورت دیگری استفاده کن",
   "fcmOptimization": "بهینه‌سازی FCM",
   "fcmOptimizationDesc": "افزایش پایداری اتصال مستقیم FCM",
   "quickResponse": "پاسخ سریع",
