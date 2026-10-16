@@ -1,3 +1,4 @@
+import 'package:fluxora/clash/clash.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/providers/providers.dart';
@@ -23,6 +24,24 @@ class _LogsViewState extends ConsumerState<LogsView> {
   void initState() {
     super.initState();
     _scrollController = ReverseScrollController();
+    // item 6 — the core only *streams* logs once `openLogs` is on, so a page
+    // opened afterwards used to start from an empty list even though the core
+    // had been talking the whole time. Pull the buffered history first.
+    //
+    // Deferred to after the first frame: this is async and touches a provider,
+    // and `setLogs` bails out if the page has already gone away.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _seedHistoryFromCore();
+    });
+  }
+
+  Future<void> _seedHistoryFromCore() async {
+    final history = await clashCore.getLogs();
+    if (!mounted || history.isEmpty) return;
+    // The Go side records history and streams from the *same* subscription:
+    // history covers everything up to now, the stream picks up from now. So
+    // replacing the list once is correct — nothing is lost and nothing repeats.
+    ref.read(logsProvider.notifier).setLogs(history);
   }
 
   @override
