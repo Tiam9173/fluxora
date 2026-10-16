@@ -32,9 +32,15 @@ class ThemeManager extends ConsumerWidget {
             systemUiOverlayStyle: SystemUiOverlayStyle(
               statusBarColor: Colors.transparent,
               statusBarIconBrightness: iconBrightness,
+              // Android 15+ (API 35) enforces a contrast scrim behind the system
+              // bars by default, which breaks edge-to-edge. Opting out is what
+              // actually makes `SystemUiMode.edgeToEdge` below look edge-to-edge
+              // instead of showing a system-drawn band.
+              systemStatusBarContrastEnforced: false,
               systemNavigationBarIconBrightness: iconBrightness,
               systemNavigationBarColor: Colors.transparent,
               systemNavigationBarDividerColor: Colors.transparent,
+              systemNavigationBarContrastEnforced: false,
             ),
           );
           return AnnotatedRegion<SystemUiOverlayStyle>(
