@@ -5,9 +5,45 @@ import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
+// `listEquals` — used by the card's rebuild predicate.
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_svg/svg.dart';
+
+/// Whether the media-unlock card must be rebuilt.
+///
+/// Extracted so the invalidation contract is unit-testable — the cache's whole
+/// value is that a tick which changes nothing visible costs nothing, and the
+/// easy mistake is rebuilding (or wrongly reusing) on a state object that is new
+/// but identical in everything the card shows.
+bool shouldRebuildMediaCard({
+  required MediaUnlockState? lastState,
+  required List<MediaPlatform>? lastDisplayedPlatforms,
+  required bool? lastColorfulIcons,
+  required bool hasCachedCard,
+  required MediaUnlockState newState,
+  required List<MediaPlatform> displayedPlatforms,
+  required bool colorfulIcons,
+}) {
+  if (lastState == null ||
+      !hasCachedCard ||
+      lastDisplayedPlatforms == null ||
+      lastColorfulIcons == null) {
+    return true;
+  }
+  if (!listEquals(lastDisplayedPlatforms, displayedPlatforms)) return true;
+  if (lastColorfulIcons != colorfulIcons) return true;
+  if (lastState.isLoading != newState.isLoading) return true;
+  for (final p in displayedPlatforms) {
+    if (lastState.testingPlatforms.contains(p) !=
+        newState.testingPlatforms.contains(p)) {
+      return true;
+    }
+    if (lastState.results[p] != newState.results[p]) return true;
+  }
+  return false;
+}
 
 class MediaUnlock extends ConsumerStatefulWidget {
   const MediaUnlock({super.key});
@@ -17,6 +53,54 @@ class MediaUnlock extends ConsumerStatefulWidget {
 }
 
 class _MediaUnlockState extends ConsumerState<MediaUnlock> {
+  /// item 6 (Bettbox 1.19.4 alignment) — build cache for the unlock card.
+  ///
+  /// `mediaUnlockState.state` is a `ValueNotifier`, so every probe tick rebuilt
+  /// the whole card subtree — icons, rows, dividers — even when the only thing
+  /// that changed was a spinner on one platform. The sentinels below let the
+  /// builder return the previously built card untouched when nothing the card
+  /// displays has actually changed.
+  MediaUnlockState? _lastState;
+  List<MediaPlatform>? _lastDisplayedPlatforms;
+  bool? _lastColorfulIcons;
+  ThemeData? _lastTheme;
+  Widget? _cachedCard;
+
+  void _invalidateCardCache() {
+    _cachedCard = null;
+    _lastState = null;
+    _lastDisplayedPlatforms = null;
+    _lastColorfulIcons = null;
+    _lastTheme = null;
+  }
+
+  /// Whether anything the card *displays* changed.
+  ///
+  /// Deliberately narrower than "the state changed": a probe finishing on one
+  /// platform must rebuild, but a tick that leaves every result, the loading
+  /// flag and the testing set untouched must not. See [shouldRebuildMediaCard].
+  bool _shouldRebuildCard({
+    required MediaUnlockState newState,
+    required List<MediaPlatform> displayedPlatforms,
+    required bool colorfulIcons,
+  }) => shouldRebuildMediaCard(
+    lastState: _lastState,
+    lastDisplayedPlatforms: _lastDisplayedPlatforms,
+    lastColorfulIcons: _lastColorfulIcons,
+    hasCachedCard: _cachedCard != null,
+    newState: newState,
+    displayedPlatforms: displayedPlatforms,
+    colorfulIcons: colorfulIcons,
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Text scale, theme and direction all arrive through InheritedWidgets; the
+    // cached card captured the old values, so it has to go.
+    _invalidateCardCache();
+  }
+
   String _getStatusText(MediaUnlockStatus status, [MediaPlatform? platform]) {
     switch (status) {
       case MediaUnlockStatus.unlocked:
@@ -244,9 +328,20 @@ class _MediaUnlockState extends ConsumerState<MediaUnlock> {
       child: ValueListenableBuilder<MediaUnlockState>(
         valueListenable: mediaUnlockState.state,
         builder: (context, state, _) {
+          final theme = Theme.of(context);
           final isWidgetLoading =
               displayedPlatforms.any(state.testingPlatforms.contains);
-          return CommonCard(
+          if (!identical(_lastTheme, theme) ||
+              _shouldRebuildCard(
+                newState: state,
+                displayedPlatforms: displayedPlatforms,
+                colorfulIcons: colorfulIcons,
+              )) {
+            _lastTheme = theme;
+            _lastState = state;
+            _lastDisplayedPlatforms = displayedPlatforms;
+            _lastColorfulIcons = colorfulIcons;
+            _cachedCard = CommonCard(
             onPressed: () {
               showExtend(
                 context,
@@ -287,13 +382,17 @@ class _MediaUnlockState extends ConsumerState<MediaUnlock> {
                                     force: true,
                                   ),
                           icon: isWidgetLoading
-                              ? SizedBox(
-                                  width: 13.ap,
-                                  height: 13.ap,
-                                  child: SpinKitRing(
-                                    color: context.colorScheme.primary,
-                                    lineWidth: 1.5,
-                                    size: 13.ap,
+                              // The spinner animates continuously; without its
+                              // own layer every frame repaints the whole card.
+                              ? RepaintBoundary(
+                                  child: SizedBox(
+                                    width: 13.ap,
+                                    height: 13.ap,
+                                    child: SpinKitRing(
+                                      color: context.colorScheme.primary,
+                                      lineWidth: 1.5,
+                                      size: 13.ap,
+                                    ),
                                   ),
                                 )
                               : Icon(
@@ -339,6 +438,8 @@ class _MediaUnlockState extends ConsumerState<MediaUnlock> {
               ],
             ),
           );
+          }
+          return _cachedCard!;
         },
       ),
     );

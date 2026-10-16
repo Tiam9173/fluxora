@@ -7,7 +7,7 @@ void main() {
 
   group('MediaPlatform & Region Tests', () {
     test('MediaPlatform enum count and extensions', () {
-      expect(MediaPlatform.values.length, 50);
+      expect(MediaPlatform.values.length, 55);
       expect(MediaCategory.values.length, 7);
 
       for (final p in MediaPlatform.values) {
@@ -53,6 +53,15 @@ void main() {
       expect(MediaPlatform.crunchyroll.category, MediaCategory.streaming);
       expect(MediaPlatform.missav.category, MediaCategory.streaming);
       expect(MediaPlatform.ehentai.category, MediaCategory.streaming);
+      // item 6 — Bettbox 1.19.4 additions.
+      expect(MediaPlatform.mytvsuper.defaultName, 'myTV SUPER');
+      expect(MediaPlatform.mytvsuper.category, MediaCategory.streaming);
+      expect(MediaPlatform.viutv.defaultName, 'ViuTV');
+      expect(MediaPlatform.viutv.category, MediaCategory.streaming);
+      expect(MediaPlatform.hoytv.defaultName, 'HOY TV');
+      expect(MediaPlatform.hoytv.category, MediaCategory.streaming);
+      expect(MediaPlatform.rthk.defaultName, 'RTHK');
+      expect(MediaPlatform.rthk.category, MediaCategory.streaming);
 
       expect(MediaPlatform.x.defaultName, 'Twitter');
       expect(MediaPlatform.x.category, MediaCategory.social);
@@ -86,6 +95,9 @@ void main() {
       expect(MediaPlatform.kraken.category, MediaCategory.crypto);
       expect(MediaPlatform.cryptocom.category, MediaCategory.crypto);
       expect(MediaPlatform.phantom.category, MediaCategory.crypto);
+      // item 6 — Bettbox 1.19.4 addition.
+      expect(MediaPlatform.paypal.defaultName, 'PayPal');
+      expect(MediaPlatform.paypal.category, MediaCategory.crypto);
 
       expect(MediaPlatform.x.isMonochrome, true);
       expect(MediaPlatform.github.isMonochrome, true);

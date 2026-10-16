@@ -71,6 +71,12 @@ enum MediaPlatform {
   kraken,
   cryptocom,
   phantom,
+  // item 6 — aligned with Bettbox 1.19.4's additional platform checks.
+  paypal,
+  mytvsuper,
+  viutv,
+  hoytv,
+  rthk,
 }
 
 extension MediaPlatformExt on MediaPlatform {
@@ -93,7 +99,11 @@ extension MediaPlatformExt on MediaPlatform {
         MediaPlatform.iqiyi ||
         MediaPlatform.crunchyroll ||
         MediaPlatform.missav ||
-        MediaPlatform.ehentai =>
+        MediaPlatform.ehentai ||
+        MediaPlatform.mytvsuper ||
+        MediaPlatform.viutv ||
+        MediaPlatform.hoytv ||
+        MediaPlatform.rthk =>
           MediaCategory.streaming,
         MediaPlatform.qqnews ||
         MediaPlatform.alidnsprobe ||
@@ -130,7 +140,8 @@ extension MediaPlatformExt on MediaPlatform {
         MediaPlatform.okx ||
         MediaPlatform.kraken ||
         MediaPlatform.cryptocom ||
-        MediaPlatform.phantom =>
+        MediaPlatform.phantom ||
+        MediaPlatform.paypal =>
           MediaCategory.crypto,
       };
 
@@ -185,6 +196,11 @@ extension MediaPlatformExt on MediaPlatform {
         MediaPlatform.kraken => 'Kraken',
         MediaPlatform.cryptocom => 'Crypto.com',
         MediaPlatform.phantom => 'Phantom',
+        MediaPlatform.paypal => 'PayPal',
+        MediaPlatform.mytvsuper => 'myTV SUPER',
+        MediaPlatform.viutv => 'ViuTV',
+        MediaPlatform.hoytv => 'HOY TV',
+        MediaPlatform.rthk => 'RTHK',
       };
 
   bool get isMonochrome => switch (this) {
