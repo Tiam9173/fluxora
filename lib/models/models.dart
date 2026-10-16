@@ -14,3 +14,5 @@ export 'chain_fallback_pool.dart';
 export 'chain_failover.dart';
 export 'chain_flap_dampening.dart';
 export 'chain_telemetry.dart';
+export 'ip_reputation.dart';
+export 'network_info.dart';
