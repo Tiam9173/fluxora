@@ -271,6 +271,10 @@ abstract class VpnProps with _$VpnProps {
     @Default(false) bool highPriorityNotification,
     @Default(false) bool networkSpeedNotification,
     @Default(false) bool excludeChina,
+    /// item 6 (Bettbox 1.19.3) — reject loopback traffic aimed at our own
+    /// listener ports, so a misrouted packet cannot loop back into the proxy.
+    /// Off by default, matching upstream.
+    @Default(false) bool loopbackProtection,
     /// item 6 — when the configured mixed proxy port is taken at cold start,
     /// start on the next free port for this session instead of failing.
     /// On by default: the alternative is a core that simply will not start.

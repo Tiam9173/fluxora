@@ -71,6 +71,8 @@
   "enableTraySpeedDesc": "메뉴 막대에 업로드 및 다운로드 속도 표시",
   "excludeChina": "중국 트래픽 제외",
   "excludeChinaDesc": "전면 차단 대신 중국 QUIC 트래픽 허용",
+  "loopbackProtection": "루프백 보호",
+  "loopbackProtectionDesc": "네트워크 오류로 인한 루프백 차단",
   "portFallback": "포트 자동 회피",
   "portFallbackDesc": "설정한 포트가 사용 중이면 다른 포트를 임시로 사용합니다",
   "fcmOptimization": "FCM 최적화",

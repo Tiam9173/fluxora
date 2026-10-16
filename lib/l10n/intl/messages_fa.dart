@@ -1012,6 +1012,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "loopbackDesc": MessageLookupByLibrary.simpleMessage(
       "رفع محدودیت Loopback برای برنامه‌های UWP",
     ),
+    "loopbackProtection": MessageLookupByLibrary.simpleMessage(
+      "محافظت در برابر لوپ‌بک",
+    ),
+    "loopbackProtectionDesc": MessageLookupByLibrary.simpleMessage(
+      "مسدودسازی ترافیک لوپ‌بک ناشی از خطای شبکه",
+    ),
     "loose": MessageLookupByLibrary.simpleMessage("باز"),
     "manualAddNode": MessageLookupByLibrary.simpleMessage("افزودن دستی گره"),
     "manualEntry": MessageLookupByLibrary.simpleMessage("ورود دستی"),

@@ -395,9 +395,33 @@ class _BatteryOptimizationItemState extends ConsumerState<BatteryOptimizationIte
   }
 }
 
+/// item 6 (Bettbox 1.19.3) — reject traffic inside the tunnel that is aimed at
+/// one of our own listener ports, so a misroute cannot loop back into the proxy.
+class LoopbackProtectionSection extends ConsumerWidget {
+  const LoopbackProtectionSection({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final loopbackProtection = ref.watch(
+      vpnSettingProvider.select((state) => state.loopbackProtection),
+    );
+    return ListItem.switchItem(
+      title: Text(appLocalizations.loopbackProtection),
+      subtitle: Text(appLocalizations.loopbackProtectionDesc),
+      delegate: SwitchDelegate(
+        value: loopbackProtection,
+        onChanged: (bool value) async {
+          ref
+              .read(vpnSettingProvider.notifier)
+              .updateState((state) => state.copyWith(loopbackProtection: value));
+        },
+      ),
+    );
+  }
+}
+
 class DisableQuicSection extends ConsumerWidget {
   const DisableQuicSection({super.key});
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final disableQuic = ref.watch(
@@ -769,6 +793,7 @@ class OtherSettingView extends ConsumerWidget {
       if (system.isAndroid) const DozeSuspendItem(),
       if (system.isAndroid) const QuickResponseItem(),
       const StoreFixItem(),
+      const LoopbackProtectionSection(),
       const DisableQuicSection(),
       if (system.isAndroid) const HighPriorityNotificationItem(),
       if (system.isAndroid) const NetworkSpeedNotificationItem(),

@@ -276,6 +276,7 @@ _VpnProps _$VpnPropsFromJson(Map<String, dynamic> json) => _VpnProps(
   highPriorityNotification: json['highPriorityNotification'] as bool? ?? false,
   networkSpeedNotification: json['networkSpeedNotification'] as bool? ?? false,
   excludeChina: json['excludeChina'] as bool? ?? false,
+  loopbackProtection: json['loopbackProtection'] as bool? ?? false,
   portFallback: json['portFallback'] as bool? ?? true,
   trayEnhancement: json['trayEnhancement'] as bool? ?? false,
   trayLeftClickBehavior:
@@ -312,6 +313,7 @@ Map<String, dynamic> _$VpnPropsToJson(_VpnProps instance) => <String, dynamic>{
   'highPriorityNotification': instance.highPriorityNotification,
   'networkSpeedNotification': instance.networkSpeedNotification,
   'excludeChina': instance.excludeChina,
+  'loopbackProtection': instance.loopbackProtection,
   'portFallback': instance.portFallback,
   'trayEnhancement': instance.trayEnhancement,
   'trayLeftClickBehavior':
