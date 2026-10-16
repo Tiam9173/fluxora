@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluxora/common/common.dart';
 import 'package:fluxora/manager/chain_proxy_manager.dart';
 import 'package:fluxora/providers/chain_proxy.dart';
 import 'package:fluxora/views/proxies/chain_support_confirm_dialog.dart';
@@ -60,21 +61,27 @@ class _ChainSupportPanelState extends ConsumerState<ChainSupportPanel> {
                   size: 20,
                 ),
                 const SizedBox(width: 8),
-                const Text(
-                  'Chain Support',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                // item 4 — unwrapped this card title overflowed by 32 px at
+                // 280 dp under the 1.4x text scale.
+                Flexible(
+                  child: Text(
+                    appLocalizations.chainSupportTitle,
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 12),
             if (package != null) ...[
-              const Text(
-                'Package Ready',
+              Text(
+                appLocalizations.chainPackageReady,
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 4),
               Text(
-                'Generated: ${package.createdAt.toIso8601String().split('T').first}',
+                '${appLocalizations.chainGeneratedOn} '
+                '${package.createdAt.toIso8601String().split('T').first}',
                 style: TextStyle(
                   fontSize: 12,
                   color: colorScheme.onSurfaceVariant,
@@ -86,21 +93,21 @@ class _ChainSupportPanelState extends ConsumerState<ChainSupportPanel> {
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () {}, // Simulated open folder
-                      child: const Text('Open Folder'),
+                      child: Text(appLocalizations.chainOpenFolder),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {}, // Simulated share
-                      child: const Text('Share'),
+                      child: Text(appLocalizations.chainShareLabel),
                     ),
                   ),
                 ],
               ),
             ] else ...[
-              const Text(
-                'Diagnostic Package',
+              Text(
+                appLocalizations.chainDiagnosticPackage,
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
@@ -115,7 +122,9 @@ class _ChainSupportPanelState extends ConsumerState<ChainSupportPanel> {
                         )
                       : const Icon(Icons.archive_outlined, size: 18),
                   label: Text(
-                    _isGenerating ? 'Creating...' : 'Create Support Package',
+                    _isGenerating
+                        ? appLocalizations.chainCreatingPackage
+                        : appLocalizations.chainCreateSupportPackage,
                   ),
                   onPressed: _isGenerating ? null : _createPackage,
                 ),

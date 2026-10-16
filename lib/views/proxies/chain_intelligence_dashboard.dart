@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fluxora/common/common.dart';
 import 'package:fluxora/models/chain_analytics.dart';
 import 'package:fluxora/models/chain_telemetry.dart';
 import 'package:fluxora/widgets/widgets.dart';
@@ -37,9 +38,14 @@ class ChainIntelligenceDashboard extends StatelessWidget {
                   size: 20,
                 ),
                 const SizedBox(width: 8),
-                const Text(
-                  'Intelligence Analytics',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                // item 4 — this card title is long; unwrapped it overflowed the
+                // card at 280/320 dp under the 1.4x text scale.
+                Flexible(
+                  child: Text(
+                    appLocalizations.chainIntelAnalytics,
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),
@@ -87,7 +93,7 @@ class ChainIntelligenceDashboard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Health Score',
+                  appLocalizations.chainHealthScore,
                   style: TextStyle(
                     fontSize: 11,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -107,12 +113,17 @@ class ChainIntelligenceDashboard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 4),
-                    Text(
-                      analytics.healthRating,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: scoreColor,
+                    // item 4 — the rating word is the variable-length half of
+                    // this half-width stat; unwrapped it overflowed at 280/320 dp.
+                    Flexible(
+                      child: Text(
+                        analytics.healthRating,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: scoreColor,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -133,7 +144,7 @@ class ChainIntelligenceDashboard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Avg Latency',
+                  appLocalizations.chainAvgLatency,
                   style: TextStyle(
                     fontSize: 11,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -144,14 +155,19 @@ class ChainIntelligenceDashboard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.baseline,
                   textBaseline: TextBaseline.alphabetic,
                   children: [
-                    Text(
-                      analytics.averageLatencyMs > 0
-                          ? '${analytics.averageLatencyMs.round()}'
-                          : '--',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.primary,
+                    // item 4 — a 4-digit latency must be able to shrink in this
+                    // half-width stat.
+                    Flexible(
+                      child: Text(
+                        analytics.averageLatencyMs > 0
+                            ? '${analytics.averageLatencyMs.round()}'
+                            : '--',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const SizedBox(width: 4),
@@ -198,8 +214,8 @@ class ChainIntelligenceDashboard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Top Failure Reason',
+                Text(
+                  appLocalizations.chainTopFailureReason,
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
@@ -228,8 +244,8 @@ class ChainIntelligenceDashboard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Node Reliability:',
+        Text(
+          appLocalizations.chainNodeReliability,
           style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
         ),
         const SizedBox(height: 6),
