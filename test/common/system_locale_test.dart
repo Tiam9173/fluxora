@@ -70,4 +70,25 @@ void main() {
       }
     });
   });
+
+  /// The language list gained a "Default" option that stores
+  /// [systemLocaleValue] in `AppSettingProps.locale`. It must resolve to *no*
+  /// locale so every caller falls back to `getSystemLocale()`; parsing it as a
+  /// real language would try to load a locale literally named "system".
+  group('utils.getLocaleForString — "follow system" sentinel', () {
+    testWidgets('null (never chosen) yields no locale', (tester) async {
+      expect(utils.getLocaleForString(null), isNull);
+    });
+
+    testWidgets('the sentinel yields no locale so the system one wins', (
+      tester,
+    ) async {
+      expect(utils.getLocaleForString(systemLocaleValue), isNull);
+    });
+
+    testWidgets('a real locale string still parses', (tester) async {
+      expect(utils.getLocaleForString('zh_CN'), const Locale('zh', 'CN'));
+      expect(utils.getLocaleForString('en'), const Locale('en'));
+    });
+  });
 }

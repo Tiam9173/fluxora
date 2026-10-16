@@ -110,4 +110,157 @@ void main() {
       }
     });
   });
+
+  // ── P4 — IP reputation (IP risk intel) ─────────────────────────────────────
+  //
+  // E-5's hard requirement is that the section is **opt-in**: the setting must
+  // default to false so no lookup happens until the user turns it on.
+  group('P4 — ipReputationEnabled defaults OFF and persists', () {
+    test('the default is false (nothing is sent until the user opts in)', () {
+      expect(defaultAppSettingProps.ipReputationEnabled, isFalse);
+      expect(AppSettingProps().ipReputationEnabled, isFalse);
+    });
+
+    test('round-trips through copyWith and JSON in both directions', () {
+      final on = defaultAppSettingProps.copyWith(ipReputationEnabled: true);
+      expect(on.ipReputationEnabled, isTrue);
+
+      expect(on.toJson()['ipReputationEnabled'], isTrue);
+      expect(
+        AppSettingProps.fromJson(on.toJson()).ipReputationEnabled,
+        isTrue,
+      );
+
+      // A payload written before the field existed must still read as OFF.
+      expect(
+        AppSettingProps.fromJson(
+          defaultAppSettingProps.toJson(),
+        ).ipReputationEnabled,
+        isFalse,
+      );
+    });
+  });
+
+  group('P4 — the risk-intel labels resolve in every shipped locale', () {
+    final labels = <String, String Function()>{
+      'ipRiskIntel': () => appLocalizations.ipRiskIntel,
+      'ipRiskPrivacyNote': () => appLocalizations.ipRiskPrivacyNote,
+      'ipRiskEnable': () => appLocalizations.ipRiskEnable,
+      'ipRiskNotFlagged': () => appLocalizations.ipRiskNotFlagged,
+      'ipRiskStale': () => appLocalizations.ipRiskStale,
+      'ipRiskVpn': () => appLocalizations.ipRiskVpn,
+      'ipRiskProxy': () => appLocalizations.ipRiskProxy,
+      'ipRiskTor': () => appLocalizations.ipRiskTor,
+      'ipRiskHosting': () => appLocalizations.ipRiskHosting,
+      'ipRiskRelay': () => appLocalizations.ipRiskRelay,
+      'ipRiskMobile': () => appLocalizations.ipRiskMobile,
+      'ipRiskBogon': () => appLocalizations.ipRiskBogon,
+      'ipRiskSearchEngineBot': () => appLocalizations.ipRiskSearchEngineBot,
+      'ipRiskAbuse': () => appLocalizations.ipRiskAbuse,
+      'ipRiskBlocklists': () => appLocalizations.ipRiskBlocklists,
+      'ipRiskLimits': () => appLocalizations.ipRiskLimits,
+      'ipRiskOpenReport': () => appLocalizations.ipRiskOpenReport,
+      'ipRiskFailed': () => appLocalizations.ipRiskFailed,
+    };
+
+    test('every label is non-empty in every locale', () async {
+      for (final locale in _allLocales) {
+        await AppLocalizations.load(locale);
+        for (final entry in labels.entries) {
+          expect(
+            entry.value().isNotEmpty,
+            isTrue,
+            reason: '${entry.key} is empty in $locale',
+          );
+        }
+      }
+    });
+
+    test('non-English locales do not silently fall back to English', () async {
+      await AppLocalizations.load(const Locale('en'));
+      final english = {
+        for (final e in labels.entries) e.key: e.value(),
+      };
+
+      for (final locale in _allLocales) {
+        if (locale.languageCode == 'en') continue;
+        await AppLocalizations.load(locale);
+        for (final entry in labels.entries) {
+          // Identical-to-English is allowed only where the term is a proper noun
+          // that is not translated (VPN / Tor / PayPal-style brand names).
+          const properNouns = {'ipRiskVpn', 'ipRiskTor'};
+          if (properNouns.contains(entry.key)) continue;
+          expect(
+            entry.value(),
+            isNot(equals(english[entry.key])),
+            reason: '${entry.key} falls back to English in $locale',
+          );
+        }
+      }
+    });
+  });
+
+  // ── C — chain panel titles were hard-coded English ─────────────────────────
+  //
+  // `chain_intelligence_dashboard` / `chain_decision_panel` /
+  // `chain_diagnostic_panel` / `chain_support_panel` rendered literal English
+  // strings. They now resolve through l10n; this guards both directions —
+  // every key is present, and no non-English locale silently falls back.
+  group('C — chain panel labels resolve in every shipped locale', () {
+    final chainLabels = <String, String Function()>{
+      'chainIntelAnalytics': () => appLocalizations.chainIntelAnalytics,
+      'chainAvgLatency': () => appLocalizations.chainAvgLatency,
+      'chainTopFailureReason': () => appLocalizations.chainTopFailureReason,
+      'chainNodeReliability': () => appLocalizations.chainNodeReliability,
+      'chainHealthScore': () => appLocalizations.chainHealthScore,
+      'chainDecisionSupport': () => appLocalizations.chainDecisionSupport,
+      'chainDiagnosticTitle': () => appLocalizations.chainDiagnosticTitle,
+      'chainHealthLabel': () => appLocalizations.chainHealthLabel,
+      'chainEventsLabel': () => appLocalizations.chainEventsLabel,
+      'chainFailuresLabel': () => appLocalizations.chainFailuresLabel,
+      'chainExportReport': () => appLocalizations.chainExportReport,
+      'chainExporting': () => appLocalizations.chainExporting,
+      'chainSupportTitle': () => appLocalizations.chainSupportTitle,
+      'chainPackageReady': () => appLocalizations.chainPackageReady,
+      'chainGeneratedOn': () => appLocalizations.chainGeneratedOn,
+      'chainOpenFolder': () => appLocalizations.chainOpenFolder,
+      'chainShareLabel': () => appLocalizations.chainShareLabel,
+      'chainDiagnosticPackage': () => appLocalizations.chainDiagnosticPackage,
+      'chainCreateSupportPackage': () =>
+          appLocalizations.chainCreateSupportPackage,
+      'chainCreatingPackage': () => appLocalizations.chainCreatingPackage,
+    };
+
+    test('every label is non-empty in every locale', () async {
+      for (final locale in _allLocales) {
+        await AppLocalizations.load(locale);
+        for (final entry in chainLabels.entries) {
+          expect(
+            entry.value().isNotEmpty,
+            isTrue,
+            reason: '${entry.key} is empty in $locale',
+          );
+        }
+      }
+    });
+
+    test('non-English locales do not silently fall back to English', () async {
+      await AppLocalizations.load(const Locale('en'));
+      final english = {
+        for (final e in chainLabels.entries) e.key: e.value(),
+      };
+
+      for (final locale in _allLocales) {
+        if (locale.languageCode == 'en') continue;
+        await AppLocalizations.load(locale);
+        for (final entry in chainLabels.entries) {
+          expect(
+            entry.value(),
+            isNot(equals(english[entry.key])),
+            reason: '${entry.key} falls back to English in $locale',
+          );
+        }
+      }
+    });
+  });
 }
