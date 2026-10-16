@@ -1024,6 +1024,248 @@ class MediaUnlockChecker {
     }
   }
 
+  // ── item 6 — ported from Bettbox 1.19.4 ─────────────────────────────────────
+  //
+  // PayPal is fronted by Akamai rather than Cloudflare, so it cannot use
+  // `_checkCloudflareTrace`; the 403 / redirect-region probe below is the
+  // upstream contract.
+
+  Future<MediaUnlockResult> checkPayPal() async {
+    final sw = Stopwatch()..start();
+    final dio = _createDio(followRedirects: false);
+    try {
+      final res = await dio.head<void>(
+        'https://www.paypal.com/',
+        options: Options(
+          receiveTimeout: const Duration(seconds: 4),
+          sendTimeout: const Duration(seconds: 4),
+        ),
+      );
+      final latency = sw.elapsedMilliseconds;
+      final statusCode = res.statusCode ?? 0;
+      if (statusCode == 403) {
+        return MediaUnlockResult(
+          platform: MediaPlatform.paypal,
+          status: MediaUnlockStatus.blocked,
+          latency: latency,
+        );
+      }
+      final location = res.headers.value('location') ?? '';
+      final uri = Uri.tryParse(location);
+      String? region;
+      if (uri != null && uri.pathSegments.isNotEmpty) {
+        final seg = uri.pathSegments.first.toLowerCase();
+        if (seg == 'c2') {
+          region = 'CN';
+        } else if (seg.length == 2) {
+          region = seg.toUpperCase();
+        }
+      }
+      final status = (statusCode >= 200 && statusCode < 400)
+          ? MediaUnlockStatus.unlocked
+          : MediaUnlockStatus.blocked;
+      return MediaUnlockResult(
+        platform: MediaPlatform.paypal,
+        status: status,
+        region: region,
+        latency: latency,
+      );
+    } catch (_) {
+      return MediaUnlockResult(
+        platform: MediaPlatform.paypal,
+        status: MediaUnlockStatus.failed,
+        latency: sw.elapsedMilliseconds,
+      );
+    } finally {
+      dio.close(force: true);
+    }
+  }
+
+  Future<MediaUnlockResult> checkMyTvSuper() async {
+    final sw = Stopwatch()..start();
+    final dio = _createDio(followRedirects: true);
+    try {
+      final res = await dio.get<dynamic>(
+        'https://www.mytvsuper.com/api/auth/getSession/self/',
+        options: Options(
+          responseType: ResponseType.json,
+          receiveTimeout: const Duration(seconds: 4),
+          sendTimeout: const Duration(seconds: 4),
+        ),
+      );
+      final latency = sw.elapsedMilliseconds;
+      final json = _parseJson(res.data);
+      if (res.statusCode == 200 && json != null) {
+        final supported = json['supported_country'] == true;
+        final countryCode = json['country_code']?.toString().toUpperCase();
+        return MediaUnlockResult(
+          platform: MediaPlatform.mytvsuper,
+          status: supported
+              ? MediaUnlockStatus.unlocked
+              : MediaUnlockStatus.blocked,
+          region: countryCode,
+          latency: latency,
+        );
+      }
+      return MediaUnlockResult(
+        platform: MediaPlatform.mytvsuper,
+        status: MediaUnlockStatus.blocked,
+        latency: latency,
+      );
+    } catch (_) {
+      return MediaUnlockResult(
+        platform: MediaPlatform.mytvsuper,
+        status: MediaUnlockStatus.failed,
+        latency: sw.elapsedMilliseconds,
+      );
+    } finally {
+      dio.close(force: true);
+    }
+  }
+
+  Future<MediaUnlockResult> checkViuTv() async {
+    final sw = Stopwatch()..start();
+    final dio = _createDio(followRedirects: true);
+    try {
+      final res = await dio.post<dynamic>(
+        'https://api.viu.now.com/p8/3/getLiveURL',
+        data: const {
+          'callerReferenceNo': '20210726112323',
+          'contentId': '099',
+          'contentType': 'Channel',
+          'channelno': '099',
+          'mode': 'prod',
+          'deviceId': '29b3cb117a635d5b56',
+          'deviceType': 'ANDROID_WEB',
+        },
+        options: Options(
+          responseType: ResponseType.json,
+          receiveTimeout: const Duration(seconds: 4),
+          sendTimeout: const Duration(seconds: 4),
+          headers: const {'Content-Type': 'application/json'},
+        ),
+      );
+      final latency = sw.elapsedMilliseconds;
+      final json = _parseJson(res.data);
+      final code = json?['responseCode']?.toString();
+      if (code == 'SUCCESS') {
+        return MediaUnlockResult(
+          platform: MediaPlatform.viutv,
+          status: MediaUnlockStatus.unlocked,
+          region: 'HK',
+          latency: latency,
+        );
+      } else if (code == 'GEO_CHECK_FAIL') {
+        return MediaUnlockResult(
+          platform: MediaPlatform.viutv,
+          status: MediaUnlockStatus.blocked,
+          latency: latency,
+        );
+      }
+      return MediaUnlockResult(
+        platform: MediaPlatform.viutv,
+        status: res.statusCode == 200
+            ? MediaUnlockStatus.blocked
+            : MediaUnlockStatus.failed,
+        latency: latency,
+      );
+    } catch (_) {
+      return MediaUnlockResult(
+        platform: MediaPlatform.viutv,
+        status: MediaUnlockStatus.failed,
+        latency: sw.elapsedMilliseconds,
+      );
+    } finally {
+      dio.close(force: true);
+    }
+  }
+
+  Future<MediaUnlockResult> checkHoyTv() async {
+    final sw = Stopwatch()..start();
+    final dio = _createDio(followRedirects: false);
+    try {
+      final res = await dio.head<void>(
+        'https://hoytv-live-stream.hoy.tv/ch77/index-fhd.m3u8',
+        options: Options(
+          receiveTimeout: const Duration(seconds: 4),
+          sendTimeout: const Duration(seconds: 4),
+        ),
+      );
+      final latency = sw.elapsedMilliseconds;
+      final statusCode = res.statusCode ?? 0;
+      if (statusCode == 200) {
+        return MediaUnlockResult(
+          platform: MediaPlatform.hoytv,
+          status: MediaUnlockStatus.unlocked,
+          region: 'HK',
+          latency: latency,
+        );
+      } else if (statusCode == 403) {
+        return MediaUnlockResult(
+          platform: MediaPlatform.hoytv,
+          status: MediaUnlockStatus.blocked,
+          latency: latency,
+        );
+      }
+      return MediaUnlockResult(
+        platform: MediaPlatform.hoytv,
+        status: MediaUnlockStatus.failed,
+        latency: latency,
+      );
+    } catch (_) {
+      return MediaUnlockResult(
+        platform: MediaPlatform.hoytv,
+        status: MediaUnlockStatus.failed,
+        latency: sw.elapsedMilliseconds,
+      );
+    } finally {
+      dio.close(force: true);
+    }
+  }
+
+  Future<MediaUnlockResult> checkRthk() async {
+    final sw = Stopwatch()..start();
+    final dio = _createDio(followRedirects: false);
+    try {
+      final res = await dio.head<void>(
+        'https://rthktv31-live.akamaized.net/hls/live/2036818/RTHKTV31/stream1/streamPlaylist.m3u8',
+        options: Options(
+          receiveTimeout: const Duration(seconds: 4),
+          sendTimeout: const Duration(seconds: 4),
+        ),
+      );
+      final latency = sw.elapsedMilliseconds;
+      final statusCode = res.statusCode ?? 0;
+      if (statusCode == 200) {
+        return MediaUnlockResult(
+          platform: MediaPlatform.rthk,
+          status: MediaUnlockStatus.unlocked,
+          region: 'HK',
+          latency: latency,
+        );
+      } else if (statusCode == 403) {
+        return MediaUnlockResult(
+          platform: MediaPlatform.rthk,
+          status: MediaUnlockStatus.blocked,
+          latency: latency,
+        );
+      }
+      return MediaUnlockResult(
+        platform: MediaPlatform.rthk,
+        status: MediaUnlockStatus.failed,
+        latency: latency,
+      );
+    } catch (_) {
+      return MediaUnlockResult(
+        platform: MediaPlatform.rthk,
+        status: MediaUnlockStatus.failed,
+        latency: sw.elapsedMilliseconds,
+      );
+    } finally {
+      dio.close(force: true);
+    }
+  }
+
   Future<MediaUnlockResult> checkPlatform(MediaPlatform platform) {
     final checkFuture = switch (platform) {
       MediaPlatform.openai => _checkCloudflareTrace(
@@ -1122,6 +1364,12 @@ class MediaUnlockChecker {
         _checkCloudflareTrace(MediaPlatform.cryptocom, 'crypto.com'),
       MediaPlatform.phantom =>
         _checkCloudflareTrace(MediaPlatform.phantom, 'phantom.com'),
+      // item 6 — Bettbox 1.19.4 additions.
+      MediaPlatform.paypal => checkPayPal(),
+      MediaPlatform.mytvsuper => checkMyTvSuper(),
+      MediaPlatform.viutv => checkViuTv(),
+      MediaPlatform.hoytv => checkHoyTv(),
+      MediaPlatform.rthk => checkRthk(),
     };
     return checkFuture.timeout(
       const Duration(seconds: 8),
