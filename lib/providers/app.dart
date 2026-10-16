@@ -249,10 +249,33 @@ class LocalIp extends _$LocalIp with AutoDisposeNotifierMixin {
   }
 }
 
+/// item 6 — the LAN detail behind the "intranet IP" card.
+///
+/// `null` means "not looked up yet" (the card has never been opened, or the
+/// lookup is in flight); an empty `NetworkInfo` means "looked up, found
+/// nothing". The UI distinguishes the two: the first shows "…", the second "-".
+@riverpod
+class LocalNetwork extends _$LocalNetwork with AutoDisposeNotifierMixin {
+  @override
+  NetworkInfo? build() {
+    return globalState.appState.localNetwork;
+  }
+
+  @override
+  onUpdate(value) {
+    globalState.appState = globalState.appState.copyWith(localNetwork: value);
+  }
+
+  @override
+  set state(NetworkInfo? value) {
+    super.state = value;
+    globalState.appState = globalState.appState.copyWith(localNetwork: state);
+  }
+}
+
 @riverpod
 class RunTime extends _$RunTime with AutoDisposeNotifierMixin {
-  @override
-  int? build() {
+  @override  int? build() {
     return globalState.appState.runTime;
   }
 
