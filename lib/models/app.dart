@@ -5,6 +5,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 import 'common.dart';
 import 'core.dart';
+import 'network_info.dart';
 
 part 'generated/app.freezed.dart';
 
@@ -26,6 +27,10 @@ abstract class AppState with _$AppState {
     int? runTime,
     @Default([]) List<ExternalProvider> providers,
     String? localIp,
+    // item 6 — the LAN detail the "intranet IP" card opens. Null means "not
+    // looked up yet", which is distinct from an empty `NetworkInfo` ("looked
+    // up, found nothing").
+    NetworkInfo? localNetwork,
     required FixedList<TrackerInfo> requests,
     required int version,
     required FixedList<Log> logs,
