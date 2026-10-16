@@ -71,6 +71,8 @@
   "enableTraySpeedDesc": "Display upload and download rates in the menu bar",
   "excludeChina": "Exclude China",
   "excludeChinaDesc": "Allow China QUIC traffic instead of blocking all",
+  "portFallback": "Port Fallback",
+  "portFallbackDesc": "Use another port when the configured one is already taken",
   "fcmOptimization": "FCM Optimization",
   "fcmOptimizationDesc": "Enhance FCM connection stability",
   "quickResponse": "Quick Response",

@@ -436,8 +436,31 @@ class PortItem extends ConsumerWidget {
   }
 }
 
-class Ipv6Item extends ConsumerWidget {
-  const Ipv6Item({super.key});
+class PortFallbackItem extends ConsumerWidget {
+  const PortFallbackItem({super.key});
+
+  @override
+  Widget build(BuildContext context, ref) {
+    final portFallback = ref.watch(
+      vpnSettingProvider.select((state) => state.portFallback),
+    );
+    return ListItem.switchItem(
+      leading: const Icon(Icons.swap_horiz_rounded),
+      title: Text(appLocalizations.portFallback),
+      subtitle: Text(appLocalizations.portFallbackDesc),
+      delegate: SwitchDelegate(
+        value: portFallback,
+        onChanged: (bool value) async {
+          ref
+              .read(vpnSettingProvider.notifier)
+              .updateState((state) => state.copyWith(portFallback: value));
+        },
+      ),
+    );
+  }
+}
+
+class Ipv6Item extends ConsumerWidget {  const Ipv6Item({super.key});
 
   @override
   Widget build(BuildContext context, ref) {
@@ -776,6 +799,7 @@ List<Widget> get generalItems => generateSection(
     if (system.isDesktop) const KeepAliveIntervalItem(),
     const TestUrlItem(),
     const PortItem(),
+    const PortFallbackItem(),
     const Ipv6Item(),
     const AllowLanItem(),
     const UnifiedDelayItem(),

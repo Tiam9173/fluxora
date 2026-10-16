@@ -320,6 +320,29 @@ class MessageLookup extends MessageLookupByLibrary {
     "categoryGaming": MessageLookupByLibrary.simpleMessage("Игровой центр"),
     "categorySocial": MessageLookupByLibrary.simpleMessage("Сообщество"),
     "categoryStreaming": MessageLookupByLibrary.simpleMessage("Стриминг"),
+    "chainAvgLatency": MessageLookupByLibrary.simpleMessage("Средняя задержка"),
+    "chainCreateSupportPackage": MessageLookupByLibrary.simpleMessage(
+      "Создать пакет поддержки",
+    ),
+    "chainCreatingPackage": MessageLookupByLibrary.simpleMessage("Создание…"),
+    "chainDecisionSupport": MessageLookupByLibrary.simpleMessage(
+      "Поддержка решений",
+    ),
+    "chainDiagnosticPackage": MessageLookupByLibrary.simpleMessage(
+      "Диагностический пакет",
+    ),
+    "chainDiagnosticTitle": MessageLookupByLibrary.simpleMessage(
+      "Диагностика цепочки",
+    ),
+    "chainEventsLabel": MessageLookupByLibrary.simpleMessage("События"),
+    "chainExportReport": MessageLookupByLibrary.simpleMessage("Экспорт отчёта"),
+    "chainExporting": MessageLookupByLibrary.simpleMessage("Экспорт…"),
+    "chainFailuresLabel": MessageLookupByLibrary.simpleMessage("Сбои"),
+    "chainGeneratedOn": MessageLookupByLibrary.simpleMessage("Создан"),
+    "chainHealthLabel": MessageLookupByLibrary.simpleMessage("Состояние"),
+    "chainHealthScore": MessageLookupByLibrary.simpleMessage(
+      "Оценка состояния",
+    ),
     "chainHopExitNode": MessageLookupByLibrary.simpleMessage(
       "3-й переход (выходной узел)",
     ),
@@ -339,6 +362,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainHopUnavailable": MessageLookupByLibrary.simpleMessage(
       "Не удалось прочитать список доступных узлов, поэтому проверка доступности узлов не выполнена",
     ),
+    "chainIntelAnalytics": MessageLookupByLibrary.simpleMessage(
+      "Интеллектуальная аналитика",
+    ),
     "chainLandingProxyNone": MessageLookupByLibrary.simpleMessage(
       "По умолчанию (нет)",
     ),
@@ -348,14 +374,26 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainNodeGroupNodes": MessageLookupByLibrary.simpleMessage("Узлы группы"),
     "chainNodeLocal": MessageLookupByLibrary.simpleMessage("Локально"),
     "chainNodePreProxy": MessageLookupByLibrary.simpleMessage("Предпрокси"),
+    "chainNodeReliability": MessageLookupByLibrary.simpleMessage(
+      "Надёжность узлов",
+    ),
     "chainNodeSubscription": MessageLookupByLibrary.simpleMessage(
       "Узел подписки",
     ),
+    "chainOpenFolder": MessageLookupByLibrary.simpleMessage("Открыть папку"),
+    "chainPackageReady": MessageLookupByLibrary.simpleMessage("Пакет готов"),
     "chainPreProxyNone": MessageLookupByLibrary.simpleMessage("Напрямую (нет)"),
     "chainProbeNow": MessageLookupByLibrary.simpleMessage("Проверить цепочку"),
     "chainProxy": MessageLookupByLibrary.simpleMessage("Цепочка прокси"),
     "chainProxyDesc": MessageLookupByLibrary.simpleMessage(
       "Настройте входной переход и статический резидентный IP-выход",
+    ),
+    "chainShareLabel": MessageLookupByLibrary.simpleMessage("Поделиться"),
+    "chainSupportTitle": MessageLookupByLibrary.simpleMessage(
+      "Поддержка цепочки",
+    ),
+    "chainTopFailureReason": MessageLookupByLibrary.simpleMessage(
+      "Основная причина сбоя",
     ),
     "chainTopologyPreview": MessageLookupByLibrary.simpleMessage(
       "Предпросмотр топологии цепной маршрутизации",
@@ -513,6 +551,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "defaultDialerProxyDesc": MessageLookupByLibrary.simpleMessage(
       "Узел или группа, используемые прокси выхода по умолчанию (рекомендуется группа выбора узла)",
     ),
+    "defaultGateway": MessageLookupByLibrary.simpleMessage("Шлюз по умолчанию"),
     "defaultNameserver": MessageLookupByLibrary.simpleMessage(
       "DNS по умолчанию",
     ),
@@ -893,6 +932,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "intelligentSelected": MessageLookupByLibrary.simpleMessage("Умный выбор"),
     "internet": MessageLookupByLibrary.simpleMessage("Интернет"),
     "interval": MessageLookupByLibrary.simpleMessage("Интервал"),
+    "intranetAndGateway": MessageLookupByLibrary.simpleMessage(
+      "Интранет и шлюз",
+    ),
     "intranetIP": MessageLookupByLibrary.simpleMessage("Локальный IP"),
     "invalidIpFormat": MessageLookupByLibrary.simpleMessage(
       "Неверный формат IP или CIDR",
@@ -902,6 +944,40 @@ class MessageLookup extends MessageLookupByLibrary {
       "Режим отображения",
     ),
     "ipPrivacyProtection": MessageLookupByLibrary.simpleMessage("Скрыть IP"),
+    "ipRiskAbuse": MessageLookupByLibrary.simpleMessage(
+      "Жалобы на злоупотребления",
+    ),
+    "ipRiskBlocklists": MessageLookupByLibrary.simpleMessage("Чёрные списки"),
+    "ipRiskBogon": MessageLookupByLibrary.simpleMessage(
+      "Зарезервированный адрес",
+    ),
+    "ipRiskEnable": MessageLookupByLibrary.simpleMessage("Включить запрос"),
+    "ipRiskFailed": MessageLookupByLibrary.simpleMessage(
+      "Не удалось выполнить запрос",
+    ),
+    "ipRiskHosting": MessageLookupByLibrary.simpleMessage("Хостинг/ЦОД"),
+    "ipRiskIntel": MessageLookupByLibrary.simpleMessage("IP-репутация"),
+    "ipRiskLimits": MessageLookupByLibrary.simpleMessage(
+      "Что эти данные не показывают",
+    ),
+    "ipRiskMobile": MessageLookupByLibrary.simpleMessage("Мобильная сеть"),
+    "ipRiskNotFlagged": MessageLookupByLibrary.simpleMessage("Не обнаружено"),
+    "ipRiskOpenReport": MessageLookupByLibrary.simpleMessage(
+      "Открыть полный отчёт",
+    ),
+    "ipRiskPrivacyNote": MessageLookupByLibrary.simpleMessage(
+      "Ваш IP отправляется третьей стороне (нет политики конфиденциальности)",
+    ),
+    "ipRiskProxy": MessageLookupByLibrary.simpleMessage("Прокси"),
+    "ipRiskRelay": MessageLookupByLibrary.simpleMessage("Ретранслятор"),
+    "ipRiskSearchEngineBot": MessageLookupByLibrary.simpleMessage(
+      "Поисковый бот",
+    ),
+    "ipRiskStale": MessageLookupByLibrary.simpleMessage(
+      "Устаревшие данные (не в реальном времени)",
+    ),
+    "ipRiskTor": MessageLookupByLibrary.simpleMessage("Tor"),
+    "ipRiskVpn": MessageLookupByLibrary.simpleMessage("VPN"),
     "ipcidr": MessageLookupByLibrary.simpleMessage("IP/CIDR"),
     "ipv6Desc": MessageLookupByLibrary.simpleMessage("Включить поддержку IPv6"),
     "ipv6InboundDesc": MessageLookupByLibrary.simpleMessage(
@@ -920,6 +996,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Интервал TCP keep-alive",
     ),
     "key": MessageLookupByLibrary.simpleMessage("Ключ"),
+    "lanShareAddress": MessageLookupByLibrary.simpleMessage("Адрес для LAN"),
     "landingProxies": MessageLookupByLibrary.simpleMessage(
       "Резидентные узлы выхода",
     ),
@@ -1059,6 +1136,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "networkFixDesc": MessageLookupByLibrary.simpleMessage(
       "Исправляет значок сети в системе",
     ),
+    "networkInterface": MessageLookupByLibrary.simpleMessage("Интерфейс"),
     "networkLabel": MessageLookupByLibrary.simpleMessage("Транспорт"),
     "networkMatch": MessageLookupByLibrary.simpleMessage("Сопоставление сети"),
     "networkMatchHint": MessageLookupByLibrary.simpleMessage(
@@ -1159,6 +1237,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Считать только трафик через прокси",
     ),
     "openDashboard": MessageLookupByLibrary.simpleMessage("Открыть Zashboard"),
+    "openGateway": MessageLookupByLibrary.simpleMessage("Открыть шлюз"),
     "openSettings": MessageLookupByLibrary.simpleMessage("Открыть настройки"),
     "operatorOrAsn": MessageLookupByLibrary.simpleMessage("Организация / ASN"),
     "options": MessageLookupByLibrary.simpleMessage("Опции"),
@@ -1262,6 +1341,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "port": MessageLookupByLibrary.simpleMessage("Порт"),
     "portConflictTip": MessageLookupByLibrary.simpleMessage(
       "Введите разные порты",
+    ),
+    "portFallback": MessageLookupByLibrary.simpleMessage(
+      "Обход занятого порта",
+    ),
+    "portFallbackDesc": MessageLookupByLibrary.simpleMessage(
+      "Использовать другой порт, если заданный уже занят",
     ),
     "portLabel": MessageLookupByLibrary.simpleMessage("Порт"),
     "portTip": m26,
@@ -1610,6 +1695,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "syncFailed": MessageLookupByLibrary.simpleMessage("Ошибка синхронизации"),
     "system": MessageLookupByLibrary.simpleMessage("Система"),
     "systemApp": MessageLookupByLibrary.simpleMessage("Системные приложения"),
+    "systemDns": MessageLookupByLibrary.simpleMessage("Системный DNS"),
     "systemFont": MessageLookupByLibrary.simpleMessage("Системный шрифт"),
     "systemProxy": MessageLookupByLibrary.simpleMessage("Системный прокси"),
     "systemProxyActualOff": MessageLookupByLibrary.simpleMessage(
@@ -1836,49 +1922,5 @@ class MessageLookup extends MessageLookupByLibrary {
       "Требуются права администратора",
     ),
     "years": m31,
-    "ipRiskIntel": MessageLookupByLibrary.simpleMessage("IP-репутация"),
-    "ipRiskPrivacyNote": MessageLookupByLibrary.simpleMessage("Ваш IP отправляется третьей стороне (нет политики конфиденциальности)"),
-    "ipRiskEnable": MessageLookupByLibrary.simpleMessage("Включить запрос"),
-    "ipRiskNotFlagged": MessageLookupByLibrary.simpleMessage("Не обнаружено"),
-    "ipRiskStale": MessageLookupByLibrary.simpleMessage("Устаревшие данные (не в реальном времени)"),
-    "ipRiskVpn": MessageLookupByLibrary.simpleMessage("VPN"),
-    "ipRiskProxy": MessageLookupByLibrary.simpleMessage("Прокси"),
-    "ipRiskTor": MessageLookupByLibrary.simpleMessage("Tor"),
-    "ipRiskHosting": MessageLookupByLibrary.simpleMessage("Хостинг/ЦОД"),
-    "ipRiskRelay": MessageLookupByLibrary.simpleMessage("Ретранслятор"),
-    "ipRiskMobile": MessageLookupByLibrary.simpleMessage("Мобильная сеть"),
-    "ipRiskBogon": MessageLookupByLibrary.simpleMessage("Зарезервированный адрес"),
-    "ipRiskSearchEngineBot": MessageLookupByLibrary.simpleMessage("Поисковый бот"),
-    "ipRiskAbuse": MessageLookupByLibrary.simpleMessage("Жалобы на злоупотребления"),
-    "ipRiskBlocklists": MessageLookupByLibrary.simpleMessage("Чёрные списки"),
-    "ipRiskLimits": MessageLookupByLibrary.simpleMessage("Что эти данные не показывают"),
-    "ipRiskOpenReport": MessageLookupByLibrary.simpleMessage("Открыть полный отчёт"),
-    "ipRiskFailed": MessageLookupByLibrary.simpleMessage("Не удалось выполнить запрос"),
-    "chainIntelAnalytics": MessageLookupByLibrary.simpleMessage("Интеллектуальная аналитика"),
-    "chainAvgLatency": MessageLookupByLibrary.simpleMessage("Средняя задержка"),
-    "chainTopFailureReason": MessageLookupByLibrary.simpleMessage("Основная причина сбоя"),
-    "chainNodeReliability": MessageLookupByLibrary.simpleMessage("Надёжность узлов"),
-    "chainHealthScore": MessageLookupByLibrary.simpleMessage("Оценка состояния"),
-    "chainDecisionSupport": MessageLookupByLibrary.simpleMessage("Поддержка решений"),
-    "chainDiagnosticTitle": MessageLookupByLibrary.simpleMessage("Диагностика цепочки"),
-    "chainHealthLabel": MessageLookupByLibrary.simpleMessage("Состояние"),
-    "chainEventsLabel": MessageLookupByLibrary.simpleMessage("События"),
-    "chainFailuresLabel": MessageLookupByLibrary.simpleMessage("Сбои"),
-    "chainExportReport": MessageLookupByLibrary.simpleMessage("Экспорт отчёта"),
-    "chainExporting": MessageLookupByLibrary.simpleMessage("Экспорт…"),
-    "chainSupportTitle": MessageLookupByLibrary.simpleMessage("Поддержка цепочки"),
-    "chainPackageReady": MessageLookupByLibrary.simpleMessage("Пакет готов"),
-    "chainGeneratedOn": MessageLookupByLibrary.simpleMessage("Создан"),
-    "chainOpenFolder": MessageLookupByLibrary.simpleMessage("Открыть папку"),
-    "chainShareLabel": MessageLookupByLibrary.simpleMessage("Поделиться"),
-    "chainDiagnosticPackage": MessageLookupByLibrary.simpleMessage("Диагностический пакет"),
-    "chainCreateSupportPackage": MessageLookupByLibrary.simpleMessage("Создать пакет поддержки"),
-    "chainCreatingPackage": MessageLookupByLibrary.simpleMessage("Создание…"),
-    "intranetAndGateway": MessageLookupByLibrary.simpleMessage("Интранет и шлюз"),
-    "networkInterface": MessageLookupByLibrary.simpleMessage("Интерфейс"),
-    "defaultGateway": MessageLookupByLibrary.simpleMessage("Шлюз по умолчанию"),
-    "systemDns": MessageLookupByLibrary.simpleMessage("Системный DNS"),
-    "openGateway": MessageLookupByLibrary.simpleMessage("Открыть шлюз"),
-    "lanShareAddress": MessageLookupByLibrary.simpleMessage("Адрес для LAN"),
   };
 }

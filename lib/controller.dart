@@ -622,6 +622,8 @@ class AppController {
   /// free port exists, the configured port is left alone: an inconclusive answer
   /// is not evidence that the port is occupied.
   Future<void> _resolveMixedPortFallback() async {
+    // Respect the user's switch; when off, behave exactly as before.
+    if (!_ref.read(vpnSettingProvider).portFallback) return;
     final configured = _ref.read(patchClashConfigProvider).mixedPort;
     final current = _ref.read(mixedPortFallbackProvider);
 

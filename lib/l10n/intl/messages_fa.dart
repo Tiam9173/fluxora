@@ -308,6 +308,31 @@ class MessageLookup extends MessageLookupByLibrary {
       "پلتفرم‌های اجتماعی",
     ),
     "categoryStreaming": MessageLookupByLibrary.simpleMessage("رسانه‌های جاری"),
+    "chainAvgLatency": MessageLookupByLibrary.simpleMessage("تأخیر متوسط"),
+    "chainCreateSupportPackage": MessageLookupByLibrary.simpleMessage(
+      "ایجاد بسته پشتیبانی",
+    ),
+    "chainCreatingPackage": MessageLookupByLibrary.simpleMessage(
+      "در حال ایجاد…",
+    ),
+    "chainDecisionSupport": MessageLookupByLibrary.simpleMessage(
+      "پشتیبانی تصمیم",
+    ),
+    "chainDiagnosticPackage": MessageLookupByLibrary.simpleMessage(
+      "بسته تشخیصی",
+    ),
+    "chainDiagnosticTitle": MessageLookupByLibrary.simpleMessage(
+      "تشخیص زنجیره",
+    ),
+    "chainEventsLabel": MessageLookupByLibrary.simpleMessage("رویدادها"),
+    "chainExportReport": MessageLookupByLibrary.simpleMessage(
+      "خروجی گرفتن گزارش",
+    ),
+    "chainExporting": MessageLookupByLibrary.simpleMessage("در حال خروجی…"),
+    "chainFailuresLabel": MessageLookupByLibrary.simpleMessage("شکست‌ها"),
+    "chainGeneratedOn": MessageLookupByLibrary.simpleMessage("ایجاد شده در"),
+    "chainHealthLabel": MessageLookupByLibrary.simpleMessage("سلامت"),
+    "chainHealthScore": MessageLookupByLibrary.simpleMessage("امتیاز سلامت"),
     "chainHopExitNode": MessageLookupByLibrary.simpleMessage(
       "پرش سوم (گره خروجی)",
     ),
@@ -325,6 +350,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainHopUnavailable": MessageLookupByLibrary.simpleMessage(
       "فهرست گره‌های موجود خوانده نشد، بنابراین بررسی دسترس‌پذیری گره انجام نشد",
     ),
+    "chainIntelAnalytics": MessageLookupByLibrary.simpleMessage("تحلیل هوشمند"),
     "chainLandingProxyNone": MessageLookupByLibrary.simpleMessage(
       "پیش‌فرض (هیچ)",
     ),
@@ -334,12 +360,24 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainNodeGroupNodes": MessageLookupByLibrary.simpleMessage("گره‌های گروه"),
     "chainNodeLocal": MessageLookupByLibrary.simpleMessage("محلی"),
     "chainNodePreProxy": MessageLookupByLibrary.simpleMessage("پروکسی مقدماتی"),
+    "chainNodeReliability": MessageLookupByLibrary.simpleMessage(
+      "قابلیت اطمینان گره",
+    ),
     "chainNodeSubscription": MessageLookupByLibrary.simpleMessage("گره اشتراک"),
+    "chainOpenFolder": MessageLookupByLibrary.simpleMessage("باز کردن پوشه"),
+    "chainPackageReady": MessageLookupByLibrary.simpleMessage("بسته آماده است"),
     "chainPreProxyNone": MessageLookupByLibrary.simpleMessage("مستقیم (هیچ)"),
     "chainProbeNow": MessageLookupByLibrary.simpleMessage("بررسی زنجیره"),
     "chainProxy": MessageLookupByLibrary.simpleMessage("پروکسی زنجیره‌ای"),
     "chainProxyDesc": MessageLookupByLibrary.simpleMessage(
       "پیکربندی پرش ورودی و پروکسی فرود IP مسکونی ثابت",
+    ),
+    "chainShareLabel": MessageLookupByLibrary.simpleMessage("اشتراک‌گذاری"),
+    "chainSupportTitle": MessageLookupByLibrary.simpleMessage(
+      "پشتیبانی زنجیره",
+    ),
+    "chainTopFailureReason": MessageLookupByLibrary.simpleMessage(
+      "اصلی‌ترین دلیل شکست",
     ),
     "chainTopologyPreview": MessageLookupByLibrary.simpleMessage(
       "پیش‌نمایش توپولوژی مسیریابی زنجیره‌ای",
@@ -495,6 +533,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "defaultDialerProxyDesc": MessageLookupByLibrary.simpleMessage(
       "گره یا گروه سیاستی که پروکسی فرود به‌طور پیش‌فرض استفاده می‌کند (گروه انتخاب گره توصیه می‌شود)",
     ),
+    "defaultGateway": MessageLookupByLibrary.simpleMessage("دروازه پیش‌فرض"),
     "defaultNameserver": MessageLookupByLibrary.simpleMessage(
       "سرور نام پیش‌فرض",
     ),
@@ -861,6 +900,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "internet": MessageLookupByLibrary.simpleMessage("اینترنت"),
     "interval": MessageLookupByLibrary.simpleMessage("فاصله زمانی"),
+    "intranetAndGateway": MessageLookupByLibrary.simpleMessage(
+      "شبکه داخلی و دروازه",
+    ),
     "intranetIP": MessageLookupByLibrary.simpleMessage("IP شبکه محلی"),
     "invalidIpFormat": MessageLookupByLibrary.simpleMessage(
       "فرمت IP یا CIDR نامعتبر است",
@@ -870,6 +912,36 @@ class MessageLookup extends MessageLookupByLibrary {
     "ipPrivacyProtection": MessageLookupByLibrary.simpleMessage(
       "پنهان‌سازی IP",
     ),
+    "ipRiskAbuse": MessageLookupByLibrary.simpleMessage("گزارش‌های سوءاستفاده"),
+    "ipRiskBlocklists": MessageLookupByLibrary.simpleMessage(
+      "فهرست‌های مسدودسازی",
+    ),
+    "ipRiskBogon": MessageLookupByLibrary.simpleMessage("آدرس رزروشده"),
+    "ipRiskEnable": MessageLookupByLibrary.simpleMessage("فعال‌سازی استعلام"),
+    "ipRiskFailed": MessageLookupByLibrary.simpleMessage("استعلام ناموفق بود"),
+    "ipRiskHosting": MessageLookupByLibrary.simpleMessage("میزبانی/دیتاسنتر"),
+    "ipRiskIntel": MessageLookupByLibrary.simpleMessage("اطلاعات ریسک IP"),
+    "ipRiskLimits": MessageLookupByLibrary.simpleMessage(
+      "آنچه این داده نمی‌تواند بگوید",
+    ),
+    "ipRiskMobile": MessageLookupByLibrary.simpleMessage("شبکه موبایل"),
+    "ipRiskNotFlagged": MessageLookupByLibrary.simpleMessage("یافت نشد"),
+    "ipRiskOpenReport": MessageLookupByLibrary.simpleMessage(
+      "باز کردن گزارش کامل",
+    ),
+    "ipRiskPrivacyNote": MessageLookupByLibrary.simpleMessage(
+      "IP شما به شخص ثالث ارسال می‌شود (بدون سیاست حفظ حریم خصوصی)",
+    ),
+    "ipRiskProxy": MessageLookupByLibrary.simpleMessage("پروکسی"),
+    "ipRiskRelay": MessageLookupByLibrary.simpleMessage("رله"),
+    "ipRiskSearchEngineBot": MessageLookupByLibrary.simpleMessage(
+      "ربات موتور جستجو",
+    ),
+    "ipRiskStale": MessageLookupByLibrary.simpleMessage(
+      "داده قدیمی (غیر واقعی)",
+    ),
+    "ipRiskTor": MessageLookupByLibrary.simpleMessage("Tor"),
+    "ipRiskVpn": MessageLookupByLibrary.simpleMessage("VPN"),
     "ipcidr": MessageLookupByLibrary.simpleMessage("IP / ماسک"),
     "ipv6Desc": MessageLookupByLibrary.simpleMessage(
       "دریافت ترافیک IPv6 فعال باشد",
@@ -888,6 +960,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "فاصله زمانی TCP Keep-Alive",
     ),
     "key": MessageLookupByLibrary.simpleMessage("کلید"),
+    "lanShareAddress": MessageLookupByLibrary.simpleMessage("نشانی اشتراک LAN"),
     "landingProxies": MessageLookupByLibrary.simpleMessage(
       "گره‌های فرود مسکونی",
     ),
@@ -1027,6 +1100,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "networkFixDesc": MessageLookupByLibrary.simpleMessage(
       "رفع مشکل آیکون کره زمین شبکه سیستم",
     ),
+    "networkInterface": MessageLookupByLibrary.simpleMessage("رابط"),
     "networkLabel": MessageLookupByLibrary.simpleMessage("لایه انتقال"),
     "networkMatch": MessageLookupByLibrary.simpleMessage("تطبیق شبکه"),
     "networkMatchHint": MessageLookupByLibrary.simpleMessage(
@@ -1131,6 +1205,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "محاسبه ترافیک فقط برای پروکسی‌ها",
     ),
     "openDashboard": MessageLookupByLibrary.simpleMessage("باز کردن Zashboard"),
+    "openGateway": MessageLookupByLibrary.simpleMessage("باز کردن دروازه"),
     "openSettings": MessageLookupByLibrary.simpleMessage("باز کردن تنظیمات"),
     "operatorOrAsn": MessageLookupByLibrary.simpleMessage("سازمان / ASN"),
     "options": MessageLookupByLibrary.simpleMessage("گزینه‌ها"),
@@ -1232,6 +1307,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "port": MessageLookupByLibrary.simpleMessage("پورت"),
     "portConflictTip": MessageLookupByLibrary.simpleMessage(
       "لطفاً پورت غیرتکراری وارد کنید",
+    ),
+    "portFallback": MessageLookupByLibrary.simpleMessage("جایگزینی پورت"),
+    "portFallbackDesc": MessageLookupByLibrary.simpleMessage(
+      "اگر پورت تنظیم‌شده اشغال باشد، از پورت دیگری استفاده کن",
     ),
     "portLabel": MessageLookupByLibrary.simpleMessage("پورت"),
     "portTip": m26,
@@ -1584,6 +1663,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "syncFailed": MessageLookupByLibrary.simpleMessage("همگام‌سازی ناموفق بود"),
     "system": MessageLookupByLibrary.simpleMessage("سیستم"),
     "systemApp": MessageLookupByLibrary.simpleMessage("برنامه‌های سیستم"),
+    "systemDns": MessageLookupByLibrary.simpleMessage("DNS سیستمی"),
     "systemFont": MessageLookupByLibrary.simpleMessage("فونت سیستم"),
     "systemProxy": MessageLookupByLibrary.simpleMessage("پروکسی سیستم"),
     "systemProxyActualOff": MessageLookupByLibrary.simpleMessage(
@@ -1794,49 +1874,5 @@ class MessageLookup extends MessageLookupByLibrary {
       "نیازمند دسترسی مدیریت (Admin)",
     ),
     "years": m31,
-    "ipRiskIntel": MessageLookupByLibrary.simpleMessage("اطلاعات ریسک IP"),
-    "ipRiskPrivacyNote": MessageLookupByLibrary.simpleMessage("IP شما به شخص ثالث ارسال می‌شود (بدون سیاست حفظ حریم خصوصی)"),
-    "ipRiskEnable": MessageLookupByLibrary.simpleMessage("فعال‌سازی استعلام"),
-    "ipRiskNotFlagged": MessageLookupByLibrary.simpleMessage("یافت نشد"),
-    "ipRiskStale": MessageLookupByLibrary.simpleMessage("داده قدیمی (غیر واقعی)"),
-    "ipRiskVpn": MessageLookupByLibrary.simpleMessage("VPN"),
-    "ipRiskProxy": MessageLookupByLibrary.simpleMessage("پروکسی"),
-    "ipRiskTor": MessageLookupByLibrary.simpleMessage("Tor"),
-    "ipRiskHosting": MessageLookupByLibrary.simpleMessage("میزبانی/دیتاسنتر"),
-    "ipRiskRelay": MessageLookupByLibrary.simpleMessage("رله"),
-    "ipRiskMobile": MessageLookupByLibrary.simpleMessage("شبکه موبایل"),
-    "ipRiskBogon": MessageLookupByLibrary.simpleMessage("آدرس رزروشده"),
-    "ipRiskSearchEngineBot": MessageLookupByLibrary.simpleMessage("ربات موتور جستجو"),
-    "ipRiskAbuse": MessageLookupByLibrary.simpleMessage("گزارش‌های سوءاستفاده"),
-    "ipRiskBlocklists": MessageLookupByLibrary.simpleMessage("فهرست‌های مسدودسازی"),
-    "ipRiskLimits": MessageLookupByLibrary.simpleMessage("آنچه این داده نمی‌تواند بگوید"),
-    "ipRiskOpenReport": MessageLookupByLibrary.simpleMessage("باز کردن گزارش کامل"),
-    "ipRiskFailed": MessageLookupByLibrary.simpleMessage("استعلام ناموفق بود"),
-    "chainIntelAnalytics": MessageLookupByLibrary.simpleMessage("تحلیل هوشمند"),
-    "chainAvgLatency": MessageLookupByLibrary.simpleMessage("تأخیر متوسط"),
-    "chainTopFailureReason": MessageLookupByLibrary.simpleMessage("اصلی‌ترین دلیل شکست"),
-    "chainNodeReliability": MessageLookupByLibrary.simpleMessage("قابلیت اطمینان گره"),
-    "chainHealthScore": MessageLookupByLibrary.simpleMessage("امتیاز سلامت"),
-    "chainDecisionSupport": MessageLookupByLibrary.simpleMessage("پشتیبانی تصمیم"),
-    "chainDiagnosticTitle": MessageLookupByLibrary.simpleMessage("تشخیص زنجیره"),
-    "chainHealthLabel": MessageLookupByLibrary.simpleMessage("سلامت"),
-    "chainEventsLabel": MessageLookupByLibrary.simpleMessage("رویدادها"),
-    "chainFailuresLabel": MessageLookupByLibrary.simpleMessage("شکست‌ها"),
-    "chainExportReport": MessageLookupByLibrary.simpleMessage("خروجی گرفتن گزارش"),
-    "chainExporting": MessageLookupByLibrary.simpleMessage("در حال خروجی…"),
-    "chainSupportTitle": MessageLookupByLibrary.simpleMessage("پشتیبانی زنجیره"),
-    "chainPackageReady": MessageLookupByLibrary.simpleMessage("بسته آماده است"),
-    "chainGeneratedOn": MessageLookupByLibrary.simpleMessage("ایجاد شده در"),
-    "chainOpenFolder": MessageLookupByLibrary.simpleMessage("باز کردن پوشه"),
-    "chainShareLabel": MessageLookupByLibrary.simpleMessage("اشتراک‌گذاری"),
-    "chainDiagnosticPackage": MessageLookupByLibrary.simpleMessage("بسته تشخیصی"),
-    "chainCreateSupportPackage": MessageLookupByLibrary.simpleMessage("ایجاد بسته پشتیبانی"),
-    "chainCreatingPackage": MessageLookupByLibrary.simpleMessage("در حال ایجاد…"),
-    "intranetAndGateway": MessageLookupByLibrary.simpleMessage("شبکه داخلی و دروازه"),
-    "networkInterface": MessageLookupByLibrary.simpleMessage("رابط"),
-    "defaultGateway": MessageLookupByLibrary.simpleMessage("دروازه پیش‌فرض"),
-    "systemDns": MessageLookupByLibrary.simpleMessage("DNS سیستمی"),
-    "openGateway": MessageLookupByLibrary.simpleMessage("باز کردن دروازه"),
-    "lanShareAddress": MessageLookupByLibrary.simpleMessage("نشانی اشتراک LAN"),
   };
 }

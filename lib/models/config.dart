@@ -271,6 +271,10 @@ abstract class VpnProps with _$VpnProps {
     @Default(false) bool highPriorityNotification,
     @Default(false) bool networkSpeedNotification,
     @Default(false) bool excludeChina,
+    /// item 6 — when the configured mixed proxy port is taken at cold start,
+    /// start on the next free port for this session instead of failing.
+    /// On by default: the alternative is a core that simply will not start.
+    @Default(true) bool portFallback,
     @Default(false) bool trayEnhancement,
     @Default(TrayClickBehavior.showPanel)
     TrayClickBehavior trayLeftClickBehavior,
