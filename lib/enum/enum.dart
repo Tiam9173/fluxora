@@ -263,6 +263,8 @@ enum ActionMethod {
   sideLoadExternalProvider,
   startLog,
   stopLog,
+  getLogs,
+  clearLogs,
   startListener,
   stopListener,
   getCountryCode,
