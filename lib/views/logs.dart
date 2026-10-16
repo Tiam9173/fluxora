@@ -36,7 +36,18 @@ class _LogsViewState extends ConsumerState<LogsView> {
   }
 
   Future<void> _seedHistoryFromCore() async {
-    final history = await clashCore.getLogs();
+    // Only pull when the core is actually up. `invoke` is happy to (re)start the
+    // core process to satisfy a request, which in a fresh desktop session means
+    // spawning `FluxoraDevCore.exe` just to read a log — and in tests it throws
+    // a `ProcessException` after the test has finished.
+    if (!await clashCore.isInit) return;
+    final List<Log> history;
+    try {
+      history = await clashCore.getLogs();
+    } catch (_) {
+      // Reading history is best-effort: the page still works off the stream.
+      return;
+    }
     if (!mounted || history.isEmpty) return;
     // The Go side records history and streams from the *same* subscription:
     // history covers everything up to now, the stream picks up from now. So
