@@ -233,26 +233,44 @@ class DAVClient {
   }
 
   /// The name a new backup should use: the current UTC instant, with `_01`,
-  /// `_02`, … appended while that name is already taken.
+  /// `_02`, … appended when that instant already has backups.
+  ///
+  /// The suffix is **one past the highest already in use**, not the lowest free
+  /// one. Reusing a freed slot would hand the new backup an old position in the
+  /// sort order, so the very next prune — which keeps the newest ten — would
+  /// delete the backup that was just written. The sequence therefore only ever
+  /// increases, matching upstream.
   ///
   /// This only picks a name. It cannot *claim* it — see [backup] for the check
   /// that runs after the upload.
   Future<String> getNextBackupFileName({DateTime? now}) async {
-    final utc = (now ?? DateTime.now()).toUtc();
-    final taken = <String>{};
+    // Truncated to whole seconds: the name only encodes seconds, so comparing a
+    // microsecond-precision `now` against a parsed name would never match and
+    // every upload would reuse sequence 0.
+    final raw = (now ?? DateTime.now()).toUtc();
+    final utc = DateTime.utc(
+      raw.year,
+      raw.month,
+      raw.day,
+      raw.hour,
+      raw.minute,
+      raw.second,
+    );
+
+    var maxSequence = -1;
     try {
       for (final entry in await getBackupEntries()) {
-        taken.add(entry.name.toLowerCase());
+        if (!entry.isVersioned) continue;
+        if (entry.timestamp != utc) continue;
+        if (entry.sequence > maxSequence) maxSequence = entry.sequence;
       }
     } catch (_) {}
 
-    for (var sequence = 0; sequence <= 99; sequence++) {
-      final candidate = buildBackupName(utc, sequence, baseName: baseName);
-      if (!taken.contains(candidate.toLowerCase())) return candidate;
-    }
-    // 100 backups inside one second: fall back to the plain name rather than
-    // looping forever. The post-upload check still refuses to clobber anything.
-    return buildBackupName(utc, 0, baseName: baseName);
+    return buildBackupName(
+      utc,
+      maxSequence + 1,
+      baseName: baseName,
+    );
   }
 
   /// Delete versioned backups beyond the newest [maxVersions].
