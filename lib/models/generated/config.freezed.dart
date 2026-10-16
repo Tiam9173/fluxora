@@ -1642,7 +1642,12 @@ as bool,
 /// @nodoc
 mixin _$ProxiesStyle {
 
- ProxiesType get type; ProxiesSortType get sortType; ProxiesLayout get layout; ProxiesIconStyle get iconStyle; ProxyCardType get cardType; DelayAnimationType get delayAnimation; Map<String, String> get iconMap; int get concurrencyLimit; bool get showHiddenItems; bool get hideTimeoutProxies; bool get hasCustomizedStyle;
+ ProxiesType get type; ProxiesSortType get sortType; ProxiesLayout get layout; ProxiesIconStyle get iconStyle; ProxyCardType get cardType; DelayAnimationType get delayAnimation;/// item 6 (Bettbox 1.19.4) — show the chosen delay animation on other pages
+/// too, instead of the plain spinner.
+///
+/// On by default, matching upstream. Turning it off, or leaving the animation
+/// at `none`, restores the previous spinner everywhere.
+ bool get syncDelayAnimation; Map<String, String> get iconMap; int get concurrencyLimit; bool get showHiddenItems; bool get hideTimeoutProxies; bool get hasCustomizedStyle;
 /// Create a copy of ProxiesStyle
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1656,20 +1661,20 @@ $ProxiesStyleCopyWith<ProxiesStyle> get copyWith => _$ProxiesStyleCopyWithImpl<P
 @override
 bool operator ==(Object other) {
   final _this = this as ProxiesStyle;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ProxiesStyle&&(identical(other.type, _this.type) || other.type == _this.type)&&(identical(other.sortType, _this.sortType) || other.sortType == _this.sortType)&&(identical(other.layout, _this.layout) || other.layout == _this.layout)&&(identical(other.iconStyle, _this.iconStyle) || other.iconStyle == _this.iconStyle)&&(identical(other.cardType, _this.cardType) || other.cardType == _this.cardType)&&(identical(other.delayAnimation, _this.delayAnimation) || other.delayAnimation == _this.delayAnimation)&&const DeepCollectionEquality().equals(other.iconMap, _this.iconMap)&&(identical(other.concurrencyLimit, _this.concurrencyLimit) || other.concurrencyLimit == _this.concurrencyLimit)&&(identical(other.showHiddenItems, _this.showHiddenItems) || other.showHiddenItems == _this.showHiddenItems)&&(identical(other.hideTimeoutProxies, _this.hideTimeoutProxies) || other.hideTimeoutProxies == _this.hideTimeoutProxies)&&(identical(other.hasCustomizedStyle, _this.hasCustomizedStyle) || other.hasCustomizedStyle == _this.hasCustomizedStyle));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ProxiesStyle&&(identical(other.type, _this.type) || other.type == _this.type)&&(identical(other.sortType, _this.sortType) || other.sortType == _this.sortType)&&(identical(other.layout, _this.layout) || other.layout == _this.layout)&&(identical(other.iconStyle, _this.iconStyle) || other.iconStyle == _this.iconStyle)&&(identical(other.cardType, _this.cardType) || other.cardType == _this.cardType)&&(identical(other.delayAnimation, _this.delayAnimation) || other.delayAnimation == _this.delayAnimation)&&(identical(other.syncDelayAnimation, _this.syncDelayAnimation) || other.syncDelayAnimation == _this.syncDelayAnimation)&&const DeepCollectionEquality().equals(other.iconMap, _this.iconMap)&&(identical(other.concurrencyLimit, _this.concurrencyLimit) || other.concurrencyLimit == _this.concurrencyLimit)&&(identical(other.showHiddenItems, _this.showHiddenItems) || other.showHiddenItems == _this.showHiddenItems)&&(identical(other.hideTimeoutProxies, _this.hideTimeoutProxies) || other.hideTimeoutProxies == _this.hideTimeoutProxies)&&(identical(other.hasCustomizedStyle, _this.hasCustomizedStyle) || other.hasCustomizedStyle == _this.hasCustomizedStyle));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as ProxiesStyle;
-  return Object.hash(runtimeType,_this.type,_this.sortType,_this.layout,_this.iconStyle,_this.cardType,_this.delayAnimation,const DeepCollectionEquality().hash(_this.iconMap),_this.concurrencyLimit,_this.showHiddenItems,_this.hideTimeoutProxies,_this.hasCustomizedStyle);
+  return Object.hash(runtimeType,_this.type,_this.sortType,_this.layout,_this.iconStyle,_this.cardType,_this.delayAnimation,_this.syncDelayAnimation,const DeepCollectionEquality().hash(_this.iconMap),_this.concurrencyLimit,_this.showHiddenItems,_this.hideTimeoutProxies,_this.hasCustomizedStyle);
 }
 
 @override
 String toString() {
   final _this = this as ProxiesStyle;
-  return 'ProxiesStyle(type: ${_this.type}, sortType: ${_this.sortType}, layout: ${_this.layout}, iconStyle: ${_this.iconStyle}, cardType: ${_this.cardType}, delayAnimation: ${_this.delayAnimation}, iconMap: ${_this.iconMap}, concurrencyLimit: ${_this.concurrencyLimit}, showHiddenItems: ${_this.showHiddenItems}, hideTimeoutProxies: ${_this.hideTimeoutProxies}, hasCustomizedStyle: ${_this.hasCustomizedStyle})';
+  return 'ProxiesStyle(type: ${_this.type}, sortType: ${_this.sortType}, layout: ${_this.layout}, iconStyle: ${_this.iconStyle}, cardType: ${_this.cardType}, delayAnimation: ${_this.delayAnimation}, syncDelayAnimation: ${_this.syncDelayAnimation}, iconMap: ${_this.iconMap}, concurrencyLimit: ${_this.concurrencyLimit}, showHiddenItems: ${_this.showHiddenItems}, hideTimeoutProxies: ${_this.hideTimeoutProxies}, hasCustomizedStyle: ${_this.hasCustomizedStyle})';
 }
 
 
@@ -1680,7 +1685,7 @@ abstract mixin class $ProxiesStyleCopyWith<$Res>  {
   factory $ProxiesStyleCopyWith(ProxiesStyle value, $Res Function(ProxiesStyle) _then) = _$ProxiesStyleCopyWithImpl;
 @useResult
 $Res call({
- ProxiesType type, ProxiesSortType sortType, ProxiesLayout layout, ProxiesIconStyle iconStyle, ProxyCardType cardType, DelayAnimationType delayAnimation, Map<String, String> iconMap, int concurrencyLimit, bool showHiddenItems, bool hideTimeoutProxies, bool hasCustomizedStyle
+ ProxiesType type, ProxiesSortType sortType, ProxiesLayout layout, ProxiesIconStyle iconStyle, ProxyCardType cardType, DelayAnimationType delayAnimation, bool syncDelayAnimation, Map<String, String> iconMap, int concurrencyLimit, bool showHiddenItems, bool hideTimeoutProxies, bool hasCustomizedStyle
 });
 
 
@@ -1697,7 +1702,7 @@ class _$ProxiesStyleCopyWithImpl<$Res>
 
 /// Create a copy of ProxiesStyle
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? type = null,Object? sortType = null,Object? layout = null,Object? iconStyle = null,Object? cardType = null,Object? delayAnimation = null,Object? iconMap = null,Object? concurrencyLimit = null,Object? showHiddenItems = null,Object? hideTimeoutProxies = null,Object? hasCustomizedStyle = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? type = null,Object? sortType = null,Object? layout = null,Object? iconStyle = null,Object? cardType = null,Object? delayAnimation = null,Object? syncDelayAnimation = null,Object? iconMap = null,Object? concurrencyLimit = null,Object? showHiddenItems = null,Object? hideTimeoutProxies = null,Object? hasCustomizedStyle = null,}) {
   return _then(ProxiesStyle(
 type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as ProxiesType,sortType: null == sortType ? _self.sortType : sortType // ignore: cast_nullable_to_non_nullable
@@ -1705,7 +1710,8 @@ as ProxiesSortType,layout: null == layout ? _self.layout : layout // ignore: cas
 as ProxiesLayout,iconStyle: null == iconStyle ? _self.iconStyle : iconStyle // ignore: cast_nullable_to_non_nullable
 as ProxiesIconStyle,cardType: null == cardType ? _self.cardType : cardType // ignore: cast_nullable_to_non_nullable
 as ProxyCardType,delayAnimation: null == delayAnimation ? _self.delayAnimation : delayAnimation // ignore: cast_nullable_to_non_nullable
-as DelayAnimationType,iconMap: null == iconMap ? _self.iconMap : iconMap // ignore: cast_nullable_to_non_nullable
+as DelayAnimationType,syncDelayAnimation: null == syncDelayAnimation ? _self.syncDelayAnimation : syncDelayAnimation // ignore: cast_nullable_to_non_nullable
+as bool,iconMap: null == iconMap ? _self.iconMap : iconMap // ignore: cast_nullable_to_non_nullable
 as Map<String, String>,concurrencyLimit: null == concurrencyLimit ? _self.concurrencyLimit : concurrencyLimit // ignore: cast_nullable_to_non_nullable
 as int,showHiddenItems: null == showHiddenItems ? _self.showHiddenItems : showHiddenItems // ignore: cast_nullable_to_non_nullable
 as bool,hideTimeoutProxies: null == hideTimeoutProxies ? _self.hideTimeoutProxies : hideTimeoutProxies // ignore: cast_nullable_to_non_nullable
@@ -1795,10 +1801,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ProxiesType type,  ProxiesSortType sortType,  ProxiesLayout layout,  ProxiesIconStyle iconStyle,  ProxyCardType cardType,  DelayAnimationType delayAnimation,  Map<String, String> iconMap,  int concurrencyLimit,  bool showHiddenItems,  bool hideTimeoutProxies,  bool hasCustomizedStyle)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ProxiesType type,  ProxiesSortType sortType,  ProxiesLayout layout,  ProxiesIconStyle iconStyle,  ProxyCardType cardType,  DelayAnimationType delayAnimation,  bool syncDelayAnimation,  Map<String, String> iconMap,  int concurrencyLimit,  bool showHiddenItems,  bool hideTimeoutProxies,  bool hasCustomizedStyle)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ProxiesStyle() when $default != null:
-return $default(_that.type,_that.sortType,_that.layout,_that.iconStyle,_that.cardType,_that.delayAnimation,_that.iconMap,_that.concurrencyLimit,_that.showHiddenItems,_that.hideTimeoutProxies,_that.hasCustomizedStyle);case _:
+return $default(_that.type,_that.sortType,_that.layout,_that.iconStyle,_that.cardType,_that.delayAnimation,_that.syncDelayAnimation,_that.iconMap,_that.concurrencyLimit,_that.showHiddenItems,_that.hideTimeoutProxies,_that.hasCustomizedStyle);case _:
   return orElse();
 
 }
@@ -1816,10 +1822,10 @@ return $default(_that.type,_that.sortType,_that.layout,_that.iconStyle,_that.car
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ProxiesType type,  ProxiesSortType sortType,  ProxiesLayout layout,  ProxiesIconStyle iconStyle,  ProxyCardType cardType,  DelayAnimationType delayAnimation,  Map<String, String> iconMap,  int concurrencyLimit,  bool showHiddenItems,  bool hideTimeoutProxies,  bool hasCustomizedStyle)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ProxiesType type,  ProxiesSortType sortType,  ProxiesLayout layout,  ProxiesIconStyle iconStyle,  ProxyCardType cardType,  DelayAnimationType delayAnimation,  bool syncDelayAnimation,  Map<String, String> iconMap,  int concurrencyLimit,  bool showHiddenItems,  bool hideTimeoutProxies,  bool hasCustomizedStyle)  $default,) {final _that = this;
 switch (_that) {
 case _ProxiesStyle():
-return $default(_that.type,_that.sortType,_that.layout,_that.iconStyle,_that.cardType,_that.delayAnimation,_that.iconMap,_that.concurrencyLimit,_that.showHiddenItems,_that.hideTimeoutProxies,_that.hasCustomizedStyle);case _:
+return $default(_that.type,_that.sortType,_that.layout,_that.iconStyle,_that.cardType,_that.delayAnimation,_that.syncDelayAnimation,_that.iconMap,_that.concurrencyLimit,_that.showHiddenItems,_that.hideTimeoutProxies,_that.hasCustomizedStyle);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1836,10 +1842,10 @@ return $default(_that.type,_that.sortType,_that.layout,_that.iconStyle,_that.car
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ProxiesType type,  ProxiesSortType sortType,  ProxiesLayout layout,  ProxiesIconStyle iconStyle,  ProxyCardType cardType,  DelayAnimationType delayAnimation,  Map<String, String> iconMap,  int concurrencyLimit,  bool showHiddenItems,  bool hideTimeoutProxies,  bool hasCustomizedStyle)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ProxiesType type,  ProxiesSortType sortType,  ProxiesLayout layout,  ProxiesIconStyle iconStyle,  ProxyCardType cardType,  DelayAnimationType delayAnimation,  bool syncDelayAnimation,  Map<String, String> iconMap,  int concurrencyLimit,  bool showHiddenItems,  bool hideTimeoutProxies,  bool hasCustomizedStyle)?  $default,) {final _that = this;
 switch (_that) {
 case _ProxiesStyle() when $default != null:
-return $default(_that.type,_that.sortType,_that.layout,_that.iconStyle,_that.cardType,_that.delayAnimation,_that.iconMap,_that.concurrencyLimit,_that.showHiddenItems,_that.hideTimeoutProxies,_that.hasCustomizedStyle);case _:
+return $default(_that.type,_that.sortType,_that.layout,_that.iconStyle,_that.cardType,_that.delayAnimation,_that.syncDelayAnimation,_that.iconMap,_that.concurrencyLimit,_that.showHiddenItems,_that.hideTimeoutProxies,_that.hasCustomizedStyle);case _:
   return null;
 
 }
@@ -1851,7 +1857,7 @@ return $default(_that.type,_that.sortType,_that.layout,_that.iconStyle,_that.car
 @JsonSerializable()
 
 class _ProxiesStyle implements ProxiesStyle {
-  const _ProxiesStyle({this.type = ProxiesType.tab, this.sortType = ProxiesSortType.none, this.layout = ProxiesLayout.standard, this.iconStyle = ProxiesIconStyle.none, this.cardType = ProxyCardType.shrink, this.delayAnimation = DelayAnimationType.none,  Map<String, String> iconMap = const {}, this.concurrencyLimit = 250, this.showHiddenItems = false, this.hideTimeoutProxies = false, this.hasCustomizedStyle = false}): _iconMap = iconMap;
+  const _ProxiesStyle({this.type = ProxiesType.tab, this.sortType = ProxiesSortType.none, this.layout = ProxiesLayout.standard, this.iconStyle = ProxiesIconStyle.none, this.cardType = ProxyCardType.shrink, this.delayAnimation = DelayAnimationType.none, this.syncDelayAnimation = true,  Map<String, String> iconMap = const {}, this.concurrencyLimit = 250, this.showHiddenItems = false, this.hideTimeoutProxies = false, this.hasCustomizedStyle = false}): _iconMap = iconMap;
   factory _ProxiesStyle.fromJson(Map<String, dynamic> json) => _$ProxiesStyleFromJson(json);
 
 @override@JsonKey() final  ProxiesType type;
@@ -1860,6 +1866,12 @@ class _ProxiesStyle implements ProxiesStyle {
 @override@JsonKey() final  ProxiesIconStyle iconStyle;
 @override@JsonKey() final  ProxyCardType cardType;
 @override@JsonKey() final  DelayAnimationType delayAnimation;
+/// item 6 (Bettbox 1.19.4) — show the chosen delay animation on other pages
+/// too, instead of the plain spinner.
+///
+/// On by default, matching upstream. Turning it off, or leaving the animation
+/// at `none`, restores the previous spinner everywhere.
+@override@JsonKey() final  bool syncDelayAnimation;
  final  Map<String, String> _iconMap;
 @override@JsonKey() Map<String, String> get iconMap {
   if (_iconMap is EqualUnmodifiableMapView) return _iconMap;
@@ -1885,18 +1897,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ProxiesStyle&&(identical(other.type, type) || other.type == type)&&(identical(other.sortType, sortType) || other.sortType == sortType)&&(identical(other.layout, layout) || other.layout == layout)&&(identical(other.iconStyle, iconStyle) || other.iconStyle == iconStyle)&&(identical(other.cardType, cardType) || other.cardType == cardType)&&(identical(other.delayAnimation, delayAnimation) || other.delayAnimation == delayAnimation)&&const DeepCollectionEquality().equals(other.iconMap, _iconMap)&&(identical(other.concurrencyLimit, concurrencyLimit) || other.concurrencyLimit == concurrencyLimit)&&(identical(other.showHiddenItems, showHiddenItems) || other.showHiddenItems == showHiddenItems)&&(identical(other.hideTimeoutProxies, hideTimeoutProxies) || other.hideTimeoutProxies == hideTimeoutProxies)&&(identical(other.hasCustomizedStyle, hasCustomizedStyle) || other.hasCustomizedStyle == hasCustomizedStyle));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ProxiesStyle&&(identical(other.type, type) || other.type == type)&&(identical(other.sortType, sortType) || other.sortType == sortType)&&(identical(other.layout, layout) || other.layout == layout)&&(identical(other.iconStyle, iconStyle) || other.iconStyle == iconStyle)&&(identical(other.cardType, cardType) || other.cardType == cardType)&&(identical(other.delayAnimation, delayAnimation) || other.delayAnimation == delayAnimation)&&(identical(other.syncDelayAnimation, syncDelayAnimation) || other.syncDelayAnimation == syncDelayAnimation)&&const DeepCollectionEquality().equals(other.iconMap, _iconMap)&&(identical(other.concurrencyLimit, concurrencyLimit) || other.concurrencyLimit == concurrencyLimit)&&(identical(other.showHiddenItems, showHiddenItems) || other.showHiddenItems == showHiddenItems)&&(identical(other.hideTimeoutProxies, hideTimeoutProxies) || other.hideTimeoutProxies == hideTimeoutProxies)&&(identical(other.hasCustomizedStyle, hasCustomizedStyle) || other.hasCustomizedStyle == hasCustomizedStyle));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,type,sortType,layout,iconStyle,cardType,delayAnimation,const DeepCollectionEquality().hash(_iconMap),concurrencyLimit,showHiddenItems,hideTimeoutProxies,hasCustomizedStyle);
+    return Object.hash(runtimeType,type,sortType,layout,iconStyle,cardType,delayAnimation,syncDelayAnimation,const DeepCollectionEquality().hash(_iconMap),concurrencyLimit,showHiddenItems,hideTimeoutProxies,hasCustomizedStyle);
 }
 
 @override
 String toString() {
-    return 'ProxiesStyle(type: $type, sortType: $sortType, layout: $layout, iconStyle: $iconStyle, cardType: $cardType, delayAnimation: $delayAnimation, iconMap: $iconMap, concurrencyLimit: $concurrencyLimit, showHiddenItems: $showHiddenItems, hideTimeoutProxies: $hideTimeoutProxies, hasCustomizedStyle: $hasCustomizedStyle)';
+    return 'ProxiesStyle(type: $type, sortType: $sortType, layout: $layout, iconStyle: $iconStyle, cardType: $cardType, delayAnimation: $delayAnimation, syncDelayAnimation: $syncDelayAnimation, iconMap: $iconMap, concurrencyLimit: $concurrencyLimit, showHiddenItems: $showHiddenItems, hideTimeoutProxies: $hideTimeoutProxies, hasCustomizedStyle: $hasCustomizedStyle)';
 }
 
 
@@ -1907,7 +1919,7 @@ abstract mixin class _$ProxiesStyleCopyWith<$Res> implements $ProxiesStyleCopyWi
   factory _$ProxiesStyleCopyWith(_ProxiesStyle value, $Res Function(_ProxiesStyle) _then) = __$ProxiesStyleCopyWithImpl;
 @override @useResult
 $Res call({
- ProxiesType type, ProxiesSortType sortType, ProxiesLayout layout, ProxiesIconStyle iconStyle, ProxyCardType cardType, DelayAnimationType delayAnimation, Map<String, String> iconMap, int concurrencyLimit, bool showHiddenItems, bool hideTimeoutProxies, bool hasCustomizedStyle
+ ProxiesType type, ProxiesSortType sortType, ProxiesLayout layout, ProxiesIconStyle iconStyle, ProxyCardType cardType, DelayAnimationType delayAnimation, bool syncDelayAnimation, Map<String, String> iconMap, int concurrencyLimit, bool showHiddenItems, bool hideTimeoutProxies, bool hasCustomizedStyle
 });
 
 
@@ -1924,7 +1936,7 @@ class __$ProxiesStyleCopyWithImpl<$Res>
 
 /// Create a copy of ProxiesStyle
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? type = null,Object? sortType = null,Object? layout = null,Object? iconStyle = null,Object? cardType = null,Object? delayAnimation = null,Object? iconMap = null,Object? concurrencyLimit = null,Object? showHiddenItems = null,Object? hideTimeoutProxies = null,Object? hasCustomizedStyle = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? type = null,Object? sortType = null,Object? layout = null,Object? iconStyle = null,Object? cardType = null,Object? delayAnimation = null,Object? syncDelayAnimation = null,Object? iconMap = null,Object? concurrencyLimit = null,Object? showHiddenItems = null,Object? hideTimeoutProxies = null,Object? hasCustomizedStyle = null,}) {
   return _then(_ProxiesStyle(
 type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as ProxiesType,sortType: null == sortType ? _self.sortType : sortType // ignore: cast_nullable_to_non_nullable
@@ -1932,7 +1944,8 @@ as ProxiesSortType,layout: null == layout ? _self.layout : layout // ignore: cas
 as ProxiesLayout,iconStyle: null == iconStyle ? _self.iconStyle : iconStyle // ignore: cast_nullable_to_non_nullable
 as ProxiesIconStyle,cardType: null == cardType ? _self.cardType : cardType // ignore: cast_nullable_to_non_nullable
 as ProxyCardType,delayAnimation: null == delayAnimation ? _self.delayAnimation : delayAnimation // ignore: cast_nullable_to_non_nullable
-as DelayAnimationType,iconMap: null == iconMap ? _self._iconMap : iconMap // ignore: cast_nullable_to_non_nullable
+as DelayAnimationType,syncDelayAnimation: null == syncDelayAnimation ? _self.syncDelayAnimation : syncDelayAnimation // ignore: cast_nullable_to_non_nullable
+as bool,iconMap: null == iconMap ? _self._iconMap : iconMap // ignore: cast_nullable_to_non_nullable
 as Map<String, String>,concurrencyLimit: null == concurrencyLimit ? _self.concurrencyLimit : concurrencyLimit // ignore: cast_nullable_to_non_nullable
 as int,showHiddenItems: null == showHiddenItems ? _self.showHiddenItems : showHiddenItems // ignore: cast_nullable_to_non_nullable
 as bool,hideTimeoutProxies: null == hideTimeoutProxies ? _self.hideTimeoutProxies : hideTimeoutProxies // ignore: cast_nullable_to_non_nullable

@@ -1325,6 +1325,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "switchToDomesticIp": MessageLookupByLibrary.simpleMessage("국내 IP 가져오기"),
     "sync": MessageLookupByLibrary.simpleMessage("동기화"),
     "syncAll": MessageLookupByLibrary.simpleMessage("모두 동기화"),
+    "syncDelayAnimation": MessageLookupByLibrary.simpleMessage(
+      "다른 페이지에 애니메이션 동기화",
+    ),
     "syncFailed": MessageLookupByLibrary.simpleMessage("동기화 실패"),
     "system": MessageLookupByLibrary.simpleMessage("시스템"),
     "systemApp": MessageLookupByLibrary.simpleMessage("시스템 앱"),

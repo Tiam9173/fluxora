@@ -298,6 +298,7 @@
   "style": "스타일",
   "size": "크기",
   "delayAnimation": "테스트 애니메이션",
+  "syncDelayAnimation": "다른 페이지에 애니메이션 동기화",
   "delayAnimationDesc": "테스트 진행 중 표시할 애니메이션 변경",
   "noAnimation": "기본값",
   "rotatingCircle": "단일 회전",

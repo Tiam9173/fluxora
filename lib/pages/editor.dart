@@ -661,8 +661,11 @@ class _EditorPageState extends ConsumerState<EditorPage> {
                     child: Container(
                       color: context.colorScheme.surface.withAlpha(200),
                       child: Center(
-                        child: CircularProgressIndicator(
-                          color: context.colorScheme.primary,
+                        child: SyncedLoading(
+                          size: 36,
+                          child: CircularProgressIndicator(
+                            color: context.colorScheme.primary,
+                          ),
                         ),
                       ),
                     ),

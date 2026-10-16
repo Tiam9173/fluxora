@@ -1720,6 +1720,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "sync": MessageLookupByLibrary.simpleMessage("Синхронизировать"),
     "syncAll": MessageLookupByLibrary.simpleMessage("Синхронизировать всё"),
+    "syncDelayAnimation": MessageLookupByLibrary.simpleMessage(
+      "Синхронизировать анимацию с другими страницами",
+    ),
     "syncFailed": MessageLookupByLibrary.simpleMessage("Ошибка синхронизации"),
     "system": MessageLookupByLibrary.simpleMessage("Система"),
     "systemApp": MessageLookupByLibrary.simpleMessage("Системные приложения"),

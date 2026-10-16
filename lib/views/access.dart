@@ -563,7 +563,12 @@ class _AccessViewState extends ConsumerState<AccessView>
                     future: _completer.future,
                     builder: (_, snapshot) {
                       if (snapshot.connectionState != ConnectionState.done) {
-                        return Center(child: CircularProgressIndicator());
+                        return Center(
+                          child: SyncedLoading(
+                            size: 36,
+                            child: CircularProgressIndicator(),
+                          ),
+                        );
                       }
                       if (_packageListPermissionDenied) {
                         return _buildPackageListPermissionDeniedView();

@@ -91,10 +91,22 @@ class _OverrideProfileViewState extends State<OverrideProfileView> {
           ),
         );
         if (!isInit) {
-          return Center(child: CircularProgressIndicator());
+          return Center(
+            child: SyncedLoading(
+              size: 40,
+              child: CircularProgressIndicator(),
+            ),
+          );
         }
         return FadeBox(
-          child: !isInit ? Center(child: CircularProgressIndicator()) : child!,
+          child: !isInit
+              ? Center(
+                  child: SyncedLoading(
+                    size: 40,
+                    child: CircularProgressIndicator(),
+                  ),
+                )
+              : child!,
         );
       },
       child: LayoutBuilder(

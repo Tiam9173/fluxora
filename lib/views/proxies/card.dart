@@ -11,7 +11,6 @@ import 'package:collection/collection.dart';
 import 'package:emoji_regex/emoji_regex.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 final proxyIconProvider = Provider.family<String, String>((ref, proxyName) {
   if (proxyName.isEmpty) return '';
@@ -138,40 +137,9 @@ class ProxyCard extends StatelessWidget {
     double size,
     Color color,
   ) {
-    return switch (animationType) {
-      DelayAnimationType.none => Icon(Icons.bolt, size: size),
-      DelayAnimationType.rotatingCircle => SpinKitRotatingCircle(
-        color: color,
-        size: size,
-      ),
-      DelayAnimationType.pulse => SpinKitPulse(color: color, size: size),
-      DelayAnimationType.spinningLines => SpinKitSpinningLines(
-        color: color,
-        size: size,
-      ),
-      DelayAnimationType.threeInOut => SpinKitThreeInOut(
-        color: color,
-        size: size,
-      ),
-      DelayAnimationType.threeBounce => SpinKitThreeBounce(
-        color: color,
-        size: size,
-      ),
-      DelayAnimationType.circle => SpinKitCircle(color: color, size: size),
-      DelayAnimationType.fadingCircle => SpinKitFadingCircle(
-        color: color,
-        size: size,
-      ),
-      DelayAnimationType.fadingFour => SpinKitFadingFour(
-        color: color,
-        size: size,
-      ),
-      DelayAnimationType.wave => SpinKitWave(color: color, size: size),
-      DelayAnimationType.doubleBounce => SpinKitDoubleBounce(
-        color: color,
-        size: size,
-      ),
-    };
+    // Delegates to the shared widget so the proxy card and the synced loading
+    // indicators cannot drift apart.
+    return DelayAnimation(type: animationType, size: size, color: color);
   }
 
   /// Icon of the sub-group this node belongs to, or '' when the node name

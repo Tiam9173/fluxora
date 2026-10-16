@@ -299,6 +299,7 @@
   "style": "Style",
   "size": "Size",
   "delayAnimation": "Delay Animation",
+  "syncDelayAnimation": "Sync animation to other pages",
   "delayAnimationDesc": "Customize animation during delay testing",
   "noAnimation": "Default",
   "rotatingCircle": "Rotating Circle",

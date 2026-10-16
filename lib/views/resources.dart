@@ -114,7 +114,10 @@ class ResourcesView extends ConsumerWidget {
               ? const SizedBox(
                   width: 24,
                   height: 24,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  child: SyncedLoading(
+                    size: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
                 )
               : const Icon(Icons.sync),
           onPressed: isUpdating ? null : () => _handleSyncAll(ref),
@@ -286,7 +289,10 @@ class _GeoDataListItemState extends ConsumerState<GeoDataListItem> {
                                   width: 30,
                                   child: Padding(
                                     padding: EdgeInsets.all(2),
-                                    child: CircularProgressIndicator(),
+                                    child: SyncedLoading(
+                                      size: 26,
+                                      child: CircularProgressIndicator(),
+                                    ),
                                   ),
                                 )
                               : CommonChip(

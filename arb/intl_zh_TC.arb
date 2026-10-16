@@ -298,6 +298,7 @@
   "style": "風格",
   "size": "尺寸",
   "delayAnimation": "延遲動畫",
+  "syncDelayAnimation": "同步動畫到其他頁面",
   "delayAnimationDesc": "自訂測試過程中的動畫顯示",
   "noAnimation": "預設",
   "rotatingCircle": "單圓自轉",

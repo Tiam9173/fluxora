@@ -360,7 +360,10 @@ class ProviderItem extends StatelessWidget {
                         width: 30,
                         child: const Padding(
                           padding: EdgeInsets.all(2),
-                          child: CircularProgressIndicator(),
+                          child: SyncedLoading(
+                            size: 26,
+                            child: CircularProgressIndicator(),
+                          ),
                         ),
                       )
                     : CommonChip(

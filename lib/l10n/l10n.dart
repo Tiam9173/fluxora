@@ -2465,6 +2465,16 @@ class AppLocalizations {
     );
   }
 
+  /// `Sync animation to other pages`
+  String get syncDelayAnimation {
+    return Intl.message(
+      'Sync animation to other pages',
+      name: 'syncDelayAnimation',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Customize animation during delay testing`
   String get delayAnimationDesc {
     return Intl.message(

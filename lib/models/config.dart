@@ -357,6 +357,12 @@ abstract class ProxiesStyle with _$ProxiesStyle {
     @Default(ProxiesIconStyle.none) ProxiesIconStyle iconStyle,
     @Default(ProxyCardType.shrink) ProxyCardType cardType,
     @Default(DelayAnimationType.none) DelayAnimationType delayAnimation,
+    /// item 6 (Bettbox 1.19.4) — show the chosen delay animation on other pages
+    /// too, instead of the plain spinner.
+    ///
+    /// On by default, matching upstream. Turning it off, or leaving the animation
+    /// at `none`, restores the previous spinner everywhere.
+    @Default(true) bool syncDelayAnimation,
     @Default({}) Map<String, String> iconMap,
     @Default(250) int concurrencyLimit,
     @Default(false) bool showHiddenItems,
