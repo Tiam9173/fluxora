@@ -294,8 +294,35 @@ abstract class NetworkProps with _$NetworkProps {
     @Default(true) bool autoSetSystemDns,
   }) = _NetworkProps;
 
+  /// item 6 (Bettbox 1.19.4) — the persisted bypass list is not trusted; see
+  /// [NetworkPropsSanitize.withoutInvalidBypassEntries].
+  ///
+  /// Kept expression-bodied on purpose: a block-bodied `fromJson` makes freezed
+  /// skip generating `_$NetworkPropsFromJson`, which then breaks
+  /// `json_serializable` for every model that nests a `NetworkProps`.
   factory NetworkProps.fromJson(Map<String, Object?>? json) =>
-      json == null ? const NetworkProps() : _$NetworkPropsFromJson(json);
+      (json == null
+          ? const NetworkProps()
+          : _$NetworkPropsFromJson(json)).withoutInvalidBypassEntries();
+}
+
+extension NetworkPropsSanitize on NetworkProps {
+  /// Drops bypass entries the Windows system-proxy call cannot accept.
+  ///
+  /// A bare `::1` in the bypass list makes `InternetSetOption` fail outright,
+  /// leaving the system proxy unset rather than merely misconfigured. Fluxora's
+  /// own default list never contains it, but a user can type it, paste it, or
+  /// import a config that does — so it is filtered on read, mirroring upstream's
+  /// `bypassDomainSafeFromJson`.
+  ///
+  /// Only the exact `::1` form is removed: `127.*`-style wildcards and
+  /// `localhost` still cover loopback the way the list intends.
+  NetworkProps withoutInvalidBypassEntries() {
+    final bypass = bypassDomain.where((e) => e != '::1').toList();
+    return bypass.length == bypassDomain.length
+        ? this
+        : copyWith(bypassDomain: bypass);
+  }
 }
 
 extension NetworkPropsExt on NetworkProps {
