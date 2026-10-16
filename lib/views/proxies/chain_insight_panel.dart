@@ -34,9 +34,14 @@ class ChainInsightPanel extends StatelessWidget {
                   size: 20,
                 ),
                 const SizedBox(width: 8),
-                const Text(
-                  'Adaptive Insights',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                // item 4 — unwrapped this card title overflowed at 280/320 dp
+                // under the 1.4x text scale.
+                const Flexible(
+                  child: Text(
+                    'Adaptive Insights',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),
@@ -114,12 +119,17 @@ class ChainInsightPanel extends StatelessWidget {
                   children: [
                     Icon(forecastIcon, color: forecastColor, size: 16),
                     const SizedBox(width: 6),
-                    Text(
-                      forecastText,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: forecastColor,
+                    // item 4 — `forecastText` is long; unwrapped it overflowed
+                    // the half-width card at 280/320 dp under the 1.4x scale.
+                    Flexible(
+                      child: Text(
+                        forecastText,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: forecastColor,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -186,9 +196,14 @@ class ChainInsightPanel extends StatelessWidget {
       children: [
         Icon(icon, color: color, size: 16),
         const SizedBox(width: 6),
-        Text(
-          label,
-          style: TextStyle(fontSize: 12, color: colorScheme.onSurface),
+        // item 4 — unwrapped trend labels overflowed at 280/320 dp under the
+        // 1.4x text scale.
+        Flexible(
+          child: Text(
+            label,
+            style: TextStyle(fontSize: 12, color: colorScheme.onSurface),
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       ],
     );
