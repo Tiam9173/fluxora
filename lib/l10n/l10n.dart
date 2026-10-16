@@ -7699,6 +7699,405 @@ class AppLocalizations {
       args: [],
     );
   }
+
+  /// `IP Risk Intel`
+  String get ipRiskIntel {
+    return Intl.message(
+      'IP Risk Intel',
+      name: 'ipRiskIntel',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Sends your IP to a third party (no privacy policy)`
+  String get ipRiskPrivacyNote {
+    return Intl.message(
+      'Sends your IP to a third party (no privacy policy)',
+      name: 'ipRiskPrivacyNote',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Enable lookup`
+  String get ipRiskEnable {
+    return Intl.message(
+      'Enable lookup',
+      name: 'ipRiskEnable',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Not flagged`
+  String get ipRiskNotFlagged {
+    return Intl.message(
+      'Not flagged',
+      name: 'ipRiskNotFlagged',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Stale — not real-time`
+  String get ipRiskStale {
+    return Intl.message(
+      'Stale — not real-time',
+      name: 'ipRiskStale',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `VPN`
+  String get ipRiskVpn {
+    return Intl.message(
+      'VPN',
+      name: 'ipRiskVpn',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Proxy`
+  String get ipRiskProxy {
+    return Intl.message(
+      'Proxy',
+      name: 'ipRiskProxy',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Tor`
+  String get ipRiskTor {
+    return Intl.message(
+      'Tor',
+      name: 'ipRiskTor',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Hosting/DC`
+  String get ipRiskHosting {
+    return Intl.message(
+      'Hosting/DC',
+      name: 'ipRiskHosting',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Relay`
+  String get ipRiskRelay {
+    return Intl.message(
+      'Relay',
+      name: 'ipRiskRelay',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Mobile`
+  String get ipRiskMobile {
+    return Intl.message(
+      'Mobile',
+      name: 'ipRiskMobile',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Bogon`
+  String get ipRiskBogon {
+    return Intl.message(
+      'Bogon',
+      name: 'ipRiskBogon',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Search bot`
+  String get ipRiskSearchEngineBot {
+    return Intl.message(
+      'Search bot',
+      name: 'ipRiskSearchEngineBot',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Abuse reports`
+  String get ipRiskAbuse {
+    return Intl.message(
+      'Abuse reports',
+      name: 'ipRiskAbuse',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Blocklists`
+  String get ipRiskBlocklists {
+    return Intl.message(
+      'Blocklists',
+      name: 'ipRiskBlocklists',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `What this data cannot tell`
+  String get ipRiskLimits {
+    return Intl.message(
+      'What this data cannot tell',
+      name: 'ipRiskLimits',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Open full report`
+  String get ipRiskOpenReport {
+    return Intl.message(
+      'Open full report',
+      name: 'ipRiskOpenReport',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Lookup failed`
+  String get ipRiskFailed {
+    return Intl.message(
+      'Lookup failed',
+      name: 'ipRiskFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Intelligence Analytics`
+  String get chainIntelAnalytics {
+    return Intl.message(
+      'Intelligence Analytics',
+      name: 'chainIntelAnalytics',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Avg Latency`
+  String get chainAvgLatency {
+    return Intl.message(
+      'Avg Latency',
+      name: 'chainAvgLatency',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Top Failure Reason`
+  String get chainTopFailureReason {
+    return Intl.message(
+      'Top Failure Reason',
+      name: 'chainTopFailureReason',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Node Reliability`
+  String get chainNodeReliability {
+    return Intl.message(
+      'Node Reliability',
+      name: 'chainNodeReliability',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Health Score`
+  String get chainHealthScore {
+    return Intl.message(
+      'Health Score',
+      name: 'chainHealthScore',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Decision Support`
+  String get chainDecisionSupport {
+    return Intl.message(
+      'Decision Support',
+      name: 'chainDecisionSupport',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Chain Diagnostic`
+  String get chainDiagnosticTitle {
+    return Intl.message(
+      'Chain Diagnostic',
+      name: 'chainDiagnosticTitle',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Health`
+  String get chainHealthLabel {
+    return Intl.message(
+      'Health',
+      name: 'chainHealthLabel',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Events`
+  String get chainEventsLabel {
+    return Intl.message(
+      'Events',
+      name: 'chainEventsLabel',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Failures`
+  String get chainFailuresLabel {
+    return Intl.message(
+      'Failures',
+      name: 'chainFailuresLabel',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Export Report`
+  String get chainExportReport {
+    return Intl.message(
+      'Export Report',
+      name: 'chainExportReport',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Exporting...`
+  String get chainExporting {
+    return Intl.message(
+      'Exporting...',
+      name: 'chainExporting',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Chain Support`
+  String get chainSupportTitle {
+    return Intl.message(
+      'Chain Support',
+      name: 'chainSupportTitle',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Package Ready`
+  String get chainPackageReady {
+    return Intl.message(
+      'Package Ready',
+      name: 'chainPackageReady',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Generated on`
+  String get chainGeneratedOn {
+    return Intl.message(
+      'Generated on',
+      name: 'chainGeneratedOn',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Open Folder`
+  String get chainOpenFolder {
+    return Intl.message(
+      'Open Folder',
+      name: 'chainOpenFolder',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Share`
+  String get chainShareLabel {
+    return Intl.message(
+      'Share',
+      name: 'chainShareLabel',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Diagnostic Package`
+  String get chainDiagnosticPackage {
+    return Intl.message(
+      'Diagnostic Package',
+      name: 'chainDiagnosticPackage',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Create Support Package`
+  String get chainCreateSupportPackage {
+    return Intl.message(
+      'Create Support Package',
+      name: 'chainCreateSupportPackage',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Creating...`
+  String get chainCreatingPackage {
+    return Intl.message(
+      'Creating...',
+      name: 'chainCreatingPackage',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Intranet & Gateway`
+  String get intranetAndGateway {
+    return Intl.message(
+      'Intranet & Gateway',
+      name: 'intranetAndGateway',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Interface`
+  String get networkInterface {
+    return Intl.message(
+      'Interface',
+      name: 'networkInterface',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Default Gateway`
+  String get defaultGateway {
+    return Intl.message(
+      'Default Gateway',
+      name: 'defaultGateway',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `System DNS`
+  String get systemDns {
+    return Intl.message(
+      'System DNS',
+      name: 'systemDns',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `Open Gateway`
+  String get openGateway {
+    return Intl.message(
+      'Open Gateway',
+      name: 'openGateway',
+      desc: '',
+      args: [],
+    );
+  }
+  /// `LAN Share Address`
+  String get lanShareAddress {
+    return Intl.message(
+      'LAN Share Address',
+      name: 'lanShareAddress',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {
