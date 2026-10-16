@@ -246,6 +246,27 @@ CoreState coreState(Ref ref) {
   );
 }
 
+/// item 6 — the mixed proxy port to use *for this session*, when the configured
+/// one was already taken at cold start.
+///
+/// Deliberately **session-only**: writing the fallback back into the user's
+/// config would silently rewrite their setting, and they would open the app next
+/// time to a different port with no idea why.
+///
+/// Only ever set at cold start, while no core is running. That is what keeps the
+/// port from drifting: probing while our *own* core still holds the port would
+/// read as "occupied", so we would move once, then move again on every restart.
+/// Restarts and hot config updates never probe, so they can never drift.
+@riverpod
+class MixedPortFallback extends _$MixedPortFallback {
+  @override
+  int? build() => null;
+
+  void set(int? port) {
+    state = port;
+  }
+}
+
 @riverpod
 UpdateParams updateParams(Ref ref) {
   final (:bypassPrivateRoute, :realBypassPrivateRouteAddress) = ref.watch(
@@ -256,6 +277,10 @@ UpdateParams updateParams(Ref ref) {
       ),
     ),
   );
+  // item 6 — a cold-start fallback port, if the configured one was taken. Read
+  // outside the `select` so the derived `UpdateParams` still rebuilds when it
+  // changes, and so the user's own setting is never touched.
+  final mixedPortFallback = ref.watch(mixedPortFallbackProvider);
   return ref.watch(
     patchClashConfigProvider.select(
       (state) => UpdateParams(
@@ -275,7 +300,7 @@ UpdateParams updateParams(Ref ref) {
         tcpConcurrent: state.tcpConcurrent,
         externalController: state.externalController,
         unifiedDelay: state.unifiedDelay,
-        mixedPort: state.mixedPort,
+        mixedPort: mixedPortFallback ?? state.mixedPort,
       ),
     ),
   );

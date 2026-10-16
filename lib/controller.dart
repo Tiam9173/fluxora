@@ -609,7 +609,49 @@ class AppController {
     return res.data ?? _ref.read(realTunEnableProvider);
   }
 
+  /// item 6 — pick a session-only fallback port when the configured mixed proxy
+  /// port is already bound by something else.
+  ///
+  /// Only called at cold start (see [_updateClashConfig]). That gate is what
+  /// keeps the port from drifting: probing while our *own* core still holds the
+  /// port would read as "occupied", so we would move once and then move again on
+  /// every restart. Restarts and hot config updates never call this.
+  ///
+  /// Never writes back to the user's config — the fallback lives in a provider
+  /// for the session only. When the probe cannot prove the port is taken, or no
+  /// free port exists, the configured port is left alone: an inconclusive answer
+  /// is not evidence that the port is occupied.
+  Future<void> _resolveMixedPortFallback() async {
+    final configured = _ref.read(patchClashConfigProvider).mixedPort;
+    final current = _ref.read(mixedPortFallbackProvider);
+
+    // Re-probe when the user has since changed the configured port, so a stale
+    // fallback from an earlier port is not kept.
+    if (current != null && current == configured) return;
+
+    if (await isPortAvailable(configured)) {
+      if (current != null) {
+        _ref.read(mixedPortFallbackProvider.notifier).set(null);
+      }
+      return;
+    }
+
+    final next = await findNextAvailablePort(
+      configured,
+      isAvailable: (port) => isPortAvailable(port),
+    );
+    if (next == null) return;
+    commonPrint.log(
+      'Mixed port $configured is in use, using $next for this session',
+    );
+    _ref.read(mixedPortFallbackProvider.notifier).set(next);
+  }
+
   Future<void> _updateClashConfig() async {
+    // item 6 — cold start only: no core running means the port cannot be ours.
+    if (!_ref.read(runTimeProvider.notifier).isStart) {
+      await _resolveMixedPortFallback();
+    }
     final updateParams = _ref.read(updateParamsProvider);
     final tunResult = await _requestAdmin(updateParams.tun.enable);
     if (tunResult.isError) return;

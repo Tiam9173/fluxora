@@ -49,19 +49,23 @@ int nextPortCandidate(int port) {
 /// Returns null when nothing in the range is free; the caller must treat that as
 /// "do not start with a guessed port", not as "keep the current one".
 ///
+/// The predicate is asynchronous because Dart's socket API is: upstream's Rust
+/// version can bind synchronously, Dart cannot, so the probe has to be awaited
+/// per candidate.
+///
 /// Ported from clash-verge-rev's `utils/port.rs` (`find_next_available_port`).
-int? findNextAvailablePort(
+Future<int?> findNextAvailablePort(
   int current, {
   Set<int> reserved = const {},
-  required bool Function(int port) isAvailable,
-}) {
+  required Future<bool> Function(int port) isAvailable,
+}) async {
   var candidate = nextPortCandidate(current);
   // Bounded by the size of the range, so a pathological `isAvailable` can never
   // spin forever.
   for (var i = minFallbackPort; i <= 65535; i++) {
     if (candidate != current &&
         !reserved.contains(candidate) &&
-        isAvailable(candidate)) {
+        await isAvailable(candidate)) {
       return candidate;
     }
     candidate = nextPortCandidate(candidate);
@@ -91,3 +95,4 @@ Future<bool> isPortAvailable(int port, {InternetAddress? address}) async {
     return false;
   }
 }
+

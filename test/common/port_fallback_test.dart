@@ -26,68 +26,71 @@ void main() {
   });
 
   group('findNextAvailablePort', () {
-    test('takes the very next port when it is free', () {
+    test('takes the very next port when it is free', () async {
       expect(
-        findNextAvailablePort(7890, isAvailable: (_) => true),
+        await findNextAvailablePort(7890, isAvailable: (_) async => true),
         7891,
       );
     });
 
-    test('skips ports the probe rejects', () {
+    test('skips ports the probe rejects', () async {
       final taken = {7891, 7892, 7893};
       expect(
-        findNextAvailablePort(
+        await findNextAvailablePort(
           7890,
-          isAvailable: (port) => !taken.contains(port),
+          isAvailable: (port) async => !taken.contains(port),
         ),
         7894,
       );
     });
 
-    test('skips reserved ports even when they probe free', () {
+    test('skips reserved ports even when they probe free', () async {
       // Reserved is checked *before* availability, so a port the caller has
       // earmarked is never handed back even if nothing is bound to it.
       expect(
-        findNextAvailablePort(
+        await findNextAvailablePort(
           7890,
           reserved: {7891, 7892},
-          isAvailable: (_) => true,
+          isAvailable: (_) async => true,
         ),
         7893,
       );
     });
 
-    test('never returns the current port, even when it is the only free one', () {
+    test('never returns the current port, even when it is the only free one', () async {
       // The whole point of the call: the current port is the broken one, so
       // handing it back would put the caller in a loop. When it is the *only*
       // port the probe accepts, the correct answer is "nothing found".
       expect(
-        findNextAvailablePort(20_000, isAvailable: (port) => port == 20_000),
+        await findNextAvailablePort(20_000, isAvailable: (port) async => port == 20_000),
         isNull,
       );
     });
 
-    test('wraps around and finds a free port below the start', () {
+    test('wraps around and finds a free port below the start', () async {
       // Everything from 60_000 upward is taken, so the scan must wrap past the
       // top rather than give up. The first thing it meets after wrapping is the
       // floor.
       expect(
-        findNextAvailablePort(60_000, isAvailable: (port) => port < 60_000),
+        await findNextAvailablePort(60_000, isAvailable: (port) async => port < 60_000),
         minFallbackPort,
       );
     });
 
-    test('returns null when nothing in the range is free', () {
+    test('returns null when nothing in the range is free', () async {
       expect(
-        findNextAvailablePort(7890, isAvailable: (_) => false),
+        await findNextAvailablePort(7890, isAvailable: (_) async => false),
         isNull,
       );
     });
 
-    test('a null result is not the current port', () {
+    test('a null result is not the current port', () async {
       // Guards the caller's failure mode: null must mean "do not guess", not
       // "keep using the port we know is taken".
-      final result = findNextAvailablePort(7890, isAvailable: (_) => false);
+      final result = await findNextAvailablePort(
+        7890,
+        isAvailable: (_) async => false,
+      );
       expect(result, isNot(7890));
       expect(result, isNull);
     });
