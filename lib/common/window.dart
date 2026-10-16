@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/state.dart';
@@ -16,9 +17,10 @@ class Window {
       protocol.register('fluxora');
     }
     await windowManager.ensureInitialized();
+    const minimumSize = Size(372, 492);
     WindowOptions windowOptions = WindowOptions(
-      size: Size(props.width, props.height),
-      minimumSize: const Size(380, 400),
+      size: Size(props.width, math.max(props.height, minimumSize.height)),
+      minimumSize: minimumSize,
     );
     await windowManager.setTitleBarStyle(TitleBarStyle.hidden);
     await windowManager.setAlwaysOnTop(props.isPinned);
