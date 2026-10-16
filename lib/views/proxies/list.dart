@@ -10,6 +10,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'card.dart';
 import 'common.dart';
 
+/// The inputs that must invalidate a cached group sliver.
+///
+/// Extracted so the invalidation contract is unit-testable — the cache's whole
+/// value is that a stale entry can never be served, and the easy mistake is
+/// forgetting one of these.
+///
+/// `delayMap` is deliberately included even though it is not a widget field: the
+/// delay sort reads it through `getDelayProvider` while the `Group` instance
+/// stays the same across a delay update, so omitting it would freeze the sort
+/// order the moment a probe returned a new value.
+Object groupSliverCacheKey({
+  required bool isExpand,
+  required ProxiesSortType sortType,
+  required int columns,
+  required double itemHeight,
+  required Object? delayMap,
+}) => (isExpand, sortType, columns, itemHeight, delayMap);
+
 class ProxiesListView extends ConsumerWidget {
   const ProxiesListView({super.key});
 
@@ -87,6 +105,52 @@ class _RowItem extends _FlatItem {
 
 class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
   final ScrollController _scrollController = ScrollController();
+
+  /// item 6 (Bettbox 1.19.4 alignment) — per-group build cache.
+  ///
+  /// `_buildRowsSliver` re-ran `getSortProxies` for **every expanded group** on
+  /// every build, so an unrelated rebuild (the 1 s tick, a delay update, a
+  /// selection change) repeated an O(n log n) sort per group. The entry stores
+  /// the group instance and every input that shapes the sliver, so a stale entry
+  /// can never be served.
+  final Map<String, (Group, Object, Widget)> _sliverCache = {};
+
+  /// Everything the cached sliver depends on besides the group itself.
+  ///
+  /// `delayMap` is in the key because the delay sort reads it through
+  /// `getDelayProvider` while the `Group` instance stays the same across a delay
+  /// update — without it the sort order would go stale the moment a probe
+  /// returned. See [groupSliverCacheKey].
+  (Object,) _cacheKeyFor(Group group, double itemHeight) => (
+    groupSliverCacheKey(
+      isExpand: widget.currentUnfoldSet.contains(group.name),
+      sortType: widget.sortType,
+      columns: widget.columns,
+      itemHeight: itemHeight,
+      delayMap: globalState.appState.delayMap,
+    ),
+  );
+
+  void _invalidateCache() => _sliverCache.clear();
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Measure / text-scale changes reshape every row.
+    _invalidateCache();
+  }
+
+  @override
+  void didUpdateWidget(_ProxyGroupsList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.columns != widget.columns ||
+        oldWidget.cardType != widget.cardType) {
+      _invalidateCache();
+    } else if (!identical(oldWidget.groups, widget.groups)) {
+      final names = {for (final group in widget.groups) group.name};
+      _sliverCache.removeWhere((name, _) => !names.contains(name));
+    }
+  }
 
   void _handleToggle(String groupName) {
     final tempUnfoldSet = Set<String>.from(widget.currentUnfoldSet);
@@ -185,85 +249,173 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
     super.dispose();
   }
 
+  /// One row of proxy cards for [group] — the same `Row` of `Expanded` cards the
+  /// flat-item builder used to produce.
+  Widget _buildRow(Group group, List<Proxy> proxies, double itemHeight) {
+    final cardWidgets = <Widget>[];
+    for (var i = 0; i < widget.columns; i++) {
+      if (i < proxies.length) {
+        final proxy = proxies[i];
+        cardWidgets.add(
+          Expanded(
+            child: ProxyCard(
+              key: ValueKey('${group.name}.${proxy.name}'),
+              proxy: proxy,
+              groupName: group.name,
+              type: widget.cardType,
+              groupType: group.type,
+              testUrl: group.testUrl,
+            ),
+          ),
+        );
+      } else {
+        cardWidgets.add(const Expanded(child: SizedBox()));
+      }
+    }
+
+    final rowChildren = <Widget>[];
+    for (var i = 0; i < cardWidgets.length; i++) {
+      rowChildren.add(cardWidgets[i]);
+      if (i < cardWidgets.length - 1) {
+        rowChildren.add(const SizedBox(width: 8));
+      }
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: SizedBox(height: itemHeight, child: Row(children: rowChildren)),
+    );
+  }
+
+  /// The group's proxy rows, or an empty sliver when the group is collapsed.
+  Widget _buildRowsSliver(Group group, double itemHeight) {
+    final cacheKey = _cacheKeyFor(group, itemHeight);
+    final cached = _sliverCache[group.name];
+    if (cached != null &&
+        identical(cached.$1, group) &&
+        cached.$2 == cacheKey) {
+      return cached.$3;
+    }
+
+    final sliver = _buildRowsSliverUncached(group, itemHeight);
+    _sliverCache[group.name] = (group, cacheKey, sliver);
+    return sliver;
+  }
+
+  Widget _buildRowsSliverUncached(Group group, double itemHeight) {
+    if (!widget.currentUnfoldSet.contains(group.name)) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+
+    final sortedProxies = globalState.appController.getSortProxies(
+      proxies: group.all,
+      sortType: widget.sortType,
+      testUrl: group.testUrl,
+    );
+    final rowCount = (sortedProxies.length + widget.columns - 1) ~/
+        widget.columns;
+
+    return SliverVariedExtentList.builder(
+      itemCount: rowCount,
+      itemExtentBuilder: (index, _) => itemHeight + 8.0,
+      itemBuilder: (context, index) {
+        final start = index * widget.columns;
+        final end = (start + widget.columns < sortedProxies.length)
+            ? start + widget.columns
+            : sortedProxies.length;
+        return _buildRow(group, sortedProxies.sublist(start, end), itemHeight);
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isMobileView = ref.watch(isMobileViewProvider);
-    final flatItems = _buildFlatItems();
     final headerHeight = _getHeaderHeight();
     final itemHeight = getItemHeight(widget.cardType);
+    const horizontal = EdgeInsets.symmetric(horizontal: 16);
 
+    // item 6 (Bettbox 1.19.3 alignment) — group headers are pinned. The previous
+    // `ListView.builder` + flat-item model kept them scrolling away; the sliver
+    // conversion preserves the same per-item extents, so `_scrollToSelected`'s
+    // offset arithmetic is unchanged.
     return CommonScrollBar(
       controller: _scrollController,
-      child: ListView.builder(
+      child: CustomScrollView(
         key: const PageStorageKey<String>('proxies_list'),
         controller: _scrollController,
-        padding: EdgeInsets.all(16).copyWith(
-          bottom:
-              (globalState.isAndroidTV ? 48.0 : 16.0) +
-              (isMobileView ? getFloatingBottomBarReserveHeight(context) : 0),
-        ),
-        itemCount: flatItems.length,
-        itemExtentBuilder: (index, _) {
-          return flatItems[index].getHeight(headerHeight, itemHeight);
-        },
-        itemBuilder: (context, index) {
-          final item = flatItems[index];
-          if (item is _HeaderItem) {
-            final isExpand = widget.currentUnfoldSet.contains(item.group.name);
-            return _GroupHeader(
-              key: ValueKey('header_${item.group.name}'),
-              group: item.group,
-              isExpand: isExpand,
-              onToggle: () => _handleToggle(item.group.name),
-              cardType: widget.cardType,
-              columns: widget.columns,
-              onScrollToSelected: () => _scrollToSelected(item.group.name),
-            );
-          } else if (item is _SpacingItem) {
-            return SizedBox(height: item.height);
-          } else if (item is _RowItem) {
-            final cardWidgets = <Widget>[];
-            for (var i = 0; i < widget.columns; i++) {
-              if (i < item.proxies.length) {
-                final proxy = item.proxies[i];
-                cardWidgets.add(
-                  Expanded(
-                    child: ProxyCard(
-                      key: ValueKey('${item.group.name}.${proxy.name}'),
-                      proxy: proxy,
-                      groupName: item.group.name,
-                      type: widget.cardType,
-                      groupType: item.group.type,
-                      testUrl: item.group.testUrl,
-                    ),
-                  ),
-                );
-              } else {
-                cardWidgets.add(const Expanded(child: SizedBox()));
-              }
-            }
-
-            final rowChildren = <Widget>[];
-            for (var i = 0; i < cardWidgets.length; i++) {
-              rowChildren.add(cardWidgets[i]);
-              if (i < cardWidgets.length - 1) {
-                rowChildren.add(const SizedBox(width: 8));
-              }
-            }
-
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: SizedBox(
-                height: itemHeight,
-                child: Row(children: rowChildren),
+        slivers: [
+          const SliverPadding(padding: EdgeInsets.only(top: 16)),
+          for (final group in widget.groups) ...[
+            SliverPadding(
+              padding: horizontal,
+              sliver: SliverPersistentHeader(
+                pinned: true,
+                delegate: _GroupHeaderDelegate(
+                  extent: headerHeight,
+                  builder: () {
+                    final isExpand = widget.currentUnfoldSet.contains(
+                      group.name,
+                    );
+                    return _GroupHeader(
+                      key: ValueKey('header_${group.name}'),
+                      group: group,
+                      isExpand: isExpand,
+                      onToggle: () => _handleToggle(group.name),
+                      cardType: widget.cardType,
+                      columns: widget.columns,
+                      onScrollToSelected: () => _scrollToSelected(group.name),
+                    );
+                  },
+                ),
               ),
-            );
-          }
-          return const SizedBox();
-        },
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 8)),
+            SliverPadding(
+              padding: horizontal,
+              sliver: _buildRowsSliver(group, itemHeight),
+            ),
+          ],
+          SliverPadding(
+            padding: EdgeInsets.only(
+              bottom:
+                  (globalState.isAndroidTV ? 48.0 : 16.0) +
+                  (isMobileView ? getFloatingBottomBarReserveHeight(context) : 0),
+            ),
+          ),
+        ],
       ),
     );
   }
+}
+
+/// Pins a `_GroupHeader` at the top of the viewport while its group scrolls.
+class _GroupHeaderDelegate extends SliverPersistentHeaderDelegate {
+  _GroupHeaderDelegate({required this.extent, required this.builder});
+
+  final double extent;
+  final Widget Function() builder;
+
+  @override
+  double get minExtent => extent;
+
+  @override
+  double get maxExtent => extent;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return builder();
+  }
+
+  // The parent only rebuilds this delegate when its own state (unfold set,
+  // filters, card type) changes, so an unconditional rebuild is correct here and
+  // avoids comparing closures.
+  @override
+  bool shouldRebuild(covariant _GroupHeaderDelegate oldDelegate) => true;
 }
 
 class _GroupHeader extends ConsumerWidget {
