@@ -877,7 +877,14 @@ class BypassPrivateRouteItem extends ConsumerWidget {
       title: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(appLocalizations.bypassPrivateRoute),
+          // item 4 — the label must be allowed to shrink: unwrapped it overflowed
+          // the switch row by 13 px at 280 dp under the app's 1.4x text scale.
+          Flexible(
+            child: Text(
+              appLocalizations.bypassPrivateRoute,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
           if (system.isDesktop) ...[
             const SizedBox(width: 6),
             Tooltip(

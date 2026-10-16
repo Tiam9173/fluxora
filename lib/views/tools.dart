@@ -1448,6 +1448,9 @@ class _ToolViewState extends ConsumerState<ToolsView> {
 class _LocaleItem extends ConsumerWidget {
   const _LocaleItem();
 
+  /// Sentinel option that means "follow the system language".
+  static const Locale _systemLocaleOption = Locale(systemLocaleValue);
+
   static final List<Locale> _localeOptions = _getOrderedLocales();
   static const Map<String, String> _nativeLocaleNames = {
     'zh_CN': '简体中文',
@@ -1472,10 +1475,16 @@ class _LocaleItem extends ConsumerWidget {
       if (bIndex != -1) return 1;
       return aKey.compareTo(bKey);
     });
-    return locales;
+    // "Default" (follow system) always sits first.
+    return [_systemLocaleOption, ...locales];
   }
 
   String _getLocaleString(Locale locale) {
+    if (locale == _systemLocaleOption) {
+      final system = utils.getSystemLocale();
+      final name = _nativeLocaleNames[system.toString()] ?? system.toString();
+      return '${appLocalizations.defaultText} ($name)';
+    }
     return _nativeLocaleNames[locale.toString()] ?? locale.toString();
   }
 
@@ -1484,8 +1493,9 @@ class _LocaleItem extends ConsumerWidget {
     final locale = ref.watch(
       appSettingProvider.select((state) => state.locale),
     );
+    // `null` (never chosen) and the sentinel both mean "follow system".
     final currentLocale =
-        utils.getLocaleForString(locale) ?? utils.getSystemLocale();
+        utils.getLocaleForString(locale) ?? _systemLocaleOption;
     return ListItem<Locale>.options(
       leading: const Icon(Icons.language_outlined),
       title: Text(appLocalizations.language),
@@ -1498,7 +1508,11 @@ class _LocaleItem extends ConsumerWidget {
           ref
               .read(appSettingProvider.notifier)
               .updateState(
-                (state) => state.copyWith(locale: locale.toString()),
+                (state) => state.copyWith(
+                  locale: locale == _systemLocaleOption
+                      ? systemLocaleValue
+                      : locale.toString(),
+                ),
               );
         },
         textBuilder: (locale) => _getLocaleString(locale),

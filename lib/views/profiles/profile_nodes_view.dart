@@ -72,7 +72,14 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
             children: [
               const Icon(Icons.link_rounded, color: Colors.blueAccent),
               const SizedBox(width: 8),
-              Text(appLocalizations.batchImportShareLinks),
+              // item 4 — unwrapped this dialog title overflowed by 32 px at
+              // 320 dp and 72 px at 280 dp under the 1.4x text scale.
+              Flexible(
+                child: Text(
+                  appLocalizations.batchImportShareLinks,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ),
           content: SizedBox(
@@ -271,15 +278,19 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
+                  // item 4 — the two actions must be allowed to wrap: side by
+                  // side they overflow by 1.8 px at 320 dp and 42 px at 280 dp
+                  // under the app's maximum 1.4x text scale.
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 12,
+                    runSpacing: 8,
                     children: [
                       FilledButton.tonalIcon(
                         icon: const Icon(Icons.link_rounded),
                         label: Text(appLocalizations.importShareLinks),
                         onPressed: _showBatchImportDialog,
                       ),
-                      const SizedBox(width: 12),
                       FilledButton.icon(
                         icon: const Icon(Icons.edit_rounded),
                         label: Text(appLocalizations.manualEntry),
@@ -787,7 +798,14 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
         children: [
           const Icon(Icons.edit_note_rounded, color: Colors.blueAccent),
           const SizedBox(width: 8),
-          Text(appLocalizations.manualAddNode),
+          // item 4 — unwrapped this dialog title overflowed by 24 px at 280 dp
+          // under the 1.4x text scale.
+          Flexible(
+            child: Text(
+              appLocalizations.manualAddNode,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       ),
       content: SizedBox(
@@ -828,7 +846,14 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Text(p.displayName),
+                        // item 4 — long protocol names overflowed the dropdown
+                        // by 2.8 px at 280 dp under the 1.4x text scale.
+                        Flexible(
+                          child: Text(
+                            p.displayName,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       ],
                     ),
                   );

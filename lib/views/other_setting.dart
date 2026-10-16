@@ -409,7 +409,11 @@ class DisableQuicSection extends ConsumerWidget {
     final locale = ref.watch(
       appSettingProvider.select((state) => state.locale),
     );
-    final isRussian = locale?.toLowerCase().startsWith('ru') ?? false;
+    // Resolve "follow system" / unset before the language check.
+    final isRussian =
+        (utils.getLocaleForString(locale) ?? utils.getSystemLocale())
+                .languageCode ==
+            'ru';
 
     return Column(
       mainAxisSize: MainAxisSize.min,
