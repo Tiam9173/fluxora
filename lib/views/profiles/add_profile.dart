@@ -190,7 +190,14 @@ class AddProfileView extends StatelessWidget {
           children: [
             const Icon(Icons.playlist_add_rounded, color: Colors.blueAccent),
             const SizedBox(width: 8),
-            Text(appLocalizations.createEmptyGroup),
+            // item 4 — unwrapped this dialog title overflowed by 24 px at
+            // 280 dp under the 1.4x text scale.
+            Flexible(
+              child: Text(
+                appLocalizations.createEmptyGroup,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
         content: SizedBox(

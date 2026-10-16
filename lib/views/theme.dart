@@ -49,8 +49,13 @@ class ThemeView extends ConsumerWidget {
     final locale = ref.watch(
       appSettingProvider.select((state) => state.locale),
     );
+    // Resolve "follow system" / unset first: the raw sentinel is neither 'zh'
+    // nor 'en', which would wrongly hide the Harmony font item.
+    final effectiveLocale =
+        utils.getLocaleForString(locale) ?? utils.getSystemLocale();
     final shouldShowHarmonyFont =
-        locale?.startsWith('zh') == true || locale?.startsWith('en') == true;
+        effectiveLocale.languageCode == 'zh' ||
+        effectiveLocale.languageCode == 'en';
 
     final toggleItems = [
       if (shouldShowHarmonyFont) _HarmonyFontItem(),

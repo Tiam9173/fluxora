@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/models/chain_fallback_pool.dart';
 import 'package:fluxora/providers/adaptive_ranking_provider.dart';
+import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/widgets/widgets.dart';
 import 'package:fluxora/views/proxies/intelligent_node_card.dart';
 
@@ -37,10 +38,26 @@ class _IntelligentNodePickerSheetState
     extends ConsumerState<IntelligentNodePickerSheet> {
   String _sortMode = 'adaptive';
 
+  /// item 2 — groups that must never be offered as an entry hop: the dedicated
+  /// chain groups are managed by the chain itself, so picking one would make the
+  /// chain reference itself.
+  static const Set<String> _excludedHopGroups = {
+    '🔗 链式代理',
+    '✈️ 链式跳板',
+  };
+
   @override
   Widget build(BuildContext context) {
     final params = (role: widget.role, sortMode: _sortMode);
     final viewModels = ref.watch(adaptiveRankingProvider(params));
+    // item 2 — the entry hop may target a **policy group**, not only a concrete
+    // node. Restored alongside the generation-side support in `chain_proxy`.
+    final List<String> groupNames = ref
+        .watch(groupsProvider)
+        .map((g) => g.name)
+        .where((n) => n.isNotEmpty && !_excludedHopGroups.contains(n))
+        .toList();
+    final int groupSectionCount = groupNames.isEmpty ? 0 : groupNames.length + 1;
 
     // P2 (option 3): 「延迟」 sorts by each node's **own** latency, which only
     // exists once a real measurement has been recorded. With no measurement the
@@ -114,7 +131,7 @@ class _IntelligentNodePickerSheetState
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-              itemCount: viewModels.length + 2,
+              itemCount: viewModels.length + 2 + groupSectionCount,
               itemBuilder: (ctx, index) {
                 if (index == 0) {
                   if (widget.allowFollowMain) {
@@ -151,7 +168,52 @@ class _IntelligentNodePickerSheetState
                   return const SizedBox.shrink();
                 }
 
-                final vm = viewModels[index - 2];
+                // item 2 — policy-group entries, shown as their own section
+                // between DIRECT and the concrete nodes.
+                if (index >= 2 && index < 2 + groupSectionCount) {
+                  final int groupIndex = index - 2;
+                  if (groupIndex == 0) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      child: Text(
+                        (() {
+                          try {
+                            return appLocalizations.proxyGroup;
+                          } catch (_) {
+                            return 'Proxy Group';
+                          }
+                        })(),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    );
+                  }
+                  final String groupName = groupNames[groupIndex - 1];
+                  final bool isGroupExcluded = widget.excludedHops.contains(
+                    groupName,
+                  );
+                  return ListTile(
+                    leading: const Icon(Icons.folder_outlined),
+                    title: Text(groupName),
+                    trailing: widget.currentHop == groupName
+                        ? const Icon(Icons.check, color: Colors.blue)
+                        : null,
+                    enabled: !isGroupExcluded,
+                    onTap: isGroupExcluded
+                        ? null
+                        : () {
+                            widget.onSelect(groupName);
+                            Navigator.of(ctx).pop();
+                          },
+                  );
+                }
+
+                final vm = viewModels[index - 2 - groupSectionCount];
                 final isExcluded = widget.excludedHops.contains(vm.nodeName);
 
                 return Padding(
