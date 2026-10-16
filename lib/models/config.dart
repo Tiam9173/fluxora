@@ -167,6 +167,9 @@ abstract class AppSettingProps with _$AppSettingProps {
     @Default(true) bool closeConnections,
     @Default(defaultTestUrl) String testUrl,
     @Default(defaultNetworkDetectionUrl) String networkDetectionUrl,
+    // P4 (E-5): the IP reputation section is opt-in. Default OFF means no
+    // third-party lookup happens until the user explicitly turns it on.
+    @Default(false) bool ipReputationEnabled,
     @Default(false) bool showStartSwitch,
     @Default(true) bool enableNavBarHapticFeedback,
     @Default(true) bool autoCheckUpdate,

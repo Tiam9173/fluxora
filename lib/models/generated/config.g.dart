@@ -40,6 +40,7 @@ _AppSettingProps _$AppSettingPropsFromJson(
   testUrl: json['testUrl'] as String? ?? defaultTestUrl,
   networkDetectionUrl:
       json['networkDetectionUrl'] as String? ?? defaultNetworkDetectionUrl,
+  ipReputationEnabled: json['ipReputationEnabled'] as bool? ?? false,
   showStartSwitch: json['showStartSwitch'] as bool? ?? false,
   enableNavBarHapticFeedback:
       json['enableNavBarHapticFeedback'] as bool? ?? true,
@@ -86,6 +87,7 @@ Map<String, dynamic> _$AppSettingPropsToJson(_AppSettingProps instance) =>
       'closeConnections': instance.closeConnections,
       'testUrl': instance.testUrl,
       'networkDetectionUrl': instance.networkDetectionUrl,
+      'ipReputationEnabled': instance.ipReputationEnabled,
       'showStartSwitch': instance.showStartSwitch,
       'enableNavBarHapticFeedback': instance.enableNavBarHapticFeedback,
       'autoCheckUpdate': instance.autoCheckUpdate,
@@ -181,6 +183,11 @@ const _$MediaPlatformEnumMap = {
   MediaPlatform.kraken: 'kraken',
   MediaPlatform.cryptocom: 'cryptocom',
   MediaPlatform.phantom: 'phantom',
+  MediaPlatform.paypal: 'paypal',
+  MediaPlatform.mytvsuper: 'mytvsuper',
+  MediaPlatform.viutv: 'viutv',
+  MediaPlatform.hoytv: 'hoytv',
+  MediaPlatform.rthk: 'rthk',
 };
 
 _AccessControl _$AccessControlFromJson(Map<String, dynamic> json) =>
