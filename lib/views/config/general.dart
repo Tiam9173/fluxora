@@ -3,6 +3,7 @@ import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/models/models.dart';
 import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
+import 'package:fluxora/views/config/user_auth.dart';
 import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -486,6 +487,14 @@ class Ipv6Item extends ConsumerWidget {  const Ipv6Item({super.key});
 class AllowLanItem extends ConsumerWidget {
   const AllowLanItem({super.key});
 
+  /// item 6 (Bettbox 1.19.3) — credentials for the LAN proxy live behind this
+  /// icon rather than as a separate row: they only mean anything while the LAN
+  /// listener is on, so keeping them attached to that switch is what makes the
+  /// relationship obvious.
+  Future<void> _showUserAuthDialog() async {
+    await globalState.showCommonDialog(child: const UserAuthDialog());
+  }
+
   @override
   Widget build(BuildContext context, ref) {
     final allowLan = ref.watch(
@@ -493,7 +502,34 @@ class AllowLanItem extends ConsumerWidget {
     );
     return ListItem.switchItem(
       leading: const Icon(Icons.device_hub),
-      title: Text(appLocalizations.allowLan),
+      title: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Flexible, not a bare Text: with `MainAxisSize.min` the label cannot
+          // shrink, so a long translation at a large text scale overflows the row
+          // on a narrow screen. This lets the title wrap instead.
+          Flexible(child: Text(appLocalizations.allowLan)),
+          Tooltip(
+            message: appLocalizations.userAuth,
+            child: Material(
+              color: Colors.transparent,
+              child: InkResponse(
+                radius: 16,
+                highlightShape: BoxShape.circle,
+                onTap: _showUserAuthDialog,
+                child: Padding(
+                  padding: const EdgeInsets.all(7),
+                  child: Icon(
+                    Icons.settings_outlined,
+                    size: 18,
+                    color: context.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
       subtitle: Text(appLocalizations.allowLanDesc),
       delegate: SwitchDelegate(
         value: allowLan,

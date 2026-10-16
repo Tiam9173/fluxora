@@ -113,6 +113,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "addRoleFallbackCandidate": m1,
     "addRule": MessageLookupByLibrary.simpleMessage("ルール追加"),
     "addTunnel": MessageLookupByLibrary.simpleMessage("転送追加"),
+    "addUser": MessageLookupByLibrary.simpleMessage("ユーザーを追加"),
     "addedOriginRules": MessageLookupByLibrary.simpleMessage("元のルールに追加"),
     "address": MessageLookupByLibrary.simpleMessage("アドレス"),
     "addressHelp": MessageLookupByLibrary.simpleMessage("WebDAVサーバーアドレス"),
@@ -781,6 +782,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "lastEdit": MessageLookupByLibrary.simpleMessage("前回の編集"),
     "layout": MessageLookupByLibrary.simpleMessage("レイアウト"),
     "leftClickBehavior": MessageLookupByLibrary.simpleMessage("左クリック"),
+    "legacyBackup": MessageLookupByLibrary.simpleMessage("旧形式のバックアップ"),
     "light": MessageLookupByLibrary.simpleMessage("ライト"),
     "limitedUnlock": MessageLookupByLibrary.simpleMessage("自作のみ"),
     "lineWrap": MessageLookupByLibrary.simpleMessage("折り返し"),
@@ -889,6 +891,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "networkType": MessageLookupByLibrary.simpleMessage("ネットワーク種別"),
     "neutralScheme": MessageLookupByLibrary.simpleMessage("ニュートラル"),
     "noAnimation": MessageLookupByLibrary.simpleMessage("デフォルト"),
+    "noBackupFileFound": MessageLookupByLibrary.simpleMessage(
+      "バックアップファイルが見つかりません",
+    ),
     "noData": MessageLookupByLibrary.simpleMessage("データがありません"),
     "noHotKey": MessageLookupByLibrary.simpleMessage("ショートカットキーなし"),
     "noIcon": MessageLookupByLibrary.simpleMessage("アイコンなし"),
@@ -1218,6 +1223,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "securityLabel": MessageLookupByLibrary.simpleMessage("セキュリティ/TLS"),
     "securityNonePlain": MessageLookupByLibrary.simpleMessage("なし (平文)"),
     "selectAll": MessageLookupByLibrary.simpleMessage("すべて選択"),
+    "selectBackupVersion": MessageLookupByLibrary.simpleMessage(
+      "バックアップバージョンの選択",
+    ),
     "selected": MessageLookupByLibrary.simpleMessage("選択済み"),
     "selectedCountTitle": m29,
     "serverAddress": MessageLookupByLibrary.simpleMessage("サーバーアドレス"),
@@ -1249,6 +1257,10 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "skipDomain": MessageLookupByLibrary.simpleMessage("除外ドメイン"),
     "skipDstAddress": MessageLookupByLibrary.simpleMessage("除外宛先IP"),
+    "skipLocalAuth": MessageLookupByLibrary.simpleMessage("ローカル認証をスキップ"),
+    "skipLocalAuthDesc": MessageLookupByLibrary.simpleMessage(
+      "ローカル端末からの認証なしアクセスを許可",
+    ),
     "skipSrcAddress": MessageLookupByLibrary.simpleMessage("除外送信元IP"),
     "smartAutoStop": MessageLookupByLibrary.simpleMessage("スマート自動停止"),
     "smartAutoStopDesc": MessageLookupByLibrary.simpleMessage(
@@ -1453,7 +1465,11 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "useHosts": MessageLookupByLibrary.simpleMessage("Hostsを使用"),
     "useSystemHosts": MessageLookupByLibrary.simpleMessage("システムHostsを使用"),
+    "userAuth": MessageLookupByLibrary.simpleMessage("ユーザー認証"),
     "username": MessageLookupByLibrary.simpleMessage("ユーザー名"),
+    "usernameCannotContainColon": MessageLookupByLibrary.simpleMessage(
+      "ユーザー名にコロン（:）を含めることはできません",
+    ),
     "usernameOptional": MessageLookupByLibrary.simpleMessage("ユーザー名 (任意)"),
     "value": MessageLookupByLibrary.simpleMessage("値"),
     "vibrantScheme": MessageLookupByLibrary.simpleMessage("バイブラント"),
