@@ -1056,6 +1056,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "requests": MessageLookupByLibrary.simpleMessage("请求"),
     "requestsDesc": MessageLookupByLibrary.simpleMessage("查看最近请求记录"),
     "reset": MessageLookupByLibrary.simpleMessage("重置"),
+    "resetIconCache": MessageLookupByLibrary.simpleMessage("重置图标缓存"),
+    "resetIconCacheDesc": MessageLookupByLibrary.simpleMessage(
+      "是否重置本地图标缓存？这个操作是安全的，因为应用会再次从远程链接自动获取。",
+    ),
     "resetTip": MessageLookupByLibrary.simpleMessage("确定要重置吗?"),
     "resources": MessageLookupByLibrary.simpleMessage("资源"),
     "resourcesDesc": MessageLookupByLibrary.simpleMessage("外部资源相关信息"),

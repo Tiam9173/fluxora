@@ -1180,6 +1180,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "requests": MessageLookupByLibrary.simpleMessage("リクエスト"),
     "requestsDesc": MessageLookupByLibrary.simpleMessage("最近の通信リクエスト履歴を表示"),
     "reset": MessageLookupByLibrary.simpleMessage("リセット"),
+    "resetIconCache": MessageLookupByLibrary.simpleMessage("アイコンキャッシュをリセット"),
+    "resetIconCacheDesc": MessageLookupByLibrary.simpleMessage(
+      "ローカルのアイコンキャッシュをリセットしますか？アプリがリモートリンクから自動的に再取得するため、この操作は安全です。",
+    ),
     "resetTip": MessageLookupByLibrary.simpleMessage("本当にリセットしますか？"),
     "resources": MessageLookupByLibrary.simpleMessage("リソース"),
     "resourcesDesc": MessageLookupByLibrary.simpleMessage("外部リソース情報"),

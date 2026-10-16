@@ -518,6 +518,8 @@
   "regExp": "正規表示式",
   "icon": "圖片",
   "iconConfiguration": "圖片設定",
+  "resetIconCache": "重置圖示快取",
+  "resetIconCacheDesc": "是否重置本機圖示快取？這個操作是安全的，因為應用會再次從遠端連結自動取得。",
   "noData": "暫無資料",
   "adminAutoLaunch": "管理員自啟動",
   "adminAutoLaunchDesc": "使用管理員模式開機自動啟動",

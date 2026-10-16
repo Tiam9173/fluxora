@@ -518,6 +518,8 @@
   "regExp": "正規表現",
   "icon": "画像",
   "iconConfiguration": "画像設定",
+  "resetIconCache": "アイコンキャッシュをリセット",
+  "resetIconCacheDesc": "ローカルのアイコンキャッシュをリセットしますか？アプリがリモートリンクから自動的に再取得するため、この操作は安全です。",
   "noData": "データがありません",
   "adminAutoLaunch": "管理者権限で自動起動",
   "adminAutoLaunchDesc": "管理者モードでOS起動時に自動開始",

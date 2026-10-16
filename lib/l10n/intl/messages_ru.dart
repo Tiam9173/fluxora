@@ -1531,6 +1531,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "Просмотр недавних запросов",
     ),
     "reset": MessageLookupByLibrary.simpleMessage("Сброс"),
+    "resetIconCache": MessageLookupByLibrary.simpleMessage(
+      "Сбросить кэш значков",
+    ),
+    "resetIconCacheDesc": MessageLookupByLibrary.simpleMessage(
+      "Сбросить локальный кэш значков? Это безопасно: приложение автоматически загрузит их заново по удалённым ссылкам.",
+    ),
     "resetTip": MessageLookupByLibrary.simpleMessage("Сбросить настройки?"),
     "resources": MessageLookupByLibrary.simpleMessage("Ресурсы"),
     "resourcesDesc": MessageLookupByLibrary.simpleMessage(

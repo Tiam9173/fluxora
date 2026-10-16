@@ -1182,6 +1182,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "requests": MessageLookupByLibrary.simpleMessage("요청"),
     "requestsDesc": MessageLookupByLibrary.simpleMessage("최근 요청 기록 보기"),
     "reset": MessageLookupByLibrary.simpleMessage("초기화"),
+    "resetIconCache": MessageLookupByLibrary.simpleMessage("아이콘 캐시 초기화"),
+    "resetIconCacheDesc": MessageLookupByLibrary.simpleMessage(
+      "로컬 아이콘 캐시를 초기화하시겠습니까? 앱이 원격 링크에서 자동으로 다시 가져오므로 안전한 작업입니다.",
+    ),
     "resetTip": MessageLookupByLibrary.simpleMessage("정말 초기화하시겠습니까?"),
     "resources": MessageLookupByLibrary.simpleMessage("리소스"),
     "resourcesDesc": MessageLookupByLibrary.simpleMessage("외부 리소스 정보"),

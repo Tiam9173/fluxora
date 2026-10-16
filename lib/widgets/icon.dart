@@ -15,6 +15,38 @@ class CommonTargetIcon extends StatefulWidget {
 
   const CommonTargetIcon({super.key, required this.src, required this.size});
 
+  /// item 6 (Bettbox 1.19.3) — bumped by [clearCache] so that icons already on
+  /// screen re-resolve instead of keeping the bitmap they were built with.
+  ///
+  /// Clearing the caches alone is not enough: the widgets holding a resolved
+  /// `File` have no reason to rebuild, so the user would still be looking at the
+  /// stale icon and conclude the reset did nothing.
+  static final ValueNotifier<int> _cacheVersion = ValueNotifier(0);
+
+  /// Drop every layer of the icon cache: the resized PNGs on disk, the three
+  /// in-memory maps, Flutter's image cache, and the SVG cache.
+  ///
+  /// Everything here is re-fetchable, so this is safe by construction — the next
+  /// paint simply goes back to the network. Failure is not swallowed: the caller
+  /// reports it.
+  static Future<void> clearCache() async {
+    final tempDir = await appPath.tempPath;
+    for (final name in ['icon_raw_cache', 'resized_icons']) {
+      final dir = Directory(path.join(tempDir, name));
+      if (await dir.exists()) {
+        await dir.delete(recursive: true);
+      }
+    }
+    _CommonTargetIconState._moduleFileCache.clear();
+    _CommonTargetIconState._moduleSvgValidCache.clear();
+    _CommonTargetIconState._moduleFailureCache.clear();
+    final imageCache = PaintingBinding.instance.imageCache;
+    imageCache.clear();
+    imageCache.clearLiveImages();
+    svg.cache.clear();
+    _cacheVersion.value++;
+  }
+
   @override
   State<CommonTargetIcon> createState() => _CommonTargetIconState();
 }
@@ -437,12 +469,23 @@ class _CommonTargetIconState extends State<CommonTargetIcon> {
     return SizedBox(
       width: widget.size,
       height: widget.size,
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 200),
-        child: KeyedSubtree(
-          key: ValueKey<String>('${widget.src}_${_file?.path}'),
-          child: _buildIcon(),
-        ),
+      child: ValueListenableBuilder<int>(
+        valueListenable: CommonTargetIcon._cacheVersion,
+        builder: (_, cacheVersion, child) {
+          return AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            child: KeyedSubtree(
+              // The cache version is part of the key so that clearing the cache
+              // rebuilds the subtree and re-resolves the icon, rather than
+              // leaving the previous bitmap in place.
+              key: ValueKey<String>(
+                '${widget.src}_${_file?.path}_$cacheVersion',
+              ),
+              child: child!,
+            ),
+          );
+        },
+        child: _buildIcon(),
       ),
     );
   }
