@@ -33,7 +33,16 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
     _subscription = controller.barcodes.listen(_handleBarcode);
     // Check permission and start camera
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkCameraPermission();
+      // The camera start used to run straight out of the post-frame callback,
+      // which races the route push: the page is still animating in and the
+      // preview surface is not ready yet, so on desktop the start failed and the
+      // scanner never produced a code. Wait for the transition, and re-check
+      // `mounted` because the user can pop before it finishes.
+      if (!mounted) return;
+      context.afterRouteTransition(() {
+        if (!mounted) return;
+        _checkCameraPermission();
+      });
     });
   }
 

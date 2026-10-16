@@ -3,6 +3,29 @@ import 'package:fluxora/widgets/scaffold.dart';
 import 'package:flutter/material.dart';
 
 extension BuildContextExtension on BuildContext {
+  /// Run [callback] once the current route's transition has finished.
+  ///
+  /// Starting hardware-dependent work (camera, sensors) straight from a
+  /// post-frame callback races the route push animation: the page is still
+  /// animating in, and on desktop the surface the preview is supposed to attach
+  /// to is not ready, so the start silently fails. Bailing out immediately when
+  /// there is no `ModalRoute` or the animation is already done keeps this a
+  /// no-op for non-route contexts.
+  void afterRouteTransition(VoidCallback callback) {
+    final animation = ModalRoute.of(this)?.animation;
+    if (animation == null || animation.isCompleted) {
+      callback();
+      return;
+    }
+    void listener(AnimationStatus status) {
+      if (!status.isCompleted) return;
+      animation.removeStatusListener(listener);
+      callback();
+    }
+
+    animation.addStatusListener(listener);
+  }
+
   CommonScaffoldState? get commonScaffoldState {
     return findAncestorStateOfType<CommonScaffoldState>();
   }
