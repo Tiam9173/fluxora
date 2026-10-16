@@ -47,6 +47,9 @@ const defaultAccessControl = AccessControl();
 final defaultThemeProps = ThemeProps(primaryColor: defaultPrimaryColor);
 
 const List<DashboardWidget> defaultDashboardWidgets = [
+  // The connection Hero leads the dashboard: appended last, a fresh install
+  // needed a scroll before the main switch was visible.
+  DashboardWidget.startButton,
   DashboardWidget.networkSpeed,
   DashboardWidget.systemProxyButton,
   DashboardWidget.tunButton,
@@ -56,17 +59,17 @@ const List<DashboardWidget> defaultDashboardWidgets = [
   DashboardWidget.trafficUsage,
   DashboardWidget.memoryInfo,
   DashboardWidget.connectionsCount,
-  DashboardWidget.startButton,
 ];
 
 const List<DashboardWidget> defaultAndroidDashboardWidgets = [
+  // Same reasoning as the desktop list: the Hero comes first.
+  DashboardWidget.startButton,
   DashboardWidget.outboundModeV2,
   DashboardWidget.networkSpeed,
   DashboardWidget.trafficUsage,
   DashboardWidget.networkDetection,
   DashboardWidget.connectionsCount,
   DashboardWidget.memoryInfo,
-  DashboardWidget.startButton,
 ];
 
 List<DashboardWidget> dashboardWidgetsSafeFromJson(

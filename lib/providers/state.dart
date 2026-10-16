@@ -374,9 +374,14 @@ DashboardState dashboardState(Ref ref) {
     ),
   );
   final viewWidth = ref.watch(viewWidthProvider);
+  // The start button is the connection Hero (D4.6) and `isDeletable: false`,
+  // but a stored list predating it (or one edited by an older build) can still
+  // lack it. Re-insert it at the **front** rather than the back: appended last
+  // it sat below every other card and a fresh install needed a scroll before
+  // the main switch was visible.
   final widgets = dashboardWidgets.contains(DashboardWidget.startButton)
       ? dashboardWidgets
-      : [...dashboardWidgets, DashboardWidget.startButton];
+      : [DashboardWidget.startButton, ...dashboardWidgets];
   return DashboardState(dashboardWidgets: widgets, viewWidth: viewWidth);
 }
 

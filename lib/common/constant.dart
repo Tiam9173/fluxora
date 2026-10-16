@@ -99,6 +99,18 @@ const presetNtpServers = [
 // Network detection URL (primary IP source)
 // Default must match the previous hardcoded primary source so that
 // behavior is unchanged when the user never configures this.
+/// Whether the title-bar start switch is shown by default on this platform.
+///
+/// Android TV always showed it. A phone now does too: the Hero sits at the top
+/// of the dashboard grid, but the title-bar switch is the one control that stays
+/// reachable **without scrolling** — which is the whole point of having it.
+/// Desktop keeps it off, where the tray and the prominent Hero already cover it.
+///
+/// Extracted so the platform rule is unit-testable via `system.platformOverride`
+/// instead of living inline in `GlobalState`'s constructor.
+bool defaultShowStartSwitch({required bool isAndroidTV}) =>
+    isAndroidTV || system.isAndroid;
+
 const defaultNetworkDetectionUrl = 'http://ip-api.com/json/?lang=zh-CN';
 
 // Preset network detection URLs (deduped from the existing built-in sources)

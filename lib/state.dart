@@ -184,7 +184,14 @@ class GlobalState {
             systemProxy: system.isDesktop,
           ),
           appSetting: defaultAppSettingProps.copyWith(
-            showStartSwitch: _isAndroidTV ?? false,
+            // Android TV always showed it; a phone now does too. On a phone the
+            // Hero sits at the top of the dashboard grid, but the title-bar
+            // switch stays reachable without scrolling — which is the whole
+            // point. Desktop keeps it off: it has the tray and the Hero is
+            // already prominent there.
+            showStartSwitch: defaultShowStartSwitch(
+              isAndroidTV: _isAndroidTV == true,
+            ),
           ),
         );
     await globalState.migrateOldData(config);
@@ -1003,8 +1010,12 @@ class GlobalState {
     }
 
     if (config.vpnProps.disableQuic) {
+      // Resolve "follow system" / unset before the language check.
       final isRussian =
-          config.appSetting.locale?.toLowerCase().startsWith('ru') ?? false;
+          (utils.getLocaleForString(config.appSetting.locale) ??
+                      utils.getSystemLocale())
+                  .languageCode ==
+              'ru';
       final quicRules = config.vpnProps.excludeChina && !isRussian
           ? [
               'AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((OR,((GEOSITE,geolocation-cn),(GEOIP,CN,no-resolve)))))),REJECT',

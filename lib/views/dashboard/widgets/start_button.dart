@@ -36,6 +36,84 @@ typedef _HeroPresentation = ({
 /// `runTimeProvider` / `isRestartingCoreProvider` / `isSmartStoppedProvider`
 /// drive it, tapping still calls `updateStatus`, long-press still offers a core
 /// restart, and a missing profile still opens the add-profile sheet.
+/// One-shot entrance for the dashboard Hero.
+///
+/// Every number comes from [FluxoraMotion] — none is invented here:
+///
+/// * duration `base` (200 ms) — the "state change / fade / card expand" tier of
+///   §10.1, which is what a single card entering is;
+/// * curve `enter` (§10.2);
+/// * offset `enterOffset` — the §10.2 4 px lift.
+///
+/// §10.4 forbids scale changes over 1.1×, so the motion is **fade + translate
+/// only**: no `Transform.scale`, no rotation, no flashing. §10.5 is honoured by
+/// resolving a [FluxoraMotionSet] from `MediaQuery.disableAnimations`: under
+/// reduced motion both the duration and the offset collapse to zero, so the card
+/// simply appears with no displacement.
+class _HeroEntrance extends StatefulWidget {
+  const _HeroEntrance({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_HeroEntrance> createState() => _HeroEntranceState();
+}
+
+class _HeroEntranceState extends State<_HeroEntrance>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(vsync: this);
+
+  /// Runs the entrance exactly once, even if dependencies are rebuilt.
+  bool _played = false;
+
+  FluxoraMotionSet get _motion => FluxoraMotionSet.of(
+    reduceMotion: MediaQuery.maybeOf(context)?.disableAnimations ?? false,
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final motion = _motion;
+    _controller.duration = motion.base;
+    if (_played) return;
+    _played = true;
+    if (motion.reduceMotion) {
+      // No displacement and no fade — §10.5.
+      _controller.value = 1;
+    } else {
+      _controller.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final motion = _motion;
+    return AnimatedBuilder(
+      animation: _controller,
+      // `child` is threaded through so the Hero subtree is never rebuilt by the
+      // entrance animation.
+      child: widget.child,
+      builder: (context, child) {
+        final t = motion.reduceMotion ? 1.0 : _controller.value;
+        return Opacity(
+          opacity: t,
+          child: Transform.translate(
+            // Starts 4 px low and lifts to its resting place.
+            offset: Offset(0, motion.enterOffset.dy * (1 - t)),
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+}
+
 class StartButton extends ConsumerStatefulWidget {
   const StartButton({super.key});
 
@@ -124,9 +202,13 @@ class _StartButtonState extends ConsumerState<StartButton> {
         state.isInit && !state.hasProfile && !_isDisabled && !isSmartStopped;
     final isRestarting = ref.watch(isRestartingCoreProvider);
 
-    return ValueListenableBuilder<int>(
-      valueListenable: dashboardRefreshManager.tick1s,
-      builder: (_, _, _) {
+    // item — the Hero's one-shot entrance. Wrapping the scroll content keeps the
+    // 1 s tick listener untouched: `_HeroEntrance` passes its child through and
+    // never rebuilds it, so per-second updates cost nothing extra.
+    return _HeroEntrance(
+      child: ValueListenableBuilder<int>(
+        valueListenable: dashboardRefreshManager.tick1s,
+        builder: (_, _, _) {
         final runTime = ref.read(runTimeProvider);
         final isStart = runTime != null;
         final displayStart =
@@ -245,6 +327,7 @@ class _StartButtonState extends ConsumerState<StartButton> {
           ),
         );
       },
+      ),
     );
   }
 
