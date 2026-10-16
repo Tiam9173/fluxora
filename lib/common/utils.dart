@@ -3,8 +3,10 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:ui';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/enum/enum.dart';
+import 'package:fluxora/models/models.dart';
 import 'package:flutter/foundation.dart';
 import 'package:fluxora/l10n/l10n.dart';
 import 'package:flutter/material.dart';
@@ -740,6 +742,9 @@ class Utils {
 
   Locale? getLocaleForString(String? localString) {
     if (localString == null) return null;
+    // "Follow system" is stored as a sentinel, not a real locale string. Return
+    // null so every caller falls back to `getSystemLocale()`.
+    if (localString == systemLocaleValue) return null;
     var localSplit = localString.split('_');
     if (localSplit.length == 1) {
       return Locale(localSplit[0]);
@@ -993,26 +998,37 @@ class Utils {
     return '';
   }
 
-  Future<List<String>> getLocalGateways() async {
+  /// Every default route, gateway **and** interface name.
+  ///
+  /// [getLocalGateways] is the gateway-only view of the same data — it stays a
+  /// `List<String>` because five call sites (including two Android
+  /// `MethodChannel` wrappers) depend on that shape.
+  Future<List<({String gateway, String interfaceName})>> _getDefaultRoutes() async {
     if (Platform.isLinux) {
-      return _getLinuxGateways();
+      return _getLinuxDefaultRoutes();
     }
     if (Platform.isMacOS) {
-      return _getMacOSGateways();
+      return _getMacOSDefaultRoutes();
     }
     if (Platform.isWindows) {
-      return _getWindowsGateways();
+      return _getWindowsDefaultRoutes();
     }
     return [];
   }
 
-  Future<List<String>> _getLinuxGateways() async {
+  Future<List<String>> getLocalGateways() async {
+    final routes = await _getDefaultRoutes();
+    return routes.map((route) => route.gateway).toList();
+  }
+
+  Future<List<({String gateway, String interfaceName})>>
+  _getLinuxDefaultRoutes() async {
     try {
       final routeFile = File('/proc/net/route');
       if (!await routeFile.exists()) return [];
 
       final lines = await routeFile.readAsLines();
-      final gateways = <String>[];
+      final routes = <({String gateway, String interfaceName})>[];
       // Header: Iface Destination Gateway Flags RefCnt Use Metric Mask ...
       for (final line in lines.skip(1)) {
         final parts = line.trim().split(RegExp(r'\s+'));
@@ -1027,38 +1043,49 @@ class Utils {
           int.parse(gwHex.substring(2, 4), radix: 16),
           int.parse(gwHex.substring(0, 2), radix: 16),
         ];
-        gateways.add(bytes.join('.'));
+        routes.add((gateway: bytes.join('.'), interfaceName: parts[0]));
       }
-      return gateways;
+      return routes;
     } catch (e) {
       commonPrint.log('Smart Auto Stop: Linux gateway error: $e');
       return [];
     }
   }
 
-  Future<List<String>> _getMacOSGateways() async {
+  Future<List<({String gateway, String interfaceName})>>
+  _getMacOSDefaultRoutes() async {
     try {
       final result = await Process.run('route', ['-n', 'get', 'default']);
       if (result.exitCode != 0) return [];
 
+      var gateway = '';
+      var interfaceName = '';
       final stdout = result.stdout.toString();
       for (final line in stdout.split('\n')) {
         final trimmed = line.trim();
         if (!trimmed.startsWith('gateway:')) continue;
-        final gateway = trimmed.substring('gateway:'.length).trim();
+        final value = trimmed.substring('gateway:'.length).trim();
         // Exclude IPv6/link-local gateways
-        if (gateway.isNotEmpty && !gateway.contains(':')) {
-          return [gateway];
+        if (value.isNotEmpty && !value.contains(':')) {
+          gateway = value;
+          break;
         }
       }
-      return [];
+      if (gateway.isEmpty) return [];
+      for (final line in stdout.split('\n')) {
+        final trimmed = line.trim();
+        if (!trimmed.startsWith('interface:')) continue;
+        interfaceName = trimmed.substring('interface:'.length).trim();
+      }
+      return [(gateway: gateway, interfaceName: interfaceName)];
     } catch (e) {
       commonPrint.log('Smart Auto Stop: macOS gateway error: $e');
       return [];
     }
   }
 
-  Future<List<String>> _getWindowsGateways() async {
+  Future<List<({String gateway, String interfaceName})>>
+  _getWindowsDefaultRoutes() async {
     try {
       final result = await Process.run(
         'powershell',
@@ -1066,21 +1093,149 @@ class Utils {
           '-NoProfile',
           '-Command',
           'Get-NetRoute -DestinationPrefix \'0.0.0.0/0\' '
-              '| Select-Object -ExpandProperty NextHop',
+              r'| ForEach-Object { "$($_.NextHop)|$($_.InterfaceAlias)" }',
         ],
       );
       if (result.exitCode != 0) return [];
 
-      final gateways = <String>[];
+      final routes = <({String gateway, String interfaceName})>[];
       for (final line in result.stdout.toString().split('\n')) {
-        final gateway = line.trim();
+        final parts = line.trim().split('|');
+        final gateway = parts.first;
         if (gateway.isEmpty) continue;
         if (!RegExp(r'^\d{1,3}(\.\d{1,3}){3}$').hasMatch(gateway)) continue;
-        gateways.add(gateway);
+        routes.add((gateway: gateway, interfaceName: parts.skip(1).join('|')));
       }
-      return gateways;
+      return routes;
     } catch (e) {
       commonPrint.log('Smart Auto Stop: Windows gateway error: $e');
+      return [];
+    }
+  }
+
+  /// item 6 — the LAN detail behind the "intranet IP" card.
+  ///
+  /// Desktop is pure Dart: the default route comes from [_getDefaultRoutes]
+  /// (already used by Smart Auto Stop), the address from `NetworkInterface.list`
+  /// and the resolvers from [_getSystemDns]. Android has to go through
+  /// `MethodChannel('service')` because neither `NetworkInterface.list` nor
+  /// `connectivity_plus` exposes a gateway there.
+  ///
+  /// Every field defaults to empty, so a failed lookup returns an **empty**
+  /// report rather than throwing — the UI renders "-" and never invents a value.
+  Future<NetworkInfo> getNetworkInfo() async {
+    try {
+      if (system.isAndroid) {
+        final info = await const MethodChannel('service').invokeMapMethod<
+          String,
+          Object?
+        >('getNetworkInfo');
+        return info == null
+            ? const NetworkInfo()
+            : NetworkInfo.fromJson(info);
+      }
+      final routes = await _getDefaultRoutes();
+      final route = routes
+          .where(
+            (route) =>
+                route.gateway != '0.0.0.0' &&
+                route.interfaceName.isNotEmpty,
+          )
+          .firstOrNull;
+      final interfaces = await NetworkInterface.list(includeLoopback: false);
+      final matchedInterface = interfaces
+          .where((interface) => interface.name == route?.interfaceName)
+          .firstOrNull;
+      final Iterable<InternetAddress> addresses =
+          matchedInterface?.addresses.where((address) => !address.isLinkLocal) ??
+          const <InternetAddress>[];
+      final address =
+          addresses.where((address) => address.isIPv4).firstOrNull ??
+          addresses.firstOrNull;
+      return NetworkInfo(
+        type: await _getConnectivityType(),
+        interfaceName: route?.interfaceName ?? '',
+        ip: address?.address ?? await getLocalIpAddress() ?? '',
+        gateway: route?.gateway ?? '',
+        dns: await _getSystemDns(),
+      );
+    } catch (e) {
+      commonPrint.log('Local network info error: $e');
+      return const NetworkInfo();
+    }
+  }
+
+  /// `Wi-Fi` · `Ethernet` · `Cellular`, or `''` when the platform cannot say.
+  Future<String> _getConnectivityType() async {
+    try {
+      final results = await Connectivity().checkConnectivity();
+      if (results.contains(ConnectivityResult.wifi)) return 'Wi-Fi';
+      if (results.contains(ConnectivityResult.ethernet)) return 'Ethernet';
+      if (results.contains(ConnectivityResult.mobile)) return 'Cellular';
+    } catch (_) {}
+    return '';
+  }
+
+  /// The resolvers the OS actually uses, **excluding Fluxora's own hijack DNS**.
+  ///
+  /// While the tunnel is up, Fluxora points the system at `198.18.0.x`; reading
+  /// those back would report our own resolver as the "system DNS", which is
+  /// misleading. `127.0.0.1` is excluded for the same reason.
+  Future<List<String>> _getSystemDns() async {
+    if (Platform.isMacOS) {
+      // `systemDns` lives on `MacOS`, not `System` — it is the macOS-only
+      // `networksetup -getdnsservers` reader that `System` already uses for its
+      // own DNS hijack bookkeeping.
+      return await MacOS().systemDns ?? [];
+    }
+    if (Platform.isWindows) {
+      return _getWindowsDns();
+    }
+    if (Platform.isLinux) {
+      return _getLinuxDns();
+    }
+    return [];
+  }
+
+  Future<List<String>> _getWindowsDns() async {
+    try {
+      final result = await Process.run('powershell', [
+        '-NoProfile',
+        '-Command',
+        r'$route = Get-NetRoute -DestinationPrefix "0.0.0.0/0" | Where-Object { $_.InterfaceAlias -notmatch "(?i)(tun|tap|wintun|meta|clash|vpn)" -and $_.NextHop -ne "0.0.0.0" } | Sort-Object RouteMetric | Select-Object -First 1; if ($route) { (Get-DnsClientServerAddress -InterfaceIndex $route.InterfaceIndex -AddressFamily IPv4).ServerAddresses } else { (Get-DnsClientServerAddress -AddressFamily IPv4).ServerAddresses }',
+      ]);
+      if (result.exitCode != 0) return [];
+      final servers = <String>{};
+      for (final line in result.stdout.toString().split('\n')) {
+        final server = line.trim();
+        if (server.isEmpty) continue;
+        if (!RegExp(r'^\d{1,3}(\.\d{1,3}){3}$').hasMatch(server)) continue;
+        if (server.startsWith('198.18.') || server == '127.0.0.1') continue;
+        servers.add(server);
+      }
+      return servers.toList();
+    } catch (e) {
+      commonPrint.log('Windows DNS error: $e');
+      return [];
+    }
+  }
+
+  Future<List<String>> _getLinuxDns() async {
+    try {
+      final file = File('/etc/resolv.conf');
+      if (!await file.exists()) return [];
+      final servers = <String>{};
+      for (final line in await file.readAsLines()) {
+        final trimmed = line.trim();
+        if (!trimmed.startsWith('nameserver ')) continue;
+        final server = trimmed.substring('nameserver '.length).trim();
+        if (server.isEmpty) continue;
+        if (server.startsWith('198.18.') || server == '127.0.0.1') continue;
+        servers.add(server);
+      }
+      return servers.toList();
+    } catch (e) {
+      commonPrint.log('Linux DNS error: $e');
       return [];
     }
   }

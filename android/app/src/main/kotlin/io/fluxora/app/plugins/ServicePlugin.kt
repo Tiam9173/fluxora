@@ -67,6 +67,7 @@ class ServicePlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 VpnPlugin.handleSmartStop()
                 result.success(true)
             }
+            "getNetworkInfo" -> result.success(VpnPlugin.getNetworkInfo())
             "smartResume" -> {
                 val data = call.argument<String>("data")
                 val options = gson.fromJson(data, VpnOptions::class.java)

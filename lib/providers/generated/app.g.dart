@@ -477,6 +477,80 @@ abstract class _$LocalIp extends $Notifier<String?> {
   }
 }
 
+/// item 6 — the LAN detail behind the "intranet IP" card.
+///
+/// `null` means "not looked up yet" (the card has never been opened, or the
+/// lookup is in flight); an empty `NetworkInfo` means "looked up, found
+/// nothing". The UI distinguishes the two: the first shows "…", the second "-".
+
+@ProviderFor(LocalNetwork)
+final localNetworkProvider = LocalNetworkProvider._();
+
+/// item 6 — the LAN detail behind the "intranet IP" card.
+///
+/// `null` means "not looked up yet" (the card has never been opened, or the
+/// lookup is in flight); an empty `NetworkInfo` means "looked up, found
+/// nothing". The UI distinguishes the two: the first shows "…", the second "-".
+final class LocalNetworkProvider
+    extends $NotifierProvider<LocalNetwork, NetworkInfo?> {
+  /// item 6 — the LAN detail behind the "intranet IP" card.
+  ///
+  /// `null` means "not looked up yet" (the card has never been opened, or the
+  /// lookup is in flight); an empty `NetworkInfo` means "looked up, found
+  /// nothing". The UI distinguishes the two: the first shows "…", the second "-".
+  LocalNetworkProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'localNetworkProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$localNetworkHash();
+
+  @$internal
+  @override
+  LocalNetwork create() => LocalNetwork();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(NetworkInfo? value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<NetworkInfo?>(value),
+    );
+  }
+}
+
+String _$localNetworkHash() => r'152235671692c4d184a87d1242bfdd3cfbec5425';
+
+/// item 6 — the LAN detail behind the "intranet IP" card.
+///
+/// `null` means "not looked up yet" (the card has never been opened, or the
+/// lookup is in flight); an empty `NetworkInfo` means "looked up, found
+/// nothing". The UI distinguishes the two: the first shows "…", the second "-".
+
+abstract class _$LocalNetwork extends $Notifier<NetworkInfo?> {
+  NetworkInfo? build();
+  @$mustCallSuper
+  @override
+  WhenComplete runBuild() {
+    final ref = this.ref as $Ref<NetworkInfo?, NetworkInfo?>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<NetworkInfo?, NetworkInfo?>,
+              NetworkInfo?,
+              Object?,
+              Object?
+            >;
+    return element.handleCreate(ref, build);
+  }
+}
+
 @ProviderFor(RunTime)
 final runTimeProvider = RunTimeProvider._();
 
