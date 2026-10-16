@@ -44,11 +44,12 @@ class BackupAndRecovery extends ConsumerWidget {
   Future<void> _recoveryOnWebDAV(
     BuildContext context,
     DAVClient client,
+    String targetFileName,
     RecoveryOption recoveryOption,
   ) async {
     final res = await globalState.appController.safeRun<bool>(
       () async {
-        final data = await client.recovery();
+        final data = await client.recovery(targetFileName);
         await globalState.appController.recoveryData(data, recoveryOption);
         return true;
       },
@@ -67,11 +68,31 @@ class BackupAndRecovery extends ConsumerWidget {
     BuildContext context,
     DAVClient client,
   ) async {
+    final entries = await globalState.appController.safeRun<List<BackupEntry>>(
+      () => client.getBackupEntries(),
+      needLoading: true,
+      title: appLocalizations.recovery,
+    );
+    if (!context.mounted) return;
+    if (entries == null || entries.isEmpty) {
+      globalState.showNotifier(appLocalizations.noBackupFileFound);
+      return;
+    }
+
+    // Pick a version first…
+    final selected = await globalState.showCommonDialog<BackupEntry>(
+      child: BackupVersionsDialog(entries: entries),
+    );
+    if (selected == null || !context.mounted) return;
+
+    // …then confirm what restoring it will do. Two deliberate steps: choosing a
+    // version is not the same decision as overwriting the current setup.
     final recoveryOption = await globalState.showCommonDialog<RecoveryOption>(
       child: const RecoveryOptionsDialog(),
     );
     if (recoveryOption == null || !context.mounted) return;
-    _recoveryOnWebDAV(context, client, recoveryOption);
+
+    _recoveryOnWebDAV(context, client, selected.name, recoveryOption);
   }
 
   Future<void> _backupOnLocal(BuildContext context) async {
@@ -309,6 +330,82 @@ class BackupAndRecovery extends ConsumerWidget {
         ],
       ),
     ]);
+  }
+}
+
+/// item 6 (Bettbox 1.19.3) — pick which backup to restore.
+///
+/// Versioned backups show the UTC instant decoded from their name (not the
+/// server's mtime, which is the server's clock and can be wrong). Legacy backups
+/// are labelled so they are never confused with a version.
+class BackupVersionsDialog extends StatefulWidget {
+  final List<BackupEntry> entries;
+
+  const BackupVersionsDialog({super.key, required this.entries});
+
+  @override
+  State<BackupVersionsDialog> createState() => _BackupVersionsDialogState();
+}
+
+class _BackupVersionsDialogState extends State<BackupVersionsDialog> {
+  late BackupEntry _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = widget.entries.first;
+  }
+
+  /// `2026-10-16 23:05:00 UTC`
+  String _formatUtc(DateTime utc) {
+    String p2(int v) => v.toString().padLeft(2, '0');
+    return '${utc.year}-${p2(utc.month)}-${p2(utc.day)} '
+        '${p2(utc.hour)}:${p2(utc.minute)}:${p2(utc.second)} UTC';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CommonDialog(
+      title: appLocalizations.selectBackupVersion,
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(_selected),
+          child: Text(appLocalizations.confirm),
+        ),
+      ],
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 360),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ...widget.entries.map<Widget>((entry) {
+                final timestamp = entry.timestamp;
+                final subtitle = entry.isVersioned && timestamp != null
+                    ? _formatUtc(timestamp)
+                    : appLocalizations.legacyBackup;
+
+                return ListItem<BackupEntry>.radio(
+                  title: Text(entry.name),
+                  subtitle: Text(subtitle),
+                  delegate: RadioDelegate<BackupEntry>(
+                    value: entry,
+                    groupValue: _selected,
+                    onChanged: (val) {
+                      if (val != null) {
+                        setState(() {
+                          _selected = val;
+                        });
+                      }
+                    },
+                  ),
+                );
+              }).separated(const Divider(height: 1)),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
