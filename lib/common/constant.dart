@@ -20,6 +20,12 @@ const packageName = AppIdentity.packageId;
 final unixSocketPath = '/tmp/FluxoraSocket_${Random().nextInt(10000)}.sock';
 const maxTextScale = 1.4;
 const minTextScale = 0.8;
+
+/// Sentinel stored in `AppSettingProps.locale` that means "follow the system
+/// language". It is deliberately **not** `null`: `GlobalState.migrateOldData`
+/// re-seeds a `null` locale with the concrete system locale on every launch, so
+/// an explicit "Default" choice would not survive a restart.
+const systemLocaleValue = 'system';
 final baseInfoEdgeInsets = EdgeInsets.symmetric(
   vertical: 16.ap,
   horizontal: 16.ap,

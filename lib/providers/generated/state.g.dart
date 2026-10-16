@@ -537,7 +537,7 @@ final class DashboardStateProvider
   }
 }
 
-String _$dashboardStateHash() => r'f9159592989464c198dea7bba5152a957643da90';
+String _$dashboardStateHash() => r'40ace068453b358ff2f08819684e70cf272106d7';
 
 @ProviderFor(startButtonSelectorState)
 final startButtonSelectorStateProvider = StartButtonSelectorStateProvider._();
