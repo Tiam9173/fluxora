@@ -812,6 +812,55 @@ class MediaUnlockChecker {
     }
   }
 
+  /// item 6 (Bettbox 1.19.4) — regions where Gemini answers **200** but is not
+  /// actually usable.
+  ///
+  /// Gemini serves a normal-looking page in several sanctioned / unsupported
+  /// countries, so a status-code check alone reports "unlocked" for a region
+  /// where the product does not work. Both the ISO-3166 alpha-2 and alpha-3
+  /// spellings are listed because the page has used both.
+  static const _geminiUnsupportedRegions = <String>{
+    'CN', 'CHN', 'MO', 'MAC', 'RU', 'RUS', 'BY', 'BLR', 'IR', 'IRN',
+    'KP', 'PRK', 'SY', 'SYR', 'CU', 'CUB', 'VE', 'VEN', 'MM', 'MMR',
+    'SD', 'SDN', 'AF', 'AFG', 'SS', 'SSD', 'YE', 'YEM', 'ZW', 'ZWE',
+  };
+
+  /// Whether a Gemini response means "usable".
+  ///
+  /// Extracted so the region blocklist and the refusal phrasings are
+  /// unit-testable without a network round-trip — those are the parts that were
+  /// wrong. Gemini answers **200** in several unsupported countries, so neither
+  /// the status code nor the redirect target alone is sufficient: a sanctioned
+  /// region gets a normal-looking page whose *body* carries the refusal.
+  static MediaUnlockStatus geminiUnlockStatus({
+    required int statusCode,
+    required String realUrl,
+    required String body,
+    required String? rawRegion,
+  }) {
+    final region = rawRegion != null ? utils.normalizeRegion(rawRegion) : null;
+
+    // The refusal is phrased several different ways across Gemini's locales, and
+    // the redirect target is not always `unavailable` — checking the body is
+    // what actually catches it.
+    final isUnavailable =
+        realUrl.contains('unavailable') ||
+        body.contains('is not supported in your country') ||
+        body.contains("isn't supported in your country") ||
+        body.contains('not available in your country') ||
+        body.contains('unavailable in your country') ||
+        body.contains('is not currently supported') ||
+        body.contains("isn't currently supported");
+
+    final isBlockedRegion =
+        (region != null && _geminiUnsupportedRegions.contains(region)) ||
+        (rawRegion != null && _geminiUnsupportedRegions.contains(rawRegion));
+
+    return (statusCode != 200 || isUnavailable || isBlockedRegion)
+        ? MediaUnlockStatus.blocked
+        : MediaUnlockStatus.unlocked;
+  }
+
   Future<MediaUnlockResult> checkGemini() async {
     final sw = Stopwatch()..start();
     final dio = _createDio(followRedirects: true);
@@ -819,13 +868,20 @@ class MediaUnlockChecker {
       final res = await dio.get<String>('https://gemini.google.com/');
       final body = res.data ?? '';
       final regMatch = RegExp(r',2,1,200,"([A-Z]{3})"').firstMatch(body);
-      final altMatch = RegExp(r'\[1,null,null,\d+,\d+,"([A-Z]{3})"').firstMatch(body);
+      final altMatch = RegExp(
+        r'\[1,null,null,\d+,\d+,"([A-Z]{3})"',
+      ).firstMatch(body);
       final rawRegion = regMatch?.group(1) ?? altMatch?.group(1);
       final region = rawRegion != null ? utils.normalizeRegion(rawRegion) : null;
       final loc = res.realUri.toString();
-      final status = (res.statusCode == 200 && !loc.contains('unavailable'))
-          ? MediaUnlockStatus.unlocked
-          : MediaUnlockStatus.blocked;
+
+      final status = geminiUnlockStatus(
+        statusCode: res.statusCode ?? 0,
+        realUrl: loc,
+        body: body,
+        rawRegion: rawRegion,
+      );
+
       final latency = await _measureLatency(
         dio,
         'https://gemini.google.com/',
