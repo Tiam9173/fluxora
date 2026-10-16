@@ -100,6 +100,12 @@ static void my_application_activate(GApplication* application) {
   main_window = window;
 
   g_autoptr(FlDartProject) project = fl_dart_project_new();
+  // item 6 (Bettbox 1.19.5) — opt out of Impeller on Linux.
+  //
+  // Matches upstream. The desktop renderer has known glitches under Impeller
+  // that the Skia path does not; disabling it is the supported way to get the
+  // stable rendering back. Harmless on the platforms where it is not called.
+  fl_dart_project_set_enable_impeller(project, FALSE);
   fl_dart_project_set_dart_entrypoint_arguments(project, self->dart_entrypoint_arguments);
 
   FlView* view = fl_view_new(project);
