@@ -518,6 +518,8 @@
   "regExp": "정규식",
   "icon": "이미지",
   "iconConfiguration": "이미지 설정",
+  "resetIconCache": "아이콘 캐시 초기화",
+  "resetIconCacheDesc": "로컬 아이콘 캐시를 초기화하시겠습니까? 앱이 원격 링크에서 자동으로 다시 가져오므로 안전한 작업입니다.",
   "noData": "데이터가 없습니다",
   "adminAutoLaunch": "관리자 권한 자동 시작",
   "adminAutoLaunchDesc": "관리자 모드로 부팅 시 자동 실행",

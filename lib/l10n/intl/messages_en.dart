@@ -1461,6 +1461,10 @@ class MessageLookup extends MessageLookupByLibrary {
       "View recent request logs",
     ),
     "reset": MessageLookupByLibrary.simpleMessage("Reset"),
+    "resetIconCache": MessageLookupByLibrary.simpleMessage("Reset Icon Cache"),
+    "resetIconCacheDesc": MessageLookupByLibrary.simpleMessage(
+      "Reset the local icon cache? This is safe, the app will fetch icons from their remote links again automatically.",
+    ),
     "resetTip": MessageLookupByLibrary.simpleMessage(
       "Are you sure you want to reset?",
     ),

@@ -4320,6 +4320,26 @@ class AppLocalizations {
     );
   }
 
+  /// `Reset Icon Cache`
+  String get resetIconCache {
+    return Intl.message(
+      'Reset Icon Cache',
+      name: 'resetIconCache',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Reset the local icon cache? This is safe, the app will fetch icons from their remote links again automatically.`
+  String get resetIconCacheDesc {
+    return Intl.message(
+      'Reset the local icon cache? This is safe, the app will fetch icons from their remote links again automatically.',
+      name: 'resetIconCacheDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `No Data`
   String get noData {
     return Intl.message('No Data', name: 'noData', desc: '', args: []);

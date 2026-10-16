@@ -1495,6 +1495,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "مشاهده تاریخچه درخواست‌های اخیر",
     ),
     "reset": MessageLookupByLibrary.simpleMessage("بازنشانی"),
+    "resetIconCache": MessageLookupByLibrary.simpleMessage(
+      "بازنشانی حافظه پنهان آیکون‌ها",
+    ),
+    "resetIconCacheDesc": MessageLookupByLibrary.simpleMessage(
+      "حافظه پنهان محلی آیکون‌ها بازنشانی شود؟ این کار ایمن است، زیرا برنامه دوباره آن‌ها را به‌طور خودکار از پیوندهای راه دور دریافت می‌کند.",
+    ),
     "resetTip": MessageLookupByLibrary.simpleMessage(
       "آیا از بازنشانی اطمینان دارید؟",
     ),

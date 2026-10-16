@@ -521,6 +521,8 @@
   "regExp": "正则",
   "icon": "图片",
   "iconConfiguration": "图片配置",
+  "resetIconCache": "重置图标缓存",
+  "resetIconCacheDesc": "是否重置本地图标缓存？这个操作是安全的，因为应用会再次从远程链接自动获取。",
   "noData": "暂无数据",
   "adminAutoLaunch": "管理员自启动",
   "adminAutoLaunchDesc": "使用管理员模式开机自启动",

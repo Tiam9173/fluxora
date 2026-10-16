@@ -28,6 +28,22 @@ class ProxiesView extends ConsumerStatefulWidget {
 
 class _ProxiesViewState extends ConsumerState<ProxiesView> {
   final GlobalKey<ProxiesTabViewState> _proxiesTabKey = GlobalKey();
+
+  /// item 6 (Bettbox 1.19.3) — drop the icon cache.
+  ///
+  /// Confirmed first: it is safe (everything is re-fetchable from the remote
+  /// URL) but not free — every visible icon re-downloads afterwards.
+  Future<void> _handleResetIconCache(BuildContext context) async {
+    final res = await globalState.showMessage(
+      title: appLocalizations.resetIconCache,
+      message: TextSpan(text: appLocalizations.resetIconCacheDesc),
+    );
+    if (res != true) return;
+    await globalState.appController.safeRun(() async {
+      await CommonTargetIcon.clearCache();
+      globalState.showNotifier(appLocalizations.success);
+    });
+  }
   bool _hasProviders = false;
   bool _isTab = false;
 
@@ -160,6 +176,20 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
                         type: type,
                         body: const _IconConfigView(),
                         title: appLocalizations.iconConfiguration,
+                        actions: [
+                          Consumer(
+                            builder: (_, ref, _) {
+                              return IconButton(
+                                onPressed: () =>
+                                    _handleResetIconCache(context),
+                                tooltip: appLocalizations.resetIconCache,
+                                icon: const Icon(
+                                  Icons.cleaning_services_outlined,
+                                ),
+                              );
+                            },
+                          ),
+                        ],
                       );
                     },
                   );

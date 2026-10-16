@@ -521,6 +521,8 @@
   "regExp": "RegExp",
   "icon": "Icon",
   "iconConfiguration": "Icon Configuration",
+  "resetIconCache": "Reset Icon Cache",
+  "resetIconCacheDesc": "Reset the local icon cache? This is safe, the app will fetch icons from their remote links again automatically.",
   "noData": "No Data",
   "adminAutoLaunch": "Admin Auto-Launch",
   "adminAutoLaunchDesc": "Auto-start with admin privileges",

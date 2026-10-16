@@ -1072,6 +1072,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "requests": MessageLookupByLibrary.simpleMessage("請求"),
     "requestsDesc": MessageLookupByLibrary.simpleMessage("查看最近請求記錄"),
     "reset": MessageLookupByLibrary.simpleMessage("重設"),
+    "resetIconCache": MessageLookupByLibrary.simpleMessage("重置圖示快取"),
+    "resetIconCacheDesc": MessageLookupByLibrary.simpleMessage(
+      "是否重置本機圖示快取？這個操作是安全的，因為應用會再次從遠端連結自動取得。",
+    ),
     "resetTip": MessageLookupByLibrary.simpleMessage("確定要重設嗎？"),
     "resources": MessageLookupByLibrary.simpleMessage("資源"),
     "resourcesDesc": MessageLookupByLibrary.simpleMessage("外部資源相關資訊"),
