@@ -118,6 +118,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "addRoleFallbackCandidate": m1,
     "addRule": MessageLookupByLibrary.simpleMessage("افزودن قانون"),
     "addTunnel": MessageLookupByLibrary.simpleMessage("افزودن هدایت"),
+    "addUser": MessageLookupByLibrary.simpleMessage("افزودن کاربر"),
     "addedOriginRules": MessageLookupByLibrary.simpleMessage(
       "افزودن به قوانین اصلی",
     ),
@@ -980,6 +981,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "lastEdit": MessageLookupByLibrary.simpleMessage("آخرین ویرایش"),
     "layout": MessageLookupByLibrary.simpleMessage("چیدمان"),
     "leftClickBehavior": MessageLookupByLibrary.simpleMessage("کلیک چپ"),
+    "legacyBackup": MessageLookupByLibrary.simpleMessage("پشتیبان قدیمی"),
     "light": MessageLookupByLibrary.simpleMessage("روشن"),
     "limitedUnlock": MessageLookupByLibrary.simpleMessage("فقط اختصاصی"),
     "lineWrap": MessageLookupByLibrary.simpleMessage("شکستن خطوط"),
@@ -1122,6 +1124,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "networkType": MessageLookupByLibrary.simpleMessage("نوع شبکه"),
     "neutralScheme": MessageLookupByLibrary.simpleMessage("خنثی"),
     "noAnimation": MessageLookupByLibrary.simpleMessage("پیش‌فرض"),
+    "noBackupFileFound": MessageLookupByLibrary.simpleMessage(
+      "فایل پشتیبان پیدا نشد",
+    ),
     "noData": MessageLookupByLibrary.simpleMessage("داده‌ای موجود نیست"),
     "noHotKey": MessageLookupByLibrary.simpleMessage("بدون کلید میانبر"),
     "noIcon": MessageLookupByLibrary.simpleMessage("بدون آیکون"),
@@ -1553,6 +1558,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "securityLabel": MessageLookupByLibrary.simpleMessage("امنیت/TLS"),
     "securityNonePlain": MessageLookupByLibrary.simpleMessage("هیچ (متن ساده)"),
     "selectAll": MessageLookupByLibrary.simpleMessage("انتخاب همه"),
+    "selectBackupVersion": MessageLookupByLibrary.simpleMessage(
+      "انتخاب نسخه پشتیبان",
+    ),
     "selected": MessageLookupByLibrary.simpleMessage("انتخاب شده"),
     "selectedCountTitle": m29,
     "serverAddress": MessageLookupByLibrary.simpleMessage("آدرس سرور"),
@@ -1590,6 +1598,12 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "skipDomain": MessageLookupByLibrary.simpleMessage("دامنه‌های مستثنی"),
     "skipDstAddress": MessageLookupByLibrary.simpleMessage("IP مقصد مستثنی"),
+    "skipLocalAuth": MessageLookupByLibrary.simpleMessage(
+      "رد شدن از احراز هویت محلی",
+    ),
+    "skipLocalAuthDesc": MessageLookupByLibrary.simpleMessage(
+      "اجازه دسترسی به پروکسی بدون اطلاعات کاربری از سیستم محلی",
+    ),
     "skipSrcAddress": MessageLookupByLibrary.simpleMessage("IP مبدا مستثنی"),
     "smartAutoStop": MessageLookupByLibrary.simpleMessage("توقف هوشمند"),
     "smartAutoStopDesc": MessageLookupByLibrary.simpleMessage(
@@ -1842,7 +1856,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "useSystemHosts": MessageLookupByLibrary.simpleMessage(
       "استفاده از Hosts سیستم",
     ),
+    "userAuth": MessageLookupByLibrary.simpleMessage("احراز هویت کاربر"),
     "username": MessageLookupByLibrary.simpleMessage("نام کاربری"),
+    "usernameCannotContainColon": MessageLookupByLibrary.simpleMessage(
+      "نام کاربری نباید شامل دونقطه (:) باشد",
+    ),
     "usernameOptional": MessageLookupByLibrary.simpleMessage(
       "نام کاربری (اختیاری)",
     ),

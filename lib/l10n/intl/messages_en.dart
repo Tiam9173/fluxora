@@ -120,6 +120,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "addRoleFallbackCandidate": m1,
     "addRule": MessageLookupByLibrary.simpleMessage("Add Rule"),
     "addTunnel": MessageLookupByLibrary.simpleMessage("Add Forwarding"),
+    "addUser": MessageLookupByLibrary.simpleMessage("Add User"),
     "addedOriginRules": MessageLookupByLibrary.simpleMessage(
       "Append to Original Rules",
     ),
@@ -970,6 +971,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "lastEdit": MessageLookupByLibrary.simpleMessage("Last edited"),
     "layout": MessageLookupByLibrary.simpleMessage("Layout"),
     "leftClickBehavior": MessageLookupByLibrary.simpleMessage("Left Click"),
+    "legacyBackup": MessageLookupByLibrary.simpleMessage("Legacy backup"),
     "light": MessageLookupByLibrary.simpleMessage("Light"),
     "limitedUnlock": MessageLookupByLibrary.simpleMessage("Originals Only"),
     "lineWrap": MessageLookupByLibrary.simpleMessage("Wrap Lines"),
@@ -1110,6 +1112,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "networkType": MessageLookupByLibrary.simpleMessage("Network Type"),
     "neutralScheme": MessageLookupByLibrary.simpleMessage("Neutral"),
     "noAnimation": MessageLookupByLibrary.simpleMessage("Default"),
+    "noBackupFileFound": MessageLookupByLibrary.simpleMessage(
+      "No backup file found",
+    ),
     "noData": MessageLookupByLibrary.simpleMessage("No Data"),
     "noHotKey": MessageLookupByLibrary.simpleMessage("No Hotkeys"),
     "noIcon": MessageLookupByLibrary.simpleMessage("No Icon"),
@@ -1515,6 +1520,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "None (plaintext)",
     ),
     "selectAll": MessageLookupByLibrary.simpleMessage("Select All"),
+    "selectBackupVersion": MessageLookupByLibrary.simpleMessage(
+      "Select Backup Version",
+    ),
     "selected": MessageLookupByLibrary.simpleMessage("Selected"),
     "selectedCountTitle": m29,
     "serverAddress": MessageLookupByLibrary.simpleMessage("Server Address"),
@@ -1553,6 +1561,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "skipDomain": MessageLookupByLibrary.simpleMessage("Skip Domain"),
     "skipDstAddress": MessageLookupByLibrary.simpleMessage(
       "Skip Destination IP",
+    ),
+    "skipLocalAuth": MessageLookupByLibrary.simpleMessage(
+      "Skip Local Authentication",
+    ),
+    "skipLocalAuthDesc": MessageLookupByLibrary.simpleMessage(
+      "Allow local machine to access proxy without credentials",
     ),
     "skipSrcAddress": MessageLookupByLibrary.simpleMessage("Skip Source IP"),
     "smartAutoStop": MessageLookupByLibrary.simpleMessage("Smart Auto-Stop"),
@@ -1802,7 +1816,11 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "useHosts": MessageLookupByLibrary.simpleMessage("Use Hosts"),
     "useSystemHosts": MessageLookupByLibrary.simpleMessage("Use System Hosts"),
+    "userAuth": MessageLookupByLibrary.simpleMessage("User Authentication"),
     "username": MessageLookupByLibrary.simpleMessage("Username"),
+    "usernameCannotContainColon": MessageLookupByLibrary.simpleMessage(
+      "Username cannot contain colons",
+    ),
     "usernameOptional": MessageLookupByLibrary.simpleMessage(
       "Username (optional)",
     ),

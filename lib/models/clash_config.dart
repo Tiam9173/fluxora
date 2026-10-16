@@ -19,6 +19,14 @@ const defaultTunnel = <TunnelEntry>[];
 const defaultExperimental = Experimental();
 const defaultGeoXUrl = GeoXUrl();
 
+/// item 6 (Bettbox 1.19.3) — addresses that never need to authenticate when
+/// `allow-lan` is on.
+///
+/// Loopback is listed because the local client already reaches the proxy
+/// directly; demanding credentials from it only breaks tooling that talks to
+/// `127.0.0.1`. Matches mihomo's own default.
+const defaultSkipAuthPrefixes = ['127.0.0.1/8', '::1/128'];
+
 const defaultMixedPort = 7890;
 const defaultKeepAliveInterval = 30;
 
@@ -706,6 +714,14 @@ abstract class ClashConfig with _$ClashConfig {
     @Default(0) @JsonKey(name: 'tproxy-port') int tproxyPort,
     @Default(Mode.rule) Mode mode,
     @Default(false) @JsonKey(name: 'allow-lan') bool allowLan,
+    /// item 6 (Bettbox 1.19.3) — `user:password` entries for the LAN proxy.
+    ///
+    /// Only meaningful while [allowLan] is on; an empty list means mihomo does
+    /// not require credentials at all, which is the previous behaviour.
+    @Default([]) List<String> authentication,
+    @Default(defaultSkipAuthPrefixes)
+    @JsonKey(name: 'skip-auth-prefixes')
+    List<String> skipAuthPrefixes,
     @Default(LogLevel.error) @JsonKey(name: 'log-level') LogLevel logLevel,
     @Default(false) bool ipv6,
     @Default(FindProcessMode.off)

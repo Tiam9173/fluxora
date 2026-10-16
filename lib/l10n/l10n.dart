@@ -835,6 +835,51 @@ class AppLocalizations {
     );
   }
 
+  /// `User Authentication`
+  String get userAuth {
+    return Intl.message(
+      'User Authentication',
+      name: 'userAuth',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Skip Local Authentication`
+  String get skipLocalAuth {
+    return Intl.message(
+      'Skip Local Authentication',
+      name: 'skipLocalAuth',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Allow local machine to access proxy without credentials`
+  String get skipLocalAuthDesc {
+    return Intl.message(
+      'Allow local machine to access proxy without credentials',
+      name: 'skipLocalAuthDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Add User`
+  String get addUser {
+    return Intl.message('Add User', name: 'addUser', desc: '', args: []);
+  }
+
+  /// `Username cannot contain colons`
+  String get usernameCannotContainColon {
+    return Intl.message(
+      'Username cannot contain colons',
+      name: 'usernameCannotContainColon',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `TUN`
   String get tun {
     return Intl.message('TUN', name: 'tun', desc: '', args: []);
@@ -1820,6 +1865,36 @@ class AppLocalizations {
     return Intl.message(
       'Restore Successful',
       name: 'recoverySuccess',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Select Backup Version`
+  String get selectBackupVersion {
+    return Intl.message(
+      'Select Backup Version',
+      name: 'selectBackupVersion',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No backup file found`
+  String get noBackupFileFound {
+    return Intl.message(
+      'No backup file found',
+      name: 'noBackupFileFound',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Legacy backup`
+  String get legacyBackup {
+    return Intl.message(
+      'Legacy backup',
+      name: 'legacyBackup',
       desc: '',
       args: [],
     );

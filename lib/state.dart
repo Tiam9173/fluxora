@@ -713,6 +713,17 @@ class GlobalState {
     rawConfig['tproxy-port'] = realPatchConfig.tproxyPort;
     rawConfig['find-process-mode'] = realPatchConfig.findProcessMode.name;
     rawConfig['allow-lan'] = realPatchConfig.allowLan;
+    // item 6 (Bettbox 1.19.3) — LAN proxy credentials.
+    //
+    // Only emitted when there is something to authenticate: an absent key and an
+    // empty array both mean "no credentials required" to mihomo, but leaving the
+    // key out keeps the generated config identical to before for every user who
+    // never touches this feature. `skip-auth-prefixes` rides along because it is
+    // meaningless without credentials to skip.
+    if (realPatchConfig.authentication.isNotEmpty) {
+      rawConfig['authentication'] = realPatchConfig.authentication;
+      rawConfig['skip-auth-prefixes'] = realPatchConfig.skipAuthPrefixes;
+    }
     rawConfig['mode'] = realPatchConfig.mode.name;
     if (rawConfig['tun'] == null) {
       rawConfig['tun'] = <String, dynamic>{};
