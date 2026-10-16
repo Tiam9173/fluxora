@@ -314,6 +314,8 @@ const _$ActionMethodEnumMap = {
   ActionMethod.sideLoadExternalProvider: 'sideLoadExternalProvider',
   ActionMethod.startLog: 'startLog',
   ActionMethod.stopLog: 'stopLog',
+  ActionMethod.getLogs: 'getLogs',
+  ActionMethod.clearLogs: 'clearLogs',
   ActionMethod.startListener: 'startListener',
   ActionMethod.stopListener: 'stopListener',
   ActionMethod.getCountryCode: 'getCountryCode',

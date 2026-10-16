@@ -73,6 +73,12 @@ mixin ClashInterface {
 
   FutureOr<void> stopLog();
 
+  /// Serialised JSON of the buffered log history. Falls back to an empty array
+  /// on the Go side, so this never throws for a cold buffer.
+  FutureOr<String> getLogs();
+
+  FutureOr<bool> clearLogs();
+
   Future<bool> crash();
 
   FutureOr<String> getConnections();
@@ -382,6 +388,16 @@ abstract class ClashHandlerInterface with ClashInterface {
   @override
   stopLog() {
     invoke<bool>(method: ActionMethod.stopLog);
+  }
+
+  @override
+  getLogs() {
+    return invoke<String>(method: ActionMethod.getLogs);
+  }
+
+  @override
+  clearLogs() {
+    return invoke<bool>(method: ActionMethod.clearLogs);
   }
 
   @override
