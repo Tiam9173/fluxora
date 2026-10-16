@@ -292,6 +292,104 @@ final class CoreStateProvider
 
 String _$coreStateHash() => r'0fec30a6b2b78e720d08824a11e1cc945c1873bb';
 
+/// item 6 — the mixed proxy port to use *for this session*, when the configured
+/// one was already taken at cold start.
+///
+/// Deliberately **session-only**: writing the fallback back into the user's
+/// config would silently rewrite their setting, and they would open the app next
+/// time to a different port with no idea why.
+///
+/// Only ever set at cold start, while no core is running. That is what keeps the
+/// port from drifting: probing while our *own* core still holds the port would
+/// read as "occupied", so we would move once, then move again on every restart.
+/// Restarts and hot config updates never probe, so they can never drift.
+
+@ProviderFor(MixedPortFallback)
+final mixedPortFallbackProvider = MixedPortFallbackProvider._();
+
+/// item 6 — the mixed proxy port to use *for this session*, when the configured
+/// one was already taken at cold start.
+///
+/// Deliberately **session-only**: writing the fallback back into the user's
+/// config would silently rewrite their setting, and they would open the app next
+/// time to a different port with no idea why.
+///
+/// Only ever set at cold start, while no core is running. That is what keeps the
+/// port from drifting: probing while our *own* core still holds the port would
+/// read as "occupied", so we would move once, then move again on every restart.
+/// Restarts and hot config updates never probe, so they can never drift.
+final class MixedPortFallbackProvider
+    extends $NotifierProvider<MixedPortFallback, int?> {
+  /// item 6 — the mixed proxy port to use *for this session*, when the configured
+  /// one was already taken at cold start.
+  ///
+  /// Deliberately **session-only**: writing the fallback back into the user's
+  /// config would silently rewrite their setting, and they would open the app next
+  /// time to a different port with no idea why.
+  ///
+  /// Only ever set at cold start, while no core is running. That is what keeps the
+  /// port from drifting: probing while our *own* core still holds the port would
+  /// read as "occupied", so we would move once, then move again on every restart.
+  /// Restarts and hot config updates never probe, so they can never drift.
+  MixedPortFallbackProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'mixedPortFallbackProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$mixedPortFallbackHash();
+
+  @$internal
+  @override
+  MixedPortFallback create() => MixedPortFallback();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(int? value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<int?>(value),
+    );
+  }
+}
+
+String _$mixedPortFallbackHash() => r'ac53c757c65045f63b1d96046a3cccb3cecbeaf9';
+
+/// item 6 — the mixed proxy port to use *for this session*, when the configured
+/// one was already taken at cold start.
+///
+/// Deliberately **session-only**: writing the fallback back into the user's
+/// config would silently rewrite their setting, and they would open the app next
+/// time to a different port with no idea why.
+///
+/// Only ever set at cold start, while no core is running. That is what keeps the
+/// port from drifting: probing while our *own* core still holds the port would
+/// read as "occupied", so we would move once, then move again on every restart.
+/// Restarts and hot config updates never probe, so they can never drift.
+
+abstract class _$MixedPortFallback extends $Notifier<int?> {
+  int? build();
+  @$mustCallSuper
+  @override
+  WhenComplete runBuild() {
+    final ref = this.ref as $Ref<int?, int?>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<int?, int?>,
+              int?,
+              Object?,
+              Object?
+            >;
+    return element.handleCreate(ref, build);
+  }
+}
+
 @ProviderFor(updateParams)
 final updateParamsProvider = UpdateParamsProvider._();
 
