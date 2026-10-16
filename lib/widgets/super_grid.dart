@@ -20,6 +20,19 @@ class SuperGrid extends StatefulWidget {
   final int crossAxisCount;
   final VoidCallback? onUpdate;
 
+  /// item 6 — when set, each item gets a drag handle at its top-right corner and
+  /// the card itself no longer starts a drag.
+  ///
+  /// Needed when the host's cards are interactive. Without it the whole card is
+  /// a drag source (immediate on desktop, long-press on mobile) and sits inside
+  /// an [AbsorbPointer], so a card that has its own tap or long-press would lose
+  /// it. The profiles grid is exactly that case: long-press there opens the
+  /// subscription editor.
+  ///
+  /// Null (the default) keeps the original behaviour, which is what the
+  /// dashboard relies on — its cards have no gestures of their own.
+  final Widget Function(int index)? dragHandleBuilder;
+
   const SuperGrid({
     super.key,
     required this.children,
@@ -27,6 +40,7 @@ class SuperGrid extends StatefulWidget {
     this.mainAxisSpacing = 0,
     this.crossAxisSpacing = 0,
     this.onUpdate,
+    this.dragHandleBuilder,
   });
 
   @override
@@ -428,7 +442,12 @@ class SuperGridState extends State<SuperGrid> with TickerProviderStateMixin {
   }) {
     final target = DragTarget<int>(
       builder: (_, _, _) {
-        return AbsorbPointer(child: item);
+        // With a handle the card stays live: the handle is the only drag
+        // source, so nothing needs to be absorbed to avoid a gesture fight.
+        // Without one the original behaviour stands.
+        return widget.dragHandleBuilder == null
+            ? AbsorbPointer(child: item)
+            : item;
       },
       onWillAcceptWithDetails: (_) {
         debouncer.call(FunctionTag.handleWill, _handleWill, args: [index]);
@@ -463,44 +482,97 @@ class SuperGridState extends State<SuperGrid> with TickerProviderStateMixin {
         child: target,
       ),
     );
-    final draggableChild = system.isDesktop
-        ? Draggable(
-            childWhenDragging: childWhenDragging,
-            data: index,
+    if (widget.dragHandleBuilder == null) {
+      return _draggableSource(
+        index: index,
+        child: shakeTarget,
+        feedback: feedback,
+        childWhenDragging: childWhenDragging,
+      );
+    }
+
+    // Handle mode: only the handle starts a drag, so the card keeps its own tap
+    // and long-press. The card dims while its handle is being dragged, matching
+    // what a whole-card drag does.
+    return Stack(
+      children: [
+        ValueListenableBuilder<int>(
+          valueListenable: _dragIndexNotifier,
+          builder: (_, dragIndex, child) {
+            return Opacity(
+              opacity: dragIndex == index ? 0.6 : 1,
+              child: child,
+            );
+          },
+          child: shakeTarget,
+        ),
+        Positioned(
+          top: 0,
+          right: 0,
+          child: _draggableSource(
+            index: index,
+            child: widget.dragHandleBuilder!(index),
             feedback: feedback,
-            onDragStarted: () {
-              _handleDragStarted(index);
-            },
-            onDragUpdate: (details) {
-              _handleDragUpdate(details);
-            },
-            onDragEnd: (details) {
-              _handleDragEnd(details);
-            },
-            child: shakeTarget,
-          )
-        : LongPressDraggable(
-            childWhenDragging: childWhenDragging,
-            data: index,
-            feedback: feedback,
-            onDragStarted: () {
-              _handleDragStarted(index);
-            },
-            onDragUpdate: (details) {
-              _handleDragUpdate(details);
-            },
-            onDragEnd: (details) {
-              _handleDragEnd(details);
-            },
-            child: shakeTarget,
-          );
-    return draggableChild;
+            childWhenDragging: const SizedBox.shrink(),
+            // A handle is an explicit affordance, so drag starts immediately —
+            // making the user hold it first would be a surprise. This is also
+            // why the handle needs no long-press arbitration with the card.
+            immediate: true,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _draggableSource({
+    required int index,
+    required Widget child,
+    required Widget feedback,
+    required Widget childWhenDragging,
+    bool immediate = false,
+  }) {
+    if (immediate || system.isDesktop) {
+      return Draggable(
+        childWhenDragging: childWhenDragging,
+        data: index,
+        feedback: feedback,
+        onDragStarted: () {
+          _handleDragStarted(index);
+        },
+        onDragUpdate: (details) {
+          _handleDragUpdate(details);
+        },
+        onDragEnd: (details) {
+          _handleDragEnd(details);
+        },
+        child: child,
+      );
+    }
+    return LongPressDraggable(
+      childWhenDragging: childWhenDragging,
+      data: index,
+      feedback: feedback,
+      onDragStarted: () {
+        _handleDragStarted(index);
+      },
+      onDragUpdate: (details) {
+        _handleDragUpdate(details);
+      },
+      onDragEnd: (details) {
+        _handleDragEnd(details);
+      },
+      child: child,
+    );
   }
 
   Widget _builderItem(int index) {
     final gridItem = _childrenNotifier.value[index];
     final child = gridItem.child;
     return GridItem(
+      // Carry the host's key through so a reorder can be mapped back to the
+      // model: `onUpdate` reads `SuperGridState.children` and matches on these.
+      // The dashboard passes no key, so this stays a no-op there.
+      key: gridItem.key,
       mainAxisCellCount: gridItem.mainAxisCellCount,
       crossAxisCellCount: gridItem.crossAxisCellCount,
       isDeletable: gridItem.isDeletable,
