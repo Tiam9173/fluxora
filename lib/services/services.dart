@@ -6,3 +6,4 @@ export 'chain_failover_service.dart';
 export 'chain_flap_dampener_service.dart';
 export 'chain_telemetry_service.dart';
 export 'chain_adaptive_ranking_cache_service.dart';
+export 'ip_reputation_service.dart';
