@@ -396,6 +396,38 @@ class _EditorPageState extends ConsumerState<EditorPage> {
               : null,
         ),
       ],
+      // item 6 (Bettbox 1.19.6) — select all / deselect from the editor's own
+      // menu. The controller has always exposed `selectAll()`, but it was only
+      // reachable from the platform selection toolbar (long-press), which is
+      // awkward with a mouse and unreachable from the overflow menu.
+      //
+      // The two entries are mutually exclusive on `selection.isCollapsed`, so the
+      // menu never offers an action that would do nothing. Same read-at-build
+      // pattern as the undo/redo entries above.
+      if (_hasRustBackend && _controller != null) ...[
+        PopupMenuItemData(
+          icon: Icons.select_all,
+          label: appLocalizations.selectAll,
+          onPressed: _controller!.selection.isCollapsed
+              ? () => _controller!.selectAll()
+              : null,
+        ),
+        PopupMenuItemData(
+          icon: Icons.deselect,
+          label: appLocalizations.cancelSelectAll,
+          onPressed: _controller!.selection.isCollapsed
+              ? null
+              : () {
+                  // Collapse onto the end of the current selection, which is
+                  // where the caret would naturally land — `code_forge` has no
+                  // dedicated deselect call.
+                  final selection = _controller!.selection;
+                  _controller!.setSelectionImmediately(
+                    TextSelection.collapsed(offset: selection.extentOffset),
+                  );
+                },
+        ),
+      ],
       PopupMenuItemData(
         icon: _lineWrap ? Icons.check : Icons.wrap_text,
         label: appLocalizations.lineWrap,
