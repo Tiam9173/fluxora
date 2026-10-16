@@ -2,6 +2,7 @@ import 'package:fluxora/common/common.dart';
 import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/models/models.dart';
 import 'package:fluxora/providers/providers.dart';
+import 'package:fluxora/services/services.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
@@ -225,6 +226,15 @@ class _NetworkDetectionState extends ConsumerState<NetworkDetection> {
                   title: Text(appLocalizations.domain),
                   subtitle: Text(rawIpInfo.asDomain!),
                 ),
+              // 7. P4 — IP 风险情报。
+              //
+              // E-5: a **separate** section, never merged into the `IpInfo`
+              // fields above; default OFF, so nothing is sent anywhere until the
+              // user turns it on.
+              if (rawIpInfo.ip.isNotEmpty) ...[
+                const Divider(height: 24),
+                _IpRiskSection(ip: rawIpInfo.ip),
+              ],
             ],
           ),
         ),
@@ -493,6 +503,274 @@ class _NetworkDetectionUrlDialog extends ConsumerWidget {
                 ),
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// P4 — the "IP risk intel" section.
+///
+/// Contract (E-4 / E-5):
+/// * **Separate** from the `IpInfo` rows above — it never reads or writes
+///   `IpInfo`, and `networkDetectionUrl` is untouched.
+/// * **Default OFF.** Nothing leaves the device until the user flips the switch;
+///   every lookup is gated on that switch. Opening this dialog is a user action,
+///   and a node switch never reaches this widget.
+/// * Shows the source, the source's own query time and a stale warning, so a
+///   cached report is never presented as real-time.
+/// * A failed lookup renders as a failure with its reason — **never** as a clean
+///   result.
+/// * **No composite score**: only the independent markers (E-4).
+class _IpRiskSection extends ConsumerStatefulWidget {
+  const _IpRiskSection({required this.ip});
+
+  final String ip;
+
+  @override
+  ConsumerState<_IpRiskSection> createState() => _IpRiskSectionState();
+}
+
+class _IpRiskSectionState extends ConsumerState<_IpRiskSection> {
+  final IpReputationService _service = IpReputationService();
+  IpReputation? _report;
+  bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Only fires for users who already opted in.
+    if (ref.read(appSettingProvider).ipReputationEnabled) {
+      _query();
+    }
+  }
+
+  Future<void> _query() async {
+    setState(() => _loading = true);
+    final report = await _service.lookup(widget.ip);
+    if (!mounted) return;
+    setState(() {
+      _report = report;
+      _loading = false;
+    });
+  }
+
+  void _setEnabled(bool value) {
+    ref
+        .read(appSettingProvider.notifier)
+        .updateState((state) => state.copyWith(ipReputationEnabled: value));
+    if (value) {
+      _query();
+    } else {
+      // Turning it off drops the result rather than leaving it on screen.
+      setState(() => _report = null);
+    }
+  }
+
+  String _markerLabel(IpRiskMarker marker) => switch (marker.id) {
+    'vpn' => appLocalizations.ipRiskVpn,
+    'proxy' => appLocalizations.ipRiskProxy,
+    'tor' => appLocalizations.ipRiskTor,
+    'hosting' => appLocalizations.ipRiskHosting,
+    'relay' => appLocalizations.ipRiskRelay,
+    'mobile' => appLocalizations.ipRiskMobile,
+    'bogon' => appLocalizations.ipRiskBogon,
+    'searchEngineBot' => appLocalizations.ipRiskSearchEngineBot,
+    _ => marker.id,
+  };
+
+  String _stateLabel(IpRiskMarkerState state) => switch (state) {
+    IpRiskMarkerState.flagged => appLocalizations.flagged,
+    IpRiskMarkerState.clear => appLocalizations.ipRiskNotFlagged,
+    IpRiskMarkerState.unknown => appLocalizations.unknown,
+  };
+
+  String _formatQueriedAt(DateTime t) {
+    final l = t.toLocal();
+    String two(int v) => v.toString().padLeft(2, '0');
+    return '${l.year}-${two(l.month)}-${two(l.day)} '
+        '${two(l.hour)}:${two(l.minute)}';
+  }
+
+  Widget _markerChip(IpRiskMarker marker) {
+    final scheme = Theme.of(context).colorScheme;
+    final (IconData icon, Color color) = switch (marker.state) {
+      IpRiskMarkerState.flagged => (Icons.error_outline, scheme.error),
+      IpRiskMarkerState.clear => (Icons.check_circle_outline, scheme.outline),
+      IpRiskMarkerState.unknown => (Icons.help_outline, scheme.outlineVariant),
+    };
+    return SizedBox(
+      width: 150,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              '${_markerLabel(marker)} · ${_stateLabel(marker.state)}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: context.textTheme.bodySmall?.copyWith(color: color),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = ref.watch(
+      appSettingProvider.select((s) => s.ipReputationEnabled),
+    );
+    final report = _report;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: const Icon(Icons.shield_outlined),
+          title: Text(appLocalizations.ipRiskIntel),
+          subtitle: Text(appLocalizations.ipRiskPrivacyNote),
+        ),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          dense: true,
+          title: Text(appLocalizations.ipRiskEnable),
+          value: enabled,
+          onChanged: _setLoadingGuard(_setEnabled),
+        ),
+        if (enabled) ...[
+          if (_loading)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            )
+          else if (report == null)
+            const SizedBox.shrink()
+          else if (!report.isOk)
+            // E-5: a failure is shown as a failure — it is never a clean result.
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(
+                Icons.cloud_off_outlined,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              title: Text(appLocalizations.ipRiskFailed),
+              subtitle: Text(report.failureReason ?? ''),
+            )
+          else ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: [
+                  for (final marker in report.markers) _markerChip(marker),
+                ],
+              ),
+            ),
+            _kv(appLocalizations.source, report.source ?? ''),
+            if (report.queriedAt != null)
+              _kv(appLocalizations.time, _formatQueriedAt(report.queriedAt!)),
+            if (report.stale)
+              // E-5: a stale report must not masquerade as real-time.
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.schedule_outlined,
+                      size: 14,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        appLocalizations.ipRiskStale,
+                        style: context.textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            if (report.asn != null || report.asnOrg != null)
+              _kv(
+                'ASN',
+                [report.asn, report.asnOrg].whereType<String>().join(' · '),
+              ),
+            if (report.usageType != null)
+              _kv(appLocalizations.ipRiskHosting, report.usageType!),
+            if (report.abuseScore != null)
+              _kv(
+                appLocalizations.ipRiskAbuse,
+                '${report.abuseScore}'
+                    '${report.abuseReports == null ? '' : ' (${report.abuseReports})'}',
+              ),
+            if (report.blocklistsHit.isNotEmpty)
+              _kv(appLocalizations.ipRiskBlocklists, report.blocklistsHit.join(', ')),
+            // The source's own limits, surfaced so a high score is never read as
+            // a safety guarantee (E-4).
+            if (report.unknownNotes.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                appLocalizations.ipRiskLimits,
+                style: context.textTheme.labelMedium,
+              ),
+              for (final note in report.unknownNotes)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text('• $note', style: context.textTheme.bodySmall),
+                ),
+            ],
+            if (report.reportUrl != null)
+              TextButton(
+                onPressed: () => globalState.openUrl(report.reportUrl!),
+                child: Text(appLocalizations.ipRiskOpenReport),
+              ),
+          ],
+        ],
+      ],
+    );
+  }
+
+  /// Blocks a second toggle while a lookup is in flight.
+  ValueChanged<bool> _setLoadingGuard(ValueChanged<bool> inner) {
+    return (value) {
+      if (_loading) return;
+      inner(value);
+    };
+  }
+
+  Widget _kv(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 96,
+            child: Text(
+              label,
+              style: context.textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(value, style: context.textTheme.bodySmall),
           ),
         ],
       ),
