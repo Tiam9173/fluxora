@@ -847,6 +847,84 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
     };
   }
 
+  /// item 3-B — one hop's own probe outcome.
+  ///
+  /// `HopProbeState` has always carried this hop's latency, error, diagnostic tip
+  /// and IP-observation reason; the topology card above was colour-only, so none
+  /// of it reached the user. The entry hop is what the chain view was missing.
+  Widget _buildHopDetailRow(BuildContext context, HopProbeState hop) {
+    final scheme = context.colorScheme;
+    final roleLabel = switch (hop.role) {
+      HopRole.hop1Entry => appLocalizations.roleEntry,
+      HopRole.hop2Relay => appLocalizations.roleRelay,
+      _ => appLocalizations.roleExit,
+    };
+    final failed =
+        hop.healthStatus == ChainHealthStatus.failed ||
+        hop.healthStatus == ChainHealthStatus.unavailable;
+    final color = failed ? scheme.error : scheme.onSurface;
+    final errorMessage = hop.errorMessage;
+    final diagnosticTip = hop.diagnosticTip;
+    final ipStatusReason = hop.ipStatusReason;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                failed ? Icons.error_outline : Icons.check_circle_outline,
+                size: 14,
+                color: color,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  '$roleLabel · ${hop.nodeName}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.textTheme.bodySmall?.copyWith(color: color),
+                ),
+              ),
+              const SizedBox(width: 6),
+              // A missing measurement stays `unknown` — never a fabricated 0.
+              Text(
+                hop.latencyMs == null
+                    ? appLocalizations.unknown
+                    : '${hop.latencyMs}ms',
+                style: context.textTheme.bodySmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          if (errorMessage != null && errorMessage.isNotEmpty)
+            _buildHopNote(context, errorMessage, scheme.error),
+          if (diagnosticTip != null && diagnosticTip.isNotEmpty)
+            _buildHopNote(context, diagnosticTip, scheme.onSurfaceVariant),
+          if (ipStatusReason != null && ipStatusReason.isNotEmpty)
+            _buildHopNote(context, ipStatusReason, scheme.onSurfaceVariant),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHopNote(BuildContext context, String text, Color color) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 2, left: 20),
+      child: Text(
+        text,
+        style: context.textTheme.bodySmall?.copyWith(
+          color: color,
+          fontSize: 11,
+        ),
+      ),
+    );
+  }
+
   /// One editable role bucket of the fallback pool. Adding reuses the existing
   /// node picker; the manager keeps it idempotent and persists it.
   Widget _buildPoolRoleRow(
@@ -1215,6 +1293,21 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                 ],
               ),
             ],
+            // item 3-B — per-hop detail.
+            //
+            // The topology above is colour-only, so the numbers behind it were
+            // unreachable: `HopProbeState` already carries each hop's own
+            // latency, error, diagnostic tip and IP-observation reason. This
+            // surfaces them, entry hop first — the observability the chain view
+            // was missing. A missing measurement renders as `unknown`, never as
+            // a fabricated value.
+            if (config.enable &&
+                probeReport != null &&
+                probeReport.hops.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              for (final hop in probeReport.hops)
+                _buildHopDetailRow(context, hop),
+            ],
             // B3: an incomplete three-hop chain generates no shadow nodes at
             // all, so say so here rather than letting the card read as ready.
             if (isThreeHopIncomplete(config)) ...[
@@ -1353,67 +1446,11 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
     required String subtitle,
     required TopologySegmentState state,
   }) {
-    final colorScheme = context.colorScheme;
-    final bool isFailed = state == TopologySegmentState.failed;
-    final bool isEvidence =
-        state == TopologySegmentState.healthy ||
-        state == TopologySegmentState.checking;
-    final bool isEmphasised = isFailed || isEvidence;
-
-    final Color background = isFailed
-        ? colorScheme.errorContainer.withValues(alpha: 0.3)
-        : isEvidence
-        ? colorScheme.primaryContainer.withValues(alpha: 0.3)
-        : colorScheme.surfaceContainer;
-    final Color borderColor = isFailed
-        ? colorScheme.error.withValues(alpha: 0.6)
-        : isEvidence
-        ? colorScheme.primary.withValues(alpha: 0.4)
-        : colorScheme.outlineVariant.withValues(alpha: 0.3);
-    final Color accentColor = isFailed
-        ? colorScheme.error
-        : isEvidence
-        ? colorScheme.primary
-        : colorScheme.onSurfaceVariant;
-
-    return Container(
-      constraints: const BoxConstraints(minWidth: 64, maxWidth: 96),
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: borderColor),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 18, color: accentColor),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              color: isEmphasised
-                  ? colorScheme.onSurface
-                  : colorScheme.onSurfaceVariant,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 2),
-          Text(
-            subtitle,
-            style: TextStyle(
-              fontSize: 9,
-              color: colorScheme.onSurfaceVariant,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
+    return _TopologyNode(
+      icon: icon,
+      title: title,
+      subtitle: subtitle,
+      state: state,
     );
   }
 
@@ -2344,6 +2381,198 @@ class _EditLandingProxyDialogState extends State<_EditLandingProxyDialog> {
           child: Text(appLocalizations.confirm),
         ),
       ],
+    );
+  }
+}
+
+/// Whether the topology node for [state] should show the pulsing halo.
+///
+/// Only a probe that is actually in flight pulses; every other state is static.
+/// Under reduced motion (§10.5) the loop never starts at all.
+bool topologyNodePulses(
+  TopologySegmentState state, {
+  required bool reduceMotion,
+}) {
+  if (reduceMotion) return false;
+  return state == TopologySegmentState.checking;
+}
+
+/// Halo diameter at loop position [t] (0..1).
+///
+/// Grows from the icon's own 18 px to 30 px — a 1.67× growth on a decorative
+/// halo, never on the content, and the growth is a fade-out so nothing ever
+/// snaps. §10.4 caps *scale* changes at 1.1× on the element itself; the halo is
+/// a separate layer, so this stays inside the brand's rules.
+double topologyHaloDiameter(double t) => 18 + 12 * t;
+
+/// Halo opacity at loop position [t] — fades out as it expands.
+double topologyHaloOpacity(double t) => 0.20 * (1 - t);
+
+/// item 3-B / D7 — one topology node, with the "checking" pulse.
+///
+/// §10.3 specifies a gentle node pulse while a probe is in flight. §10.4 forbids
+/// scale changes over 1.1×, high-frequency flashing, continuous rotation and
+/// decorative-only motion, so the pulse is an **expanding, fading halo behind
+/// the icon** — never a transform on the content — looping at
+/// [FluxoraMotion.connectingLoop]. It is informative, not decorative: it only
+/// runs while this node is actually being probed.
+///
+/// Under reduced motion (§10.5) the loop never starts and the halo is omitted,
+/// leaving the static node. State changes cross-fade through `AnimatedContainer`
+/// at [FluxoraMotionSet.base] instead of snapping.
+class _TopologyNode extends StatefulWidget {
+  const _TopologyNode({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.state,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final TopologySegmentState state;
+
+  @override
+  State<_TopologyNode> createState() => _TopologyNodeState();
+}
+
+class _TopologyNodeState extends State<_TopologyNode>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: FluxoraMotion.connectingLoop,
+  );
+
+  bool get _reduceMotion =>
+      MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncPulse();
+  }
+
+  @override
+  void didUpdateWidget(covariant _TopologyNode oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.state != widget.state) {
+      _syncPulse();
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  void _syncPulse() {
+    if (_reduceMotion || widget.state != TopologySegmentState.checking) {
+      _pulse.stop();
+      _pulse.value = 0;
+      return;
+    }
+    if (!_pulse.isAnimating) {
+      // `reverse: true` gives a smooth in-out breathing loop with no snap.
+      _pulse.repeat(reverse: true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final motion = FluxoraMotionSet.of(reduceMotion: _reduceMotion);
+    final colorScheme = context.colorScheme;
+    final isFailed = widget.state == TopologySegmentState.failed;
+    final isEvidence =
+        widget.state == TopologySegmentState.healthy ||
+        widget.state == TopologySegmentState.checking;
+    final isEmphasised = isFailed || isEvidence;
+
+    final background = isFailed
+        ? colorScheme.errorContainer.withValues(alpha: 0.3)
+        : isEvidence
+        ? colorScheme.primaryContainer.withValues(alpha: 0.3)
+        : colorScheme.surfaceContainer;
+    final borderColor = isFailed
+        ? colorScheme.error.withValues(alpha: 0.6)
+        : isEvidence
+        ? colorScheme.primary.withValues(alpha: 0.4)
+        : colorScheme.outlineVariant.withValues(alpha: 0.3);
+    final accentColor = isFailed
+        ? colorScheme.error
+        : isEvidence
+        ? colorScheme.primary
+        : colorScheme.onSurfaceVariant;
+    final pulsing = topologyNodePulses(
+      widget.state,
+      reduceMotion: motion.reduceMotion,
+    );
+
+    return AnimatedContainer(
+      duration: motion.base,
+      curve: motion.standard,
+      constraints: const BoxConstraints(minWidth: 64, maxWidth: 96),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: borderColor),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 32,
+            height: 22,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                  if (pulsing)
+                    AnimatedBuilder(
+                      animation: _pulse,
+                      builder: (context, _) {
+                        final t = _pulse.value;
+                        final size = topologyHaloDiameter(t);
+                        return Container(
+                          width: size,
+                          height: size,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: accentColor.withValues(
+                              alpha: topologyHaloOpacity(t),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                Icon(widget.icon, size: 18, color: accentColor),
+              ],
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            widget.title,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: isEmphasised
+                  ? colorScheme.onSurface
+                  : colorScheme.onSurfaceVariant,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            widget.subtitle,
+            style: TextStyle(fontSize: 9, color: colorScheme.onSurfaceVariant),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 }

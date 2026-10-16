@@ -840,7 +840,17 @@ class ChainProxyConfig {
         airportProxyNames.contains(hop1);
     final bool isHopDirect = hop1.toUpperCase() == 'DIRECT';
 
-    final String fallbackHop = (isHopSpecificProxy || isHopDirect)
+    // item 2 — the entry hop may name a **policy group** (restored capability).
+    // `airportProxyNames` only holds concrete proxies, so a group name used to
+    // fall through to the dedicated hop group and be silently replaced. Accept
+    // any name that resolves to a proxy group already present in this config.
+    final bool isHopGroup =
+        hop1.isNotEmpty &&
+        hop1.toUpperCase() != 'DIRECT' &&
+        groupList.any((g) => g is Map && g['name']?.toString() == hop1);
+
+    final String fallbackHop =
+        (isHopSpecificProxy || isHopDirect || isHopGroup)
         ? hop1
         : dedicatedHopGroupName;
 
