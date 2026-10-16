@@ -37,7 +37,9 @@ LogLevel _logLevelFromName(Object? raw) => switch (raw) {
   'info' || 'INFO' => LogLevel.info,
   'warning' || 'WARNING' => LogLevel.warning,
   'error' || 'ERROR' => LogLevel.error,
-  'silent' || 'SILENT' => LogLevel.silent,
+  // The core reports this level as `silent`; accept `none` too so a value we
+  // wrote ourselves round-trips even if the naming changes again.
+  'silent' || 'SILENT' || 'none' || 'NONE' => LogLevel.none,
   _ => LogLevel.error,
 };
 

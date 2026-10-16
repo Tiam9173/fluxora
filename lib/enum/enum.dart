@@ -90,12 +90,28 @@ enum TrayClickBehavior { showPanel, showMenu }
 
 enum ViewMode { mobile, laptop, desktop }
 
-enum LogLevel { debug, info, warning, error, silent }
+/// Log verbosity for the core.
+///
+/// [none] is the "produce no logs" setting. It is deliberately *not* a second
+/// option alongside a `silent` value: the two would carry the same wire value,
+/// which makes the enum's reverse lookup ambiguous and offers the user two
+/// identical choices. The wire value stays `silent` because that is the name the
+/// core understands.
+enum LogLevel {
+  debug,
+  info,
+  warning,
+  error,
+  /// The wire value stays `silent`: that is the name the core understands, and
+  /// emitting `none` would be rejected. `none` is only how the option reads.
+  @JsonValue('silent')
+  none,
+}
 
 extension LogLevelExt on LogLevel {
   Color? get color {
     return switch (this) {
-      LogLevel.silent => Colors.grey.shade700,
+      LogLevel.none => Colors.grey.shade700,
       LogLevel.debug => Colors.grey.shade400,
       LogLevel.info => null,
       LogLevel.warning => const Color.fromARGB(230, 255, 166, 0),
