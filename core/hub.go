@@ -44,7 +44,55 @@ var (
 	externalProviders = map[string]cp.Provider{}
 	logSubscriber     observable.Subscription[log.Event]
 	ageMutex          sync.Mutex
+
+	// item 6 — buffered log history so the UI can catch up on what happened
+	// before it started listening. Streaming and history share the same
+	// subscription: `handleStartLog` records every event into the ring buffer
+	// *and* pushes it, so there is nothing extra to keep in sync.
+	logHistoryLock sync.RWMutex
+	logHistory     []logEntry
 )
+
+/// item 6 — oldest entries are dropped once the buffer is full, so a long
+/// running session cannot grow it without bound.
+const maxLogHistory = 512
+
+type logEntry struct {
+	log.Event
+	Time int64 `json:"time"`
+}
+
+func recordLogHistory(entry logEntry) {
+	logHistoryLock.Lock()
+	defer logHistoryLock.Unlock()
+	if len(logHistory) >= maxLogHistory {
+		logHistory = logHistory[1:]
+	}
+	logHistory = append(logHistory, entry)
+}
+
+/// Serialised for the Dart side. Always returns valid JSON — an empty array on
+/// a cold buffer or a marshal failure, never an error, so a log read can never
+/// break the page that asked for it.
+func handleGetLogs() string {
+	logHistoryLock.RLock()
+	defer logHistoryLock.RUnlock()
+	if len(logHistory) == 0 {
+		return "[]"
+	}
+	data, err := json.Marshal(logHistory)
+	if err != nil {
+		return "[]"
+	}
+	return string(data)
+}
+
+func handleClearLogs() bool {
+	logHistoryLock.Lock()
+	defer logHistoryLock.Unlock()
+	logHistory = nil
+	return true
+}
 
 func handleInitClash(paramsString string) bool {
 	var params = InitParams{}
@@ -508,6 +556,7 @@ func handleStartLog() {
 			if logData.LogLevel < log.Level() {
 				continue
 			}
+			recordLogHistory(logEntry{Event: logData, Time: time.Now().UnixMilli()})
 			message := &Message{
 				Type: LogMessage,
 				Data: logData,
