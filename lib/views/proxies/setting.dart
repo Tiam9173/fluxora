@@ -1,7 +1,9 @@
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/enum/enum.dart';
+import 'package:fluxora/models/config.dart';
 import 'package:fluxora/providers/app.dart';
 import 'package:fluxora/providers/config.dart';
+import 'package:fluxora/state.dart';
 import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -295,6 +297,51 @@ class ProxiesSetting extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [..._buildGroupStyleSetting()],
             ),
+          ),
+          // One tap back to the default style. An imported backup can carry a
+          // style the user does not recognise (the minimal grid reads as a
+          // broken page), and hunting the individual switches is the wrong kind
+          // of work. Custom icons are user content, so they survive the reset.
+          Consumer(
+            builder: (context, ref, _) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: generateSection(
+                  plain: true,
+                  title: appLocalizations.reset,
+                  items: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton.icon(
+                          icon: const Icon(Icons.restart_alt_rounded, size: 18),
+                          label: Text(appLocalizations.reset),
+                          onPressed: () async {
+                            final res = await globalState.showMessage(
+                              message: TextSpan(text: appLocalizations.resetTip),
+                            );
+                            if (res != true) return;
+                            final iconMap = globalState
+                                .config
+                                .proxiesStyle
+                                .iconMap;
+                            ref
+                                .read(proxiesStyleSettingProvider.notifier)
+                                .updateState(
+                                  (state) => defaultProxiesStyle.copyWith(
+                                    iconMap: iconMap,
+                                  ),
+                                );
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
         ],
       ),

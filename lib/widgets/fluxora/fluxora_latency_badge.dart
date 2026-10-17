@@ -138,6 +138,9 @@ class FluxoraLatencyBadge extends StatelessWidget {
         style: FluxoraTypography.numericLabel.copyWith(
           color: color,
           height: dense ? 1.0 : null,
+          // Digits keep a fixed width so a badge does not jitter as the value
+          // changes between "9 ms" and "10 ms" during a delay test.
+          fontFeatures: const [FontFeature.tabularFigures()],
         ),
       ),
     );

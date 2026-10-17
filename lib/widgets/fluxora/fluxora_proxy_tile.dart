@@ -121,6 +121,9 @@ class FluxoraProxyTile extends StatelessWidget {
 
     final nameStyle = (compact ? FluxoraTypography.body : FluxoraTypography.title)
         .copyWith(
+          // A touch heavier than body weight: node names are the primary label
+          // and sit next to dense status text, so the hierarchy needs the help.
+          fontWeight: FontWeight.w600,
           color: selected ? colorScheme.primary : colorScheme.onSurface,
         );
 
@@ -138,6 +141,20 @@ class FluxoraProxyTile extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          // Selected marker: a short accent tick on the leading edge. Fixed
+          // height on purpose — the tile's height is fixed by the list's
+          // itemExtent, so the marker must not grow the row.
+          if (selected) ...[
+            Container(
+              width: 3,
+              height: 20,
+              decoration: BoxDecoration(
+                color: colorScheme.primary,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: FluxoraSpacing.sm),
+          ],
           if (leading != null) ...[
             leading!,
             const SizedBox(width: FluxoraSpacing.md),
