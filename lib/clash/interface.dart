@@ -108,6 +108,16 @@ mixin AndroidClashInterface {
   Future<DateTime?> getRunTime();
 }
 
+/// item 6 ⑤ — same contract as [clashCoreForget], for discarded action
+/// invocations: log-and-swallow instead of leaking an uncaught async error
+/// when the core is not ready to answer.
+void clashInvokeAndForget(FutureOr<Object?> result, String name) {
+  Future.value(result).then<void>(
+    (_) {},
+    onError: (Object e) => commonPrint.log('$name ignored: $e'),
+  );
+}
+
 abstract class ClashHandlerInterface with ClashInterface {
   Map<String, Completer> callbackCompleterMap = {};
 
@@ -377,17 +387,23 @@ abstract class ClashHandlerInterface with ClashInterface {
 
   @override
   resetTraffic() {
-    invoke(method: ActionMethod.resetTraffic);
+    clashInvokeAndForget(
+      invoke(method: ActionMethod.resetTraffic),
+      'resetTraffic',
+    );
   }
 
   @override
   startLog() {
-    invoke(method: ActionMethod.startLog);
+    clashInvokeAndForget(invoke(method: ActionMethod.startLog), 'startLog');
   }
 
   @override
   stopLog() {
-    invoke<bool>(method: ActionMethod.stopLog);
+    clashInvokeAndForget(
+      invoke<bool>(method: ActionMethod.stopLog),
+      'stopLog',
+    );
   }
 
   @override

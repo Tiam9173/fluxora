@@ -43,6 +43,22 @@ LogLevel _logLevelFromName(Object? raw) => switch (raw) {
   _ => LogLevel.error,
 };
 
+/// item 6 ⑤ — fire-and-forget wrapper for core calls whose result nobody
+/// awaits (ported from upstream v1.19.4 "Improve core stability").
+///
+/// The core answers FFI calls with a rejected future when it is stopped, torn
+/// down, or not up yet — which is exactly when the UI fires these ("clear
+/// logs" right after stopping the VPN, a connection closing during a core
+/// restart). An un-awaited rejection surfaces as an uncaught async error, so
+/// the failure is logged and swallowed here instead: the caller asked for a
+/// best-effort action, not a result.
+void clashCoreForget(FutureOr<Object?> request, String name) {
+  Future.value(request).then<void>(
+    (_) {},
+    onError: (Object e) => commonPrint.log('$name ignored: $e'),
+  );
+}
+
 class ClashCore {
   static ClashCore? _instance;
   late ClashHandlerInterface clashInterface;
@@ -213,7 +229,7 @@ class ClashCore {
   }
 
   void closeConnection(String id) {
-    clashInterface.closeConnection(id);
+    clashCoreForget(clashInterface.closeConnection(id), 'closeConnection');
   }
 
   Future<void> closeConnections() async {
@@ -221,7 +237,7 @@ class ClashCore {
   }
 
   void resetConnections() {
-    clashInterface.resetConnections();
+    clashCoreForget(clashInterface.resetConnections(), 'resetConnections');
   }
 
   Future<List<ExternalProvider>> getExternalProviders() async {
@@ -412,7 +428,7 @@ class ClashCore {
   }
 
   void clearLogs() {
-    clashInterface.clearLogs();
+    clashCoreForget(clashInterface.clearLogs(), 'clearLogs');
   }
 
   Future<void> requestGc({bool forceFreeOSMemory = false}) async {

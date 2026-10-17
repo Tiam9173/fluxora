@@ -2,6 +2,7 @@ export 'android.dart';
 export 'app_localizations.dart';
 export 'backup_crypto.dart';
 export 'color.dart';
+export 'process_icon.dart';
 export 'constant.dart';
 export 'context.dart';
 export 'converter.dart';
