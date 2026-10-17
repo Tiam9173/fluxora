@@ -778,6 +778,19 @@ class MessageLookup extends MessageLookupByLibrary {
       "FCM зависит от устройства. Для точных результатов отключите \'Разрешить обход VPN\'",
     ),
     "fidelityScheme": MessageLookupByLibrary.simpleMessage("Высокая точность"),
+    "fieldAbuse": MessageLookupByLibrary.simpleMessage(
+      "Жалобы на злоупотребление",
+    ),
+    "fieldAsn": MessageLookupByLibrary.simpleMessage("ASN"),
+    "fieldBlocklists": MessageLookupByLibrary.simpleMessage("Чёрные списки"),
+    "fieldMarkers": MessageLookupByLibrary.simpleMessage("Маркеры риска"),
+    "fieldNativeType": MessageLookupByLibrary.simpleMessage("Нативный IP"),
+    "fieldScenarios": MessageLookupByLibrary.simpleMessage(
+      "Оценки по сценариям",
+    ),
+    "fieldScore": MessageLookupByLibrary.simpleMessage("Оценка чистоты"),
+    "fieldUnknownNotes": MessageLookupByLibrary.simpleMessage("Неизвестности"),
+    "fieldUsageType": MessageLookupByLibrary.simpleMessage("Тип использования"),
     "file": MessageLookupByLibrary.simpleMessage("Файл"),
     "fileDesc": MessageLookupByLibrary.simpleMessage(
       "Загрузить файл конфигурации",
@@ -957,12 +970,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "ipRiskFailed": MessageLookupByLibrary.simpleMessage(
       "Не удалось выполнить запрос",
     ),
+    "ipRiskFieldsTitle": MessageLookupByLibrary.simpleMessage(
+      "Настройка полей",
+    ),
     "ipRiskHosting": MessageLookupByLibrary.simpleMessage("Хостинг/ЦОД"),
     "ipRiskIntel": MessageLookupByLibrary.simpleMessage("IP-репутация"),
     "ipRiskLimits": MessageLookupByLibrary.simpleMessage(
       "Что эти данные не показывают",
     ),
     "ipRiskMobile": MessageLookupByLibrary.simpleMessage("Мобильная сеть"),
+    "ipRiskNativeType": MessageLookupByLibrary.simpleMessage("Нативный IP"),
     "ipRiskNotFlagged": MessageLookupByLibrary.simpleMessage("Не обнаружено"),
     "ipRiskOpenReport": MessageLookupByLibrary.simpleMessage(
       "Открыть полный отчёт",
@@ -985,6 +1002,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "Устаревшие данные (не в реальном времени)",
     ),
     "ipRiskTor": MessageLookupByLibrary.simpleMessage("Tor"),
+    "ipRiskUnknownNotes": MessageLookupByLibrary.simpleMessage(
+      "Неопределённые ограничения",
+    ),
     "ipRiskVerdict": MessageLookupByLibrary.simpleMessage("Оценка источника"),
     "ipRiskVpn": MessageLookupByLibrary.simpleMessage("VPN"),
     "ipcidr": MessageLookupByLibrary.simpleMessage("IP/CIDR"),

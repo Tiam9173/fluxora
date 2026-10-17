@@ -748,6 +748,15 @@ class MessageLookup extends MessageLookupByLibrary {
       "اتصال FCM به دستگاه شما بستگی دارد. برای نتایج دقیق‌تر، گزینه \'میانبر زدن VPN\' را غیرفعال کنید",
     ),
     "fidelityScheme": MessageLookupByLibrary.simpleMessage("فیدلیتی"),
+    "fieldAbuse": MessageLookupByLibrary.simpleMessage("گزارش‌های سوءاستفاده"),
+    "fieldAsn": MessageLookupByLibrary.simpleMessage("ASN"),
+    "fieldBlocklists": MessageLookupByLibrary.simpleMessage("لیست‌های سیاه"),
+    "fieldMarkers": MessageLookupByLibrary.simpleMessage("نشانه‌های خطر"),
+    "fieldNativeType": MessageLookupByLibrary.simpleMessage("IP بومی"),
+    "fieldScenarios": MessageLookupByLibrary.simpleMessage("امتیاز سناریوها"),
+    "fieldScore": MessageLookupByLibrary.simpleMessage("امتیاز خلوص"),
+    "fieldUnknownNotes": MessageLookupByLibrary.simpleMessage("ناشناخته‌ها"),
+    "fieldUsageType": MessageLookupByLibrary.simpleMessage("نوع کاربری"),
     "file": MessageLookupByLibrary.simpleMessage("فایل"),
     "fileDesc": MessageLookupByLibrary.simpleMessage(
       "آپلود فایل پروفایل از حافظه",
@@ -921,12 +930,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "ipRiskEnable": MessageLookupByLibrary.simpleMessage("فعال‌سازی استعلام"),
     "ipRiskFactors": MessageLookupByLibrary.simpleMessage("عوامل امتیاز"),
     "ipRiskFailed": MessageLookupByLibrary.simpleMessage("استعلام ناموفق بود"),
+    "ipRiskFieldsTitle": MessageLookupByLibrary.simpleMessage(
+      "سفارشی‌سازی فیلدها",
+    ),
     "ipRiskHosting": MessageLookupByLibrary.simpleMessage("میزبانی/دیتاسنتر"),
     "ipRiskIntel": MessageLookupByLibrary.simpleMessage("اطلاعات ریسک IP"),
     "ipRiskLimits": MessageLookupByLibrary.simpleMessage(
       "آنچه این داده نمی‌تواند بگوید",
     ),
     "ipRiskMobile": MessageLookupByLibrary.simpleMessage("شبکه موبایل"),
+    "ipRiskNativeType": MessageLookupByLibrary.simpleMessage("IP بومی"),
     "ipRiskNotFlagged": MessageLookupByLibrary.simpleMessage("یافت نشد"),
     "ipRiskOpenReport": MessageLookupByLibrary.simpleMessage(
       "باز کردن گزارش کامل",
@@ -945,6 +958,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "داده قدیمی (غیر واقعی)",
     ),
     "ipRiskTor": MessageLookupByLibrary.simpleMessage("Tor"),
+    "ipRiskUnknownNotes": MessageLookupByLibrary.simpleMessage(
+      "محدودیت‌های ناشناخته",
+    ),
     "ipRiskVerdict": MessageLookupByLibrary.simpleMessage("ارزیابی"),
     "ipRiskVpn": MessageLookupByLibrary.simpleMessage("VPN"),
     "ipcidr": MessageLookupByLibrary.simpleMessage("IP / ماسک"),

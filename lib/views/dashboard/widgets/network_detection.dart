@@ -700,6 +700,74 @@ class _IpRiskScoreCard extends StatelessWidget {
   }
 }
 
+/// item 6 — pick which IP-reputation rows the detail view shows.
+///
+/// A flat checkbox list rather than the shared `OptionsDialog`, which is
+/// single-select and would need a different return contract. Saving an empty
+/// selection is allowed: it means "show nothing".
+class _IpRiskFieldsDialog extends StatefulWidget {
+  const _IpRiskFieldsDialog({required this.selected});
+
+  final Set<String> selected;
+
+  @override
+  State<_IpRiskFieldsDialog> createState() => _IpRiskFieldsDialogState();
+}
+
+class _IpRiskFieldsDialogState extends State<_IpRiskFieldsDialog> {
+  late final Set<String> _selected = Set<String>.of(widget.selected);
+
+  static String _label(String id) => switch (id) {
+    IpReputationFieldIds.markers => appLocalizations.fieldMarkers,
+    IpReputationFieldIds.score => appLocalizations.fieldScore,
+    IpReputationFieldIds.scenarios => appLocalizations.fieldScenarios,
+    IpReputationFieldIds.nativeType => appLocalizations.fieldNativeType,
+    IpReputationFieldIds.usageType => appLocalizations.fieldUsageType,
+    IpReputationFieldIds.asn => appLocalizations.fieldAsn,
+    IpReputationFieldIds.abuse => appLocalizations.fieldAbuse,
+    IpReputationFieldIds.blocklists => appLocalizations.fieldBlocklists,
+    IpReputationFieldIds.unknownNotes => appLocalizations.fieldUnknownNotes,
+    _ => id,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    return CommonDialog(
+      title: appLocalizations.ipRiskFieldsTitle,
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(appLocalizations.cancel),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(_selected),
+          child: Text(appLocalizations.save),
+        ),
+      ],
+      child: Column(
+        children: [
+          for (final id in IpReputationFieldIds.all)
+            CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              value: _selected.contains(id),
+              title: Text(_label(id)),
+              onChanged: (value) {
+                setState(() {
+                  if (value == true) {
+                    _selected.add(id);
+                  } else {
+                    _selected.remove(id);
+                  }
+                });
+              },
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 class _IpRiskSection extends ConsumerStatefulWidget {
   const _IpRiskSection({required this.ip});
 
@@ -743,6 +811,21 @@ class _IpRiskSectionState extends ConsumerState<_IpRiskSection> {
       // Turning it off drops the result rather than leaving it on screen.
       setState(() => _report = null);
     }
+  }
+
+  /// item 6 — open the field picker. An empty result is a valid answer ("show
+  /// nothing"), so it is saved as-is rather than treated as a cancel.
+  Future<void> _pickFields() async {
+    final current = resolveIpReputationFields(
+      ref.read(appSettingProvider).ipReputationFields,
+    );
+    final next = await globalState.showCommonDialog<Set<String>>(
+      child: _IpRiskFieldsDialog(selected: current),
+    );
+    if (next == null) return;
+    ref.read(appSettingProvider.notifier).updateState(
+      (state) => state.copyWith(ipReputationFields: next),
+    );
   }
 
   String _markerLabel(IpRiskMarker marker) => switch (marker.id) {
@@ -824,6 +907,15 @@ class _IpRiskSectionState extends ConsumerState<_IpRiskSection> {
           title: Text(appLocalizations.ipRiskEnable),
           value: enabled,
           onChanged: _setLoadingGuard(_setEnabled),
+          // Only meaningful once the section is on — there is nothing to
+          // customise while no lookup happens.
+          secondary: enabled
+              ? IconButton(
+                  onPressed: _pickFields,
+                  tooltip: appLocalizations.ipRiskFieldsTitle,
+                  icon: const Icon(Icons.tune),
+                )
+              : null,
         ),
         if (enabled) ...[
           if (_loading)
@@ -898,14 +990,29 @@ class _IpRiskSectionState extends ConsumerState<_IpRiskSection> {
                   ],
                 ),
               ),
-            if (report.asn != null || report.asnOrg != null)
+            if (fields.contains(IpReputationFieldIds.asn) &&
+                (report.asn != null || report.asnOrg != null))
               _kv(
                 'ASN',
                 [report.asn, report.asnOrg].whereType<String>().join(' · '),
               ),
-            if (report.usageType != null)
+            if (fields.contains(IpReputationFieldIds.usageType) && report.usageType != null)
               _kv(appLocalizations.ipRiskHosting, report.usageType!),
-            if (report.abuseScore != null)
+            if (fields.contains(IpReputationFieldIds.nativeType) && report.nativeType != null)
+              _kv(appLocalizations.ipRiskNativeType, report.nativeType!),
+            if (fields.contains(IpReputationFieldIds.blocklists) &&
+                report.blocklistsHit.isNotEmpty)
+              _kv(
+                appLocalizations.ipRiskBlocklists,
+                report.blocklistsHit.join(' · '),
+              ),
+            if (fields.contains(IpReputationFieldIds.unknownNotes) &&
+                report.unknownNotes.isNotEmpty)
+              _kv(
+                appLocalizations.ipRiskUnknownNotes,
+                report.unknownNotes.join('\n'),
+              ),
+            if (fields.contains(IpReputationFieldIds.abuse) && report.abuseScore != null)
               _kv(
                 appLocalizations.ipRiskAbuse,
                 '${report.abuseScore}'
