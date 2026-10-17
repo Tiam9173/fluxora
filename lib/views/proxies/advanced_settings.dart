@@ -1,7 +1,7 @@
 import 'package:fluxora/common/common.dart';
-import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
+import 'package:fluxora/views/proxies/delay_animation_preview.dart';
 import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -272,21 +272,6 @@ class _SyncDelayAnimationItem extends ConsumerWidget {
 class _DelayAnimationItem extends ConsumerWidget {
   const _DelayAnimationItem();
 
-  String _getTextForDelayAnimation(DelayAnimationType type) {
-    return switch (type) {
-      DelayAnimationType.none => appLocalizations.noAnimation,
-      DelayAnimationType.rotatingCircle => appLocalizations.rotatingCircle,
-      DelayAnimationType.pulse => appLocalizations.pulse,
-      DelayAnimationType.spinningLines => appLocalizations.spinningLines,
-      DelayAnimationType.threeInOut => appLocalizations.threeInOut,
-      DelayAnimationType.threeBounce => appLocalizations.threeBounce,
-      DelayAnimationType.circle => appLocalizations.circle,
-      DelayAnimationType.fadingCircle => appLocalizations.fadingCircle,
-      DelayAnimationType.fadingFour => appLocalizations.fadingFour,
-      DelayAnimationType.wave => appLocalizations.wave,
-      DelayAnimationType.doubleBounce => appLocalizations.doubleBounce,
-    };
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -294,22 +279,48 @@ class _DelayAnimationItem extends ConsumerWidget {
       proxiesStyleSettingProvider.select((state) => state.delayAnimation),
     );
 
-    return ListItem<DelayAnimationType>.options(
+    return ListItem(
       leading: const Icon(Icons.animation),
       title: Text(appLocalizations.delayAnimation),
       subtitle: Text(appLocalizations.delayAnimationDesc),
-      delegate: OptionsDelegate(
-        title: appLocalizations.delayAnimation,
-        options: DelayAnimationType.values,
-        value: delayAnimation,
-        textBuilder: (value) => _getTextForDelayAnimation(value),
-        onChanged: (value) {
-          if (value != null) {
-            ref.read(proxiesStyleSettingProvider.notifier).updateState(
-                  (state) => state.copyWith(delayAnimation: value),
-                );
-          }
-        },
+      // Opens the live preview instead of a text-only option list: the whole
+      // point of an animation is what it looks like while a test runs.
+      onTap: () => showDelayAnimationPreview(context),
+      trailing: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 130),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 22,
+              height: 22,
+              child: Center(
+                child: DelayAnimation(
+                  type: delayAnimation,
+                  size: 18,
+                  color: context.colorScheme.primary,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                delayAnimationName(delayAnimation),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: context.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 18,
+              color: context.colorScheme.onSurfaceVariant,
+            ),
+          ],
+        ),
       ),
     );
   }
