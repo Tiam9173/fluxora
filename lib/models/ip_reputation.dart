@@ -27,6 +27,48 @@ enum IpRiskMarkerState {
 
 /// One independent marker (E-4 list). `id` is a stable, non-localised key so
 /// the UI owns the translation.
+/// item 6 — every IP-reputation row the detail view can show, in display order.
+///
+/// The ids are stable and non-localised for the same reason marker ids are: the
+/// UI owns the translation. A user's saved selection is intersected with this
+/// list, so an id that is later removed stops rendering instead of lurking in
+/// somebody's config forever.
+class IpReputationFieldIds {
+  static const markers = 'markers';
+  static const score = 'score';
+  static const scenarios = 'scenarios';
+  static const nativeType = 'nativeType';
+  static const usageType = 'usageType';
+  static const asn = 'asn';
+  static const abuse = 'abuse';
+  static const blocklists = 'blocklists';
+  static const unknownNotes = 'unknownNotes';
+
+  /// Display order. Doubles as the "everything" set.
+  static const all = <String>[
+    markers,
+    score,
+    scenarios,
+    nativeType,
+    usageType,
+    asn,
+    abuse,
+    blocklists,
+    unknownNotes,
+  ];
+
+  const IpReputationFieldIds._();
+}
+
+/// Resolve a saved selection against [IpReputationFieldIds.all].
+///
+/// An empty selection means the user has not customised anything yet, so every
+/// field is shown — that is what keeps the setting invisible until it is used.
+Set<String> resolveIpReputationFields(Set<String>? saved) {
+  if (saved == null || saved.isEmpty) return IpReputationFieldIds.all.toSet();
+  return IpReputationFieldIds.all.where(saved.contains).toSet();
+}
+
 class IpRiskMarker {
   final String id;
   final IpRiskMarkerState state;

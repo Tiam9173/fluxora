@@ -531,10 +531,15 @@ class _NetworkDetectionUrlDialog extends ConsumerWidget {
 /// .factors] travels with the number, and the whole card is labelled as the
 /// source's judgement rather than ours.
 class _IpRiskScoreCard extends StatelessWidget {
-  const _IpRiskScoreCard({required this.risk, this.scenarios = const []});
+  const _IpRiskScoreCard({
+    required this.risk,
+    this.scenarios = const [],
+    this.showScenarios = true,
+  });
 
   final IpRiskScore risk;
   final List<IpScenarioScore> scenarios;
+  final bool showScenarios;
 
   /// Localised label for a scenario id. Unknown ids are dropped upstream, so
   /// the fallback is unreachable in practice — it exists so a new source-side id
@@ -607,7 +612,7 @@ class _IpRiskScoreCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                if (scenarios.isNotEmpty) ...[
+                if (showScenarios && scenarios.isNotEmpty) ...[
                   Padding(
                     padding: const EdgeInsets.only(top: 6),
                     child: Text(
@@ -794,6 +799,11 @@ class _IpRiskSectionState extends ConsumerState<_IpRiskSection> {
 
   @override
   Widget build(BuildContext context) {
+    // item 6 - which rows the user wants. Empty means "not customised",
+    // which resolves to every field.
+    final fields = resolveIpReputationFields(
+      ref.watch(appSettingProvider.select((s) => s.ipReputationFields)),
+    );
     final enabled = ref.watch(
       appSettingProvider.select((s) => s.ipReputationEnabled),
     );
@@ -842,14 +852,23 @@ class _IpRiskSectionState extends ConsumerState<_IpRiskSection> {
             )
           else ...[
             if (report.risk case final risk? when risk.hasScore)
-              _IpRiskScoreCard(risk: risk, scenarios: report.scenarios),
+              if (fields.contains(IpReputationFieldIds.score) ||
+                  fields.contains(IpReputationFieldIds.scenarios))
+                _IpRiskScoreCard(
+                  risk: risk,
+                  scenarios: report.scenarios,
+                  showScenarios: fields.contains(
+                    IpReputationFieldIds.scenarios,
+                  ),
+                ),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Wrap(
                 spacing: 8,
                 runSpacing: 4,
                 children: [
-                  for (final marker in report.markers) _markerChip(marker),
+                  if (fields.contains(IpReputationFieldIds.markers))
+                    for (final marker in report.markers) _markerChip(marker),
                 ],
               ),
             ),
