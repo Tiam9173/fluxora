@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
 import 'dart:isolate';
@@ -256,12 +257,53 @@ Future<void> _service(List<String> flags) async {
         }
 
         clashLibHandler.startListener();
+
+        // item 6 — the speed notification is driven from the *service*
+        // isolate, the way FlClash does it: the UI isolate is paused once
+        // Android backgrounds the app, which is exactly when the notification
+        // matters. This isolate owns the core (`clashLibHandler`), so the tick
+        // costs one direct FFI call and no IPC round-trip.
+        _startNotificationSpeedLoop(clashLibHandler);
       } catch (e) {
         commonPrint.log('Fatal error during service background start: $e');
         await vpn?.stop();
       }
     });
   }
+}
+
+Timer? _notificationSpeedTimer;
+int _notificationSpeedSeq = 0;
+
+/// Replaces the notification text with live up/down speeds every second.
+///
+/// Started only on the service start paths; the service process dies with the
+/// VPN, so the timer needs no explicit teardown. Each tick re-reads the
+/// setting, so toggling the switch takes effect without a restart.
+void _startNotificationSpeedLoop(ClashLibHandler clashLibHandler) {
+  _notificationSpeedTimer?.cancel();
+  _notificationSpeedTimer = Timer.periodic(const Duration(seconds: 1), (
+    _,
+  ) async {
+    if (!globalState.config.vpnProps.networkSpeedNotification) return;
+    try {
+      final raw = await clashLibHandler.invokeAction(
+        '{"id": "serviceSpeed${_notificationSpeedSeq++}", "method": "getTraffic"}',
+      );
+      if (raw.isEmpty) return;
+      final traffic = Traffic.fromMap(json.decode(raw));
+      var profileName = 'Fluxora';
+      for (final profile in globalState.config.profiles) {
+        if (profile.id == globalState.config.currentProfileId) {
+          profileName = profile.label ?? profileName;
+          break;
+        }
+      }
+      await vpn?.updateNotificationSpeed(profileName, traffic.toSpeedText());
+    } catch (e) {
+      commonPrint.log('Service speed notification update failed: $e');
+    }
+  });
 }
 
 void _handleMainIpc(ClashLibHandler clashLibHandler) {

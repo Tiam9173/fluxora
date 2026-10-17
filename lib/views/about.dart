@@ -49,6 +49,14 @@ class AboutView extends StatelessWidget {
                 globalState.openUrl('https://github.com/MetaCubeX/mihomo'),
           ),
         ),
+        _LinkGridRow(
+          left: _LinkGridTile(
+            title: 'Bettbox',
+            icon: Icons.launch,
+            onTap: () =>
+                globalState.openUrl('https://github.com/appshubcc/Bettbox'),
+          ),
+        ),
       ],
     );
   }
