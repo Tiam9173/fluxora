@@ -66,7 +66,19 @@ Fluxora 是一个独立产品，与任何上游项目没有官方关联。它的
 ### 节点
 - 代理组：选择 / 自动测速 / 故障转移 / 负载均衡
 - 延迟检测与节点切换
-- 链式代理（前置 / 落地中继）
+
+### 链式代理
+- 前置跳板 + 落地静态住宅 IP 双跳中继，流量按「前置 → 落地」顺序转发
+- 为链式代理生成独立策略组卡片（🔗 链式代理），与普通代理组并列管理
+- 逐跳节点选择与状态（前置 / 落地），支持逐跳延迟探测与诊断
+- 路由拓扑预览：直观查看两跳的连通性与延迟分布
+- 可按订阅单独启用；支持故障转移与自动回退
+
+### Cloudflare WARP
+- 内置 WARP 出口，生成独立的「🛡️ WARP 出口」策略组，可与任意代理组组合使用
+- 一键注册 Cloudflare 账号，支持绑定 WARP+ license key
+- 可自定义端点 / 端口、优选 IP（clean IP）、MTU、UDP 开关与远程 DNS 解析
+- 路由模式可选，并支持指定上游拨号器（default dialer proxy）
 
 ### 配置
 - 多配置文件管理（本地文件 / 订阅链接）
@@ -102,9 +114,19 @@ Fluxora 是一个独立产品，与任何上游项目没有官方关联。它的
 
 ## 下载
 
-正式版本即将发布。发布后安装包统一放在 **[GitHub Releases](https://github.com/Tiam9173/fluxora/releases)**，命名格式为 `Fluxora-<version>-<platform>`。
+安装包统一发布在 **[GitHub Releases](https://github.com/Tiam9173/fluxora/releases)**，命名格式为 `Fluxora-<version>-<platform>`。
 
-当前仓库**尚无任何正式 Release**，因此下方没有可直接点击的安装包链接——请在发布后再回到 Releases 页面获取。
+当前 **v1.1.0 系列处于预发布（RC）阶段**，正式版尚未发布。RC 版本用于功能验证与反馈收集，不建议用于生产环境。
+
+| 平台 | 提供格式 | 架构 |
+|---|---|---|
+| Windows 10 / 11 | `setup.exe` 安装包 · `portable.zip` 便携版 | amd64 · amd64-compatible · arm64 |
+| macOS 12+ | `.dmg` | arm64 · amd64 · amd64-compatible |
+| Linux | `.AppImage` · `.deb` · `.rpm` | amd64 · amd64-compatible（三种格式）· arm64（deb） |
+| Android 8.0+ | `.apk` | arm64-v8a · armeabi-v7a · x86_64 · universal |
+| iOS | 暂无官方客户端 | — |
+
+> `-compatible` 变体面向较旧的 CPU 与系统环境（如缺少新指令集的老设备），一般设备优先选择常规版本。
 
 ## 安装
 
