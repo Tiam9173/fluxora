@@ -319,13 +319,19 @@ class ScriptState extends _$ScriptState with AutoDisposeNotifierMixin {
     state = state.copyWith(currentId: state.currentId != id ? id : null);
   }
 
-  void del(String id) {
+  Future<void> del(String label) async {
     final list = List<Script>.from(state.scripts);
-    final index = list.indexWhere((item) => item.label == id);
+    final index = list.indexWhere((item) => item.label == label);
     if (index != -1) {
-      list.removeAt(index);
+      final removed = list.removeAt(index);
+      // P1 ② — the side file outlives the list entry unless removed here.
+      try {
+        await removed.deleteContent();
+      } catch (e) {
+        commonPrint.log('Failed to delete script file: $e');
+      }
     }
-    final nextId = id == state.currentId ? null : state.currentId;
+    final nextId = label == state.currentId ? null : state.currentId;
     state = state.copyWith(scripts: list, currentId: nextId);
   }
 
@@ -349,11 +355,11 @@ class ScriptState extends _$ScriptState with AutoDisposeNotifierMixin {
     final url = script.url;
     if (url == null || url.isEmpty) return;
     final res = await request.getTextResponseForUrl(url);
-    if (script.content != res.data) {
-      JavaScriptRuntimeManager.invalidateCachedOptions(script.content);
+    final oldContent = await script.readContent();
+    if (oldContent != res.data) {
+      JavaScriptRuntimeManager.invalidateCachedOptions(oldContent);
     }
-    final updated = script.copyWith(content: res.data);
-    setScript(updated);
+    setScript(await script.writeContent(res.data));
   }
 }
 

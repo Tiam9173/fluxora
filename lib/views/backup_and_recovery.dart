@@ -26,10 +26,20 @@ class BackupAndRecovery extends ConsumerWidget {
   }
 
   Future<void> _backupOnWebDAV(DAVClient client) async {
+    // P1 ② — ask before generating the payload: an encrypted backup cannot be
+    // un-encrypted without the password, so the choice belongs up front.
+    final choice = await globalState
+        .showCommonDialog<({bool encrypt, String password})>(
+          child: const BackupEncryptDialog(),
+        );
+    if (choice == null) return;
     final res = await globalState.appController.safeRun<bool>(
       () async {
         final backupData = await globalState.appController.backupData();
-        return await client.backup(Uint8List.fromList(backupData));
+        return await client.backup(
+          Uint8List.fromList(backupData),
+          password: choice.encrypt ? choice.password : null,
+        );
       },
       needLoading: true,
       title: appLocalizations.backup,
@@ -45,13 +55,23 @@ class BackupAndRecovery extends ConsumerWidget {
   Future<void> _recoveryOnWebDAV(
     BuildContext context,
     DAVClient client,
-    String targetFileName,
+    BackupEntry entry,
     RecoveryOption recoveryOption,
   ) async {
+    String? password;
+    if (entry.isEncrypted) {
+      password = await globalState.showCommonDialog<String>(
+        child: const BackupPasswordDialog(),
+      );
+      if (password == null || password.isEmpty || !context.mounted) return;
+    }
     final res = await globalState.appController.safeRun<bool>(
       () async {
-        final data = await client.recovery(targetFileName);
-        await globalState.appController.recoveryData(data, recoveryOption);
+        final data = await client.recovery(entry.name);
+        final plaintext = entry.isEncrypted
+            ? await _decryptBackup(data, password!)
+            : data;
+        await globalState.appController.recoveryData(plaintext, recoveryOption);
         return true;
       },
       needLoading: true,
@@ -63,6 +83,16 @@ class BackupAndRecovery extends ConsumerWidget {
       message: TextSpan(text: appLocalizations.recoverySuccess),
       cancelable: false,
     );
+  }
+
+  /// P1 ② — a wrong password and a tampered file fail the same way in GCM, so
+  /// they share one message: the user cannot tell them apart either.
+  Future<List<int>> _decryptBackup(List<int> data, String password) async {
+    try {
+      return await BackupCrypto.decrypt(Uint8List.fromList(data), password);
+    } on Object catch (_) {
+      throw appLocalizations.wrongBackupPassword;
+    }
   }
 
   Future<void> _handleRecoveryOnWebDAV(
@@ -93,7 +123,7 @@ class BackupAndRecovery extends ConsumerWidget {
     );
     if (recoveryOption == null || !context.mounted) return;
 
-    _recoveryOnWebDAV(context, client, selected.name, recoveryOption);
+    _recoveryOnWebDAV(context, client, selected, recoveryOption);
   }
 
   Future<void> _backupOnLocal(BuildContext context) async {
@@ -390,7 +420,27 @@ class _BackupVersionsDialogState extends State<BackupVersionsDialog> {
                     : appLocalizations.legacyBackup;
 
                 return ListItem<BackupEntry>.radio(
-                  title: Text(entry.name),
+                  title: Row(
+                    children: [
+                      // P1 ② — an encrypted backup needs its password at
+                      // restore time; mark it before the user picks it.
+                      if (entry.isEncrypted) ...[
+                        Icon(
+                          Icons.lock_outline,
+                          size: 14,
+                          color: context.colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 4),
+                      ],
+                      Expanded(
+                        child: Text(
+                          entry.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                   subtitle: Text(subtitle),
                   delegate: RadioDelegate<BackupEntry>(
                     value: entry,
@@ -572,6 +622,187 @@ class _WebDAVFormDialogState extends ConsumerState<WebDAVFormDialog> {
               },
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// P1 ② — opt into encrypting the remote backup.
+///
+/// Returns `(encrypt: false, password: '')` when the switch stays off, so a
+/// cancelled dialog (null) stays distinguishable from "no encryption".
+class BackupEncryptDialog extends StatefulWidget {
+  const BackupEncryptDialog({super.key});
+
+  @override
+  State<BackupEncryptDialog> createState() => _BackupEncryptDialogState();
+}
+
+class _BackupEncryptDialogState extends State<BackupEncryptDialog> {
+  final _passwordController = TextEditingController();
+  final _confirmController = TextEditingController();
+  final _obscure = ValueNotifier<bool>(true);
+  final _formKey = GlobalKey<FormState>();
+  bool _encrypt = false;
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    _confirmController.dispose();
+    _obscure.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (!_encrypt) {
+      Navigator.of(context).pop((encrypt: false, password: ''));
+      return;
+    }
+    if (_formKey.currentState?.validate() != true) return;
+    Navigator.of(
+      context,
+    ).pop((encrypt: true, password: _passwordController.text));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CommonDialog(
+      title: appLocalizations.backup,
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(appLocalizations.cancel),
+        ),
+        TextButton(onPressed: _submit, child: Text(appLocalizations.confirm)),
+      ],
+      child: Form(
+        key: _formKey,
+        child: Wrap(
+          runSpacing: 16,
+          children: [
+            ListItem.switchItem(
+              leading: const Icon(Icons.lock_outline),
+              title: Text(appLocalizations.encryptBackup),
+              subtitle: Text(appLocalizations.encryptBackupDesc),
+              delegate: SwitchDelegate(
+                value: _encrypt,
+                onChanged: (value) => setState(() => _encrypt = value),
+              ),
+            ),
+            if (_encrypt) ...[
+              ValueListenableBuilder(
+                valueListenable: _obscure,
+                builder: (_, obscure, _) => TextFormField(
+                  controller: _passwordController,
+                  obscureText: obscure,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.password),
+                    border: const OutlineInputBorder(),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        obscure ? Icons.visibility : Icons.visibility_off,
+                      ),
+                      onPressed: () => _obscure.value = !obscure,
+                    ),
+                    labelText: appLocalizations.backupPassword,
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return appLocalizations.emptyTip(
+                        appLocalizations.password,
+                      );
+                    }
+                    return null;
+                  },
+                ),
+              ),
+              TextFormField(
+                controller: _confirmController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.password),
+                  border: const OutlineInputBorder(),
+                  labelText: appLocalizations.confirmPassword,
+                ),
+                validator: (value) {
+                  if (value != _passwordController.text) {
+                    return appLocalizations.passwordMismatch;
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// P1 ② — password prompt when restoring an encrypted backup. The password is
+/// deliberately not persisted; it lives for this one operation.
+class BackupPasswordDialog extends StatefulWidget {
+  const BackupPasswordDialog({super.key});
+
+  @override
+  State<BackupPasswordDialog> createState() => _BackupPasswordDialogState();
+}
+
+class _BackupPasswordDialogState extends State<BackupPasswordDialog> {
+  final _passwordController = TextEditingController();
+  final _obscure = ValueNotifier<bool>(true);
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    _obscure.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (_formKey.currentState?.validate() != true) return;
+    Navigator.of(context).pop(_passwordController.text);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CommonDialog(
+      title: appLocalizations.recovery,
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(appLocalizations.cancel),
+        ),
+        TextButton(onPressed: _submit, child: Text(appLocalizations.confirm)),
+      ],
+      child: Form(
+        key: _formKey,
+        child: ValueListenableBuilder(
+          valueListenable: _obscure,
+          builder: (_, obscure, _) => TextFormField(
+            controller: _passwordController,
+            obscureText: obscure,
+            autofocus: true,
+            onFieldSubmitted: (_) => _submit(),
+            decoration: InputDecoration(
+              prefixIcon: const Icon(Icons.lock_outline),
+              border: const OutlineInputBorder(),
+              suffixIcon: IconButton(
+                icon: Icon(obscure ? Icons.visibility : Icons.visibility_off),
+                onPressed: () => _obscure.value = !obscure,
+              ),
+              labelText: appLocalizations.backupPassword,
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return appLocalizations.emptyTip(appLocalizations.password);
+              }
+              return null;
+            },
+          ),
         ),
       ),
     );

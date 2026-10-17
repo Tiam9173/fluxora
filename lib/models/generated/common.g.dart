@@ -254,11 +254,14 @@ Map<String, dynamic> _$TextPainterParamsToJson(_TextPainterParams instance) =>
 _Script _$ScriptFromJson(Map<String, dynamic> json) => _Script(
   id: json['id'] as String,
   label: json['label'] as String,
-  content: json['content'] as String,
+  content: json['content'] as String? ?? '',
   url: json['url'] as String?,
   customOptions: (json['custom-options'] as Map<String, dynamic>?)?.map(
     (k, e) => MapEntry(k, e as bool),
   ),
+  digest: json['digest'] as String?,
+  compatible: json['compatible'] as bool? ?? false,
+  volatile: json['volatile'] as bool?,
 );
 
 Map<String, dynamic> _$ScriptToJson(_Script instance) => <String, dynamic>{
@@ -267,4 +270,7 @@ Map<String, dynamic> _$ScriptToJson(_Script instance) => <String, dynamic>{
   'content': instance.content,
   'url': instance.url,
   'custom-options': instance.customOptions,
+  'digest': instance.digest,
+  'compatible': instance.compatible,
+  'volatile': instance.volatile,
 };

@@ -178,6 +178,12 @@ class AppPath {
     return join(directory, '$id.yaml');
   }
 
+  Future<String> getScriptPath(String id) async {
+    final directory = await dataDir.future;
+    // `basename` keeps a crafted id (e.g. `../../x`) inside the directory.
+    return join(directory.path, 'scripts', '${basename(id)}.js');
+  }
+
   Future<String> getProvidersDirPath(String id) async {
     final directory = await profilesPath;
     return join(directory, 'providers', id);

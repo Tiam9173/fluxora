@@ -62,6 +62,12 @@ dependencies:
   xml: ^6.6.1
   flutter_cache_manager: ^3.4.1
   crypto: ^3.0.7
+  # WebDAV backup encryption (P1 ②) — pure-Dart AES-GCM + PBKDF2. Adding a
+  # dependency was authorized on 2026-10-17 (pubspec is normally frozen).
+  cryptography: ^2.9.0
+  # Android TV "push profile from phone" (item 6 ③) — renders the LAN QR the
+  # phone scans. Authorized on 2026-10-17 alongside `cryptography`.
+  qr_flutter: ^4.1.0
   google_nav_bar: ^5.0.7
   wakelock_plus: ^1.4.0
   flutter_spinkit: ^5.2.2

@@ -194,6 +194,13 @@ class GlobalState {
             ),
           ),
         );
+    // P1 ② — move legacy inline script content into side files before
+    // anything reads it, and persist right away so the migration runs once.
+    final scriptProps = await config.scriptProps.externalize();
+    if (scriptProps != config.scriptProps) {
+      config = config.copyWith(scriptProps: scriptProps);
+      await preferences.saveConfig(config);
+    }
     await globalState.migrateOldData(config);
     await chainProxyManager.init();
     await warpManager.init();
@@ -1150,7 +1157,7 @@ class GlobalState {
 
       try {
         return await JavaScriptRuntimeManager.evaluateScript(
-          currentScript.content,
+          await currentScript.readContent(),
           config,
           customOptions: currentScript.customOptions,
         );

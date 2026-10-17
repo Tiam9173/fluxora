@@ -191,6 +191,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "backupAndRecoveryDesc": MessageLookupByLibrary.simpleMessage(
       "透過 WebDAV 或本地同步資料",
     ),
+    "backupPassword": MessageLookupByLibrary.simpleMessage("備份密碼"),
     "backupSuccess": MessageLookupByLibrary.simpleMessage("備份成功"),
     "basicConfig": MessageLookupByLibrary.simpleMessage("內核配置"),
     "basicConfigDesc": MessageLookupByLibrary.simpleMessage("全域修改內核配置"),
@@ -327,6 +328,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "confirmDelete": MessageLookupByLibrary.simpleMessage("確認刪除"),
     "confirmDeleteNodeMsg": m5,
     "confirmImport": MessageLookupByLibrary.simpleMessage("確認匯入"),
+    "confirmPassword": MessageLookupByLibrary.simpleMessage("確認密碼"),
     "connection": MessageLookupByLibrary.simpleMessage("活躍連線"),
     "connections": MessageLookupByLibrary.simpleMessage("連線"),
     "connectionsDesc": MessageLookupByLibrary.simpleMessage("查看目前連線資料"),
@@ -480,6 +482,10 @@ class MessageLookup extends MessageLookupByLibrary {
       "在選單欄顯示上傳和下載速率",
     ),
     "enableUdpForwarding": MessageLookupByLibrary.simpleMessage("啟用 UDP 轉發"),
+    "encryptBackup": MessageLookupByLibrary.simpleMessage("加密備份"),
+    "encryptBackupDesc": MessageLookupByLibrary.simpleMessage(
+      "使用 AES-256-GCM 加密備份內容。密碼不會保存，遺失後備份將無法還原",
+    ),
     "endpointIndependentNat": MessageLookupByLibrary.simpleMessage("NAT 增強"),
     "endpointIndependentNatConfirmDesc": MessageLookupByLibrary.simpleMessage(
       "啟用 Endpoint-Independent NAT 功能，性能可能會略有下降，此功能僅建議您在必要且熟悉的情況下開啟",
@@ -952,6 +958,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "parsePureIpDesc": MessageLookupByLibrary.simpleMessage("解析純 IP 連線"),
     "password": MessageLookupByLibrary.simpleMessage("密碼"),
     "passwordAuth": MessageLookupByLibrary.simpleMessage("密碼"),
+    "passwordMismatch": MessageLookupByLibrary.simpleMessage("兩次輸入的密碼不一致"),
     "paste": MessageLookupByLibrary.simpleMessage("貼上"),
     "pasteFromClipboard": MessageLookupByLibrary.simpleMessage("從剪貼簿貼上"),
     "peerPublicKey": MessageLookupByLibrary.simpleMessage("對端公鑰"),
@@ -1116,6 +1123,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "rotatingCircle": MessageLookupByLibrary.simpleMessage("單圓自轉"),
     "rule": MessageLookupByLibrary.simpleMessage("規則"),
     "ruleName": MessageLookupByLibrary.simpleMessage("規則名稱"),
+    "ruleProviderWarningsTitle": MessageLookupByLibrary.simpleMessage(
+      "部分規則集未載入",
+    ),
     "ruleProviders": MessageLookupByLibrary.simpleMessage("規則提供者"),
     "ruleProvidersCount": MessageLookupByLibrary.simpleMessage("規則集"),
     "ruleTarget": MessageLookupByLibrary.simpleMessage("規則目標"),
@@ -1269,6 +1279,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "titleTooLong": MessageLookupByLibrary.simpleMessage("太長了，最多支援 20 個字元"),
     "tlsPortSniffer": MessageLookupByLibrary.simpleMessage("TLS 連接埠嗅探"),
     "toggle": MessageLookupByLibrary.simpleMessage("切換"),
+    "tolerateRuleProviderErrors": MessageLookupByLibrary.simpleMessage(
+      "忽略規則集載入失敗",
+    ),
+    "tolerateRuleProviderErrorsDesc": MessageLookupByLibrary.simpleMessage(
+      "部分規則集下載失敗時仍套用設定。關閉後，任何規則集失敗都會導致整份設定被拒絕",
+    ),
     "tonalSpotScheme": MessageLookupByLibrary.simpleMessage("調性點綴"),
     "tooManyRules": MessageLookupByLibrary.simpleMessage("最多允許 5 個規則"),
     "tools": MessageLookupByLibrary.simpleMessage("更多"),
@@ -1323,6 +1339,17 @@ class MessageLookup extends MessageLookupByLibrary {
     "tunnelTargetHint": MessageLookupByLibrary.simpleMessage(
       "例如: 114.114.114.114:53",
     ),
+    "tvScanManualUrl": MessageLookupByLibrary.simpleMessage("也可在手機瀏覽器中直接輸入："),
+    "tvScanNoNetwork": MessageLookupByLibrary.simpleMessage(
+      "未檢測到可用的局域網，請檢查 Wi-Fi",
+    ),
+    "tvScanStep1": MessageLookupByLibrary.simpleMessage(
+      "確保手機與 TV 連接在同一 Wi-Fi 局域網",
+    ),
+    "tvScanStep2": MessageLookupByLibrary.simpleMessage("使用支援的相機或瀏覽器以掃描二維碼"),
+    "tvScanStep3": MessageLookupByLibrary.simpleMessage("在網頁中粘貼訂閱連結或上傳設定檔並推送"),
+    "tvScanSuccess": MessageLookupByLibrary.simpleMessage("設定檔推送成功，正在導入..."),
+    "tvScanWaiting": MessageLookupByLibrary.simpleMessage("等待手機推送設定檔中..."),
     "twoColumns": MessageLookupByLibrary.simpleMessage("兩列"),
     "udpForwarding": MessageLookupByLibrary.simpleMessage("UDP 轉發"),
     "udpForwardingDesc": MessageLookupByLibrary.simpleMessage(
@@ -1381,6 +1408,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "whitelistMode": MessageLookupByLibrary.simpleMessage("白名單模式"),
     "writeToSystem": MessageLookupByLibrary.simpleMessage("寫入系統"),
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage("需要管理員權限"),
+    "wrongBackupPassword": MessageLookupByLibrary.simpleMessage("密碼錯誤或備份已被竄改"),
     "years": m32,
   };
 }

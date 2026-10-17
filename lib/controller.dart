@@ -361,8 +361,22 @@ class AppController {
     );
     final message = await clashCore.setupConfig(params);
     if (message.isNotEmpty) {
-      commonPrint.log('[Core] Setup config failed: $message');
-      throw message;
+      final tolerable =
+          _ref.read(appSettingProvider).tolerateRuleProviderErrors &&
+          isRuleProviderOnlyWarning(message);
+      if (!tolerable) {
+        commonPrint.log('[Core] Setup config failed: $message');
+        throw message;
+      }
+      // Applied, but with rules missing — the user must be able to tell the
+      // difference between "all rules loaded" and "some were skipped".
+      commonPrint.log('[Core] Applied with ruleset warnings: $message');
+      // P1 ⑥ — surface it to the UI too: a maintainer-visible log is not
+      // something the user can act on.
+      _ref.read(ruleProviderWarningsProvider.notifier).state = message;
+    } else if (_ref.read(ruleProviderWarningsProvider).isNotEmpty) {
+      // A fully clean apply retires the notice from the previous attempt.
+      _ref.read(ruleProviderWarningsProvider.notifier).state = '';
     }
     if (system.isDesktop) {
       final prefs = await preferences.sharedPreferencesCompleter.future;

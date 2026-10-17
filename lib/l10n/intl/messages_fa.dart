@@ -240,6 +240,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "backupAndRecoveryDesc": MessageLookupByLibrary.simpleMessage(
       "همگام‌سازی داده‌ها از طریق WebDAV یا محلی",
     ),
+    "backupPassword": MessageLookupByLibrary.simpleMessage("گذرواژه پشتیبان"),
     "backupSuccess": MessageLookupByLibrary.simpleMessage(
       "پشتیبان‌گیری با موفقیت انجام شد",
     ),
@@ -444,6 +445,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "confirmDelete": MessageLookupByLibrary.simpleMessage("تأیید حذف"),
     "confirmDeleteNodeMsg": m5,
     "confirmImport": MessageLookupByLibrary.simpleMessage("تأیید درج"),
+    "confirmPassword": MessageLookupByLibrary.simpleMessage("تأیید گذرواژه"),
     "connection": MessageLookupByLibrary.simpleMessage("اتصال فعال"),
     "connections": MessageLookupByLibrary.simpleMessage("اتصالات"),
     "connectionsDesc": MessageLookupByLibrary.simpleMessage(
@@ -654,6 +656,10 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "enableUdpForwarding": MessageLookupByLibrary.simpleMessage(
       "فعال‌سازی بازپخش UDP",
+    ),
+    "encryptBackup": MessageLookupByLibrary.simpleMessage("رمزگذاری پشتیبان"),
+    "encryptBackupDesc": MessageLookupByLibrary.simpleMessage(
+      "رمزگذاری محتوای پشتیبان با AES-256-GCM. گذرواژه ذخیره نمی‌شود؛ در صورت گم شدن، بازیابی ممکن نیست",
     ),
     "endpointIndependentNat": MessageLookupByLibrary.simpleMessage(
       "ارتقای NAT",
@@ -1313,6 +1319,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "password": MessageLookupByLibrary.simpleMessage("رمز عبور"),
     "passwordAuth": MessageLookupByLibrary.simpleMessage("رمز عبور"),
+    "passwordMismatch": MessageLookupByLibrary.simpleMessage(
+      "گذرواژه‌ها مطابقت ندارند",
+    ),
     "paste": MessageLookupByLibrary.simpleMessage("جایگذاری"),
     "pasteFromClipboard": MessageLookupByLibrary.simpleMessage(
       "چسباندن از کلیپ‌بورد",
@@ -1563,6 +1572,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "rotatingCircle": MessageLookupByLibrary.simpleMessage("چرخش تک‌دایره"),
     "rule": MessageLookupByLibrary.simpleMessage("قوانین"),
     "ruleName": MessageLookupByLibrary.simpleMessage("نام قانون"),
+    "ruleProviderWarningsTitle": MessageLookupByLibrary.simpleMessage(
+      "برخی مجموعه‌قواعد بارگیری نشدند",
+    ),
     "ruleProviders": MessageLookupByLibrary.simpleMessage(
       "ارائه‌دهندگان قوانین",
     ),
@@ -1794,6 +1806,12 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "tlsPortSniffer": MessageLookupByLibrary.simpleMessage("اسنیف پورت TLS"),
     "toggle": MessageLookupByLibrary.simpleMessage("تغییر"),
+    "tolerateRuleProviderErrors": MessageLookupByLibrary.simpleMessage(
+      "نادیده گرفتن خطاهای بارگذاری مجموعه‌قواعد",
+    ),
+    "tolerateRuleProviderErrorsDesc": MessageLookupByLibrary.simpleMessage(
+      "حتی اگر بارگیری برخی مجموعه‌قواعد ناموفق باشد، تنظیمات اعمال شود. در غیر این صورت، هر خطای مجموعه‌قواعد کل تنظیمات را رد می‌کند",
+    ),
     "tonalSpotScheme": MessageLookupByLibrary.simpleMessage("تونال اسپات"),
     "tooManyRules": MessageLookupByLibrary.simpleMessage(
       "حداکثر ۵ قانون مجاز است",
@@ -1872,6 +1890,27 @@ class MessageLookup extends MessageLookupByLibrary {
     "tunnelTargetHint": MessageLookupByLibrary.simpleMessage(
       "مثال: 114.114.114.114:53",
     ),
+    "tvScanManualUrl": MessageLookupByLibrary.simpleMessage(
+      "یا آدرس را مستقیماً در مرورگر گوشی وارد کنید:",
+    ),
+    "tvScanNoNetwork": MessageLookupByLibrary.simpleMessage(
+      "شبکه محلی در دسترس یافت نشد، لطفاً Wi-Fi را بررسی کنید",
+    ),
+    "tvScanStep1": MessageLookupByLibrary.simpleMessage(
+      "مطمئن شوید گوشی و TV به یک شبکه Wi-Fi متصل هستند",
+    ),
+    "tvScanStep2": MessageLookupByLibrary.simpleMessage(
+      "کد QR را با یک دوربین یا مرورگر پشتیبانی‌شده اسکن کنید",
+    ),
+    "tvScanStep3": MessageLookupByLibrary.simpleMessage(
+      "لینک اشتراک را در صفحه وب جای‌گذاری کرده یا فایل پیکربندی را آپلود و ارسال کنید",
+    ),
+    "tvScanSuccess": MessageLookupByLibrary.simpleMessage(
+      "پروفایل دریافت شد، در حال وارد کردن...",
+    ),
+    "tvScanWaiting": MessageLookupByLibrary.simpleMessage(
+      "در انتظار ارسال پروفایل از گوشی...",
+    ),
     "twoColumns": MessageLookupByLibrary.simpleMessage("۲ ستون"),
     "udpForwarding": MessageLookupByLibrary.simpleMessage("بازپخش UDP"),
     "udpForwardingDesc": MessageLookupByLibrary.simpleMessage(
@@ -1947,6 +1986,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystem": MessageLookupByLibrary.simpleMessage("اعمال به سیستم"),
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage(
       "نیازمند دسترسی مدیریت (Admin)",
+    ),
+    "wrongBackupPassword": MessageLookupByLibrary.simpleMessage(
+      "گذرواژه نادرست است یا پشتیبان دستکاری شده است",
     ),
     "years": m32,
   };

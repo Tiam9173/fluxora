@@ -110,6 +110,16 @@ class _EditorPageState extends ConsumerState<EditorPage> {
   bool _isLoading = true;
   bool _isBusy = false;
 
+  /// item 6 ④ — editor zoom, owned per page visit (never persisted). Gestures
+  /// commit through [CodeForge.onZoomEnd]; the editor rebuilds with a scaled
+  /// `textStyle`, so every metric follows the text.
+  double _zoom = 1;
+
+  void _handleZoomEnd(double zoom) {
+    if (!mounted) return;
+    setState(() => _zoom = zoom);
+  }
+
   bool get _disableSyntaxHighlight =>
       widget.simple || _lineCount > _largeEditableLineThreshold;
 
@@ -595,6 +605,8 @@ class _EditorPageState extends ConsumerState<EditorPage> {
                         undoController: _undoController,
                         readOnly: readOnly,
                         lineWrap: _lineWrap,
+                        zoom: _zoom,
+                        onZoomEnd: _handleZoomEnd,
                         enableFolding: !widget.simple && !_disableSyntaxHighlight,
                         enableGuideLines:
                             !widget.simple && !_disableSyntaxHighlight,
@@ -615,7 +627,9 @@ class _EditorPageState extends ConsumerState<EditorPage> {
                             : atomOneLightTheme,
                         textStyle: TextStyle(
                           fontFamily: FontFamily.jetBrainsMono.value,
-                          fontSize: context.textTheme.bodyLarge?.fontSize?.ap,
+                          fontSize:
+                              (context.textTheme.bodyLarge?.fontSize?.ap ?? 14) *
+                              _zoom,
                         ),
                         innerPadding: const EdgeInsets.only(right: 16),
                         finderBuilder: (context, controller) => FindPanel(
@@ -648,7 +662,9 @@ class _EditorPageState extends ConsumerState<EditorPage> {
                         keyboardType: TextInputType.multiline,
                         style: TextStyle(
                           fontFamily: FontFamily.jetBrainsMono.value,
-                          fontSize: context.textTheme.bodyLarge?.fontSize?.ap,
+                          fontSize:
+                              (context.textTheme.bodyLarge?.fontSize?.ap ?? 14) *
+                              _zoom,
                         ),
                         decoration: const InputDecoration(
                           border: InputBorder.none,

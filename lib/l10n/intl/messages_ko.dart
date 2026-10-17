@@ -205,6 +205,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "backupAndRecoveryDesc": MessageLookupByLibrary.simpleMessage(
       "WebDAV 또는 로컬로 데이터 동기화",
     ),
+    "backupPassword": MessageLookupByLibrary.simpleMessage("백업 비밀번호"),
     "backupSuccess": MessageLookupByLibrary.simpleMessage("백업 성공"),
     "basicConfig": MessageLookupByLibrary.simpleMessage("코어 설정"),
     "basicConfigDesc": MessageLookupByLibrary.simpleMessage("글로벌 코어 설정 변경"),
@@ -363,6 +364,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "confirmDelete": MessageLookupByLibrary.simpleMessage("삭제 확인"),
     "confirmDeleteNodeMsg": m5,
     "confirmImport": MessageLookupByLibrary.simpleMessage("가져오기 확인"),
+    "confirmPassword": MessageLookupByLibrary.simpleMessage("비밀번호 확인"),
     "connection": MessageLookupByLibrary.simpleMessage("활성 연결"),
     "connections": MessageLookupByLibrary.simpleMessage("연결"),
     "connectionsDesc": MessageLookupByLibrary.simpleMessage("현재 연결 데이터 보기"),
@@ -538,6 +540,10 @@ class MessageLookup extends MessageLookupByLibrary {
       "메뉴 막대에 업로드 및 다운로드 속도 표시",
     ),
     "enableUdpForwarding": MessageLookupByLibrary.simpleMessage("UDP 포워딩 사용"),
+    "encryptBackup": MessageLookupByLibrary.simpleMessage("백업 암호화"),
+    "encryptBackupDesc": MessageLookupByLibrary.simpleMessage(
+      "AES-256-GCM으로 백업 내용을 암호화합니다. 비밀번호는 저장되지 않으며, 분실 시 복원할 수 없습니다",
+    ),
     "endpointIndependentNat": MessageLookupByLibrary.simpleMessage("NAT 향상"),
     "endpointIndependentNatConfirmDesc": MessageLookupByLibrary.simpleMessage(
       "Endpoint-Independent NAT를 활성화하면 성능이 약간 저하될 수 있습니다. 필요한 경우에만 설정하세요",
@@ -1046,6 +1052,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "parsePureIpDesc": MessageLookupByLibrary.simpleMessage("순수 IP 연결 분석"),
     "password": MessageLookupByLibrary.simpleMessage("비밀번호"),
     "passwordAuth": MessageLookupByLibrary.simpleMessage("비밀번호"),
+    "passwordMismatch": MessageLookupByLibrary.simpleMessage("비밀번호가 일치하지 않습니다"),
     "paste": MessageLookupByLibrary.simpleMessage("붙여넣기"),
     "pasteFromClipboard": MessageLookupByLibrary.simpleMessage("클립보드에서 붙여넣기"),
     "peerPublicKey": MessageLookupByLibrary.simpleMessage("피어 공개 키"),
@@ -1232,6 +1239,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "rotatingCircle": MessageLookupByLibrary.simpleMessage("단일 회전"),
     "rule": MessageLookupByLibrary.simpleMessage("규칙"),
     "ruleName": MessageLookupByLibrary.simpleMessage("규칙 이름"),
+    "ruleProviderWarningsTitle": MessageLookupByLibrary.simpleMessage(
+      "일부 규칙 세트가 로드되지 않음",
+    ),
     "ruleProviders": MessageLookupByLibrary.simpleMessage("규칙 프로바이더"),
     "ruleProvidersCount": MessageLookupByLibrary.simpleMessage("규칙 세트"),
     "ruleTarget": MessageLookupByLibrary.simpleMessage("규칙 목적지"),
@@ -1413,6 +1423,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "titleTooLong": MessageLookupByLibrary.simpleMessage("제목이 너무 깁니다 (최대 20자)"),
     "tlsPortSniffer": MessageLookupByLibrary.simpleMessage("TLS 포트 스니핑"),
     "toggle": MessageLookupByLibrary.simpleMessage("전환"),
+    "tolerateRuleProviderErrors": MessageLookupByLibrary.simpleMessage(
+      "규칙 세트 로드 실패 무시",
+    ),
+    "tolerateRuleProviderErrorsDesc": MessageLookupByLibrary.simpleMessage(
+      "일부 규칙 세트 다운로드가 실패해도 설정을 적용합니다. 끄면 규칙 세트 실패 시 전체 설정이 거부됩니다",
+    ),
     "tonalSpotScheme": MessageLookupByLibrary.simpleMessage("토널 스팟"),
     "tooManyRules": MessageLookupByLibrary.simpleMessage("규칙은 최대 5개까지 허용됩니다"),
     "tools": MessageLookupByLibrary.simpleMessage("도구"),
@@ -1477,6 +1493,27 @@ class MessageLookup extends MessageLookupByLibrary {
     "tunnelTargetHint": MessageLookupByLibrary.simpleMessage(
       "예: 114.114.114.114:53",
     ),
+    "tvScanManualUrl": MessageLookupByLibrary.simpleMessage(
+      "스마트폰 브라우저에 직접 입력할 수도 있습니다:",
+    ),
+    "tvScanNoNetwork": MessageLookupByLibrary.simpleMessage(
+      "사용 가능한 LAN을 찾을 수 없습니다. Wi-Fi를 확인하세요",
+    ),
+    "tvScanStep1": MessageLookupByLibrary.simpleMessage(
+      "스마트폰과 TV가 동일한 Wi-Fi 네트워크에 연결되어 있는지 확인",
+    ),
+    "tvScanStep2": MessageLookupByLibrary.simpleMessage(
+      "지원되는 카메라 또는 브라우저로 QR 코드를 스캔하세요",
+    ),
+    "tvScanStep3": MessageLookupByLibrary.simpleMessage(
+      "웹페이지에서 구독 링크를 붙여넣거나 프로필을 업로드하여 푸시하세요",
+    ),
+    "tvScanSuccess": MessageLookupByLibrary.simpleMessage(
+      "프로필이 푸시되었습니다. 가져오는 중...",
+    ),
+    "tvScanWaiting": MessageLookupByLibrary.simpleMessage(
+      "스마트폰에서 프로필 푸시 대기 중...",
+    ),
     "twoColumns": MessageLookupByLibrary.simpleMessage("2열"),
     "udpForwarding": MessageLookupByLibrary.simpleMessage("UDP 포워딩"),
     "udpForwardingDesc": MessageLookupByLibrary.simpleMessage(
@@ -1539,6 +1576,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "whitelistMode": MessageLookupByLibrary.simpleMessage("화이트리스트 모드"),
     "writeToSystem": MessageLookupByLibrary.simpleMessage("시스템 적용"),
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage("관리자 권한이 필요합니다"),
+    "wrongBackupPassword": MessageLookupByLibrary.simpleMessage(
+      "비밀번호가 틀리거나 백업이 변조되었습니다",
+    ),
     "years": m32,
   };
 }

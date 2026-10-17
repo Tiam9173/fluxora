@@ -244,6 +244,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "backupAndRecoveryDesc": MessageLookupByLibrary.simpleMessage(
       "Sync data via WebDAV or locally",
     ),
+    "backupPassword": MessageLookupByLibrary.simpleMessage("Backup password"),
     "backupSuccess": MessageLookupByLibrary.simpleMessage("Backup Successful"),
     "basicConfig": MessageLookupByLibrary.simpleMessage("Core Configuration"),
     "basicConfigDesc": MessageLookupByLibrary.simpleMessage(
@@ -440,6 +441,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "confirmDelete": MessageLookupByLibrary.simpleMessage("Confirm deletion"),
     "confirmDeleteNodeMsg": m5,
     "confirmImport": MessageLookupByLibrary.simpleMessage("Confirm import"),
+    "confirmPassword": MessageLookupByLibrary.simpleMessage("Confirm password"),
     "connection": MessageLookupByLibrary.simpleMessage("Active"),
     "connections": MessageLookupByLibrary.simpleMessage("Connections"),
     "connectionsDesc": MessageLookupByLibrary.simpleMessage(
@@ -654,6 +656,10 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "enableUdpForwarding": MessageLookupByLibrary.simpleMessage(
       "Enable UDP forwarding",
+    ),
+    "encryptBackup": MessageLookupByLibrary.simpleMessage("Encrypt backup"),
+    "encryptBackupDesc": MessageLookupByLibrary.simpleMessage(
+      "Encrypt the backup content with AES-256-GCM. The password is not stored; if lost, the backup cannot be restored",
     ),
     "endpointIndependentNat": MessageLookupByLibrary.simpleMessage(
       "NAT Enhancement",
@@ -1289,6 +1295,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "password": MessageLookupByLibrary.simpleMessage("Password"),
     "passwordAuth": MessageLookupByLibrary.simpleMessage("Password"),
+    "passwordMismatch": MessageLookupByLibrary.simpleMessage(
+      "Passwords do not match",
+    ),
     "paste": MessageLookupByLibrary.simpleMessage("Paste"),
     "pasteFromClipboard": MessageLookupByLibrary.simpleMessage(
       "Paste from Clipboard",
@@ -1523,6 +1532,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "rotatingCircle": MessageLookupByLibrary.simpleMessage("Rotating Circle"),
     "rule": MessageLookupByLibrary.simpleMessage("Rule"),
     "ruleName": MessageLookupByLibrary.simpleMessage("Rule Name"),
+    "ruleProviderWarningsTitle": MessageLookupByLibrary.simpleMessage(
+      "Some rule-sets were not loaded",
+    ),
     "ruleProviders": MessageLookupByLibrary.simpleMessage("Rule Providers"),
     "ruleProvidersCount": MessageLookupByLibrary.simpleMessage(
       "Rule Providers",
@@ -1750,6 +1762,12 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "tlsPortSniffer": MessageLookupByLibrary.simpleMessage("TLS Port Sniffing"),
     "toggle": MessageLookupByLibrary.simpleMessage("Toggle"),
+    "tolerateRuleProviderErrors": MessageLookupByLibrary.simpleMessage(
+      "Ignore rule-set load failures",
+    ),
+    "tolerateRuleProviderErrorsDesc": MessageLookupByLibrary.simpleMessage(
+      "Apply the config even if some rule-sets failed to download. When off, any rule-set failure rejects the whole config",
+    ),
     "tonalSpotScheme": MessageLookupByLibrary.simpleMessage("Tonal Spot"),
     "tooManyRules": MessageLookupByLibrary.simpleMessage("Max 5 rules allowed"),
     "tools": MessageLookupByLibrary.simpleMessage("Tools"),
@@ -1830,6 +1848,27 @@ class MessageLookup extends MessageLookupByLibrary {
     "tunnelTargetHint": MessageLookupByLibrary.simpleMessage(
       "e.g.: 114.114.114.114:53",
     ),
+    "tvScanManualUrl": MessageLookupByLibrary.simpleMessage(
+      "Or enter directly in phone browser:",
+    ),
+    "tvScanNoNetwork": MessageLookupByLibrary.simpleMessage(
+      "No available LAN detected, please check Wi-Fi",
+    ),
+    "tvScanStep1": MessageLookupByLibrary.simpleMessage(
+      "Ensure phone and TV are on the same Wi-Fi network",
+    ),
+    "tvScanStep2": MessageLookupByLibrary.simpleMessage(
+      "Scan the QR code with a supported camera or browser",
+    ),
+    "tvScanStep3": MessageLookupByLibrary.simpleMessage(
+      "Paste subscription URL or upload profile on the webpage and push",
+    ),
+    "tvScanSuccess": MessageLookupByLibrary.simpleMessage(
+      "Profile received, importing...",
+    ),
+    "tvScanWaiting": MessageLookupByLibrary.simpleMessage(
+      "Waiting for profile from phone...",
+    ),
     "twoColumns": MessageLookupByLibrary.simpleMessage("2 Columns"),
     "udpForwarding": MessageLookupByLibrary.simpleMessage("UDP Forwarding"),
     "udpForwardingDesc": MessageLookupByLibrary.simpleMessage(
@@ -1901,6 +1940,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystem": MessageLookupByLibrary.simpleMessage("Write to System"),
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage(
       "Requires administrator privileges",
+    ),
+    "wrongBackupPassword": MessageLookupByLibrary.simpleMessage(
+      "Wrong password or the backup was tampered with",
     ),
     "years": m32,
   };

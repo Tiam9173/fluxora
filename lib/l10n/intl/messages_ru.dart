@@ -250,6 +250,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "backupAndRecoveryDesc": MessageLookupByLibrary.simpleMessage(
       "Синхронизация данных через WebDAV или локально",
     ),
+    "backupPassword": MessageLookupByLibrary.simpleMessage(
+      "Пароль резервной копии",
+    ),
     "backupSuccess": MessageLookupByLibrary.simpleMessage(
       "Резервное копирование успешно",
     ),
@@ -460,6 +463,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "confirmDeleteNodeMsg": m5,
     "confirmImport": MessageLookupByLibrary.simpleMessage("Подтвердить импорт"),
+    "confirmPassword": MessageLookupByLibrary.simpleMessage(
+      "Подтвердите пароль",
+    ),
     "connection": MessageLookupByLibrary.simpleMessage("Соединения"),
     "connections": MessageLookupByLibrary.simpleMessage("Соединения"),
     "connectionsDesc": MessageLookupByLibrary.simpleMessage(
@@ -680,6 +686,12 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "enableUdpForwarding": MessageLookupByLibrary.simpleMessage(
       "Включить пересылку UDP",
+    ),
+    "encryptBackup": MessageLookupByLibrary.simpleMessage(
+      "Шифровать резервную копию",
+    ),
+    "encryptBackupDesc": MessageLookupByLibrary.simpleMessage(
+      "Зашифровать содержимое резервной копии с помощью AES-256-GCM. Пароль не сохраняется; при утере восстановление невозможно",
     ),
     "endpointIndependentNat": MessageLookupByLibrary.simpleMessage(
       "Улучшенный NAT",
@@ -1359,6 +1371,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "password": MessageLookupByLibrary.simpleMessage("Пароль"),
     "passwordAuth": MessageLookupByLibrary.simpleMessage("Пароль"),
+    "passwordMismatch": MessageLookupByLibrary.simpleMessage(
+      "Пароли не совпадают",
+    ),
     "paste": MessageLookupByLibrary.simpleMessage("Вставить"),
     "pasteFromClipboard": MessageLookupByLibrary.simpleMessage(
       "Вставить из буфера обмена",
@@ -1601,6 +1616,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "rotatingCircle": MessageLookupByLibrary.simpleMessage("Вращающийся круг"),
     "rule": MessageLookupByLibrary.simpleMessage("По правилам"),
     "ruleName": MessageLookupByLibrary.simpleMessage("Имя правила"),
+    "ruleProviderWarningsTitle": MessageLookupByLibrary.simpleMessage(
+      "Некоторые наборы правил не загружены",
+    ),
     "ruleProviders": MessageLookupByLibrary.simpleMessage("Провайдеры правил"),
     "ruleProvidersCount": MessageLookupByLibrary.simpleMessage("Наборы правил"),
     "ruleTarget": MessageLookupByLibrary.simpleMessage("Цель правила"),
@@ -1840,6 +1858,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "TLS порты сниффера",
     ),
     "toggle": MessageLookupByLibrary.simpleMessage("Переключить"),
+    "tolerateRuleProviderErrors": MessageLookupByLibrary.simpleMessage(
+      "Игнорировать ошибки загрузки наборов правил",
+    ),
+    "tolerateRuleProviderErrorsDesc": MessageLookupByLibrary.simpleMessage(
+      "Применять конфигурацию, даже если некоторые наборы правил не удалось загрузить. Если выключено, любая ошибка набора правил отклонит всю конфигурацию",
+    ),
     "tonalSpotScheme": MessageLookupByLibrary.simpleMessage("Тональный акцент"),
     "tooManyRules": MessageLookupByLibrary.simpleMessage("Максимум 5 правил"),
     "tools": MessageLookupByLibrary.simpleMessage("Инструменты"),
@@ -1928,6 +1952,27 @@ class MessageLookup extends MessageLookupByLibrary {
     "tunnelTargetHint": MessageLookupByLibrary.simpleMessage(
       "Например: 114.114.114.114:53",
     ),
+    "tvScanManualUrl": MessageLookupByLibrary.simpleMessage(
+      "Или введите адрес в браузере телефона:",
+    ),
+    "tvScanNoNetwork": MessageLookupByLibrary.simpleMessage(
+      "Доступная локальная сеть не найдена, проверьте Wi-Fi",
+    ),
+    "tvScanStep1": MessageLookupByLibrary.simpleMessage(
+      "Убедитесь, что телефон и TV подключены к одной сети Wi-Fi",
+    ),
+    "tvScanStep2": MessageLookupByLibrary.simpleMessage(
+      "Отсканируйте QR-код поддерживаемой камерой или браузером",
+    ),
+    "tvScanStep3": MessageLookupByLibrary.simpleMessage(
+      "Вставьте URL подписки или загрузите конфигурацию на веб-странице и отправьте",
+    ),
+    "tvScanSuccess": MessageLookupByLibrary.simpleMessage(
+      "Профиль получен, выполняется импорт...",
+    ),
+    "tvScanWaiting": MessageLookupByLibrary.simpleMessage(
+      "Ожидание отправки профиля с телефона...",
+    ),
     "twoColumns": MessageLookupByLibrary.simpleMessage("2 колонки"),
     "udpForwarding": MessageLookupByLibrary.simpleMessage("Пересылка UDP"),
     "udpForwardingDesc": MessageLookupByLibrary.simpleMessage(
@@ -2007,6 +2052,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystem": MessageLookupByLibrary.simpleMessage("Записать в систему"),
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage(
       "Требуются права администратора",
+    ),
+    "wrongBackupPassword": MessageLookupByLibrary.simpleMessage(
+      "Неверный пароль или резервная копия изменена",
     ),
     "years": m32,
   };
