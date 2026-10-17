@@ -23,6 +23,13 @@ class CommonScaffold extends StatefulWidget {
   final Widget body;
   final Color? backgroundColor;
   final String? title;
+
+  /// A widget title, used when the title is not plain text — e.g. the
+  /// resources page's `Providers | Resources` switch.
+  ///
+  /// Takes precedence over [title] except while editing, where the
+  /// selection count must win.
+  final Widget? titleWidget;
   final Widget? leading;
   final List<Widget>? actions;
   final bool? centerTitle;
@@ -38,6 +45,7 @@ class CommonScaffold extends StatefulWidget {
     this.backgroundColor,
     this.leading,
     this.title,
+    this.titleWidget,
     this.actions,
     this.centerTitle,
     this.editState,
@@ -208,6 +216,8 @@ class CommonScaffoldState extends State<CommonScaffold> {
             },
             decoration: InputDecoration(hintText: appLocalizations.search),
           )
+        : !_isEdit && widget.titleWidget != null
+        ? widget.titleWidget!
         : EmojiText(
             !_isEdit
                 ? widget.title!

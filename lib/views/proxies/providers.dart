@@ -15,65 +15,78 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 typedef UpdatingMap = Map<String, bool>;
 
-class ProvidersView extends ConsumerStatefulWidget {
-  final SheetType type;
+/// Refresh one or all external providers.
+///
+/// item 6 (Bettbox 1.19.4) — hoisted out of `_ProvidersViewState` so the
+/// resources page can drive the same action from its own header. Two copies
+/// would drift the moment the update flow changes.
+Future<void> updateExternalProviders(
+  WidgetRef ref,
+  BuildContext context, {
+  String? type,
+}) async {
+  final allProviders = ref.read(providersProvider);
+  final providers = type == null
+      ? allProviders
+      : allProviders.where((p) => p.type == type).toList();
 
-  const ProvidersView({super.key, required this.type});
+  if (providers.isEmpty) return;
 
-  @override
-  ConsumerState<ProvidersView> createState() => _ProvidersViewState();
+  final providersNotifier = ref.read(providersProvider.notifier);
+  final messages = [];
+  final updateProviders = providers.map<Future>((provider) async {
+    providersNotifier.setProvider(provider.copyWith(isUpdating: true));
+    final message = await clashCore.updateExternalProvider(
+      providerName: provider.name,
+    );
+    if (message.isNotEmpty) {
+      messages.add('${provider.name}: $message \n');
+    }
+    providersNotifier.setProvider(
+      await clashCore.getExternalProvider(provider.name),
+    );
+  });
+  final titleMedium = context.textTheme.titleMedium;
+  await Future.wait(updateProviders);
+  globalState.appController.updateGroupsDebounce();
+  final hasRuleProvider = providers.any((p) => p.type == 'Rule');
+  if (hasRuleProvider) {
+    globalState.appController.applyProfileDebounce(silence: true);
+  }
+  if (messages.isNotEmpty) {
+    globalState.showMessage(
+      title: appLocalizations.tip,
+      message: TextSpan(
+        children: [
+          for (final message in messages)
+            TextSpan(text: message, style: titleMedium),
+        ],
+      ),
+      cancelable: false,
+    );
+  }
 }
 
-class _ProvidersViewState extends ConsumerState<ProvidersView> {
+/// The provider list on its own, without a scaffold.
+///
+/// item 6 (Bettbox 1.19.4) — the resources page hosts this directly so a user
+/// with providers lands on them first. `ProvidersView` wraps it for the
+/// sheet-based entry point, which is why the list and the scaffold are separate.
+class ProvidersBody extends ConsumerStatefulWidget {
+  const ProvidersBody({super.key});
+
+  @override
+  ConsumerState<ProvidersBody> createState() => _ProvidersBodyState();
+}
+
+class _ProvidersBodyState extends ConsumerState<ProvidersBody> {
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       globalState.appController.updateProviders();
     });
-  }
-
-  Future<void> _updateProviders({String? type}) async {
-    final allProviders = ref.read(providersProvider);
-    final providers = type == null
-        ? allProviders
-        : allProviders.where((p) => p.type == type).toList();
-
-    if (providers.isEmpty) return;
-
-    final providersNotifier = ref.read(providersProvider.notifier);
-    final messages = [];
-    final updateProviders = providers.map<Future>((provider) async {
-      providersNotifier.setProvider(provider.copyWith(isUpdating: true));
-      final message = await clashCore.updateExternalProvider(
-        providerName: provider.name,
-      );
-      if (message.isNotEmpty) {
-        messages.add('${provider.name}: $message \n');
-      }
-      providersNotifier.setProvider(
-        await clashCore.getExternalProvider(provider.name),
-      );
-    });
-    final titleMedium = context.textTheme.titleMedium;
-    await Future.wait(updateProviders);
-    globalState.appController.updateGroupsDebounce();
-    final hasRuleProvider = providers.any((p) => p.type == 'Rule');
-    if (hasRuleProvider) {
-      globalState.appController.applyProfileDebounce(silence: true);
-    }
-    if (messages.isNotEmpty) {
-      globalState.showMessage(
-        title: appLocalizations.tip,
-        message: TextSpan(
-          children: [
-            for (final message in messages)
-              TextSpan(text: message, style: titleMedium),
-          ],
-        ),
-        cancelable: false,
-      );
-    }
   }
 
   @override
@@ -90,83 +103,97 @@ class _ProvidersViewState extends ConsumerState<ProvidersView> {
         (
           title: appLocalizations.proxyProviders,
           providers: proxyProviders,
-          onSync: () => _updateProviders(type: 'Proxy'),
+          onSync: () => updateExternalProviders(ref, context, type: 'Proxy'),
         ),
       if (ruleProviders.isNotEmpty)
         (
           title: appLocalizations.ruleProviders,
           providers: ruleProviders,
-          onSync: () => _updateProviders(type: 'Rule'),
+          onSync: () => updateExternalProviders(ref, context, type: 'Rule'),
         ),
     ];
 
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final itemCount = sections.fold<int>(
+      0,
+      (sum, section) => sum + 1 + section.providers.length,
+    );
+    return ListView.builder(
+      padding: EdgeInsets.only(bottom: 24 + bottomPadding, top: 12),
+      itemCount: itemCount,
+      itemBuilder: (context, index) {
+        var current = 0;
+        for (final section in sections) {
+          if (index == current) {
+            return ListHeader(
+              title: section.title,
+              padding: current == 0
+                  ? const EdgeInsets.only(
+                      left: 16,
+                      right: 8,
+                      top: 4,
+                      bottom: 8,
+                    )
+                  : null,
+              actions: [
+                IconButton(
+                  onPressed: section.onSync,
+                  tooltip: appLocalizations.update,
+                  icon: const Icon(Icons.sync),
+                  iconSize: 20,
+                  splashRadius: 20,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
+            );
+          }
+          current++;
+          if (index < current + section.providers.length) {
+            final providerIndex = index - current;
+            final provider = section.providers[providerIndex];
+            return ContinuousListItem(
+              index: providerIndex,
+              count: section.providers.length,
+              child: ProviderItem(
+                key: ValueKey(provider.name),
+                provider: provider,
+              ),
+            );
+          }
+          current += section.providers.length;
+        }
+        return const SizedBox.shrink();
+      },
+    );
+  }
+}
+
+class ProvidersView extends ConsumerStatefulWidget {
+  final SheetType type;
+
+  const ProvidersView({super.key, required this.type});
+
+  @override
+  ConsumerState<ProvidersView> createState() => _ProvidersViewState();
+}
+
+class _ProvidersViewState extends ConsumerState<ProvidersView> {
+  @override
+  Widget build(BuildContext context) {
     return RepaintBoundary(
       child: AdaptiveSheetScaffold(
         actions: [
           IconButton(
-            onPressed: _updateProviders,
+            onPressed: () => updateExternalProviders(ref, context),
             tooltip: appLocalizations.update,
             icon: const Icon(Icons.sync),
           ),
         ],
         type: widget.type,
-        body: Builder(
-          builder: (context) {
-            final bottomPadding = MediaQuery.of(context).padding.bottom;
-            final itemCount = sections.fold<int>(
-              0,
-              (sum, section) => sum + 1 + section.providers.length,
-            );
-            return ListView.builder(
-              padding: EdgeInsets.only(bottom: 24 + bottomPadding, top: 12),
-              itemCount: itemCount,
-              itemBuilder: (context, index) {
-                var current = 0;
-                for (final section in sections) {
-                  if (index == current) {
-                    return ListHeader(
-                      title: section.title,
-                      padding: current == 0
-                          ? const EdgeInsets.only(
-                              left: 16,
-                              right: 8,
-                              top: 4,
-                              bottom: 8,
-                            )
-                          : null,
-                      actions: [
-                        IconButton(
-                          onPressed: section.onSync,
-                          tooltip: appLocalizations.update,
-                          icon: const Icon(Icons.sync),
-                          iconSize: 20,
-                          splashRadius: 20,
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                        ),
-                      ],
-                    );
-                  }
-                  current++;
-                  if (index < current + section.providers.length) {
-                    final providerIndex = index - current;
-                    final provider = section.providers[providerIndex];
-                    return ContinuousListItem(
-                      index: providerIndex,
-                      count: section.providers.length,
-                      child: ProviderItem(
-                        key: ValueKey(provider.name),
-                        provider: provider,
-                      ),
-                    );
-                  }
-                  current += section.providers.length;
-                }
-                return const SizedBox.shrink();
-              },
-            );
-          },
-        ),
+        // The list itself lives in ProvidersBody, which also triggers the
+        // post-frame refresh — so this class no longer needs its own initState.
+        body: const ProvidersBody(),
         title: appLocalizations.providers,
       ),
     );
