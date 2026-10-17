@@ -295,6 +295,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "cipherLabel": MessageLookupByLibrary.simpleMessage("加密方式"),
     "circle": MessageLookupByLibrary.simpleMessage("圓環流轉"),
     "clear": MessageLookupByLibrary.simpleMessage("清空"),
+    "clearAllRulesAndScripts": MessageLookupByLibrary.simpleMessage(
+      "清除所有規則與腳本",
+    ),
+    "clearAllRulesAndScriptsTip": MessageLookupByLibrary.simpleMessage(
+      "將刪除所有訂閱的覆寫規則與全域腳本，此操作不可復原。",
+    ),
     "clearCacheDesc": MessageLookupByLibrary.simpleMessage(
       "是否需要清理 FakeIP & DNS 快取？",
     ),

@@ -516,6 +516,8 @@
   "bypassDomain": "バイパスドメイン",
   "bypassDomainDesc": "システムプロキシ有効時のみ適用",
   "resetTip": "本当にリセットしますか？",
+  "clearAllRulesAndScripts": "すべてのルールとスクリプトを削除",
+  "clearAllRulesAndScriptsTip": "全プロファイルの上書きルールとグローバルスクリプトを削除します。この操作は取り消せません。",
   "regExp": "正規表現",
   "icon": "画像",
   "iconConfiguration": "画像設定",

@@ -418,6 +418,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "cipherLabel": MessageLookupByLibrary.simpleMessage("Шифр"),
     "circle": MessageLookupByLibrary.simpleMessage("Круг"),
     "clear": MessageLookupByLibrary.simpleMessage("Очистить"),
+    "clearAllRulesAndScripts": MessageLookupByLibrary.simpleMessage(
+      "Удалить все правила и скрипты",
+    ),
+    "clearAllRulesAndScriptsTip": MessageLookupByLibrary.simpleMessage(
+      "Будут удалены правила переопределения всех профилей и глобальные скрипты. Действие необратимо.",
+    ),
     "clearCacheDesc": MessageLookupByLibrary.simpleMessage(
       "Очистить кэш FakeIP и DNS?",
     ),

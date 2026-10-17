@@ -348,6 +348,12 @@ class AppController {
     if (currentProfile == null) {
       return false;
     }
+    // item 6 — the port probe belongs here: this runs before the core takes the
+    // port, so "occupied" can only mean someone else. It used to live in
+    // _updateClashConfig behind `!isStart`, but the start path calls
+    // handleStart() (which sets runTime) before that, so the guard was always
+    // false and the fallback never happened.
+    await _resolveMixedPortFallback();
     await currentProfile.checkAndUpdate();
     final patchConfig = _ref.read(patchClashConfigProvider);
     final targetTun = enableTun ?? patchConfig.tun.enable;
@@ -356,8 +362,15 @@ class AppController {
     if (realTunEnable == null) return false;
 
     final realPatchConfig = patchConfig.copyWith.tun(enable: realTunEnable);
+    // The setup config is built from the raw patch config, so the session
+    // fallback has to be applied here or the core would still get the port that
+    // was just found to be taken.
+    final fallbackPort = _ref.read(mixedPortFallbackProvider);
+    final effectivePatchConfig = fallbackPort == null
+        ? realPatchConfig
+        : realPatchConfig.copyWith(mixedPort: fallbackPort);
     final params = await globalState.getSetupParams(
-      pathConfig: realPatchConfig,
+      pathConfig: effectivePatchConfig,
     );
     final message = await clashCore.setupConfig(params);
     if (message.isNotEmpty) {
@@ -491,9 +504,42 @@ class AppController {
   }
 
   Future<void> addProfile(Profile profile) async {
-    _ref.read(profilesProvider.notifier).setProfile(profile);
+    // item 3 — a newly added subscription inherits the current profile's
+    // override rules and script-override switch, so the global rules the user
+    // already set up apply to it without re-entering them.
+    final current = _ref.read(currentProfileProvider);
+    final next = current == null
+        ? profile
+        : profile.copyWith(
+            overrideData: profile.overrideData == const OverrideData()
+                ? current.overrideData
+                : profile.overrideData,
+            useScriptOverride: profile.useScriptOverride
+                ? profile.useScriptOverride
+                : current.useScriptOverride,
+          );
+    _ref.read(profilesProvider.notifier).setProfile(next);
     if (_ref.read(currentProfileIdProvider) != null) return;
     _ref.read(currentProfileIdProvider.notifier).value = profile.id;
+  }
+
+  /// item 3 — remove every profile's override rules and all global scripts.
+  ///
+  /// Deliberately one explicit action with a confirmation in the UI: the data
+  /// spans every profile, so there is no per-item undo. Ports, proxies and
+  /// subscriptions themselves are untouched.
+  Future<void> clearAllRulesAndScripts() async {
+    final config = globalState.config;
+    final cleared = config.copyWith(
+      scriptProps: const ScriptProps(),
+      profiles: config.profiles
+          .map((profile) => profile.copyWith(overrideData: const OverrideData()))
+          .toList(),
+    );
+    globalState.config = cleared;
+    await preferences.saveConfig(cleared);
+    setProfiles(cleared.profiles);
+    await updateClashConfig();
   }
 
   Future<void> deleteProfile(String id) async {
@@ -677,10 +723,6 @@ class AppController {
   }
 
   Future<void> _updateClashConfig() async {
-    // item 6 — cold start only: no core running means the port cannot be ours.
-    if (!_ref.read(runTimeProvider.notifier).isStart) {
-      await _resolveMixedPortFallback();
-    }
     final updateParams = _ref.read(updateParamsProvider);
     final tunResult = await _requestAdmin(updateParams.tun.enable);
     if (tunResult.isError) return;

@@ -394,6 +394,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "cipherLabel": MessageLookupByLibrary.simpleMessage("Cipher"),
     "circle": MessageLookupByLibrary.simpleMessage("Circle"),
     "clear": MessageLookupByLibrary.simpleMessage("Clear"),
+    "clearAllRulesAndScripts": MessageLookupByLibrary.simpleMessage(
+      "Clear all rules and scripts",
+    ),
+    "clearAllRulesAndScriptsTip": MessageLookupByLibrary.simpleMessage(
+      "This removes every profile\'s override rules and all global scripts. It cannot be undone.",
+    ),
     "clearCacheDesc": MessageLookupByLibrary.simpleMessage(
       "Clear FakeIP and DNS cache?",
     ),

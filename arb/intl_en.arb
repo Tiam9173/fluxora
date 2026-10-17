@@ -519,6 +519,8 @@
   "bypassDomain": "Bypass Domain",
   "bypassDomainDesc": "Active only when System Proxy is on",
   "resetTip": "Are you sure you want to reset?",
+  "clearAllRulesAndScripts": "Clear all rules and scripts",
+  "clearAllRulesAndScriptsTip": "This removes every profile's override rules and all global scripts. It cannot be undone.",
   "regExp": "RegExp",
   "icon": "Icon",
   "iconConfiguration": "Icon Configuration",

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluxora/common/common.dart';
+import 'package:fluxora/manager/chain_proxy_manager.dart';
 import 'package:fluxora/models/chain_fallback_pool.dart';
 import 'package:fluxora/providers/adaptive_ranking_provider.dart';
 import 'package:fluxora/providers/providers.dart';
@@ -45,6 +46,39 @@ class _IntelligentNodePickerSheetState
     '🔗 链式代理',
     '✈️ 链式跳板',
   };
+
+  @override
+  void initState() {
+    super.initState();
+    // item 2 — the picker used to open with no latency at all and no way to
+    // obtain any: switching the sort to latency showed the "no data" hint
+    // forever, because nothing on this sheet ever probed. Probe once on open
+    // when nothing is measured; the hint turns into "probing…" while it runs.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _autoProbeIfNeeded());
+  }
+
+  Future<void> _autoProbeIfNeeded() async {
+    if (!mounted) return;
+    final viewModels = ref.read(
+      adaptiveRankingProvider((role: widget.role, sortMode: _sortMode)),
+    );
+    if (viewModels.any((vm) => vm.latencyMs != null)) return;
+    if (chainProxyManager.isProbingChain) return;
+    try {
+      await chainProxyManager.probeCurrentChain();
+    } catch (e) {
+      commonPrint.log('Node picker auto probe failed: $e');
+    }
+  }
+
+  Future<void> _probeNow() async {
+    if (chainProxyManager.isProbingChain) return;
+    try {
+      await chainProxyManager.probeCurrentChain();
+    } catch (e) {
+      commonPrint.log('Node picker manual probe failed: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -118,12 +152,19 @@ class _IntelligentNodePickerSheetState
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      '暂无延迟数据：尚未测得任何节点延迟，当前按名称排序',
+                      chainProxyManager.isProbingChain
+                          ? '正在探测节点延迟…'
+                          : '暂无延迟数据：尚未测得任何节点延迟，当前按名称排序',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ),
+                  if (!chainProxyManager.isProbingChain)
+                    TextButton(
+                      onPressed: _probeNow,
+                      child: Text(appLocalizations.chainProbeNow),
+                    ),
                 ],
               ),
             ),

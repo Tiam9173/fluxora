@@ -4310,6 +4310,26 @@ class AppLocalizations {
     );
   }
 
+  /// `Clear all rules and scripts`
+  String get clearAllRulesAndScripts {
+    return Intl.message(
+      'Clear all rules and scripts',
+      name: 'clearAllRulesAndScripts',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `This removes every profile's override rules and all global scripts. It cannot be undone.`
+  String get clearAllRulesAndScriptsTip {
+    return Intl.message(
+      'This removes every profile\'s override rules and all global scripts. It cannot be undone.',
+      name: 'clearAllRulesAndScriptsTip',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `RegExp`
   String get regExp {
     return Intl.message('RegExp', name: 'regExp', desc: '', args: []);

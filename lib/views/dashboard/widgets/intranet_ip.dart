@@ -168,6 +168,61 @@ class _LanSettingsBodyState extends ConsumerState<_LanSettingsBody> {
       padding: EdgeInsets.zero,
       shrinkWrap: true,
       children: [
+        // Header: the active transport as a status strip. Deliberately our own
+        // shape (tinted rounded strip + pill) rather than the upstream dialog's
+        // bracketed sections and boxed tiles.
+        Container(
+          margin: const EdgeInsets.only(bottom: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer.withValues(alpha: 0.32),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                _networkIcon(info.type),
+                size: 18,
+                color: colorScheme.primary,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  info.type.isEmpty
+                      ? (network == null ? '...' : appLocalizations.noNetwork)
+                      : info.type,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+              ),
+              if (info.ip.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    appLocalizations.coreConnected,
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.primary,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        _buildSectionLabel(appLocalizations.intranetAndGateway),
         _buildRow(
           icon: Icons.wifi_rounded,
           label: appLocalizations.networkType,
@@ -190,6 +245,9 @@ class _LanSettingsBodyState extends ConsumerState<_LanSettingsBody> {
                   tooltip: appLocalizations.copy,
                   onPressed: () async {
                     await Clipboard.setData(ClipboardData(text: info.ip));
+                    if (context.mounted) {
+                      context.showNotifier(appLocalizations.copySuccess);
+                    }
                   },
                   icon: Icon(
                     Icons.copy_rounded,
@@ -222,6 +280,8 @@ class _LanSettingsBodyState extends ConsumerState<_LanSettingsBody> {
           label: appLocalizations.systemDns,
           value: info.dns.isEmpty ? placeholder : info.dns.join(', '),
         ),
+        _buildSectionLabel(appLocalizations.allowLan),
+        _buildLanTile(clashConfig.allowLan),
         if (clashConfig.allowLan && info.ip.isNotEmpty)
           _buildRow(
             icon: Icons.share_rounded,
@@ -233,6 +293,9 @@ class _LanSettingsBodyState extends ConsumerState<_LanSettingsBody> {
               tooltip: appLocalizations.copy,
               onPressed: () async {
                 await Clipboard.setData(ClipboardData(text: sharedAddress));
+                if (context.mounted) {
+                  context.showNotifier(appLocalizations.copySuccess);
+                }
               },
               icon: Icon(
                 Icons.copy_rounded,
@@ -243,6 +306,83 @@ class _LanSettingsBodyState extends ConsumerState<_LanSettingsBody> {
           ),
       ],
     );
+  }
+
+  /// Our own section marker: small caps label with a hairline rule. The
+  /// upstream dialog used bracketed headers; this reads as one panel instead of
+  /// a stack of separate ones.
+  Widget _buildSectionLabel(String title) {
+    final colorScheme = context.colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(top: 16, bottom: 6),
+      child: Row(
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.6,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Container(
+              height: 1,
+              color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// LAN sharing is a switch here rather than a status pill that navigates away:
+  /// the address right below it is the reason to turn it on, so the two belong
+  /// in one place.
+  Widget _buildLanTile(bool allowLan) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          Icon(
+            Icons.lan_rounded,
+            size: 18,
+            color: context.colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              appLocalizations.allowLan,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+            ),
+          ),
+          Switch(
+            value: allowLan,
+            onChanged: (value) {
+              ref
+                  .read(patchClashConfigProvider.notifier)
+                  .updateState((state) => state.copyWith(allowLan: value));
+              globalState.appController.updateClashConfigDebounce();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Transport icon for the header strip; unknown types keep the generic one.
+  IconData _networkIcon(String type) {
+    final lower = type.toLowerCase();
+    if (lower.contains('wifi') || lower.contains('wi-fi')) {
+      return Icons.wifi_rounded;
+    }
+    if (lower.contains('ethernet')) return Icons.lan_rounded;
+    if (lower.contains('cellular') || lower.contains('mobile')) {
+      return Icons.signal_cellular_alt_rounded;
+    }
+    return Icons.devices_rounded;
   }
   Widget _buildRow({
     required IconData icon,

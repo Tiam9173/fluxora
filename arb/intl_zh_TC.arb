@@ -516,6 +516,8 @@
   "bypassDomain": "排除網域",
   "bypassDomainDesc": "僅在系統代理啟用時生效",
   "resetTip": "確定要重設嗎？",
+  "clearAllRulesAndScripts": "清除所有規則與腳本",
+  "clearAllRulesAndScriptsTip": "將刪除所有訂閱的覆寫規則與全域腳本，此操作不可復原。",
   "regExp": "正規表示式",
   "icon": "圖片",
   "iconConfiguration": "圖片設定",

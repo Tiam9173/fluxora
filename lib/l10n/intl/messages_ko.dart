@@ -327,6 +327,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "cipherLabel": MessageLookupByLibrary.simpleMessage("암호화 방식"),
     "circle": MessageLookupByLibrary.simpleMessage("서클"),
     "clear": MessageLookupByLibrary.simpleMessage("지우기"),
+    "clearAllRulesAndScripts": MessageLookupByLibrary.simpleMessage(
+      "모든 규칙과 스크립트 지우기",
+    ),
+    "clearAllRulesAndScriptsTip": MessageLookupByLibrary.simpleMessage(
+      "모든 프로필의 재정의 규칙과 전역 스크립트를 삭제합니다. 되돌릴 수 없습니다.",
+    ),
     "clearCacheDesc": MessageLookupByLibrary.simpleMessage(
       "FakeIP 및 DNS 캐시를 지우시겠습니까?",
     ),

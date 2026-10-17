@@ -146,6 +146,27 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
         icon: const Icon(Icons.sort),
         iconSize: 26,
       ),
+      PopupMenuButton<String>(
+        tooltip: '',
+        icon: const Icon(Icons.more_vert, size: 26),
+        onSelected: (value) async {
+          if (value != 'clearRulesScripts') return;
+          final res = await globalState.showMessage(
+            title: appLocalizations.tip,
+            message: TextSpan(
+              text: appLocalizations.clearAllRulesAndScriptsTip,
+            ),
+          );
+          if (res != true) return;
+          await globalState.appController.clearAllRulesAndScripts();
+        },
+        itemBuilder: (_) => [
+          PopupMenuItem(
+            value: 'clearRulesScripts',
+            child: Text(appLocalizations.clearAllRulesAndScripts),
+          ),
+        ],
+      ),
     ];
   }
 

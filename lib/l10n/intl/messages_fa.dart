@@ -400,6 +400,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "cipherLabel": MessageLookupByLibrary.simpleMessage("روش رمزنگاری"),
     "circle": MessageLookupByLibrary.simpleMessage("حلقه"),
     "clear": MessageLookupByLibrary.simpleMessage("پاک کردن"),
+    "clearAllRulesAndScripts": MessageLookupByLibrary.simpleMessage(
+      "پاک کردن همه قواعد و اسکریپت‌ها",
+    ),
+    "clearAllRulesAndScriptsTip": MessageLookupByLibrary.simpleMessage(
+      "قواعد بازنویسی همه پروفایل‌ها و اسکریپت‌های سراسری حذف می‌شوند. این کار بازگشت‌ناپذیر است.",
+    ),
     "clearCacheDesc": MessageLookupByLibrary.simpleMessage(
       "آیا حافظه پنهان FakeIP و DNS پاکسازی شود؟",
     ),

@@ -519,6 +519,8 @@
   "bypassDomain": "排除域名",
   "bypassDomainDesc": "仅在系统代理启用时生效",
   "resetTip": "确定要重置吗?",
+  "clearAllRulesAndScripts": "清除所有规则与脚本",
+  "clearAllRulesAndScriptsTip": "将删除所有订阅的覆写规则与全局脚本，此操作不可撤销。",
   "regExp": "正则",
   "icon": "图片",
   "iconConfiguration": "图片配置",

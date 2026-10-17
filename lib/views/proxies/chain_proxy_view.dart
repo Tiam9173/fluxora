@@ -1043,9 +1043,15 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
       exitName,
       isThreeHop ? 3 : 2,
     );
-    // The client and the target are not chain hops, so nothing ever probes
-    // them: they stay neutral and can never turn the card green on their own.
-    const TopologySegmentState edgeState = TopologySegmentState.notProbed;
+    // item 2 — the two edge nodes used to be pinned to `notProbed`, so the
+    // client→hop and landing→target segments never reacted to a probe at all.
+    // Neither edge is a chain hop, so nothing probes it directly; the honest
+    // derivation is that the device side is usable exactly when the first hop
+    // carrying it is, and the target is reachable exactly when the landing hop
+    // is. A confirmed hop failure therefore shows up on the matching edge too,
+    // instead of the card contradicting itself.
+    final TopologySegmentState clientState = _edgeStateFrom(entryState);
+    final TopologySegmentState targetState = _edgeStateFrom(exitState);
 
     // P3: an explicit per-hop summary, so a coloured row is never read as an
     // end-to-end availability proof — the probe measures each hop on its own.
@@ -1207,12 +1213,12 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                       icon: Icons.devices_rounded,
                       title: appLocalizations.topologyClient,
                       subtitle: '设备端',
-                      state: edgeState,
+                      state: clientState,
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                       child: FluxoraFlowIndicator(
-                        state: topologySegmentFlow(edgeState, entryState),
+                        state: topologySegmentFlow(clientState, entryState),
                         width: 36,
                         height: 12,
                       ),
@@ -1259,7 +1265,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                       child: FluxoraFlowIndicator(
-                        state: topologySegmentFlow(exitState, edgeState),
+                        state: topologySegmentFlow(exitState, targetState),
                         width: 36,
                         height: 12,
                       ),
@@ -1268,7 +1274,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                       icon: Icons.public_rounded,
                       title: appLocalizations.topologyTarget,
                       subtitle: '目标网络',
-                      state: edgeState,
+                      state: targetState,
                     ),
                   ],
                 ),
@@ -1438,6 +1444,20 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
               );
             },
     );
+  }
+
+  /// item 2 — an edge node (device / target) mirrors the hop that carries it.
+  ///
+  /// Only a **confirmed** hop result is inherited: `checking` / `unknown` /
+  /// `notProbed` all stay neutral, because the edge itself was never measured
+  /// and a spinner on the device side would claim a probe that is not happening
+  /// there.
+  TopologySegmentState _edgeStateFrom(TopologySegmentState hopState) {
+    return switch (hopState) {
+      TopologySegmentState.healthy => TopologySegmentState.healthy,
+      TopologySegmentState.failed => TopologySegmentState.failed,
+      _ => TopologySegmentState.notProbed,
+    };
   }
 
   Widget _buildTopologyNode({

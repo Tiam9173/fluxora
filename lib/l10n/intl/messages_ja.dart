@@ -321,6 +321,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "cipherLabel": MessageLookupByLibrary.simpleMessage("暗号方式"),
     "circle": MessageLookupByLibrary.simpleMessage("サークル"),
     "clear": MessageLookupByLibrary.simpleMessage("消去"),
+    "clearAllRulesAndScripts": MessageLookupByLibrary.simpleMessage(
+      "すべてのルールとスクリプトを削除",
+    ),
+    "clearAllRulesAndScriptsTip": MessageLookupByLibrary.simpleMessage(
+      "全プロファイルの上書きルールとグローバルスクリプトを削除します。この操作は取り消せません。",
+    ),
     "clearCacheDesc": MessageLookupByLibrary.simpleMessage(
       "FakeIPとDNSキャッシュをクリアしますか？",
     ),
