@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'edit_profile.dart';
 import 'profile_nodes_view.dart';
+import 'tv_qr_import_dialog.dart';
 
 class AddProfileView extends StatelessWidget {
   final BuildContext context;
@@ -84,6 +85,15 @@ class AddProfileView extends StatelessWidget {
   Future<void> _toScan() async {
     if (system.isDesktop) {
       globalState.appController.addProfileFormQrCode();
+      return;
+    }
+    // item 6 ③ — a TV has no camera to scan with, so it hosts the code
+    // instead: the phone pushes the profile to the TV over the LAN.
+    if (globalState.isAndroidTV) {
+      await showDialog(
+        context: context,
+        builder: (_) => const TvQrImportDialog(),
+      );
       return;
     }
     final url = await BaseNavigator.push(context, const ScanPage());

@@ -71,13 +71,10 @@ Future<void> showScriptCustomOptions(
       needLoading: true,
       () async {
         final stopwatch = Stopwatch()..start();
-        final cached = JavaScriptRuntimeManager.getCachedOptions(
-          script.content,
-        );
+        final content = await script.readContent();
+        final cached = JavaScriptRuntimeManager.getCachedOptions(content);
         final data = cached ??
-            await JavaScriptRuntimeManager.extractScriptOptions(
-              script.content,
-            );
+            await JavaScriptRuntimeManager.extractScriptOptions(content);
         final (options, icons) = _processScriptData(data, script);
 
         final targetDuration = cached != null
@@ -109,6 +106,20 @@ Future<void> showScriptCustomOptions(
   }
 }
 
+/// Upstream c0cce973 — the file name a script exports as.
+///
+/// The label is a human name, not a file name: the `.js` suffix is enforced
+/// here (an extensionless file is awkward to re-import on desktop), and a blank
+/// label — which the editor normally prevents — falls back instead of producing
+/// a hidden `.js`.
+String scriptExportFileName(String label) {
+  final rawName = label.trim();
+  if (rawName.isEmpty) {
+    return 'script.js';
+  }
+  return rawName.endsWith('.js') ? rawName : '$rawName.js';
+}
+
 class ScriptsView extends ConsumerStatefulWidget {
   const ScriptsView({super.key});
 
@@ -126,7 +137,7 @@ class _ScriptsViewState extends ConsumerState<ScriptsView> {
     if (res != true) {
       return;
     }
-    ref.read(scriptStateProvider.notifier).del(label);
+    await ref.read(scriptStateProvider.notifier).del(label);
   }
 
   Future<void> _handleSyncScript(String id) async {
@@ -141,6 +152,29 @@ class _ScriptsViewState extends ConsumerState<ScriptsView> {
 
   Future<void> _handleCustomOptions(Script script) async {
     await showScriptCustomOptions(context, ref, script: script);
+  }
+
+  /// Upstream c0cce973 — write the script to a user-chosen `.js` file.
+  ///
+  /// The save dialog is the platform's own picker (`picker.saveFile` writes the
+  /// bytes itself), so the content never round-trips through app state. A null
+  /// path means the user cancelled, which is not an error worth reporting.
+  Future<void> _handleExportFile(Script script) async {
+    final res = await globalState.appController.safeRun<bool>(
+      () async {
+        final path = await picker.saveFile(
+          scriptExportFileName(script.label),
+          utf8.encode(await script.readContent()),
+          allowedExtensions: ['js'],
+        );
+        return path != null;
+      },
+      needLoading: true,
+      title: appLocalizations.tip,
+    );
+    if (res == true && mounted) {
+      context.showNotifier(appLocalizations.exportSuccess);
+    }
   }
 
   void _handleShowScriptSettings() {
@@ -230,6 +264,13 @@ class _ScriptsViewState extends ConsumerState<ScriptsView> {
                               },
                             ),
                           PopupMenuItemData(
+                            icon: Icons.file_copy_outlined,
+                            label: appLocalizations.exportFile,
+                            onPressed: () {
+                              _handleExportFile(script);
+                            },
+                          ),
+                          PopupMenuItemData(
                             icon: Icons.delete,
                             label: appLocalizations.delete,
                             onPressed: () {
@@ -256,8 +297,9 @@ class _ScriptsViewState extends ConsumerState<ScriptsView> {
     Script? script,
     String? url,
   }) async {
-    if (script != null && script.content != content) {
-      JavaScriptRuntimeManager.invalidateCachedOptions(script.content);
+    final oldContent = script == null ? null : await script.readContent();
+    if (oldContent != null && oldContent != content) {
+      JavaScriptRuntimeManager.invalidateCachedOptions(oldContent);
     }
     var finalLabel = title.trim();
     if (finalLabel.isEmpty) {
@@ -265,13 +307,13 @@ class _ScriptsViewState extends ConsumerState<ScriptsView> {
           .read(scriptStateProvider.notifier)
           .getAvailableLabel(appLocalizations.unnamed);
     }
-    Script newScript =
-        script?.copyWith(label: finalLabel, content: content, url: url) ??
-        Script.create(label: finalLabel, content: content, url: url);
-    if (newScript.label != script?.label) {
+    final draft =
+        script?.copyWith(label: finalLabel, url: url) ??
+        Script.create(label: finalLabel, url: url);
+    if (draft.label != script?.label) {
       final isExits = ref
           .read(scriptStateProvider.notifier)
-          .isExits(newScript.label);
+          .isExits(draft.label);
       if (isExits) {
         globalState.showMessage(
           message: TextSpan(
@@ -282,10 +324,13 @@ class _ScriptsViewState extends ConsumerState<ScriptsView> {
         return;
       }
     }
+    final newScript = await globalState.appController.safeRun(
+      silence: false,
+      () => draft.writeContent(content),
+    );
+    if (newScript == null || !mounted) return;
     ref.read(scriptStateProvider.notifier).setScript(newScript);
-    if (mounted) {
-      Navigator.of(context).pop();
-    }
+    Navigator.of(context).pop();
   }
 
   Future<bool> _handleEditorPop(
@@ -309,9 +354,15 @@ class _ScriptsViewState extends ConsumerState<ScriptsView> {
     return false;
   }
 
-  void _handleToEditor({Script? script, String? initialContent, String? url, bool delayedFocus = false}) {
+  Future<void> _handleToEditor({
+    Script? script,
+    String? initialContent,
+    String? url,
+    bool delayedFocus = false,
+  }) async {
     final title = script?.label ?? '';
-    final raw = script?.content ?? initialContent ?? scriptTemplate;
+    final raw = initialContent ?? await script?.readContent() ?? scriptTemplate;
+    if (!mounted) return;
     String? importedUrl = url ?? script?.url;
     BaseNavigator.push(
       context,

@@ -1,5 +1,6 @@
 // ignore_for_file: invalid_annotation_target
 
+import 'dart:io';
 import 'dart:math';
 
 import 'package:fluxora/common/common.dart';
@@ -825,21 +826,62 @@ abstract class Script with _$Script {
   const factory Script({
     required String id,
     required String label,
-    required String content,
+    @Default('') String content,
     String? url,
     @JsonKey(name: 'custom-options') Map<String, bool>? customOptions,
+    String? digest,
+    @Default(false) bool compatible,
+    bool? volatile,
   }) = _Script;
 
-  factory Script.create({required String label, required String content, String? url}) {
-    return Script(id: utils.uuidV4, label: label, content: content, url: url);
+  factory Script.create({required String label, String? url}) {
+    return Script(id: utils.uuidV4, label: label, url: url);
   }
 
   factory Script.fromJson(Map<String, Object?> json) => _$ScriptFromJson(json);
 }
 
+/// P1 ② — a script that reads the clock or randomness cannot be cached: its
+/// output differs between runs, so reusing a stored config would silently go
+/// stale. Detected when the content is stored and kept next to it.
+final volatileScriptPattern = RegExp(r'\bDate\b|Math\s*\.\s*random');
+
 extension ScriptExt on Script {
-  bool get isCompatibleWithFluxora {
-    final head = content.length > 2000 ? content.substring(0, 2000) : content;
-    return head.contains('Compatible_With_Fluxora');
+  /// Whether the script opts into Fluxora-only extensions. The marker used to
+  /// be scanned out of the content text; it is now persisted at store time.
+  bool get isCompatibleWithFluxora => compatible;
+
+  /// Content lives in a side file once stored. Inline content — legacy configs
+  /// that have not been migrated yet — still takes precedence.
+  Future<String> readContent() async {
+    if (content.isNotEmpty) return content;
+    final file = File(await appPath.getScriptPath(id));
+    if (!await file.exists()) return '';
+    return file.readAsString();
+  }
+
+  /// Atomic store: write a temp file next to the target, then rename, so a
+  /// crash mid-write can never leave a half-written script behind. The config
+  /// only keeps the digest afterwards.
+  Future<Script> writeContent(String value) async {
+    final path = await appPath.getScriptPath(id);
+    final temp = File('$path.${DateTime.now().microsecondsSinceEpoch}.tmp');
+    await temp.parent.create(recursive: true);
+    await temp.writeAsString(value, flush: true);
+    await temp.rename(path);
+    final head = value.length > 2000 ? value.substring(0, 2000) : value;
+    return copyWith(
+      content: '',
+      digest: value.toMd5(),
+      compatible: head.contains('Compatible_With_Fluxora'),
+      volatile: volatileScriptPattern.hasMatch(value),
+    );
+  }
+
+  Future<void> deleteContent() async {
+    final file = File(await appPath.getScriptPath(id));
+    if (await file.exists()) {
+      await file.delete();
+    }
   }
 }

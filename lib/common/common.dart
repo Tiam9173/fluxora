@@ -1,5 +1,6 @@
 export 'android.dart';
 export 'app_localizations.dart';
+export 'backup_crypto.dart';
 export 'color.dart';
 export 'constant.dart';
 export 'context.dart';
@@ -33,6 +34,7 @@ export 'protocol.dart';
 export 'proxy.dart';
 export 'render.dart';
 export 'request.dart';
+export 'rule_provider_warning.dart';
 export 'scroll.dart';
 export 'string.dart';
 export 'system.dart';

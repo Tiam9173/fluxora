@@ -65,6 +65,41 @@ const String _wordCharPattern =
 ///   ),
 /// )
 /// ```
+/// item 6 4 — zoom constants and gesture math, kept as top-level pure
+/// functions so the rules can be asserted without pumping a 12k-line editor.
+///
+/// Ported in spirit from upstream Bettbox `b41bae74` ("Add editor zoom
+/// gestures"). Two deliberate differences, both documented at their call
+/// sites: the pinch preview is a focal-centered [Transform] instead of the
+/// upstream renderer's `_zoomFocus`/`_pinchPreview` (our renderer predates that
+/// restructure), and committing a zoom rebuilds with a scaled `textStyle`
+/// (every local metric already derives from `textStyle.fontSize`).
+const double kEditorMinZoom = 0.5;
+const double kEditorMaxZoom = 1.5;
+const double kEditorWheelZoomStep = 1.1;
+const double kEditorPanZoomSlop = 0.05;
+
+double clampEditorZoom(double zoom) =>
+    zoom.clamp(kEditorMinZoom, kEditorMaxZoom);
+
+/// Where one ctrl/cmd+wheel notch lands from [currentZoom]. `dy < 0` (scroll up)
+/// zooms in. Returns [currentZoom] when already clamped — the caller then does
+/// nothing, so a clamped gesture never fires [CodeForge.onZoomEnd].
+double editorWheelTargetZoom(double currentZoom, double dy) {
+  if (dy == 0) return currentZoom;
+  final step = dy < 0 ? kEditorWheelZoomStep : 1 / kEditorWheelZoomStep;
+  return (currentZoom * step).clamp(kEditorMinZoom, kEditorMaxZoom);
+}
+
+/// Scaling matrix that keeps [focal] visually anchored (in the coordinate
+/// space the matrix is applied to): translate to the focal point, scale,
+/// translate back.
+Matrix4 focalZoomMatrix(Offset focal, double scale) =>
+    Matrix4.identity()
+      ..translateByDouble(focal.dx, focal.dy, 0, 1)
+      ..scaleByDouble(scale, scale, 1, 1)
+      ..translateByDouble(-focal.dx, -focal.dy, 0, 1);
+
 class CodeForge extends StatefulWidget {
   /// The controller for managing the editor's text content and selection.
   ///
@@ -231,6 +266,26 @@ class CodeForge extends StatefulWidget {
   /// Whether to show the magnifier when dragging selection handles.
   final bool enableMagnifier;
 
+  /// item 6 4 — live zoom factor applied to [textStyle]. `1` is the natural
+  /// size; the editor rebuilds with a scaled style when a gesture commits.
+  final double zoom;
+
+  /// Zoom bounds. [onZoomEnd] never receives a value outside them.
+  final double minZoom;
+  final double maxZoom;
+
+  /// Two-finger pinch (touch) and trackpad pinch (desktop). Ctrl/cmd+wheel
+  /// works regardless — it cannot be mistaken for anything else.
+  final bool enablePinchZoom;
+
+  /// The line-number gutter stops scaling at this zoom (a 1.5x gutter number
+  /// wastes width the code could use).
+  final double lineNumberMaxZoom;
+
+  /// Committed zoom, after clamping. Receiving this means "a gesture ended at
+  /// this zoom" — the page owns the durable state.
+  final ValueChanged<double>? onZoomEnd;
+
   /// Whether to enable local and non LSP autocomplete suggestions.
   /// To control LSP suggestions, use the [capabilities] field of the [LspConfig].
   /// [false] by default because, this may cause delay or jitter in large files.
@@ -329,7 +384,12 @@ class CodeForge extends StatefulWidget {
     this.enableGutter = true,
     this.enableGutterDivider = false,
     this.enableMagnifier = true,
-    this.deleteFoldRangeOnDeletingFirstLine = false,
+    this.zoom = 1,
+    this.minZoom = kEditorMinZoom,
+    this.maxZoom = kEditorMaxZoom,
+    this.enablePinchZoom = true,
+    this.lineNumberMaxZoom = 1,
+    this.onZoomEnd,    this.deleteFoldRangeOnDeletingFirstLine = false,
     this.selectionStyle,
     this.gutterStyle,
     this.gutterBuilder,
@@ -397,7 +457,25 @@ class _CodeForgeState extends State<CodeForge> with TickerProviderStateMixin {
   final _isWindows = Platform.isWindows;
   DateTime? _lastCtrlUpTime;
   final GlobalKey _codeFieldKey = GlobalKey();
-  TextInputConnection? _connection;
+
+  // item 6 4 — pinch / wheel / trackpad zoom state. `_zoomTouches` mirrors
+  // every live pointer so the two-finger distance can be computed on any move;
+  // the transform is identity except while a pinch is in flight.
+  final Map<int, Offset> _zoomTouches = {};
+  int? _pinchPointer1;
+  int? _pinchPointer2;
+  int? _panZoomPointer;
+  double _startPinchDistance = 0;
+  double _pinchScale = 1;
+  Offset _panZoomFocal = Offset.zero;
+  final ValueNotifier<Matrix4> _pinchTransform = ValueNotifier(
+    Matrix4.identity(),
+  );
+
+  /// item 6 4 — the zoom [Listener]'s own box: the gesture area is the whole
+  /// editor (the field itself is content-sized and would cover only the top
+  /// rows), and wheel positions arrive in global coordinates.
+  final GlobalKey _zoomAreaKey = GlobalKey();  TextInputConnection? _connection;
   StreamSubscription? _lspResponsesSubscription;
   bool _isHovering = false, _isSignatureInvoked = false;
   bool _isMobileSuggActive = false, _isInjectingSnippets = false;
@@ -1115,6 +1193,7 @@ class _CodeForgeState extends State<CodeForge> with TickerProviderStateMixin {
     if (_ownsHorizontalScrollController) _hscrollController.dispose();
     if (_ownsVerticalScrollController) _vscrollController.dispose();
     if (_ownsController) _controller.dispose();
+    _pinchTransform.dispose();
     super.dispose();
   }
 
@@ -1718,6 +1797,151 @@ class _CodeForgeState extends State<CodeForge> with TickerProviderStateMixin {
     );
   }
 
+  // -------------------------------------------------------------------------
+  // item 6 4 — zoom gestures (pinch / ctrl+wheel / trackpad pinch)
+  //
+  // Deliberate difference from upstream Bettbox `b41bae74`: their pinch preview
+  // leans on renderer support (`_zoomFocus` / `_pinchPreview`) that our
+  // renderer predates, so the live preview here is a focal-centered
+  // [Transform] and the commit rebuilds with a scaled `textStyle` — every
+  // local metric (line height, gutter, caret) already derives from
+  // `textStyle.fontSize`. What we give up is the upstream guarantee that the
+  // row under the fingers keeps its exact screen position across the commit.
+  // -------------------------------------------------------------------------
+
+  bool get _zoomArmed => widget.onZoomEnd != null;
+
+  void _handleZoomPointerDown(PointerDownEvent event) {
+    _zoomTouches[event.pointer] = event.localPosition;
+    if (!widget.enablePinchZoom || !_zoomArmed) return;
+    if (_zoomTouches.length == 2) {
+      final points = _zoomTouches.values.toList();
+      _beginPinch(
+        (points[0] + points[1]) / 2,
+        _pinchDistance(points[0], points[1]),
+      );
+    }
+  }
+
+  void _handleZoomPointerMove(PointerMoveEvent event) {
+    if (!_zoomTouches.containsKey(event.pointer)) return;
+    _zoomTouches[event.pointer] = event.localPosition;
+    if (_pinchPointer1 == null) return;
+    if (event.pointer != _pinchPointer1 && event.pointer != _pinchPointer2) {
+      return;
+    }
+    final p1 = _zoomTouches[_pinchPointer1];
+    final p2 = _zoomTouches[_pinchPointer2];
+    if (p1 == null || p2 == null) return;
+    _updatePinch(_pinchDistance(p1, p2));
+  }
+
+  void _handleZoomPointerEnd(PointerEvent event) {
+    _zoomTouches.remove(event.pointer);
+    if (_pinchPointer1 == null) return;
+    if (event.pointer == _pinchPointer1 || event.pointer == _pinchPointer2) {
+      _finishPinch();
+    }
+  }
+
+  void _handleZoomPointerSignal(PointerSignalEvent event) {
+    if (_isMobile || !widget.enablePinchZoom || !_zoomArmed) return;
+    if (event is! PointerScrollEvent || event.scrollDelta.dy == 0) return;
+    final keyboard = HardwareKeyboard.instance;
+    if (!keyboard.isControlPressed && !keyboard.isMetaPressed) return;
+    // Registering with the resolver claims the event: the surrounding scroll
+    // view never sees a ctrl+wheel, so it cannot scroll at the same time.
+    GestureBinding.instance.pointerSignalResolver.register(event, (event) {
+      if (event is PointerScrollEvent) _zoomByWheel(event);
+    });
+  }
+
+  void _zoomByWheel(PointerScrollEvent event) {
+    final target = editorWheelTargetZoom(widget.zoom, event.scrollDelta.dy);
+    if (target == widget.zoom) return;
+    final scale = target / widget.zoom;
+    // Preview around the pointer, then commit on the next frame — a wheel is a
+    // series of discrete notches, so showing the intermediate zoom keeps the
+    // image under the cursor from jumping once per step.
+    final box = _zoomAreaKey.currentContext?.findRenderObject();
+    if (box is RenderBox) {
+      final focal = box.globalToLocal(event.position);
+      _pinchTransform.value = focalZoomMatrix(focal, scale);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _pinchTransform.value = Matrix4.identity();
+        widget.onZoomEnd?.call(target);
+      });
+    } else {
+      widget.onZoomEnd?.call(target);
+    }
+  }
+
+  void _handlePanZoomStart(PointerPanZoomStartEvent event) {
+    if (!widget.enablePinchZoom || !_zoomArmed) return;
+    _panZoomPointer = event.pointer;
+    _panZoomFocal = event.localPosition;
+  }
+
+  void _handlePanZoomUpdate(PointerPanZoomUpdateEvent event) {
+    if (event.pointer != _panZoomPointer || _pinchPointer1 != null) return;
+    if (_startPinchDistance == 0) {
+      if ((event.scale - 1).abs() < kEditorPanZoomSlop) return;
+      _beginPinch(_panZoomFocal, event.scale);
+    }
+    _updatePinch(event.scale);
+  }
+
+  void _handlePanZoomEnd(PointerPanZoomEndEvent event) {
+    if (event.pointer != _panZoomPointer) return;
+    _panZoomPointer = null;
+    if (_pinchPointer1 == null) return;
+    _finishPinch();
+  }
+
+  double _pinchDistance(Offset a, Offset b) =>
+      a == b ? 1.0 : max(1.0, (a - b).distance);
+
+  void _beginPinch(Offset focal, double start) {
+    _pinchPointer1 = _zoomTouches.keys.first;
+    _pinchPointer2 = _zoomTouches.keys.elementAt(1);
+    _startPinchDistance = start;
+    _pinchScale = 1;
+    // `focal` is already in the zoom listener's local coordinates; the matrix
+    // scales around it, so the midpoint of the two fingers stays put.
+    _pinchTransform.value = focalZoomMatrix(focal, 1);
+  }
+
+  void _updatePinch(double distance) {
+    final start = _startPinchDistance;
+    if (start == 0) return;
+    final target = (widget.zoom * distance / start).clamp(
+      widget.minZoom,
+      widget.maxZoom,
+    );
+    final scale = target / widget.zoom;
+    if (scale == _pinchScale) return;
+    _pinchScale = scale;
+    final points = _zoomTouches.values.toList();
+    final focal = (points[0] + points[1]) / 2;
+    _pinchTransform.value = focalZoomMatrix(focal, scale);
+  }
+
+  void _finishPinch() {
+    final committed = clampEditorZoom(widget.zoom * _pinchScale);
+    _pinchPointer1 = null;
+    _pinchPointer2 = null;
+    _startPinchDistance = 0;
+    _pinchScale = 1;
+    _zoomTouches.clear();
+    _pinchTransform.value = Matrix4.identity();
+    // A gesture that ends where it started (or that never got past a bound)
+    // reports nothing — same contract as the wheel path.
+    if (committed != widget.zoom) {
+      widget.onZoomEnd?.call(committed);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
@@ -1819,7 +2043,22 @@ class _CodeForgeState extends State<CodeForge> with TickerProviderStateMixin {
                                 child: ValueListenableBuilder(
                                   valueListenable: _selectionActiveNotifier,
                                   builder: (context, selVal, child) {
-                                    return TwoDimensionalScrollable(
+                                    return ValueListenableBuilder<Matrix4>(
+                                      valueListenable: _pinchTransform,
+                                      builder: (_, transform, child) => transform.isIdentity()
+                                          ? child!
+                                          : Transform(transform: transform, child: child),
+                                      child: Listener(
+                                        key: _zoomAreaKey,
+                                        onPointerDown: _handleZoomPointerDown,
+                                        onPointerMove: _handleZoomPointerMove,
+                                        onPointerUp: _handleZoomPointerEnd,
+                                        onPointerCancel: _handleZoomPointerEnd,
+                                        onPointerPanZoomStart: _handlePanZoomStart,
+                                        onPointerPanZoomUpdate: _handlePanZoomUpdate,
+                                        onPointerPanZoomEnd: _handlePanZoomEnd,
+                                        onPointerSignal: _handleZoomPointerSignal,
+                                        child: TwoDimensionalScrollable(
                                       horizontalDetails:
                                           ScrollableDetails.horizontal(
                                             controller: _hscrollController,
@@ -3116,7 +3355,10 @@ class _CodeForgeState extends State<CodeForge> with TickerProviderStateMixin {
                                           },
                                         ),
                                       ),
-                                    );
+                                    ),
+                                      ),
+                                    )
+;
                                   },
                                 ),
                               ),

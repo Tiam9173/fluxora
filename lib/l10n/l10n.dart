@@ -5520,6 +5520,166 @@ class AppLocalizations {
     );
   }
 
+  /// `Ignore rule-set load failures`
+  String get tolerateRuleProviderErrors {
+    return Intl.message(
+      'Ignore rule-set load failures',
+      name: 'tolerateRuleProviderErrors',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Apply the config even if some rule-sets failed to download. When off, any rule-set failure rejects the whole config`
+  String get tolerateRuleProviderErrorsDesc {
+    return Intl.message(
+      'Apply the config even if some rule-sets failed to download. When off, any rule-set failure rejects the whole config',
+      name: 'tolerateRuleProviderErrorsDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Some rule-sets were not loaded`
+  String get ruleProviderWarningsTitle {
+    return Intl.message(
+      'Some rule-sets were not loaded',
+      name: 'ruleProviderWarningsTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Encrypt backup`
+  String get encryptBackup {
+    return Intl.message(
+      'Encrypt backup',
+      name: 'encryptBackup',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Encrypt the backup content with AES-256-GCM. The password is not stored; if lost, the backup cannot be restored`
+  String get encryptBackupDesc {
+    return Intl.message(
+      'Encrypt the backup content with AES-256-GCM. The password is not stored; if lost, the backup cannot be restored',
+      name: 'encryptBackupDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Backup password`
+  String get backupPassword {
+    return Intl.message(
+      'Backup password',
+      name: 'backupPassword',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Confirm password`
+  String get confirmPassword {
+    return Intl.message(
+      'Confirm password',
+      name: 'confirmPassword',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Passwords do not match`
+  String get passwordMismatch {
+    return Intl.message(
+      'Passwords do not match',
+      name: 'passwordMismatch',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Wrong password or the backup was tampered with`
+  String get wrongBackupPassword {
+    return Intl.message(
+      'Wrong password or the backup was tampered with',
+      name: 'wrongBackupPassword',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Ensure phone and TV are on the same Wi-Fi network`
+  String get tvScanStep1 {
+    return Intl.message(
+      'Ensure phone and TV are on the same Wi-Fi network',
+      name: 'tvScanStep1',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Scan the QR code with a supported camera or browser`
+  String get tvScanStep2 {
+    return Intl.message(
+      'Scan the QR code with a supported camera or browser',
+      name: 'tvScanStep2',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Paste subscription URL or upload profile on the webpage and push`
+  String get tvScanStep3 {
+    return Intl.message(
+      'Paste subscription URL or upload profile on the webpage and push',
+      name: 'tvScanStep3',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Or enter directly in phone browser:`
+  String get tvScanManualUrl {
+    return Intl.message(
+      'Or enter directly in phone browser:',
+      name: 'tvScanManualUrl',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Waiting for profile from phone...`
+  String get tvScanWaiting {
+    return Intl.message(
+      'Waiting for profile from phone...',
+      name: 'tvScanWaiting',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Profile received, importing...`
+  String get tvScanSuccess {
+    return Intl.message(
+      'Profile received, importing...',
+      name: 'tvScanSuccess',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No available LAN detected, please check Wi-Fi`
+  String get tvScanNoNetwork {
+    return Intl.message(
+      'No available LAN detected, please check Wi-Fi',
+      name: 'tvScanNoNetwork',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Manually restart the core?`
   String get restartCoreDesc {
     return Intl.message(

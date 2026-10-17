@@ -201,6 +201,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "backupAndRecoveryDesc": MessageLookupByLibrary.simpleMessage(
       "WebDAVまたはローカルでデータを同期",
     ),
+    "backupPassword": MessageLookupByLibrary.simpleMessage("バックアップパスワード"),
     "backupSuccess": MessageLookupByLibrary.simpleMessage("バックアップ成功"),
     "basicConfig": MessageLookupByLibrary.simpleMessage("カーネル設定"),
     "basicConfigDesc": MessageLookupByLibrary.simpleMessage("カーネル設定をグローバル変更"),
@@ -355,6 +356,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "confirmDelete": MessageLookupByLibrary.simpleMessage("削除の確認"),
     "confirmDeleteNodeMsg": m5,
     "confirmImport": MessageLookupByLibrary.simpleMessage("インポートを確認"),
+    "confirmPassword": MessageLookupByLibrary.simpleMessage("パスワードの確認"),
     "connection": MessageLookupByLibrary.simpleMessage("アクティブ接続"),
     "connections": MessageLookupByLibrary.simpleMessage("接続"),
     "connectionsDesc": MessageLookupByLibrary.simpleMessage("現在の通信接続データを表示"),
@@ -528,6 +530,10 @@ class MessageLookup extends MessageLookupByLibrary {
       "メニューバーにアップロード/ダウンロード速度を表示",
     ),
     "enableUdpForwarding": MessageLookupByLibrary.simpleMessage("UDP 転送を有効にする"),
+    "encryptBackup": MessageLookupByLibrary.simpleMessage("バックアップを暗号化"),
+    "encryptBackupDesc": MessageLookupByLibrary.simpleMessage(
+      "AES-256-GCMでバックアップ内容を暗号化します。パスワードは保存されないため、紛失すると復元できません",
+    ),
     "endpointIndependentNat": MessageLookupByLibrary.simpleMessage("NAT強化"),
     "endpointIndependentNatConfirmDesc": MessageLookupByLibrary.simpleMessage(
       "Endpoint-Independent NATを有効にするとパフォーマンスがわずかに低下する場合があります。必要な場合のみ設定してください",
@@ -1040,6 +1046,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "parsePureIpDesc": MessageLookupByLibrary.simpleMessage("IP直接接続を解析"),
     "password": MessageLookupByLibrary.simpleMessage("パスワード"),
     "passwordAuth": MessageLookupByLibrary.simpleMessage("パスワード"),
+    "passwordMismatch": MessageLookupByLibrary.simpleMessage("パスワードが一致しません"),
     "paste": MessageLookupByLibrary.simpleMessage("貼り付け"),
     "pasteFromClipboard": MessageLookupByLibrary.simpleMessage("クリップボードから貼り付け"),
     "peerPublicKey": MessageLookupByLibrary.simpleMessage("ピア公開鍵"),
@@ -1228,6 +1235,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "rotatingCircle": MessageLookupByLibrary.simpleMessage("ローテーション"),
     "rule": MessageLookupByLibrary.simpleMessage("ルール"),
     "ruleName": MessageLookupByLibrary.simpleMessage("ルール名"),
+    "ruleProviderWarningsTitle": MessageLookupByLibrary.simpleMessage(
+      "一部のルールセットが読み込まれませんでした",
+    ),
     "ruleProviders": MessageLookupByLibrary.simpleMessage("ルールプロバイダー"),
     "ruleProvidersCount": MessageLookupByLibrary.simpleMessage("ルールセット"),
     "ruleTarget": MessageLookupByLibrary.simpleMessage("ルールターゲット"),
@@ -1415,6 +1425,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "titleTooLong": MessageLookupByLibrary.simpleMessage("長すぎます（最大20文字）"),
     "tlsPortSniffer": MessageLookupByLibrary.simpleMessage("TLSポート解析"),
     "toggle": MessageLookupByLibrary.simpleMessage("切替"),
+    "tolerateRuleProviderErrors": MessageLookupByLibrary.simpleMessage(
+      "ルールセットの読み込み失敗を無視",
+    ),
+    "tolerateRuleProviderErrorsDesc": MessageLookupByLibrary.simpleMessage(
+      "一部のルールセットのダウンロードが失敗しても設定を適用します。オフにすると、ルールセットの失敗で設定全体が拒否されます",
+    ),
     "tonalSpotScheme": MessageLookupByLibrary.simpleMessage("トーナルスポット"),
     "tooManyRules": MessageLookupByLibrary.simpleMessage("ルールは最大5つまでです"),
     "tools": MessageLookupByLibrary.simpleMessage("ツール"),
@@ -1473,6 +1489,25 @@ class MessageLookup extends MessageLookupByLibrary {
     "tunnelTargetHint": MessageLookupByLibrary.simpleMessage(
       "例: 114.114.114.114:53",
     ),
+    "tvScanManualUrl": MessageLookupByLibrary.simpleMessage(
+      "スマホのブラウザに直接入力も可能：",
+    ),
+    "tvScanNoNetwork": MessageLookupByLibrary.simpleMessage(
+      "利用可能なLANが見つかりません。Wi-Fiを確認してください",
+    ),
+    "tvScanStep1": MessageLookupByLibrary.simpleMessage(
+      "スマホとTVが同じWi-Fiネットワークにあることを確認",
+    ),
+    "tvScanStep2": MessageLookupByLibrary.simpleMessage(
+      "対応するカメラまたはブラウザでQRコードをスキャン",
+    ),
+    "tvScanStep3": MessageLookupByLibrary.simpleMessage(
+      "Webページで購読URLを貼り付けまたは設定をアップロードしてプッシュ",
+    ),
+    "tvScanSuccess": MessageLookupByLibrary.simpleMessage(
+      "設定がプッシュされました。インポート中...",
+    ),
+    "tvScanWaiting": MessageLookupByLibrary.simpleMessage("スマホからのプッシュを待機中..."),
     "twoColumns": MessageLookupByLibrary.simpleMessage("2列"),
     "udpForwarding": MessageLookupByLibrary.simpleMessage("UDP 転送"),
     "udpForwardingDesc": MessageLookupByLibrary.simpleMessage(
@@ -1535,6 +1570,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "whitelistMode": MessageLookupByLibrary.simpleMessage("ホワイトリストモード"),
     "writeToSystem": MessageLookupByLibrary.simpleMessage("システムへ適用"),
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage("管理者権限が必要です"),
+    "wrongBackupPassword": MessageLookupByLibrary.simpleMessage(
+      "パスワードが違うか、バックアップが改ざんされています",
+    ),
     "years": m32,
   };
 }

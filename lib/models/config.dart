@@ -173,6 +173,13 @@ abstract class AppSettingProps with _$AppSettingProps {
     // P4 (E-5): the IP reputation section is opt-in. Default OFF means no
     // third-party lookup happens until the user explicitly turns it on.
     @Default(false) bool ipReputationEnabled,
+    /// P1 — keep a config even when some rule providers could not be fetched.
+    ///
+    /// Off by default: any non-empty `setupConfig` message is fatal, which is
+    /// what the project has always done. On, a message that consists *only* of
+    /// rule-provider warnings is downgraded to a notice and the rest of the
+    /// config still applies. Anything unrecognised stays fatal either way.
+    @Default(false) bool tolerateRuleProviderErrors,
     /// Which IP-reputation rows the detail view shows.
     ///
     /// Empty means **not customised yet** — the view then shows every field, so
@@ -506,6 +513,27 @@ extension ScriptPropsExt on ScriptProps {
       return scripts[index];
     }
     return null;
+  }
+
+  /// P1 ② — move legacy inline content into side files so the config JSON
+  /// stays small no matter how large the scripts are. Runs on every config
+  /// load; a no-op once migrated (idempotent: all content already empty).
+  Future<ScriptProps> externalize() async {
+    if (scripts.every((script) => script.content.isEmpty)) return this;
+    final next = <Script>[];
+    for (final script in scripts) {
+      if (script.content.isEmpty) {
+        next.add(script);
+        continue;
+      }
+      try {
+        next.add(await script.writeContent(script.content));
+      } catch (e) {
+        commonPrint.log('Failed to store script ${script.label}: $e');
+        next.add(script);
+      }
+    }
+    return copyWith(scripts: next);
   }
 }
 

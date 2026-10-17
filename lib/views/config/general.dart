@@ -657,6 +657,115 @@ class GeodataLoaderItem extends ConsumerWidget {
   }
 }
 
+/// P1 ⑥ — opt-in tolerance for rule-provider fetch failures. Off by default:
+/// any non-empty `setupConfig` message rejects the whole config, which is what
+/// upstream does. On, a message that consists *only* of rule-provider warnings
+/// keeps the rest of the config; see `isRuleProviderOnlyWarning`.
+class TolerateRuleProviderItem extends ConsumerWidget {
+  const TolerateRuleProviderItem({super.key});
+
+  @override
+  Widget build(BuildContext context, ref) {
+    final tolerate = ref.watch(
+      appSettingProvider.select((s) => s.tolerateRuleProviderErrors),
+    );
+    final warnings = ref.watch(ruleProviderWarningsProvider);
+    return Column(
+      children: [
+        ListItem.switchItem(
+          leading: const Icon(Icons.fact_check_outlined),
+          title: Text(appLocalizations.tolerateRuleProviderErrors),
+          subtitle: Text(appLocalizations.tolerateRuleProviderErrorsDesc),
+          delegate: SwitchDelegate(
+            value: tolerate,
+            onChanged: (bool value) {
+              ref
+                  .read(appSettingProvider.notifier)
+                  .updateState(
+                    (state) =>
+                        state.copyWith(tolerateRuleProviderErrors: value),
+                  );
+            },
+          ),
+        ),
+        if (warnings.isNotEmpty)
+          RuleProviderWarningNotice(
+            message: warnings,
+            onDismiss: () =>
+                ref.read(ruleProviderWarningsProvider.notifier).state = '',
+          ),
+      ],
+    );
+  }
+}
+
+/// P1 ⑥ — the notice shown when the last apply carried rule-provider warnings.
+///
+/// The core message is shown verbatim (newlines included): it names **which**
+/// provider failed, which is the part the user needs. The dismiss button only
+/// hides the notice; the next apply rewrites or clears it.
+class RuleProviderWarningNotice extends StatelessWidget {
+  const RuleProviderWarningNotice({
+    super.key,
+    required this.message,
+    this.onDismiss,
+  });
+
+  final String message;
+  final VoidCallback? onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = context.colorScheme;
+    final onColor = scheme.onErrorContainer;
+    return Container(
+      margin: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
+      padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+      decoration: BoxDecoration(
+        color: scheme.errorContainer,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.warning_amber_outlined, size: 18, color: onColor),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  appLocalizations.ruleProviderWarningsTitle,
+                  style: context.textTheme.bodyMedium?.copyWith(
+                    color: onColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              if (onDismiss != null)
+                IconButton(
+                  onPressed: onDismiss,
+                  icon: const Icon(Icons.close, size: 18),
+                  color: onColor,
+                  tooltip: MaterialLocalizations.of(context).closeButtonLabel,
+                  visualDensity: VisualDensity.compact,
+                ),
+            ],
+          ),
+          Padding(
+            // Keeps the message inside the rounded card on narrow screens by
+            // giving it the same right inset as the dismiss button column.
+            padding: const EdgeInsets.only(right: 8),
+            child: Text(
+              message,
+              style: context.textTheme.bodySmall?.copyWith(color: onColor),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class ExternalControllerItem extends ConsumerWidget {
   const ExternalControllerItem({super.key});
 
@@ -842,6 +951,7 @@ List<Widget> get generalItems => generateSection(
     const FindProcessItem(),
     const TcpConcurrentItem(),
     const GeodataLoaderItem(),
+    const TolerateRuleProviderItem(),
     const ExternalControllerItem(),
   ],
 );

@@ -189,6 +189,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "backupAndRecoveryDesc": MessageLookupByLibrary.simpleMessage(
       "通过 WebDAV 或本地同步数据",
     ),
+    "backupPassword": MessageLookupByLibrary.simpleMessage("备份密码"),
     "backupSuccess": MessageLookupByLibrary.simpleMessage("备份成功"),
     "basicConfig": MessageLookupByLibrary.simpleMessage("内核配置"),
     "basicConfigDesc": MessageLookupByLibrary.simpleMessage("全局修改内核配置"),
@@ -323,6 +324,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "confirmDelete": MessageLookupByLibrary.simpleMessage("确认删除"),
     "confirmDeleteNodeMsg": m5,
     "confirmImport": MessageLookupByLibrary.simpleMessage("确认导入"),
+    "confirmPassword": MessageLookupByLibrary.simpleMessage("确认密码"),
     "connection": MessageLookupByLibrary.simpleMessage("活跃连接"),
     "connections": MessageLookupByLibrary.simpleMessage("连接"),
     "connectionsDesc": MessageLookupByLibrary.simpleMessage("查看当前连接数据"),
@@ -476,6 +478,10 @@ class MessageLookup extends MessageLookupByLibrary {
       "在菜单栏显示上传和下载速率",
     ),
     "enableUdpForwarding": MessageLookupByLibrary.simpleMessage("启用 UDP 转发"),
+    "encryptBackup": MessageLookupByLibrary.simpleMessage("加密备份"),
+    "encryptBackupDesc": MessageLookupByLibrary.simpleMessage(
+      "使用 AES-256-GCM 加密备份内容。密码不会保存，丢失后备份将无法恢复",
+    ),
     "endpointIndependentNat": MessageLookupByLibrary.simpleMessage("NAT增强"),
     "endpointIndependentNatConfirmDesc": MessageLookupByLibrary.simpleMessage(
       "启用 Endpoint-Independent NAT 功能，性能可能会略有下降，此功能仅建议您在必要且熟悉的情况下开启",
@@ -938,6 +944,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "parsePureIpDesc": MessageLookupByLibrary.simpleMessage("解析纯 IP 连接"),
     "password": MessageLookupByLibrary.simpleMessage("密码"),
     "passwordAuth": MessageLookupByLibrary.simpleMessage("密码"),
+    "passwordMismatch": MessageLookupByLibrary.simpleMessage("两次输入的密码不一致"),
     "paste": MessageLookupByLibrary.simpleMessage("粘贴"),
     "pasteFromClipboard": MessageLookupByLibrary.simpleMessage("从剪贴板粘贴"),
     "peerPublicKey": MessageLookupByLibrary.simpleMessage("对端公钥"),
@@ -1100,6 +1107,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "rotatingCircle": MessageLookupByLibrary.simpleMessage("单圆自转"),
     "rule": MessageLookupByLibrary.simpleMessage("规则"),
     "ruleName": MessageLookupByLibrary.simpleMessage("规则名称"),
+    "ruleProviderWarningsTitle": MessageLookupByLibrary.simpleMessage(
+      "部分规则集未加载",
+    ),
     "ruleProviders": MessageLookupByLibrary.simpleMessage("规则提供者"),
     "ruleProvidersCount": MessageLookupByLibrary.simpleMessage("规则集"),
     "ruleTarget": MessageLookupByLibrary.simpleMessage("规则目标"),
@@ -1253,6 +1263,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "titleTooLong": MessageLookupByLibrary.simpleMessage("太长了，最多支持 20 个字符"),
     "tlsPortSniffer": MessageLookupByLibrary.simpleMessage("TLS 端口嗅探"),
     "toggle": MessageLookupByLibrary.simpleMessage("切换"),
+    "tolerateRuleProviderErrors": MessageLookupByLibrary.simpleMessage(
+      "忽略规则集加载失败",
+    ),
+    "tolerateRuleProviderErrorsDesc": MessageLookupByLibrary.simpleMessage(
+      "部分规则集下载失败时仍然应用配置。关闭后，任何规则集失败都会导致整份配置被拒绝",
+    ),
     "tonalSpotScheme": MessageLookupByLibrary.simpleMessage("调性点缀"),
     "tooManyRules": MessageLookupByLibrary.simpleMessage("最多允许 5 个规则"),
     "tools": MessageLookupByLibrary.simpleMessage("更多"),
@@ -1307,6 +1323,17 @@ class MessageLookup extends MessageLookupByLibrary {
     "tunnelTargetHint": MessageLookupByLibrary.simpleMessage(
       "例如: 114.114.114.114:53",
     ),
+    "tvScanManualUrl": MessageLookupByLibrary.simpleMessage("手机浏览器也可直接访问："),
+    "tvScanNoNetwork": MessageLookupByLibrary.simpleMessage(
+      "未检测到可用的局域网，请检查 Wi-Fi",
+    ),
+    "tvScanStep1": MessageLookupByLibrary.simpleMessage(
+      "确保手机与 TV 连接在同一 Wi-Fi 局域网",
+    ),
+    "tvScanStep2": MessageLookupByLibrary.simpleMessage("使用支持的相机或浏览器以扫描二维码"),
+    "tvScanStep3": MessageLookupByLibrary.simpleMessage("在网页中粘贴订阅链接或上传配置并推送"),
+    "tvScanSuccess": MessageLookupByLibrary.simpleMessage("配置推送成功，正在导入..."),
+    "tvScanWaiting": MessageLookupByLibrary.simpleMessage("等待手机推送配置中..."),
     "twoColumns": MessageLookupByLibrary.simpleMessage("两列"),
     "udpForwarding": MessageLookupByLibrary.simpleMessage("UDP 转发"),
     "udpForwardingDesc": MessageLookupByLibrary.simpleMessage(
@@ -1365,6 +1392,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "whitelistMode": MessageLookupByLibrary.simpleMessage("白名单模式"),
     "writeToSystem": MessageLookupByLibrary.simpleMessage("写入系统"),
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage("需要管理员权限"),
+    "wrongBackupPassword": MessageLookupByLibrary.simpleMessage("密码错误或备份已被篡改"),
     "years": m32,
   };
 }

@@ -329,6 +329,14 @@ final wakelockStateProvider = StateProvider<bool>((ref) => false);
 
 final isRestartingCoreProvider = StateProvider<bool>((ref) => false);
 
+/// P1 ⑥ — the raw core message of the **last successful** setup that carried
+/// rule-provider warnings, or `''` when the config is fully loaded.
+///
+/// Only a tolerable apply writes here (see `_setupCoreConfig`); a fatal one
+/// leaves the previous value, because the rollback keeps running the config the
+/// notice describes. A later clean apply clears it.
+final ruleProviderWarningsProvider = StateProvider<String>((ref) => '');
+
 @riverpod
 TrayState trayState(Ref ref) {
   final isStart = ref.watch(runTimeProvider.select((state) => state != null));
@@ -844,14 +852,14 @@ ColorScheme genColorScheme(
 @riverpod
 VM3<String?, String?, Dns?> needSetup(Ref ref) {
   final profileId = ref.watch(currentProfileIdProvider);
-  final content = ref.watch(
-    scriptStateProvider.select((state) => state.currentScript?.content),
+  final scriptDigest = ref.watch(
+    scriptStateProvider.select((state) => state.currentScript?.digest),
   );
   final overrideDns = ref.watch(overrideDnsProvider);
   final dns = overrideDns == true
       ? ref.watch(patchClashConfigProvider.select((state) => state.dns))
       : null;
-  return VM3(a: profileId, b: content, c: dns);
+  return VM3(a: profileId, b: scriptDigest, c: dns);
 }
 
 @riverpod

@@ -2150,7 +2150,7 @@ final class NeedSetupProvider
   }
 }
 
-String _$needSetupHash() => r'3668e8dc9f40a9bea45c94321804eb3afa0e7c51';
+String _$needSetupHash() => r'abba1c0e0e5ec94f89d33fbc7c3dc11b96cfb2fc';
 
 @ProviderFor(currentBrightness)
 final currentBrightnessProvider = CurrentBrightnessProvider._();

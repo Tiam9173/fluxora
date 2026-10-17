@@ -31,6 +31,7 @@ class BackupEntry {
     required this.kind,
     this.timestamp,
     this.sequence = 0,
+    this.isEncrypted = false,
   });
 
   final String name;
@@ -43,10 +44,15 @@ class BackupEntry {
   /// Collision suffix: `_01` is 1, no suffix is 0.
   final int sequence;
 
+  /// P1 ② — the payload is AES-256-GCM encrypted (`…​.zip.enc`). Says nothing
+  /// about the transport; see [BackupCrypto].
+  final bool isEncrypted;
+
   bool get isVersioned => kind == BackupKind.versioned;
 }
 
-/// Parse `fluxora_20261016T230500Z[_NN].zip`.
+/// Parse `fluxora_20261016T230500Z[_NN].zip` (P1 ②: an optional `.enc` suffix
+/// marks an encrypted payload; the rest of the grammar is unchanged).
 ///
 /// Returns null unless the name matches **strictly** — an unrecognised name is
 /// not a versioned backup, so it must never become eligible for pruning.
@@ -55,7 +61,7 @@ class BackupEntry {
   required String baseName,
 }) {
   final reg = RegExp(
-    '^${RegExp.escape(baseName)}_(\\d{4})(\\d{2})(\\d{2})T(\\d{2})(\\d{2})(\\d{2})Z(?:_(\\d{2}))?\\.zip\$',
+    '^${RegExp.escape(baseName)}_(\\d{4})(\\d{2})(\\d{2})T(\\d{2})(\\d{2})(\\d{2})Z(?:_(\\d{2}))?\\.zip(?:\\.enc)?\$',
     caseSensitive: false,
   );
   final match = reg.firstMatch(name);
@@ -97,6 +103,7 @@ String buildBackupName(
   DateTime utc,
   int sequence, {
   required String baseName,
+  bool encrypted = false,
 }) {
   final t = utc.toUtc();
   String p2(int v) => v.toString().padLeft(2, '0');
@@ -104,15 +111,22 @@ String buildBackupName(
       '${t.year.toString().padLeft(4, '0')}${p2(t.month)}${p2(t.day)}'
       'T${p2(t.hour)}${p2(t.minute)}${p2(t.second)}Z';
   final suffix = sequence == 0 ? '' : '_${p2(sequence)}';
-  return '${baseName}_$stamp$suffix.zip';
+  return '${baseName}_$stamp$suffix.zip${encrypted ? '.enc' : ''}';
 }
 
 /// Classify a remote file name, or null when it is neither kind of backup.
 ///
 /// Null means "not ours" — such a file is neither listed nor prunable.
 BackupEntry? classifyBackupName(String name, {required String baseName}) {
-  if (name.toLowerCase() == '${baseName.toLowerCase()}.zip') {
-    return BackupEntry(name: name, kind: BackupKind.legacy);
+  final lower = name.toLowerCase();
+  final encrypted = BackupCrypto.isEncryptedName(name);
+  if (lower == '${baseName.toLowerCase()}.zip' ||
+      lower == '${baseName.toLowerCase()}.zip.enc') {
+    return BackupEntry(
+      name: name,
+      kind: BackupKind.legacy,
+      isEncrypted: encrypted,
+    );
   }
   final parsed = parseVersionedBackupName(name, baseName: baseName);
   if (parsed == null) return null;
@@ -121,6 +135,7 @@ BackupEntry? classifyBackupName(String name, {required String baseName}) {
     kind: BackupKind.versioned,
     timestamp: parsed.timestamp,
     sequence: parsed.sequence,
+    isEncrypted: encrypted,
   );
 }
 
@@ -243,7 +258,10 @@ class DAVClient {
   ///
   /// This only picks a name. It cannot *claim* it — see [backup] for the check
   /// that runs after the upload.
-  Future<String> getNextBackupFileName({DateTime? now}) async {
+  Future<String> getNextBackupFileName({
+    DateTime? now,
+    bool encrypted = false,
+  }) async {
     // Truncated to whole seconds: the name only encodes seconds, so comparing a
     // microsecond-precision `now` against a parsed name would never match and
     // every upload would reuse sequence 0.
@@ -270,6 +288,7 @@ class DAVClient {
       utc,
       maxSequence + 1,
       baseName: baseName,
+      encrypted: encrypted,
     );
   }
 
@@ -294,8 +313,15 @@ class DAVClient {
     }
   }
 
-  Future<bool> backup(Uint8List data) async {
+  /// P1 ② — [password] encrypts the payload (AES-256-GCM) and marks the name
+  /// with `.enc`. The password is never persisted; losing it means the backup
+  /// is unreadable, which the UI states up front.
+  Future<bool> backup(Uint8List data, {String? password}) async {
     return await _retryOperation(() async {
+      final encrypted = password != null && password.isNotEmpty;
+      final payload = encrypted
+          ? await BackupCrypto.encrypt(data, password)
+          : data;
       try {
         await client.mkdir(root);
       } catch (e) {
@@ -313,13 +339,13 @@ class DAVClient {
       // instead of having silently overwritten the winner.
       const maxAttempts = 3;
       for (var attempt = 1; attempt <= maxAttempts; attempt++) {
-        final targetName = await getNextBackupFileName();
+        final targetName = await getNextBackupFileName(encrypted: encrypted);
         final targetPath = '$root/$targetName';
         commonPrint.log(
-          'WebDAV backup: uploading ${data.length} bytes to $targetPath',
+          'WebDAV backup: uploading ${payload.length} bytes to $targetPath',
         );
 
-        await client.write(targetPath, data);
+        await client.write(targetPath, payload);
 
         final landed = (await getBackupEntries()).where(
           (e) => e.name.toLowerCase() == targetName.toLowerCase(),
