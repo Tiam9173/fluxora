@@ -1,4 +1,3 @@
-import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluxora/models/ip_reputation.dart';
@@ -40,7 +39,14 @@ void main() {
           'isSearchEngineBot': false,
         },
     'asn': {'asn': 139341, 'name': 'ACE-AS-AP', 'org': 'Aceville Pte.ltd'},
-    'risk': {'purity': 12, 'verdict': 'dangerous'},
+    'risk': {
+      'purity': 12,
+      'verdict': 'dangerous',
+      'factors': [
+        {'id': 'native', 'label': 'native-ip', 'points': -5},
+        {'id': 'rdns:missing', 'label': 'no-rdns', 'points': 5},
+      ],
+    },
     'scenarios': const [],
     'sources': const [],
     'blocklists': blocklists ?? const [],
@@ -257,30 +263,67 @@ void main() {
     });
   });
 
-  group('P4 — E-4: no composite score is surfaced', () {
-    test('a body full of risk.purity still yields no score field', () {
+  // E-4 was relaxed by the user (decision B), but only on one condition: the
+  // score must never travel alone. These tests pin the *new* contract, which is
+  // stricter than the old one about the thing that actually matters.
+  group('P4 - score only with its reasons (E-4 relaxed, decision B)', () {
+    test('risk.purity is surfaced, together with its factors', () {
       final r = service.parse('203.0.113.7', 200, fullBody());
 
-      // `risk.purity` / `risk.verdict` exist in the payload but the contract
-      // deliberately exposes no aggregate: the only per-marker verdicts are the
-      // independent tri-state markers.
-      expect(r.hasFlaggedMarker, isTrue);
+      expect(r.isOk, isTrue);
+      expect(r.risk, isNotNull);
+      expect(r.risk!.purity, fullBody()['risk']['purity']);
+      // Without its reasons the score would be the black box E-4 rejected, so
+      // the parser must never emit a score with an empty factor list when the
+      // source sent factors.
+      expect(fullBody()['risk']['factors'], isNotEmpty);
+      expect(r.risk!.factors, isNotEmpty);
+      // The per-marker verdicts are unchanged: the aggregate is additive.
       expect(r.markers.length, IpReputationService.markerIds.length);
     });
 
-    test('the model declares no composite score or verdict field', () {
-      // Structural guard: strip doc comments, then assert no code-level
-      // `purity` / `verdict` / `score`-style aggregate identifier exists. The
-      // only numeric reputation value allowed is the per-source abuse score.
-      final src = File('lib/models/ip_reputation.dart')
-          .readAsStringSync()
-          .split('\n')
-          .where((l) => !l.trimLeft().startsWith('///'))
-          .join('\n');
+    test('a score with no reasons and no number is not surfaced', () {
+      final body = fullBody()..['risk'] = <String, dynamic>{};
 
-      expect(RegExp(r'\bpurity\b').hasMatch(src), isFalse);
-      expect(RegExp(r'\bverdict\b').hasMatch(src), isFalse);
-      expect(RegExp(r'\b(purityScore|totalScore|riskScore)\b').hasMatch(src), isFalse);
+      final r = service.parse('203.0.113.7', 200, body);
+
+      expect(r.isOk, isTrue);
+      expect(r.risk, isNull);
+      expect(r.markers, isNotEmpty);
+    });
+
+    test('a factor without a weight is kept at neutral, not invented', () {
+      final body = fullBody();
+      body['risk']['factors'] = [
+        {'id': 'native', 'label': 'native-ip'},
+      ];
+
+      final r = service.parse('203.0.113.7', 200, body);
+
+      expect(r.risk!.factors, hasLength(1));
+      expect(r.risk!.factors.single.points, 0);
+    });
+
+    test('a negative source weight is a bonus, not a penalty', () {
+      final body = fullBody();
+      body['risk']['factors'] = [
+        {'id': 'native', 'label': 'native-ip', 'points': -5},
+      ];
+
+      final r = service.parse('203.0.113.7', 200, body);
+
+      expect(r.risk!.factors.single.points, -5);
+    });
+
+    test('null purity scores are never manufactured as zero', () {
+      final r = IpReputation(
+        status: IpReputationStatus.ok,
+        ip: '203.0.113.7',
+        risk: const IpRiskScore(factors: []),
+      );
+
+      expect(r.risk, isNotNull);
+      expect(r.risk!.hasScore, isFalse);
     });
   });
 }

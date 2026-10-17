@@ -523,6 +523,120 @@ class _NetworkDetectionUrlDialog extends ConsumerWidget {
 /// * A failed lookup renders as a failure with its reason — **never** as a clean
 ///   result.
 /// * **No composite score**: only the independent markers (E-4).
+/// item 6 — the source's composite score, always rendered as a unit with the
+/// reasons behind it.
+///
+/// User decision B relaxed E-4's "no composite score" rule, but only on this
+/// condition: a bare number is the black box that rule rejected. So [IpRiskScore
+/// .factors] travels with the number, and the whole card is labelled as the
+/// source's judgement rather than ours.
+class _IpRiskScoreCard extends StatelessWidget {
+  const _IpRiskScoreCard({required this.risk});
+
+  final IpRiskScore risk;
+
+  Color? _scoreColor(BuildContext context, int purity) {
+    final scheme = Theme.of(context).colorScheme;
+    if (purity < 40) return scheme.error;
+    if (purity < 75) return Colors.orange;
+    return scheme.primary;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 96,
+            child: Text(
+              appLocalizations.ipRiskScore,
+              style: textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      '${risk.purity}',
+                      style: textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: _scoreColor(context, risk.purity ?? 0),
+                      ),
+                    ),
+                    if (risk.label != null)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 6),
+                        child: Text(risk.label!, style: textTheme.bodyMedium),
+                      ),
+                  ],
+                ),
+                if (risk.verdict != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      '${appLocalizations.ipRiskVerdict}: ${risk.verdict}',
+                      style: textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                if (risk.factors.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(
+                      appLocalizations.ipRiskFactors,
+                      style: textTheme.bodySmall,
+                    ),
+                  ),
+                  for (final factor in risk.factors)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: 44,
+                            child: Text(
+                              factor.points < 0
+                                  ? '+${-factor.points}'
+                                  : '-${factor.points}',
+                              style: textTheme.bodySmall?.copyWith(
+                                color: factor.points < 0
+                                    ? colorScheme.primary
+                                    : colorScheme.error,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              factor.label,
+                              style: textTheme.bodySmall,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _IpRiskSection extends ConsumerStatefulWidget {
   const _IpRiskSection({required this.ip});
 
@@ -669,6 +783,8 @@ class _IpRiskSectionState extends ConsumerState<_IpRiskSection> {
               subtitle: Text(report.failureReason ?? ''),
             )
           else ...[
+            if (report.risk case final risk? when risk.hasScore)
+              _IpRiskScoreCard(risk: risk),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Wrap(

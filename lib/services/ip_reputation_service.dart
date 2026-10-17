@@ -7,9 +7,12 @@ import 'package:fluxora/models/ip_reputation.dart';
 ///
 /// * **Never throws.** Every failure becomes [IpReputation.unavailable] with a
 ///   reason, because a failed lookup must never be presented as "clean" (E-5).
-/// * **No composite score.** The response's `risk.purity` / `risk.verdict` are
-///   deliberately ignored — only the independent `flags` / `asn` / `abuse` /
-///   `blocklists` markers are mapped (E-4).
+/// * **Score only with its reasons.** E-4 originally dropped `risk` entirely.
+///   The user has since relaxed that: the source's `purity` / `level` /
+///   `verdict` are now mapped **together with `risk.factors`**, and the UI must
+///   always render the number and the reasons as one unit, attributed to the
+///   source. A score without its reasons would still be the black box E-4
+///   rejected.
 /// * **No new dependency.** Uses the `dio` client the project already ships.
 /// * Does not touch `networkDetectionUrl`, the IP query order, or `IpInfo`.
 class IpReputationService {
@@ -125,12 +128,58 @@ class IpReputationService {
         abuseScore: _abuseScore(body['abuse']),
         abuseReports: _abuseReports(body['abuse']),
         blocklistsHit: _blocklistsHit(body['blocklists']),
+        risk: _risk(body['risk']),
         unknownNotes: _unknownNotes(body['unknowns']),
         reportUrl: _nonEmpty(body['reportUrl']),
       );
     } catch (_) {
       return IpReputation.unavailable(ip, IpReputationFailure.parseError);
     }
+  }
+
+  /// Map the source's composite score, keeping its reasons attached.
+  ///
+  /// Returns null when the source sent nothing usable — the UI then shows "no
+  /// score", which is not the same as a good score.
+  static IpRiskScore? _risk(Object? raw) {
+    if (raw is! Map) return null;
+    final purity = _asInt(raw['purity']);
+    final factorsRaw = raw['factors'];
+    final factors = <IpRiskFactor>[];
+    if (factorsRaw is List) {
+      for (final item in factorsRaw) {
+        if (item is! Map) continue;
+        final id = _nonEmpty(item['id']);
+        final label = _nonEmpty(item['label']);
+        if (id == null || label == null) continue;
+        factors.add(
+          IpRiskFactor(
+            id: id,
+            label: label,
+            // A factor without points cannot be ranked; treat it as neutral
+            // rather than inventing a weight.
+            points: _asInt(item['points']) ?? 0,
+            category: _nonEmpty(item['category']),
+            detail: _nonEmpty(item['detail']),
+          ),
+        );
+      }
+    }
+    if (purity == null && factors.isEmpty) return null;
+    return IpRiskScore(
+      purity: purity,
+      riskPoints: _asInt(raw['riskPoints']),
+      level: _nonEmpty(raw['level']),
+      label: _nonEmpty(raw['label']),
+      verdict: _nonEmpty(raw['verdict']),
+      factors: factors,
+    );
+  }
+
+  static int? _asInt(Object? v) {
+    if (v is int) return v;
+    if (v is num) return v.toInt();
+    return int.tryParse(v?.toString() ?? '');
   }
 
   static String? _nonEmpty(Object? v) {

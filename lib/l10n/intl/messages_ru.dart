@@ -953,6 +953,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Зарезервированный адрес",
     ),
     "ipRiskEnable": MessageLookupByLibrary.simpleMessage("Включить запрос"),
+    "ipRiskFactors": MessageLookupByLibrary.simpleMessage("Факторы оценки"),
     "ipRiskFailed": MessageLookupByLibrary.simpleMessage(
       "Не удалось выполнить запрос",
     ),
@@ -971,6 +972,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "ipRiskProxy": MessageLookupByLibrary.simpleMessage("Прокси"),
     "ipRiskRelay": MessageLookupByLibrary.simpleMessage("Ретранслятор"),
+    "ipRiskScore": MessageLookupByLibrary.simpleMessage(
+      "Оценка чистоты источника",
+    ),
     "ipRiskSearchEngineBot": MessageLookupByLibrary.simpleMessage(
       "Поисковый бот",
     ),
@@ -978,6 +982,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Устаревшие данные (не в реальном времени)",
     ),
     "ipRiskTor": MessageLookupByLibrary.simpleMessage("Tor"),
+    "ipRiskVerdict": MessageLookupByLibrary.simpleMessage("Оценка источника"),
     "ipRiskVpn": MessageLookupByLibrary.simpleMessage("VPN"),
     "ipcidr": MessageLookupByLibrary.simpleMessage("IP/CIDR"),
     "ipv6Desc": MessageLookupByLibrary.simpleMessage("Включить поддержку IPv6"),

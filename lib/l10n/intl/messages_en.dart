@@ -909,6 +909,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "ipRiskBlocklists": MessageLookupByLibrary.simpleMessage("Blocklists"),
     "ipRiskBogon": MessageLookupByLibrary.simpleMessage("Bogon"),
     "ipRiskEnable": MessageLookupByLibrary.simpleMessage("Enable lookup"),
+    "ipRiskFactors": MessageLookupByLibrary.simpleMessage("Score Factors"),
     "ipRiskFailed": MessageLookupByLibrary.simpleMessage("Lookup failed"),
     "ipRiskHosting": MessageLookupByLibrary.simpleMessage("Hosting/DC"),
     "ipRiskIntel": MessageLookupByLibrary.simpleMessage("IP Risk Intel"),
@@ -925,11 +926,13 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "ipRiskProxy": MessageLookupByLibrary.simpleMessage("Proxy"),
     "ipRiskRelay": MessageLookupByLibrary.simpleMessage("Relay"),
+    "ipRiskScore": MessageLookupByLibrary.simpleMessage("Source Purity Score"),
     "ipRiskSearchEngineBot": MessageLookupByLibrary.simpleMessage("Search bot"),
     "ipRiskStale": MessageLookupByLibrary.simpleMessage(
       "Stale — not real-time",
     ),
     "ipRiskTor": MessageLookupByLibrary.simpleMessage("Tor"),
+    "ipRiskVerdict": MessageLookupByLibrary.simpleMessage("Assessment"),
     "ipRiskVpn": MessageLookupByLibrary.simpleMessage("VPN"),
     "ipcidr": MessageLookupByLibrary.simpleMessage("IP/CIDR"),
     "ipv6Desc": MessageLookupByLibrary.simpleMessage(
