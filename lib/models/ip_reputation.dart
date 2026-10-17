@@ -54,6 +54,57 @@ class IpReputationFailure {
   static const httpError = 'http_error';
 }
 
+/// One reason behind the source's score — a deduction or a bonus.
+///
+/// item 6 — the score is only shown alongside these, never on its own: a number
+/// without its reasons is the black box E-4 rejected.
+class IpRiskFactor {
+  final String id;
+  final String? category;
+  final String label;
+
+  /// Negative means the source *added* points for this (a good signal);
+  /// positive means it deducted. Sign is the source's, not ours.
+  final int points;
+  final String? detail;
+
+  const IpRiskFactor({
+    required this.id,
+    required this.label,
+    required this.points,
+    this.category,
+    this.detail,
+  });
+}
+
+/// The source's own composite assessment.
+///
+/// item 6 (user decision, relaxing E-4) — E-4 originally kept this out entirely
+/// because a 0–100 score hides how it was reached. It is allowed back **only
+/// because** the source also sends [factors], and the UI always renders the two
+/// together, labelled as the source's judgement rather than a verdict of ours.
+class IpRiskScore {
+  /// 0–100, higher is cleaner.
+  final int? purity;
+  final int? riskPoints;
+  final String? level;
+  final String? label;
+  final String? verdict;
+  final List<IpRiskFactor> factors;
+
+  const IpRiskScore({
+    this.purity,
+    this.riskPoints,
+    this.level,
+    this.label,
+    this.verdict,
+    this.factors = const [],
+  });
+
+  /// True when there is a number worth showing.
+  bool get hasScore => purity != null;
+}
+
 /// One report. `status == unavailable` means **nothing is known** — the UI must
 /// not render it as a clean bill of health (E-5: failure ≠ safe).
 class IpReputation {
@@ -94,6 +145,12 @@ class IpReputation {
   /// Names of public blocklists that listed this IP (benign listings excluded).
   final List<String> blocklistsHit;
 
+  /// The source's composite score, shown together with its reasons.
+  ///
+  /// Null when the source did not send one — which the UI must render as "no
+  /// score", never as a good score.
+  final IpRiskScore? risk;
+
   /// The source's own "what this data cannot tell you" list — surfaced verbatim
   /// so the UI can show the limits alongside the markers.
   final List<String> unknownNotes;
@@ -116,6 +173,7 @@ class IpReputation {
     this.abuseScore,
     this.abuseReports,
     this.blocklistsHit = const [],
+    this.risk,
     this.unknownNotes = const [],
     this.reportUrl,
   });

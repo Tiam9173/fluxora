@@ -7985,6 +7985,36 @@ class AppLocalizations {
     );
   }
 
+  /// `Source Purity Score`
+  String get ipRiskScore {
+    return Intl.message(
+      'Source Purity Score',
+      name: 'ipRiskScore',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Assessment`
+  String get ipRiskVerdict {
+    return Intl.message(
+      'Assessment',
+      name: 'ipRiskVerdict',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Score Factors`
+  String get ipRiskFactors {
+    return Intl.message(
+      'Score Factors',
+      name: 'ipRiskFactors',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Intelligence Analytics`
   String get chainIntelAnalytics {
     return Intl.message(

@@ -919,6 +919,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "ipRiskBogon": MessageLookupByLibrary.simpleMessage("آدرس رزروشده"),
     "ipRiskEnable": MessageLookupByLibrary.simpleMessage("فعال‌سازی استعلام"),
+    "ipRiskFactors": MessageLookupByLibrary.simpleMessage("عوامل امتیاز"),
     "ipRiskFailed": MessageLookupByLibrary.simpleMessage("استعلام ناموفق بود"),
     "ipRiskHosting": MessageLookupByLibrary.simpleMessage("میزبانی/دیتاسنتر"),
     "ipRiskIntel": MessageLookupByLibrary.simpleMessage("اطلاعات ریسک IP"),
@@ -935,6 +936,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "ipRiskProxy": MessageLookupByLibrary.simpleMessage("پروکسی"),
     "ipRiskRelay": MessageLookupByLibrary.simpleMessage("رله"),
+    "ipRiskScore": MessageLookupByLibrary.simpleMessage("امتیاز خلوص منبع"),
     "ipRiskSearchEngineBot": MessageLookupByLibrary.simpleMessage(
       "ربات موتور جستجو",
     ),
@@ -942,6 +944,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "داده قدیمی (غیر واقعی)",
     ),
     "ipRiskTor": MessageLookupByLibrary.simpleMessage("Tor"),
+    "ipRiskVerdict": MessageLookupByLibrary.simpleMessage("ارزیابی"),
     "ipRiskVpn": MessageLookupByLibrary.simpleMessage("VPN"),
     "ipcidr": MessageLookupByLibrary.simpleMessage("IP / ماسک"),
     "ipv6Desc": MessageLookupByLibrary.simpleMessage(
