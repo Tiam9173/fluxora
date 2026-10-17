@@ -325,5 +325,32 @@ void main() {
       expect(r.risk, isNotNull);
       expect(r.risk!.hasScore, isFalse);
     });
+
+    test('scenarios are surfaced, and unscored uses are dropped', () {
+      final body = fullBody();
+      body['scenarios'] = [
+        {'id': 'ai', 'label': 'AI', 'score': 99, 'levelLabel': 'very-suitable'},
+        {'id': 'email', 'label': 'mail', 'score': 12, 'levelLabel': 'poor'},
+        {'id': 'made-up', 'label': 'nope', 'score': 100},
+        {'id': 'streaming', 'label': 'missing-score'},
+      ];
+
+      final r = service.parse('203.0.113.7', 200, body);
+
+      // An unknown id and an unscored use both say nothing usable, so neither
+      // may be surfaced as a score.
+      expect(r.scenarios.map((e) => e.id).toList(), ['ai', 'email']);
+      expect(r.scenarios.first.score, 99);
+      expect(r.scenarios.first.levelLabel, 'very-suitable');
+      expect(r.scenarios.last.score, 12);
+    });
+
+    test('an absent scenarios key is empty, not all-good', () {
+      final body = fullBody()..remove('scenarios');
+
+      final r = service.parse('203.0.113.7', 200, body);
+
+      expect(r.scenarios, isEmpty);
+    });
   });
 }

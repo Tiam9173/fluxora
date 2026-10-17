@@ -8015,6 +8015,61 @@ class AppLocalizations {
     );
   }
 
+  /// `Scenario Scores`
+  String get ipRiskScenarios {
+    return Intl.message(
+      'Scenario Scores',
+      name: 'ipRiskScenarios',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `AI Services`
+  String get scenarioAi {
+    return Intl.message('AI Services', name: 'scenarioAi', desc: '', args: []);
+  }
+
+  /// `Social Sign-up`
+  String get scenarioSocial {
+    return Intl.message(
+      'Social Sign-up',
+      name: 'scenarioSocial',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Streaming`
+  String get scenarioStreaming {
+    return Intl.message(
+      'Streaming',
+      name: 'scenarioStreaming',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Gaming`
+  String get scenarioGaming {
+    return Intl.message('Gaming', name: 'scenarioGaming', desc: '', args: []);
+  }
+
+  /// `E-commerce`
+  String get scenarioEcommerce {
+    return Intl.message(
+      'E-commerce',
+      name: 'scenarioEcommerce',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Email`
+  String get scenarioEmail {
+    return Intl.message('Email', name: 'scenarioEmail', desc: '', args: []);
+  }
+
   /// `Intelligence Analytics`
   String get chainIntelAnalytics {
     return Intl.message(

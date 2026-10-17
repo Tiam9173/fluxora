@@ -105,6 +105,29 @@ class IpRiskScore {
   bool get hasScore => purity != null;
 }
 
+/// How suitable the IP is for one concrete use.
+///
+/// item 6 — the source scores each use case separately because "is this IP any
+/// good" has no single answer: an address can be fine for streaming and hopeless
+/// for email. [id] is stable and non-localised, so the UI owns the translation
+/// and the source's own Chinese label is deliberately not shown.
+class IpScenarioScore {
+  /// One of [IpReputationService.scenarioIds].
+  final String id;
+  final int? score;
+
+  /// The source's verdict for this use, e.g. "very suitable".
+  final String? levelLabel;
+  final String? reason;
+
+  const IpScenarioScore({
+    required this.id,
+    this.score,
+    this.levelLabel,
+    this.reason,
+  });
+}
+
 /// One report. `status == unavailable` means **nothing is known** — the UI must
 /// not render it as a clean bill of health (E-5: failure ≠ safe).
 class IpReputation {
@@ -151,6 +174,10 @@ class IpReputation {
   /// score", never as a good score.
   final IpRiskScore? risk;
 
+  /// Per-use-case suitability. Empty when the source sent none — which is
+  /// "nothing to say", never "fine for everything".
+  final List<IpScenarioScore> scenarios;
+
   /// The source's own "what this data cannot tell you" list — surfaced verbatim
   /// so the UI can show the limits alongside the markers.
   final List<String> unknownNotes;
@@ -174,6 +201,7 @@ class IpReputation {
     this.abuseReports,
     this.blocklistsHit = const [],
     this.risk,
+    this.scenarios = const [],
     this.unknownNotes = const [],
     this.reportUrl,
   });
