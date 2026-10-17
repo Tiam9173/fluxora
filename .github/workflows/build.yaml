@@ -1,4 +1,6 @@
-name: build
+name: Build & Release
+
+run-name: ${{ github.event_name == 'workflow_dispatch' && format('Build validation - {0}', github.ref_name) || format('Build {0}', github.ref_name) }}
 
 on:
   push:
