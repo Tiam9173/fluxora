@@ -39,6 +39,19 @@ class _ScriptOptionsCache {
 }
 
 class JavaScriptRuntimeManager {
+  /// The `console` shim every script gets, injected once before the script
+  /// itself. Kept separate so the user's source is never concatenated into a
+  /// wrapper: any rewrite of their text can change how it parses.
+  static const String _consolePrelude = '''
+    var console = {
+      log: function() { if (typeof print !== 'undefined') print.apply(null, arguments); },
+      warn: function() { if (typeof print !== 'undefined') print.apply(null, ['WARN:'].concat(Array.prototype.slice.call(arguments))); },
+      error: function() { if (typeof print !== 'undefined') print.apply(null, ['ERROR:'].concat(Array.prototype.slice.call(arguments))); },
+      info: function() { if (typeof print !== 'undefined') print.apply(null, arguments); },
+      debug: function() { if (typeof print !== 'undefined') print.apply(null, arguments); }
+    };
+  ''';
+
   static Future<Map<String, dynamic>> evaluateScript(
     String scriptContent,
     Map<String, dynamic> config, {
@@ -70,16 +83,12 @@ class JavaScriptRuntimeManager {
 
       final engine = IsolateQjs();
       try {
+        // Same reason as _evaluateWithRetry: the script must parse as the user
+        // wrote it, not indented inside a function body.
+        await engine.evaluate(_consolePrelude);
+        await engine.evaluate(scriptContent);
         final res = await engine.evaluate('''
-          var console = {
-            log: function() {},
-            warn: function() {},
-            error: function() {},
-            info: function() {},
-            debug: function() {}
-          };
           (function() {
-            $scriptContent
             var options = typeof ruleOptionsEnable !== 'undefined' && ruleOptionsEnable && typeof ruleOptionsEnable === 'object' ? ruleOptionsEnable : {};
             var icons = {};
             if (typeof serviceConfigs !== 'undefined' && Array.isArray(serviceConfigs)) {
@@ -138,28 +147,24 @@ class JavaScriptRuntimeManager {
     while (true) {
       final engine = IsolateQjs();
       try {
+        // The script is evaluated at **top level**, never inlined into an IIFE.
+        // Inlining used to break on perfectly valid scripts: the wrapper put the
+        // content inside a function body at a different indentation, so a
+        // top-level `return`, a trailing line comment swallowing the injected
+        // call, or an ASI-sensitive construct failed to parse. Three phases keep
+        // the script byte-identical to what the user imported.
+        await engine.evaluate(_consolePrelude);
+        await engine.evaluate(scriptContent);
         final configJs = json.encode(config);
         final customJs = customOptions != null && customOptions.isNotEmpty
             ? json.encode(customOptions)
             : null;
-        final overrideSnippet = customJs != null
-            ? 'if (typeof ruleOptionsEnable !== "undefined") { Object.assign(ruleOptionsEnable, $customJs); }'
-            : '';
-
-        return await engine.evaluate('''
-          var console = {
-            log: function(...args) { if (typeof print !== 'undefined') print(...args); },
-            warn: function(...args) { if (typeof print !== 'undefined') print('WARN:', ...args); },
-            error: function(...args) { if (typeof print !== 'undefined') print('ERROR:', ...args); },
-            info: function(...args) { if (typeof print !== 'undefined') print('INFO:', ...args); },
-            debug: function(...args) { if (typeof print !== 'undefined') print('DEBUG:', ...args); }
-          };
-          (function() {
-            $scriptContent
-            $overrideSnippet
-            return main($configJs);
-          })();
-        ''');
+        if (customJs != null) {
+          await engine.evaluate(
+            'if (typeof ruleOptionsEnable !== "undefined") { Object.assign(ruleOptionsEnable, $customJs); }',
+          );
+        }
+        return await engine.evaluate('main($configJs)');
       } catch (e) {
         if (attempt >= maxRetries) {
           throw 'JS Script Error: $e';
