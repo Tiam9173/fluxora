@@ -781,11 +781,11 @@ class AppController {
         try {
           await _applyProfile();
         } catch (err) {
-          _ref.read(currentProfileIdProvider.notifier).value = prevProfileId;
-          try {
-            await _applyProfile();
-          } catch (_) {}
-          globalState.showNotifier(err.toString());
+          await _reportProfileSwitchFailure(
+            failedProfileId: _ref.read(currentProfileIdProvider),
+            restoreProfileId: prevProfileId,
+            error: err,
+          );
         }
       }
       _ref.read(logsProvider.notifier).value = FixedList(maxLength);
@@ -793,6 +793,70 @@ class AppController {
       globalState.computeHeightMapCache = {};
       addCheckIpNumDebounce();
     });
+  }
+
+  /// item 6 (P0) — report a failed profile switch honestly.
+  ///
+  /// Rolling the selection back stays the right call: staying on a config that
+  /// works beats leaving the user on one that does not. What was wrong was doing
+  /// it **silently** — the user saw "nothing happened", with no way to tell
+  /// which config was actually live. That is precisely the state that reads as
+  /// "every subscription turned into the same thing": the list says one thing,
+  /// the running config is another.
+  ///
+  /// Two things this now does that it did not before:
+  /// * names the profile that failed and the one still in effect;
+  /// * says so when the fallback *also* fails, instead of swallowing it.
+  Future<void> _reportProfileSwitchFailure({
+    required String? failedProfileId,
+    required String? restoreProfileId,
+    required Object error,
+  }) async {
+    final profiles = _ref.read(profilesProvider);
+    final failedLabel = _profileLabel(profiles, failedProfileId);
+    final restoreLabel = _profileLabel(profiles, restoreProfileId);
+
+    _ref.read(currentProfileIdProvider.notifier).value = restoreProfileId;
+    var restored = true;
+    try {
+      await _applyProfile();
+    } catch (_) {
+      restored = false;
+    }
+
+    final reason = error.formatError;
+    commonPrint.log(
+      '[Profile] Switch to "$failedLabel" failed: $reason '
+      '| rolled back to "$restoreLabel": $restored',
+    );
+    globalState.showMessage(
+      title: appLocalizations.switchProfileFailed,
+      message: TextSpan(
+        children: [
+          if (failedLabel case final label?)
+            TextSpan(text: '"$label"\n'),
+          TextSpan(text: reason),
+          TextSpan(text: '\n\n'),
+          if (restored)
+            TextSpan(
+              text: restoreLabel == null
+                  ? appLocalizations.noProfileInEffect
+                  : appLocalizations.stillUsingProfile(restoreLabel),
+            )
+          else
+            TextSpan(text: appLocalizations.profileFallbackFailed),
+        ],
+      ),
+    );
+  }
+
+  /// The label of a profile, or null when the id is unknown or absent.
+  static String? _profileLabel(List<Profile> profiles, String? id) {
+    if (id == null) return null;
+    for (final profile in profiles) {
+      if (profile.id == id) return profile.label;
+    }
+    return null;
   }
 
   void _reportCoreRestartFailure(Object error) {

@@ -81,9 +81,11 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m29(count) => "${count}개 선택됨";
 
-  static String m30(label) => "${label} 항목은 올바른 URL이어야 합니다";
+  static String m30(name) => "사용 중: ${name}";
 
-  static String m31(count) => "${Intl.plural(count, other: '#년')}";
+  static String m31(label) => "${label} 항목은 올바른 URL이어야 합니다";
+
+  static String m32(count) => "${Intl.plural(count, other: '#년')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -928,6 +930,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "noNodesInGroupHint": MessageLookupByLibrary.simpleMessage(
       "오른쪽 아래의 \"노드 수동 추가\" 또는 오른쪽 위의 \"링크 일괄 가져오기\"를 탭하세요",
     ),
+    "noProfileInEffect": MessageLookupByLibrary.simpleMessage("활성 설정이 없습니다"),
     "noProxy": MessageLookupByLibrary.simpleMessage("프록시 없음"),
     "noProxyDesc": MessageLookupByLibrary.simpleMessage(
       "프로필을 생성하거나 유효한 프로필을 추가하세요",
@@ -1105,6 +1108,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "profileChainDialogTitle": m27,
     "profileChainSaved": MessageLookupByLibrary.simpleMessage(
       "사전 프록시 및 랜딩 프록시 설정을 저장했습니다",
+    ),
+    "profileFallbackFailed": MessageLookupByLibrary.simpleMessage(
+      "이전 설정도 복원하지 못했습니다",
     ),
     "profileHasUpdate": MessageLookupByLibrary.simpleMessage(
       "프로필이 수정되었습니다. 자동 업데이트를 끄시겠습니까?",
@@ -1329,6 +1335,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "startVpn": MessageLookupByLibrary.simpleMessage("시작 중..."),
     "status": MessageLookupByLibrary.simpleMessage("상태"),
     "statusDesc": MessageLookupByLibrary.simpleMessage("끄면 시스템 DNS를 사용합니다"),
+    "stillUsingProfile": m30,
     "stop": MessageLookupByLibrary.simpleMessage("정지"),
     "stopVpn": MessageLookupByLibrary.simpleMessage("정지 중..."),
     "storeFix": MessageLookupByLibrary.simpleMessage("스토어 복구"),
@@ -1344,6 +1351,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "submit": MessageLookupByLibrary.simpleMessage("제출"),
     "success": MessageLookupByLibrary.simpleMessage("성공"),
     "switchLabel": MessageLookupByLibrary.simpleMessage("스위치"),
+    "switchProfileFailed": MessageLookupByLibrary.simpleMessage("구독 전환 실패"),
     "switchToDomesticIp": MessageLookupByLibrary.simpleMessage("국내 IP 가져오기"),
     "sync": MessageLookupByLibrary.simpleMessage("동기화"),
     "syncAll": MessageLookupByLibrary.simpleMessage("모두 동기화"),
@@ -1494,7 +1502,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "upload": MessageLookupByLibrary.simpleMessage("업로드"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage("URL 주소로 프로필 가져오기"),
-    "urlTip": m30,
+    "urlTip": m31,
     "useGlobalScriptOverride": MessageLookupByLibrary.simpleMessage(
       "글로벌 스크립트 오버라이드 사용",
     ),
@@ -1531,6 +1539,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "whitelistMode": MessageLookupByLibrary.simpleMessage("화이트리스트 모드"),
     "writeToSystem": MessageLookupByLibrary.simpleMessage("시스템 적용"),
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage("관리자 권한이 필요합니다"),
-    "years": m31,
+    "years": m32,
   };
 }

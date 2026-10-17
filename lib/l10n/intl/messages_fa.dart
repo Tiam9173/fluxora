@@ -84,9 +84,11 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m29(count) => "${count} مورد انتخاب شده";
 
-  static String m30(label) => "${label} باید یک URL معتبر باشد";
+  static String m30(name) => "همچنان در حال استفاده: ${name}";
 
-  static String m31(count) => "${Intl.plural(count, other: '# سال')}";
+  static String m31(label) => "${label} باید یک URL معتبر باشد";
+
+  static String m32(count) => "${Intl.plural(count, other: '# سال')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -1167,6 +1169,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "noNodesInGroupHint": MessageLookupByLibrary.simpleMessage(
       "روی «افزودن دستی گره» در پایین‌راست یا «درج دسته‌ای پیوندها» در بالا‌راست ضربه بزنید",
     ),
+    "noProfileInEffect": MessageLookupByLibrary.simpleMessage(
+      "هیچ پیکربندی فعالی وجود ندارد",
+    ),
     "noProxy": MessageLookupByLibrary.simpleMessage("بدون پروکسی"),
     "noProxyDesc": MessageLookupByLibrary.simpleMessage(
       "لطفاً یک پروفایل معتبر ایجاد یا اضافه کنید",
@@ -1386,6 +1391,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "profileChainDialogTitle": m27,
     "profileChainSaved": MessageLookupByLibrary.simpleMessage(
       "تنظیمات پروکسی مقدماتی و فرود ذخیره شد",
+    ),
+    "profileFallbackFailed": MessageLookupByLibrary.simpleMessage(
+      "پیکربندی قبلی نیز بازگردانی نشد",
     ),
     "profileHasUpdate": MessageLookupByLibrary.simpleMessage(
       "پروفایل تغییر یافته است. آیا بروزرسانی خودکار غیرفعال شود؟",
@@ -1696,6 +1704,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "statusDesc": MessageLookupByLibrary.simpleMessage(
       "در صورت غیرفعال بودن از DNS سیستم استفاده می‌شود",
     ),
+    "stillUsingProfile": m30,
     "stop": MessageLookupByLibrary.simpleMessage("توقف"),
     "stopVpn": MessageLookupByLibrary.simpleMessage("در حال توقف..."),
     "storeFix": MessageLookupByLibrary.simpleMessage("ترمیم استور"),
@@ -1711,6 +1720,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "submit": MessageLookupByLibrary.simpleMessage("ارسال"),
     "success": MessageLookupByLibrary.simpleMessage("موفقیت‌آمیز"),
     "switchLabel": MessageLookupByLibrary.simpleMessage("کلید"),
+    "switchProfileFailed": MessageLookupByLibrary.simpleMessage(
+      "تغییر اشتراک ناموفق",
+    ),
     "switchToDomesticIp": MessageLookupByLibrary.simpleMessage(
       "دریافت IP داخلی",
     ),
@@ -1887,7 +1899,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "urlDesc": MessageLookupByLibrary.simpleMessage(
       "دریافت پروفایل از طریق آدرس URL",
     ),
-    "urlTip": m30,
+    "urlTip": m31,
     "useGlobalScriptOverride": MessageLookupByLibrary.simpleMessage(
       "استفاده از اسکریپت اورراید سراسری",
     ),
@@ -1936,6 +1948,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage(
       "نیازمند دسترسی مدیریت (Admin)",
     ),
-    "years": m31,
+    "years": m32,
   };
 }

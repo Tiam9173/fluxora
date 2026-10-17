@@ -81,9 +81,11 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m29(count) => "已選擇 ${count} 項";
 
-  static String m30(label) => "${label}必須為 URL";
+  static String m30(name) => "當前仍在使用：${name}";
 
-  static String m31(count) => "${Intl.plural(count, other: '年')}";
+  static String m31(label) => "${label}必須為 URL";
+
+  static String m32(count) => "${Intl.plural(count, other: '年')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -846,6 +848,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "noNodesInGroupHint": MessageLookupByLibrary.simpleMessage(
       "點擊右下方「手動新增節點」或右上角「批次匯入連結」",
     ),
+    "noProfileInEffect": MessageLookupByLibrary.simpleMessage("當前沒有生效的配置"),
     "noProxy": MessageLookupByLibrary.simpleMessage("暫無代理"),
     "noProxyDesc": MessageLookupByLibrary.simpleMessage("請建立配置或新增有效的設定檔"),
     "noResolve": MessageLookupByLibrary.simpleMessage("不解析 IP"),
@@ -1002,6 +1005,7 @@ class MessageLookup extends MessageLookupByLibrary {
         MessageLookupByLibrary.simpleMessage("請輸入自動更新間隔時間"),
     "profileChainDialogTitle": m27,
     "profileChainSaved": MessageLookupByLibrary.simpleMessage("已儲存前置與落地代理設定"),
+    "profileFallbackFailed": MessageLookupByLibrary.simpleMessage("舊配置也無法恢復"),
     "profileHasUpdate": MessageLookupByLibrary.simpleMessage(
       "設定檔已經修改，是否關閉自動更新？",
     ),
@@ -1203,6 +1207,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "startVpn": MessageLookupByLibrary.simpleMessage("正在啟動"),
     "status": MessageLookupByLibrary.simpleMessage("狀態"),
     "statusDesc": MessageLookupByLibrary.simpleMessage("關閉後將使用系統 DNS"),
+    "stillUsingProfile": m30,
     "stop": MessageLookupByLibrary.simpleMessage("停止"),
     "stopVpn": MessageLookupByLibrary.simpleMessage("正在停止"),
     "storeFix": MessageLookupByLibrary.simpleMessage("商店修復"),
@@ -1216,6 +1221,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "submit": MessageLookupByLibrary.simpleMessage("提交"),
     "success": MessageLookupByLibrary.simpleMessage("Success"),
     "switchLabel": MessageLookupByLibrary.simpleMessage("開關"),
+    "switchProfileFailed": MessageLookupByLibrary.simpleMessage("切換訂閱失敗"),
     "switchToDomesticIp": MessageLookupByLibrary.simpleMessage("獲取國內 IP"),
     "sync": MessageLookupByLibrary.simpleMessage("同步"),
     "syncAll": MessageLookupByLibrary.simpleMessage("全部同步"),
@@ -1340,7 +1346,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "upload": MessageLookupByLibrary.simpleMessage("上傳"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage("透過 URL 獲取設定檔"),
-    "urlTip": m30,
+    "urlTip": m31,
     "useGlobalScriptOverride": MessageLookupByLibrary.simpleMessage("使用全域腳本覆寫"),
     "useHosts": MessageLookupByLibrary.simpleMessage("使用 Hosts"),
     "useSystemHosts": MessageLookupByLibrary.simpleMessage("使用系統 Hosts"),
@@ -1375,6 +1381,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "whitelistMode": MessageLookupByLibrary.simpleMessage("白名單模式"),
     "writeToSystem": MessageLookupByLibrary.simpleMessage("寫入系統"),
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage("需要管理員權限"),
-    "years": m31,
+    "years": m32,
   };
 }

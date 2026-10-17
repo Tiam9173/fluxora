@@ -5480,6 +5480,46 @@ class AppLocalizations {
     );
   }
 
+  /// `Switch Subscription Failed`
+  String get switchProfileFailed {
+    return Intl.message(
+      'Switch Subscription Failed',
+      name: 'switchProfileFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Still using: {name}`
+  String stillUsingProfile(Object name) {
+    return Intl.message(
+      'Still using: $name',
+      name: 'stillUsingProfile',
+      desc: '',
+      args: [name],
+    );
+  }
+
+  /// `No config in effect`
+  String get noProfileInEffect {
+    return Intl.message(
+      'No config in effect',
+      name: 'noProfileInEffect',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The previous config could not be restored either`
+  String get profileFallbackFailed {
+    return Intl.message(
+      'The previous config could not be restored either',
+      name: 'profileFallbackFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Manually restart the core?`
   String get restartCoreDesc {
     return Intl.message(

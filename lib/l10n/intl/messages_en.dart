@@ -85,9 +85,11 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m29(count) => "${count} items selected";
 
-  static String m30(label) => "${label} must be a URL";
+  static String m30(name) => "Still using: ${name}";
 
-  static String m31(count) =>
+  static String m31(label) => "${label} must be a URL";
+
+  static String m32(count) =>
       "${Intl.plural(count, one: 'year', other: 'years')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
@@ -1151,6 +1153,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "noNodesInGroupHint": MessageLookupByLibrary.simpleMessage(
       "Tap \"Manually add node\" at the bottom right or \"Batch import links\" at the top right",
     ),
+    "noProfileInEffect": MessageLookupByLibrary.simpleMessage(
+      "No config in effect",
+    ),
     "noProxy": MessageLookupByLibrary.simpleMessage("No Proxy"),
     "noProxyDesc": MessageLookupByLibrary.simpleMessage(
       "Please create or add a valid profile",
@@ -1358,6 +1363,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "profileChainDialogTitle": m27,
     "profileChainSaved": MessageLookupByLibrary.simpleMessage(
       "Pre-proxy and landing proxy settings saved",
+    ),
+    "profileFallbackFailed": MessageLookupByLibrary.simpleMessage(
+      "The previous config could not be restored either",
     ),
     "profileHasUpdate": MessageLookupByLibrary.simpleMessage(
       "Profile modified. Disable auto-update?",
@@ -1654,6 +1662,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "statusDesc": MessageLookupByLibrary.simpleMessage(
       "Uses system DNS when disabled",
     ),
+    "stillUsingProfile": m30,
     "stop": MessageLookupByLibrary.simpleMessage("Stop"),
     "stopVpn": MessageLookupByLibrary.simpleMessage("Stopping..."),
     "storeFix": MessageLookupByLibrary.simpleMessage("Store Fix"),
@@ -1669,6 +1678,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "submit": MessageLookupByLibrary.simpleMessage("Submit"),
     "success": MessageLookupByLibrary.simpleMessage("Success"),
     "switchLabel": MessageLookupByLibrary.simpleMessage("Switch"),
+    "switchProfileFailed": MessageLookupByLibrary.simpleMessage(
+      "Switch Subscription Failed",
+    ),
     "switchToDomesticIp": MessageLookupByLibrary.simpleMessage(
       "Get Domestic IP",
     ),
@@ -1843,7 +1855,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "upload": MessageLookupByLibrary.simpleMessage("Upload"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage("Get profile via URL"),
-    "urlTip": m30,
+    "urlTip": m31,
     "useGlobalScriptOverride": MessageLookupByLibrary.simpleMessage(
       "Use Global Script Override",
     ),
@@ -1890,6 +1902,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage(
       "Requires administrator privileges",
     ),
-    "years": m31,
+    "years": m32,
   };
 }

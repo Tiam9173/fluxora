@@ -87,9 +87,11 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m29(count) => "Выбрано: ${count}";
 
-  static String m30(label) => "${label} должен быть URL";
+  static String m30(name) => "Используется: ${name}";
 
-  static String m31(count) =>
+  static String m31(label) => "${label} должен быть URL";
+
+  static String m32(count) =>
       "${Intl.plural(count, one: 'год', few: 'года', many: 'лет', other: 'лет')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
@@ -1211,6 +1213,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "noNodesInGroupHint": MessageLookupByLibrary.simpleMessage(
       "Нажмите «Добавить узел вручную» в правом нижнем углу или «Массовый импорт ссылок» в правом верхнем углу",
     ),
+    "noProfileInEffect": MessageLookupByLibrary.simpleMessage(
+      "Активная конфигурация отсутствует",
+    ),
     "noProxy": MessageLookupByLibrary.simpleMessage("Нет прокси"),
     "noProxyDesc": MessageLookupByLibrary.simpleMessage(
       "Создайте или добавьте профиль",
@@ -1432,6 +1437,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "profileChainDialogTitle": m27,
     "profileChainSaved": MessageLookupByLibrary.simpleMessage(
       "Настройки предпрокси и прокси-выхода сохранены",
+    ),
+    "profileFallbackFailed": MessageLookupByLibrary.simpleMessage(
+      "Не удалось восстановить и предыдущую конфигурацию",
     ),
     "profileHasUpdate": MessageLookupByLibrary.simpleMessage(
       "Конфигурация изменена. Отключить автообновление?",
@@ -1736,6 +1744,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "statusDesc": MessageLookupByLibrary.simpleMessage(
       "Использовать системный DNS при выключении",
     ),
+    "stillUsingProfile": m30,
     "stop": MessageLookupByLibrary.simpleMessage("Остановка"),
     "stopVpn": MessageLookupByLibrary.simpleMessage("Остановка VPN"),
     "storeFix": MessageLookupByLibrary.simpleMessage("Исправление Google Play"),
@@ -1753,6 +1762,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "submit": MessageLookupByLibrary.simpleMessage("Отправить"),
     "success": MessageLookupByLibrary.simpleMessage("Успех"),
     "switchLabel": MessageLookupByLibrary.simpleMessage("Переключатель"),
+    "switchProfileFailed": MessageLookupByLibrary.simpleMessage(
+      "Не удалось переключить подписку",
+    ),
     "switchToDomesticIp": MessageLookupByLibrary.simpleMessage(
       "Получить локальный IP",
     ),
@@ -1943,7 +1955,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "upload": MessageLookupByLibrary.simpleMessage("Отправка"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage("Получить профиль по URL"),
-    "urlTip": m30,
+    "urlTip": m31,
     "useGlobalScriptOverride": MessageLookupByLibrary.simpleMessage(
       "Глобальное переопределение",
     ),
@@ -1996,6 +2008,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage(
       "Требуются права администратора",
     ),
-    "years": m31,
+    "years": m32,
   };
 }

@@ -81,9 +81,11 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m29(count) => "已选择 ${count} 项";
 
-  static String m30(label) => "${label}必须为URL";
+  static String m30(name) => "当前仍在使用：${name}";
 
-  static String m31(count) => "${Intl.plural(count, other: '年')}";
+  static String m31(label) => "${label}必须为URL";
+
+  static String m32(count) => "${Intl.plural(count, other: '年')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -832,6 +834,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "noNodesInGroupHint": MessageLookupByLibrary.simpleMessage(
       "点击右下方「手动添加节点」或右上角「批量导入链接」",
     ),
+    "noProfileInEffect": MessageLookupByLibrary.simpleMessage("当前没有生效的配置"),
     "noProxy": MessageLookupByLibrary.simpleMessage("暂无代理"),
     "noProxyDesc": MessageLookupByLibrary.simpleMessage("请创建配置或者添加有效配置文件"),
     "noResolve": MessageLookupByLibrary.simpleMessage("不解析 IP"),
@@ -988,6 +991,7 @@ class MessageLookup extends MessageLookupByLibrary {
         MessageLookupByLibrary.simpleMessage("请输入自动更新间隔时间"),
     "profileChainDialogTitle": m27,
     "profileChainSaved": MessageLookupByLibrary.simpleMessage("已保存前置与落地代理设置"),
+    "profileFallbackFailed": MessageLookupByLibrary.simpleMessage("旧配置也无法恢复"),
     "profileHasUpdate": MessageLookupByLibrary.simpleMessage(
       "配置文件已经修改，是否关闭自动更新？",
     ),
@@ -1187,6 +1191,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "startVpn": MessageLookupByLibrary.simpleMessage("正在启动"),
     "status": MessageLookupByLibrary.simpleMessage("状态"),
     "statusDesc": MessageLookupByLibrary.simpleMessage("关闭后将使用系统 DNS"),
+    "stillUsingProfile": m30,
     "stop": MessageLookupByLibrary.simpleMessage("停止"),
     "stopVpn": MessageLookupByLibrary.simpleMessage("正在停止"),
     "storeFix": MessageLookupByLibrary.simpleMessage("商店修复"),
@@ -1200,6 +1205,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "submit": MessageLookupByLibrary.simpleMessage("提交"),
     "success": MessageLookupByLibrary.simpleMessage("Success"),
     "switchLabel": MessageLookupByLibrary.simpleMessage("开关"),
+    "switchProfileFailed": MessageLookupByLibrary.simpleMessage("切换订阅失败"),
     "switchToDomesticIp": MessageLookupByLibrary.simpleMessage("获取国内 IP"),
     "sync": MessageLookupByLibrary.simpleMessage("同步"),
     "syncAll": MessageLookupByLibrary.simpleMessage("全部同步"),
@@ -1324,7 +1330,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "upload": MessageLookupByLibrary.simpleMessage("上传"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage("通过 URL 获取配置文件"),
-    "urlTip": m30,
+    "urlTip": m31,
     "useGlobalScriptOverride": MessageLookupByLibrary.simpleMessage("使用全局脚本覆写"),
     "useHosts": MessageLookupByLibrary.simpleMessage("使用Hosts"),
     "useSystemHosts": MessageLookupByLibrary.simpleMessage("使用系统 Hosts"),
@@ -1359,6 +1365,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "whitelistMode": MessageLookupByLibrary.simpleMessage("白名单模式"),
     "writeToSystem": MessageLookupByLibrary.simpleMessage("写入系统"),
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage("需要管理员权限"),
-    "years": m31,
+    "years": m32,
   };
 }
