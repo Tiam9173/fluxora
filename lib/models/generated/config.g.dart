@@ -41,6 +41,11 @@ _AppSettingProps _$AppSettingPropsFromJson(
   networkDetectionUrl:
       json['networkDetectionUrl'] as String? ?? defaultNetworkDetectionUrl,
   ipReputationEnabled: json['ipReputationEnabled'] as bool? ?? false,
+  ipReputationFields:
+      (json['ipReputationFields'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toSet() ??
+      const <String>{},
   showStartSwitch: json['showStartSwitch'] as bool? ?? false,
   enableNavBarHapticFeedback:
       json['enableNavBarHapticFeedback'] as bool? ?? true,
@@ -88,6 +93,7 @@ Map<String, dynamic> _$AppSettingPropsToJson(_AppSettingProps instance) =>
       'testUrl': instance.testUrl,
       'networkDetectionUrl': instance.networkDetectionUrl,
       'ipReputationEnabled': instance.ipReputationEnabled,
+      'ipReputationFields': instance.ipReputationFields.toList(),
       'showStartSwitch': instance.showStartSwitch,
       'enableNavBarHapticFeedback': instance.enableNavBarHapticFeedback,
       'autoCheckUpdate': instance.autoCheckUpdate,

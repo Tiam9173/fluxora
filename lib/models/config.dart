@@ -173,6 +173,12 @@ abstract class AppSettingProps with _$AppSettingProps {
     // P4 (E-5): the IP reputation section is opt-in. Default OFF means no
     // third-party lookup happens until the user explicitly turns it on.
     @Default(false) bool ipReputationEnabled,
+    /// Which IP-reputation rows the detail view shows.
+    ///
+    /// Empty means **not customised yet** — the view then shows every field, so
+    /// nobody's display changes until they go and pick. Once non-empty it is the
+    /// exact list, so a user can hide everything.
+    @Default(<String>{}) Set<String> ipReputationFields,
     @Default(false) bool showStartSwitch,
     @Default(true) bool enableNavBarHapticFeedback,
     @Default(true) bool autoCheckUpdate,
