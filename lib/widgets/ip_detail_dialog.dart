@@ -154,6 +154,17 @@ class _IpDetailDialogState extends State<_IpDetailDialog> {
                 fontWeight: FontWeight.bold,
               ),
             ),
+            // item 6 (Bettbox 1.19.4) — jump to IP2Location for this exact IP.
+            // IP2Location is the only one of the two providers with a per-IP
+            // page; ippure only ever shows the visitor's own address.
+            trailing: IconButton(
+              icon: const Icon(Icons.open_in_new, size: 18),
+              tooltip: appLocalizations.viewDetailedIpData,
+              onPressed: () {
+                Navigator.of(context, rootNavigator: true).pop();
+                globalState.openUrl('https://www.ip2location.com/${widget.ip}');
+              },
+            ),
           ),
           ListTile(
             contentPadding: EdgeInsets.zero,
@@ -182,6 +193,17 @@ class _IpDetailDialogState extends State<_IpDetailDialog> {
               style: context.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
+            ),
+            // item 6 (Bettbox 1.19.4) — jump to IP2Location for this exact IP.
+            // IP2Location is the only one of the two providers with a per-IP
+            // page; ippure only ever shows the visitor's own address.
+            trailing: IconButton(
+              icon: const Icon(Icons.open_in_new, size: 18),
+              tooltip: appLocalizations.viewDetailedIpData,
+              onPressed: () {
+                Navigator.of(context, rootNavigator: true).pop();
+                globalState.openUrl('https://www.ip2location.com/${widget.ip}');
+              },
             ),
           ),
           ListTile(
@@ -212,6 +234,17 @@ class _IpDetailDialogState extends State<_IpDetailDialog> {
                 fontWeight: FontWeight.bold,
               ),
             ),
+            // item 6 (Bettbox 1.19.4) — jump to IP2Location for this exact IP.
+            // IP2Location is the only one of the two providers with a per-IP
+            // page; ippure only ever shows the visitor's own address.
+            trailing: IconButton(
+              icon: const Icon(Icons.open_in_new, size: 18),
+              tooltip: appLocalizations.viewDetailedIpData,
+              onPressed: () {
+                Navigator.of(context, rootNavigator: true).pop();
+                globalState.openUrl('https://www.ip2location.com/${widget.ip}');
+              },
+            ),
           ),
           ListTile(
             contentPadding: EdgeInsets.zero,
@@ -238,6 +271,17 @@ class _IpDetailDialogState extends State<_IpDetailDialog> {
               style: context.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
+            ),
+            // item 6 (Bettbox 1.19.4) — jump to IP2Location for this exact IP.
+            // IP2Location is the only one of the two providers with a per-IP
+            // page; ippure only ever shows the visitor's own address.
+            trailing: IconButton(
+              icon: const Icon(Icons.open_in_new, size: 18),
+              tooltip: appLocalizations.viewDetailedIpData,
+              onPressed: () {
+                Navigator.of(context, rootNavigator: true).pop();
+                globalState.openUrl('https://www.ip2location.com/${widget.ip}');
+              },
             ),
           ),
           // 2. 国家 / 地区（twEmoji 国旗 + 国家名 · 国家代码）

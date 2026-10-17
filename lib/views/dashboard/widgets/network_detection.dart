@@ -160,7 +160,7 @@ class _NetworkDetectionState extends ConsumerState<NetworkDetection> {
                   tooltip: appLocalizations.viewDetailedIpData,
                   onPressed: () {
                     Navigator.of(context, rootNavigator: true).pop();
-                    globalState.openUrl('https://ipinfo.io/what-is-my-ip');
+                    globalState.openUrl('https://www.ip2location.com/demo');
                   },
                 ),
               ),
