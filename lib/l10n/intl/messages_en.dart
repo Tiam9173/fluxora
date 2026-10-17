@@ -1521,8 +1521,12 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "restart": MessageLookupByLibrary.simpleMessage("Restart"),
     "restartApp": MessageLookupByLibrary.simpleMessage("Restart App"),
+    "restartCore": MessageLookupByLibrary.simpleMessage("Restart core"),
     "restartCoreDesc": MessageLookupByLibrary.simpleMessage(
       "Manually restart the core?",
+    ),
+    "restartCoreTip": MessageLookupByLibrary.simpleMessage(
+      "Restart the core? Active connections will briefly drop.",
     ),
     "restartCoreTitle": MessageLookupByLibrary.simpleMessage("Restart Core"),
     "restartTip": MessageLookupByLibrary.simpleMessage(
@@ -1763,6 +1767,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "tight": MessageLookupByLibrary.simpleMessage("Compact"),
     "time": MessageLookupByLibrary.simpleMessage("Time"),
     "tip": MessageLookupByLibrary.simpleMessage("Tip"),
+    "titleColor": MessageLookupByLibrary.simpleMessage("Title colour"),
     "titleTooLong": MessageLookupByLibrary.simpleMessage(
       "Title is too long, maximum 20 characters supported",
     ),

@@ -1230,8 +1230,12 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "restart": MessageLookupByLibrary.simpleMessage("재시작"),
     "restartApp": MessageLookupByLibrary.simpleMessage("앱 재시작"),
+    "restartCore": MessageLookupByLibrary.simpleMessage("코어 재시작"),
     "restartCoreDesc": MessageLookupByLibrary.simpleMessage(
       "코어를 수동으로 재시작하시겠습니까?",
+    ),
+    "restartCoreTip": MessageLookupByLibrary.simpleMessage(
+      "코어를 재시작할까요? 사용 중인 연결이 잠시 끊깁니다.",
     ),
     "restartCoreTitle": MessageLookupByLibrary.simpleMessage("코어 재시작"),
     "restartTip": MessageLookupByLibrary.simpleMessage("TUN 재시작 후 적용됩니다"),
@@ -1426,6 +1430,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "tight": MessageLookupByLibrary.simpleMessage("조밀하게"),
     "time": MessageLookupByLibrary.simpleMessage("시간"),
     "tip": MessageLookupByLibrary.simpleMessage("알림"),
+    "titleColor": MessageLookupByLibrary.simpleMessage("제목 색상"),
     "titleTooLong": MessageLookupByLibrary.simpleMessage("제목이 너무 깁니다 (최대 20자)"),
     "tlsPortSniffer": MessageLookupByLibrary.simpleMessage("TLS 포트 스니핑"),
     "toggle": MessageLookupByLibrary.simpleMessage("전환"),

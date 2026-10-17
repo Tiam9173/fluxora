@@ -4310,6 +4310,41 @@ class AppLocalizations {
     );
   }
 
+  /// `Restart core`
+  String get restartCore {
+    return Intl.message(
+      'Restart core',
+      name: 'restartCore',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Manually restart the core?`
+  String get restartCoreDesc {
+    return Intl.message(
+      'Manually restart the core?',
+      name: 'restartCoreDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Restart the core? Active connections will briefly drop.`
+  String get restartCoreTip {
+    return Intl.message(
+      'Restart the core? Active connections will briefly drop.',
+      name: 'restartCoreTip',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Title colour`
+  String get titleColor {
+    return Intl.message('Title colour', name: 'titleColor', desc: '', args: []);
+  }
+
   /// `Clear all rules and scripts`
   String get clearAllRulesAndScripts {
     return Intl.message(
@@ -5695,16 +5730,6 @@ class AppLocalizations {
     return Intl.message(
       'No available LAN detected, please check Wi-Fi',
       name: 'tvScanNoNetwork',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Manually restart the core?`
-  String get restartCoreDesc {
-    return Intl.message(
-      'Manually restart the core?',
-      name: 'restartCoreDesc',
       desc: '',
       args: [],
     );

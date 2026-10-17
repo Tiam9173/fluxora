@@ -1605,8 +1605,12 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "restart": MessageLookupByLibrary.simpleMessage("Перезапуск"),
     "restartApp": MessageLookupByLibrary.simpleMessage("Перезапустить"),
+    "restartCore": MessageLookupByLibrary.simpleMessage("Перезапустить ядро"),
     "restartCoreDesc": MessageLookupByLibrary.simpleMessage(
       "Перезапустить ядро вручную?",
+    ),
+    "restartCoreTip": MessageLookupByLibrary.simpleMessage(
+      "Перезапустить ядро? Активные подключения ненадолго прервутся.",
     ),
     "restartCoreTitle": MessageLookupByLibrary.simpleMessage("Перезапуск ядра"),
     "restartTip": MessageLookupByLibrary.simpleMessage(
@@ -1857,6 +1861,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "tight": MessageLookupByLibrary.simpleMessage("Минимальная"),
     "time": MessageLookupByLibrary.simpleMessage("Время"),
     "tip": MessageLookupByLibrary.simpleMessage("Подсказка"),
+    "titleColor": MessageLookupByLibrary.simpleMessage("Цвет заголовка"),
     "titleTooLong": MessageLookupByLibrary.simpleMessage(
       "Слишком длинный, максимум 20 символов",
     ),

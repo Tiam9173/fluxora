@@ -1559,8 +1559,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "restartApp": MessageLookupByLibrary.simpleMessage(
       "راه‌اندازی مجدد برنامه",
     ),
+    "restartCore": MessageLookupByLibrary.simpleMessage(
+      "راه‌اندازی دوباره هسته",
+    ),
     "restartCoreDesc": MessageLookupByLibrary.simpleMessage(
       "آیا هسته به صورت دستی راه‌اندازی مجدد شود؟",
+    ),
+    "restartCoreTip": MessageLookupByLibrary.simpleMessage(
+      "هسته دوباره راه‌اندازی شود؟ اتصال‌های فعال لحظه‌ای قطع می‌شوند.",
     ),
     "restartCoreTitle": MessageLookupByLibrary.simpleMessage(
       "راه‌اندازی مجدد هسته",
@@ -1807,6 +1813,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "tight": MessageLookupByLibrary.simpleMessage("فشرده"),
     "time": MessageLookupByLibrary.simpleMessage("زمان"),
     "tip": MessageLookupByLibrary.simpleMessage("راهنما"),
+    "titleColor": MessageLookupByLibrary.simpleMessage("رنگ عنوان"),
     "titleTooLong": MessageLookupByLibrary.simpleMessage(
       "عنوان بیش از حد طولانی است (حداکثر ۲۰ کاراکتر)",
     ),
