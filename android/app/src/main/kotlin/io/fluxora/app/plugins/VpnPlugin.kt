@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.net.ConnectivityManager
-import android.net.Inet4Address
 import android.net.LinkProperties
 import android.net.Network
 import android.net.NetworkCapabilities
@@ -21,6 +20,7 @@ import io.fluxora.core.Core
 import io.fluxora.app.extensions.awaitResult
 import io.fluxora.app.extensions.asSocketAddressText
 import io.fluxora.app.extensions.resolveDns
+import java.net.Inet4Address
 import io.fluxora.app.models.StartForegroundParams
 import io.fluxora.app.models.VpnOptions
 import io.fluxora.app.modules.SuspendModule
