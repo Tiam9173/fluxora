@@ -937,8 +937,32 @@ class _SecretDialogState extends ConsumerState<_SecretDialog> {
   }
 }
 
+/// Restart the core from the core settings themselves: every option on this
+/// page is applied by restarting or re-applying the config, so this is where a
+/// manual restart is looked for.
+class RestartCoreItem extends ConsumerWidget {
+  const RestartCoreItem({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ListItem(
+      leading: const Icon(Icons.restart_alt_rounded),
+      title: Text(appLocalizations.restartCore),
+      subtitle: Text(appLocalizations.restartCoreDesc),
+      onTap: () async {
+        final res = await globalState.showMessage(
+          message: TextSpan(text: appLocalizations.restartCoreTip),
+        );
+        if (res != true) return;
+        await globalState.appController.restartCore();
+      },
+    );
+  }
+}
+
 List<Widget> get generalItems => generateSection(
   items: [
+    const RestartCoreItem(),
     const LogLevelItem(),
     const UaItem(),
     if (system.isDesktop) const KeepAliveIntervalItem(),

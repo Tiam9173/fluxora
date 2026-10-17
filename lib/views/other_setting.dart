@@ -783,33 +783,12 @@ class _TrayClickBehaviorDialogState extends State<_TrayClickBehaviorDialog> {
   }
 }
 
-class RestartCoreItem extends ConsumerWidget {
-  const RestartCoreItem({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return ListItem(
-      leading: const Icon(Icons.restart_alt_rounded),
-      title: Text(appLocalizations.restartCore),
-      subtitle: Text(appLocalizations.restartCoreDesc),
-      onTap: () async {
-        final res = await globalState.showMessage(
-          message: TextSpan(text: appLocalizations.restartCoreTip),
-        );
-        if (res != true) return;
-        await globalState.appController.restartCore();
-      },
-    );
-  }
-}
-
 class OtherSettingView extends ConsumerWidget {
   const OtherSettingView({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     List<Widget> items = [
-      const RestartCoreItem(),
       const SmartAutoStopSection(),
       if (system.isAndroid) const DozeSuspendItem(),
       if (system.isAndroid) const QuickResponseItem(),
