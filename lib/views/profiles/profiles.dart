@@ -196,6 +196,12 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
       actions: _buildActions(),
       body: Consumer(
         builder: (_, ref, _) {
+          // Watch the profile list itself, not only the derived selector: the
+          // selector is a scoped provider (`dependencies: [Query]`), and a
+          // scoped provider can keep serving its cached value when the
+          // unscoped list changes. That mismatch is why edits used to appear
+          // only after leaving and re-entering the page.
+          ref.watch(profilesProvider);
           final profilesSelectorState = ref.watch(
             profilesSelectorStateProvider,
           );

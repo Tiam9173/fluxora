@@ -49,6 +49,14 @@ class SuperGrid extends StatefulWidget {
 
 class SuperGridState extends State<SuperGrid> with TickerProviderStateMixin {
   final ValueNotifier<List<GridItem>> _childrenNotifier = ValueNotifier([]);
+
+  /// The last `widget.children` applied to [_childrenNotifier]. Used to tell a
+  /// genuine parent-side change from a rebuild that re-sends the same list.
+  List<GridItem>? _lastWidgetChildren;
+
+  /// True while [_childrenNotifier] is being updated from the parent, so the
+  /// listener does not treat it as a user reorder.
+  bool _isSyncingChildren = false;
   List<GridItem> children = [];
 
   int get length => _childrenNotifier.value.length;
@@ -123,15 +131,35 @@ class SuperGridState extends State<SuperGrid> with TickerProviderStateMixin {
   }
 
   @override
+  void didUpdateWidget(SuperGrid oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // The grid owns an internal copy of the children (it mutates it while
+    // dragging). Without this sync a new list from the parent — an added,
+    // edited or deleted subscription — was ignored until the whole State was
+    // recreated, which is why such edits only appeared after switching pages.
+    if (identical(widget.children, _lastWidgetChildren)) return;
+    _lastWidgetChildren = widget.children;
+    _isSyncingChildren = true;
+    try {
+      _childrenNotifier.value = widget.children;
+    } finally {
+      _isSyncingChildren = false;
+    }
+  }
+
+  @override
   void initState() {
     super.initState();
     _childrenNotifier.addListener(() {
       children = _childrenNotifier.value;
-      if (widget.onUpdate != null) {
+      // Programmatic syncs (a new list from the parent) are not user reorders,
+      // so they must not call back into the host's persistence handler.
+      if (!_isSyncingChildren && widget.onUpdate != null) {
         widget.onUpdate!();
       }
     });
 
+    _lastWidgetChildren = widget.children;
     _childrenNotifier.value = widget.children;
 
     _fakeDragWidgetController = AnimationController.unbounded(
