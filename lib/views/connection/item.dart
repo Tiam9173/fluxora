@@ -12,28 +12,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluxora/providers/providers.dart';
 
-final _iconCache = <String, Uint8List?>{};
-final _iconCacheKeys = <String>[];
-const _maxIconCacheSize = 50;
 Uint8List? _defaultIconCache;
 Future<Uint8List?>? _defaultIconFuture;
-
-void _addToIconCache(String key, Uint8List? value) {
-  if (_iconCache.containsKey(key)) {
-    _iconCacheKeys.remove(key);
-    _iconCacheKeys.add(key);
-    _iconCache[key] = value;
-    return;
-  }
-
-  while (_iconCacheKeys.length >= _maxIconCacheSize) {
-    final oldestKey = _iconCacheKeys.removeAt(0);
-    _iconCache.remove(oldestKey);
-  }
-
-  _iconCacheKeys.add(key);
-  _iconCache[key] = value;
-}
 
 class TrackerInfoItem extends ConsumerWidget {
   final TrackerInfo trackerInfo;
@@ -159,6 +139,7 @@ class TrackerInfoItem extends ConsumerWidget {
     final icon = value
         ? _ProcessIcon(
             process: trackerInfo.metadata.process,
+            path: trackerInfo.metadata.processPath,
             onClick: onClickKeyword,
           )
         : null;
@@ -208,20 +189,15 @@ class TrackerInfoItem extends ConsumerWidget {
   }
 }
 
-Future<Uint8List?> _getPackageIcon(String process) async {
-  if (process.isEmpty) {
+Future<Uint8List?> _getPackageIcon(String process, String path) async {
+  if (process.isEmpty && path.isEmpty) {
     return _getDefaultPackageIcon();
   }
-  final cachedIcon = _iconCache[process];
-  if (cachedIcon != null) {
-    return cachedIcon;
-  }
-  final icon = await app.getPackageIcon(process);
-  if (icon != null) {
-    _addToIconCache(process, icon);
-    return icon;
-  }
-  return _getDefaultPackageIcon();
+  // item 6 进程图标性能: the serial queue + LRU + platform extraction live in
+  // `ProcessIcon` now. A path (desktop) beats a bare name (mobile) because
+  // the Windows extractor wants the file, not the name.
+  final icon = await processIcon.get(path.isNotEmpty ? path : process);
+  return icon ?? await _getDefaultPackageIcon();
 }
 
 Future<Uint8List?> _getDefaultPackageIcon() {
@@ -240,9 +216,14 @@ Future<Uint8List?> _getDefaultPackageIcon() {
 
 class _ProcessIcon extends StatefulWidget {
   final String process;
+  final String path;
   final Function(String)? onClick;
 
-  const _ProcessIcon({required this.process, this.onClick});
+  const _ProcessIcon({
+    required this.process,
+    this.path = '',
+    this.onClick,
+  });
 
   @override
   State<_ProcessIcon> createState() => _ProcessIconState();
@@ -254,14 +235,14 @@ class _ProcessIconState extends State<_ProcessIcon> {
   @override
   void initState() {
     super.initState();
-    _iconFuture = _getPackageIcon(widget.process);
+    _iconFuture = _getPackageIcon(widget.process, widget.path);
   }
 
   @override
   void didUpdateWidget(_ProcessIcon oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.process != widget.process) {
-      _iconFuture = _getPackageIcon(widget.process);
+    if (oldWidget.process != widget.process || oldWidget.path != widget.path) {
+      _iconFuture = _getPackageIcon(widget.process, widget.path);
     }
   }
 
