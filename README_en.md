@@ -66,7 +66,19 @@ Fluxora is an independent product with no official affiliation to any upstream p
 ### Nodes
 - Proxy groups: select / url-test / fallback / load-balance
 - Latency testing and node switching
-- Chain proxy (pre-landing relays)
+
+### Chain proxy
+- Two-hop relay (front relay + landing static residential IP), traffic forwarded front → landing
+- Dedicated proxy-group card (🔗 Chain proxy) managed alongside regular groups
+- Per-hop node selection and status (front / landing), with per-hop latency probes and diagnostics
+- Route topology preview of both hops
+- Enable per profile; failover and automatic fallback
+
+### Cloudflare WARP
+- Built-in WARP outbound as a dedicated "🛡️ WARP exit" group, composable with any proxy group
+- One-tap Cloudflare account registration with optional WARP+ licence key
+- Custom endpoint / port, preferred IP (clean IP), MTU, UDP toggle and remote DNS resolution
+- Selectable routing mode, with an optional upstream dialer (default dialer proxy)
 
 ### Profiles
 - Multiple profiles (local file / subscription URL)
@@ -102,9 +114,19 @@ Fluxora is an independent product with no official affiliation to any upstream p
 
 ## Download
 
-The first stable release is coming soon. Once published, installers will live on **[GitHub Releases](https://github.com/Tiam9173/fluxora/releases)**, named `Fluxora-<version>-<platform>`.
+Every package is published on **[GitHub Releases](https://github.com/Tiam9173/fluxora/releases)**, named `Fluxora-<version>-<platform>`.
 
-This repository has **no releases yet**, so there are no clickable installer links below — please check the Releases page again after the launch.
+The **v1.1.0 series is currently in pre-release (RC)**; the stable release is not out yet. RC builds are for validation and feedback, not for production use.
+
+| Platform | Formats | Architectures |
+|---|---|---|
+| Windows 10 / 11 | `setup.exe` installer · `portable.zip` | amd64 · amd64-compatible · arm64 |
+| macOS 12+ | `.dmg` | arm64 · amd64 · amd64-compatible |
+| Linux | `.AppImage` · `.deb` · `.rpm` | amd64 · amd64-compatible (all three) · arm64 (deb) |
+| Android 8.0+ | `.apk` | arm64-v8a · armeabi-v7a · x86_64 · universal |
+| iOS | No official client yet | — |
+
+> The `-compatible` variants target older CPUs and systems (e.g. devices missing newer instruction sets); regular builds are preferred otherwise.
 
 ## Installation
 

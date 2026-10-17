@@ -50,5 +50,5 @@
 
 ### 💖 致谢与开源协议 / Acknowledgements
 
-- 鸣谢 [FlClash](https://github.com/chen08209/FlClash) 与 [Mihomo (Clash.Meta)](https://github.com/MetaCubeX/mihomo)。
+- 鸣谢 [FlClash](https://github.com/chen08209/FlClash)、[Mihomo (Clash.Meta)](https://github.com/MetaCubeX/mihomo) 与 [Bettbox](https://github.com/appshubcc/Bettbox)。
 - 本项目遵循 GPL-3.0 License 开源协议。
