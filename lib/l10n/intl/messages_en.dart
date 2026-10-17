@@ -746,6 +746,15 @@ class MessageLookup extends MessageLookupByLibrary {
       "FCM connection and support depend on the device itself, the results are for reference only. Due to system permission reasons, you need to disable \"Allow bypass VPN\" in settings to get accurate results",
     ),
     "fidelityScheme": MessageLookupByLibrary.simpleMessage("Fidelity"),
+    "fieldAbuse": MessageLookupByLibrary.simpleMessage("Abuse Reports"),
+    "fieldAsn": MessageLookupByLibrary.simpleMessage("ASN"),
+    "fieldBlocklists": MessageLookupByLibrary.simpleMessage("Blocklists"),
+    "fieldMarkers": MessageLookupByLibrary.simpleMessage("Risk Markers"),
+    "fieldNativeType": MessageLookupByLibrary.simpleMessage("Native IP"),
+    "fieldScenarios": MessageLookupByLibrary.simpleMessage("Scenario Scores"),
+    "fieldScore": MessageLookupByLibrary.simpleMessage("Purity Score"),
+    "fieldUnknownNotes": MessageLookupByLibrary.simpleMessage("Unknowns"),
+    "fieldUsageType": MessageLookupByLibrary.simpleMessage("Usage Type"),
     "file": MessageLookupByLibrary.simpleMessage("File"),
     "fileDesc": MessageLookupByLibrary.simpleMessage("Upload profile file"),
     "fileIsUpdate": MessageLookupByLibrary.simpleMessage(
@@ -911,12 +920,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "ipRiskEnable": MessageLookupByLibrary.simpleMessage("Enable lookup"),
     "ipRiskFactors": MessageLookupByLibrary.simpleMessage("Score Factors"),
     "ipRiskFailed": MessageLookupByLibrary.simpleMessage("Lookup failed"),
+    "ipRiskFieldsTitle": MessageLookupByLibrary.simpleMessage(
+      "Customise Fields",
+    ),
     "ipRiskHosting": MessageLookupByLibrary.simpleMessage("Hosting/DC"),
     "ipRiskIntel": MessageLookupByLibrary.simpleMessage("IP Risk Intel"),
     "ipRiskLimits": MessageLookupByLibrary.simpleMessage(
       "What this data cannot tell",
     ),
     "ipRiskMobile": MessageLookupByLibrary.simpleMessage("Mobile"),
+    "ipRiskNativeType": MessageLookupByLibrary.simpleMessage("Native IP"),
     "ipRiskNotFlagged": MessageLookupByLibrary.simpleMessage("Not flagged"),
     "ipRiskOpenReport": MessageLookupByLibrary.simpleMessage(
       "Open full report",
@@ -933,6 +946,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "Stale — not real-time",
     ),
     "ipRiskTor": MessageLookupByLibrary.simpleMessage("Tor"),
+    "ipRiskUnknownNotes": MessageLookupByLibrary.simpleMessage(
+      "Unknown Limits",
+    ),
     "ipRiskVerdict": MessageLookupByLibrary.simpleMessage("Assessment"),
     "ipRiskVpn": MessageLookupByLibrary.simpleMessage("VPN"),
     "ipcidr": MessageLookupByLibrary.simpleMessage("IP/CIDR"),

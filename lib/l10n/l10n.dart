@@ -7885,6 +7885,116 @@ class AppLocalizations {
     );
   }
 
+  /// `Native IP`
+  String get ipRiskNativeType {
+    return Intl.message(
+      'Native IP',
+      name: 'ipRiskNativeType',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Unknown Limits`
+  String get ipRiskUnknownNotes {
+    return Intl.message(
+      'Unknown Limits',
+      name: 'ipRiskUnknownNotes',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Customise Fields`
+  String get ipRiskFieldsTitle {
+    return Intl.message(
+      'Customise Fields',
+      name: 'ipRiskFieldsTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Risk Markers`
+  String get fieldMarkers {
+    return Intl.message(
+      'Risk Markers',
+      name: 'fieldMarkers',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Purity Score`
+  String get fieldScore {
+    return Intl.message('Purity Score', name: 'fieldScore', desc: '', args: []);
+  }
+
+  /// `Scenario Scores`
+  String get fieldScenarios {
+    return Intl.message(
+      'Scenario Scores',
+      name: 'fieldScenarios',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Native IP`
+  String get fieldNativeType {
+    return Intl.message(
+      'Native IP',
+      name: 'fieldNativeType',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Usage Type`
+  String get fieldUsageType {
+    return Intl.message(
+      'Usage Type',
+      name: 'fieldUsageType',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `ASN`
+  String get fieldAsn {
+    return Intl.message('ASN', name: 'fieldAsn', desc: '', args: []);
+  }
+
+  /// `Abuse Reports`
+  String get fieldAbuse {
+    return Intl.message(
+      'Abuse Reports',
+      name: 'fieldAbuse',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Blocklists`
+  String get fieldBlocklists {
+    return Intl.message(
+      'Blocklists',
+      name: 'fieldBlocklists',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Unknowns`
+  String get fieldUnknownNotes {
+    return Intl.message(
+      'Unknowns',
+      name: 'fieldUnknownNotes',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `VPN`
   String get ipRiskVpn {
     return Intl.message('VPN', name: 'ipRiskVpn', desc: '', args: []);
