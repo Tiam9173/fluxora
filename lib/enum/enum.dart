@@ -102,16 +102,13 @@ enum LogLevel {
   info,
   warning,
   error,
-  /// The wire value stays `silent`: that is the name the core understands, and
-  /// emitting `none` would be rejected. `none` is only how the option reads.
-  @JsonValue('silent')
-  none,
+  silent,
 }
 
 extension LogLevelExt on LogLevel {
   Color? get color {
     return switch (this) {
-      LogLevel.none => Colors.grey.shade700,
+      LogLevel.silent => Colors.grey.shade700,
       LogLevel.debug => Colors.grey.shade400,
       LogLevel.info => null,
       LogLevel.warning => const Color.fromARGB(230, 255, 166, 0),

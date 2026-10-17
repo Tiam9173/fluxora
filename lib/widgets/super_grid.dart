@@ -477,6 +477,12 @@ class SuperGridState extends State<SuperGrid> with TickerProviderStateMixin {
                   child: child!,
                 )
               : child!;
+          // Handle mode is an explicit affordance: the wobble exists to say
+          // "these cards can be moved", which the visible handle already says.
+          // Keeping it would leave the profiles grid jiggling forever.
+          if (widget.dragHandleBuilder != null) {
+            return content;
+          }
           return _buildShake(content);
         },
         child: target,

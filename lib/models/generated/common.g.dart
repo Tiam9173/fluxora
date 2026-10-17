@@ -125,7 +125,7 @@ const _$LogLevelEnumMap = {
   LogLevel.info: 'info',
   LogLevel.warning: 'warning',
   LogLevel.error: 'error',
-  LogLevel.none: 'silent',
+  LogLevel.silent: 'silent',
 };
 
 _DAV _$DAVFromJson(Map<String, dynamic> json) => _DAV(

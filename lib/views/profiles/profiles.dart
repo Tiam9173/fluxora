@@ -219,6 +219,11 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
                     GridItem(
                       // Read back by `_handleProfilesReordered` after a reorder.
                       key: ValueKey(profile.id),
+                      // Subscriptions are deleted from their own menu, never via
+                      // the grid's corner X: that X also put a tappable delete
+                      // over the card's top-right, stealing the tap that selects
+                      // a profile.
+                      isDeletable: false,
                       child: ProfileItem(
                         key: Key(profile.id),
                         profile: profile,

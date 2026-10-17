@@ -449,10 +449,23 @@ class AppController {
       return;
     }
 
-    _ref.read(totalTrafficProvider.notifier).value = await clashCore
-        .getTotalTraffic();
+    // Each core read stands alone: a single failing call must not take the
+    // notification and the dashboard down with it. Before this guard one
+    // throwing call (the first one, `getTotalTraffic`) aborted the whole tick —
+    // no traffic data, and the speed notification never got its update.
+    try {
+      _ref.read(totalTrafficProvider.notifier).value = await clashCore
+          .getTotalTraffic();
+    } catch (e) {
+      commonPrint.log('updateTraffic: getTotalTraffic failed: $e');
+    }
 
-    final traffic = await clashCore.getTraffic();
+    var traffic = Traffic();
+    try {
+      traffic = await clashCore.getTraffic();
+    } catch (e) {
+      commonPrint.log('updateTraffic: getTraffic failed: $e');
+    }
 
     if (shouldUpdateDashboard) {
       _ref.read(trafficsProvider.notifier).addTraffic(traffic);
