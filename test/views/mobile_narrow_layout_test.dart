@@ -37,6 +37,7 @@ import 'package:fluxora/views/profiles/add_profile.dart';
 import 'package:fluxora/views/profiles/override_profile.dart';
 import 'package:fluxora/views/profiles/profile_nodes_view.dart';
 import 'package:fluxora/views/proxies/chain_decision_panel.dart';
+import 'package:fluxora/views/resources.dart';
 import 'package:fluxora/views/proxies/chain_diagnostic_panel.dart';
 import 'package:fluxora/views/proxies/chain_insight_panel.dart';
 import 'package:fluxora/views/proxies/chain_intelligence_dashboard.dart';
@@ -178,6 +179,19 @@ void main() {
         },
       );
     }
+  }
+
+  // item 6 (Bettbox 1.19.4) — the resources page gained a `Providers |
+  // Resources` title switch. With no providers it falls back to the plain title,
+  // which is the state most likely to be hit and the one that must not overflow.
+  for (final size in const [Size(360, 640), Size(320, 640), Size(280, 560)]) {
+    testWidgets(
+      'ResourcesView 不溢出 @ ${size.width}x${size.height} + 1.4x',
+      (tester) async {
+        await pumpAt(tester, size, 1.4, seedGlobals(const ResourcesView()));
+        expect(tester.takeException(), isNull);
+      },
+    );
   }
 
   // ── dialog titles built from `Row([Icon, Text])` ───────────────────────────
