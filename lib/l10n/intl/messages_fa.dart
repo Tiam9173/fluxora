@@ -936,6 +936,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "ipRiskProxy": MessageLookupByLibrary.simpleMessage("پروکسی"),
     "ipRiskRelay": MessageLookupByLibrary.simpleMessage("رله"),
+    "ipRiskScenarios": MessageLookupByLibrary.simpleMessage("امتیاز سناریوها"),
     "ipRiskScore": MessageLookupByLibrary.simpleMessage("امتیاز خلوص منبع"),
     "ipRiskSearchEngineBot": MessageLookupByLibrary.simpleMessage(
       "ربات موتور جستجو",
@@ -1555,6 +1556,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "saveTip": MessageLookupByLibrary.simpleMessage(
       "آیا از ذخیره تغییرات اطمینان دارید؟",
     ),
+    "scenarioAi": MessageLookupByLibrary.simpleMessage("خدمات هوش مصنوعی"),
+    "scenarioEcommerce": MessageLookupByLibrary.simpleMessage(
+      "تجارت الکترونیک",
+    ),
+    "scenarioEmail": MessageLookupByLibrary.simpleMessage("ایمیل"),
+    "scenarioGaming": MessageLookupByLibrary.simpleMessage("بازی"),
+    "scenarioSocial": MessageLookupByLibrary.simpleMessage(
+      "ثبت‌نام شبکه‌های اجتماعی",
+    ),
+    "scenarioStreaming": MessageLookupByLibrary.simpleMessage("پخش جریانی"),
     "script": MessageLookupByLibrary.simpleMessage("اسکریپت"),
     "scriptDesc": MessageLookupByLibrary.simpleMessage(
       "تنظیمات اسکریپت اورراید سراسری",

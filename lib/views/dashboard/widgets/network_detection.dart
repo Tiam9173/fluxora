@@ -531,9 +531,25 @@ class _NetworkDetectionUrlDialog extends ConsumerWidget {
 /// .factors] travels with the number, and the whole card is labelled as the
 /// source's judgement rather than ours.
 class _IpRiskScoreCard extends StatelessWidget {
-  const _IpRiskScoreCard({required this.risk});
+  const _IpRiskScoreCard({required this.risk, this.scenarios = const []});
 
   final IpRiskScore risk;
+  final List<IpScenarioScore> scenarios;
+
+  /// Localised label for a scenario id. Unknown ids are dropped upstream, so
+  /// the fallback is unreachable in practice — it exists so a new source-side id
+  /// fails visibly rather than silently rendering an id string.
+  static String _scenarioLabel(String id) {
+    return switch (id) {
+      'ai' => appLocalizations.scenarioAi,
+      'social' => appLocalizations.scenarioSocial,
+      'streaming' => appLocalizations.scenarioStreaming,
+      'gaming' => appLocalizations.scenarioGaming,
+      'ecommerce' => appLocalizations.scenarioEcommerce,
+      'email' => appLocalizations.scenarioEmail,
+      _ => id,
+    };
+  }
 
   Color? _scoreColor(BuildContext context, int purity) {
     final scheme = Theme.of(context).colorScheme;
@@ -591,6 +607,48 @@ class _IpRiskScoreCard extends StatelessWidget {
                       ),
                     ),
                   ),
+                if (scenarios.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(
+                      appLocalizations.ipRiskScenarios,
+                      style: textTheme.bodySmall,
+                    ),
+                  ),
+                  for (final scenario in scenarios)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              _scenarioLabel(scenario.id),
+                              style: textTheme.bodySmall,
+                            ),
+                          ),
+                          Text(
+                            '${scenario.score}',
+                            style: textTheme.bodySmall?.copyWith(
+                              color: _scoreColor(
+                                context,
+                                scenario.score ?? 0,
+                              ),
+                            ),
+                          ),
+                          if (scenario.levelLabel != null)
+                            Padding(
+                              padding: const EdgeInsets.only(left: 6),
+                              child: Text(
+                                scenario.levelLabel!,
+                                style: textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                ],
                 if (risk.factors.isNotEmpty) ...[
                   Padding(
                     padding: const EdgeInsets.only(top: 6),
@@ -784,7 +842,7 @@ class _IpRiskSectionState extends ConsumerState<_IpRiskSection> {
             )
           else ...[
             if (report.risk case final risk? when risk.hasScore)
-              _IpRiskScoreCard(risk: risk),
+              _IpRiskScoreCard(risk: risk, scenarios: report.scenarios),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Wrap(

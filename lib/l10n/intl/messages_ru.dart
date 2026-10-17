@@ -972,6 +972,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "ipRiskProxy": MessageLookupByLibrary.simpleMessage("Прокси"),
     "ipRiskRelay": MessageLookupByLibrary.simpleMessage("Ретранслятор"),
+    "ipRiskScenarios": MessageLookupByLibrary.simpleMessage(
+      "Оценки по сценариям",
+    ),
     "ipRiskScore": MessageLookupByLibrary.simpleMessage(
       "Оценка чистоты источника",
     ),
@@ -1585,6 +1588,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "saveChanges": MessageLookupByLibrary.simpleMessage("Сохранить изменения?"),
     "saveNode": MessageLookupByLibrary.simpleMessage("Сохранить узел"),
     "saveTip": MessageLookupByLibrary.simpleMessage("Сохранить изменения?"),
+    "scenarioAi": MessageLookupByLibrary.simpleMessage("ИИ-сервисы"),
+    "scenarioEcommerce": MessageLookupByLibrary.simpleMessage(
+      "Электронная коммерция",
+    ),
+    "scenarioEmail": MessageLookupByLibrary.simpleMessage("Электронная почта"),
+    "scenarioGaming": MessageLookupByLibrary.simpleMessage("Игры"),
+    "scenarioSocial": MessageLookupByLibrary.simpleMessage(
+      "Регистрация в соцсетях",
+    ),
+    "scenarioStreaming": MessageLookupByLibrary.simpleMessage("Стриминг"),
     "script": MessageLookupByLibrary.simpleMessage("Скрипт"),
     "scriptDesc": MessageLookupByLibrary.simpleMessage(
       "Настройка глобального скрипта переопределения",

@@ -129,6 +129,7 @@ class IpReputationService {
         abuseReports: _abuseReports(body['abuse']),
         blocklistsHit: _blocklistsHit(body['blocklists']),
         risk: _risk(body['risk']),
+        scenarios: _scenarios(body['scenarios']),
         unknownNotes: _unknownNotes(body['unknowns']),
         reportUrl: _nonEmpty(body['reportUrl']),
       );
@@ -180,6 +181,41 @@ class IpReputationService {
     if (v is int) return v;
     if (v is num) return v.toInt();
     return int.tryParse(v?.toString() ?? '');
+  }
+
+  /// Stable, non-localised scenario ids. The UI owns the translation, exactly
+  /// as it does for marker ids.
+  static const List<String> scenarioIds = [
+    'ai',
+    'social',
+    'streaming',
+    'gaming',
+    'ecommerce',
+    'email',
+  ];
+
+  /// Map per-use-case scores, dropping anything the source did not actually
+  /// score — an unscored use is "nothing to say", not a low score.
+  static List<IpScenarioScore> _scenarios(Object? raw) {
+    if (raw is! List) return const [];
+    final out = <IpScenarioScore>[];
+    for (final item in raw) {
+      if (item is! Map) continue;
+      final id = _nonEmpty(item['id']);
+      if (id == null || !scenarioIds.contains(id)) continue;
+      final score = _asInt(item['score']);
+      // Without a number the entry says nothing usable.
+      if (score == null) continue;
+      out.add(
+        IpScenarioScore(
+          id: id,
+          score: score,
+          levelLabel: _nonEmpty(item['levelLabel']),
+          reason: _nonEmpty(item['reason']),
+        ),
+      );
+    }
+    return out;
   }
 
   static String? _nonEmpty(Object? v) {

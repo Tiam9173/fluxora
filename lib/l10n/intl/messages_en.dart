@@ -926,6 +926,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "ipRiskProxy": MessageLookupByLibrary.simpleMessage("Proxy"),
     "ipRiskRelay": MessageLookupByLibrary.simpleMessage("Relay"),
+    "ipRiskScenarios": MessageLookupByLibrary.simpleMessage("Scenario Scores"),
     "ipRiskScore": MessageLookupByLibrary.simpleMessage("Source Purity Score"),
     "ipRiskSearchEngineBot": MessageLookupByLibrary.simpleMessage("Search bot"),
     "ipRiskStale": MessageLookupByLibrary.simpleMessage(
@@ -1513,6 +1514,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "saveTip": MessageLookupByLibrary.simpleMessage(
       "Are you sure you want to save?",
     ),
+    "scenarioAi": MessageLookupByLibrary.simpleMessage("AI Services"),
+    "scenarioEcommerce": MessageLookupByLibrary.simpleMessage("E-commerce"),
+    "scenarioEmail": MessageLookupByLibrary.simpleMessage("Email"),
+    "scenarioGaming": MessageLookupByLibrary.simpleMessage("Gaming"),
+    "scenarioSocial": MessageLookupByLibrary.simpleMessage("Social Sign-up"),
+    "scenarioStreaming": MessageLookupByLibrary.simpleMessage("Streaming"),
     "script": MessageLookupByLibrary.simpleMessage("Script"),
     "scriptDesc": MessageLookupByLibrary.simpleMessage(
       "Global override script config",
