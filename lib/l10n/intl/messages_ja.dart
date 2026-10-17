@@ -81,9 +81,11 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m29(count) => "${count} 件選択中";
 
-  static String m30(label) => "${label} は有効なURLである必要があります";
+  static String m30(name) => "使用中: ${name}";
 
-  static String m31(count) => "${Intl.plural(count, other: '年')}";
+  static String m31(label) => "${label} は有効なURLである必要があります";
+
+  static String m32(count) => "${Intl.plural(count, other: '年')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -926,6 +928,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "noNodesInGroupHint": MessageLookupByLibrary.simpleMessage(
       "右下の「ノードを手動で追加」または右上の「リンクを一括インポート」をタップ",
     ),
+    "noProfileInEffect": MessageLookupByLibrary.simpleMessage("有効な設定はありません"),
     "noProxy": MessageLookupByLibrary.simpleMessage("プロキシなし"),
     "noProxyDesc": MessageLookupByLibrary.simpleMessage("プロファイルを作成または追加してください"),
     "noResolve": MessageLookupByLibrary.simpleMessage("IP解決を行わない"),
@@ -1101,6 +1104,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "profileChainDialogTitle": m27,
     "profileChainSaved": MessageLookupByLibrary.simpleMessage(
       "プリプロキシとランディングプロキシの設定を保存しました",
+    ),
+    "profileFallbackFailed": MessageLookupByLibrary.simpleMessage(
+      "以前の設定も復元できませんでした",
     ),
     "profileHasUpdate": MessageLookupByLibrary.simpleMessage(
       "プロファイルが変更されました。自動更新をオフにしますか？",
@@ -1331,6 +1337,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "startVpn": MessageLookupByLibrary.simpleMessage("起動中..."),
     "status": MessageLookupByLibrary.simpleMessage("ステータス"),
     "statusDesc": MessageLookupByLibrary.simpleMessage("オフにするとシステムDNSを使用します"),
+    "stillUsingProfile": m30,
     "stop": MessageLookupByLibrary.simpleMessage("停止"),
     "stopVpn": MessageLookupByLibrary.simpleMessage("停止中..."),
     "storeFix": MessageLookupByLibrary.simpleMessage("ストア修復"),
@@ -1346,6 +1353,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "submit": MessageLookupByLibrary.simpleMessage("送信"),
     "success": MessageLookupByLibrary.simpleMessage("成功"),
     "switchLabel": MessageLookupByLibrary.simpleMessage("スイッチ"),
+    "switchProfileFailed": MessageLookupByLibrary.simpleMessage(
+      "サブスクリプションの切り替えに失敗",
+    ),
     "switchToDomesticIp": MessageLookupByLibrary.simpleMessage("国内IPを取得"),
     "sync": MessageLookupByLibrary.simpleMessage("同期"),
     "syncAll": MessageLookupByLibrary.simpleMessage("すべて同期"),
@@ -1488,7 +1498,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "upload": MessageLookupByLibrary.simpleMessage("送信"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage("URLから設定を取得"),
-    "urlTip": m30,
+    "urlTip": m31,
     "useGlobalScriptOverride": MessageLookupByLibrary.simpleMessage(
       "グローバルスクリプトオーバーライドを使用",
     ),
@@ -1525,6 +1535,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "whitelistMode": MessageLookupByLibrary.simpleMessage("ホワイトリストモード"),
     "writeToSystem": MessageLookupByLibrary.simpleMessage("システムへ適用"),
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage("管理者権限が必要です"),
-    "years": m31,
+    "years": m32,
   };
 }
