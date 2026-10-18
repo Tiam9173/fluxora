@@ -1907,6 +1907,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "topologyTarget": MessageLookupByLibrary.simpleMessage("Целевой сервис"),
     "totalTraffic": MessageLookupByLibrary.simpleMessage("Общий трафик"),
     "tproxyPort": MessageLookupByLibrary.simpleMessage("Порт Tproxy"),
+    "trafficSinceStart": MessageLookupByLibrary.simpleMessage(
+      "С момента запуска",
+    ),
     "trafficUsage": MessageLookupByLibrary.simpleMessage("Трафик"),
     "trayClickBehavior": MessageLookupByLibrary.simpleMessage(
       "Действие при нажатии на значок",

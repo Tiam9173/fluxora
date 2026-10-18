@@ -22,6 +22,7 @@
   "realTimeSpeed": "실시간 속도",
   "connectionsSort": "연결 정렬",
   "totalTraffic": "전체 전송량",
+  "trafficSinceStart": "이번 실행 누적",
   "restartApp": "앱 재시작",
   "outboundMode": "아웃바운드 모드",
   "networkDetection": "네트워크 진단",

@@ -321,7 +321,15 @@ class CommonScaffoldState extends State<CommonScaffold> {
 
   @override
   Widget build(BuildContext context) {
-    assert(widget.appBar != null || widget.title != null);
+    // `titleWidget` is a legitimate way to supply the title (the dashboard uses
+    // it for the editable title). Omitting it here made every debug build fail
+    // on the dashboard: asserts are stripped in release, so the bug only ever
+    // showed up in exactly the builds used for testing.
+    assert(
+      widget.appBar != null ||
+          widget.title != null ||
+          widget.titleWidget != null,
+    );
     final body = SafeArea(
       top: false,
       bottom: false,

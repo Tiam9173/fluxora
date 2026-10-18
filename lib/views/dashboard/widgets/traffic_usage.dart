@@ -8,6 +8,7 @@ import 'package:fluxora/state.dart';
 import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluxora/views/dashboard/widgets/traffic_detail.dart';
 
 class TrafficUsage extends ConsumerStatefulWidget {
   const TrafficUsage({super.key});
@@ -105,7 +106,8 @@ class _TrafficUsageState extends ConsumerState<TrafficUsage> {
           label: appLocalizations.trafficUsage,
           iconData: Icons.data_saver_off,
         ),
-        onPressed: () {},
+        // Was an empty callback: the card looked interactive and did nothing.
+        onPressed: showTrafficDetailDialog,
         child: ValueListenableBuilder<int>(
           valueListenable: dashboardRefreshManager.tick1s,
           builder: (_, _, _) {

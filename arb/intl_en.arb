@@ -22,6 +22,7 @@
   "realTimeSpeed": "Real-time Speed",
   "connectionsSort": "Connections Sort",
   "totalTraffic": "Total Traffic",
+  "trafficSinceStart": "Since this session started",
   "restartApp": "Restart App",
   "outboundMode": "Outbound Mode",
   "networkDetection": "Network",

@@ -1466,6 +1466,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "topologyTarget": MessageLookupByLibrary.simpleMessage("대상 서비스"),
     "totalTraffic": MessageLookupByLibrary.simpleMessage("전체 전송량"),
     "tproxyPort": MessageLookupByLibrary.simpleMessage("Tproxy 포트"),
+    "trafficSinceStart": MessageLookupByLibrary.simpleMessage("이번 실행 누적"),
     "trafficUsage": MessageLookupByLibrary.simpleMessage("트래픽 사용량"),
     "trayClickBehavior": MessageLookupByLibrary.simpleMessage("트레이 클릭 동작"),
     "trayEnhancement": MessageLookupByLibrary.simpleMessage("트레이 기능 향상"),

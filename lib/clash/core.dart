@@ -356,13 +356,36 @@ class ClashCore {
     return IpInfo(ip: ip, countryCode: countryCode);
   }
 
+  /// Consecutive empty reads, used to log the failure once instead of every
+  /// second. A traffic counter that never moves is otherwise indistinguishable
+  /// from a UI bug: the panel just shows 0.00 forever.
+  static int _emptyTrafficReads = 0;
+  static bool _loggedNonZeroTraffic = false;
+
   Future<Traffic> getTotalTraffic() async {
     final totalTrafficString = await clashInterface.getTotalTraffic();
     if (totalTrafficString.isEmpty) {
+      _emptyTrafficReads++;
+      if (_emptyTrafficReads == 1 || _emptyTrafficReads % 60 == 0) {
+        commonPrint.log(
+          'getTotalTraffic: core returned an empty string '
+          '($_emptyTrafficReads consecutive reads) — the counter is not '
+          'reaching the UI',
+        );
+      }
       return Traffic();
     }
+    _emptyTrafficReads = 0;
     try {
-      return Traffic.fromMap(json.decode(totalTrafficString));
+      final traffic = Traffic.fromMap(json.decode(totalTrafficString));
+      if (!_loggedNonZeroTraffic &&
+          (traffic.up.value > 0 || traffic.down.value > 0)) {
+        _loggedNonZeroTraffic = true;
+        commonPrint.log(
+          'getTotalTraffic: first non-zero reading $totalTrafficString',
+        );
+      }
+      return traffic;
     } catch (e) {
       commonPrint.log('Failed to parse total traffic: $e');
       return Traffic();

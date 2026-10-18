@@ -1303,6 +1303,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "topologyTarget": MessageLookupByLibrary.simpleMessage("目标服务"),
     "totalTraffic": MessageLookupByLibrary.simpleMessage("传输总量"),
     "tproxyPort": MessageLookupByLibrary.simpleMessage("Tproxy端口"),
+    "trafficSinceStart": MessageLookupByLibrary.simpleMessage("本次运行累计"),
     "trafficUsage": MessageLookupByLibrary.simpleMessage("流量统计"),
     "trayClickBehavior": MessageLookupByLibrary.simpleMessage("托盘点击行为"),
     "trayEnhancement": MessageLookupByLibrary.simpleMessage("托盘增强"),

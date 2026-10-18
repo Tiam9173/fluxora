@@ -22,6 +22,7 @@
   "realTimeSpeed": "Текущая скорость",
   "connectionsSort": "Сортировка соединений",
   "totalTraffic": "Общий трафик",
+  "trafficSinceStart": "С момента запуска",
   "restartApp": "Перезапустить",
   "outboundMode": "Маршрутизация",
   "networkDetection": "IP сети",

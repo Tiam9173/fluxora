@@ -22,6 +22,7 @@
   "realTimeSpeed": "实时速度",
   "connectionsSort": "连接排序",
   "totalTraffic": "传输总量",
+  "trafficSinceStart": "本次运行累计",
   "restartApp": "重启软件",
   "outboundMode": "出站模式",
   "networkDetection": "网络检测",

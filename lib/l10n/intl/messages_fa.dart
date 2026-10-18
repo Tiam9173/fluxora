@@ -1855,6 +1855,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "topologyTarget": MessageLookupByLibrary.simpleMessage("سرویس هدف"),
     "totalTraffic": MessageLookupByLibrary.simpleMessage("مجموع ترافیک"),
     "tproxyPort": MessageLookupByLibrary.simpleMessage("پورت Tproxy"),
+    "trafficSinceStart": MessageLookupByLibrary.simpleMessage(
+      "از شروع این اجرا",
+    ),
     "trafficUsage": MessageLookupByLibrary.simpleMessage("مصرف ترافیک"),
     "trayClickBehavior": MessageLookupByLibrary.simpleMessage(
       "رفتار کلیک روی سینی",

@@ -22,6 +22,7 @@
   "realTimeSpeed": "سرعت لحظه‌ای",
   "connectionsSort": "مرتب‌سازی اتصال‌ها",
   "totalTraffic": "مجموع ترافیک",
+  "trafficSinceStart": "از شروع این اجرا",
   "restartApp": "راه‌اندازی مجدد برنامه",
   "outboundMode": "حالت خروجی",
   "networkDetection": "تست شبکه",

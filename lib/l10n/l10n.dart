@@ -220,6 +220,16 @@ class AppLocalizations {
     );
   }
 
+  /// `Since this session started`
+  String get trafficSinceStart {
+    return Intl.message(
+      'Since this session started',
+      name: 'trafficSinceStart',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Restart App`
   String get restartApp {
     return Intl.message('Restart App', name: 'restartApp', desc: '', args: []);
