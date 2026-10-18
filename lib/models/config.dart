@@ -282,7 +282,7 @@ abstract class VpnProps with _$VpnProps {
     @Default(false) bool networkFix,
     @Default(false) bool disableQuic,
     @Default(false) bool highPriorityNotification,
-    @Default(false) bool networkSpeedNotification,
+    @Default(true) bool networkSpeedNotification,
     @Default(false) bool excludeChina,
     /// item 6 (Bettbox 1.19.3) — reject loopback traffic aimed at our own
     /// listener ports, so a misrouted packet cannot loop back into the proxy.

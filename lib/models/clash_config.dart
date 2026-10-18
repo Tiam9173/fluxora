@@ -722,7 +722,7 @@ abstract class ClashConfig with _$ClashConfig {
     @Default(defaultSkipAuthPrefixes)
     @JsonKey(name: 'skip-auth-prefixes')
     List<String> skipAuthPrefixes,
-    @Default(LogLevel.error) @JsonKey(name: 'log-level') LogLevel logLevel,
+    @Default(LogLevel.silent) @JsonKey(name: 'log-level') LogLevel logLevel,
     @Default(false) bool ipv6,
     @Default(FindProcessMode.off)
     @JsonKey(

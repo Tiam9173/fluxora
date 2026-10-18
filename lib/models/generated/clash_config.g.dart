@@ -460,7 +460,7 @@ _ClashConfig _$ClashConfigFromJson(Map<String, dynamic> json) => _ClashConfig(
       defaultSkipAuthPrefixes,
   logLevel:
       $enumDecodeNullable(_$LogLevelEnumMap, json['log-level']) ??
-      LogLevel.error,
+      LogLevel.silent,
   ipv6: json['ipv6'] as bool? ?? false,
   findProcessMode:
       $enumDecodeNullable(
