@@ -29,6 +29,59 @@ interface BaseServiceInterface {
     suspend fun startForeground()
 }
 
+/// Shared notification-action dispatch.
+///
+/// Two different services can own the notification: [FluxoraVpnService] while
+/// the tunnel is up and [FluxoraService] otherwise. They share no superclass,
+/// so the handling lives here and each of them calls it from onStartCommand.
+/// Returns true when the intent was an action button.
+fun BaseServiceInterface.handleNotificationAction(intent: Intent?): Boolean {
+    val action = intent?.action ?: return false
+    if (!action.startsWith("io.fluxora.app.action.")) return false
+    // Every branch logs: a silent button is indistinguishable from a broken
+    // one, and the notification is the only place a user can press these.
+    android.util.Log.i(TAG, "action=$action service=${this::class.java.simpleName}")
+    return when (action) {
+        FluxoraService.ACTION_STOP -> {
+            stop()
+            true
+        }
+        FluxoraService.ACTION_SWITCH -> {
+            forwardToApp("switch") {
+                GlobalState.getCurrentVPNPlugin()?.requestNotificationSwitch()
+            }
+            true
+        }
+        FluxoraService.ACTION_RESET -> {
+            forwardToApp("reset") {
+                GlobalState.getCurrentVPNPlugin()?.requestNotificationReset()
+            }
+            true
+        }
+        FluxoraService.ACTION_SPEED_TEST -> {
+            forwardToApp("speedTest") {
+                GlobalState.getCurrentVPNPlugin()?.requestNotificationSpeedTest()
+            }
+            true
+        }
+        else -> false
+    }
+}
+
+private const val TAG = "NotificationAction"
+
+/// Forwards an action to Dart, logging the failure mode instead of dropping it.
+private inline fun forwardToApp(name: String, block: () -> Unit) {
+    val plugin = GlobalState.getCurrentVPNPlugin()
+    if (plugin == null) {
+        android.util.Log.w(TAG, "$name: no VpnPlugin attached (app not running?)")
+        return
+    }
+    runCatching { block() }.onFailure {
+        android.util.Log.e(TAG, "$name: forward failed: ${it.message}")
+    }
+}
+
 suspend fun Service.createFluxoraNotificationBuilder(
     isSuspended: Boolean = GlobalState.isSmartStopped,
     isHighPriority: Boolean = GlobalState.isNotificationHighPriority
@@ -91,6 +144,45 @@ suspend fun Service.createFluxoraNotificationBuilder(
             setShowWhen(true)
             setOnlyAlertOnce(true)
             setPriority(priority)
+
+            // Action buttons. Android renders its own expand chevron in the
+            // collapsed state as soon as a notification carries actions, so
+            // there is no custom expanded layout to maintain.
+            //
+            // The intents target *this* service class, so the buttons reach the
+            // instance that built the notification (VpnService or plain
+            // service) and land in its onStartCommand.
+            val serviceClass = this@createFluxoraNotificationBuilder::class.java
+            fun actionIntent(action: String, requestCode: Int): PendingIntent =
+                PendingIntent.getService(
+                    this@createFluxoraNotificationBuilder,
+                    requestCode,
+                    Intent(this@createFluxoraNotificationBuilder, serviceClass)
+                        .setAction(action)
+                        .setPackage(packageName),
+                    flags
+                )
+
+            addAction(
+                android.R.drawable.ic_menu_close_clear_cancel,
+                getString(R.string.action_stop),
+                actionIntent(FluxoraService.ACTION_STOP, 101)
+            )
+            addAction(
+                android.R.drawable.ic_menu_compass,
+                getString(R.string.action_switch),
+                actionIntent(FluxoraService.ACTION_SWITCH, 102)
+            )
+            addAction(
+                android.R.drawable.ic_menu_rotate,
+                getString(R.string.action_reset),
+                actionIntent(FluxoraService.ACTION_RESET, 103)
+            )
+            addAction(
+                android.R.drawable.ic_menu_recent_history,
+                getString(R.string.action_speed_test),
+                actionIntent(FluxoraService.ACTION_SPEED_TEST, 104)
+            )
         }
     }
 

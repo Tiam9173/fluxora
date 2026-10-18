@@ -516,6 +516,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "dozeSuspendDesc": MessageLookupByLibrary.simpleMessage(
       "OSのDozeスリープモードに同期",
     ),
+    "duplicateNodeSkipped": MessageLookupByLibrary.simpleMessage(
+      "重複するノード名をスキップしました（名前は一意である必要があります）",
+    ),
     "edit": MessageLookupByLibrary.simpleMessage("編集"),
     "editTunnel": MessageLookupByLibrary.simpleMessage("転送編集"),
     "emptyLandingTip": MessageLookupByLibrary.simpleMessage(
@@ -1384,6 +1387,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "switchProfileFailed": MessageLookupByLibrary.simpleMessage(
       "サブスクリプションの切り替えに失敗",
     ),
+    "switchProxy": MessageLookupByLibrary.simpleMessage("切り替え"),
     "switchToDomesticIp": MessageLookupByLibrary.simpleMessage("国内IPを取得"),
     "sync": MessageLookupByLibrary.simpleMessage("同期"),
     "syncAll": MessageLookupByLibrary.simpleMessage("すべて同期"),
@@ -1441,6 +1445,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "threeInOut": MessageLookupByLibrary.simpleMessage("トリプルインアウト"),
     "tight": MessageLookupByLibrary.simpleMessage("タイト"),
     "time": MessageLookupByLibrary.simpleMessage("時間"),
+    "timeoutLabel": MessageLookupByLibrary.simpleMessage("タイムアウト"),
     "tip": MessageLookupByLibrary.simpleMessage("ヒント"),
     "titleColor": MessageLookupByLibrary.simpleMessage("タイトルの色"),
     "titleTooLong": MessageLookupByLibrary.simpleMessage("長すぎます（最大20文字）"),

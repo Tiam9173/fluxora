@@ -642,6 +642,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "dozeSuspendDesc": MessageLookupByLibrary.simpleMessage(
       "همگام‌سازی با حالت خواب سیستم (Doze)",
     ),
+    "duplicateNodeSkipped": MessageLookupByLibrary.simpleMessage(
+      "نام‌های تکراری نادیده گرفته شد (نام‌ها باید یکتا باشند)",
+    ),
     "edit": MessageLookupByLibrary.simpleMessage("ویرایش"),
     "editTunnel": MessageLookupByLibrary.simpleMessage("ویرایش هدایت"),
     "emptyLandingTip": MessageLookupByLibrary.simpleMessage(
@@ -1758,6 +1761,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "switchProfileFailed": MessageLookupByLibrary.simpleMessage(
       "تغییر اشتراک ناموفق",
     ),
+    "switchProxy": MessageLookupByLibrary.simpleMessage("تغییر"),
     "switchToDomesticIp": MessageLookupByLibrary.simpleMessage(
       "دریافت IP داخلی",
     ),
@@ -1825,6 +1829,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "threeInOut": MessageLookupByLibrary.simpleMessage("سه دایره"),
     "tight": MessageLookupByLibrary.simpleMessage("فشرده"),
     "time": MessageLookupByLibrary.simpleMessage("زمان"),
+    "timeoutLabel": MessageLookupByLibrary.simpleMessage("مهلت تمام شد"),
     "tip": MessageLookupByLibrary.simpleMessage("راهنما"),
     "titleColor": MessageLookupByLibrary.simpleMessage("رنگ عنوان"),
     "titleTooLong": MessageLookupByLibrary.simpleMessage(

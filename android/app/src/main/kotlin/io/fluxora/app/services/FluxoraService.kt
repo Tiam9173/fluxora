@@ -104,6 +104,23 @@ class FluxoraService : Service(), BaseServiceInterface {
 
     override fun onBind(intent: Intent): IBinder = binder
 
+    /// Notification action dispatch.
+    ///
+    /// Stop is handled here (nothing else needs to know); switch, reset and
+    /// speed test are forwarded to the app, because they operate on the config,
+    /// the connection table and the delay state — all of which live in Dart.
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        handleNotificationAction(intent)
+        return START_NOT_STICKY
+    }
+
+    companion object {
+        const val ACTION_STOP = "io.fluxora.app.action.STOP"
+        const val ACTION_SWITCH = "io.fluxora.app.action.SWITCH"
+        const val ACTION_RESET = "io.fluxora.app.action.RESET"
+        const val ACTION_SPEED_TEST = "io.fluxora.app.action.SPEED_TEST"
+    }
+
     override fun onDestroy() {
         stop()
         fairMemoryHelper.unregister(this)

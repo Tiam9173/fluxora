@@ -640,6 +640,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "dozeSuspendDesc": MessageLookupByLibrary.simpleMessage(
       "Sync with system Doze mode",
     ),
+    "duplicateNodeSkipped": MessageLookupByLibrary.simpleMessage(
+      "Skipped duplicate node names (landing proxies must be unique)",
+    ),
     "edit": MessageLookupByLibrary.simpleMessage("Edit"),
     "editTunnel": MessageLookupByLibrary.simpleMessage("Edit Forwarding"),
     "emptyLandingTip": MessageLookupByLibrary.simpleMessage(
@@ -1716,6 +1719,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "switchProfileFailed": MessageLookupByLibrary.simpleMessage(
       "Switch Subscription Failed",
     ),
+    "switchProxy": MessageLookupByLibrary.simpleMessage("Switch"),
     "switchToDomesticIp": MessageLookupByLibrary.simpleMessage(
       "Get Domestic IP",
     ),
@@ -1781,6 +1785,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "threeInOut": MessageLookupByLibrary.simpleMessage("Three In Out"),
     "tight": MessageLookupByLibrary.simpleMessage("Compact"),
     "time": MessageLookupByLibrary.simpleMessage("Time"),
+    "timeoutLabel": MessageLookupByLibrary.simpleMessage("Timeout"),
     "tip": MessageLookupByLibrary.simpleMessage("Tip"),
     "titleColor": MessageLookupByLibrary.simpleMessage("Title colour"),
     "titleTooLong": MessageLookupByLibrary.simpleMessage(

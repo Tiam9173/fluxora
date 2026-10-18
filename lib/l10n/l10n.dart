@@ -4360,6 +4360,16 @@ class AppLocalizations {
     );
   }
 
+  /// `Switch`
+  String get switchProxy {
+    return Intl.message('Switch', name: 'switchProxy', desc: '', args: []);
+  }
+
+  /// `Timeout`
+  String get timeoutLabel {
+    return Intl.message('Timeout', name: 'timeoutLabel', desc: '', args: []);
+  }
+
   /// `Telegram group`
   String get telegramGroup {
     return Intl.message(
@@ -6957,6 +6967,16 @@ class AppLocalizations {
       name: 'importSuccessCount',
       desc: '',
       args: [count],
+    );
+  }
+
+  /// `Skipped duplicate node names (landing proxies must be unique)`
+  String get duplicateNodeSkipped {
+    return Intl.message(
+      'Skipped duplicate node names (landing proxies must be unique)',
+      name: 'duplicateNodeSkipped',
+      desc: '',
+      args: [],
     );
   }
 

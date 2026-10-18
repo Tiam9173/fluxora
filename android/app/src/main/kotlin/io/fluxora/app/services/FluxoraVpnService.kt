@@ -161,6 +161,8 @@ class FluxoraVpnService : VpnService(), BaseServiceInterface {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // Notification action buttons (stop / switch / reset / speed test).
+        if (handleNotificationAction(intent)) return START_NOT_STICKY
         if (intent?.action == "UPDATE_NOTIFICATION_SPEED") {
             val profileName = intent.getStringExtra("profileName") ?: ""
             val speedInfo = intent.getStringExtra("speedInfo") ?: ""

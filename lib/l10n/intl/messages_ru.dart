@@ -668,6 +668,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "dozeSuspendDesc": MessageLookupByLibrary.simpleMessage(
       "Синхронизация с режимом сна Android",
     ),
+    "duplicateNodeSkipped": MessageLookupByLibrary.simpleMessage(
+      "Пропущены дубликаты имён (имена должны быть уникальны)",
+    ),
     "edit": MessageLookupByLibrary.simpleMessage("Редактировать"),
     "editTunnel": MessageLookupByLibrary.simpleMessage(
       "Изменить перенаправление",
@@ -1806,6 +1809,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "switchProfileFailed": MessageLookupByLibrary.simpleMessage(
       "Не удалось переключить подписку",
     ),
+    "switchProxy": MessageLookupByLibrary.simpleMessage("Переключить"),
     "switchToDomesticIp": MessageLookupByLibrary.simpleMessage(
       "Получить локальный IP",
     ),
@@ -1875,6 +1879,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "threeInOut": MessageLookupByLibrary.simpleMessage("Три точки"),
     "tight": MessageLookupByLibrary.simpleMessage("Минимальная"),
     "time": MessageLookupByLibrary.simpleMessage("Время"),
+    "timeoutLabel": MessageLookupByLibrary.simpleMessage("Таймаут"),
     "tip": MessageLookupByLibrary.simpleMessage("Подсказка"),
     "titleColor": MessageLookupByLibrary.simpleMessage("Цвет заголовка"),
     "titleTooLong": MessageLookupByLibrary.simpleMessage(

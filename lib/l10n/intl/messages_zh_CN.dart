@@ -464,6 +464,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "dozeSuspendDesc": MessageLookupByLibrary.simpleMessage(
       "开启后同步系统 Doze 休眠模式",
     ),
+    "duplicateNodeSkipped": MessageLookupByLibrary.simpleMessage(
+      "已跳过重名节点（落地代理名称必须唯一）",
+    ),
     "edit": MessageLookupByLibrary.simpleMessage("编辑"),
     "editTunnel": MessageLookupByLibrary.simpleMessage("编辑转发"),
     "emptyLandingTip": MessageLookupByLibrary.simpleMessage(
@@ -1232,6 +1235,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "success": MessageLookupByLibrary.simpleMessage("Success"),
     "switchLabel": MessageLookupByLibrary.simpleMessage("开关"),
     "switchProfileFailed": MessageLookupByLibrary.simpleMessage("切换订阅失败"),
+    "switchProxy": MessageLookupByLibrary.simpleMessage("切换"),
     "switchToDomesticIp": MessageLookupByLibrary.simpleMessage("获取国内 IP"),
     "sync": MessageLookupByLibrary.simpleMessage("同步"),
     "syncAll": MessageLookupByLibrary.simpleMessage("全部同步"),
@@ -1277,6 +1281,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "threeInOut": MessageLookupByLibrary.simpleMessage("三星舒合"),
     "tight": MessageLookupByLibrary.simpleMessage("紧凑"),
     "time": MessageLookupByLibrary.simpleMessage("时间"),
+    "timeoutLabel": MessageLookupByLibrary.simpleMessage("超时"),
     "tip": MessageLookupByLibrary.simpleMessage("提示"),
     "titleColor": MessageLookupByLibrary.simpleMessage("标题颜色"),
     "titleTooLong": MessageLookupByLibrary.simpleMessage("太长了，最多支持 20 个字符"),

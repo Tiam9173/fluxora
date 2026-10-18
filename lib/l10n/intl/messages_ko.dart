@@ -527,6 +527,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "dozeSuspendDesc": MessageLookupByLibrary.simpleMessage(
       "시스템 Doze 절전 모드와 동기화",
     ),
+    "duplicateNodeSkipped": MessageLookupByLibrary.simpleMessage(
+      "중복된 노드 이름을 건너뛰었습니다(이름은 고유해야 합니다)",
+    ),
     "edit": MessageLookupByLibrary.simpleMessage("편집"),
     "editTunnel": MessageLookupByLibrary.simpleMessage("포워딩 편집"),
     "emptyLandingTip": MessageLookupByLibrary.simpleMessage(
@@ -1381,6 +1384,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "success": MessageLookupByLibrary.simpleMessage("성공"),
     "switchLabel": MessageLookupByLibrary.simpleMessage("스위치"),
     "switchProfileFailed": MessageLookupByLibrary.simpleMessage("구독 전환 실패"),
+    "switchProxy": MessageLookupByLibrary.simpleMessage("전환"),
     "switchToDomesticIp": MessageLookupByLibrary.simpleMessage("국내 IP 가져오기"),
     "sync": MessageLookupByLibrary.simpleMessage("동기화"),
     "syncAll": MessageLookupByLibrary.simpleMessage("모두 동기화"),
@@ -1440,6 +1444,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "threeInOut": MessageLookupByLibrary.simpleMessage("트리플 인아웃"),
     "tight": MessageLookupByLibrary.simpleMessage("조밀하게"),
     "time": MessageLookupByLibrary.simpleMessage("시간"),
+    "timeoutLabel": MessageLookupByLibrary.simpleMessage("시간 초과"),
     "tip": MessageLookupByLibrary.simpleMessage("알림"),
     "titleColor": MessageLookupByLibrary.simpleMessage("제목 색상"),
     "titleTooLong": MessageLookupByLibrary.simpleMessage("제목이 너무 깁니다 (최대 20자)"),

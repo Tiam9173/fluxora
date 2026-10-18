@@ -707,7 +707,45 @@ class ChainProxyConfig {
   };
 
   void applyToClashConfig(Map<String, dynamic> rawConfig) {
-    // 1. WebRTC Leak Prevention: Injects high-priority STUN/TURN blocking rules for all nodes
+    final rawProxies = rawConfig['proxies'];
+    final rawGroups = rawConfig['proxy-groups'];
+
+    // 1. Clean teardown when disabled. Everything below only runs while the
+    //    feature is on: a disabled feature must not change global routing.
+    if (!enable) {
+      if (rawProxies is List) {
+        rawProxies.removeWhere(
+          (p) =>
+              p is Map &&
+              (p['name']?.toString().startsWith('🔗中转·') == true ||
+                  p['name']?.toString().startsWith('🔗出口·') == true),
+        );
+      }
+      if (rawGroups is List) {
+        rawGroups.removeWhere(
+          (g) =>
+              g is Map &&
+              (g['name'] == dedicatedGroupName || g['name'] == '✈️ 链式跳板'),
+        );
+        for (final g in rawGroups) {
+          if (g is Map && g['proxies'] is List) {
+            (g['proxies'] as List).removeWhere(
+              (p) =>
+                  p == dedicatedGroupName ||
+                  p == '✈️ 链式跳板' ||
+                  (p is String &&
+                      (p.startsWith('🔗中转·') || p.startsWith('🔗出口·'))),
+            );
+          }
+        }
+      }
+      return;
+    }
+
+    // 2. WebRTC Leak Prevention: high-priority STUN/TURN blocking rules.
+    //    Gated by `enable` above — before that fix these rules were injected
+    //    unconditionally and silently blocked video calls for users who had
+    //    never turned the chain proxy on.
     if (preventWebRtcLeak) {
       final rawRules = rawConfig['rules'];
       final List<dynamic> rulesList = (rawRules is List)
@@ -743,40 +781,6 @@ class ChainProxyConfig {
           .toList();
       rulesList.insertAll(0, rulesToInsert);
       rawConfig['rules'] = rulesList;
-    }
-
-    final rawProxies = rawConfig['proxies'];
-    final rawGroups = rawConfig['proxy-groups'];
-
-    // 2. Clean teardown when disabled
-    if (!enable) {
-      if (rawProxies is List) {
-        rawProxies.removeWhere(
-          (p) =>
-              p is Map &&
-              (p['name']?.toString().startsWith('🔗中转·') == true ||
-                  p['name']?.toString().startsWith('🔗出口·') == true),
-        );
-      }
-      if (rawGroups is List) {
-        rawGroups.removeWhere(
-          (g) =>
-              g is Map &&
-              (g['name'] == dedicatedGroupName || g['name'] == '✈️ 链式跳板'),
-        );
-        for (final g in rawGroups) {
-          if (g is Map && g['proxies'] is List) {
-            (g['proxies'] as List).removeWhere(
-              (p) =>
-                  p == dedicatedGroupName ||
-                  p == '✈️ 链式跳板' ||
-                  (p is String &&
-                      (p.startsWith('🔗中转·') || p.startsWith('🔗出口·'))),
-            );
-          }
-        }
-      }
-      return;
     }
 
     final activeLandings = landingProxies.where((p) => p.enable).toList();

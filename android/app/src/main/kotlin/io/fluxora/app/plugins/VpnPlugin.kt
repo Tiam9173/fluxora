@@ -236,6 +236,24 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         }
     }
     
+    /// Notification action forwarders.
+    ///
+    /// The notification's switch/reset/speed-test buttons land in the service's
+    /// onStartCommand, which forwards them here; they operate on config and
+    /// connection state, which only exists on the Dart side.
+    fun requestNotificationSwitch() = invokeDart("notificationSwitch")
+
+    fun requestNotificationReset() = invokeDart("notificationReset")
+
+    fun requestNotificationSpeedTest() = invokeDart("notificationSpeedTest")
+
+    private fun invokeDart(method: String) {
+        val channel = activeChannels.firstOrNull() ?: return
+        scope.launch(Dispatchers.Main) {
+            runCatching { channel.invokeMethod(method, null) }
+        }
+    }
+
     fun setQuickResponse(enabled: Boolean) {
         quickResponseEnabled = enabled
     }

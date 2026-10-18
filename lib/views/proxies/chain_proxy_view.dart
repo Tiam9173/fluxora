@@ -269,10 +269,15 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
     showDialog(
       context: context,
       builder: (ctx) => _QuickImportDialog(
-        onImport: (proxies) {
-          chainProxyManager.addLandingProxies(proxies);
+        onImport: (proxies) async {
+          final added = await chainProxyManager.addLandingProxies(proxies);
+          if (!mounted) return;
+          // Report what actually landed: names must be unique, so a repeated
+          // import is skipped rather than written twice.
           context.showSnackBar(
-            appLocalizations.importSuccessCount(proxies.length),
+            added == proxies.length
+                ? appLocalizations.importSuccessCount(added)
+                : appLocalizations.duplicateNodeSkipped,
           );
         },
       ),
@@ -284,11 +289,12 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
       context: context,
       builder: (ctx) => _EditLandingProxyDialog(
         proxy: existing,
-        onSave: (proxy) {
-          if (existing == null) {
-            chainProxyManager.addLandingProxies([proxy]);
-          } else {
-            chainProxyManager.updateLandingProxy(proxy);
+        onSave: (proxy) async {
+          final ok = existing == null
+              ? await chainProxyManager.addLandingProxies([proxy]) > 0
+              : await chainProxyManager.updateLandingProxy(proxy);
+          if (!ok && mounted) {
+            context.showSnackBar(appLocalizations.duplicateNodeSkipped);
           }
         },
       ),

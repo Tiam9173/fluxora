@@ -5,6 +5,7 @@ import 'package:fluxora/models/config.dart';
 import 'package:fluxora/models/widget.dart';
 import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
+import 'package:fluxora/views/proxies/notification_switch_card.dart';
 import 'package:fluxora/views/proxies/list.dart';
 import 'package:fluxora/views/proxies/providers.dart';
 import 'package:fluxora/widgets/widgets.dart';
@@ -90,6 +91,14 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
         },
         popup: CommonPopupMenu(
           items: [
+            // The compact switch card is what the notification's switch button
+            // opens; reachable here too so it does not depend on the OS
+            // notification being present (and so it can be used on desktop).
+            PopupMenuItemData(
+              icon: Icons.swap_horiz_rounded,
+              label: appLocalizations.switchProxy,
+              onPressed: () => showNotificationSwitchCard(context),
+            ),
             PopupMenuItemData(
               icon: Icons.tune,
               label: appLocalizations.settings,

@@ -468,6 +468,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "dozeSuspendDesc": MessageLookupByLibrary.simpleMessage(
       "開啟後同步系統 Doze 休眠模式",
     ),
+    "duplicateNodeSkipped": MessageLookupByLibrary.simpleMessage(
+      "已略過同名節點（落地代理名稱必須唯一）",
+    ),
     "edit": MessageLookupByLibrary.simpleMessage("編輯"),
     "editTunnel": MessageLookupByLibrary.simpleMessage("編輯轉發"),
     "emptyLandingTip": MessageLookupByLibrary.simpleMessage(
@@ -1248,6 +1251,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "success": MessageLookupByLibrary.simpleMessage("Success"),
     "switchLabel": MessageLookupByLibrary.simpleMessage("開關"),
     "switchProfileFailed": MessageLookupByLibrary.simpleMessage("切換訂閱失敗"),
+    "switchProxy": MessageLookupByLibrary.simpleMessage("切換"),
     "switchToDomesticIp": MessageLookupByLibrary.simpleMessage("獲取國內 IP"),
     "sync": MessageLookupByLibrary.simpleMessage("同步"),
     "syncAll": MessageLookupByLibrary.simpleMessage("全部同步"),
@@ -1293,6 +1297,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "threeInOut": MessageLookupByLibrary.simpleMessage("三星舒合"),
     "tight": MessageLookupByLibrary.simpleMessage("緊湊"),
     "time": MessageLookupByLibrary.simpleMessage("時間"),
+    "timeoutLabel": MessageLookupByLibrary.simpleMessage("逾時"),
     "tip": MessageLookupByLibrary.simpleMessage("提示"),
     "titleColor": MessageLookupByLibrary.simpleMessage("標題顏色"),
     "titleTooLong": MessageLookupByLibrary.simpleMessage("太長了，最多支援 20 個字元"),

@@ -568,23 +568,56 @@ class ChainProxyManager extends ChangeNotifier {
     await updateConfig((c) => c.copyWith(preventWebRtcLeak: prevent));
   }
 
-  Future<void> addLandingProxies(List<LandingProxy> proxies) async {
-    if (proxies.isEmpty) return;
+  /// Adds landing proxies, skipping names that already exist.
+  ///
+  /// Returns how many were actually added. Names must be unique: they are
+  /// written into the generated config as proxy names, and mihomo rejects a
+  /// whole config that contains a duplicate — one repeated import would take
+  /// down every node, not just the duplicated one.
+  Future<int> addLandingProxies(List<LandingProxy> proxies) async {
+    if (proxies.isEmpty) return 0;
+    var added = 0;
     await updateConfig((c) {
-      final updated = List<LandingProxy>.from(c.landingProxies)
-        ..addAll(proxies);
-      return c.copyWith(landingProxies: updated);
+      final names = c.landingProxies.map((p) => p.name.trim()).toSet();
+      final accepted = <LandingProxy>[];
+      for (final proxy in proxies) {
+        final name = proxy.name.trim();
+        if (name.isEmpty) continue;
+        // No commonPrint here: it routes through AppController.addLog,
+        // which touches a Riverpod ref and throws when the widget is
+        // already disposed (it broke a test that way). The return value
+        // and the UI snackbar carry the same information.
+        if (!names.add(name)) continue;
+        accepted.add(proxy);
+      }
+      added = accepted.length;
+      if (accepted.isEmpty) return c;
+      return c.copyWith(
+        landingProxies: List<LandingProxy>.from(c.landingProxies)
+          ..addAll(accepted),
+      );
     });
+    return added;
   }
 
-  Future<void> updateLandingProxy(LandingProxy proxy) async {
+  /// Updates one landing proxy in place. Returns false when nothing changed —
+  /// an unknown id, or a rename onto a name another entry already uses.
+  Future<bool> updateLandingProxy(LandingProxy proxy) async {
+    var updated = false;
     await updateConfig((c) {
       final index = c.landingProxies.indexWhere((p) => p.id == proxy.id);
       if (index == -1) return c;
-      final updated = List<LandingProxy>.from(c.landingProxies);
-      updated[index] = proxy;
-      return c.copyWith(landingProxies: updated);
+      final name = proxy.name.trim();
+      final duplicate = c.landingProxies.any(
+        (p) => p.id != proxy.id && p.name.trim() == name,
+      );
+      if (duplicate) return c;
+      final list = List<LandingProxy>.from(c.landingProxies);
+      list[index] = proxy;
+      updated = true;
+      return c.copyWith(landingProxies: list);
     });
+    return updated;
   }
 
   Future<void> toggleLandingProxy(String id, bool enable) async {

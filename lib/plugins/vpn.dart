@@ -1,8 +1,11 @@
 import 'dart:convert';
 
 import 'package:fluxora/clash/clash.dart';
+import 'package:fluxora/common/common.dart';
 import 'package:fluxora/models/models.dart';
 import 'package:fluxora/state.dart';
+import 'package:fluxora/views/proxies/common.dart';
+import 'package:fluxora/views/proxies/notification_switch_card.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
@@ -45,6 +48,51 @@ class Vpn {
           for (final listener in _listeners) {
             listener.onNetworkChanged();
           }
+          break;
+        // Notification action buttons.
+        case 'notificationSwitch':
+          final context = globalState.navigatorKey.currentContext;
+          if (context == null) {
+            // Happens when the UI was torn down while the service kept running;
+            // the button then has nowhere to draw the card.
+            commonPrint.log(
+              'notificationSwitch: no navigator context, card not shown',
+            );
+          } else {
+            commonPrint.log('notificationSwitch: opening switch card');
+            showNotificationSwitchCard(context);
+          }
+          break;
+        case 'notificationReset':
+          // ownbox's RESET_UPSTREAM_CONNECTIONS semantics: drop the existing
+          // upstream connections and let the core rebuild them from the current
+          // config, so the selected node and profile stay exactly as they are.
+          commonPrint.log('notificationReset: resetting upstream connections');
+          clashCore.resetConnections();
+          break;
+        case 'notificationSpeedTest':
+          final controller = globalState.appController;
+          final groupName = controller.getCurrentGroupName();
+          final group = globalState.appState.groups
+              .where((element) => element.name == groupName)
+              .firstOrNull;
+          if (group == null) {
+            commonPrint.log(
+              'notificationSpeedTest: group "$groupName" not found '
+              '(${globalState.appState.groups.length} groups)',
+            );
+            break;
+          }
+          commonPrint.log(
+            'notificationSpeedTest: group "$groupName", '
+            '${group.all.length} proxies',
+          );
+          await delayTest(
+            group.all,
+            testUrl: group.testUrl,
+            groupName: groupName,
+          );
+          commonPrint.log('notificationSpeedTest: done');
           break;
         default:
       }
