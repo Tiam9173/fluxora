@@ -564,9 +564,20 @@ class AppController {
   }
 
   Future<void> updateLocalIp() async {
-    _ref.read(localIpProvider.notifier).value = null;
+    // localIpProvider is autoDispose: once the intranet card is unmounted the
+    // notifier is gone and writing to it throws, which surfaced as an
+    // uncaught Flutter error every time the dashboard was not on screen.
+    void write(String? value) {
+      try {
+        _ref.read(localIpProvider.notifier).value = value;
+      } catch (e) {
+        commonPrint.log('updateLocalIp: provider disposed, skipped ($e)');
+      }
+    }
+
+    write(null);
     await Future.delayed(commonDuration);
-    _ref.read(localIpProvider.notifier).value = await utils.getLocalIpAddress();
+    write(await utils.getLocalIpAddress());
   }
 
   Future<void> updateProfile(Profile profile, {bool validate = true}) async {
