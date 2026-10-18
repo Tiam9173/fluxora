@@ -245,8 +245,13 @@ class _SwitchCardState extends ConsumerState<_SwitchCard> {
                       // so tapping one would be undone by the core a moment
                       // later. Shown, but not selectable.
                       final selectable = !currentGroup.type.isComputedSelected;
-                      final delay = delayMap[currentGroup.testUrl ?? defaultTestUrl]
-                          ?[proxy.name];
+                      // Resolve the same way delayTest does: it stores results
+                      // under getRealTestUrl(...), so looking them up by the
+                      // raw group URL never matched and every row stayed blank.
+                      final delayUrl = globalState.appController.getRealTestUrl(
+                        currentGroup.testUrl ?? defaultTestUrl,
+                      );
+                      final delay = delayMap[delayUrl]?[proxy.name];
                       return InkWell(
                         onTap: selectable
                             ? () {
