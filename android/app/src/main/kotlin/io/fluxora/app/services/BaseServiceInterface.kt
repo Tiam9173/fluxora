@@ -102,7 +102,20 @@ fun BaseServiceInterface.handleNotificationAction(intent: Intent?): Boolean {
     android.util.Log.i(TAG, "action=$action service=${this::class.java.simpleName}")
     return when (action) {
         FluxoraService.ACTION_STOP -> {
-            stop()
+            // Stopping the service alone leaves Dart believing the tunnel is
+            // still up, and its state machine then starts it again - which
+            // looks exactly like "stop restarts the service". Ask the app to
+            // stop; fall back to a plain stop if no engine is attached.
+            val plugin = GlobalState.getCurrentVPNPlugin()
+            if (plugin == null) {
+                android.util.Log.w(TAG, "stop: no VpnPlugin, stopping service only")
+                stop()
+            } else {
+                runCatching { plugin.requestNotificationStop() }.onFailure {
+                    android.util.Log.e(TAG, "stop: forward failed: ${it.message}")
+                    stop()
+                }
+            }
             true
         }
         FluxoraService.ACTION_SWITCH -> {

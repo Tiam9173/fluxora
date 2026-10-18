@@ -241,6 +241,8 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     /// The notification's switch/reset/speed-test buttons land in the service's
     /// onStartCommand, which forwards them here; they operate on config and
     /// connection state, which only exists on the Dart side.
+    fun requestNotificationStop() = invokeDart("notificationStop")
+
     fun requestNotificationSwitch() = invokeDart("notificationSwitch")
 
     fun requestNotificationReset() = invokeDart("notificationReset")

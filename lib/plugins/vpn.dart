@@ -50,6 +50,12 @@ class Vpn {
           }
           break;
         // Notification action buttons.
+        case 'notificationStop':
+          // The app's own stop path, not a bare service kill: it also tears
+          // down the core and tells the state machine the tunnel is gone.
+          commonPrint.log('notificationStop: stopping via app controller');
+          await globalState.handleStop();
+          break;
         case 'notificationSwitch':
           // The activity is launched before this arrives, but on a cold start
           // the navigator is not mounted yet. Retry briefly rather than drop
