@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import io.fluxora.app.GlobalState
+import io.fluxora.app.RunState
 import io.flutter.plugin.common.MethodChannel
 
 /// Receives the notification's action buttons.
@@ -19,24 +20,37 @@ class NotificationActionReceiver : BroadcastReceiver() {
         val action = intent?.action ?: return
         Log.i(TAG, "received $action")
 
-        val method = when (action) {
-            FluxoraService.ACTION_STOP -> "notificationStop"
-            FluxoraService.ACTION_RESET -> "notificationReset"
-            FluxoraService.ACTION_SPEED_TEST -> "notificationSpeedTest"
-            else -> return
-        }
+        // Stop reuses the quick-settings tile path: the tile toggles the service
+        // from outside the UI and it works, so it is the one stop sequence that
+        // is known to complete without a Flutter screen attached.
+        if (action == FluxoraService.ACTION_STOP) {
+            val stopped = runCatching {
+                GlobalState.handleStop(skipDebounce = true)
+                true
+            }.getOrElse {
+                Log.e(TAG, "stop via GlobalState failed: ${it.message}")
+                false
+            }
+            Log.i(TAG, "stop -> GlobalState.handleStop handled=$stopped")
 
-        val delivered = invokeDart(method)
-        Log.i(TAG, "$action -> $method delivered=$delivered")
-
-        // Stopping has to work even with no UI attached, so do it natively.
-        if (!delivered && action == FluxoraService.ACTION_STOP) {
-            Log.w(TAG, "stop: no Dart channel, stopping natively")
+            // If the state machine thought it was already stopped, force it.
+            if (!stopped || GlobalState.currentRunState == RunState.START) {
+                runCatching { GlobalState.handleStop(skipDebounce = true) }
+            }
             context?.let {
                 it.stopService(Intent(it, FluxoraVpnService::class.java))
                 it.stopService(Intent(it, FluxoraService::class.java))
             }
+            return
         }
+
+        val method = when (action) {
+            FluxoraService.ACTION_RESET -> "notificationReset"
+            FluxoraService.ACTION_SPEED_TEST -> "notificationSpeedTest"
+            else -> return
+        }
+        val delivered = invokeDart(method)
+        Log.i(TAG, "$action -> $method delivered=$delivered")
     }
 
     private fun invokeDart(method: String): Boolean {
