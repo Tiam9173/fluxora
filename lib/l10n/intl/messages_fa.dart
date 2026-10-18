@@ -74,21 +74,24 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m25(label) => "${label} باید عدد باشد";
 
-  static String m26(label) =>
+  static String m26(from, to) =>
+      "پورت ${from} اشغال است؛ در این نشست از ${to} استفاده می‌شود";
+
+  static String m27(label) =>
       "${label} باید بین ۱۰۲۴ تا ۴۹۱۵۱ باشد (۰ برای غیرفعال)";
 
-  static String m27(name) => "پروکسی مقدماتی و پروکسی فرود · ${name}";
+  static String m28(name) => "پروکسی مقدماتی و پروکسی فرود · ${name}";
 
-  static String m28(statusCode) =>
+  static String m29(statusCode) =>
       "خطا در دریافت پروفایل. لطفاً شبکه خود را بررسی کرده یا لینک را ریست کنید ( کد خطا: ${statusCode} )";
 
-  static String m29(count) => "${count} مورد انتخاب شده";
+  static String m30(count) => "${count} مورد انتخاب شده";
 
-  static String m30(name) => "همچنان در حال استفاده: ${name}";
+  static String m31(name) => "همچنان در حال استفاده: ${name}";
 
-  static String m31(label) => "${label} باید یک URL معتبر باشد";
+  static String m32(label) => "${label} باید یک URL معتبر باشد";
 
-  static String m32(count) => "${Intl.plural(count, other: '# سال')}";
+  static String m33(count) => "${Intl.plural(count, other: '# سال')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -1363,8 +1366,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "portFallbackDesc": MessageLookupByLibrary.simpleMessage(
       "اگر پورت تنظیم‌شده اشغال باشد، از پورت دیگری استفاده کن",
     ),
+    "portFallbackNotice": m26,
     "portLabel": MessageLookupByLibrary.simpleMessage("پورت"),
-    "portTip": m26,
+    "portTip": m27,
     "powerSwitch": MessageLookupByLibrary.simpleMessage("کلید روشن/خاموش"),
     "preProxyOptionCustom": MessageLookupByLibrary.simpleMessage(
       "✏️ ورود دستی نام گره مقدماتی...",
@@ -1403,7 +1407,7 @@ class MessageLookup extends MessageLookupByLibrary {
         ),
     "profileAutoUpdateIntervalNullValidationDesc":
         MessageLookupByLibrary.simpleMessage("لطفاً فاصله زمانی را وارد کنید"),
-    "profileChainDialogTitle": m27,
+    "profileChainDialogTitle": m28,
     "profileChainSaved": MessageLookupByLibrary.simpleMessage(
       "تنظیمات پروکسی مقدماتی و فرود ذخیره شد",
     ),
@@ -1413,7 +1417,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "profileHasUpdate": MessageLookupByLibrary.simpleMessage(
       "پروفایل تغییر یافته است. آیا بروزرسانی خودکار غیرفعال شود؟",
     ),
-    "profileImportFailed": m28,
+    "profileImportFailed": m29,
     "profileNameNullValidationDesc": MessageLookupByLibrary.simpleMessage(
       "لطفاً نام پروفایل را وارد کنید",
     ),
@@ -1630,7 +1634,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "انتخاب نسخه پشتیبان",
     ),
     "selected": MessageLookupByLibrary.simpleMessage("انتخاب شده"),
-    "selectedCountTitle": m29,
+    "selectedCountTitle": m30,
     "serverAddress": MessageLookupByLibrary.simpleMessage("آدرس سرور"),
     "serverAddressHint": MessageLookupByLibrary.simpleMessage("IP یا دامنه"),
     "serverAddressLabel": MessageLookupByLibrary.simpleMessage("آدرس سرور"),
@@ -1728,7 +1732,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "statusDesc": MessageLookupByLibrary.simpleMessage(
       "در صورت غیرفعال بودن از DNS سیستم استفاده می‌شود",
     ),
-    "stillUsingProfile": m30,
+    "stillUsingProfile": m31,
     "stop": MessageLookupByLibrary.simpleMessage("توقف"),
     "stopVpn": MessageLookupByLibrary.simpleMessage("در حال توقف..."),
     "storeFix": MessageLookupByLibrary.simpleMessage("ترمیم استور"),
@@ -1951,7 +1955,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "urlDesc": MessageLookupByLibrary.simpleMessage(
       "دریافت پروفایل از طریق آدرس URL",
     ),
-    "urlTip": m31,
+    "urlTip": m32,
     "useGlobalScriptOverride": MessageLookupByLibrary.simpleMessage(
       "استفاده از اسکریپت اورراید سراسری",
     ),
@@ -2003,6 +2007,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "wrongBackupPassword": MessageLookupByLibrary.simpleMessage(
       "گذرواژه نادرست است یا پشتیبان دستکاری شده است",
     ),
-    "years": m32,
+    "years": m33,
   };
 }

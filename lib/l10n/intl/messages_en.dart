@@ -75,21 +75,24 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m25(label) => "${label} must be a number";
 
-  static String m26(label) =>
+  static String m26(from, to) =>
+      "Port ${from} is in use; using ${to} for this session";
+
+  static String m27(label) =>
       "${label} must be between 1024 and 49151, 0 to disable";
 
-  static String m27(name) => "Pre-proxy & Landing Proxy · ${name}";
+  static String m28(name) => "Pre-proxy & Landing Proxy · ${name}";
 
-  static String m28(statusCode) =>
+  static String m29(statusCode) =>
       "Failed to import profile. Please check your network status or try resetting the subscription link ( HTTP error code: ${statusCode} )";
 
-  static String m29(count) => "${count} items selected";
+  static String m30(count) => "${count} items selected";
 
-  static String m30(name) => "Still using: ${name}";
+  static String m31(name) => "Still using: ${name}";
 
-  static String m31(label) => "${label} must be a URL";
+  static String m32(label) => "${label} must be a URL";
 
-  static String m32(count) =>
+  static String m33(count) =>
       "${Intl.plural(count, one: 'year', other: 'years')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
@@ -1339,8 +1342,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "portFallbackDesc": MessageLookupByLibrary.simpleMessage(
       "Use another port when the configured one is already taken",
     ),
+    "portFallbackNotice": m26,
     "portLabel": MessageLookupByLibrary.simpleMessage("Port"),
-    "portTip": m26,
+    "portTip": m27,
     "powerSwitch": MessageLookupByLibrary.simpleMessage("Power"),
     "preProxyOptionCustom": MessageLookupByLibrary.simpleMessage(
       "✏️ Manually enter pre-proxy node name...",
@@ -1375,7 +1379,7 @@ class MessageLookup extends MessageLookupByLibrary {
         MessageLookupByLibrary.simpleMessage("Please enter a valid interval"),
     "profileAutoUpdateIntervalNullValidationDesc":
         MessageLookupByLibrary.simpleMessage("Please enter update interval"),
-    "profileChainDialogTitle": m27,
+    "profileChainDialogTitle": m28,
     "profileChainSaved": MessageLookupByLibrary.simpleMessage(
       "Pre-proxy and landing proxy settings saved",
     ),
@@ -1385,7 +1389,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "profileHasUpdate": MessageLookupByLibrary.simpleMessage(
       "Profile modified. Disable auto-update?",
     ),
-    "profileImportFailed": m28,
+    "profileImportFailed": m29,
     "profileNameNullValidationDesc": MessageLookupByLibrary.simpleMessage(
       "Please enter a profile name",
     ),
@@ -1584,7 +1588,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Select Backup Version",
     ),
     "selected": MessageLookupByLibrary.simpleMessage("Selected"),
-    "selectedCountTitle": m29,
+    "selectedCountTitle": m30,
     "serverAddress": MessageLookupByLibrary.simpleMessage("Server Address"),
     "serverAddressHint": MessageLookupByLibrary.simpleMessage("IP or domain"),
     "serverAddressLabel": MessageLookupByLibrary.simpleMessage(
@@ -1684,7 +1688,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "statusDesc": MessageLookupByLibrary.simpleMessage(
       "Uses system DNS when disabled",
     ),
-    "stillUsingProfile": m30,
+    "stillUsingProfile": m31,
     "stop": MessageLookupByLibrary.simpleMessage("Stop"),
     "stopVpn": MessageLookupByLibrary.simpleMessage("Stopping..."),
     "storeFix": MessageLookupByLibrary.simpleMessage("Store Fix"),
@@ -1905,7 +1909,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "upload": MessageLookupByLibrary.simpleMessage("Upload"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage("Get profile via URL"),
-    "urlTip": m31,
+    "urlTip": m32,
     "useGlobalScriptOverride": MessageLookupByLibrary.simpleMessage(
       "Use Global Script Override",
     ),
@@ -1955,6 +1959,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "wrongBackupPassword": MessageLookupByLibrary.simpleMessage(
       "Wrong password or the backup was tampered with",
     ),
-    "years": m32,
+    "years": m33,
   };
 }

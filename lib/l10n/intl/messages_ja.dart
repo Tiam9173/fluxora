@@ -72,20 +72,22 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m25(label) => "${label} は数値である必要があります";
 
-  static String m26(label) => "${label} は1024〜49151の範囲で指定してください（0で無効）";
+  static String m26(from, to) => "ポート ${from} は使用中のため、今回は ${to} を使用します";
 
-  static String m27(name) => "プリプロキシとランディングプロキシ · ${name}";
+  static String m27(label) => "${label} は1024〜49151の範囲で指定してください（0で無効）";
 
-  static String m28(statusCode) =>
+  static String m28(name) => "プリプロキシとランディングプロキシ · ${name}";
+
+  static String m29(statusCode) =>
       "プロファイルのインポートに失敗しました。通信状態を確認するかURLをリセットしてください ( HTTPエラーコード: ${statusCode} )";
 
-  static String m29(count) => "${count} 件選択中";
+  static String m30(count) => "${count} 件選択中";
 
-  static String m30(name) => "使用中: ${name}";
+  static String m31(name) => "使用中: ${name}";
 
-  static String m31(label) => "${label} は有効なURLである必要があります";
+  static String m32(label) => "${label} は有効なURLである必要があります";
 
-  static String m32(count) => "${Intl.plural(count, other: '年')}";
+  static String m33(count) => "${Intl.plural(count, other: '年')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -1084,8 +1086,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "portFallbackDesc": MessageLookupByLibrary.simpleMessage(
       "設定したポートが使用中のとき、別のポートを一時的に使用します",
     ),
+    "portFallbackNotice": m26,
     "portLabel": MessageLookupByLibrary.simpleMessage("ポート"),
-    "portTip": m26,
+    "portTip": m27,
     "powerSwitch": MessageLookupByLibrary.simpleMessage("電源スイッチ"),
     "preProxyOptionCustom": MessageLookupByLibrary.simpleMessage(
       "✏️ プリプロキシノード名を手動入力...",
@@ -1114,7 +1117,7 @@ class MessageLookup extends MessageLookupByLibrary {
         MessageLookupByLibrary.simpleMessage("有効な時間を指定してください"),
     "profileAutoUpdateIntervalNullValidationDesc":
         MessageLookupByLibrary.simpleMessage("更新間隔を入力してください"),
-    "profileChainDialogTitle": m27,
+    "profileChainDialogTitle": m28,
     "profileChainSaved": MessageLookupByLibrary.simpleMessage(
       "プリプロキシとランディングプロキシの設定を保存しました",
     ),
@@ -1124,7 +1127,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "profileHasUpdate": MessageLookupByLibrary.simpleMessage(
       "プロファイルが変更されました。自動更新をオフにしますか？",
     ),
-    "profileImportFailed": m28,
+    "profileImportFailed": m29,
     "profileNameNullValidationDesc": MessageLookupByLibrary.simpleMessage(
       "設定名を入力してください",
     ),
@@ -1279,7 +1282,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "バックアップバージョンの選択",
     ),
     "selected": MessageLookupByLibrary.simpleMessage("選択済み"),
-    "selectedCountTitle": m29,
+    "selectedCountTitle": m30,
     "serverAddress": MessageLookupByLibrary.simpleMessage("サーバーアドレス"),
     "serverAddressHint": MessageLookupByLibrary.simpleMessage("IP またはドメイン"),
     "serverAddressLabel": MessageLookupByLibrary.simpleMessage("サーバーアドレス"),
@@ -1357,7 +1360,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "startVpn": MessageLookupByLibrary.simpleMessage("起動中..."),
     "status": MessageLookupByLibrary.simpleMessage("ステータス"),
     "statusDesc": MessageLookupByLibrary.simpleMessage("オフにするとシステムDNSを使用します"),
-    "stillUsingProfile": m30,
+    "stillUsingProfile": m31,
     "stop": MessageLookupByLibrary.simpleMessage("停止"),
     "stopVpn": MessageLookupByLibrary.simpleMessage("停止中..."),
     "storeFix": MessageLookupByLibrary.simpleMessage("ストア修復"),
@@ -1544,7 +1547,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "upload": MessageLookupByLibrary.simpleMessage("送信"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage("URLから設定を取得"),
-    "urlTip": m31,
+    "urlTip": m32,
     "useGlobalScriptOverride": MessageLookupByLibrary.simpleMessage(
       "グローバルスクリプトオーバーライドを使用",
     ),
@@ -1584,6 +1587,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "wrongBackupPassword": MessageLookupByLibrary.simpleMessage(
       "パスワードが違うか、バックアップが改ざんされています",
     ),
-    "years": m32,
+    "years": m33,
   };
 }

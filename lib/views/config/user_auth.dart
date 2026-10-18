@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/models/models.dart';
 import 'package:fluxora/providers/providers.dart';
@@ -104,9 +106,32 @@ class _UserAuthDialogState extends ConsumerState<UserAuthDialog> {
     super.dispose();
   }
 
+  /// Random credentials for a new entry.
+  ///
+  /// LAN sharing is usually switched on to let one device through, and asking
+  /// the user to invent a password there produces either "123456" or a
+  /// password they will have to look up later. Generated values are short
+  /// enough to type on a TV remote and use an alphabet without look-alikes
+  /// (0/O, 1/l/I).
+  static const _alphabet =
+      'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+  static String _randomToken(int length) {
+    final random = Random.secure();
+    return List.generate(
+      length,
+      (_) => _alphabet[random.nextInt(_alphabet.length)],
+    ).join();
+  }
+
   void _addEntry() {
     setState(() {
-      _entries.add(_UserAuthEntry(username: '', password: ''));
+      _entries.add(
+        _UserAuthEntry(
+          username: 'fluxora_${_randomToken(4).toLowerCase()}',
+          password: _randomToken(10),
+        ),
+      );
     });
   }
 

@@ -72,20 +72,22 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m25(label) => "${label}必须为数字";
 
-  static String m26(label) => "${label} 必须在 1024 到 49151 之间，0 为关闭";
+  static String m26(from, to) => "端口 ${from} 已被占用，本次会话改用 ${to}";
 
-  static String m27(name) => "前置与落地代理 · ${name}";
+  static String m27(label) => "${label} 必须在 1024 到 49151 之间，0 为关闭";
 
-  static String m28(statusCode) =>
+  static String m28(name) => "前置与落地代理 · ${name}";
+
+  static String m29(statusCode) =>
       "配置导入失败，请检查网络状况或尝试重置订阅链接( HTTP错误代码: ${statusCode} )";
 
-  static String m29(count) => "已选择 ${count} 项";
+  static String m30(count) => "已选择 ${count} 项";
 
-  static String m30(name) => "当前仍在使用：${name}";
+  static String m31(name) => "当前仍在使用：${name}";
 
-  static String m31(label) => "${label}必须为URL";
+  static String m32(label) => "${label}必须为URL";
 
-  static String m32(count) => "${Intl.plural(count, other: '年')}";
+  static String m33(count) => "${Intl.plural(count, other: '年')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -974,8 +976,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "portFallbackDesc": MessageLookupByLibrary.simpleMessage(
       "配置的端口被占用时，临时使用其他端口",
     ),
+    "portFallbackNotice": m26,
     "portLabel": MessageLookupByLibrary.simpleMessage("端口"),
-    "portTip": m26,
+    "portTip": m27,
     "powerSwitch": MessageLookupByLibrary.simpleMessage("启动开关"),
     "preProxyOptionCustom": MessageLookupByLibrary.simpleMessage(
       "✏️ 手动输入前置节点名称...",
@@ -1002,13 +1005,13 @@ class MessageLookup extends MessageLookupByLibrary {
         MessageLookupByLibrary.simpleMessage("请输入有效间隔时间格式"),
     "profileAutoUpdateIntervalNullValidationDesc":
         MessageLookupByLibrary.simpleMessage("请输入自动更新间隔时间"),
-    "profileChainDialogTitle": m27,
+    "profileChainDialogTitle": m28,
     "profileChainSaved": MessageLookupByLibrary.simpleMessage("已保存前置与落地代理设置"),
     "profileFallbackFailed": MessageLookupByLibrary.simpleMessage("旧配置也无法恢复"),
     "profileHasUpdate": MessageLookupByLibrary.simpleMessage(
       "配置文件已经修改，是否关闭自动更新？",
     ),
-    "profileImportFailed": m28,
+    "profileImportFailed": m29,
     "profileNameNullValidationDesc": MessageLookupByLibrary.simpleMessage(
       "请输入配置名称",
     ),
@@ -1147,7 +1150,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "selectAll": MessageLookupByLibrary.simpleMessage("全选"),
     "selectBackupVersion": MessageLookupByLibrary.simpleMessage("选择备份版本"),
     "selected": MessageLookupByLibrary.simpleMessage("已选择"),
-    "selectedCountTitle": m29,
+    "selectedCountTitle": m30,
     "serverAddress": MessageLookupByLibrary.simpleMessage("服务器地址"),
     "serverAddressHint": MessageLookupByLibrary.simpleMessage("IP 或域名"),
     "serverAddressLabel": MessageLookupByLibrary.simpleMessage("服务器地址"),
@@ -1211,7 +1214,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "startVpn": MessageLookupByLibrary.simpleMessage("正在启动"),
     "status": MessageLookupByLibrary.simpleMessage("状态"),
     "statusDesc": MessageLookupByLibrary.simpleMessage("关闭后将使用系统 DNS"),
-    "stillUsingProfile": m30,
+    "stillUsingProfile": m31,
     "stop": MessageLookupByLibrary.simpleMessage("停止"),
     "stopVpn": MessageLookupByLibrary.simpleMessage("正在停止"),
     "storeFix": MessageLookupByLibrary.simpleMessage("商店修复"),
@@ -1368,7 +1371,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "upload": MessageLookupByLibrary.simpleMessage("上传"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage("通过 URL 获取配置文件"),
-    "urlTip": m31,
+    "urlTip": m32,
     "useGlobalScriptOverride": MessageLookupByLibrary.simpleMessage("使用全局脚本覆写"),
     "useHosts": MessageLookupByLibrary.simpleMessage("使用Hosts"),
     "useSystemHosts": MessageLookupByLibrary.simpleMessage("使用系统 Hosts"),
@@ -1404,6 +1407,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystem": MessageLookupByLibrary.simpleMessage("写入系统"),
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage("需要管理员权限"),
     "wrongBackupPassword": MessageLookupByLibrary.simpleMessage("密码错误或备份已被篡改"),
-    "years": m32,
+    "years": m33,
   };
 }

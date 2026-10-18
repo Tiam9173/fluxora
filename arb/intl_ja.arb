@@ -517,6 +517,7 @@
   "bypassDomainDesc": "システムプロキシ有効時のみ適用",
   "resetTip": "本当にリセットしますか？",
   "restartCore": "コアを再起動",
+  "portFallbackNotice": "ポート {from} は使用中のため、今回は {to} を使用します",
   "restartCoreDesc": "コアと現在の設定を再読み込みします",
   "restartCoreTip": "コアを再起動しますか？使用中の接続は一時的に切断されます。",
   "titleColor": "タイトルの色",

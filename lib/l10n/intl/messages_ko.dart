@@ -72,20 +72,23 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m25(label) => "${label} 항목은 숫자여야 합니다";
 
-  static String m26(label) => "${label} 항목은 1024~49151 사이여야 합니다 (0은 비활성화)";
+  static String m26(from, to) =>
+      "포트 ${from}이(가) 사용 중이라 이번 세션에서는 ${to}을(를) 사용합니다";
 
-  static String m27(name) => "사전 프록시 및 랜딩 프록시 · ${name}";
+  static String m27(label) => "${label} 항목은 1024~49151 사이여야 합니다 (0은 비활성화)";
 
-  static String m28(statusCode) =>
+  static String m28(name) => "사전 프록시 및 랜딩 프록시 · ${name}";
+
+  static String m29(statusCode) =>
       "프로필 가져오기에 실패했습니다. 네트워크 상태를 확인하거나 구독 링크를 재설정해 보세요 ( HTTP 오류 코드: ${statusCode} )";
 
-  static String m29(count) => "${count}개 선택됨";
+  static String m30(count) => "${count}개 선택됨";
 
-  static String m30(name) => "사용 중: ${name}";
+  static String m31(name) => "사용 중: ${name}";
 
-  static String m31(label) => "${label} 항목은 올바른 URL이어야 합니다";
+  static String m32(label) => "${label} 항목은 올바른 URL이어야 합니다";
 
-  static String m32(count) => "${Intl.plural(count, other: '#년')}";
+  static String m33(count) => "${Intl.plural(count, other: '#년')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -1088,8 +1091,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "portFallbackDesc": MessageLookupByLibrary.simpleMessage(
       "설정한 포트가 사용 중이면 다른 포트를 임시로 사용합니다",
     ),
+    "portFallbackNotice": m26,
     "portLabel": MessageLookupByLibrary.simpleMessage("포트"),
-    "portTip": m26,
+    "portTip": m27,
     "powerSwitch": MessageLookupByLibrary.simpleMessage("전원 스위치"),
     "preProxyOptionCustom": MessageLookupByLibrary.simpleMessage(
       "✏️ 사전 프록시 노드 이름 수동 입력...",
@@ -1118,7 +1122,7 @@ class MessageLookup extends MessageLookupByLibrary {
         MessageLookupByLibrary.simpleMessage("올바른 시간 형식을 입력하세요"),
     "profileAutoUpdateIntervalNullValidationDesc":
         MessageLookupByLibrary.simpleMessage("업데이트 간격을 입력하세요"),
-    "profileChainDialogTitle": m27,
+    "profileChainDialogTitle": m28,
     "profileChainSaved": MessageLookupByLibrary.simpleMessage(
       "사전 프록시 및 랜딩 프록시 설정을 저장했습니다",
     ),
@@ -1128,7 +1132,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "profileHasUpdate": MessageLookupByLibrary.simpleMessage(
       "프로필이 수정되었습니다. 자동 업데이트를 끄시겠습니까?",
     ),
-    "profileImportFailed": m28,
+    "profileImportFailed": m29,
     "profileNameNullValidationDesc": MessageLookupByLibrary.simpleMessage(
       "프로필 이름을 입력하세요",
     ),
@@ -1279,7 +1283,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "selectAll": MessageLookupByLibrary.simpleMessage("전체 선택"),
     "selectBackupVersion": MessageLookupByLibrary.simpleMessage("백업 버전 선택"),
     "selected": MessageLookupByLibrary.simpleMessage("선택됨"),
-    "selectedCountTitle": m29,
+    "selectedCountTitle": m30,
     "serverAddress": MessageLookupByLibrary.simpleMessage("서버 주소"),
     "serverAddressHint": MessageLookupByLibrary.simpleMessage("IP 또는 도메인"),
     "serverAddressLabel": MessageLookupByLibrary.simpleMessage("서버 주소"),
@@ -1355,7 +1359,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "startVpn": MessageLookupByLibrary.simpleMessage("시작 중..."),
     "status": MessageLookupByLibrary.simpleMessage("상태"),
     "statusDesc": MessageLookupByLibrary.simpleMessage("끄면 시스템 DNS를 사용합니다"),
-    "stillUsingProfile": m30,
+    "stillUsingProfile": m31,
     "stop": MessageLookupByLibrary.simpleMessage("정지"),
     "stopVpn": MessageLookupByLibrary.simpleMessage("정지 중..."),
     "storeFix": MessageLookupByLibrary.simpleMessage("스토어 복구"),
@@ -1550,7 +1554,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "upload": MessageLookupByLibrary.simpleMessage("업로드"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage("URL 주소로 프로필 가져오기"),
-    "urlTip": m31,
+    "urlTip": m32,
     "useGlobalScriptOverride": MessageLookupByLibrary.simpleMessage(
       "글로벌 스크립트 오버라이드 사용",
     ),
@@ -1590,6 +1594,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "wrongBackupPassword": MessageLookupByLibrary.simpleMessage(
       "비밀번호가 틀리거나 백업이 변조되었습니다",
     ),
-    "years": m32,
+    "years": m33,
   };
 }

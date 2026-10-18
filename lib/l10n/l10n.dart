@@ -4320,6 +4320,16 @@ class AppLocalizations {
     );
   }
 
+  /// `Port {from} is in use; using {to} for this session`
+  String portFallbackNotice(Object from, Object to) {
+    return Intl.message(
+      'Port $from is in use; using $to for this session',
+      name: 'portFallbackNotice',
+      desc: '',
+      args: [from, to],
+    );
+  }
+
   /// `Manually restart the core?`
   String get restartCoreDesc {
     return Intl.message(

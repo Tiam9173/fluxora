@@ -163,7 +163,7 @@ final filteredRequestsProvider = Provider<List<TrackerInfo>>((ref) {
   }).toList();
 });
 
-@riverpod
+@Riverpod(keepAlive: true)
 class Providers extends _$Providers with AutoDisposeNotifierMixin {
   @override
   List<ExternalProvider> build() {
@@ -214,7 +214,7 @@ class SystemBrightness extends _$SystemBrightness
   }
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 class Traffics extends _$Traffics with AutoDisposeNotifierMixin {
   @override
   FixedList<Traffic> build() {
@@ -235,7 +235,7 @@ class Traffics extends _$Traffics with AutoDisposeNotifierMixin {
   }
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 class TotalTraffic extends _$TotalTraffic with AutoDisposeNotifierMixin {
   @override
   Traffic build() {

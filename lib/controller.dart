@@ -720,6 +720,12 @@ class AppController {
       'Mixed port $configured is in use, using $next for this session',
     );
     _ref.read(mixedPortFallbackProvider.notifier).set(next);
+    // Say it out loud: a port that silently differs from the one in settings
+    // reads as a broken LAN-share address, and the user has no way to connect
+    // the two. The configured port is not modified — this is session-only.
+    globalState.showNotifier(
+      appLocalizations.portFallbackNotice('$configured', '$next'),
+    );
   }
 
   Future<void> _updateClashConfig() async {

@@ -176,7 +176,7 @@ final class ProvidersProvider
         argument: null,
         retry: null,
         name: r'providersProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -197,7 +197,7 @@ final class ProvidersProvider
   }
 }
 
-String _$providersHash() => r'4292240629a99470b2e72426dde3b9049b9b57e0';
+String _$providersHash() => r'2caa9d7c36c9c0eb420fd60b3922a54b93718437';
 
 abstract class _$Providers extends $Notifier<List<ExternalProvider>> {
   List<ExternalProvider> build();
@@ -333,7 +333,7 @@ final class TrafficsProvider
         argument: null,
         retry: null,
         name: r'trafficsProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -354,7 +354,7 @@ final class TrafficsProvider
   }
 }
 
-String _$trafficsHash() => r'8b86eb718fed5776de174c51fd5b231957011fe6';
+String _$trafficsHash() => r'36921a0bcb058e659945dba136778b51bde452b9';
 
 abstract class _$Traffics extends $Notifier<FixedList<Traffic>> {
   FixedList<Traffic> build();
@@ -385,7 +385,7 @@ final class TotalTrafficProvider
         argument: null,
         retry: null,
         name: r'totalTrafficProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -406,7 +406,7 @@ final class TotalTrafficProvider
   }
 }
 
-String _$totalTrafficHash() => r'cc993ec58fa4c8ee0dbbf2e8a146f7039e818d7e';
+String _$totalTrafficHash() => r'2c1f32bea823a69a3ffcfa355930dd1430c1e739';
 
 abstract class _$TotalTraffic extends $Notifier<Traffic> {
   Traffic build();

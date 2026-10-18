@@ -517,6 +517,7 @@
   "bypassDomainDesc": "僅在系統代理啟用時生效",
   "resetTip": "確定要重設嗎？",
   "restartCore": "重啟核心",
+  "portFallbackNotice": "連接埠 {from} 已被佔用，本次工作階段改用 {to}",
   "restartCoreDesc": "重新載入核心與目前設定",
   "restartCoreTip": "確定要重啟核心嗎？正在使用的連線會短暫中斷。",
   "titleColor": "標題顏色",

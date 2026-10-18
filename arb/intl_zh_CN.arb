@@ -520,6 +520,7 @@
   "bypassDomainDesc": "仅在系统代理启用时生效",
   "resetTip": "确定要重置吗?",
   "restartCore": "重启内核",
+  "portFallbackNotice": "端口 {from} 已被占用，本次会话改用 {to}",
   "restartCoreDesc": "重新加载内核与当前配置",
   "restartCoreTip": "确定要重启内核吗？正在使用的连接会短暂中断。",
   "titleColor": "标题颜色",
