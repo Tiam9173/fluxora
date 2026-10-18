@@ -130,6 +130,13 @@ class WarpManager extends ChangeNotifier {
 
   Future<void> setEnable(bool enable) async {
     await updateConfig((c) => c.copyWith(enable: enable));
+    // Enabling with no keys used to be a silent no-op: applyToClashConfig
+    // returns early when `privateKey` is empty, so the switch appeared to do
+    // nothing. Register on the spot instead — that is what the user meant by
+    // turning WARP on.
+    if (enable && _config.privateKey.trim().isEmpty) {
+      await registerCloudflareAccount();
+    }
   }
 
   Future<void> setMode(WarpMode mode) async {
@@ -244,11 +251,10 @@ class WarpManager extends ChangeNotifier {
       final proxyPort = await _getEffectiveProxyPort();
       final client = _createHttpClient(proxyPort);
 
-      final regUri = Uri.parse('https://api.cloudflareclient.com/v0a2158/reg');
-      final request = await client.postUrl(regUri);
-      request.headers.set('Content-Type', 'application/json; charset=UTF-8');
-      request.headers.set('User-Agent', 'okhttp/3.12.1');
-
+      // Cloudflare rotates the API version in the path; an old one starts
+      // answering 404/400 and registration then fails with no usable message.
+      // Try the current version first and fall back to the legacy one, so a
+      // rotation cannot silently disable WARP.
       final body = {
         'key': pub,
         'install_id': '',
@@ -258,10 +264,36 @@ class WarpManager extends ChangeNotifier {
         'serial_number': '',
         'locale': 'en_US',
       };
-      request.write(jsonEncode(body));
 
-      final response = await request.close();
-      final respStr = await response.transform(utf8.decoder).join();
+      HttpClientResponse? response;
+      String respStr = '';
+      for (final version in const ['v0i190228', 'v0a2158']) {
+        final regUri = Uri.parse(
+          'https://api.cloudflareclient.com/$version/reg',
+        );
+        final request = await client.postUrl(regUri);
+        request.headers.set(
+          'Content-Type',
+          'application/json; charset=UTF-8',
+        );
+        request.headers.set('User-Agent', 'okhttp/3.12.1');
+        request.write(jsonEncode(body));
+        final attempt = await request.close();
+        final attemptBody = await attempt.transform(utf8.decoder).join();
+        if (attempt.statusCode >= 200 && attempt.statusCode < 300) {
+          response = attempt;
+          respStr = attemptBody;
+          break;
+        }
+        commonPrint.log(
+          'WarpManager: registration via $version failed: '
+          '${attempt.statusCode} $attemptBody',
+        );
+      }
+      if (response == null) {
+        commonPrint.log('WarpManager: every registration endpoint failed');
+        return false;
+      }
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final resJson = jsonDecode(respStr) as Map<String, dynamic>;
