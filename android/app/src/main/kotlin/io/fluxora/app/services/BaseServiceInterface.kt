@@ -260,28 +260,16 @@ suspend fun Service.createFluxoraNotificationBuilder(
                 getString(R.string.action_reset),
                 actionIntent(FluxoraService.ACTION_RESET, 103)
             )
-            addAction(
-                android.R.drawable.ic_menu_recent_history,
-                getString(R.string.action_speed_test),
-                actionIntent(FluxoraService.ACTION_SPEED_TEST, 104)
-            )
 
             // Four buttons do not fit the stock layout, so the expanded state is
             // ours. The collapsed state stays the system one, which is what
             // keeps the notification closed until the user taps it.
-            // Custom content views only behave as collapsed/expanded pair when
-            // the decorated style is set; without it the big view is used for
-            // both states, so the notification looks permanently expanded.
-            setStyle(NotificationCompat.DecoratedCustomViewStyle())
-            // Both views are required. With only the big one set, the system
-            // uses it as the collapsed content as well, which is why the
-            // notification looked permanently expanded.
-            setCustomContentView(
-                buildCollapsedNotificationViews(getString(R.string.fluxora), "")
-            )
-            setCustomBigContentView(
-                buildExpandedNotificationViews(getString(R.string.fluxora), "")
-            )
+            // Standard actions only. A custom RemoteViews layout rendered fine
+            // but its buttons never dispatched: taps on a custom content view
+            // are not turned into notification actions the way the stock row
+            // is. ownbox (SagerNet) uses the stock row for the same reason.
+            // The platform shows three, so speed test lives in the switch card
+            // instead of being a fourth button that would never appear.
         }
     }
 

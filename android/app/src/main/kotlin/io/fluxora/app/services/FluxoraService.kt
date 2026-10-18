@@ -84,7 +84,7 @@ class FluxoraService : Service(), BaseServiceInterface {
         val notification = builder
             .setContentTitle(title)
             .setContentText(content)
-            .setStyle(NotificationCompat.DecoratedCustomViewStyle())
+            .setStyle(null)
             .build()
 
         if (!hasStartedForeground) {
