@@ -99,6 +99,11 @@ class _TrafficUsageState extends ConsumerState<TrafficUsage> {
 
     final primaryColor = globalState.theme.darken3PrimaryContainer;
     final secondaryColor = globalState.theme.darken2SecondaryContainer;
+    // watch, not read: the provider is autoDispose, so a bare `read` leaves no
+    // subscriber behind and it is torn down immediately. updateTraffic then
+    // throws "Cannot use the Ref ... after it has been disposed" on every tick
+    // and the counter stays at zero forever.
+    final totalTraffic = ref.watch(totalTrafficProvider);
     return SizedBox(
       height: getWidgetHeight(2),
       child: CommonCard(
@@ -111,7 +116,6 @@ class _TrafficUsageState extends ConsumerState<TrafficUsage> {
         child: ValueListenableBuilder<int>(
           valueListenable: dashboardRefreshManager.tick1s,
           builder: (_, _, _) {
-            final totalTraffic = ref.read(totalTrafficProvider);
                 final upTotalTrafficValue = totalTraffic.up;
                 final downTotalTrafficValue = totalTraffic.down;
                 return Padding(
