@@ -206,6 +206,16 @@
             </intent-filter>
         </receiver>
 
+        <receiver
+            android:name=".services.NotificationActionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="io.fluxora.app.action.STOP" />
+                <action android:name="io.fluxora.app.action.RESET" />
+                <action android:name="io.fluxora.app.action.SPEED_TEST" />
+            </intent-filter>
+        </receiver>
+
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />

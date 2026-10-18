@@ -235,13 +235,14 @@ suspend fun Service.createFluxoraNotificationBuilder(
             // instance that built the notification (VpnService or plain
             // service) and land in its onStartCommand.
             val serviceClass = this@createFluxoraNotificationBuilder::class.java
+            // Broadcasts, not getService: service intents from a notification
+            // never reached onStartCommand here, while the getActivity one
+            // (switch) did. ownbox uses broadcasts for these same buttons.
             fun actionIntent(action: String, requestCode: Int): PendingIntent =
-                PendingIntent.getService(
+                PendingIntent.getBroadcast(
                     this@createFluxoraNotificationBuilder,
                     requestCode,
-                    Intent(this@createFluxoraNotificationBuilder, serviceClass)
-                        .setAction(action)
-                        .setPackage(packageName),
+                    Intent(action).setPackage(packageName),
                     flags
                 )
 
