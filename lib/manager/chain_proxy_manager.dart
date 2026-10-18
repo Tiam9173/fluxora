@@ -1980,10 +1980,26 @@ class ChainProxyManager extends ChangeNotifier {
             );
         final newMap = Map<String, ChainReliabilityStats>.from(c.statsByContext);
         newMap[context] = newStats;
-        
+
+        // The manual chain probe used to record reliability only, and the
+        // failover writer was the sole producer of `nodeLatency` — so a probed
+        // node still rendered as 「暂无延迟」 in the picker and the card. Its own
+        // hop latency is exactly the number those views want, so publish it
+        // here, tagged with the network context it was measured on.
+        final int? hopLatency = matchedHop.latencyMs;
+        final LatencyState? nodeLatency = (hopLatency == null || hopLatency <= 0)
+            ? null
+            : LatencyState(
+                latencyMs: hopLatency,
+                scope: LatencyScope.node,
+                source: LatencySource.probe,
+                testedAt: matchedHop.testedAt ?? now,
+                fingerprint: context,
+              );
+
         return c.copyWith(
           statsByContext: newMap,
-          
+          nodeLatency: nodeLatency ?? c.nodeLatency,
         );
       }).toList();
     }
