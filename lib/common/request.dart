@@ -251,11 +251,37 @@ class Request {
         .replaceAll(RegExp(r'</li>', caseSensitive: false), '\n')
         .replaceAll(RegExp(r'<li[^>]*>', caseSensitive: false), '- ')
         .replaceAll(RegExp(r'<[^>]+>'), '');
-    return text
+    final lines = text
         .split('\n')
         .map((line) => line.trim())
         .where((line) => line.isNotEmpty)
-        .join('\n');
+        .toList();
+
+    // Release bodies are mostly boilerplate: community links, download tables,
+    // feedback and the licence credits. Only the changelog belongs in an update
+    // prompt, so stop at the first section that is clearly not one.
+    const stopMarkers = [
+      'telegram',
+      'download',
+      '下载',
+      'feedback',
+      '反馈',
+      '致谢',
+      '鸣谢',
+      'acknowledg',
+      '开源协议',
+      'license',
+      'licence',
+      'notice',
+      'lineage',
+    ];
+    final notes = <String>[];
+    for (final line in lines) {
+      final lower = line.toLowerCase();
+      if (stopMarkers.any(lower.contains)) break;
+      notes.add(line);
+    }
+    return notes.join('\n');
   }
 
   // Returns the current *built-in* primary IP source for the given locale.
