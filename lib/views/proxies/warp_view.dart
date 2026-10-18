@@ -384,103 +384,6 @@ class _WarpViewState extends ConsumerState<WarpView> {
     );
   }
 
-  void _showNoiseDialog(WarpConfig config) {
-    final countCtrl = TextEditingController(text: config.noiseCount);
-    final modeCtrl = TextEditingController(text: config.noiseMode);
-    final sizeCtrl = TextEditingController(text: config.noiseSize);
-    final delayCtrl = TextEditingController(text: config.noiseDelay);
-    showDialog(
-      context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          title: const Text('噪声与伪装参数'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: countCtrl,
-                  decoration: const InputDecoration(
-                    labelText: '噪声数量',
-                    hintText: '1-3',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: modeCtrl,
-                  decoration: const InputDecoration(
-                    labelText: '噪声模式',
-                    hintText: 'm4',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: sizeCtrl,
-                  decoration: const InputDecoration(
-                    labelText: '噪声大小',
-                    hintText: '10-30',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: delayCtrl,
-                  decoration: const InputDecoration(
-                    labelText: '噪声延迟',
-                    hintText: '10-30',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                warpManager.setNoise(
-                  count: '1-3',
-                  mode: 'm4',
-                  size: '10-30',
-                  delay: '10-30',
-                );
-                Navigator.of(ctx).pop();
-                context.showSnackBar('噪声参数已重置为默认值');
-              },
-              child: const Text('重置'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('取消'),
-            ),
-            FilledButton(
-              onPressed: () {
-                warpManager.setNoise(
-                  count: countCtrl.text.trim().isEmpty
-                      ? '1-3'
-                      : countCtrl.text.trim(),
-                  mode: modeCtrl.text.trim().isEmpty
-                      ? 'm4'
-                      : modeCtrl.text.trim(),
-                  size: sizeCtrl.text.trim().isEmpty
-                      ? '10-30'
-                      : sizeCtrl.text.trim(),
-                  delay: delayCtrl.text.trim().isEmpty
-                      ? '10-30'
-                      : delayCtrl.text.trim(),
-                );
-                Navigator.of(ctx).pop();
-                context.showSnackBar('噪声参数已保存');
-              },
-              child: const Text('保存'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   void _showLicenseDialog(WarpConfig config) {
     final ctrl = TextEditingController(text: config.licenseKey);
     showDialog(
@@ -1170,62 +1073,6 @@ class _WarpViewState extends ConsumerState<WarpView> {
           ),
           const Divider(height: 1),
 
-          // 7. 噪声数量
-          ListTile(
-            leading: Icon(Icons.layers_outlined, color: colorScheme.primary),
-            title: const Text('噪声数量'),
-            subtitle: Text(
-              config.noiseCount,
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-            onTap: () => _showNoiseDialog(config),
-          ),
-          const Divider(height: 1),
-
-          // 8. 噪声模式
-          ListTile(
-            leading: Icon(
-              Icons.mode_standby_rounded,
-              color: colorScheme.primary,
-            ),
-            title: const Text('噪声模式'),
-            subtitle: Text(
-              config.noiseMode,
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-            onTap: () => _showNoiseDialog(config),
-          ),
-          const Divider(height: 1),
-
-          // 9. 噪声大小
-          ListTile(
-            leading: Icon(
-              Icons.compare_arrows_rounded,
-              color: colorScheme.primary,
-            ),
-            title: const Text('噪声大小'),
-            subtitle: Text(
-              config.noiseSize,
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-            onTap: () => _showNoiseDialog(config),
-          ),
-          const Divider(height: 1),
-
-          // 10. 噪声延迟
-          ListTile(
-            leading: Icon(Icons.schedule_rounded, color: colorScheme.primary),
-            title: const Text('噪声延迟'),
-            subtitle: Text(
-              config.noiseDelay,
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-            onTap: () => _showNoiseDialog(config),
-          ),
         ],
       ),
     );
@@ -1313,9 +1160,87 @@ class _WarpViewState extends ConsumerState<WarpView> {
                 ],
               ),
             ),
+            if (config.mode == WarpMode.custom) ...[
+              const Divider(height: 1),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(Icons.rule, color: colorScheme.primary),
+                title: const Text('自定义规则'),
+                subtitle: Text(
+                  config.customRules.isEmpty
+                      ? '尚未添加规则 —— 此模式下规则为空则不分流'
+                      : '已配置 ${config.customRules.length} 条规则',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                onTap: () => _showCustomRulesDialog(config),
+              ),
+            ],
           ],
         ),
       ),
+    );
+  }
+
+  /// Editor for [WarpMode.custom] rules. One complete Clash rule per line —
+  /// the rules are prepended verbatim, so a half-written rule would be a
+  /// config error rather than a silently ignored preference.
+  void _showCustomRulesDialog(WarpConfig config) {
+    final ctrl = TextEditingController(
+      text: config.customRules.join('\n'),
+    );
+    final group = config.dedicatedGroupName.trim().isEmpty
+        ? WarpConfig.defaultDedicatedGroupName
+        : config.dedicatedGroupName;
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('自定义规则'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '每行一条完整 Clash 规则，例如：\n'
+                  'DOMAIN-SUFFIX,openai.com,$group',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: ctrl,
+                  minLines: 5,
+                  maxLines: 10,
+                  decoration: InputDecoration(
+                    hintText: 'DOMAIN-SUFFIX,example.com,$group',
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final lines = ctrl.text
+                    .split('\n')
+                    .map((line) => line.trim())
+                    .where((line) => line.isNotEmpty)
+                    .toList();
+                warpManager.setCustomRules(lines);
+                Navigator.of(ctx).pop();
+                context.showSnackBar('已保存 ${lines.length} 条自定义规则');
+              },
+              child: const Text('保存'),
+            ),
+          ],
+        );
+      },
     );
   }
 

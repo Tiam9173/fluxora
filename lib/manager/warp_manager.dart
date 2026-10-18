@@ -143,6 +143,20 @@ class WarpManager extends ChangeNotifier {
     await updateConfig((c) => c.copyWith(mode: mode));
   }
 
+  /// Replaces the custom routing rules used by [WarpMode.custom].
+  ///
+  /// The rules are prepended verbatim, so they must be complete Clash rules
+  /// (`DOMAIN-SUFFIX,example.com,🛡️ WARP 出口`). Blank lines are dropped here
+  /// rather than at emit time: a stored blank line would otherwise count as a
+  /// rule the user thinks exists.
+  Future<void> setCustomRules(List<String> rules) async {
+    final cleaned = rules
+        .map((rule) => rule.trim())
+        .where((rule) => rule.isNotEmpty)
+        .toList();
+    await updateConfig((c) => c.copyWith(customRules: cleaned));
+  }
+
   Future<void> setDefaultDialer(String dialer) async {
     await updateConfig((c) => c.copyWith(defaultDialerProxy: dialer));
   }
