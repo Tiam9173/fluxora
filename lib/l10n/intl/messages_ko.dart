@@ -325,10 +325,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "checkUpdateError": MessageLookupByLibrary.simpleMessage(
       "현재 최신 버전을 사용 중입니다",
     ),
-    "checkUpdatePrerelease": MessageLookupByLibrary.simpleMessage(
-      "업데이트 확인(미리보기)",
-    ),
-    "checkUpdateStable": MessageLookupByLibrary.simpleMessage("업데이트 확인(정식판)"),
+    "checkUpdatePrerelease": MessageLookupByLibrary.simpleMessage("미리보기"),
+    "checkUpdateStable": MessageLookupByLibrary.simpleMessage("정식판"),
     "checking": MessageLookupByLibrary.simpleMessage("확인 중..."),
     "cipher": MessageLookupByLibrary.simpleMessage("암호화 방식"),
     "cipherLabel": MessageLookupByLibrary.simpleMessage("암호화 방식"),

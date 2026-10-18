@@ -4330,20 +4330,20 @@ class AppLocalizations {
     );
   }
 
-  /// `Check for updates (stable)`
+  /// `Stable`
   String get checkUpdateStable {
     return Intl.message(
-      'Check for updates (stable)',
+      'Stable',
       name: 'checkUpdateStable',
       desc: '',
       args: [],
     );
   }
 
-  /// `Check for updates (preview)`
+  /// `Preview`
   String get checkUpdatePrerelease {
     return Intl.message(
-      'Check for updates (preview)',
+      'Preview',
       name: 'checkUpdatePrerelease',
       desc: '',
       args: [],

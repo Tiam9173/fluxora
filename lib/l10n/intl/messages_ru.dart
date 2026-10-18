@@ -416,12 +416,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "checkUpdateError": MessageLookupByLibrary.simpleMessage(
       "Установлена последняя версия",
     ),
-    "checkUpdatePrerelease": MessageLookupByLibrary.simpleMessage(
-      "Проверить обновления (превью)",
-    ),
-    "checkUpdateStable": MessageLookupByLibrary.simpleMessage(
-      "Проверить обновления (стабильная)",
-    ),
+    "checkUpdatePrerelease": MessageLookupByLibrary.simpleMessage("Превью"),
+    "checkUpdateStable": MessageLookupByLibrary.simpleMessage("Стабильная"),
     "checking": MessageLookupByLibrary.simpleMessage("Проверка..."),
     "cipher": MessageLookupByLibrary.simpleMessage("Шифрование"),
     "cipherLabel": MessageLookupByLibrary.simpleMessage("Шифр"),

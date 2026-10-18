@@ -613,9 +613,12 @@ class GlobalState {
     }
 
     if (config.appSetting.locale == null) {
-      final systemLocale = utils.getSystemLocale();
+      // First run: store the "follow system" sentinel rather than the locale
+      // resolved right now. Writing the concrete value pinned a fresh install
+      // to whatever language the device happened to use at that moment, so
+      // changing the system language afterwards had no effect.
       config = config.copyWith(
-        appSetting: config.appSetting.copyWith(locale: systemLocale.toString()),
+        appSetting: config.appSetting.copyWith(locale: systemLocaleValue),
       );
       preferences.saveConfig(config);
       this.config = config;

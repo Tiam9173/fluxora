@@ -398,12 +398,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "checkUpdateError": MessageLookupByLibrary.simpleMessage(
       "شما از آخرین نسخه استفاده می‌کنید",
     ),
-    "checkUpdatePrerelease": MessageLookupByLibrary.simpleMessage(
-      "بررسی به‌روزرسانی (پیش‌نمایش)",
-    ),
-    "checkUpdateStable": MessageLookupByLibrary.simpleMessage(
-      "بررسی به‌روزرسانی (پایدار)",
-    ),
+    "checkUpdatePrerelease": MessageLookupByLibrary.simpleMessage("پیش‌نمایش"),
+    "checkUpdateStable": MessageLookupByLibrary.simpleMessage("پایدار"),
     "checking": MessageLookupByLibrary.simpleMessage("در حال بررسی..."),
     "cipher": MessageLookupByLibrary.simpleMessage("روش رمزنگاری"),
     "cipherLabel": MessageLookupByLibrary.simpleMessage("روش رمزنگاری"),

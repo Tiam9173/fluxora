@@ -318,10 +318,8 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "checkUpdate": MessageLookupByLibrary.simpleMessage("更新の確認"),
     "checkUpdateError": MessageLookupByLibrary.simpleMessage("最新バージョンを使用中です"),
-    "checkUpdatePrerelease": MessageLookupByLibrary.simpleMessage(
-      "アップデートを確認（プレビュー版）",
-    ),
-    "checkUpdateStable": MessageLookupByLibrary.simpleMessage("アップデートを確認（安定版）"),
+    "checkUpdatePrerelease": MessageLookupByLibrary.simpleMessage("プレビュー版"),
+    "checkUpdateStable": MessageLookupByLibrary.simpleMessage("安定版"),
     "checking": MessageLookupByLibrary.simpleMessage("確認中..."),
     "cipher": MessageLookupByLibrary.simpleMessage("暗号化方式"),
     "cipherLabel": MessageLookupByLibrary.simpleMessage("暗号方式"),

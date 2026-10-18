@@ -230,16 +230,27 @@ class Request {
   /// `utils.parseReleaseBody` reads, so the dialog shows the real notes instead
   /// of a placeholder sentence.
   static String _releaseNotesFromHtml(String html) {
-    final text = html
-        .replaceAll(RegExp(r'<br\s*/?>', caseSensitive: false), '\n')
-        .replaceAll(RegExp(r'</li>', caseSensitive: false), '\n')
-        .replaceAll(RegExp(r'<li[^>]*>', caseSensitive: false), '- ')
-        .replaceAll(RegExp(r'<[^>]+>'), '')
-        .replaceAll('&amp;', '&')
+    // GitHub escapes the release body inside <content>, so the markup arrives
+    // as entities (&lt;li&gt;). Decoding has to happen *first*: stripping tags
+    // before that finds no <li> at all, every bullet is lost, and the dialog
+    // shows a version number with no notes under it.
+    //
+    // It is escaped twice (a body containing "&" arrives as "&amp;amp;"), so
+    // one pass leaves a literal "&amp;" in the middle of a sentence.
+    String decode(String input) => input
         .replaceAll('&lt;', '<')
         .replaceAll('&gt;', '>')
         .replaceAll('&quot;', '"')
-        .replaceAll('&#39;', "'");
+        .replaceAll('&#39;', "'")
+        // Last, so an escaped entity (&amp;lt;) is not decoded twice.
+        .replaceAll('&amp;', '&');
+
+    final decoded = decode(decode(html));
+    final text = decoded
+        .replaceAll(RegExp(r'<br\s*/?>', caseSensitive: false), '\n')
+        .replaceAll(RegExp(r'</li>', caseSensitive: false), '\n')
+        .replaceAll(RegExp(r'<li[^>]*>', caseSensitive: false), '- ')
+        .replaceAll(RegExp(r'<[^>]+>'), '');
     return text
         .split('\n')
         .map((line) => line.trim())
