@@ -226,7 +226,18 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 result.success(true)
             }
 
-            "status" -> {
+            "consumePendingNotificationAction" -> {
+                val pending = GlobalState.pendingNotificationAction
+                GlobalState.pendingNotificationAction = null
+                result.success(pending)
+            }
+
+            "setNotificationLabels" -> {
+                GlobalState.notificationLabels =
+                    call.argument<Map<String, String>>("labels")
+                result.success(true)
+            }
+        "status" -> {
                 result.success(GlobalState.currentRunState == RunState.START)
             }
 

@@ -21,7 +21,58 @@ class Vpn {
   static final Vpn _instance = Vpn._internal();
   final MethodChannel methodChannel = const MethodChannel('vpn');
 
+
+  /// Notification buttons are drawn by Android, so their labels have to be
+  /// handed over: string resources follow the system language, not the in-app
+  /// one.
+  Future<void> _syncNotificationLabels() async {
+    for (var attempt = 0; attempt < 20; attempt++) {
+      try {
+        final labels = {
+          'stop': appLocalizations.stop,
+          'switch': appLocalizations.switchProxy,
+          'reset': appLocalizations.reset,
+        };
+        await methodChannel.invokeMethod('setNotificationLabels', {
+          'labels': labels,
+        });
+        return;
+      } catch (_) {
+        // Localizations are not ready during the first frames.
+        await Future.delayed(const Duration(milliseconds: 250));
+      }
+    }
+    commonPrint.log('setNotificationLabels: gave up, localizations never ready');
+  }
+
+  Future<void> _consumePendingNotificationAction() async {
+    for (var attempt = 0; attempt < 20; attempt++) {
+      if (globalState.navigatorKey.currentContext != null) {
+        String? action;
+        try {
+          action = await methodChannel
+              .invokeMethod<String>('consumePendingNotificationAction');
+        } catch (e) {
+          commonPrint.log('consumePendingNotificationAction failed: $e');
+        }
+        // Re-read after the await: the navigator may have been replaced.
+        final context = globalState.navigatorKey.currentContext;
+        if (action == 'switch' && context != null) {
+          // ignore: use_build_context_synchronously
+          showNotificationSwitchCard(context);
+        }
+        return;
+      }
+      await Future.delayed(const Duration(milliseconds: 200));
+    }
+  }
+
   Vpn._internal() {
+    // A notification button can cold-start the app, so the request may already
+    // be waiting before this handler exists. Push the labels and consume it
+    // once the channel is live.
+    _syncNotificationLabels();
+    _consumePendingNotificationAction();
     methodChannel.setMethodCallHandler((call) async {
       switch (call.method) {
         case 'gc':

@@ -251,17 +251,17 @@ suspend fun Service.createFluxoraNotificationBuilder(
 
             addAction(
                 android.R.drawable.ic_menu_close_clear_cancel,
-                getString(R.string.action_stop),
+                (GlobalState.notificationLabels?.get("stop") ?: getString(R.string.action_stop)),
                 actionIntent(FluxoraService.ACTION_STOP, 101)
             )
             addAction(
                 android.R.drawable.ic_menu_compass,
-                getString(R.string.action_switch),
+                (GlobalState.notificationLabels?.get("switch") ?: getString(R.string.action_switch)),
                 buildSwitchCardIntent(flags)
             )
             addAction(
                 android.R.drawable.ic_menu_rotate,
-                getString(R.string.action_reset),
+                (GlobalState.notificationLabels?.get("reset") ?: getString(R.string.action_reset)),
                 actionIntent(FluxoraService.ACTION_RESET, 103)
             )
 

@@ -186,6 +186,17 @@ object GlobalState {
         return currentEngine?.plugins?.get(TilePlugin::class.java) as? TilePlugin
     }
 
+    /// Set when a notification button cold-starts the app. Dart consumes it as
+    /// soon as its channel is live, which removes the guesswork of posting the
+    /// request after some arbitrary delay.
+    @Volatile
+    var pendingNotificationAction: String? = null
+
+    /// Notification button labels pushed from Dart so they follow the in-app
+    /// language rather than the system one.
+    @Volatile
+    var notificationLabels: Map<String, String>? = null
+
     fun getCurrentVPNPlugin(): VpnPlugin? {
         return serviceEngine?.plugins?.get(VpnPlugin::class.java) as? VpnPlugin
     }

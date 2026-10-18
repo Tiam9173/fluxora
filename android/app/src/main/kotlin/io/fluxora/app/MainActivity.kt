@@ -63,13 +63,10 @@ class MainActivity : FlutterActivity() {
     private fun handleSwitchCardIntent(intent: Intent?) {
         if (intent?.getBooleanExtra(EXTRA_SHOW_SWITCH_CARD, false) != true) return
         intent.removeExtra(EXTRA_SHOW_SWITCH_CARD)
-        // On a cold start the engine is still booting; give the first frame a
-        // moment before asking Dart to draw a dialog.
-        GlobalState.flutterEngine?.dartExecutor?.binaryMessenger?.let {
-            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                GlobalState.getCurrentVPNPlugin()?.requestNotificationSwitch()
-            }, 600)
-        }
+        // Recorded rather than posted on a timer: on a cold start the engine is
+        // still booting and a fixed delay either fires too early (no handler
+        // yet) or too late (user already navigated). Dart pulls it when ready.
+        GlobalState.pendingNotificationAction = "switch"
     }
 
     override fun provideFlutterEngine(context: Context): FlutterEngine {
