@@ -51,15 +51,23 @@ class Vpn {
           break;
         // Notification action buttons.
         case 'notificationSwitch':
+          // The activity is launched before this arrives, but on a cold start
+          // the navigator is not mounted yet. Retry briefly rather than drop
+          // the request — a button that silently does nothing is the worst
+          // possible outcome here.
+          for (var attempt = 0; attempt < 10; attempt++) {
+            if (globalState.navigatorKey.currentContext != null) break;
+            await Future.delayed(const Duration(milliseconds: 150));
+          }
           final context = globalState.navigatorKey.currentContext;
           if (context == null) {
-            // Happens when the UI was torn down while the service kept running;
-            // the button then has nowhere to draw the card.
             commonPrint.log(
               'notificationSwitch: no navigator context, card not shown',
             );
           } else {
             commonPrint.log('notificationSwitch: opening switch card');
+            // The context was re-read after the retry loop, so it is current.
+            // ignore: use_build_context_synchronously
             showNotificationSwitchCard(context);
           }
           break;

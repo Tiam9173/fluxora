@@ -2,6 +2,7 @@ package io.fluxora.app
 
 import android.app.UiModeManager
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Build
@@ -21,6 +22,7 @@ import io.flutter.embedding.engine.FlutterEngineCache
 import io.flutter.embedding.engine.dart.DartExecutor
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugins.GeneratedPluginRegistrant
+import io.fluxora.app.services.EXTRA_SHOW_SWITCH_CARD
 
 class MainActivity : FlutterActivity() {
     companion object {
@@ -45,6 +47,29 @@ class MainActivity : FlutterActivity() {
             installSplashScreen()
         }
         super.onCreate(savedInstanceState)
+        handleSwitchCardIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleSwitchCardIntent(intent)
+    }
+
+    /// The notification's switch button launches this activity with an extra.
+    /// It is consumed here rather than forwarded from the service, because the
+    /// card needs a live UI — and the service has no way to know whether one
+    /// exists.
+    private fun handleSwitchCardIntent(intent: Intent?) {
+        if (intent?.getBooleanExtra(EXTRA_SHOW_SWITCH_CARD, false) != true) return
+        intent.removeExtra(EXTRA_SHOW_SWITCH_CARD)
+        // On a cold start the engine is still booting; give the first frame a
+        // moment before asking Dart to draw a dialog.
+        GlobalState.flutterEngine?.dartExecutor?.binaryMessenger?.let {
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                GlobalState.getCurrentVPNPlugin()?.requestNotificationSwitch()
+            }, 600)
+        }
     }
 
     override fun provideFlutterEngine(context: Context): FlutterEngine {

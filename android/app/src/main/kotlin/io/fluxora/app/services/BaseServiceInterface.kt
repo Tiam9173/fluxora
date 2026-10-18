@@ -61,9 +61,9 @@ fun Service.buildExpandedNotificationViews(
     views.setOnClickPendingIntent(
         R.id.nf_stop, action(FluxoraService.ACTION_STOP, 101)
     )
-    views.setOnClickPendingIntent(
-        R.id.nf_switch, action(FluxoraService.ACTION_SWITCH, 102)
-    )
+    // Switch opens the app: the card needs a UI to draw in, and asking the
+    // service to forward it only worked while the Flutter UI was still alive.
+    views.setOnClickPendingIntent(R.id.nf_switch, buildSwitchCardIntent(flags))
     views.setOnClickPendingIntent(
         R.id.nf_reset, action(FluxoraService.ACTION_RESET, 103)
     )
@@ -72,6 +72,21 @@ fun Service.buildExpandedNotificationViews(
     )
     return views
 }
+
+/// Opens the app and asks it to show the compact switch card.
+///
+/// The previous implementation forwarded the action to Dart, which needed a live
+/// navigator context — null whenever the UI had been torn down, so the button
+/// did nothing. Launching the activity first guarantees there is a UI to draw in.
+fun Service.buildSwitchCardIntent(flags: Int): PendingIntent {
+    val intent = Intent(this, io.fluxora.app.MainActivity::class.java).apply {
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        putExtra(EXTRA_SHOW_SWITCH_CARD, true)
+    }
+    return PendingIntent.getActivity(this, 102, intent, flags)
+}
+
+const val EXTRA_SHOW_SWITCH_CARD = "io.fluxora.app.extra.SHOW_SWITCH_CARD"
 
 /// Shared notification-action dispatch.
 ///
@@ -215,7 +230,7 @@ suspend fun Service.createFluxoraNotificationBuilder(
             addAction(
                 android.R.drawable.ic_menu_compass,
                 getString(R.string.action_switch),
-                actionIntent(FluxoraService.ACTION_SWITCH, 102)
+                buildSwitchCardIntent(flags)
             )
             addAction(
                 android.R.drawable.ic_menu_rotate,
