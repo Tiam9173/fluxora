@@ -249,11 +249,15 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
     fun requestNotificationSpeedTest() = invokeDart("notificationSpeedTest")
 
-    private fun invokeDart(method: String) {
-        val channel = activeChannels.firstOrNull() ?: return
+    /// Returns false when there is no Dart side to hand the action to, so the
+    /// caller can fall back to doing it natively instead of dropping it.
+    private fun invokeDart(method: String): Boolean {
+        val channel = activeChannels.firstOrNull() ?: return false
         scope.launch(Dispatchers.Main) {
             runCatching { channel.invokeMethod(method, null) }
+                .onFailure { android.util.Log.e("VpnPlugin", "$method: invoke failed: ${it.message}") }
         }
+        return true
     }
 
     fun setQuickResponse(enabled: Boolean) {

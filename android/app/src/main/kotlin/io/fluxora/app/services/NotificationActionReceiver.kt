@@ -22,13 +22,29 @@ class NotificationActionReceiver : BroadcastReceiver() {
             Log.w(TAG, "$action: no VpnPlugin attached")
             return
         }
-        runCatching {
+        val delivered = runCatching {
             when (action) {
                 FluxoraService.ACTION_STOP -> plugin.requestNotificationStop()
                 FluxoraService.ACTION_RESET -> plugin.requestNotificationReset()
                 FluxoraService.ACTION_SPEED_TEST -> plugin.requestNotificationSpeedTest()
+                // Without this the when is not exhaustive over String and the
+                // whole expression degrades to Unit.
+                else -> false
             }
-        }.onFailure { Log.e(TAG, "$action: forward failed: ${it.message}") }
+        }.getOrElse {
+            Log.e(TAG, "$action: forward failed: ${it.message}")
+            false
+        }
+
+        // No Dart side attached (the UI was torn down while the tunnel kept
+        // running) — stopping must still work, so do it here.
+        if (!delivered && action == FluxoraService.ACTION_STOP) {
+            Log.w(TAG, "stop: no Dart channel, stopping natively")
+            context?.let {
+                it.stopService(Intent(it, FluxoraVpnService::class.java))
+                it.stopService(Intent(it, FluxoraService::class.java))
+            }
+        }
     }
 
     companion object {
