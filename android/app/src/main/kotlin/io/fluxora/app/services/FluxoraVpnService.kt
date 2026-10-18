@@ -283,6 +283,11 @@ class FluxoraVpnService : VpnService(), BaseServiceInterface {
             .setContentTitle(profileName)
             .setContentText(speedInfo)
             .setStyle(null)
+            // Rebuilt every tick so the expanded view shows the live numbers;
+            // the RemoteViews instance itself is immutable.
+            .setCustomBigContentView(
+                buildExpandedNotificationViews(profileName, speedInfo)
+            )
             .build()
 
         if (!hasStartedForeground) {

@@ -5,6 +5,7 @@ import android.app.Notification
 import android.app.Notification.FOREGROUND_SERVICE_IMMEDIATE
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.widget.RemoteViews
 import android.app.PendingIntent
 import android.app.Service
 import android.content.pm.PackageManager
@@ -27,6 +28,49 @@ interface BaseServiceInterface {
     suspend fun start(options: VpnOptions): Int
     fun stop()
     suspend fun startForeground()
+}
+
+/// Builds the expanded (big) notification view with all four action buttons.
+///
+/// The stock layout renders at most three actions, so a fourth added through
+/// `addAction` is dropped without a word. A custom big content view is the only
+/// way to show four. The collapsed state is left to the system, which keeps the
+/// notification collapsed until the user expands it.
+fun Service.buildExpandedNotificationViews(
+    title: String,
+    content: String
+): RemoteViews {
+    val views = RemoteViews(packageName, R.layout.notification_expanded)
+    views.setTextViewText(R.id.nf_title, title)
+    views.setTextViewText(R.id.nf_speed, content)
+
+    val flags = if (Build.VERSION.SDK_INT >= 31) {
+        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+    } else {
+        PendingIntent.FLAG_UPDATE_CURRENT
+    }
+    val serviceClass = this::class.java
+    fun action(action: String, requestCode: Int): PendingIntent =
+        PendingIntent.getService(
+            this,
+            requestCode,
+            Intent(this, serviceClass).setAction(action).setPackage(packageName),
+            flags
+        )
+
+    views.setOnClickPendingIntent(
+        R.id.nf_stop, action(FluxoraService.ACTION_STOP, 101)
+    )
+    views.setOnClickPendingIntent(
+        R.id.nf_switch, action(FluxoraService.ACTION_SWITCH, 102)
+    )
+    views.setOnClickPendingIntent(
+        R.id.nf_reset, action(FluxoraService.ACTION_RESET, 103)
+    )
+    views.setOnClickPendingIntent(
+        R.id.nf_speed_test, action(FluxoraService.ACTION_SPEED_TEST, 104)
+    )
+    return views
 }
 
 /// Shared notification-action dispatch.
@@ -182,6 +226,13 @@ suspend fun Service.createFluxoraNotificationBuilder(
                 android.R.drawable.ic_menu_recent_history,
                 getString(R.string.action_speed_test),
                 actionIntent(FluxoraService.ACTION_SPEED_TEST, 104)
+            )
+
+            // Four buttons do not fit the stock layout, so the expanded state is
+            // ours. The collapsed state stays the system one, which is what
+            // keeps the notification closed until the user taps it.
+            setCustomBigContentView(
+                buildExpandedNotificationViews(getString(R.string.fluxora), "")
             )
         }
     }
