@@ -52,9 +52,15 @@ class FluxoraVpnService : VpnService(), BaseServiceInterface {
     @Volatile
     private var pendingSpeedInfo: String? = null
 
+    private var notificationActionReceiver: BroadcastReceiver? = null
+
     override fun onCreate() {
         super.onCreate()
         GlobalState.initServiceEngine()
+        // Registered here rather than in the manifest: implicit broadcasts do
+        // not reach manifest receivers since Android 8, so the notification
+        // buttons would silently do nothing.
+        notificationActionReceiver = registerNotificationActionReceiver()
 
         unlockReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
@@ -344,6 +350,10 @@ class FluxoraVpnService : VpnService(), BaseServiceInterface {
     }
 
     override fun onDestroy() {
+        notificationActionReceiver?.let {
+            runCatching { unregisterReceiver(it) }
+            notificationActionReceiver = null
+        }
         stop()
         unlockReceiver?.let {
             unregisterReceiver(it)

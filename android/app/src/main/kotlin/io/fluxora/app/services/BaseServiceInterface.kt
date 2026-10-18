@@ -1,6 +1,9 @@
 package io.fluxora.app.services
 
+import android.content.Context
 import android.annotation.SuppressLint
+import android.content.BroadcastReceiver
+import android.content.IntentFilter
 import android.app.Notification
 import android.app.Notification.FOREGROUND_SERVICE_IMMEDIATE
 import android.app.NotificationChannel
@@ -332,4 +335,25 @@ fun Service.startForeground(notification: Notification, useSpecialType: Boolean 
             android.util.Log.e("BaseServiceInterface", "startForeground fallback failed: ${fallbackErr.message}")
         }
     }
+}
+
+/// Registers the notification action receiver at runtime.
+///
+/// A manifest-declared receiver would be simpler, but implicit broadcasts no
+/// longer reach manifest receivers since Android 8, and `setPackage` does not
+/// exempt them — the taps then arrive nowhere and the buttons look dead. This
+/// is why ownbox registers its receiver from the service as well.
+fun Service.registerNotificationActionReceiver(): BroadcastReceiver {
+    val receiver = NotificationActionReceiver()
+    val filter = IntentFilter().apply {
+        addAction(FluxoraService.ACTION_STOP)
+        addAction(FluxoraService.ACTION_RESET)
+        addAction(FluxoraService.ACTION_SPEED_TEST)
+    }
+    if (Build.VERSION.SDK_INT >= 33) {
+        registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
+    } else {
+        registerReceiver(receiver, filter)
+    }
+    return receiver
 }
