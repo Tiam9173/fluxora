@@ -181,5 +181,10 @@ void main() {
 
       expect(committed, isNull);
     });
-  });
+  }, skip: hasRustLib
+      ? null
+      // The editor needs the prebuilt native library; without it the
+      // CodeForge widget cannot build at all. Skipping keeps CI honest
+      // (it reports a skip, not a pass) instead of failing every run.
+      : 'no prebuilt code_forge library — run a desktop build first');
 }
