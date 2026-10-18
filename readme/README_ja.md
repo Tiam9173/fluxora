@@ -24,7 +24,7 @@
 
 **[ダウンロード](#ダウンロード)** · **[問題報告](https://github.com/Tiam9173/fluxora/issues)** · **[コントリビュート](#コントリビュート)** · **[ライセンス](../LICENSE)**
 
-📢 **[公式 Telegram チャンネル](https://t.me/Fluxora_Chanel)** · 💬 **[公式 Telegram グループ](https://t.me/Fluxora_Grup)**
+📢 **[公式 Telegram チャンネル](https://t.me/Fluxora_Channel)** · 💬 **[公式 Telegram グループ](https://t.me/Fluxora_Group1)**
 
 </div>
 
@@ -32,8 +32,8 @@
 
 ## 公式コミュニティ
 
-- 📢 **[公式 Telegram チャンネル](https://t.me/Fluxora_Chanel)** —— Fluxora のアップデート、リリース情報、プロジェクトの動向をお届けします
-- 💬 **[公式 Telegram グループ](https://t.me/Fluxora_Grup)** —— コミュニティでの議論、不具合の報告、利用体験の共有
+- 📢 **[公式 Telegram チャンネル](https://t.me/Fluxora_Channel)** —— Fluxora のアップデート、リリース情報、プロジェクトの動向をお届けします
+- 💬 **[公式 Telegram グループ](https://t.me/Fluxora_Group1)** —— コミュニティでの議論、不具合の報告、利用体験の共有
 
 ## なぜ Fluxora か
 

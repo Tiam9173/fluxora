@@ -24,7 +24,7 @@
 
 **[دانلود](#دانلود)** · **[گزارش مشکل](https://github.com/Tiam9173/fluxora/issues)** · **[مشارکت](#مشارکت)** · **[مجوز](../LICENSE)**
 
-📢 **[کانال رسمی Telegram](https://t.me/Fluxora_Chanel)** · 💬 **[گروه رسمی Telegram](https://t.me/Fluxora_Grup)**
+📢 **[کانال رسمی Telegram](https://t.me/Fluxora_Channel)** · 💬 **[گروه رسمی Telegram](https://t.me/Fluxora_Group1)**
 
 </div>
 
@@ -32,8 +32,8 @@
 
 ## انجمن رسمی
 
-- 📢 **[کانال رسمی Telegram](https://t.me/Fluxora_Chanel)** —— به‌روزرسانی‌های Fluxora، خبرهای انتشار نسخه و رویدادهای پروژه
-- 💬 **[گروه رسمی Telegram](https://t.me/Fluxora_Grup)** —— گفت‌وگوی جمعی، گزارش مشکل و تبادل تجربهٔ استفاده
+- 📢 **[کانال رسمی Telegram](https://t.me/Fluxora_Channel)** —— به‌روزرسانی‌های Fluxora، خبرهای انتشار نسخه و رویدادهای پروژه
+- 💬 **[گروه رسمی Telegram](https://t.me/Fluxora_Group1)** —— گفت‌وگوی جمعی، گزارش مشکل و تبادل تجربهٔ استفاده
 
 ## چرا Fluxora
 

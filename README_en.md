@@ -24,7 +24,7 @@ Profiles, connections, rules and traffic state — in one restrained, legible, a
 
 **[Download](#download)** · **[Issues](https://github.com/Tiam9173/fluxora/issues)** · **[Contributing](#contributing)** · **[License](LICENSE)**
 
-📢 **[Official Telegram Channel](https://t.me/Fluxora_Chanel)** · 💬 **[Official Telegram Group](https://t.me/Fluxora_Grup)**
+📢 **[Official Telegram Channel](https://t.me/Fluxora_Channel)** · 💬 **[Official Telegram Group](https://t.me/Fluxora_Group1)**
 
 </div>
 
@@ -32,8 +32,8 @@ Profiles, connections, rules and traffic state — in one restrained, legible, a
 
 ## Community
 
-- 📢 **[Official Telegram Channel](https://t.me/Fluxora_Chanel)** — Fluxora updates, release announcements and project news
-- 💬 **[Official Telegram Group](https://t.me/Fluxora_Grup)** — Community discussion, bug reports and usage help
+- 📢 **[Official Telegram Channel](https://t.me/Fluxora_Channel)** — Fluxora updates, release announcements and project news
+- 💬 **[Official Telegram Group](https://t.me/Fluxora_Group1)** — Community discussion, bug reports and usage help
 
 ## Why Fluxora
 

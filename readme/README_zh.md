@@ -28,7 +28,7 @@ Fluxora意为: Make routing legible. - 更好的体验，亦开箱可用
 
 <div align="left">
 
-[![Telegram Group](https://img.shields.io/badge/Fluxora-Chat-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/Fluxora_Grup) [![Telegram Channel](https://img.shields.io/badge/Fluxora-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/Fluxora_Chanel)
+[![Telegram Group](https://img.shields.io/badge/Fluxora-Chat-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/Fluxora_Group1) [![Telegram Channel](https://img.shields.io/badge/Fluxora-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/Fluxora_Channel)
 
 [![GitHub Discussions](https://img.shields.io/badge/Fluxora-Discussions-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Tiam9173/fluxora/discussions)
 

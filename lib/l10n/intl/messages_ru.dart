@@ -416,6 +416,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "checkUpdateError": MessageLookupByLibrary.simpleMessage(
       "Установлена последняя версия",
     ),
+    "checkUpdatePrerelease": MessageLookupByLibrary.simpleMessage(
+      "Проверить обновления (превью)",
+    ),
+    "checkUpdateStable": MessageLookupByLibrary.simpleMessage(
+      "Проверить обновления (стабильная)",
+    ),
     "checking": MessageLookupByLibrary.simpleMessage("Проверка..."),
     "cipher": MessageLookupByLibrary.simpleMessage("Шифрование"),
     "cipherLabel": MessageLookupByLibrary.simpleMessage("Шифр"),
@@ -1293,6 +1299,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "numberTip": m25,
     "obfsModeLabel": MessageLookupByLibrary.simpleMessage("Режим обфускации"),
     "obfsNoneOff": MessageLookupByLibrary.simpleMessage("Нет (выкл.)"),
+    "officialCommunity": MessageLookupByLibrary.simpleMessage(
+      "Официальное сообщество",
+    ),
     "oneColumn": MessageLookupByLibrary.simpleMessage("1 колонка"),
     "onlinePanel": MessageLookupByLibrary.simpleMessage("Онлайн-панель"),
     "onlyIcon": MessageLookupByLibrary.simpleMessage("Только иконки"),
@@ -1845,6 +1854,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "tcpConcurrentDesc": MessageLookupByLibrary.simpleMessage(
       "Разрешить параллельные TCP-соединения",
     ),
+    "telegramChannel": MessageLookupByLibrary.simpleMessage("Канал Telegram"),
+    "telegramGroup": MessageLookupByLibrary.simpleMessage("Группа Telegram"),
     "testAll": MessageLookupByLibrary.simpleMessage("Проверить все"),
     "testCurrentProxy": MessageLookupByLibrary.simpleMessage(
       "Проверить доступность",

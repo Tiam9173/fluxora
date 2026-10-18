@@ -10,11 +10,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class AboutView extends StatelessWidget {
   const AboutView({super.key});
 
-  Future<void> _checkUpdate(BuildContext context) async {
+  static const String telegramChannelUrl = 'https://t.me/Fluxora_Channel';
+  static const String telegramGroupUrl = 'https://t.me/Fluxora_Group1';
+
+  Future<void> _checkUpdate(
+    BuildContext context, {
+    bool includePrerelease = false,
+  }) async {
     final commonScaffoldState = context.commonScaffoldState;
     if (commonScaffoldState?.mounted != true) return;
     final data = await globalState.appController.safeRun<Map<String, dynamic>?>(
-      request.checkForUpdate,
+      () => request.checkForUpdate(includePrerelease: includePrerelease),
       title: appLocalizations.checkUpdate,
       needLoading: true,
     );
@@ -25,40 +31,83 @@ class AboutView extends StatelessWidget {
   }
 
   List<Widget> _buildMoreSection(BuildContext context) {
-    return generateSection(
-      title: appLocalizations.more,
-      items: [
-        _LinkGridRow(
-          left: _LinkGridTile(
-            title: appLocalizations.checkUpdate,
-            icon: Icons.refresh,
-            onTap: () => _checkUpdate(context),
+    final colorScheme = context.colorScheme;
+    return [
+      ...generateSection(
+        title: appLocalizations.checkUpdate,
+        items: [
+          _LinkGridRow(
+            tiles: [
+              _LinkGridTile(
+                title: appLocalizations.checkUpdateStable,
+                icon: Icons.verified_outlined,
+                iconColor: colorScheme.primary,
+                onTap: () => _checkUpdate(context),
+              ),
+              _LinkGridTile(
+                title: appLocalizations.checkUpdatePrerelease,
+                icon: Icons.science_outlined,
+                iconColor: colorScheme.tertiary,
+                onTap: () => _checkUpdate(context, includePrerelease: true),
+              ),
+            ],
           ),
-        ),
-        _LinkGridRow(
-          left: _LinkGridTile(
-            title: 'FlClash',
-            icon: Icons.launch,
-            onTap: () =>
-                globalState.openUrl('https://github.com/chen08209/FlClash'),
+        ],
+      ),
+      ...generateSection(
+        title: appLocalizations.officialCommunity,
+        items: [
+          _LinkGridRow(
+            tiles: [
+              _LinkGridTile(
+                title: appLocalizations.telegramChannel,
+                icon: Icons.campaign_outlined,
+                iconColor: const Color(0xFF2CA5E0),
+                onTap: () => globalState.openUrl(telegramChannelUrl),
+              ),
+              _LinkGridTile(
+                title: appLocalizations.telegramGroup,
+                icon: Icons.forum_outlined,
+                iconColor: const Color(0xFF2CA5E0),
+                onTap: () => globalState.openUrl(telegramGroupUrl),
+              ),
+            ],
           ),
-          right: _LinkGridTile(
-            title: 'Mihomo',
-            icon: Icons.launch,
-            onTap: () =>
-                globalState.openUrl('https://github.com/MetaCubeX/mihomo'),
+        ],
+      ),
+      ...generateSection(
+        title: appLocalizations.more,
+        items: [
+          // Three equal columns: one row per upstream project, all the same
+          // width, so no credit reads as more important than another.
+          _LinkGridRow(
+            tiles: [
+              _LinkGridTile(
+                title: 'FlClash',
+                icon: Icons.launch,
+                onTap: () => globalState.openUrl(
+                  'https://github.com/chen08209/FlClash',
+                ),
+              ),
+              _LinkGridTile(
+                title: 'Bettbox',
+                icon: Icons.launch,
+                onTap: () => globalState.openUrl(
+                  'https://github.com/appshubcc/Bettbox',
+                ),
+              ),
+              _LinkGridTile(
+                title: 'Mihomo',
+                icon: Icons.launch,
+                onTap: () => globalState.openUrl(
+                  'https://github.com/MetaCubeX/mihomo',
+                ),
+              ),
+            ],
           ),
-        ),
-        _LinkGridRow(
-          left: _LinkGridTile(
-            title: 'Bettbox',
-            icon: Icons.launch,
-            onTap: () =>
-                globalState.openUrl('https://github.com/appshubcc/Bettbox'),
-          ),
-        ),
-      ],
-    );
+        ],
+      ),
+    ];
   }
 
   @override
@@ -175,17 +224,16 @@ class _DeveloperModeDetectorState extends State<_DeveloperModeDetector> {
 }
 
 class _LinkGridRow extends StatelessWidget {
-  final _LinkGridTile left;
-  final _LinkGridTile? right;
+  /// One or more equal-width cells, separated by hairlines. A single tile keeps
+  /// the full row width; anything else is split evenly, so a row of three
+  /// credits gives every project exactly the same space.
+  final List<_LinkGridTile> tiles;
 
-  const _LinkGridRow({required this.left, this.right});
+  const _LinkGridRow({required this.tiles});
 
   @override
   Widget build(BuildContext context) {
-    final right = this.right;
-    if (right == null) {
-      return left;
-    }
+    if (tiles.length == 1) return tiles.first;
     final dividerColor = context.colorScheme.outlineVariant.withValues(
       alpha: context.colorScheme.brightness == Brightness.light ? 0.6 : 0.45,
     );
@@ -193,15 +241,17 @@ class _LinkGridRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(child: left),
-          VerticalDivider(
-            width: 1,
-            thickness: 1,
-            indent: 8,
-            endIndent: 8,
-            color: dividerColor,
-          ),
-          Expanded(child: right),
+          for (var i = 0; i < tiles.length; i++) ...[
+            if (i > 0)
+              VerticalDivider(
+                width: 1,
+                thickness: 1,
+                indent: 8,
+                endIndent: 8,
+                color: dividerColor,
+              ),
+            Expanded(child: tiles[i]),
+          ],
         ],
       ),
     );
@@ -211,9 +261,15 @@ class _LinkGridRow extends StatelessWidget {
 class _LinkGridTile extends StatelessWidget {
   final String title;
   final IconData? icon;
+  final Color? iconColor;
   final VoidCallback onTap;
 
-  const _LinkGridTile({required this.title, this.icon, required this.onTap});
+  const _LinkGridTile({
+    required this.title,
+    this.icon,
+    this.iconColor,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -236,7 +292,9 @@ class _LinkGridTile extends StatelessWidget {
               Icon(
                 icon,
                 size: 16,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                color:
+                    iconColor ??
+                    Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ],
           ],

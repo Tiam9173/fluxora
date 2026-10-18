@@ -392,6 +392,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "checkUpdateError": MessageLookupByLibrary.simpleMessage(
       "Already on the latest version",
     ),
+    "checkUpdatePrerelease": MessageLookupByLibrary.simpleMessage(
+      "Check for updates (preview)",
+    ),
+    "checkUpdateStable": MessageLookupByLibrary.simpleMessage(
+      "Check for updates (stable)",
+    ),
     "checking": MessageLookupByLibrary.simpleMessage("Checking..."),
     "cipher": MessageLookupByLibrary.simpleMessage("Cipher"),
     "cipherLabel": MessageLookupByLibrary.simpleMessage("Cipher"),
@@ -1223,6 +1229,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "numberTip": m25,
     "obfsModeLabel": MessageLookupByLibrary.simpleMessage("Obfs mode"),
     "obfsNoneOff": MessageLookupByLibrary.simpleMessage("None (off)"),
+    "officialCommunity": MessageLookupByLibrary.simpleMessage(
+      "Official community",
+    ),
     "oneColumn": MessageLookupByLibrary.simpleMessage("1 Column"),
     "onlinePanel": MessageLookupByLibrary.simpleMessage("Online Panel"),
     "onlyIcon": MessageLookupByLibrary.simpleMessage("Icon Only"),
@@ -1751,6 +1760,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "tcpConcurrentDesc": MessageLookupByLibrary.simpleMessage(
       "Allow concurrent TCP connections",
     ),
+    "telegramChannel": MessageLookupByLibrary.simpleMessage("Telegram channel"),
+    "telegramGroup": MessageLookupByLibrary.simpleMessage("Telegram group"),
     "testAll": MessageLookupByLibrary.simpleMessage("Test All"),
     "testCurrentProxy": MessageLookupByLibrary.simpleMessage(
       "Test connectivity",

@@ -9,8 +9,8 @@
 
 <div align="left">
 
-[![Telegram Group](https://img.shields.io/badge/Fluxora-Group-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/Fluxora_Grup)
-[![Telegram Channel](https://img.shields.io/badge/Fluxora-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/Fluxora_Chanel)
+[![Telegram Group](https://img.shields.io/badge/Fluxora-Group-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/Fluxora_Group1)
+[![Telegram Channel](https://img.shields.io/badge/Fluxora-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/Fluxora_Channel)
 
 ---
 </div>
@@ -46,5 +46,5 @@
 ### 💖 致谢与开源协议 / Acknowledgements
 
 - Fluxora v1.0 is an independent product. See NOTICE and the Lineage & Licenses section for open-source attribution.
-- 鸣谢 [FlClash](https://github.com/chen08209/FlClash)、[Mihomo (Clash.Meta)](https://github.com/MetaCubeX/mihomo) 与 [Bettbox](https://github.com/appshubcc/Bettbox)。
+- 鸣谢 [FlClash](https://github.com/chen08209/FlClash)、[Bettbox](https://github.com/appshubcc/Bettbox) 与 [Mihomo (Clash.Meta)](https://github.com/MetaCubeX/mihomo)。
 - 本项目遵循 GPL-3.0 License 开源协议。

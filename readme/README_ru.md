@@ -24,7 +24,7 @@
 
 **[Загрузка](#загрузка)** · **[Сообщить о проблеме](https://github.com/Tiam9173/fluxora/issues)** · **[Участие в проекте](#участие-в-проекте)** · **[Лицензия](../LICENSE)**
 
-📢 **[Официальный канал в Telegram](https://t.me/Fluxora_Chanel)** · 💬 **[Официальная группа в Telegram](https://t.me/Fluxora_Grup)**
+📢 **[Официальный канал в Telegram](https://t.me/Fluxora_Channel)** · 💬 **[Официальная группа в Telegram](https://t.me/Fluxora_Group1)**
 
 </div>
 
@@ -32,8 +32,8 @@
 
 ## Официальное сообщество
 
-- 📢 **[Официальный канал в Telegram](https://t.me/Fluxora_Chanel)** —— обновления Fluxora, новости о релизах и жизни проекта
-- 💬 **[Официальная группа в Telegram](https://t.me/Fluxora_Grup)** —— обсуждения, сообщения о проблемах, обмен опытом
+- 📢 **[Официальный канал в Telegram](https://t.me/Fluxora_Channel)** —— обновления Fluxora, новости о релизах и жизни проекта
+- 💬 **[Официальная группа в Telegram](https://t.me/Fluxora_Group1)** —— обсуждения, сообщения о проблемах, обмен опытом
 
 ## Почему Fluxora
 

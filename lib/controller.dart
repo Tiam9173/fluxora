@@ -1418,9 +1418,30 @@ class AppController {
 
     if (!isAutoCheck && !forceCheck) return;
 
-    final res = await request.checkForUpdate();
-    if (res != null) {
-      checkUpdateResultHandle(data: res);
+    // Both channels. With auto-check on the user wants to hear about a new
+    // stable build *and* a new preview one, so ask both and report the higher
+    // version — the preview feed is a superset, so a tie can only happen when
+    // both point at the same tag.
+    final results = await Future.wait([
+      request.checkForUpdate(),
+      request.checkForUpdate(includePrerelease: true),
+    ]);
+    Map<String, dynamic>? best;
+    for (final res in results) {
+      if (res == null) continue;
+      if (best == null ||
+          utils.compareVersions(
+                (res['tag_name'] as String).replaceAll('v', ''),
+                (best['tag_name'] as String).replaceAll('v', ''),
+              ) >
+              0) {
+        best = res;
+      }
+    }
+    if (best != null) {
+      // handleError: true is also the flag that lets the dialog appear in
+      // pre-release builds — without it every RC silently swallowed the notice.
+      await checkUpdateResultHandle(data: best, handleError: true);
     }
 
     await prefs?.setInt('last_check_update_time', now);

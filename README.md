@@ -24,7 +24,7 @@
 
 **[下载](#下载)** · **[问题反馈](https://github.com/Tiam9173/fluxora/issues)** · **[参与贡献](#参与贡献)** · **[许可证](LICENSE)**
 
-📢 **[官方 Telegram 频道](https://t.me/Fluxora_Chanel)** · 💬 **[官方 Telegram 群组](https://t.me/Fluxora_Grup)**
+📢 **[官方 Telegram 频道](https://t.me/Fluxora_Channel)** · 💬 **[官方 Telegram 群组](https://t.me/Fluxora_Group1)**
 
 </div>
 
@@ -32,8 +32,8 @@
 
 ## 官方社区
 
-- 📢 **[官方 Telegram 频道](https://t.me/Fluxora_Chanel)** —— 获取 Fluxora 更新、版本发布与项目动态
-- 💬 **[官方 Telegram 群组](https://t.me/Fluxora_Grup)** —— 加入社区讨论、反馈问题、交流使用体验
+- 📢 **[官方 Telegram 频道](https://t.me/Fluxora_Channel)** —— 获取 Fluxora 更新、版本发布与项目动态
+- 💬 **[官方 Telegram 群组](https://t.me/Fluxora_Group1)** —— 加入社区讨论、反馈问题、交流使用体验
 
 ## 为什么是 Fluxora
 

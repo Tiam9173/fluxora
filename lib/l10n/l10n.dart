@@ -4320,6 +4320,56 @@ class AppLocalizations {
     );
   }
 
+  /// `Check for updates (stable)`
+  String get checkUpdateStable {
+    return Intl.message(
+      'Check for updates (stable)',
+      name: 'checkUpdateStable',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Check for updates (preview)`
+  String get checkUpdatePrerelease {
+    return Intl.message(
+      'Check for updates (preview)',
+      name: 'checkUpdatePrerelease',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Telegram channel`
+  String get telegramChannel {
+    return Intl.message(
+      'Telegram channel',
+      name: 'telegramChannel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Official community`
+  String get officialCommunity {
+    return Intl.message(
+      'Official community',
+      name: 'officialCommunity',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Telegram group`
+  String get telegramGroup {
+    return Intl.message(
+      'Telegram group',
+      name: 'telegramGroup',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Port {from} is in use; using {to} for this session`
   String portFallbackNotice(Object from, Object to) {
     return Intl.message(

@@ -177,40 +177,74 @@ class Request {
     return MemoryImage(bytes);
   }
 
-  Future<Map<String, dynamic>?> checkForUpdate() async {
+  /// Newest release in the requested channel.
+  ///
+  /// Both channels read the same Atom feed: it lists every release
+  /// (pre-releases included), needs no token — the REST API is rate-limited per
+  /// IP — and **carries the release notes**, which is exactly what the update
+  /// dialog renders. The stable channel simply skips entries whose tag looks
+  /// like a pre-release.
+  Future<Map<String, dynamic>?> checkForUpdate({
+    bool includePrerelease = false,
+  }) async {
     try {
       final t = DateTime.now().millisecondsSinceEpoch;
       final response = await _dio.get(
-        'https://github.com/$repository/releases/latest?t=$t',
-        options: Options(
-          followRedirects: false,
-          validateStatus: (status) =>
-              status != null && status >= 300 && status < 400,
-        ),
+        'https://github.com/$repository/releases.atom?t=$t',
       );
-      final location = response.headers['location']?.firstOrNull;
-      if (location != null && location.contains('/releases/tag/')) {
-        final remoteVersion = location.split('/').last.trim();
-        if (remoteVersion.isNotEmpty) {
-          final version = globalState.packageInfo.version;
-          final hasUpdate =
-              utils.compareVersions(
-                remoteVersion.replaceAll('v', ''),
-                version,
-              ) >
-              0;
-          if (!hasUpdate) return null;
-          return {
-            'tag_name': remoteVersion,
-            'html_url': 'https://github.com/$repository/releases/latest',
-            'body': 'New version available. Please visit GitHub to download.',
-          };
+      final xml = response.data.toString();
+      final current = globalState.packageInfo.version;
+      for (final match in RegExp(r'<entry>([\s\S]*?)</entry>').allMatches(xml)) {
+        final entry = match.group(1) ?? '';
+        final title = RegExp(
+          r'<title>([^<]*)</title>',
+        ).firstMatch(entry)?.group(1)?.trim();
+        if (title == null || title.isEmpty) continue;
+        final isPrerelease = RegExp(
+          r'-(rc|beta|alpha|pre|dev)',
+          caseSensitive: false,
+        ).hasMatch(title);
+        if (!includePrerelease && isPrerelease) continue;
+        if (utils.compareVersions(title.replaceAll('v', ''), current) <= 0) {
+          continue;
         }
+        final link = RegExp(
+          r'<link[^>]*href="([^"]+)"',
+        ).firstMatch(entry)?.group(1);
+        final content = RegExp(
+          r'<content[^>]*>([\s\S]*?)</content>',
+        ).firstMatch(entry)?.group(1) ?? '';
+        return {
+          'tag_name': title,
+          'html_url': link ?? 'https://github.com/$repository/releases',
+          'body': _releaseNotesFromHtml(content),
+        };
       }
     } catch (e) {
       commonPrint.log('Check update failed: ${e.formatErrorLog}');
     }
     return null;
+  }
+
+  /// Turns the Atom entry's HTML into the `- ` bullet lines that
+  /// `utils.parseReleaseBody` reads, so the dialog shows the real notes instead
+  /// of a placeholder sentence.
+  static String _releaseNotesFromHtml(String html) {
+    final text = html
+        .replaceAll(RegExp(r'<br\s*/?>', caseSensitive: false), '\n')
+        .replaceAll(RegExp(r'</li>', caseSensitive: false), '\n')
+        .replaceAll(RegExp(r'<li[^>]*>', caseSensitive: false), '- ')
+        .replaceAll(RegExp(r'<[^>]+>'), '')
+        .replaceAll('&amp;', '&')
+        .replaceAll('&lt;', '<')
+        .replaceAll('&gt;', '>')
+        .replaceAll('&quot;', '"')
+        .replaceAll('&#39;', "'");
+    return text
+        .split('\n')
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .join('\n');
   }
 
   // Returns the current *built-in* primary IP source for the given locale.

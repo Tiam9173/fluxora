@@ -3,6 +3,7 @@ import 'package:fluxora/models/models.dart';
 import 'package:fluxora/providers/app.dart';
 import 'package:fluxora/providers/config.dart';
 import 'package:fluxora/state.dart';
+import 'package:fluxora/views/config/user_auth.dart';
 import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -71,15 +72,22 @@ class IntranetIP extends ConsumerWidget {
   }
 
   void _openLanSettings(BuildContext context, WidgetRef ref) {
-    showSheet(
-      context: context,
-      builder: (_, type) {
-        return AdaptiveSheetScaffold(
-          type: type,
-          title: appLocalizations.intranetAndGateway,
-          body: const _LanSettingsBody(),
-        );
-      },
+    // A dialog card, not a bottom sheet: this panel is read at a glance and
+    // edited in place, and a sheet pushed everything to the bottom edge.
+    globalState.showCommonDialog(
+      child: CommonDialog(
+        title: appLocalizations.intranetAndGateway,
+        actions: [
+          TextButton(
+            onPressed: () => globalState.navigatorKey.currentState?.pop(),
+            child: Text(appLocalizations.confirm),
+          ),
+        ],
+        // The body is already a (shrink-wrapped) ListView; letting it scroll
+        // itself avoids nesting two scrollables.
+        overrideScroll: true,
+        child: const _LanSettingsBody(),
+      ),
     );
   }
 }
@@ -146,7 +154,11 @@ class _LanSettingsBodyState extends ConsumerState<_LanSettingsBody> {
     final network = _fresh ?? ref.watch(localNetworkProvider);
     final clashConfig = ref.watch(
       patchClashConfigProvider.select(
-        (state) => (allowLan: state.allowLan, mixedPort: state.mixedPort),
+        (state) => (
+          allowLan: state.allowLan,
+          mixedPort: state.mixedPort,
+          authCount: state.authentication.length,
+        ),
       ),
     );
 
@@ -282,6 +294,26 @@ class _LanSettingsBodyState extends ConsumerState<_LanSettingsBody> {
         ),
         _buildSectionLabel(appLocalizations.allowLan),
         _buildLanTile(clashConfig.allowLan),
+        // Real editing, not a link to nowhere: the same credential dialog the
+        // core settings use, so a change here is the change there.
+        if (clashConfig.allowLan)
+          InkWell(
+            onTap: () => globalState.showCommonDialog(
+              child: const UserAuthDialog(),
+            ),
+            child: _buildRow(
+              icon: Icons.key_rounded,
+              label: appLocalizations.userAuth,
+              value: clashConfig.authCount == 0
+                  ? '—'
+                  : '${clashConfig.authCount}',
+              action: Icon(
+                Icons.chevron_right_rounded,
+                size: 18,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
         if (clashConfig.allowLan && info.ip.isNotEmpty)
           _buildRow(
             icon: Icons.share_rounded,

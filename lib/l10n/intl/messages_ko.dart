@@ -325,6 +325,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "checkUpdateError": MessageLookupByLibrary.simpleMessage(
       "현재 최신 버전을 사용 중입니다",
     ),
+    "checkUpdatePrerelease": MessageLookupByLibrary.simpleMessage(
+      "업데이트 확인(미리보기)",
+    ),
+    "checkUpdateStable": MessageLookupByLibrary.simpleMessage("업데이트 확인(정식판)"),
     "checking": MessageLookupByLibrary.simpleMessage("확인 중..."),
     "cipher": MessageLookupByLibrary.simpleMessage("암호화 방식"),
     "cipherLabel": MessageLookupByLibrary.simpleMessage("암호화 방식"),
@@ -994,6 +998,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "numberTip": m25,
     "obfsModeLabel": MessageLookupByLibrary.simpleMessage("난독화 모드"),
     "obfsNoneOff": MessageLookupByLibrary.simpleMessage("없음 (끔)"),
+    "officialCommunity": MessageLookupByLibrary.simpleMessage("공식 커뮤니티"),
     "oneColumn": MessageLookupByLibrary.simpleMessage("1열"),
     "onlinePanel": MessageLookupByLibrary.simpleMessage("온라인 패널"),
     "onlyIcon": MessageLookupByLibrary.simpleMessage("아이콘만"),
@@ -1418,6 +1423,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "tcpConcurrentDesc": MessageLookupByLibrary.simpleMessage(
       "TCP 동시 다중 연결 허용",
     ),
+    "telegramChannel": MessageLookupByLibrary.simpleMessage("Telegram 채널"),
+    "telegramGroup": MessageLookupByLibrary.simpleMessage("Telegram 그룹"),
     "testAll": MessageLookupByLibrary.simpleMessage("전체 측정"),
     "testCurrentProxy": MessageLookupByLibrary.simpleMessage("가용성 테스트"),
     "testUrl": MessageLookupByLibrary.simpleMessage("테스트 URL"),

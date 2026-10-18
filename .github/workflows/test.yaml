@@ -1,0 +1,61 @@
+# CI — automated test & static analysis.
+#
+# Purpose: run `flutter analyze` and `flutter test` on pull requests and on
+# pushes to the main integration branches. The release pipeline lives in
+# `build.yaml` and is triggered only by `v*` tags; this workflow deliberately
+# excludes tags so the two never run the same event.
+#
+# Scope: static checks only — no signing, no packaging, no artifacts, no release.
+name: test
+
+on:
+  pull_request:
+    branches:
+      - main
+      - dev
+  push:
+    branches:
+      - main
+      - dev
+  workflow_dispatch:
+
+# Read-only: the checks only need the checked-out source. Nothing here writes
+# back to the repository, so no broader permission is granted.
+permissions:
+  contents: read
+
+# A newer run on the same ref supersedes an in-flight one.
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Matches build.yaml so both workflows use the same Node runtime for actions.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          # Pinned to the version the release workflow builds with (build.yaml).
+          flutter-version: '3.47.4'
+          cache: true
+          cache-key: flutter-test-${{ hashFiles('**/pubspec.lock') }}
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test

@@ -398,6 +398,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "checkUpdateError": MessageLookupByLibrary.simpleMessage(
       "شما از آخرین نسخه استفاده می‌کنید",
     ),
+    "checkUpdatePrerelease": MessageLookupByLibrary.simpleMessage(
+      "بررسی به‌روزرسانی (پیش‌نمایش)",
+    ),
+    "checkUpdateStable": MessageLookupByLibrary.simpleMessage(
+      "بررسی به‌روزرسانی (پایدار)",
+    ),
     "checking": MessageLookupByLibrary.simpleMessage("در حال بررسی..."),
     "cipher": MessageLookupByLibrary.simpleMessage("روش رمزنگاری"),
     "cipherLabel": MessageLookupByLibrary.simpleMessage("روش رمزنگاری"),
@@ -1243,6 +1249,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "numberTip": m25,
     "obfsModeLabel": MessageLookupByLibrary.simpleMessage("حالت پنهان‌سازی"),
     "obfsNoneOff": MessageLookupByLibrary.simpleMessage("هیچ (خاموش)"),
+    "officialCommunity": MessageLookupByLibrary.simpleMessage("جامعه رسمی"),
     "oneColumn": MessageLookupByLibrary.simpleMessage("۱ ستون"),
     "onlinePanel": MessageLookupByLibrary.simpleMessage("پنل آنلاین"),
     "onlyIcon": MessageLookupByLibrary.simpleMessage("فقط آیکون"),
@@ -1797,6 +1804,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "tcpConcurrentDesc": MessageLookupByLibrary.simpleMessage(
       "اجازه به اتصال‌های همزمان TCP",
     ),
+    "telegramChannel": MessageLookupByLibrary.simpleMessage("کانال تلگرام"),
+    "telegramGroup": MessageLookupByLibrary.simpleMessage("گروه تلگرام"),
     "testAll": MessageLookupByLibrary.simpleMessage("سنجش همه"),
     "testCurrentProxy": MessageLookupByLibrary.simpleMessage(
       "آزمایش دسترس‌پذیری",
