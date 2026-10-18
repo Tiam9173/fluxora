@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Collapsed notification layout: title + speed only.
+
+  A notification needs BOTH a custom content view (collapsed) and a custom big
+  content view (expanded). Setting only the big one makes the system use it as
+  the collapsed content too — the notification then looks permanently expanded
+  and its buttons do not behave like notification actions.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="12dp"
+    android:paddingEnd="12dp"
+    android:paddingTop="6dp"
+    android:paddingBottom="6dp">
+
+    <TextView
+        android:id="@+id/nf_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:textColor="#FFFFFFFF"
+        android:text="" />
+
+    <TextView
+        android:id="@+id/nf_speed"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:textSize="12sp"
+        android:textColor="#B3FFFFFF"
+        android:text="" />
+</LinearLayout>

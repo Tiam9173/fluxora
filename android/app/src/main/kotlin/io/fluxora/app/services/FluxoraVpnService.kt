@@ -240,7 +240,9 @@ class FluxoraVpnService : VpnService(), BaseServiceInterface {
         val notification = builder
             .setContentTitle(title)
             .setContentText(content)
-            .setStyle(null)
+            // Keep the decorated style: clearing it made the custom views
+            // collapse back into "big view for both states".
+            .setStyle(NotificationCompat.DecoratedCustomViewStyle())
             .build()
 
         val isFirstTime = !hasStartedForeground
@@ -282,9 +284,12 @@ class FluxoraVpnService : VpnService(), BaseServiceInterface {
         val notification = builder
             .setContentTitle(profileName)
             .setContentText(speedInfo)
-            .setStyle(null)
+            .setStyle(NotificationCompat.DecoratedCustomViewStyle())
             // Rebuilt every tick so the expanded view shows the live numbers;
             // the RemoteViews instance itself is immutable.
+            .setCustomContentView(
+                buildCollapsedNotificationViews(profileName, speedInfo)
+            )
             .setCustomBigContentView(
                 buildExpandedNotificationViews(profileName, speedInfo)
             )

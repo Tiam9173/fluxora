@@ -36,6 +36,16 @@ interface BaseServiceInterface {
 /// `addAction` is dropped without a word. A custom big content view is the only
 /// way to show four. The collapsed state is left to the system, which keeps the
 /// notification collapsed until the user expands it.
+fun Service.buildCollapsedNotificationViews(
+    title: String,
+    content: String
+): RemoteViews {
+    val views = RemoteViews(packageName, R.layout.notification_collapsed)
+    views.setTextViewText(R.id.nf_title, title)
+    views.setTextViewText(R.id.nf_speed, content)
+    return views
+}
+
 fun Service.buildExpandedNotificationViews(
     title: String,
     content: String
@@ -259,6 +269,16 @@ suspend fun Service.createFluxoraNotificationBuilder(
             // Four buttons do not fit the stock layout, so the expanded state is
             // ours. The collapsed state stays the system one, which is what
             // keeps the notification closed until the user taps it.
+            // Custom content views only behave as collapsed/expanded pair when
+            // the decorated style is set; without it the big view is used for
+            // both states, so the notification looks permanently expanded.
+            setStyle(NotificationCompat.DecoratedCustomViewStyle())
+            // Both views are required. With only the big one set, the system
+            // uses it as the collapsed content as well, which is why the
+            // notification looked permanently expanded.
+            setCustomContentView(
+                buildCollapsedNotificationViews(getString(R.string.fluxora), "")
+            )
             setCustomBigContentView(
                 buildExpandedNotificationViews(getString(R.string.fluxora), "")
             )
