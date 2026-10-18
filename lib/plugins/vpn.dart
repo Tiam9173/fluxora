@@ -132,8 +132,11 @@ class Vpn {
           // ownbox's RESET_UPSTREAM_CONNECTIONS semantics: drop the existing
           // upstream connections and let the core rebuild them from the current
           // config, so the selected node and profile stay exactly as they are.
-          commonPrint.log('notificationReset: resetting upstream connections');
-          clashCore.resetConnections();
+          // Restart the core rather than only dropping connections: that is the
+          // existing recovery path, and it rebuilds DNS and every upstream at
+          // once. A reset that leaves a broken resolver in place is not a reset.
+          commonPrint.log('notificationReset: restarting core');
+          await globalState.appController.restartCore();
           break;
         case 'notificationSpeedTest':
           final controller = globalState.appController;
