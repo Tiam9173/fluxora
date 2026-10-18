@@ -45,7 +45,7 @@ class Vpn {
     commonPrint.log('setNotificationLabels: gave up, localizations never ready');
   }
 
-  Future<void> _consumePendingNotificationAction() async {
+  Future<void> consumePendingNotificationAction() async {
     for (var attempt = 0; attempt < 20; attempt++) {
       if (globalState.navigatorKey.currentContext != null) {
         String? action;
@@ -72,7 +72,7 @@ class Vpn {
     // be waiting before this handler exists. Push the labels and consume it
     // once the channel is live.
     _syncNotificationLabels();
-    _consumePendingNotificationAction();
+    consumePendingNotificationAction();
     methodChannel.setMethodCallHandler((call) async {
       switch (call.method) {
         case 'gc':

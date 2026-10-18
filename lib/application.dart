@@ -18,6 +18,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'controller.dart';
 import 'pages/pages.dart';
+import 'package:fluxora/plugins/vpn.dart';
 
 /// P2.6-D: error boundary for fire-and-forget background tasks.
 ///
@@ -125,6 +126,9 @@ class ApplicationState extends ConsumerState<Application>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _syncAutoUpdateTasks();
     if (state == AppLifecycleState.resumed) {
+      // A notification button can bring the app back from the background; the
+      // request is stored natively and only Dart can act on it.
+      Vpn().consumePendingNotificationAction();
       if (system.isAndroid &&
           globalState.config.appSetting.enableHighRefreshRate) {
         _restoreHighRefreshRate();
