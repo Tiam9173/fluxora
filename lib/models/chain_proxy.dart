@@ -950,6 +950,22 @@ class ChainProxyConfig {
     // 不会改变最终出口 —— 落地住宅节点保持原样。
     var chainTerminal = fallbackHop;
     final frontChain = effectiveFrontHops;
+
+    // `fallbackHop` may be the dedicated hop group rather than a node. The
+    // group is created further down, but the shadows below already point at it,
+    // and mihomo refuses to load a dialer-proxy that names something missing.
+    // A placeholder is enough here: ensureDedicatedHopGroup() replaces it with
+    // the real member list later.
+    if (chainTerminal == dedicatedHopGroupName &&
+        !groupList.any(
+          (g) => g is Map && g['name'] == dedicatedHopGroupName,
+        )) {
+      groupList.insert(0, <String, dynamic>{
+        'name': dedicatedHopGroupName,
+        'type': 'select',
+        'proxies': ['DIRECT'],
+      });
+    }
     for (var i = 1; i < frontChain.length; i++) {
       final hopName = frontChain[i];
       final base = proxyConfigMap[hopName];

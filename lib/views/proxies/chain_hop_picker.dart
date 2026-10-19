@@ -8,12 +8,11 @@ import 'package:fluxora/views/proxies/notification_switch_card.dart';
 /// what picking a hop needs. Reusing it also means the two screens cannot drift
 /// apart in how they present a node.
 ///
-/// The two entries above the list are the ones a card cannot express: following
-/// the main selector (a policy group, not a node) and a direct connection.
+/// The card is the whole picker: it already lists every subscription, group and
+/// node, so nothing is duplicated here.
 Future<void> showChainHopPicker({
   required BuildContext context,
   required String title,
-  required bool allowFollowMain,
   required Set<String> excludeNames,
   required void Function(String name) onSelect,
 }) {
@@ -25,7 +24,7 @@ Future<void> showChainHopPicker({
   return showDialog(
     context: context,
     builder: (ctx) {
-      final colors = Theme.of(ctx).colorScheme;
+
       return Dialog(
         clipBehavior: Clip.antiAlias,
         child: ConstrainedBox(
@@ -53,28 +52,6 @@ Future<void> showChainHopPicker({
                   ],
                 ),
               ),
-              if (allowFollowMain)
-                ListTile(
-                  dense: true,
-                  leading: const Icon(Icons.auto_awesome, size: 18),
-                  title: const Text('跟随主选择', style: TextStyle(fontSize: 13)),
-                  subtitle: const Text(
-                    '使用当前节点选择组，随主界面切换而变化',
-                    style: TextStyle(fontSize: 11),
-                  ),
-                  onTap: () => pick(ctx, ''),
-                ),
-              ListTile(
-                dense: true,
-                leading: Icon(Icons.bolt, size: 18, color: colors.primary),
-                title: const Text('DIRECT', style: TextStyle(fontSize: 13)),
-                subtitle: const Text(
-                  '这一跳不经过任何节点',
-                  style: TextStyle(fontSize: 11),
-                ),
-                onTap: () => pick(ctx, 'DIRECT'),
-              ),
-              const Divider(height: 1),
               Flexible(
                 child: SwitchCard(
                   excludeNames: excludeNames,

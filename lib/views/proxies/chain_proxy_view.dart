@@ -470,7 +470,10 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                     leading: Icon(
                       i == 0 ? Icons.hub_outlined : Icons.swap_horiz_rounded,
                     ),
-                    title: Text('第 ${i + 1} 跳'),
+                    // 第 1 跳保留原名，后续按顺序叫中转节点 1、2、3…
+                    title: Text(
+                      i == 0 ? appLocalizations.defaultDialerProxy : '中转节点 $i',
+                    ),
                     subtitle: Text(
                       frontHops[i].isEmpty
                           ? appLocalizations.followMainSelector
@@ -498,8 +501,9 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                     onTap: () {
                       showChainHopPicker(
                         context: context,
-                        title: '第 ${i + 1} 跳',
-                        allowFollowMain: i == 0,
+                        title: i == 0
+                            ? appLocalizations.defaultDialerProxy
+                            : '中转节点 $i',
                         excludeNames: frontHops
                             .where((h) => h != frontHops[i])
                             .toSet(),
@@ -516,56 +520,44 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                     showChainHopPicker(
                       context: context,
                       title: '添加一跳',
-                      allowFollowMain: false,
                       excludeNames: frontHops.toSet(),
                       onSelect: (hop) => chainProxyManager.addFrontHop(hop),
                     );
                   },
                 ),
                 const Divider(height: 1, indent: 16, endIndent: 16),
-                ListItem(
-                  leading: const Icon(Icons.layers_outlined),
-                  title: Text(appLocalizations.dedicatedGroup),
-                  subtitle: Text(appLocalizations.dedicatedGroupDesc),
-                  trailing: Switch(
-                    value: config.createDedicatedGroup,
-                    onChanged: (val) =>
-                        chainProxyManager.setCreateDedicatedGroup(val),
-                  ),
+                _settingRow(
+                  icon: Icons.layers_outlined,
+                  title: appLocalizations.dedicatedGroup,
+                  description: appLocalizations.dedicatedGroupDesc,
+                  value: config.createDedicatedGroup,
+                  onChanged: (val) => chainProxyManager.setCreateDedicatedGroup(val),
                 ),
                 const Divider(height: 1, indent: 16, endIndent: 16),
-                ListItem(
-                  leading: const Icon(Icons.input_outlined),
-                  title: Text(appLocalizations.autoInjectGroups),
-                  subtitle: Text(appLocalizations.autoInjectGroupsDesc),
-                  trailing: Switch(
-                    value: config.autoInjectGroups,
-                    onChanged: (val) =>
-                        chainProxyManager.setAutoInjectGroups(val),
-                  ),
+                _settingRow(
+                  icon: Icons.input_outlined,
+                  title: appLocalizations.autoInjectGroups,
+                  description: appLocalizations.autoInjectGroupsDesc,
+                  value: config.autoInjectGroups,
+                  onChanged: (val) => chainProxyManager.setAutoInjectGroups(val),
                 ),
                 const Divider(height: 1, indent: 16, endIndent: 16),
-                ListItem(
-                  leading: const Icon(Icons.security, color: Colors.blueAccent),
-                  title: Text(appLocalizations.preventWebRtcLeak),
-                  subtitle: Text(appLocalizations.preventWebRtcLeakDesc),
-                  trailing: Switch(
-                    value: config.preventWebRtcLeak,
-                    onChanged: (val) =>
-                        chainProxyManager.setPreventWebRtcLeak(val),
-                  ),
+                _settingRow(
+                  icon: Icons.security,
+                  iconColor: Colors.blueAccent,
+                  title: appLocalizations.preventWebRtcLeak,
+                  description: appLocalizations.preventWebRtcLeakDesc,
+                  value: config.preventWebRtcLeak,
+                  onChanged: (val) => chainProxyManager.setPreventWebRtcLeak(val),
                 ),
                 const Divider(height: 1, indent: 16, endIndent: 16),
-                ListItem(
-                  leading:
-                      const Icon(Icons.dns_outlined, color: Colors.blueAccent),
-                  title: Text(appLocalizations.preventDnsLeak),
-                  subtitle: Text(appLocalizations.preventDnsLeakDesc),
-                  trailing: Switch(
-                    value: config.preventDnsLeak,
-                    onChanged: (val) =>
-                        chainProxyManager.setPreventDnsLeak(val),
-                  ),
+                _settingRow(
+                  icon: Icons.dns_outlined,
+                  iconColor: Colors.blueAccent,
+                  title: appLocalizations.preventDnsLeak,
+                  description: appLocalizations.preventDnsLeakDesc,
+                  value: config.preventDnsLeak,
+                  onChanged: (val) => chainProxyManager.setPreventDnsLeak(val),
                 ),
               ],
             ),
@@ -1504,6 +1496,39 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
       TopologySegmentState.failed => TopologySegmentState.failed,
       _ => TopologySegmentState.notProbed,
     };
+  }
+
+  /// A switch row that shows only the feature name.
+  ///
+  /// The explanation used to sit under every title, which made four settings
+  /// read as a wall of text before the user had decided to care. Tapping the row
+  /// now shows it, and the row itself stays scannable.
+  Widget _settingRow({
+    required IconData icon,
+    Color? iconColor,
+    required String title,
+    required String description,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return ListItem(
+      leading: Icon(icon, color: iconColor),
+      title: Text(title),
+      trailing: Switch(value: value, onChanged: onChanged),
+      onTap: () => showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(title),
+          content: Text(description, style: const TextStyle(fontSize: 13)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(appLocalizations.confirm),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildTopologyNode({
