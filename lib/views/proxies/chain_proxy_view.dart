@@ -12,7 +12,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluxora/models/chain_fallback_pool.dart';
 import 'package:fluxora/models/latency_freshness.dart';
 import 'package:fluxora/services/chain_probe_service.dart';
-import 'package:fluxora/views/proxies/intelligent_node_picker_sheet.dart';
 import 'package:fluxora/views/proxies/chain_hop_picker.dart';
 
 
@@ -237,33 +236,6 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
   void initState() {
     super.initState();
     chainProxyManager.init();
-  }
-
-  void _showIntelligentHopPicker({
-    required String title,
-    required String currentHop,
-    required Set<String> excludedHops,
-    required Function(String) onSelect,
-    required FallbackCandidateRole role,
-    bool allowDirect = true,
-    bool allowFollowMain = false,
-  }) {
-    showSheet(
-      context: context,
-      props: SheetProps(isScrollControlled: true),
-      builder: (ctx, type) {
-        return IntelligentNodePickerSheet(
-          title: title,
-          currentHop: currentHop,
-          excludedHops: excludedHops,
-          allowDirect: allowDirect,
-          allowFollowMain: allowFollowMain,
-          onSelect: onSelect,
-          role: role,
-          sheetType: type,
-        );
-      },
-    );
   }
 
   void _showQuickImportDialog() {
@@ -1000,12 +972,10 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
           IconButton(
             icon: const Icon(Icons.add_circle_outline),
             tooltip: appLocalizations.addRoleCandidate(_roleLabel(role)),
-            onPressed: () => _showIntelligentHopPicker(
+            onPressed: () => showChainHopPicker(
+              context: context,
               title: appLocalizations.addRoleFallbackCandidate(_roleLabel(role)),
-              currentHop: '',
-              excludedHops: candidates.map((c) => c.nodeName).toSet(),
-              role: role,
-              allowDirect: false,
+              excludeNames: candidates.map((c) => c.nodeName).toSet(),
               onSelect: (name) => chainProxyManager.addFallbackCandidate(
                 nodeName: name,
                 role: role,
