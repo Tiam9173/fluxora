@@ -9,6 +9,7 @@ import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluxora/manager/warp_clean_ip_scanner.dart';
 
 class WarpView extends ConsumerStatefulWidget {
   final SheetType? type;
@@ -221,6 +222,139 @@ class _WarpViewState extends ConsumerState<WarpView> {
     );
   }
 
+
+  /// Probes a spread of Cloudflare endpoints and lets the user pick the fastest.
+  ///
+  /// Kept as a dialog rather than a background job: the numbers depend on the
+  /// network at this moment, so a result the user did not just watch being
+  /// measured would be misleading.
+  void _showCleanIpScanDialog(TextEditingController ctrl) {
+    var scanning = true;
+    var started = false;
+    var done = 0;
+    var total = 0;
+    List<CleanIpResult> results = const [];
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            if (scanning && !started) {
+              started = true;
+              final candidates = WarpCleanIpScanner.defaultCandidates();
+              total = candidates.length;
+              warpCleanIpScanner
+                  .scan(
+                    candidates,
+                    onProgress: (d, t) {
+                      if (!ctx.mounted) return;
+                      setDialogState(() {
+                        done = d;
+                        total = t;
+                      });
+                    },
+                  )
+                  .then((value) {
+                    if (!ctx.mounted) return;
+                    setDialogState(() {
+                      results = value;
+                      scanning = false;
+                    });
+                  });
+            }
+
+            final reachable = results.where((r) => r.ok).take(8).toList();
+
+            return AlertDialog(
+              title: const Text('优选 IP 扫描'),
+              content: SizedBox(
+                width: 320,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (scanning)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '正在探测 Cloudflare 节点… $done/$total',
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                          const SizedBox(height: 10),
+                          LinearProgressIndicator(
+                            value: total == 0 ? null : done / total,
+                          ),
+                        ],
+                      )
+                    else if (reachable.isEmpty)
+                      const Text(
+                        '没有探测到可用节点。请检查网络，或关闭代理后重试。',
+                        style: TextStyle(fontSize: 13),
+                      )
+                    else
+                      Flexible(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              for (final r in reachable)
+                                ListTile(
+                                  dense: true,
+                                  contentPadding: EdgeInsets.zero,
+                                  title: Text(
+                                    r.ip,
+                                    style: const TextStyle(fontSize: 13),
+                                  ),
+                                  trailing: Text(
+                                    '${r.latencyMs} ms',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: r.latencyMs! < 100
+                                          ? Colors.green
+                                          : r.latencyMs! < 200
+                                              ? Colors.orange
+                                              : Colors.red,
+                                    ),
+                                  ),
+                                  onTap: () {
+                                    ctrl.text = r.ip;
+                                    Navigator.of(ctx).pop();
+                                    context.showSnackBar('已选用 ${r.ip}');
+                                  },
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: scanning ? null : () => Navigator.of(ctx).pop(),
+                  child: const Text('关闭'),
+                ),
+                if (!scanning && reachable.isNotEmpty)
+                  FilledButton(
+                    onPressed: () {
+                      ctrl.text = reachable.first.ip;
+                      Navigator.of(ctx).pop();
+                      context.showSnackBar('已选用最快节点 ${reachable.first.ip}');
+                    },
+                    child: const Text('使用最快'),
+                  ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   void _showCleanIpDialog(WarpConfig config) {
     final ctrl = TextEditingController(text: config.cleanIp);
     showDialog(
@@ -279,6 +413,13 @@ class _WarpViewState extends ConsumerState<WarpView> {
                 context.showSnackBar('优选 IP 已重置为 auto');
               },
               child: const Text('重置'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                _showCleanIpScanDialog(ctrl);
+              },
+              child: const Text('一键优选'),
             ),
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
