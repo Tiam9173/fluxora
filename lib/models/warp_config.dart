@@ -454,6 +454,21 @@ class WarpConfig {
     proxiesList.removeWhere((p) => p is Map && p['name'] == proxyName);
     proxiesList.add(toMihomoProxyMap(effectiveHop));
 
+    // The hop is a hard reference: mihomo refuses to start the WG outbound when
+    // `dialer-proxy` names something that is not in the config, and the tunnel
+    // then fails with "proxyName[✈️ WARP跳板] not found" - which is what a user
+    // sees after turning WARP off. Guarantee the target exists rather than
+    // trusting every upstream branch to have created it.
+    final hopExists = groupList.any((g) => g is Map && g['name'] == effectiveHop) ||
+        proxiesList.any((p) => p is Map && p['name'] == effectiveHop);
+    if (!hopExists) {
+      groupList.insert(0, <String, dynamic>{
+        'name': effectiveHop,
+        'type': 'select',
+        'proxies': ['DIRECT'],
+      });
+    }
+
     // 4. Create dedicated WARP outbound policy group: 🛡️ WARP 出口
     final warpOutboundGroupName = dedicatedGroupName.trim().isNotEmpty
         ? dedicatedGroupName.trim()
