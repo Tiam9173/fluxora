@@ -119,6 +119,12 @@ class Vpn {
           await globalState.handleStop();
           break;
         case 'notificationSwitch':
+          // A card-only launch replaces the whole tree, so there is no dialog to
+          // show: flip the root instead.
+          if (await methodChannel.invokeMethod<bool>('isCardOnlyLaunch') == true) {
+            globalState.cardOnlyMode.value = true;
+            break;
+          }
           // The activity is launched before this arrives, but on a cold start
           // the navigator is not mounted yet. Retry briefly rather than drop
           // the request — a button that silently does nothing is the worst
@@ -148,9 +154,8 @@ class Vpn {
           // once. A reset that leaves a broken resolver in place is not a reset.
           commonPrint.log('notificationReset: restarting core');
           await globalState.appController.restartCore();
-          // Restarting takes well under a second, so from the shade nothing
-          // appears to happen. Drop and re-post the row so the reset is visible.
-          await methodChannel.invokeMethod('flashNotification');
+          // The notification flash already happened natively when the button
+          // was pressed, so it stays visible even if this path is slow.
           break;
         case 'notificationSpeedTest':
           final controller = globalState.appController;

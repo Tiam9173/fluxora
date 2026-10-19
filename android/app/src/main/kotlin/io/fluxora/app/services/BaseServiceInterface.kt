@@ -26,6 +26,7 @@ import android.content.ComponentName
 import android.content.Intent
 
 import android.graphics.BitmapFactory
+import kotlinx.coroutines.launch
 
 interface BaseServiceInterface {
     suspend fun start(options: VpnOptions): Int
@@ -140,6 +141,16 @@ fun BaseServiceInterface.handleNotificationAction(intent: Intent?): Boolean {
         FluxoraService.ACTION_RESET -> {
             forwardToApp("reset") {
                 GlobalState.getCurrentVPNPlugin()?.requestNotificationReset()
+            }
+            true
+        }
+        FluxoraService.ACTION_FLASH -> {
+            val vpnService = this as? FluxoraVpnService
+            if (vpnService == null) {
+                android.util.Log.w(TAG, "flash: not a VPN service")
+            } else {
+                kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main)
+                    .launch { vpnService.flashNotification() }
             }
             true
         }

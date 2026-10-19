@@ -44,6 +44,15 @@ class NotificationActionReceiver : BroadcastReceiver() {
             return
         }
 
+        // Flash first, natively: the restart itself is silent from the shade, and
+        // this must happen even when there is no Dart side to hand the reset to.
+        if (action == FluxoraService.ACTION_RESET) {
+            context?.startService(
+                Intent(context, FluxoraVpnService::class.java)
+                    .setAction(FluxoraService.ACTION_FLASH)
+            )
+        }
+
         val method = when (action) {
             FluxoraService.ACTION_RESET -> "notificationReset"
             FluxoraService.ACTION_SPEED_TEST -> "notificationSpeedTest"

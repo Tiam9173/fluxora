@@ -82,6 +82,13 @@ class MainActivity : FlutterActivity() {
         // yet) or too late (user already navigated). Dart pulls it when ready.
         GlobalState.pendingNotificationAction = "switch"
         GlobalState.cardOnlyLaunch = true
+        // When the app is already in the foreground there is no lifecycle
+        // change, so nothing would ever pull the pending action. Push it now;
+        // Dart ignores it if it has no navigator yet and pulls it on resume.
+        GlobalState.flutterEngine?.dartExecutor?.binaryMessenger?.let { messenger ->
+            io.flutter.plugin.common.MethodChannel(messenger, "vpn")
+                .invokeMethod("notificationSwitch", null)
+        }
     }
 
     override fun provideFlutterEngine(context: Context): FlutterEngine {

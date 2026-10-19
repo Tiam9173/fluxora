@@ -119,6 +119,11 @@ class FluxoraService : Service(), BaseServiceInterface {
         const val ACTION_SWITCH = "io.fluxora.app.action.SWITCH"
         const val ACTION_RESET = "io.fluxora.app.action.RESET"
         const val ACTION_SPEED_TEST = "io.fluxora.app.action.SPEED_TEST"
+
+        /// Drops and re-posts the notification so a reset is visible.
+        /// Handled natively: the feedback must not depend on Dart being
+        /// reachable.
+        const val ACTION_FLASH = "io.fluxora.app.action.FLASH"
     }
 
     override fun onDestroy() {
