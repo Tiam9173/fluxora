@@ -212,6 +212,30 @@ class FluxoraVpnService : VpnService(), BaseServiceInterface {
         stopSelf()
     }
 
+    /// Drops the notification and posts it again.
+    ///
+    /// A reset restarts the core in well under a second, which is invisible in
+    /// the shade — the row just keeps counting. Cancelling and re-posting makes
+    /// the work visible, which is the only feedback the user gets from outside
+    /// the app.
+    suspend fun flashNotification() {
+        val manager = getSystemService(android.app.NotificationManager::class.java)
+        runCatching { manager?.cancel(GlobalState.NOTIFICATION_ID) }
+        hasStartedForeground = false
+        lastNotificationText = null
+        cachedBuilder = null
+        kotlinx.coroutines.delay(700)
+        runCatching {
+            val notification = createFluxoraNotificationBuilder()
+                .setContentTitle(getString(R.string.core_connected))
+                .setContentText(getString(R.string.service_running))
+                .setStyle(null)
+                .build()
+            startForeground(notification, useSpecialType = !GlobalState.isSmartStopped)
+            hasStartedForeground = true
+        }.onFailure { Log.e(TAG, "flashNotification failed: ${it.message}") }
+    }
+
     @Volatile
     private var cachedBuilder: NotificationCompat.Builder? = null
 

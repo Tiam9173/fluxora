@@ -137,6 +137,9 @@ class Vpn {
           // once. A reset that leaves a broken resolver in place is not a reset.
           commonPrint.log('notificationReset: restarting core');
           await globalState.appController.restartCore();
+          // Restarting takes well under a second, so from the shade nothing
+          // appears to happen. Drop and re-post the row so the reset is visible.
+          await methodChannel.invokeMethod('flashNotification');
           break;
         case 'notificationSpeedTest':
           final controller = globalState.appController;

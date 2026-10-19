@@ -226,6 +226,12 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 result.success(true)
             }
 
+            "flashNotification" -> {
+                val service = fluxoraService as? FluxoraVpnService
+                scope.launch { service?.flashNotification() }
+                result.success(true)
+            }
+
             "consumePendingNotificationAction" -> {
                 val pending = GlobalState.pendingNotificationAction
                 GlobalState.pendingNotificationAction = null
