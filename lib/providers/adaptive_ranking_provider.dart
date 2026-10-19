@@ -15,6 +15,7 @@ import '../services/network_fingerprint_provider.dart';
 import '../providers/chain_proxy.dart';
 
 import '../services/chain_adaptive_ranking_cache_service.dart';
+import '../common/pinyin_sort.dart';
 
 typedef AdaptiveRankingParams = ({FallbackCandidateRole role, String sortMode});
 
@@ -184,7 +185,9 @@ final adaptiveRankingProvider =
         // fallback is visible instead of being mistaken for real latency sorting.
         viewModels.sort(ChainProxyNodeViewModel.compareByLatency);
       } else if (sortMode == 'name') {
-        viewModels.sort((a, b) => a.nodeName.compareTo(b.nodeName));
+        // A→Z by pinyin, not by code point: Chinese names in Unicode order look
+        // shuffled to anyone who reads them.
+        viewModels.sort((a, b) => compareByPinyin(a.nodeName, b.nodeName));
       } else {
         viewModels.sort((a, b) => a.compareTo(b));
       }
