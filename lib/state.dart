@@ -37,6 +37,12 @@ class GlobalState {
   bool isService = false;
   bool isExiting = false;
   bool isScreenOn = true;
+
+  /// 重启内核时是否保持 VPN 服务在线。
+  ///
+  /// `false`（默认）沿用 Bettbox 的行为：服务状态跟着内核走，通知栏会看到
+  /// 服务短暂断开。`true` 保持隧道不断，避免所有 App 在重启窗口内掉网。
+  bool restartCoreKeepsService = false;
   Timer? timer;
   Timer? groupsUpdateTimer;
   Config? _config;

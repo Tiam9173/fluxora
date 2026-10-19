@@ -9,6 +9,23 @@ import 'package:fluxora/views/proxies/notification_switch_card.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+/// 卡片只显示一次。
+///
+/// 冷启动时两条路径都会到达这里：native 主动 push 一次，Dart 初始化时又
+/// consume 一次 pending action。两边都弹，用户就会看到两张卡片。
+DateTime? _lastSwitchCardShownAt;
+
+bool _shouldShowSwitchCard() {
+  final now = DateTime.now();
+  final last = _lastSwitchCardShownAt;
+  if (last != null && now.difference(last) < const Duration(seconds: 2)) {
+    commonPrint.log('notificationSwitch: duplicate request ignored');
+    return false;
+  }
+  _lastSwitchCardShownAt = now;
+  return true;
+}
+
 abstract mixin class VpnListener {
   void onDnsChanged(String dns) {}
 
@@ -68,7 +85,7 @@ class Vpn {
         }
         // Re-read after the await: the navigator may have been replaced.
         final context = globalState.navigatorKey.currentContext;
-        if (action == 'switch' && context != null) {
+        if (action == 'switch' && context != null && _shouldShowSwitchCard()) {
           // ignore: use_build_context_synchronously
           showNotificationSwitchCard(context);
         }
@@ -138,7 +155,7 @@ class Vpn {
             commonPrint.log(
               'notificationSwitch: no navigator context, card not shown',
             );
-          } else {
+          } else if (_shouldShowSwitchCard()) {
             commonPrint.log('notificationSwitch: opening switch card');
             // The context was re-read after the retry loop, so it is current.
             // ignore: use_build_context_synchronously

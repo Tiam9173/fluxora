@@ -171,7 +171,10 @@ class AppController {
     _invalidateCoreReads();
 
     final wasRunning = _ref.read(runTimeProvider.notifier).isStart;
-    final keepVpnService = system.isAndroid;
+    // 两种重启语义，由设置决定：默认让服务状态跟随内核（Bettbox 行为），
+    // 打开设置后保持隧道在线，重启期间不断网。
+    final keepVpnService =
+        system.isAndroid && globalState.restartCoreKeepsService;
     if (wasRunning) {
       await globalState.handleStop(!keepVpnService);
       _ref.read(runTimeProvider.notifier).value = null;
