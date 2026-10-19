@@ -644,6 +644,16 @@ class AppController {
     return _ref.read(getRealTestUrlProvider(url));
   }
 
+  /// The port the core is actually listening on.
+  ///
+  /// The configured mixed port can be occupied at cold start, in which case the
+  /// session runs on a fallback port (see _resolveMixedPortFallback). Anything
+  /// that connects to 127.0.0.1 must use this, not the raw config value, or it
+  /// gets a connection refused.
+  int get effectiveMixedPort =>
+      _ref.read(mixedPortFallbackProvider) ??
+      _ref.read(patchClashConfigProvider).mixedPort;
+
   int getProxiesColumns() {
     return _ref.read(getProxiesColumnsProvider);
   }

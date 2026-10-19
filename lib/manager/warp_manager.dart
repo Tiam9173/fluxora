@@ -240,7 +240,11 @@ class WarpManager extends ChangeNotifier {
     try {
       final isCoreRunning = await clashCore.isInit;
       if (isCoreRunning) {
-        return globalState.config.patchClashConfig.mixedPort;
+        // The effective port, not the configured one: at cold start the
+        // configured port may be taken and the core moves to a fallback, and
+        // connecting to the configured port then fails with "connection
+        // refused" even though the tunnel is fine.
+        return globalState.appController.effectiveMixedPort;
       }
     } catch (_) {}
     return 0;
