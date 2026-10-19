@@ -232,6 +232,8 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 result.success(true)
             }
 
+            "isCardOnlyLaunch" -> result.success(GlobalState.cardOnlyLaunch)
+
             "consumePendingNotificationAction" -> {
                 val pending = GlobalState.pendingNotificationAction
                 GlobalState.pendingNotificationAction = null

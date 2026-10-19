@@ -6,6 +6,7 @@ import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/views/proxies/common.dart';
 import 'package:fluxora/widgets/widgets.dart';
+import 'package:flutter/services.dart';
 
 /// Compact "switch" card: the proxy page in miniature.
 ///
@@ -14,17 +15,20 @@ import 'package:fluxora/widgets/widgets.dart';
 /// reads, and the delay test is the same `delayTest` call, so a number shown
 /// here is the number shown there.
 void showNotificationSwitchCard(BuildContext context) {
-  globalState.showCommonDialog(child: const _SwitchCard());
+  globalState.showCommonDialog(child: const SwitchCard());
 }
 
-class _SwitchCard extends ConsumerStatefulWidget {
-  const _SwitchCard();
+class SwitchCard extends ConsumerStatefulWidget {
+  const SwitchCard({super.key, this.onFinished});
+
+  /// Called once a node has been picked, so the host can dismiss itself.
+  final VoidCallback? onFinished;
 
   @override
-  ConsumerState<_SwitchCard> createState() => _SwitchCardState();
+  ConsumerState<SwitchCard> createState() => _SwitchCardState();
 }
 
-class _SwitchCardState extends ConsumerState<_SwitchCard> {
+class _SwitchCardState extends ConsumerState<SwitchCard> {
   String? _groupName;
   bool _showProfiles = false;
   bool _testing = false;
@@ -260,6 +264,7 @@ class _SwitchCardState extends ConsumerState<_SwitchCard> {
                                   proxy.name,
                                 );
                                 setState(() {});
+                                widget.onFinished?.call();
                               }
                             : null,
                         child: Padding(
@@ -355,4 +360,45 @@ class _DelayChip extends StatelessWidget {
       ),
     );
   }
+}
+
+
+/// Hosts the card alone, over a transparent window.
+///
+/// Used when the notification's switch button launched the app: the launcher is
+/// what shows around the card, so nothing else may be drawn. Picking a node
+/// closes it; backing out closes the app, which is what ownbox does.
+class SwitchCardOnlyApp extends StatelessWidget {
+  const SwitchCardOnlyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(),
+      home: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: _dismiss,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: GestureDetector(
+                // Swallow taps on the card itself so only the outside closes it.
+                onTap: () {},
+                child: SwitchCard(onFinished: _finish),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Both exits close the activity: it only exists to host this card, so
+  /// finishing it returns the user to whatever was on screen before.
+  static void _finish() => SystemNavigator.pop();
+
+  static void _dismiss() => SystemNavigator.pop();
 }

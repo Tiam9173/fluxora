@@ -192,6 +192,10 @@ object GlobalState {
     @Volatile
     var pendingNotificationAction: String? = null
 
+    /// Set when the app was launched purely to host the switch card.
+    @Volatile
+    var cardOnlyLaunch: Boolean = false
+
     /// Notification button labels pushed from Dart so they follow the in-app
     /// language rather than the system one.
     @Volatile

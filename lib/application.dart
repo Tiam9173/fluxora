@@ -19,6 +19,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'controller.dart';
 import 'pages/pages.dart';
 import 'package:fluxora/plugins/vpn.dart';
+import 'package:fluxora/views/proxies/notification_switch_card.dart';
 
 /// P2.6-D: error boundary for fire-and-forget background tasks.
 ///
@@ -245,6 +246,18 @@ class ApplicationState extends ConsumerState<Application>
 
   @override
   Widget build(context) {
+    // Card-only mode replaces the whole tree: the window behind it is
+    // translucent, so the launcher has to be what shows around the card.
+    return ValueListenableBuilder<bool>(
+      valueListenable: globalState.cardOnlyMode,
+      builder: (_, cardOnly, _) {
+        if (cardOnly) return const SwitchCardOnlyApp();
+        return _buildFullApp(context);
+      },
+    );
+  }
+
+  Widget _buildFullApp(BuildContext context) {
     return _buildPlatformState(
       _buildState(
         Consumer(

@@ -39,7 +39,21 @@ class MainActivity : FlutterActivity() {
                 || packageManager.hasSystemFeature(PackageManager.FEATURE_TELEVISION)
     }
 
+    /// True when the notification's switch button launched us only to show the
+    /// card. The window then has to be translucent, so the launcher shows
+    /// around it instead of the app.
+    private fun isCardOnlyLaunch(intent: Intent?): Boolean =
+        intent?.getBooleanExtra(EXTRA_SHOW_SWITCH_CARD, false) == true
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        val cardOnly = isCardOnlyLaunch(intent)
+        if (cardOnly) {
+            GlobalState.cardOnlyLaunch = true
+            window.setFormat(android.graphics.PixelFormat.TRANSLUCENT)
+            window.setBackgroundDrawable(
+                android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT)
+            )
+        }
         val isEngineCached = FlutterEngineCache.getInstance().contains(MAIN_ENGINE_ID)
         if (isTvDevice(this) || isEngineCached) {
             setTheme(R.style.NormalTheme)
@@ -67,6 +81,7 @@ class MainActivity : FlutterActivity() {
         // still booting and a fixed delay either fires too early (no handler
         // yet) or too late (user already navigated). Dart pulls it when ready.
         GlobalState.pendingNotificationAction = "switch"
+        GlobalState.cardOnlyLaunch = true
     }
 
     override fun provideFlutterEngine(context: Context): FlutterEngine {

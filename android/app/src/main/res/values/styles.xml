@@ -13,4 +13,14 @@
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowIsTranslucent">true</item>
     </style>
+    <!-- Hosts the notification switch card over the desktop: the window is
+         transparent, so everything except the card shows the launcher. -->
+    <style name="TranslucentTheme" parent="@android:style/Theme.Translucent.NoTitleBar">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
+
 </resources>

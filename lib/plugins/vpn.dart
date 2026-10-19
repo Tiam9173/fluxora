@@ -46,6 +46,17 @@ class Vpn {
   }
 
   Future<void> consumePendingNotificationAction() async {
+    // Checked before the navigator: in card-only mode the root is replaced, so
+    // there is never a navigator to wait for.
+    try {
+      final cardOnly = await methodChannel.invokeMethod<bool>('isCardOnlyLaunch');
+      if (cardOnly == true) {
+        globalState.cardOnlyMode.value = true;
+        return;
+      }
+    } catch (e) {
+      commonPrint.log('isCardOnlyLaunch failed: $e');
+    }
     for (var attempt = 0; attempt < 20; attempt++) {
       if (globalState.navigatorKey.currentContext != null) {
         String? action;

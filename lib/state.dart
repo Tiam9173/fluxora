@@ -76,6 +76,11 @@ class GlobalState {
   final navigatorKey = GlobalKey<NavigatorState>();
   final backgroundMode = ValueNotifier<bool>(false);
   final animationEnabled = ValueNotifier<bool>(true);
+
+  /// True while the app is only hosting the notification switch card over the
+  /// desktop. The window is translucent in that mode, so anything the app drew
+  /// besides the card would float on the launcher.
+  final cardOnlyMode = ValueNotifier<bool>(false);
   AppController? _appController;
   bool? _isAndroidTV;
   int _taskLoopToken = 0;
