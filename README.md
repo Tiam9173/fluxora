@@ -154,9 +154,6 @@
 ### 支持哪些平台？
 Windows、macOS、Linux 与 Android。iOS 目前没有官方客户端，也未列入当前计划。
 
-### Fluxora 与上游项目是什么关系？
-Fluxora 是**独立产品**，不是任何上游项目的官方发布。它是 Bettbox 项目的独立延续版本，并在其之上完成了品牌、UI、设计体系与 Windows 组件的独立开发。完整来源与许可义务见 [NOTICE](NOTICE)。
-
 ### 是否开源？使用什么许可证？
 开源，采用 **GPL-3.0**。全文见 [LICENSE](LICENSE)。
 
@@ -199,6 +196,6 @@ Fluxora is distributed under the GNU General Public License v3.0. See [LICENSE](
 
 Fluxora includes and interoperates with open-source components, including the [Mihomo](https://github.com/MetaCubeX/mihomo) core and other Flutter, Go, Rust, and platform libraries. Their applicable copyright notices and licenses remain in their respective source directories and distribution metadata. See [NOTICE](NOTICE) and the relevant component license files.
 
-Fluxora is an independent continuation of the [Bettbox](https://github.com/appshubcc/Bettbox) project. Project lineage: **FlClash → Bettbox → Fluxora**. Fluxora's branding, UI, design system and Windows components were developed independently on that base, starting 2026-09-25. See [NOTICE](NOTICE) for the full attribution record.
+Fluxora is based on development of [Bettbox](https://github.com/appshubcc/Bettbox) project. Project lineage: **FlClash → Bettbox → Fluxora**. Fluxora's branding, UI, design system and Windows components were developed independently on that base, starting 2026-09-25. See [NOTICE](NOTICE) for the full attribution record.
 
 Fluxora is an independent product identity. This repository does not present itself as an official product of any upstream project.
