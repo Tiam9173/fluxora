@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluxora/manager/warp_clean_ip_scanner.dart';
+import 'package:fluxora/views/proxies/chain_hop_picker.dart';
 
 class WarpView extends ConsumerStatefulWidget {
   final SheetType? type;
@@ -85,6 +86,24 @@ class _WarpViewState extends ConsumerState<WarpView> {
           body: ListView(
             padding: const EdgeInsets.symmetric(vertical: 8),
             children: [
+              // 卡片式浏览：和链式跳板用的是同一套界面，订阅→分组→节点。
+              // 保留下面那些「不是节点」的选项（跟随/DIRECT/策略组），
+              // 因为卡片只能选节点。
+              ListTile(
+                leading: const Icon(Icons.grid_view_rounded, color: Colors.teal),
+                title: const Text('从节点列表选择…'),
+                subtitle: const Text('与切换卡片相同的界面，可看到实时延迟'),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  showChainHopPicker(
+                    context: context,
+                    title: '选择 WARP 前置跳板',
+                    excludeNames: {config.proxyName},
+                    onSelect: onSelect,
+                  );
+                },
+              ),
+              const Divider(height: 1),
               ListTile(
                 leading: const Icon(Icons.auto_mode, color: Colors.blue),
                 title: const Text('⚡ 跟随后台主选择 (推荐)'),
