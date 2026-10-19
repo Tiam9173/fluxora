@@ -1039,19 +1039,11 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
     List<LandingProxy> landingProxies,
   ) {
     final isReady = config.enable && landingProxies.any((p) => p.enable);
-    final hopLabel = config.defaultDialerProxy.isEmpty
-        ? appLocalizations.followMainSelector
-        : config.defaultDialerProxy;
-
     // B3: three hops insert a relay between the dialer and the exit. The exit
     // node is `ChainProxyConfig.effectiveExitNode` — hop3Node in three-hop mode,
     // hop2Node / the active landing proxy in two-hop mode. That is the node the
     // probe actually measured, so label and probed status agree.
     final isThreeHop = config.hopMode == ChainHopMode.threeHop;
-    final hasRelay = config.hop2Node.trim().isNotEmpty;
-    final relayLabel = hasRelay
-        ? config.hop2Node
-        : appLocalizations.chainHopNotSelected;
     final exitName = config.effectiveExitNode.trim();
     final exitLabel = exitName.isEmpty
         ? appLocalizations.chainHopNotSelected
@@ -1076,7 +1068,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
       config.effectiveHop1,
       1,
     );
-    final TopologySegmentState relayState = probedState(config.hop2Node, 2);
+
     final TopologySegmentState exitState = probedState(
       exitName,
       isThreeHop ? 3 : 2,
@@ -1088,6 +1080,16 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
     // carrying it is, and the target is reachable exactly when the landing hop
     // is. A confirmed hop failure therefore shows up on the matching edge too,
     // instead of the card contradicting itself.
+    /// Per-hop state for the topology row. Hop 0 is the probed entry; the rest
+    /// are looked up by name so a chain with several front hops renders them
+    /// all instead of collapsing them into one node.
+    TopologySegmentState hopStateAt(int index) {
+      if (index <= 0) return entryState;
+      final hops = config.effectiveFrontHops;
+      if (index >= hops.length) return exitState;
+      return probedState(hops[index], index + 1);
+    }
+
     final TopologySegmentState clientState = _edgeStateFrom(entryState);
     final TopologySegmentState targetState = _edgeStateFrom(exitState);
 
@@ -1095,16 +1097,17 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
     // end-to-end availability proof — the probe measures each hop on its own.
     final List<({String label, String name, TopologySegmentState state})>
     probedSegments = [
-      (
-        label: appLocalizations.topologyHop,
-        name: config.effectiveHop1,
-        state: entryState,
-      ),
-      if (isThreeHop)
+      // 每一跳都单独列出，中转跳不再隐形。第一跳沿用原标签，后续按顺序叫
+      // 中转节点 1、2、3，与上方设置里的命名保持一致。
+      for (var i = 0; i < config.effectiveFrontHops.length; i++)
         (
-          label: appLocalizations.topologyRelay,
-          name: config.hop2Node,
-          state: relayState,
+          label: i == 0
+              ? appLocalizations.topologyHop
+              : '中转节点 $i',
+          name: config.effectiveFrontHops[i],
+          state: i == 0
+              ? entryState
+              : probedState(config.effectiveFrontHops[i], i + 1),
         ),
       (
         label: appLocalizations.topologyLanding,
@@ -1253,47 +1256,40 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                       subtitle: '设备端',
                       state: clientState,
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: FluxoraFlowIndicator(
-                        state: topologySegmentFlow(clientState, entryState),
-                        width: 36,
-                        height: 12,
-                      ),
-                    ),
-                    _buildTopologyNode(
-                      icon: Icons.alt_route_rounded,
-                      title: appLocalizations.topologyHop,
-                      subtitle: hopLabel,
-                      state: entryState,
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: FluxoraFlowIndicator(
-                        state: topologySegmentFlow(
-                          entryState,
-                          isThreeHop ? relayState : exitState,
-                        ),
-                        width: 36,
-                        height: 12,
-                      ),
-                    ),
-                    if (isThreeHop) ...[
-                      _buildTopologyNode(
-                        icon: Icons.swap_horiz_rounded,
-                        title: appLocalizations.topologyRelay,
-                        subtitle: relayLabel,
-                        state: relayState,
-                      ),
+                    for (var i = 0; i < config.effectiveFrontHops.length; i++) ...[
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 4),
                         child: FluxoraFlowIndicator(
-                          state: topologySegmentFlow(relayState, exitState),
+                          state: topologySegmentFlow(
+                            i == 0 ? clientState : hopStateAt(i - 1),
+                            hopStateAt(i),
+                          ),
                           width: 36,
                           height: 12,
                         ),
                       ),
+                      _buildTopologyNode(
+                        icon: i == 0
+                            ? Icons.alt_route_rounded
+                            : Icons.swap_horiz_rounded,
+                        title: i == 0
+                            ? appLocalizations.topologyHop
+                            : '中转节点 $i',
+                        subtitle: config.effectiveFrontHops[i],
+                        state: hopStateAt(i),
+                      ),
                     ],
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: FluxoraFlowIndicator(
+                        state: topologySegmentFlow(
+                          hopStateAt(config.effectiveFrontHops.length - 1),
+                          exitState,
+                        ),
+                        width: 36,
+                        height: 12,
+                      ),
+                    ),
                     _buildTopologyNode(
                       icon: Icons.flight_land_rounded,
                       title: appLocalizations.topologyLanding,

@@ -541,50 +541,55 @@ class ChainProbeService implements IChainProbeService {
       return ChainProbeReport.cancelled(mode: mode, timestamp: now);
     }
 
-    // Initialize hops in checking state
+    // Hops come from the configured front chain plus the exit, so a chain with
+    // two front hops renders three nodes instead of silently hiding the middle
+    // one. Only the entry can be measured on its own - traffic past it is inside
+    // the tunnel - so the rest are reported as unknown rather than invented.
+    // A legacy three-hop config still has its relay in `hop2Node` and its exit
+    // in `hop3Node`; the front-hop list is empty for those, so the relay has to
+    // come back from the old field or the middle hop disappears from the report.
+    final bool legacyThreeHop =
+        mode == ChainHopMode.threeHop && config.frontHops.isEmpty;
+    final frontChain = legacyThreeHop
+        ? <String>[hop1, hop2]
+        : config.effectiveFrontHops;
+    final String exitNode = legacyThreeHop ? hop3 : hop2;
     final hops = <HopProbeState>[
+      for (var i = 0; i < frontChain.length; i++)
+        HopProbeState(
+          hopIndex: i + 1,
+          role: i == 0 ? HopRole.hop1Entry : HopRole.hop2Relay,
+          nodeName: frontChain[i],
+          nodeAddress: frontChain[i],
+          status: i == 0 ? HopProbeStatus.checking : HopProbeStatus.unknown,
+          healthStatus: i == 0
+              ? ChainHealthStatus.checking
+              : ChainHealthStatus.unknown,
+          ipStatus: IpObservationStatus.unavailable,
+          ipStatusReason: i == 0
+              ? '第一跳作为前置代理，后续流量直接经由加密隧道发往中转/落地节点，出口流量未在此处解密观测'
+              : '中转跳的流量全程在隧道内，无法单独观测其出口 IP',
+          diagnosticTip: i == 0
+              ? '正在检测入口节点连通性...'
+              : '等待前置跳检测完成...',
+          testedAt: now,
+        ),
       HopProbeState(
-        hopIndex: 1,
-        role: HopRole.hop1Entry,
-        nodeName: hop1,
-        nodeAddress: hop1,
-        status: HopProbeStatus.checking,
-        healthStatus: ChainHealthStatus.checking,
-        ipStatus: IpObservationStatus.unavailable,
-        ipStatusReason: '第一跳作为前置代理，后续流量直接经由加密隧道发往中转/落地节点，出口流量未在此处解密观测',
-        diagnosticTip: '正在检测入口节点连通性...',
-        testedAt: now,
-      ),
-      HopProbeState(
-        hopIndex: 2,
-        role: mode == ChainHopMode.threeHop
-            ? HopRole.hop2Relay
-            : HopRole.hop2Exit,
-        nodeName: hop2,
-        nodeAddress: hop2,
+        hopIndex: frontChain.length + 1,
+        role: HopRole.hop2Exit,
+        nodeName: exitNode,
+        nodeAddress: exitNode,
         status: HopProbeStatus.unknown,
         healthStatus: ChainHealthStatus.unknown,
         ipStatus: IpObservationStatus.unavailable,
-        ipStatusReason: mode == ChainHopMode.threeHop
-            ? '第二跳作为中转隧道，流量继续流向第三跳，无法直接提取独立出口 IP'
-            : '第二跳作为最终出口，请参考下方最终全链路出口观测结果',
+        ipStatusReason: '最后一跳作为最终出口，请参考下方最终全链路出口观测结果',
         diagnosticTip: '等待前置跳检测完成...',
         testedAt: now,
       ),
-      if (mode == ChainHopMode.threeHop)
-        HopProbeState(
-          hopIndex: 3,
-          role: HopRole.hop3Exit,
-          nodeName: hop3,
-          nodeAddress: hop3,
-          status: HopProbeStatus.unknown,
-          healthStatus: ChainHealthStatus.unknown,
-          ipStatus: IpObservationStatus.unavailable,
-          ipStatusReason: '第三跳最终出口 IP 请参考下方全链路出口观测结果',
-          diagnosticTip: '等待前置跳检测完成...',
-          testedAt: now,
-        ),
     ];
+
+    // Index of the exit hop; everything after the front chain is the exit.
+    final int exitIndex = frontChain.length;
 
     onProgress?.call(
       ChainProbeReport(
@@ -701,8 +706,37 @@ class ChainProbeService implements IChainProbeService {
       return failReport;
     }
 
-    // 3. Probe Hop 2 (Hop 1 is healthy)
-    hops[1] = hops[1].copyWith(
+    // 2b. Probe every intermediate hop on its own.
+    //
+    // These used to be reported as unknown with a note that the traffic is
+    // inside the tunnel, but the chain reaches each hop through the previous
+    // one, so a delay test against the hop's name is a real measurement of that
+    // segment. Leaving them blank made a multi-hop chain look half-broken.
+    for (var i = 1; i < exitIndex; i++) {
+      if (cancelToken?.isCancelled == true) {
+        return ChainProbeReport.cancelled(mode: mode, timestamp: DateTime.now());
+      }
+      final hopDelay = await _testDelay(
+        frontChain[i],
+        effectiveTestUrl,
+        timeout: timeout,
+        cancelToken: cancelToken,
+      );
+      final bool ok = hopDelay != null && hopDelay > 0;
+      hops[i] = hops[i].copyWith(
+        status: ok
+            ? HopProbeStatus.healthy
+            : (hopDelay == null ? HopProbeStatus.timeout : HopProbeStatus.failed),
+        healthStatus: ok ? ChainHealthStatus.healthy : ChainHealthStatus.failed,
+        latencyMs: ok ? hopDelay : null,
+        diagnosticTip: ok ? '中转节点连通顺畅' : '请检查该中转节点状态',
+        testedAt: DateTime.now(),
+      );
+      onHopUpdate?.call(hops[i]);
+    }
+
+    // 3. Probe the exit (Hop 1 is healthy)
+    hops[exitIndex] = hops[exitIndex].copyWith(
       status: HopProbeStatus.checking,
       healthStatus: ChainHealthStatus.checking,
       diagnosticTip: mode == ChainHopMode.threeHop
@@ -710,7 +744,7 @@ class ChainProbeService implements IChainProbeService {
           : '正在检测落地出口连通性...',
       testedAt: DateTime.now(),
     );
-    onHopUpdate?.call(hops[1]);
+    onHopUpdate?.call(hops[exitIndex]);
     onProgress?.call(
       ChainProbeReport(
         mode: mode,
@@ -726,7 +760,7 @@ class ChainProbeService implements IChainProbeService {
     }
 
     final hop2Delay = await _testDelay(
-      hop2,
+      exitNode,
       effectiveTestUrl,
       timeout: timeout,
       cancelToken: cancelToken,
@@ -745,7 +779,7 @@ class ChainProbeService implements IChainProbeService {
         ? ChainHealthStatus.healthy
         : ChainHealthStatus.failed;
 
-    hops[1] = hops[1].copyWith(
+    hops[exitIndex] = hops[exitIndex].copyWith(
       status: hop2Status,
       healthStatus: hop2HealthStatus,
       latencyMs: hop2Delay,
@@ -774,7 +808,7 @@ class ChainProbeService implements IChainProbeService {
                 : '建议更换落地出口节点或核查账号凭据'),
       testedAt: DateTime.now(),
     );
-    onHopUpdate?.call(hops[1]);
+    onHopUpdate?.call(hops[exitIndex]);
 
     if (!hop2Healthy) {
       final failureReason = mode == ChainHopMode.threeHop
@@ -786,7 +820,7 @@ class ChainProbeService implements IChainProbeService {
                 : '第一跳就绪，但第二跳落地节点 [$hop2] 握手失败');
 
       if (mode == ChainHopMode.threeHop && hops.length > 2) {
-        hops[2] = hops[2].copyWith(
+        hops[exitIndex + 1] = hops[exitIndex + 1].copyWith(
           status: HopProbeStatus.failed,
           healthStatus: ChainHealthStatus.failed,
           errorMessage: '上游中转跳中断导致此跳无法连接',
@@ -794,7 +828,7 @@ class ChainProbeService implements IChainProbeService {
           diagnosticTip: '需先修复第二跳中转网络连通性',
           testedAt: DateTime.now(),
         );
-        onHopUpdate?.call(hops[2]);
+        onHopUpdate?.call(hops[exitIndex + 1]);
       }
 
       final finalExit = HopProbeState(
@@ -859,14 +893,14 @@ class ChainProbeService implements IChainProbeService {
     int? hop3Delay;
     HopProbeStatus hop3Status = HopProbeStatus.unknown;
 
-    if (mode == ChainHopMode.threeHop) {
-      hops[2] = hops[2].copyWith(
+    if (mode == ChainHopMode.threeHop && hops.length > exitIndex + 1) {
+      hops[exitIndex + 1] = hops[exitIndex + 1].copyWith(
         status: HopProbeStatus.checking,
         healthStatus: ChainHealthStatus.checking,
         diagnosticTip: '正在检测落地出口节点连通性...',
         testedAt: DateTime.now(),
       );
-      onHopUpdate?.call(hops[2]);
+      onHopUpdate?.call(hops[exitIndex + 1]);
       onProgress?.call(
         ChainProbeReport(
           mode: mode,
@@ -907,7 +941,7 @@ class ChainProbeService implements IChainProbeService {
           ? ChainHealthStatus.healthy
           : ChainHealthStatus.failed;
 
-      hops[2] = hops[2].copyWith(
+      hops[exitIndex + 1] = hops[exitIndex + 1].copyWith(
         status: hop3Status,
         healthStatus: hop3HealthStatus,
         latencyMs: hop3Delay,
@@ -924,7 +958,7 @@ class ChainProbeService implements IChainProbeService {
         diagnosticTip: hop3Healthy ? '落地出口连通顺畅' : '请核实落地住宅节点的有效性与账号凭据',
         testedAt: DateTime.now(),
       );
-      onHopUpdate?.call(hops[2]);
+      onHopUpdate?.call(hops[exitIndex + 1]);
 
       if (!hop3Healthy) {
         final failureReason = hop3Timeout
@@ -979,10 +1013,10 @@ class ChainProbeService implements IChainProbeService {
     }
 
     // 5. Final Exit Detection & Public IP Probe
-    final lastHopStatus = mode == ChainHopMode.threeHop
-        ? hop3Status
-        : hop2Status;
-    final lastHopDelay = mode == ChainHopMode.threeHop ? hop3Delay : hop2Delay;
+    // The exit probe targets `exitNode`, which is hop3 in a legacy three-hop
+    // config and hop2 otherwise, so one source covers both shapes.
+    final lastHopStatus = hop2Status;
+    final lastHopDelay = hop2Delay;
     final bool isChainFullyConnected = lastHopStatus == HopProbeStatus.healthy;
 
     PublicIpInfo? exitIpInfo;
