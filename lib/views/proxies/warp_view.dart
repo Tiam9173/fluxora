@@ -275,6 +275,14 @@ class _WarpViewState extends ConsumerState<WarpView> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 10),
+                      child: Text(
+                        '提示：开启代理时测得的延迟包含隧道开销。'
+                        '想拿到最干净的数值，可先关闭代理再扫描。',
+                        style: TextStyle(fontSize: 11, color: Colors.grey),
+                      ),
+                    ),
                     if (scanning)
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
