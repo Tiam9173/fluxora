@@ -373,6 +373,8 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
   Widget build(BuildContext context) {
     final manager = ref.watch(chainProxyConfigProvider);
     final config = manager.config;
+    // 前置跳板链（至少一跳）。出口不在此列，它由落地节点决定。
+    final frontHops = config.effectiveFrontHops;
     final landingProxies = config.landingProxies;
     final filteredProxies = _filterProxies(landingProxies);
 
@@ -460,40 +462,69 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
             type: CommonCardType.filled,
             child: Column(
               children: [
-                // RC.10-A: the hop-count selector is gone — the chain is
-                // two-hop only (dialer -> landing), matching the original UI.
-                ListItem(
-                  leading: const Icon(Icons.hub_outlined),
-                  title: Text(appLocalizations.defaultDialerProxy),
-                  subtitle: Text(
-                    config.defaultDialerProxy.isEmpty
-                        ? appLocalizations.followMainSelector
-                        : config.defaultDialerProxy,
-                    style: TextStyle(
-                      color: context.colorScheme.primary,
-                      fontWeight: FontWeight.w500,
+                // 前置跳板可以有多跳，每跳单独选节点。出口不在这里：它由
+                // 落地节点决定，所以增删中间跳不会改变最终出口。
+                for (var i = 0; i < frontHops.length; i++)
+                  ListItem(
+                    leading: Icon(
+                      i == 0 ? Icons.hub_outlined : Icons.swap_horiz_rounded,
                     ),
-                  ),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    _showIntelligentHopPicker(
-                        title: appLocalizations.defaultDialerProxy,
-                        currentHop: config.defaultDialerProxy,
-                        excludedHops: const {},
+                    title: Text('第 ${i + 1} 跳'),
+                    subtitle: Text(
+                      frontHops[i].isEmpty
+                          ? appLocalizations.followMainSelector
+                          : frontHops[i],
+                      style: TextStyle(
+                        color: context.colorScheme.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // 只剩一跳时不允许删除：空链路等于把代理页的选择直接
+                        // 接给落地节点，那是一个不同的配置，不该由误触产生。
+                        if (frontHops.length > 1)
+                          IconButton(
+                            icon: const Icon(Icons.remove_circle_outline),
+                            tooltip: '删除这一跳',
+                            onPressed: () =>
+                                chainProxyManager.removeFrontHopAt(i),
+                          ),
+                        const Icon(Icons.chevron_right),
+                      ],
+                    ),
+                    onTap: () {
+                      _showIntelligentHopPicker(
+                        title: '第 ${i + 1} 跳',
+                        currentHop: frontHops[i],
+                        excludedHops: frontHops
+                            .where((h) => h != frontHops[i])
+                            .toSet(),
                         role: FallbackCandidateRole.entry,
                         allowDirect: true,
-                        allowFollowMain: true,
-                        // RC.10-A.3 — `effectiveHop1` prefers `hop1Node`, so
-                        // updating only `defaultDialerProxy` left the probe (and
-                        // the topology failure label) pointing at the previous
-                        // entry node. `setHop1Node` writes both fields, keeping
-                        // node / '' (follow main) / DIRECT semantics intact.
-                        onSelect: (hop) => chainProxyManager.setHop1Node(hop),
+                        allowFollowMain: i == 0,
+                        onSelect: (hop) =>
+                            chainProxyManager.setFrontHopAt(i, hop),
                       );
+                    },
+                  ),
+                ListItem(
+                  leading: const Icon(Icons.add_circle_outline),
+                  title: const Text('添加一跳'),
+                  subtitle: const Text('在最后一跳之后、落地出口之前插入'),
+                  onTap: () {
+                    _showIntelligentHopPicker(
+                      title: '添加一跳',
+                      currentHop: '',
+                      excludedHops: frontHops.toSet(),
+                      role: FallbackCandidateRole.entry,
+                      allowDirect: true,
+                      allowFollowMain: false,
+                      onSelect: (hop) => chainProxyManager.addFrontHop(hop),
+                    );
                   },
                 ),
-                // RC.10-A: the three-hop relay/exit rows are removed with the
-                // hop-count selector; the landing-proxy chain manages the exit.
                 const Divider(height: 1, indent: 16, endIndent: 16),
                 ListItem(
                   leading: const Icon(Icons.layers_outlined),

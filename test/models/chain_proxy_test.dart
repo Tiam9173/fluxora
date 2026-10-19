@@ -161,6 +161,82 @@ http://user2:pass2@198.51.100.2:8080#HTTP-Node
     });
   });
 
+  group('ChainProxyConfig 多跳前置跳板', () {
+    test('逐跳串联，最终出口保持落地节点不变', () {
+      final config = ChainProxyConfig(
+        enable: true,
+        hop1Node: '🇭🇰 香港 01',
+        frontHops: const ['🇭🇰 香港 01', '🇯🇵 日本 02'],
+        hop2Node: '美国住宅01',
+        landingProxies: [
+          LandingProxy.create(
+            name: '美国住宅01',
+            server: '100.1.1.1',
+            port: 8000,
+            enable: true,
+          ),
+        ],
+      );
+
+      final rawConfig = <String, dynamic>{
+        'proxies': [
+          {'name': '🇭🇰 香港 01', 'type': 'ss', 'server': '1.1.1.1', 'port': 8388},
+          {'name': '🇯🇵 日本 02', 'type': 'ss', 'server': '2.2.2.2', 'port': 8388},
+        ],
+        'proxy-groups': [
+          {
+            'name': '🔰 节点选择',
+            'type': 'select',
+            'proxies': ['🇭🇰 香港 01', '🇯🇵 日本 02', 'DIRECT'],
+          },
+        ],
+      };
+
+      config.applyToClashConfig(rawConfig);
+
+      final proxies = rawConfig['proxies'] as List;
+      final secondHop =
+          proxies.firstWhere((p) => p['name'] == '🔗第2跳·🇯🇵 日本 02');
+      expect(secondHop['dialer-proxy'], '🇭🇰 香港 01');
+
+      // 出口始终接在最后一跳之后，节点本身没有被替换。
+      final exit = proxies.firstWhere((p) => p['name'] == '美国住宅01');
+      expect(exit['dialer-proxy'], '🔗第2跳·🇯🇵 日本 02');
+    });
+
+    test('未配置 frontHops 时行为与单跳完全一致', () {
+      final config = ChainProxyConfig(
+        enable: true,
+        hop1Node: '🇭🇰 香港 01',
+        hop2Node: '美国住宅01',
+        landingProxies: [
+          LandingProxy.create(
+            name: '美国住宅01',
+            server: '100.1.1.1',
+            port: 8000,
+            enable: true,
+          ),
+        ],
+      );
+
+      final rawConfig = <String, dynamic>{
+        'proxies': [
+          {'name': '🇭🇰 香港 01', 'type': 'ss', 'server': '1.1.1.1', 'port': 8388},
+        ],
+        'proxy-groups': [
+          {'name': '🔰 节点选择', 'type': 'select', 'proxies': ['🇭🇰 香港 01']},
+        ],
+      };
+
+      config.applyToClashConfig(rawConfig);
+
+      final proxies = rawConfig['proxies'] as List;
+      expect(proxies.any((p) => p['name'] == '🔗第2跳·🇭🇰 香港 01'), isFalse);
+      final exit = proxies.firstWhere((p) => p['name'] == '美国住宅01');
+      expect(exit['dialer-proxy'], '🇭🇰 香港 01');
+    });
+  });
+
   group('ChainProxyConfig.applyToClashConfig 核心注入逻辑测试', () {
     test('成功注入落地节点，生成无回环跳板池，并加入专属策略组与主策略组', () {
       final config = ChainProxyConfig(

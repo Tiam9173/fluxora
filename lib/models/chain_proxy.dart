@@ -516,6 +516,9 @@ class ChainProxyConfig {
   final List<LandingProxy> landingProxies;
   final ChainHopMode hopMode;
   final String hop1Node;
+  /// 前置跳板链，第一项即入口。默认空 = 只用 [hop1Node] 一跳，
+  /// 与旧配置完全等价；出口始终由落地节点决定，不受跳数影响。
+  final List<String> frontHops;
   final String hop2Node;
   final String hop3Node;
 
@@ -531,10 +534,25 @@ class ChainProxyConfig {
     this.landingProxies = const [],
     this.hopMode = ChainHopMode.twoHop,
     this.hop1Node = '',
+    this.frontHops = const [],
     this.hop2Node = '',
     this.hop3Node = '',
     this.autoFailover = false,
   });
+
+  /// The front-hop chain, first entry = entry node.
+  ///
+  /// Falls back to the legacy single hop so an existing config keeps
+  /// behaving exactly as before.
+  List<String> get effectiveFrontHops {
+    final explicit = frontHops
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+    if (explicit.isNotEmpty) return explicit;
+    final single = effectiveHop1;
+    return single.isEmpty ? const [] : [single];
+  }
 
   /// Effective entry proxy name (Hop 1)
   String get effectiveHop1 =>
@@ -586,6 +604,7 @@ class ChainProxyConfig {
     List<LandingProxy>? landingProxies,
     ChainHopMode? hopMode,
     String? hop1Node,
+    List<String>? frontHops,
     String? hop2Node,
     String? hop3Node,
     bool? autoFailover,
@@ -601,6 +620,7 @@ class ChainProxyConfig {
       landingProxies: landingProxies ?? this.landingProxies,
       hopMode: hopMode ?? this.hopMode,
       hop1Node: hop1Node ?? this.hop1Node,
+      frontHops: frontHops ?? this.frontHops,
       hop2Node: hop2Node ?? this.hop2Node,
       hop3Node: hop3Node ?? this.hop3Node,
       autoFailover: autoFailover ?? this.autoFailover,
@@ -619,6 +639,7 @@ class ChainProxyConfig {
       'landingProxies': landingProxies.map((e) => e.toJson()).toList(),
       'hopMode': hopMode.name,
       'hop1Node': hop1Node,
+      'frontHops': frontHops,
       'hop2Node': hop2Node,
       'hop3Node': hop3Node,
       'autoFailover': autoFailover,
@@ -649,6 +670,12 @@ class ChainProxyConfig {
           : const [],
       hopMode: ChainHopMode.fromString(json['hopMode']?.toString()),
       hop1Node: h1,
+      frontHops: (json['frontHops'] is List)
+          ? (json['frontHops'] as List)
+                .map((e) => e.toString().trim())
+                .where((e) => e.isNotEmpty)
+                .toList()
+          : const [],
       hop2Node: json['hop2Node']?.toString() ?? '',
       hop3Node: json['hop3Node']?.toString() ?? '',
       autoFailover: json['autoFailover'] == true,
@@ -656,6 +683,11 @@ class ChainProxyConfig {
   }
 
   static String transitShadowName(String nodeName) => '🔗中转·$nodeName';
+
+  /// Shadow name for an added front hop. Numbered so the same node can
+  /// appear twice in one chain without the two copies colliding.
+  static String frontHopShadowName(int index, String nodeName) =>
+      '🔗第${index + 1}跳·$nodeName';
   static String exitShadowName(String nodeName) => '🔗出口·$nodeName';
   static bool isShadowNodeName(String name) =>
       name.startsWith('🔗中转·') || name.startsWith('🔗出口·');
@@ -913,6 +945,27 @@ class ChainProxyConfig {
         ? hop1
         : dedicatedHopGroupName;
 
+    // 前置跳板链：第一项就是 fallbackHop（入口），后续每跳 clone 成 shadow
+    // 并串到上一跳。出口节点始终连 `chainTerminal`，所以增加或删除中间跳
+    // 不会改变最终出口 —— 落地住宅节点保持原样。
+    var chainTerminal = fallbackHop;
+    final frontChain = effectiveFrontHops;
+    for (var i = 1; i < frontChain.length; i++) {
+      final hopName = frontChain[i];
+      final base = proxyConfigMap[hopName];
+      if (base == null) continue;
+      final shadowName = frontHopShadowName(i, hopName);
+      final clone = Map<String, dynamic>.from(base);
+      clone['name'] = shadowName;
+      if (chainTerminal != 'DIRECT') {
+        clone['dialer-proxy'] = chainTerminal;
+      } else {
+        clone.remove('dialer-proxy');
+      }
+      proxiesList.add(clone);
+      chainTerminal = shadowName;
+    }
+
     void ensureDedicatedHopGroup() {
       final existingHopIndex = groupList.indexWhere(
         (g) => g is Map && g['name'] == dedicatedHopGroupName,
@@ -994,8 +1047,8 @@ class ChainProxyConfig {
         final shadowTransitName = transitShadowName(h2Name);
         final shadowTransit = Map<String, dynamic>.from(h2Config);
         shadowTransit['name'] = shadowTransitName;
-        if (fallbackHop != 'DIRECT') {
-          shadowTransit['dialer-proxy'] = fallbackHop;
+        if (chainTerminal != 'DIRECT') {
+          shadowTransit['dialer-proxy'] = chainTerminal;
         } else {
           shadowTransit.remove('dialer-proxy');
         }
@@ -1031,7 +1084,7 @@ class ChainProxyConfig {
           .where((p) => p.name == h2Name)
           .firstOrNull;
       if (landingMatch != null) {
-        final proxyMap = landingMatch.toMihomoProxyMap(fallbackHop);
+        final proxyMap = landingMatch.toMihomoProxyMap(chainTerminal);
         proxiesList.add(proxyMap);
         injectedProxyNames.add(landingMatch.name);
       } else {
@@ -1040,8 +1093,8 @@ class ChainProxyConfig {
           final shadowExitName = exitShadowName(h2Name);
           final shadowExit = Map<String, dynamic>.from(h2Config);
           shadowExit['name'] = shadowExitName;
-          if (fallbackHop != 'DIRECT') {
-            shadowExit['dialer-proxy'] = fallbackHop;
+          if (chainTerminal != 'DIRECT') {
+            shadowExit['dialer-proxy'] = chainTerminal;
           } else {
             shadowExit.remove('dialer-proxy');
           }
@@ -1058,11 +1111,11 @@ class ChainProxyConfig {
           (landing.dialerProxy != null &&
               landing.dialerProxy!.trim().isNotEmpty)
           ? landing.dialerProxy!.trim()
-          : fallbackHop;
+          : chainTerminal;
       if (effectiveHop != 'DIRECT' &&
           effectiveHop != dedicatedHopGroupName &&
           !airportProxyNames.contains(effectiveHop)) {
-        effectiveHop = fallbackHop;
+        effectiveHop = chainTerminal;
       }
 
       if (effectiveHop == dedicatedHopGroupName) {

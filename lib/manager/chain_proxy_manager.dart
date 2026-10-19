@@ -1184,6 +1184,43 @@ class ChainProxyManager extends ChangeNotifier {
         ));
   }
 
+  /// Replaces the front-hop chain wholesale.
+  ///
+  /// The chain is stored as a list so adding or removing a hop cannot leave the
+  /// old single-hop fields disagreeing with it; `hop1Node` is kept in sync
+  /// because the probe and the topology labels still read it.
+  Future<void> setFrontHops(List<String> hops) async {
+    final cleaned = hops
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+    await updateConfig((c) => c.copyWith(
+          frontHops: cleaned,
+          hop1Node: cleaned.isNotEmpty ? cleaned.first : '',
+          defaultDialerProxy: cleaned.isNotEmpty ? cleaned.first : '',
+        ));
+  }
+
+  Future<void> addFrontHop(String name) async {
+    final current = List<String>.from(_config.effectiveFrontHops);
+    current.add(name);
+    await setFrontHops(current);
+  }
+
+  Future<void> removeFrontHopAt(int index) async {
+    final current = List<String>.from(_config.effectiveFrontHops);
+    if (index < 0 || index >= current.length) return;
+    current.removeAt(index);
+    await setFrontHops(current);
+  }
+
+  Future<void> setFrontHopAt(int index, String name) async {
+    final current = List<String>.from(_config.effectiveFrontHops);
+    if (index < 0 || index >= current.length) return;
+    current[index] = name;
+    await setFrontHops(current);
+  }
+
   Future<void> setHop2Node(String name) async {
     await updateConfig((c) => c.copyWith(hop2Node: name));
   }
