@@ -146,13 +146,18 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                             ],
                           ),
                           const SizedBox(height: 10),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          // 横向滚动而不是压缩：窄屏时四个节点会被挤成
+                          // 一列小方块，字都截断。宁可滑动，也不缩水。
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               // RC.8: each node is `Flexible` so the row shrinks
                               // with the dialog instead of overflowing. The bare
                               // Row overflowed by 112 px at 360 px width.
-                              Flexible(
+                              SizedBox(
+                                width: 96,
                                 child: _buildHopNode(
                                   appLocalizations.chainNodeDeviceApp,
                                   appLocalizations.chainNodeLocal,
@@ -160,7 +165,8 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                                 ),
                               ),
                               const Icon(Icons.arrow_forward_rounded, size: 14, color: Colors.grey),
-                              Flexible(
+                              SizedBox(
+                                width: 96,
                                 child: _buildHopNode(
                                   appLocalizations.chainNodePreProxy,
                                   _config.preProxy?.isNotEmpty == true ? _config.preProxy! : appLocalizations.chainPreProxyNone,
@@ -168,7 +174,8 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                                 ),
                               ),
                               const Icon(Icons.arrow_forward_rounded, size: 14, color: Colors.grey),
-                              Flexible(
+                              SizedBox(
+                                width: 96,
                                 child: _buildHopNode(
                                   appLocalizations.chainNodeSubscription,
                                   appLocalizations.chainNodeGroupNodes,
@@ -176,7 +183,8 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                                 ),
                               ),
                               const Icon(Icons.arrow_forward_rounded, size: 14, color: Colors.grey),
-                              Flexible(
+                              SizedBox(
+                                width: 96,
                                 child: _buildHopNode(
                                   appLocalizations.roleExit,
                                   _config.landingProxy?.isNotEmpty == true ? _config.landingProxy! : appLocalizations.chainLandingProxyNone,
@@ -184,6 +192,7 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                                 ),
                               ),
                             ],
+                          ),
                           ),
                         ],
                       ),
