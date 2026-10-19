@@ -529,7 +529,7 @@
   "timeoutLabel": "Timeout",
   "telegramGroup": "Telegram group",
   "portFallbackNotice": "Port {from} is in use; using {to} for this session",
-  "restartCoreDesc": "Reload the core and the active configuration",
+  "restartCoreDesc": "Manually restart the core?",
   "restartCoreTip": "Restart the core? Active connections will briefly drop.",
   "titleColor": "Title colour",
   "clearAllRulesAndScripts": "Clear all rules and scripts",
@@ -702,7 +702,6 @@
   "tvScanWaiting": "Waiting for profile from phone...",
   "tvScanSuccess": "Profile received, importing...",
   "tvScanNoNetwork": "No available LAN detected, please check Wi-Fi",
-  "restartCoreDesc": "Manually restart the core?",
   "highRefreshRate": "High Refresh Rate",
   "highRefreshRateDesc": "Enable highest refresh rate support",
   "useGlobalScriptOverride": "Use Global Script Override",
@@ -768,7 +767,6 @@
   "mediaUnlockExtraDetails": "Show more IP details",
   "mediaUnlockRefreshOnNodeChange": "Auto refresh on node change",
   "mediaUnlockColorfulIcons": "Show colored icons by default",
-
   "mediaUnlockPinnedSettingsDesc": "Select up to 4 items to pin on the widget",
   "mediaUnlockSelectLimit": "You can select up to 4 items",
   "categoryAll": "All",
@@ -918,7 +916,6 @@
   "customLandingProxyName": "Custom landing node name",
   "profileChainSaved": "Pre-proxy and landing proxy settings saved",
   "saveAndApply": "Save and apply",
-
   "confirmDelete": "Confirm deletion",
   "confirmDeleteNodeMsg": "Are you sure you want to delete node \"{name}\"?",
   "nodeDeleted": "Node deleted: {name}",
@@ -1041,5 +1038,7 @@
   "defaultGateway": "Default Gateway",
   "systemDns": "System DNS",
   "openGateway": "Open Gateway",
-  "lanShareAddress": "LAN Share Address"
+  "lanShareAddress": "LAN Share Address",
+  "preventDnsLeak": "Prevent DNS leak",
+  "preventDnsLeakDesc": "Keeps DNS inside the tunnel and replaces router or ISP resolvers with public DoH, so the local network never sees your domains."
 }

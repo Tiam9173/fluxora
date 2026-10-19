@@ -1108,6 +1108,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "preProxySectionTitle": MessageLookupByLibrary.simpleMessage("1. プリプロキシ"),
     "preferH3Desc": MessageLookupByLibrary.simpleMessage("DoHでHTTP/3を優先使用"),
     "pressKeyboard": MessageLookupByLibrary.simpleMessage("キーを入力してください"),
+    "preventDnsLeak": MessageLookupByLibrary.simpleMessage("DNS リークを防ぐ"),
+    "preventDnsLeakDesc": MessageLookupByLibrary.simpleMessage(
+      "DNS をトンネル内で解決し、ルーターや ISP のリゾルバを公開 DoH に置き換えます。",
+    ),
     "preventWebRtcLeak": MessageLookupByLibrary.simpleMessage(
       "WebRTC 実IP漏洩を防止",
     ),

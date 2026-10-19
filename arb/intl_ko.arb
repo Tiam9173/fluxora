@@ -526,7 +526,7 @@
   "timeoutLabel": "시간 초과",
   "telegramGroup": "Telegram 그룹",
   "portFallbackNotice": "포트 {from}이(가) 사용 중이라 이번 세션에서는 {to}을(를) 사용합니다",
-  "restartCoreDesc": "코어와 현재 설정을 다시 불러옵니다",
+  "restartCoreDesc": "코어를 수동으로 재시작하시겠습니까?",
   "restartCoreTip": "코어를 재시작할까요? 사용 중인 연결이 잠시 끊깁니다.",
   "titleColor": "제목 색상",
   "clearAllRulesAndScripts": "모든 규칙과 스크립트 지우기",
@@ -699,7 +699,6 @@
   "tvScanWaiting": "스마트폰에서 프로필 푸시 대기 중...",
   "tvScanSuccess": "프로필이 푸시되었습니다. 가져오는 중...",
   "tvScanNoNetwork": "사용 가능한 LAN을 찾을 수 없습니다. Wi-Fi를 확인하세요",
-  "restartCoreDesc": "코어를 수동으로 재시작하시겠습니까?",
   "highRefreshRate": "고주사율",
   "highRefreshRateDesc": "디스플레이 최대 주사율 지원 활성화",
   "useGlobalScriptOverride": "글로벌 스크립트 오버라이드 사용",
@@ -765,7 +764,6 @@
   "mediaUnlockExtraDetails": "IP 상세 정보 더 보기",
   "mediaUnlockRefreshOnNodeChange": "노드 변경 시 자동 새로고침",
   "mediaUnlockColorfulIcons": "기본적으로 컬러 아이콘 표시",
-
   "mediaUnlockPinnedSettingsDesc": "위젯에 고정 표시할 항목을 최대 4개 선택할 수 있습니다",
   "mediaUnlockSelectLimit": "최대 4개 항목까지 선택할 수 있습니다",
   "categoryAll": "전체",
@@ -918,7 +916,6 @@
   "customLandingProxyName": "사용자 지정 랜딩 노드 이름",
   "profileChainSaved": "사전 프록시 및 랜딩 프록시 설정을 저장했습니다",
   "saveAndApply": "저장 및 적용",
-
   "confirmDelete": "삭제 확인",
   "confirmDeleteNodeMsg": "노드 \"{name}\"을(를) 삭제하시겠습니까?",
   "nodeDeleted": "노드를 삭제했습니다: {name}",
@@ -1041,5 +1038,7 @@
   "defaultGateway": "기본 게이트웨이",
   "systemDns": "시스템 DNS",
   "openGateway": "게이트웨이 열기",
-  "lanShareAddress": "LAN 공유 주소"
+  "lanShareAddress": "LAN 공유 주소",
+  "preventDnsLeak": "DNS 유출 방지",
+  "preventDnsLeakDesc": "DNS를 터널 안에서 해석하고 라우터/ISP 리졸버를 공개 DoH로 교체합니다."
 }

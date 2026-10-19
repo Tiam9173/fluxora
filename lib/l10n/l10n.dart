@@ -8764,6 +8764,26 @@ class AppLocalizations {
       args: [],
     );
   }
+
+  /// `Prevent DNS leak`
+  String get preventDnsLeak {
+    return Intl.message(
+      'Prevent DNS leak',
+      name: 'preventDnsLeak',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Keeps DNS inside the tunnel and replaces router or ISP resolvers with public DoH, so the local network never sees your domains.`
+  String get preventDnsLeakDesc {
+    return Intl.message(
+      'Keeps DNS inside the tunnel and replaces router or ISP resolvers with public DoH, so the local network never sees your domains.',
+      name: 'preventDnsLeakDesc',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {

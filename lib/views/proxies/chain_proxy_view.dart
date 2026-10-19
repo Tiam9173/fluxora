@@ -527,6 +527,18 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                         chainProxyManager.setPreventWebRtcLeak(val),
                   ),
                 ),
+                const Divider(height: 1, indent: 16, endIndent: 16),
+                ListItem(
+                  leading:
+                      const Icon(Icons.dns_outlined, color: Colors.blueAccent),
+                  title: Text(appLocalizations.preventDnsLeak),
+                  subtitle: Text(appLocalizations.preventDnsLeakDesc),
+                  trailing: Switch(
+                    value: config.preventDnsLeak,
+                    onChanged: (val) =>
+                        chainProxyManager.setPreventDnsLeak(val),
+                  ),
+                ),
               ],
             ),
           ),

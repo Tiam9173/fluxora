@@ -526,7 +526,7 @@
   "timeoutLabel": "مهلت تمام شد",
   "telegramGroup": "گروه تلگرام",
   "portFallbackNotice": "پورت {from} اشغال است؛ در این نشست از {to} استفاده می‌شود",
-  "restartCoreDesc": "هسته و پیکربندی فعال را دوباره بارگذاری می‌کند",
+  "restartCoreDesc": "آیا هسته به صورت دستی راه‌اندازی مجدد شود؟",
   "restartCoreTip": "هسته دوباره راه‌اندازی شود؟ اتصال‌های فعال لحظه‌ای قطع می‌شوند.",
   "titleColor": "رنگ عنوان",
   "clearAllRulesAndScripts": "پاک کردن همه قواعد و اسکریپت‌ها",
@@ -699,7 +699,6 @@
   "tvScanWaiting": "در انتظار ارسال پروفایل از گوشی...",
   "tvScanSuccess": "پروفایل دریافت شد، در حال وارد کردن...",
   "tvScanNoNetwork": "شبکه محلی در دسترس یافت نشد، لطفاً Wi-Fi را بررسی کنید",
-  "restartCoreDesc": "آیا هسته به صورت دستی راه‌اندازی مجدد شود؟",
   "highRefreshRate": "نرخ نوسازی بالا",
   "highRefreshRateDesc": "فعالسازی حداکثر نرخ نوسازی صفحه نمایش",
   "useGlobalScriptOverride": "استفاده از اسکریپت اورراید سراسری",
@@ -765,7 +764,6 @@
   "mediaUnlockExtraDetails": "نمایش جزئیات بیشتر IP",
   "mediaUnlockRefreshOnNodeChange": "به‌روزرسانی خودکار هنگام تغییر گره",
   "mediaUnlockColorfulIcons": "نمایش آیکون‌های رنگی به‌صورت پیش‌فرض",
-
   "mediaUnlockPinnedSettingsDesc": "امکان انتخاب حداکثر ۴ مورد برای پین کردن در ویجت",
   "mediaUnlockSelectLimit": "حداکثر می‌توانید ۴ مورد را انتخاب کنید",
   "categoryAll": "همه",
@@ -918,7 +916,6 @@
   "customLandingProxyName": "نام گره فرود سفارشی",
   "profileChainSaved": "تنظیمات پروکسی مقدماتی و فرود ذخیره شد",
   "saveAndApply": "ذخیره و اعمال",
-
   "confirmDelete": "تأیید حذف",
   "confirmDeleteNodeMsg": "آیا از حذف گره «{name}» مطمئن هستید؟",
   "nodeDeleted": "گره حذف شد: {name}",
@@ -1041,5 +1038,7 @@
   "defaultGateway": "دروازه پیش‌فرض",
   "systemDns": "DNS سیستمی",
   "openGateway": "باز کردن دروازه",
-  "lanShareAddress": "نشانی اشتراک LAN"
+  "lanShareAddress": "نشانی اشتراک LAN",
+  "preventDnsLeak": "جلوگیری از نشت DNS",
+  "preventDnsLeakDesc": "DNS در داخل تونل حل می‌شود و resolverهای روتر یا ISP با DoH عمومی جایگزین می‌شوند."
 }

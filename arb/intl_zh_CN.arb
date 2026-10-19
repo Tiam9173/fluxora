@@ -132,10 +132,10 @@
   "add": "添加",
   "save": "保存",
   "delete": "删除",
-  "years": "{count, plural, other{年}}", 
-  "months": "{count, plural, other{月}}", 
-  "hours": "{count, plural, other{小时}}", 
-  "days": "{count, plural, other{天}}", 
+  "years": "{count, plural, other{年}}",
+  "months": "{count, plural, other{月}}",
+  "hours": "{count, plural, other{小时}}",
+  "days": "{count, plural, other{天}}",
   "minutes": "{count, plural, other{分钟}}",
   "seconds": "秒",
   "ago": "前",
@@ -529,7 +529,7 @@
   "timeoutLabel": "超时",
   "telegramGroup": "Telegram 群组",
   "portFallbackNotice": "端口 {from} 已被占用，本次会话改用 {to}",
-  "restartCoreDesc": "重新加载内核与当前配置",
+  "restartCoreDesc": "是否手动重启内核？",
   "restartCoreTip": "确定要重启内核吗？正在使用的连接会短暂中断。",
   "titleColor": "标题颜色",
   "clearAllRulesAndScripts": "清除所有规则与脚本",
@@ -703,7 +703,6 @@
   "tvScanWaiting": "等待手机推送配置中...",
   "tvScanSuccess": "配置推送成功，正在导入...",
   "tvScanNoNetwork": "未检测到可用的局域网，请检查 Wi-Fi",
-  "restartCoreDesc": "是否手动重启内核？",
   "highRefreshRate": "高刷新率",
   "highRefreshRateDesc": "启用设备最高刷新率支持",
   "useGlobalScriptOverride": "使用全局脚本覆写",
@@ -769,7 +768,6 @@
   "mediaUnlockExtraDetails": "返回更多 IP 详细信息",
   "mediaUnlockRefreshOnNodeChange": "节点变化时自动刷新检测",
   "mediaUnlockColorfulIcons": "默认显示彩色 ICON 图标",
-
   "mediaUnlockPinnedSettingsDesc": "可选 4 个在小部件常驻展示的项目",
   "mediaUnlockSelectLimit": "最多只能选择 4 个项目",
   "categoryAll": "全部",
@@ -919,7 +917,6 @@
   "customLandingProxyName": "自定义落地节点名称",
   "profileChainSaved": "已保存前置与落地代理设置",
   "saveAndApply": "保存并应用",
-
   "confirmDelete": "确认删除",
   "confirmDeleteNodeMsg": "确定要删除节点 \"{name}\" 吗？",
   "nodeDeleted": "已删除节点: {name}",
@@ -1041,5 +1038,7 @@
   "defaultGateway": "默认网关",
   "systemDns": "系统 DNS",
   "openGateway": "打开网关",
-  "lanShareAddress": "局域网共享地址"
+  "lanShareAddress": "局域网共享地址",
+  "preventDnsLeak": "防止 DNS 泄露",
+  "preventDnsLeakDesc": "让 DNS 全程在隧道内解析，并把路由器/运营商解析器替换为公共 DoH，避免解析请求被本地网络看到。"
 }

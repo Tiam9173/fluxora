@@ -556,6 +556,10 @@ class ChainProxyManager extends ChangeNotifier {
     await updateConfig((c) => c.copyWith(defaultDialerProxy: dialer));
   }
 
+  Future<void> setPreventDnsLeak(bool prevent) async {
+    await updateConfig((c) => c.copyWith(preventDnsLeak: prevent));
+  }
+
   Future<void> setAutoInjectGroups(bool autoInject) async {
     await updateConfig((c) => c.copyWith(autoInjectGroups: autoInject));
   }

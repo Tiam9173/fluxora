@@ -1394,6 +1394,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "pressKeyboard": MessageLookupByLibrary.simpleMessage(
       "لطفاً کلید را فشار دهید",
     ),
+    "preventDnsLeak": MessageLookupByLibrary.simpleMessage(
+      "جلوگیری از نشت DNS",
+    ),
+    "preventDnsLeakDesc": MessageLookupByLibrary.simpleMessage(
+      "DNS در داخل تونل حل می‌شود و resolverهای روتر یا ISP با DoH عمومی جایگزین می‌شوند.",
+    ),
     "preventWebRtcLeak": MessageLookupByLibrary.simpleMessage(
       "جلوگیری از نشت IP واقعی WebRTC",
     ),

@@ -512,6 +512,7 @@ class ChainProxyConfig {
   final bool createDedicatedGroup;
   final String dedicatedGroupName;
   final bool preventWebRtcLeak;
+  final bool preventDnsLeak;
   final List<LandingProxy> landingProxies;
   final ChainHopMode hopMode;
   final String hop1Node;
@@ -526,6 +527,7 @@ class ChainProxyConfig {
     this.createDedicatedGroup = true,
     this.dedicatedGroupName = '🔗 链式代理',
     this.preventWebRtcLeak = true,
+    this.preventDnsLeak = true,
     this.landingProxies = const [],
     this.hopMode = ChainHopMode.twoHop,
     this.hop1Node = '',
@@ -580,6 +582,7 @@ class ChainProxyConfig {
     bool? createDedicatedGroup,
     String? dedicatedGroupName,
     bool? preventWebRtcLeak,
+    bool? preventDnsLeak,
     List<LandingProxy>? landingProxies,
     ChainHopMode? hopMode,
     String? hop1Node,
@@ -594,6 +597,7 @@ class ChainProxyConfig {
       createDedicatedGroup: createDedicatedGroup ?? this.createDedicatedGroup,
       dedicatedGroupName: dedicatedGroupName ?? this.dedicatedGroupName,
       preventWebRtcLeak: preventWebRtcLeak ?? this.preventWebRtcLeak,
+      preventDnsLeak: preventDnsLeak ?? this.preventDnsLeak,
       landingProxies: landingProxies ?? this.landingProxies,
       hopMode: hopMode ?? this.hopMode,
       hop1Node: hop1Node ?? this.hop1Node,
@@ -611,6 +615,7 @@ class ChainProxyConfig {
       'createDedicatedGroup': createDedicatedGroup,
       'dedicatedGroupName': dedicatedGroupName,
       'preventWebRtcLeak': preventWebRtcLeak,
+      'preventDnsLeak': preventDnsLeak,
       'landingProxies': landingProxies.map((e) => e.toJson()).toList(),
       'hopMode': hopMode.name,
       'hop1Node': hop1Node,
@@ -635,6 +640,7 @@ class ChainProxyConfig {
           ? json['dedicatedGroupName'].toString()
           : '🔗 链式代理',
       preventWebRtcLeak: json['preventWebRtcLeak'] != false,
+      preventDnsLeak: json['preventDnsLeak'] != false,
       landingProxies: list is List
           ? list
                 .whereType<Map>()
@@ -771,8 +777,13 @@ class ChainProxyConfig {
         'DST-PORT,5349,REJECT',
         'DST-PORT,5350,REJECT',
         'DST-PORT,19302,REJECT',
+        'DST-PORT,19303,REJECT',
+        'DST-PORT,19304,REJECT',
         'DST-PORT,19305,REJECT',
+        'DST-PORT,19306,REJECT',
         'DST-PORT,19307,REJECT',
+        'DST-PORT,19308,REJECT',
+        'DST-PORT,19309,REJECT',
       ];
 
       final existingRuleSet = rulesList.map((e) => e.toString().trim()).toSet();
@@ -781,6 +792,50 @@ class ChainProxyConfig {
           .toList();
       rulesList.insertAll(0, rulesToInsert);
       rawConfig['rules'] = rulesList;
+    }
+
+    // 3. DNS Leak Prevention: keep resolution inside the tunnel.
+    //
+    // A leak here is silent - the page still loads, but the local network sees
+    // every domain. Two things cause it: DNS switched off (the system resolver
+    // is then used directly) and a nameserver pointing at the router or a
+    // private address, which can only be answered outside the tunnel.
+    if (preventDnsLeak) {
+      final rawDns = rawConfig['dns'];
+      final dns = (rawDns is Map)
+          ? Map<String, dynamic>.from(rawDns)
+          : <String, dynamic>{};
+
+      dns['enable'] = true;
+      dns['enhanced-mode'] = 'fake-ip';
+      dns['ipv6'] = dns['ipv6'] ?? false;
+
+      const safeResolvers = <String>[
+        'https://1.1.1.1/dns-query',
+        'https://dns.google/dns-query',
+      ];
+
+      bool leaks(String server) {
+        final s = server.trim().toLowerCase();
+        return s.isEmpty ||
+            s.contains('dhcp://') ||
+            s.contains('system') ||
+            s.startsWith('192.168.') ||
+            s.startsWith('10.') ||
+            s.startsWith('172.16.') ||
+            s.startsWith('127.') ||
+            s == 'localhost';
+      }
+
+      final nameservers = dns['nameserver'];
+      if (nameservers is! List ||
+          nameservers.isEmpty ||
+          nameservers.any((e) => leaks(e.toString()))) {
+        dns['nameserver'] = List<String>.from(safeResolvers);
+      }
+      dns['fallback'] = dns['fallback'] ?? List<String>.from(safeResolvers);
+
+      rawConfig['dns'] = dns;
     }
 
     final activeLandings = landingProxies.where((p) => p.enable).toList();

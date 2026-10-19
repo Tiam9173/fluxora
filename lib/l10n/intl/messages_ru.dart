@@ -1446,6 +1446,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "Приоритет HTTP/3 для DoH",
     ),
     "pressKeyboard": MessageLookupByLibrary.simpleMessage("Нажмите клавиши"),
+    "preventDnsLeak": MessageLookupByLibrary.simpleMessage(
+      "Защита от утечки DNS",
+    ),
+    "preventDnsLeakDesc": MessageLookupByLibrary.simpleMessage(
+      "DNS разрешается внутри туннеля, а резолверы роутера или провайдера заменяются публичными DoH.",
+    ),
     "preventWebRtcLeak": MessageLookupByLibrary.simpleMessage(
       "Предотвратить утечку реального IP WebRTC",
     ),

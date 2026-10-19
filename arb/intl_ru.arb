@@ -527,7 +527,7 @@
   "timeoutLabel": "Таймаут",
   "telegramGroup": "Группа Telegram",
   "portFallbackNotice": "Порт {from} занят; в этом сеансе используется {to}",
-  "restartCoreDesc": "Перезагрузить ядро и текущую конфигурацию",
+  "restartCoreDesc": "Перезапустить ядро вручную?",
   "restartCoreTip": "Перезапустить ядро? Активные подключения ненадолго прервутся.",
   "titleColor": "Цвет заголовка",
   "clearAllRulesAndScripts": "Удалить все правила и скрипты",
@@ -699,7 +699,6 @@
   "tvScanWaiting": "Ожидание отправки профиля с телефона...",
   "tvScanSuccess": "Профиль получен, выполняется импорт...",
   "tvScanNoNetwork": "Доступная локальная сеть не найдена, проверьте Wi-Fi",
-  "restartCoreDesc": "Перезапустить ядро вручную?",
   "highRefreshRate": "Высокая частота обновления",
   "highRefreshRateDesc": "Включить поддержку максимальной частоты обновления устройства",
   "onlinePanel": "Онлайн-панель",
@@ -769,7 +768,6 @@
   "mediaUnlockExtraDetails": "Показывать больше сведений об IP",
   "mediaUnlockRefreshOnNodeChange": "Автообновление при смене узла",
   "mediaUnlockColorfulIcons": "Показывать цветные значки по умолчанию",
-
   "mediaUnlockPinnedSettingsDesc": "Можно выбрать до 4 элементов для закрепления в виджете",
   "mediaUnlockSelectLimit": "Можно выбрать максимум 4 элемента",
   "categoryAll": "Все",
@@ -922,7 +920,6 @@
   "customLandingProxyName": "Своё имя узла прокси-выхода",
   "profileChainSaved": "Настройки предпрокси и прокси-выхода сохранены",
   "saveAndApply": "Сохранить и применить",
-
   "confirmDelete": "Подтвердите удаление",
   "confirmDeleteNodeMsg": "Вы уверены, что хотите удалить узел «{name}»?",
   "nodeDeleted": "Узел удалён: {name}",
@@ -1045,5 +1042,7 @@
   "defaultGateway": "Шлюз по умолчанию",
   "systemDns": "Системный DNS",
   "openGateway": "Открыть шлюз",
-  "lanShareAddress": "Адрес для LAN"
+  "lanShareAddress": "Адрес для LAN",
+  "preventDnsLeak": "Защита от утечки DNS",
+  "preventDnsLeakDesc": "DNS разрешается внутри туннеля, а резолверы роутера или провайдера заменяются публичными DoH."
 }

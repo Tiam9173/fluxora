@@ -1370,6 +1370,10 @@ class MessageLookup extends MessageLookupByLibrary {
       "Prioritize DoH HTTP/3",
     ),
     "pressKeyboard": MessageLookupByLibrary.simpleMessage("Press a key"),
+    "preventDnsLeak": MessageLookupByLibrary.simpleMessage("Prevent DNS leak"),
+    "preventDnsLeakDesc": MessageLookupByLibrary.simpleMessage(
+      "Keeps DNS inside the tunnel and replaces router or ISP resolvers with public DoH, so the local network never sees your domains.",
+    ),
     "preventWebRtcLeak": MessageLookupByLibrary.simpleMessage(
       "Prevent WebRTC real IP leaks",
     ),

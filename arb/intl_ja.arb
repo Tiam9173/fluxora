@@ -526,7 +526,7 @@
   "timeoutLabel": "タイムアウト",
   "telegramGroup": "Telegram グループ",
   "portFallbackNotice": "ポート {from} は使用中のため、今回は {to} を使用します",
-  "restartCoreDesc": "コアと現在の設定を再読み込みします",
+  "restartCoreDesc": "カーネルを手動で再起動しますか？",
   "restartCoreTip": "コアを再起動しますか？使用中の接続は一時的に切断されます。",
   "titleColor": "タイトルの色",
   "clearAllRulesAndScripts": "すべてのルールとスクリプトを削除",
@@ -699,7 +699,6 @@
   "tvScanWaiting": "スマホからのプッシュを待機中...",
   "tvScanSuccess": "設定がプッシュされました。インポート中...",
   "tvScanNoNetwork": "利用可能なLANが見つかりません。Wi-Fiを確認してください",
-  "restartCoreDesc": "カーネルを手動で再起動しますか？",
   "highRefreshRate": "高リフレッシュレート",
   "highRefreshRateDesc": "ディスプレイの最高リフレッシュレートを有効化",
   "useGlobalScriptOverride": "グローバルスクリプトオーバーライドを使用",
@@ -765,7 +764,6 @@
   "mediaUnlockExtraDetails": "IP の詳細情報を表示",
   "mediaUnlockRefreshOnNodeChange": "ノード変更時に自動更新",
   "mediaUnlockColorfulIcons": "既定でカラーアイコンを表示",
-
   "mediaUnlockPinnedSettingsDesc": "ウィジェットに常駐表示する最大4項目を選択できます",
   "mediaUnlockSelectLimit": "最大4項目まで選択できます",
   "categoryAll": "すべて",
@@ -918,7 +916,6 @@
   "customLandingProxyName": "カスタムランディングノード名",
   "profileChainSaved": "プリプロキシとランディングプロキシの設定を保存しました",
   "saveAndApply": "保存して適用",
-
   "confirmDelete": "削除の確認",
   "confirmDeleteNodeMsg": "ノード「{name}」を削除してもよろしいですか？",
   "nodeDeleted": "ノードを削除しました: {name}",
@@ -1041,5 +1038,7 @@
   "defaultGateway": "デフォルトゲートウェイ",
   "systemDns": "システム DNS",
   "openGateway": "ゲートウェイを開く",
-  "lanShareAddress": "LAN 共有アドレス"
+  "lanShareAddress": "LAN 共有アドレス",
+  "preventDnsLeak": "DNS リークを防ぐ",
+  "preventDnsLeakDesc": "DNS をトンネル内で解決し、ルーターや ISP のリゾルバを公開 DoH に置き換えます。"
 }
