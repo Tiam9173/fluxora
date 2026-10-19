@@ -18,10 +18,24 @@ void showNotificationSwitchCard(BuildContext context) {
 }
 
 class SwitchCard extends ConsumerStatefulWidget {
-  const SwitchCard({super.key, this.onFinished});
+  const SwitchCard({
+    super.key,
+    this.onFinished,
+    this.onSelect,
+    this.excludeNames = const {},
+  });
 
   /// Called once a node has been picked, so the host can dismiss itself.
   final VoidCallback? onFinished;
+
+  /// What a node tap does. Defaults to switching the live proxy, which is what
+  /// the notification card is for; the chain passes its own handler so the same
+  /// browsing UI can pick a hop instead.
+  final void Function(String nodeName, String groupName)? onSelect;
+
+  /// Nodes that must not be offered. The chain uses this to keep one node from
+  /// appearing twice in the same path, which would create a self-reference.
+  final Set<String> excludeNames;
 
   @override
   ConsumerState<SwitchCard> createState() => _SwitchCardState();
@@ -234,12 +248,17 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
                       ),
                     ),
                   )
-                : ListView.builder(
+                : Builder(
+                    builder: (context) {
+                      final visible = currentGroup.all
+                          .where((p) => !widget.excludeNames.contains(p.name))
+                          .toList();
+                      return ListView.builder(
                     shrinkWrap: true,
                     padding: const EdgeInsets.symmetric(vertical: 4),
-                    itemCount: currentGroup.all.length,
+                    itemCount: visible.length,
                     itemBuilder: (context, index) {
-                      final proxy = currentGroup.all[index];
+                      final proxy = visible[index];
                       final selected =
                           selectedMap[currentGroup.name] == proxy.name ||
                           (selectedMap[currentGroup.name] == null &&
@@ -258,10 +277,16 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
                       return InkWell(
                         onTap: selectable
                             ? () {
-                                globalState.appController.changeProxyDebounce(
-                                  currentGroup.name,
-                                  proxy.name,
-                                );
+                                final handler = widget.onSelect;
+                                if (handler != null) {
+                                  handler(proxy.name, currentGroup.name);
+                                } else {
+                                  globalState.appController
+                                      .changeProxyDebounce(
+                                    currentGroup.name,
+                                    proxy.name,
+                                  );
+                                }
                                 setState(() {});
                                 widget.onFinished?.call();
                               }
@@ -304,6 +329,8 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
                             ],
                           ),
                         ),
+                      );
+                    },
                       );
                     },
                   ),

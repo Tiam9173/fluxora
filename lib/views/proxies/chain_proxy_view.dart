@@ -13,6 +13,7 @@ import 'package:fluxora/models/chain_fallback_pool.dart';
 import 'package:fluxora/models/latency_freshness.dart';
 import 'package:fluxora/services/chain_probe_service.dart';
 import 'package:fluxora/views/proxies/intelligent_node_picker_sheet.dart';
+import 'package:fluxora/views/proxies/chain_hop_picker.dart';
 
 
 Set<String>? chainNodeUniverse(Set<String> nodeNames) {
@@ -495,15 +496,13 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                       ],
                     ),
                     onTap: () {
-                      _showIntelligentHopPicker(
+                      showChainHopPicker(
+                        context: context,
                         title: '第 ${i + 1} 跳',
-                        currentHop: frontHops[i],
-                        excludedHops: frontHops
+                        allowFollowMain: i == 0,
+                        excludeNames: frontHops
                             .where((h) => h != frontHops[i])
                             .toSet(),
-                        role: FallbackCandidateRole.entry,
-                        allowDirect: true,
-                        allowFollowMain: i == 0,
                         onSelect: (hop) =>
                             chainProxyManager.setFrontHopAt(i, hop),
                       );
@@ -514,13 +513,11 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                   title: const Text('添加一跳'),
                   subtitle: const Text('在最后一跳之后、落地出口之前插入'),
                   onTap: () {
-                    _showIntelligentHopPicker(
+                    showChainHopPicker(
+                      context: context,
                       title: '添加一跳',
-                      currentHop: '',
-                      excludedHops: frontHops.toSet(),
-                      role: FallbackCandidateRole.entry,
-                      allowDirect: true,
                       allowFollowMain: false,
+                      excludeNames: frontHops.toSet(),
                       onSelect: (hop) => chainProxyManager.addFrontHop(hop),
                     );
                   },
