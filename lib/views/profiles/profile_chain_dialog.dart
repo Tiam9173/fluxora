@@ -69,6 +69,26 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
     }
   }
 
+  /// Shows what a section actually does.
+  ///
+  /// The explanation used to sit under every title, which pushed the pickers
+  /// below the fold on a phone. It is one tap away instead.
+  void _showSectionHelp(String title, String body) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(title),
+        content: Text(body, style: const TextStyle(fontSize: 13)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(appLocalizations.confirm),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = context.colorScheme;
@@ -183,18 +203,27 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                     const Divider(height: 24),
 
                     // 1. Pre-Proxy (前置代理)
-                    Text(
-                      appLocalizations.preProxySectionTitle,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      appLocalizations.preProxySectionDesc,
-                      style: TextStyle(fontSize: 12, color: colorScheme.outline),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            appLocalizations.preProxySectionTitle,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          visualDensity: VisualDensity.compact,
+                          icon: const Icon(Icons.info_outline, size: 16),
+                          onPressed: () => _showSectionHelp(
+                            appLocalizations.preProxySectionTitle,
+                            appLocalizations.preProxySectionDesc,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
@@ -248,18 +277,27 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                     const SizedBox(height: 20),
 
                     // 2. Landing Proxy (落地代理)
-                    Text(
-                      appLocalizations.landingProxySectionTitle,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      appLocalizations.landingProxySectionDesc,
-                      style: TextStyle(fontSize: 12, color: colorScheme.outline),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            appLocalizations.landingProxySectionTitle,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          visualDensity: VisualDensity.compact,
+                          icon: const Icon(Icons.info_outline, size: 16),
+                          onPressed: () => _showSectionHelp(
+                            appLocalizations.landingProxySectionTitle,
+                            appLocalizations.landingProxySectionDesc,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
