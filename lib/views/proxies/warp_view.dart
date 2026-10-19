@@ -378,6 +378,12 @@ class _WarpViewState extends ConsumerState<WarpView> {
                 '设置连接 Cloudflare WARP 的优选 IP，输入 auto 则自动使用官方最优 IP：',
                 style: TextStyle(fontSize: 13),
               ),
+              const SizedBox(height: 6),
+              const Text(
+                '优选 IP 改变的是「入口地址」，影响速度与稳定性；'
+                '出口 IP 由 Cloudflare 就近调度决定，不会因此变化。',
+                style: TextStyle(fontSize: 11, color: Colors.grey),
+              ),
               const SizedBox(height: 12),
               TextField(
                 controller: ctrl,
