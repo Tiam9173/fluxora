@@ -232,7 +232,13 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 result.success(true)
             }
 
-            "isCardOnlyLaunch" -> result.success(GlobalState.cardOnlyLaunch)
+            "isCardOnlyLaunch" -> {
+                // Consumed, not read: a stale true would flip every later switch
+                // into card-only mode and hide the whole app.
+                val cardOnly = GlobalState.cardOnlyLaunch
+                GlobalState.cardOnlyLaunch = false
+                result.success(cardOnly)
+            }
 
             "consumePendingNotificationAction" -> {
                 val pending = GlobalState.pendingNotificationAction

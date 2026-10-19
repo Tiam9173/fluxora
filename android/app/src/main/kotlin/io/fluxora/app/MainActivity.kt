@@ -61,27 +61,31 @@ class MainActivity : FlutterActivity() {
             installSplashScreen()
         }
         super.onCreate(savedInstanceState)
-        handleSwitchCardIntent(intent)
+        handleSwitchCardIntent(intent, isColdStart = true)
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        handleSwitchCardIntent(intent)
+        handleSwitchCardIntent(intent, isColdStart = false)
     }
 
     /// The notification's switch button launches this activity with an extra.
     /// It is consumed here rather than forwarded from the service, because the
     /// card needs a live UI — and the service has no way to know whether one
     /// exists.
-    private fun handleSwitchCardIntent(intent: Intent?) {
+    private fun handleSwitchCardIntent(intent: Intent?, isColdStart: Boolean) {
         if (intent?.getBooleanExtra(EXTRA_SHOW_SWITCH_CARD, false) != true) return
         intent.removeExtra(EXTRA_SHOW_SWITCH_CARD)
         // Recorded rather than posted on a timer: on a cold start the engine is
         // still booting and a fixed delay either fires too early (no handler
         // yet) or too late (user already navigated). Dart pulls it when ready.
         GlobalState.pendingNotificationAction = "switch"
-        GlobalState.cardOnlyLaunch = true
+        // Card-only needs a translucent window, and that can only be set before
+        // the window exists. Reusing a running activity keeps its opaque window,
+        // so there the card has to be the normal in-app dialog - otherwise the
+        // root flips to card-only over a black background.
+        GlobalState.cardOnlyLaunch = isColdStart
         // When the app is already in the foreground there is no lifecycle
         // change, so nothing would ever pull the pending action. Push it now;
         // Dart ignores it if it has no navigator yet and pulls it on resume.

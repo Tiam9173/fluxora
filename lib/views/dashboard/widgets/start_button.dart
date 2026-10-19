@@ -147,10 +147,10 @@ class _StartButtonState extends ConsumerState<StartButton> {
     if (confirmed != true) return;
     try {
       await globalState.appController.restartCore();
-      if (!mounted) return;
-      context.showSnackBar(appLocalizations.restartCore);
     } catch (e) {
       if (!mounted) return;
+      // Only failures are worth a message: the success case is visible in the
+      // status row, and a snackbar there sits behind the bottom navigation bar.
       context.showSnackBar('$e');
     }
   }
