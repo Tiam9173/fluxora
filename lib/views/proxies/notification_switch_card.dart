@@ -23,6 +23,7 @@ class SwitchCard extends ConsumerStatefulWidget {
     this.onFinished,
     this.onSelect,
     this.excludeNames = const {},
+    this.title,
   });
 
   /// Called once a node has been picked, so the host can dismiss itself.
@@ -36,6 +37,10 @@ class SwitchCard extends ConsumerStatefulWidget {
   /// Nodes that must not be offered. The chain uses this to keep one node from
   /// appearing twice in the same path, which would create a self-reference.
   final Set<String> excludeNames;
+
+  /// Dialog title. The card defaults to 「切换」, which reads wrong when it is
+  /// being used to pick a hop rather than to switch the live proxy.
+  final String? title;
 
   @override
   ConsumerState<SwitchCard> createState() => _SwitchCardState();
@@ -65,7 +70,7 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
         (visibleGroups.isEmpty ? null : visibleGroups.first);
 
     return CommonDialog(
-      title: appLocalizations.switchProxy,
+      title: widget.title ?? appLocalizations.switchProxy,
       titleTrailing: IconButton(
         visualDensity: VisualDensity.compact,
         onPressed: currentGroup == null || _testing
@@ -101,7 +106,11 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Level 1 — subscription.
+          // Level 1 — subscription. Hidden when the card is used as a hop
+          // picker: the group list always belongs to the active profile, so
+          // offering other subscriptions here would switch the whole app
+          // without showing anything different.
+          if (widget.onSelect == null)
           InkWell(
             onTap: () => setState(() => _showProfiles = !_showProfiles),
             child: Padding(
