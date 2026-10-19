@@ -17,6 +17,21 @@ void showNotificationSwitchCard(BuildContext context) {
   globalState.showCommonDialog(child: const SwitchCard());
 }
 
+/// A row above the group list for values that are not nodes: following the main
+/// selector (a policy group) or a direct connection. The card cannot express
+/// those, and dropping them would silently remove the most common choice.
+class SwitchCardSpecialOption {
+  const SwitchCardSpecialOption({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
+
+  final String label;
+  final String value;
+  final IconData icon;
+}
+
 class SwitchCard extends ConsumerStatefulWidget {
   const SwitchCard({
     super.key,
@@ -24,6 +39,7 @@ class SwitchCard extends ConsumerStatefulWidget {
     this.onSelect,
     this.excludeNames = const {},
     this.title,
+    this.specialOptions = const [],
   });
 
   /// Called once a node has been picked, so the host can dismiss itself.
@@ -41,6 +57,9 @@ class SwitchCard extends ConsumerStatefulWidget {
   /// Dialog title. The card defaults to 「切换」, which reads wrong when it is
   /// being used to pick a hop rather than to switch the live proxy.
   final String? title;
+
+  /// Rows shown above the subscription/group list.
+  final List<SwitchCardSpecialOption> specialOptions;
 
   @override
   ConsumerState<SwitchCard> createState() => _SwitchCardState();
@@ -106,6 +125,35 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          for (final option in widget.specialOptions)
+            InkWell(
+              onTap: () {
+                final handler = widget.onSelect;
+                if (handler != null) {
+                  handler(option.value, '');
+                }
+                setState(() {});
+                widget.onFinished?.call();
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                child: Row(
+                  children: [
+                    Icon(option.icon, size: 16, color: colorScheme.primary),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        option.label,
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           // Level 1 — subscription. Hidden when the card is used as a hop
           // picker: the group list always belongs to the active profile, so
           // offering other subscriptions here would switch the whole app

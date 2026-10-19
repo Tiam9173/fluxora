@@ -476,6 +476,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                         title: i == 0
                             ? appLocalizations.defaultDialerProxy
                             : '中转节点 $i',
+                        allowFollowMain: i == 0,
                         excludeNames: frontHops
                             .where((h) => h != frontHops[i])
                             .toSet(),
@@ -492,6 +493,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                     showChainHopPicker(
                       context: context,
                       title: '添加一跳',
+                      allowFollowMain: false,
                       excludeNames: frontHops.toSet(),
                       onSelect: (hop) => chainProxyManager.addFrontHop(hop),
                     );

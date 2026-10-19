@@ -12,12 +12,21 @@ Future<void> showChainHopPicker({
   required String title,
   required Set<String> excludeNames,
   required void Function(String name) onSelect,
+  bool allowFollowMain = true,
 }) {
   return showDialog(
     context: context,
     builder: (ctx) => SwitchCard(
       title: title,
       excludeNames: excludeNames,
+      specialOptions: [
+        if (allowFollowMain)
+          const SwitchCardSpecialOption(
+            label: '跟随主选择',
+            value: '',
+            icon: Icons.auto_awesome,
+          ),
+      ],
       onSelect: (name, _) {
         onSelect(name);
         Navigator.of(ctx).pop();
