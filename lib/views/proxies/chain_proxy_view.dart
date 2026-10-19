@@ -2636,6 +2636,19 @@ class _TopologyNodeState extends State<_TopologyNode>
   }
 }
 
+/// 拓扑连线：固定尺寸，滚动时不会把节点挤变形。
+class _TopologyArrow extends StatelessWidget {
+  const _TopologyArrow();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: 4),
+      child: Icon(Icons.arrow_forward, size: 14, color: Colors.grey),
+    );
+  }
+}
+
 class _ProxyHealthReportDialog extends ConsumerWidget {
   final LandingProxy proxy;
   final String defaultHop;
@@ -2647,11 +2660,8 @@ class _ProxyHealthReportDialog extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(chainProxyConfigProvider);
+    final chainConfig = ref.watch(chainProxyConfigProvider).config;
     final report = chainProxyManager.getHealthReport(proxy.id);
-    final effectiveHop = (proxy.dialerProxy != null && proxy.dialerProxy!.isNotEmpty)
-        ? proxy.dialerProxy!
-        : (defaultHop.isEmpty ? '主选择组' : defaultHop);
 
     return AlertDialog(
       title: Row(
@@ -2688,24 +2698,54 @@ class _ProxyHealthReportDialog extends ConsumerWidget {
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    // min + 固定宽度：滚动容器里给 Row 无限宽度，spaceAround
+                    // 会把节点摊到看不见的地方。
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      _buildTopologyNode(Icons.computer, appLocalizations.topologyClient, context),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 6),
-                        child: Icon(Icons.arrow_forward, size: 14, color: Colors.grey),
+                      SizedBox(
+                        width: 76,
+                        child: _buildTopologyNode(
+                          Icons.computer,
+                          appLocalizations.topologyClient,
+                          context,
+                        ),
                       ),
-                      _buildTopologyNode(Icons.alt_route, '$effectiveHop\n(${appLocalizations.topologyHop})', context, color: Colors.blue),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 6),
-                        child: Icon(Icons.arrow_forward, size: 14, color: Colors.grey),
+                      // 前置跳板的每一跳都画出来，中转节点不再被吞掉。
+                      for (var i = 0;
+                          i < chainConfig.effectiveFrontHops.length;
+                          i++) ...[
+                        const _TopologyArrow(),
+                        SizedBox(
+                          width: 96,
+                          child: _buildTopologyNode(
+                            i == 0 ? Icons.alt_route : Icons.swap_horiz,
+                            '${chainConfig.effectiveFrontHops[i]}\n'
+                                '(${i == 0 ? appLocalizations.topologyHop : '中转节点 $i'})',
+                            context,
+                            color: Colors.blue,
+                          ),
+                        ),
+                      ],
+                      const _TopologyArrow(),
+                      SizedBox(
+                        width: 96,
+                        child: _buildTopologyNode(
+                          Icons.home_outlined,
+                          '${proxy.name}\n(${appLocalizations.topologyLanding})',
+                          context,
+                          color: Colors.teal,
+                        ),
                       ),
-                      _buildTopologyNode(Icons.home_outlined, '${proxy.name}\n(${appLocalizations.topologyLanding})', context, color: Colors.teal),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 6),
-                        child: Icon(Icons.arrow_forward, size: 14, color: Colors.grey),
+                      const _TopologyArrow(),
+                      SizedBox(
+                        width: 76,
+                        child: _buildTopologyNode(
+                          Icons.public,
+                          appLocalizations.topologyTarget,
+                          context,
+                          color: Colors.orange,
+                        ),
                       ),
-                      _buildTopologyNode(Icons.public, appLocalizations.topologyTarget, context, color: Colors.orange),
                     ],
                   ),
                 ),
