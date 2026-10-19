@@ -287,6 +287,41 @@ class WarpConfig {
   }
 
   /// Builds the Mihomo (Clash.Meta) WireGuard proxy map with dialer-proxy
+  /// Removes everything this config injected into a raw clash config.
+  ///
+  /// Names are the only handle we have: the injected nodes are plain maps in a
+  /// list that also holds the user's own proxies, so removal has to be by name.
+  void _removeWarpArtifacts(Map<String, dynamic> rawConfig) {
+    final names = <String>{
+      proxyName,
+      '✈️ WARP跳板',
+      dedicatedGroupName.trim().isNotEmpty
+          ? dedicatedGroupName.trim()
+          : defaultDedicatedGroupName,
+    };
+
+    final rawProxies = rawConfig['proxies'];
+    if (rawProxies is List) {
+      rawProxies.removeWhere((p) => p is Map && names.contains(p['name']));
+      // Anything still pointing at a removed node would break the same way.
+      for (final p in rawProxies) {
+        if (p is Map && names.contains(p['dialer-proxy'])) {
+          p.remove('dialer-proxy');
+        }
+      }
+    }
+
+    final rawGroups = rawConfig['proxy-groups'];
+    if (rawGroups is List) {
+      rawGroups.removeWhere((g) => g is Map && names.contains(g['name']));
+      for (final g in rawGroups) {
+        if (g is Map && g['proxies'] is List) {
+          (g['proxies'] as List).removeWhere(names.contains);
+        }
+      }
+    }
+  }
+
   Map<String, dynamic> toMihomoProxyMap([String effectiveDialer = '']) {
     final map = <String, dynamic>{
       'name': proxyName,
@@ -316,7 +351,14 @@ class WarpConfig {
 
   /// Injects WARP WireGuard proxy, dedicated group, and anti-redirect rules into Clash rawConfig
   void applyToClashConfig(Map<String, dynamic> rawConfig) {
-    if (!enable || privateKey.trim().isEmpty) return;
+    if (!enable || privateKey.trim().isEmpty) {
+      // Off means off. A config that still carries the WG outbound - or worse,
+      // a dialer-proxy pointing at the hop group - makes mihomo refuse the
+      // outbound with "proxyName[...] not found" while the UI claims WARP is
+      // disabled. Remove every artefact instead of leaving them behind.
+      _removeWarpArtifacts(rawConfig);
+      return;
+    }
 
     // 1. Ensure proxies list
     final rawProxies = rawConfig['proxies'];
@@ -454,20 +496,6 @@ class WarpConfig {
     proxiesList.removeWhere((p) => p is Map && p['name'] == proxyName);
     proxiesList.add(toMihomoProxyMap(effectiveHop));
 
-    // The hop is a hard reference: mihomo refuses to start the WG outbound when
-    // `dialer-proxy` names something that is not in the config, and the tunnel
-    // then fails with "proxyName[✈️ WARP跳板] not found" - which is what a user
-    // sees after turning WARP off. Guarantee the target exists rather than
-    // trusting every upstream branch to have created it.
-    final hopExists = groupList.any((g) => g is Map && g['name'] == effectiveHop) ||
-        proxiesList.any((p) => p is Map && p['name'] == effectiveHop);
-    if (!hopExists) {
-      groupList.insert(0, <String, dynamic>{
-        'name': effectiveHop,
-        'type': 'select',
-        'proxies': ['DIRECT'],
-      });
-    }
 
     // 4. Create dedicated WARP outbound policy group: 🛡️ WARP 出口
     final warpOutboundGroupName = dedicatedGroupName.trim().isNotEmpty
