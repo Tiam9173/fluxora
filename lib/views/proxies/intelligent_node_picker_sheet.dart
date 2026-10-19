@@ -7,6 +7,7 @@ import 'package:fluxora/providers/adaptive_ranking_provider.dart';
 import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/widgets/widgets.dart';
 import 'package:fluxora/views/proxies/intelligent_node_card.dart';
+import 'package:fluxora/views/proxies/common.dart';
 
 class IntelligentNodePickerSheet extends ConsumerStatefulWidget {
   final String title;
@@ -63,11 +64,25 @@ class _IntelligentNodePickerSheetState
       adaptiveRankingProvider((role: widget.role, sortMode: _sortMode)),
     );
     if (viewModels.any((vm) => vm.latencyMs != null)) return;
-    if (chainProxyManager.isProbingChain) return;
-    try {
-      await chainProxyManager.probeCurrentChain();
-    } catch (e) {
-      commonPrint.log('Node picker auto probe failed: $e');
+
+    // Sweep the nodes this sheet actually lists. Probing the configured chain
+    // only ever measures the two hops in use, so the list stayed at "no data"
+    // while a probe ran - which is why the sort looked broken rather than empty.
+    //
+    // Bounded on purpose: a large subscription would otherwise fire hundreds of
+    // requests the moment the sheet opens.
+    const int maxSweep = 24;
+    const int concurrency = 6;
+    final targets = viewModels
+        .where((vm) => vm.latencyMs == null)
+        .take(maxSweep)
+        .map((vm) => vm.proxy)
+        .toList();
+    for (var i = 0; i < targets.length; i += concurrency) {
+      if (!mounted) return;
+      await Future.wait(
+        targets.skip(i).take(concurrency).map(proxyDelayTest),
+      );
     }
   }
 

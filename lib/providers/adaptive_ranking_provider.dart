@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/chain_proxy_node_view_model.dart';
-import '../models/chain_fallback_pool.dart';
 import '../models/latency_freshness.dart';
 import '../models/latency_state.dart';
 import '../services/chain_adaptive_score_service.dart';
@@ -9,13 +8,13 @@ import '../services/chain_capability_service.dart';
 import '../services/proxy_semantic_classifier.dart';
 import '../manager/chain_proxy_manager.dart';
 import '../providers/providers.dart';
-import '../models/common.dart';
-import '../models/chain_proxy.dart';
 import '../services/network_fingerprint_provider.dart';
 import '../providers/chain_proxy.dart';
 
 import '../services/chain_adaptive_ranking_cache_service.dart';
 import '../common/pinyin_sort.dart';
+import 'package:fluxora/models/models.dart';
+import 'package:fluxora/state.dart';
 
 typedef AdaptiveRankingParams = ({FallbackCandidateRole role, String sortMode});
 
@@ -26,6 +25,8 @@ final adaptiveRankingProvider =
 ) {
   final role = params.role;
   final sortMode = params.sortMode;
+  final delayMap = ref.watch(delayDataSourceProvider);
+  final testUrl = globalState.appController.getRealTestUrl('');
 
   // Read triggers that must invalidate the cache implicitly:
   final groups = ref.watch(groupsProvider);
@@ -158,12 +159,17 @@ final adaptiveRankingProvider =
           // collapse to `null`, which the card already renders as "unknown".
           // Deliberately NOT back-filled from `chainLatency` — a different
           // measurement would be mislabelled as this node's own.
+          // The pool only holds latencies observed by the chain itself, so a
+          // node nobody chained yet reads as "no data" even after the proxy page
+          // measured it. The app-wide delay map is the same kind of measurement
+          // (this session, this network), so it is used when the pool has none.
           latencyMs: LatencyFreshness.visibleLatencyMs(
-            state: candidate.nodeLatency,
-            now: DateTime.now(),
-            currentFingerprint: fingerprint,
-            expectedScope: LatencyScope.node,
-          ),
+                state: candidate.nodeLatency,
+                now: DateTime.now(),
+                currentFingerprint: fingerprint,
+                expectedScope: LatencyScope.node,
+              ) ??
+              _measuredFromDelayMap(delayMap, testUrl, proxy.name),
           capabilityEvidence: evidence,
           isLocked: isLocked,
           isFailoverCandidate:
@@ -251,3 +257,17 @@ String rankingStateFingerprint({
     ]..sort(),
   ).toString(),
 ].join('|');
+
+/// A positive delay from the app-wide map, or null.
+///
+/// `0` means "queued, not measured yet" and `-1` means "failed"; neither is a
+/// latency, so neither may be shown as one.
+int? _measuredFromDelayMap(
+  DelayMap delayMap,
+  String url,
+  String proxyName,
+) {
+  final value = delayMap[url]?[proxyName];
+  if (value == null || value <= 0) return null;
+  return value;
+}
