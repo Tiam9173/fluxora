@@ -440,16 +440,43 @@ class Request {
     );
   }
 
+  /// Retries a few times before giving up.
+  ///
+  /// The IP lookup sites (ip-api, geojs) regularly time out for a few seconds
+  /// under load. One failure used to leave the card showing "请手动刷新" until
+  /// the user tapped it, even though the tunnel was fine and the next attempt
+  /// would have worked.
+  Future<Result<IpInfo?>> _withRetries(
+    Future<Result<IpInfo?>> Function() attempt, {
+    int retries = 2,
+    CancelToken? cancelToken,
+  }) async {
+    var result = await attempt();
+    for (var i = 1; i <= retries; i++) {
+      if (result.data != null) return result;
+      if (cancelToken?.isCancelled ?? false) return result;
+      await Future.delayed(Duration(milliseconds: 600 * i));
+      if (cancelToken?.isCancelled ?? false) return result;
+      result = await attempt();
+    }
+    return result;
+  }
+
   Future<Result<IpInfo?>> checkIp({
     CancelToken? cancelToken,
     Duration? timeout,
     void Function(IpInfo info)? onUpdate,
+    int retries = 2,
   }) async {
-    return _checkIpFromSources(
-      _getPrimaryIpSources(),
-      cancelToken,
-      timeout,
-      onUpdate: onUpdate,
+    return _withRetries(
+      () => _checkIpFromSources(
+        _getPrimaryIpSources(),
+        cancelToken,
+        timeout,
+        onUpdate: onUpdate,
+      ),
+      retries: retries,
+      cancelToken: cancelToken,
     );
   }
 
