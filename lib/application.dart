@@ -20,6 +20,7 @@ import 'controller.dart';
 import 'pages/pages.dart';
 import 'package:fluxora/plugins/vpn.dart';
 import 'package:fluxora/views/proxies/notification_switch_card.dart';
+import 'package:flutter/services.dart';
 
 /// P2.6-D: error boundary for fire-and-forget background tasks.
 ///
@@ -246,18 +247,6 @@ class ApplicationState extends ConsumerState<Application>
 
   @override
   Widget build(context) {
-    // Card-only mode replaces the whole tree: the window behind it is
-    // translucent, so the launcher has to be what shows around the card.
-    return ValueListenableBuilder<bool>(
-      valueListenable: globalState.cardOnlyMode,
-      builder: (_, cardOnly, _) {
-        if (cardOnly) return const SwitchCardOnlyApp();
-        return _buildFullApp(context);
-      },
-    );
-  }
-
-  Widget _buildFullApp(BuildContext context) {
     return _buildPlatformState(
       _buildState(
         Consumer(
@@ -280,6 +269,30 @@ class ApplicationState extends ConsumerState<Application>
                 GlobalWidgetsLocalizations.delegate,
               ],
               builder: (_, child) {
+                // Card-only mode keeps this MaterialApp (and therefore the
+                // theme) but replaces everything it draws. The window behind is
+                // translucent, so what shows around the card is whatever app the
+                // user was in.
+                if (globalState.cardOnlyMode.value) {
+                  return Material(
+                    color: Colors.transparent,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => SystemNavigator.pop(),
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: GestureDetector(
+                            onTap: () {},
+                            child: SwitchCard(
+                              onFinished: () => SystemNavigator.pop(),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }
                 return Directionality(
                   textDirection: TextDirection.ltr,
                   child: ValueListenableBuilder<bool>(
