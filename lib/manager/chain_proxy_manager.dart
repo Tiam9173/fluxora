@@ -1942,6 +1942,61 @@ class ChainProxyManager extends ChangeNotifier {
     _scheduleFreshnessTick();
   }
 
+  /// Records one observation of [nodeName] from outside the chain probe.
+  ///
+  /// A delay test that succeeded is evidence the node answers, which is the same
+  /// thing the chain probe records when a hop reports healthy - not a guess. It
+  /// is only applied to nodes already in the fallback pool: adding the node
+  /// would change what failover may pick, and measuring a node is not a reason
+  /// to promote it to a candidate.
+  ///
+  /// Returns true when a candidate was found and updated.
+  Future<bool> recordNodeObservation(
+    String nodeName, {
+    required bool success,
+  }) async {
+    final name = nodeName.trim();
+    if (name.isEmpty) return false;
+
+    var updated = false;
+    await updateFallbackPool((pool) {
+      List<ChainFallbackCandidate> apply(List<ChainFallbackCandidate> list) {
+        return [
+          for (final c in list)
+            if (c.nodeName == name)
+              (() {
+                updated = true;
+                final context =
+                    networkFingerprintProvider.getCurrentFingerprint();
+                final stats = (c.statsByContext[context] ??
+                        ChainReliabilityStats.initial(
+                          networkFingerprint: context,
+                        ))
+                    .recordEvent(
+                  isSuccess: success,
+                  now: DateTime.now(),
+                  lambda: ChainReliabilityStats.decayLambda,
+                );
+                final map = Map<String, ChainReliabilityStats>.from(
+                  c.statsByContext,
+                );
+                map[context] = stats;
+                return c.copyWith(statsByContext: map);
+              })()
+            else
+              c,
+        ];
+      }
+
+      return pool.copyWith(
+        entryCandidates: apply(pool.entryCandidates),
+        relayCandidates: apply(pool.relayCandidates),
+        exitCandidates: apply(pool.exitCandidates),
+      );
+    });
+    return updated;
+  }
+
   Future<void> setAutoFailover(bool enable) async {
     await updateConfig((c) => c.copyWith(autoFailover: enable));
     // P0: route through the single reconciliation point instead of starting the

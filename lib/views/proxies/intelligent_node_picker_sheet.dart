@@ -8,6 +8,7 @@ import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/widgets/widgets.dart';
 import 'package:fluxora/views/proxies/intelligent_node_card.dart';
 import 'package:fluxora/views/proxies/common.dart';
+import 'package:fluxora/state.dart';
 
 class IntelligentNodePickerSheet extends ConsumerStatefulWidget {
   final String title;
@@ -81,7 +82,19 @@ class _IntelligentNodePickerSheetState
     for (var i = 0; i < targets.length; i += concurrency) {
       if (!mounted) return;
       await Future.wait(
-        targets.skip(i).take(concurrency).map(proxyDelayTest),
+        targets.skip(i).take(concurrency).map((proxy) async {
+          await proxyDelayTest(proxy);
+          // The measurement is also an observation: the node either answered or
+          // it did not. Recording it is what turns 暂无评分 / 暂无数据 into real
+          // numbers for nodes the chain itself has never probed.
+          final url = globalState.appController.getRealTestUrl('');
+          final value = ref.read(delayDataSourceProvider)[url]?[proxy.name];
+          if (value == null || value == 0) return;
+          await chainProxyManager.recordNodeObservation(
+            proxy.name,
+            success: value > 0,
+          );
+        }),
       );
     }
   }
