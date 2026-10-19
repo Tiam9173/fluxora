@@ -493,7 +493,13 @@ class ChainProbeService implements IChainProbeService {
 
     // 1. Topology pre-validation check
     final hop1 = config.effectiveHop1;
-    final hop2 = config.hop2Node;
+    // The exit has to be resolved the same way the config generator resolves it.
+    // Reading the raw `hop2Node` marks a chain invalid whenever the exit comes
+    // from the landing-proxy list instead of that field - the chain then works
+    // (its landing proxy passes a delay test) while the probe reports a failure.
+    final hop2 = mode == ChainHopMode.threeHop
+        ? config.hop2Node
+        : config.effectiveExitNode;
     final hop3 = config.hop3Node;
 
     final validation = ChainTopologyValidator.validate(
