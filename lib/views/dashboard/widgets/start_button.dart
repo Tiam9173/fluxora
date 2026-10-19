@@ -122,6 +122,39 @@ class StartButton extends ConsumerStatefulWidget {
 }
 
 class _StartButtonState extends ConsumerState<StartButton> {
+  /// Restarts the core without touching the profile or the selected node.
+  ///
+  /// The service stays up throughout, which is why the notification does not
+  /// flicker: only the core behind it is replaced.
+  Future<void> _handleRestartCore() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(appLocalizations.restartCore),
+        content: Text(appLocalizations.restartCoreTip),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(appLocalizations.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(appLocalizations.confirm),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await globalState.appController.restartCore();
+      if (!mounted) return;
+      context.showSnackBar(appLocalizations.restartCore);
+    } catch (e) {
+      if (!mounted) return;
+      context.showSnackBar('$e');
+    }
+  }
+
   bool _isDisabled = false;
   bool? _optimisticStart;
 
@@ -290,6 +323,21 @@ class _StartButtonState extends ConsumerState<StartButton> {
                   ),
                 ),
                 const SizedBox(width: FluxoraSpacing.md),
+                // Restart sits next to the power switch: both act on the
+                // running core, and it is only meaningful while that is up.
+                // A plain icon so it never competes with the primary action.
+                if (displayStart) ...[
+                  SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: IconButton(
+                      onPressed: busy ? null : _handleRestartCore,
+                      tooltip: appLocalizations.restartCore,
+                      icon: const Icon(Icons.restart_alt, size: 20),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                ],
                 // A real Material 3 button, not a decorative glyph. D4.6 left a
                 // bare `Icon` here (no `onPressed`), which removed the only
                 // visible cue that the card starts/stops the service.
