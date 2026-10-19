@@ -226,11 +226,20 @@ class FluxoraVpnService : VpnService(), BaseServiceInterface {
         cachedBuilder = null
         kotlinx.coroutines.delay(700)
         runCatching {
-            val notification = createFluxoraNotificationBuilder()
-                .setContentTitle(getString(R.string.core_connected))
-                .setContentText(getString(R.string.service_running))
-                .setStyle(null)
-                .build()
+            // Re-post what was there, not a generic line: the row should look
+            // untouched, only briefly absent. Falling back to the service text
+            // made the reset look like it had turned the speed readout off.
+            val builder = createFluxoraNotificationBuilder()
+            val profile = pendingSpeedProfile
+            val info = pendingSpeedInfo
+            if (profile != null && info != null) {
+                builder.setContentTitle(profile).setContentText(info)
+            } else {
+                builder
+                    .setContentTitle(getString(R.string.core_connected))
+                    .setContentText(getString(R.string.service_running))
+            }
+            val notification = builder.setStyle(null).build()
             startForeground(notification, useSpecialType = !GlobalState.isSmartStopped)
             hasStartedForeground = true
         }.onFailure { Log.e(TAG, "flashNotification failed: ${it.message}") }
