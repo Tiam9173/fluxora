@@ -34,6 +34,17 @@ Future<void> showNodeDetailsDialog(
 
   if (!context.mounted) return;
 
+  // 覆盖状态在打开时取一次：这个面板显示的是**叠加之后**的配置，不看一眼
+  // 覆盖层，用户没法知道自己看到的是订阅原样还是自己改过的。
+  await NodeOverrideStore.instance.ensureLoaded();
+  final hasOverride = profileId != null &&
+      NodeOverrideStore.instance.hasOverride(profileId, proxyName);
+  final overriddenFields = profileId == null
+      ? const <String>{}
+      : (NodeOverrideStore.instance.overridesFor(profileId, proxyName)?.keys
+              .toSet() ??
+          const <String>{});
+
   await showDialog(
     context: context,
     builder: (ctx) {
@@ -58,10 +69,37 @@ Future<void> showNodeDetailsDialog(
         title: Row(
           children: [
             Expanded(
-              child: Text(
-                proxyName,
-                style: const TextStyle(fontSize: 15),
-                overflow: TextOverflow.ellipsis,
+              child: Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      proxyName,
+                      style: const TextStyle(fontSize: 15),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (hasOverride) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colors.tertiaryContainer,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        '已修改',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: colors.onTertiaryContainer,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
             if (raw != null && profileId != null)
@@ -128,7 +166,12 @@ Future<void> showNodeDetailsDialog(
                                   e.key,
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: colors.outline,
+                                    color: overriddenFields.contains(e.key)
+                                        ? colors.tertiary
+                                        : colors.outline,
+                                    fontWeight: overriddenFields.contains(e.key)
+                                        ? FontWeight.w600
+                                        : FontWeight.w400,
                                   ),
                                 ),
                               ),
@@ -146,6 +189,18 @@ Future<void> showNodeDetailsDialog(
           ),
         ),
         actions: [
+          if (hasOverride)
+            TextButton(
+              onPressed: () async {
+                await NodeOverrideStore.instance.clear(profileId, proxyName);
+                if (!ctx.mounted) return;
+                Navigator.of(ctx).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('已恢复订阅原始配置，重启内核后生效')),
+                );
+              },
+              child: const Text('恢复原始配置'),
+            ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
             child: const Text('关闭'),
