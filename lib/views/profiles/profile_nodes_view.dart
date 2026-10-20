@@ -99,7 +99,7 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
                     // 只列内核真正支持的协议：trojan-go / awg / juicity / naive
                     // 是 sing-box 的东西，导入进来也加载不了。
                     'vmess://, vless://, ss://, ssr://, trojan://, hy2://, hysteria://, tuic://, '
-                    'wireguard://, snell://, ssh://, shadow-tls://, socks5://, http://, direct://',
+                    'wireguard://, snell://, anytls://, ssh://, shadow-tls://, socks5://, http://, direct://',
                     style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                   const SizedBox(height: 12),
@@ -497,6 +497,10 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
           _portCtrl.text = '443';
           _security = 'tls';
           break;
+        case ManualProtocol.anytls:
+          _portCtrl.text = '443';
+          _security = 'tls';
+          break;
         case ManualProtocol.tuic:
           _portCtrl.text = '8443';
           _security = 'tls';
@@ -587,6 +591,11 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
     };
 
     switch (_protocol) {
+      case ManualProtocol.anytls:
+        // anytls 只有密码 + TLS，没有 uuid/flow。
+        map['password'] = secret;
+        map['skip-cert-verify'] = _skipCertVerify;
+        if (sni.isNotEmpty) map['sni'] = sni;
       case ManualProtocol.vless:
         map['uuid'] = secret;
         if (_flowCtrl.text.trim().isNotEmpty) {

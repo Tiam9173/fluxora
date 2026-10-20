@@ -14,6 +14,7 @@ enum ManualProtocol {
   trojanGo,
   hysteria,
   hysteria2,
+  anytls,
   tuic,
   wireguard,
   amneziaWg,
@@ -50,6 +51,7 @@ extension ManualProtocolExt on ManualProtocol {
     ManualProtocol.trojanGo => 'Trojan Go',
     ManualProtocol.hysteria => 'Hysteria',
     ManualProtocol.hysteria2 => 'Hysteria 2',
+    ManualProtocol.anytls => 'AnyTLS',
     ManualProtocol.tuic => 'TUIC',
     ManualProtocol.wireguard => 'WireGuard',
     ManualProtocol.amneziaWg => 'AmneziaWG 2/3',
@@ -84,6 +86,7 @@ extension ManualProtocolExt on ManualProtocol {
     ManualProtocol.socks5 => 'socks5',
     ManualProtocol.http => 'http',
     ManualProtocol.direct => 'direct',
+    ManualProtocol.anytls => 'anytls',
     ManualProtocol.custom => 'custom',
   };
 
@@ -107,6 +110,7 @@ extension ManualProtocolExt on ManualProtocol {
     ManualProtocol.socks5 => Colors.blueGrey.shade600,
     ManualProtocol.http => Colors.grey.shade700,
     ManualProtocol.direct => Colors.green.shade700,
+    ManualProtocol.anytls => Colors.teal.shade400,
     ManualProtocol.custom => Colors.grey.shade600,
   };
 }
@@ -181,6 +185,8 @@ class ManualProxyHelper {
       } else if (raw.startsWith('naive+https://') ||
           raw.startsWith('naive://')) {
         return _parseNaive(raw);
+      } else if (raw.startsWith('anytls://')) {
+        return _parseAnyTls(raw);
       } else if (raw.startsWith('socks5://') ||
           raw.startsWith('socks://') ||
           raw.startsWith('socks4://')) {
@@ -968,6 +974,29 @@ class ManualProxyHelper {
       'sni': server,
       'skip-cert-verify': true,
     };
+  }
+
+  /// anytls://password@host:port?sni=example.com&insecure=1#备注
+  static Map<String, dynamic>? _parseAnyTls(String rawUri) {
+    final uri = Uri.tryParse(rawUri);
+    if (uri == null || uri.host.isEmpty) return null;
+    final query = uri.queryParameters;
+    final result = <String, dynamic>{
+      'name': uri.fragment.isEmpty
+          ? 'AnyTLS'
+          : Uri.decodeComponent(uri.fragment),
+      'type': 'anytls',
+      'server': uri.host,
+      'port': uri.hasPort ? uri.port : 443,
+      'password': uri.userInfo,
+      'udp': true,
+    };
+    final sni = query['sni'] ?? query['peer'];
+    if (sni != null && sni.isNotEmpty) result['sni'] = sni;
+    if (query['insecure'] == '1' || query['allowInsecure'] == '1') {
+      result['skip-cert-verify'] = true;
+    }
+    return result;
   }
 
   static Map<String, dynamic>? _parseSocks5(String rawUri) {
