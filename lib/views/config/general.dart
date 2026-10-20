@@ -1022,6 +1022,7 @@ List<Widget> get generalItems => generateSection(
     const GeodataLoaderItem(),
     const TolerateRuleProviderItem(),
     const ExternalControllerItem(),
+    const ForceLoopbackControllerItem(),
   ],
 );
 
@@ -1381,6 +1382,50 @@ class _PortDialogState extends ConsumerState<_PortDialog> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// 通知栏切换卡片要通过内核的 HTTP 接口读节点、切节点，而「外部控制器」
+/// 默认是关的。这里控制是否在这种情况下仍然绑到本机回环地址 —— 只影响本机
+/// 进程能访问，局域网是否可达仍由「允许局域网连接」决定。
+class ForceLoopbackControllerItem extends StatefulWidget {
+  const ForceLoopbackControllerItem({super.key});
+
+  @override
+  State<ForceLoopbackControllerItem> createState() =>
+      _ForceLoopbackControllerItemState();
+}
+
+class _ForceLoopbackControllerItemState
+    extends State<ForceLoopbackControllerItem> {
+  bool _enabled = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final prefs = await Preferences().sharedPreferencesCompleter.future;
+    final value = prefs?.getBool('force_loopback_controller') ?? true;
+    if (mounted) setState(() => _enabled = value);
+  }
+
+  Future<void> _set(bool value) async {
+    setState(() => _enabled = value);
+    final prefs = await Preferences().sharedPreferencesCompleter.future;
+    await prefs?.setBool('force_loopback_controller', value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListItem.switchItem(
+      leading: const Icon(Icons.settings_ethernet),
+      title: const Text('通知栏卡片可访问内核'),
+      subtitle: const Text('开启后内核始终在本机回环地址提供接口，供通知栏切换卡片使用'),
+      delegate: SwitchDelegate(value: _enabled, onChanged: _set),
     );
   }
 }

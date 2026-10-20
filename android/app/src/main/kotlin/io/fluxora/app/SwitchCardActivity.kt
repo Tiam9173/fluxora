@@ -282,8 +282,12 @@ class SwitchCardActivity : Activity() {
         runOnUiThread { adapter?.notifyDataSetChanged() }
         io.execute {
             val value = try {
-                val encoded = URLEncoder.encode(node.name, "UTF-8")
+                // URLEncoder 把空格编成 `+`，而路径段里的 `+` 就是加号本身。
+                // 节点名几乎都带空格（"🇺🇸美国05 |公益1倍"），不换成 %20 的话
+                // 请求打到一个不存在的名字上，表现就是"这个节点测不出来"。
+                val encoded = URLEncoder.encode(node.name, "UTF-8").replace("+", "%20")
                 val url = URLEncoder.encode(testUrlForCurrentGroup(), "UTF-8")
+                    .replace("+", "%20")
                 val json = JSONObject(
                     request("/proxies/$encoded/delay?timeout=3000&url=$url"),
                 )
@@ -304,7 +308,7 @@ class SwitchCardActivity : Activity() {
         io.execute {
             try {
                 val groupName = groups.getOrNull(selectedGroup)?.name ?: ""
-            val encoded = URLEncoder.encode(groupName, "UTF-8")
+            val encoded = URLEncoder.encode(groupName, "UTF-8").replace("+", "%20")
                 request(
                     "/proxies/$encoded",
                     method = "PUT",
