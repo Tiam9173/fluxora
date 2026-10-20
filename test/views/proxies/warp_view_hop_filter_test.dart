@@ -120,7 +120,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
 
-      final hopTile = find.text('前置跳板代理 (Dialer-Proxy)');
+      final hopTile = find.text(appLocalizations.warpStr41);
       if (hopTile.evaluate().isEmpty) {
         // The body is a lazy `ListView`; scroll until the card is built. Guard
         // the scrollable lookup so an empty tree surfaces as the real assertion
@@ -149,7 +149,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
 
       expect(
-        find.text('机场代理节点'),
+        find.text(appLocalizations.warpStr63),
         findsOneWidget,
         reason: 'the hop picker sheet must be open',
       );
