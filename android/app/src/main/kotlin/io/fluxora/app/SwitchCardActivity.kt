@@ -8,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
+import android.widget.LinearLayout
 import android.widget.ListView
 import android.widget.TextView
 import org.json.JSONObject
@@ -26,14 +27,19 @@ import java.util.concurrent.Executors
 /// service 里，地址和密钥由 Dart 写进 SharedPreferences。
 class SwitchCardActivity : Activity() {
     private class Node(
-        val group: String,
         val name: String,
         var delay: Int,
         var testing: Boolean,
         var selected: Boolean,
     )
 
-    private val nodes = mutableListOf<Node>()
+    private class Group(val name: String, val nodes: MutableList<Node> = mutableListOf())
+
+    private val groups = mutableListOf<Group>()
+    private var selectedGroup = 0
+
+    private val nodes: MutableList<Node>
+        get() = groups.getOrNull(selectedGroup)?.nodes ?: mutableListOf()
     private var adapter: NodeAdapter? = null
     private var endpoint: String? = null
     private var secret: String? = null
@@ -50,9 +56,11 @@ class SwitchCardActivity : Activity() {
         val list = findViewById<ListView>(R.id.node_list)
         adapter = NodeAdapter(this)
         list.adapter = adapter
-        list.setOnItemClickListener { _, _, position, _ -> select(nodes[position]) }
+        list.setOnItemClickListener { _, _, position, _ ->
+            nodes.getOrNull(position)?.let { select(it) }
+        }
         list.setOnItemLongClickListener { _, _, position, _ ->
-            testDelay(nodes[position])
+            nodes.getOrNull(position)?.let { testDelay(it) }
             true
         }
 
@@ -135,31 +143,93 @@ class SwitchCardActivity : Activity() {
             try {
                 val json = JSONObject(request("/proxies"))
                 val proxies = json.getJSONObject("proxies")
-                val collected = mutableListOf<Node>()
+                val collected = mutableListOf<Group>()
                 for (groupName in proxies.keys()) {
                     val group = proxies.optJSONObject(groupName) ?: continue
                     if (group.optString("type") != "Selector") continue
                     val all = group.optJSONArray("all") ?: continue
                     val now = group.optString("now")
+                    val entry = Group(groupName)
+                    val seen = mutableSetOf<String>()
                     for (i in 0 until all.length()) {
                         val name = all.getString(i)
-                        val detail = proxies.optJSONObject(name)
-                        val delay = lastDelay(detail)
-                        collected.add(Node(groupName, name, delay, false, name == now))
+                        // 同一批节点会出现在多个组里，组内也可能重复 —— 按名字去重，
+                        // 否则列表里同一个节点会出现好几次。
+                        if (!seen.add(name)) continue
+                        val delay = lastDelay(proxies.optJSONObject(name))
+                        entry.nodes.add(Node(name, delay, false, name == now))
                     }
+                    if (entry.nodes.isNotEmpty()) collected.add(entry)
                 }
+                val preferred = readPreferredGroup()
                 runOnUiThread {
-                    nodes.clear()
-                    nodes.addAll(collected)
+                    groups.clear()
+                    groups.addAll(collected)
+                    val index = groups.indexOfFirst { it.name == preferred }
+                    selectedGroup = if (index >= 0) index else 0
                     adapter?.notifyDataSetChanged()
-                    statusView.text =
-                        if (nodes.isEmpty()) "没有可切换的节点" else "${nodes.size} 个节点"
+                    renderChips()
+                    updateStatus()
                 }
             } catch (e: Exception) {
-                runOnUiThread {
-                    statusView.text = "读取节点失败：${e.message}"
+                runOnUiThread { statusView.text = "读取节点失败：${e.message}" }
+            }
+        }
+    }
+
+    private fun readPreferredGroup(): String? =
+        getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+            .getString("flutter.core_group", null)
+
+    private fun updateStatus() {
+        val group = groups.getOrNull(selectedGroup)
+        statusView.text = when {
+            group == null -> "没有可切换的节点"
+            else -> "${group.name} · ${group.nodes.size} 个节点"
+        }
+    }
+
+    /// 分组切换用一排横向 chips：节点会同时出现在多个组里，平铺展开必然重复。
+    private fun renderChips() {
+        val row = findViewById<LinearLayout>(R.id.group_chips)
+        row.removeAllViews()
+        val density = resources.displayMetrics.density
+        for ((index, group) in groups.withIndex()) {
+            val chip = TextView(this)
+            chip.text = group.name
+            chip.textSize = 12f
+            chip.maxLines = 1
+            chip.ellipsize = android.text.TextUtils.TruncateAt.END
+            chip.maxWidth = (140 * density).toInt()
+            chip.setPadding(
+                (12 * density).toInt(),
+                (6 * density).toInt(),
+                (12 * density).toInt(),
+                (6 * density).toInt(),
+            )
+            chip.setTextColor(
+                getColor(
+                    if (index == selectedGroup) R.color.switch_card_text
+                    else R.color.switch_card_sub,
+                ),
+            )
+            if (index == selectedGroup) {
+                chip.background = getDrawable(R.drawable.bg_chip_selected)
+            }
+            chip.setOnClickListener {
+                if (selectedGroup != index) {
+                    selectedGroup = index
+                    adapter?.notifyDataSetChanged()
+                    renderChips()
+                    updateStatus()
                 }
             }
+            val params = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            )
+            params.marginEnd = (6 * density).toInt()
+            row.addView(chip, params)
         }
     }
 
@@ -198,7 +268,8 @@ class SwitchCardActivity : Activity() {
     private fun select(node: Node) {
         io.execute {
             try {
-                val encoded = URLEncoder.encode(node.group, "UTF-8")
+                val groupName = groups.getOrNull(selectedGroup)?.name ?: ""
+            val encoded = URLEncoder.encode(groupName, "UTF-8")
                 request(
                     "/proxies/$encoded",
                     method = "PUT",

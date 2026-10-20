@@ -1283,6 +1283,11 @@ class GlobalState {
         await prefs?.setString('core_endpoint', endpoint);
       }
       await prefs?.setString('core_secret', secret ?? '');
+      // 卡片默认停在用户当前用的分组上，而不是每次都从第一个组开始。
+      final group = config.currentProfile?.currentGroupName;
+      if (group != null && group.isNotEmpty) {
+        await prefs?.setString('core_group', group);
+      }
     } catch (e) {
       commonPrint.log('persist core endpoint failed: $e');
     }
