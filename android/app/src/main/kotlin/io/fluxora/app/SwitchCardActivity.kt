@@ -33,7 +33,11 @@ class SwitchCardActivity : Activity() {
         var selected: Boolean,
     )
 
-    private class Group(val name: String, val nodes: MutableList<Node> = mutableListOf())
+    private class Group(
+        val name: String,
+        val nodes: MutableList<Node> = mutableListOf(),
+        var testUrl: String = "",
+    )
 
     private val groups = mutableListOf<Group>()
     private var selectedGroup = 0
@@ -162,7 +166,7 @@ class SwitchCardActivity : Activity() {
                     if (group.optJSONArray("all") == null) continue
                     val all = group.optJSONArray("all") ?: continue
                     val now = group.optString("now")
-                    val entry = Group(groupName)
+                    val entry = Group(groupName, testUrl = group.optString("testUrl"))
                     val seen = mutableSetOf<String>()
                     for (i in 0 until all.length()) {
                         val name = all.getString(i)
@@ -188,6 +192,18 @@ class SwitchCardActivity : Activity() {
                 runOnUiThread { statusView.text = "读取节点失败：${e.message}" }
             }
         }
+    }
+
+    /// 和 App 用同一个测速目标：分组自己的 testUrl 优先，其次 App 的全局设置。
+    private fun testUrlForCurrentGroup(): String {
+        groups.getOrNull(selectedGroup)?.testUrl?.takeIf { it.isNotEmpty() }?.let {
+            return it
+        }
+        getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+            .getString("flutter.core_test_url", null)
+            ?.takeIf { it.isNotEmpty() }
+            ?.let { return it }
+        return "https://www.gstatic.com/generate_204"
     }
 
     private fun readPreferredGroup(): String? =
@@ -267,8 +283,9 @@ class SwitchCardActivity : Activity() {
         io.execute {
             val value = try {
                 val encoded = URLEncoder.encode(node.name, "UTF-8")
+                val url = URLEncoder.encode(testUrlForCurrentGroup(), "UTF-8")
                 val json = JSONObject(
-                    request("/proxies/$encoded/delay?timeout=3000&url=https://www.gstatic.com/generate_204"),
+                    request("/proxies/$encoded/delay?timeout=3000&url=$url"),
                 )
                 json.optInt("delay", -1)
             } catch (e: Exception) {

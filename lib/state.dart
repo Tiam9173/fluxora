@@ -1295,6 +1295,11 @@ class GlobalState {
       if (group != null && group.isNotEmpty) {
         await prefs?.setString('core_group', group);
       }
+      // 卡片测速要用和 App 相同的目标地址，否则同一节点两边数字对不上。
+      final testUrl = config.appSetting.testUrl;
+      if (testUrl.isNotEmpty) {
+        await prefs?.setString('core_test_url', testUrl);
+      }
     } catch (e) {
       commonPrint.log('persist core endpoint failed: $e');
     }
