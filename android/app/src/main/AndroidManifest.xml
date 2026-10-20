@@ -36,6 +36,12 @@
              excludeFromRecents + noHistory：它不是一个可以"回退"的界面，
              关掉就该消失。 -->
         <activity
+            android:name="io.fluxora.app.SwitchCardActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTop"
+            android:theme="@style/SwitchCardTheme" />
+        <activity
             android:name="io.fluxora.app.CardActivity"
             android:exported="false"
             android:excludeFromRecents="true"

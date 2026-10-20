@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="switch_card_bg">#F21E1E1E</color>
+    <color name="switch_card_text">#FFEDEDED</color>
+    <color name="switch_card_sub">#FF9E9E9E</color>
+</resources>

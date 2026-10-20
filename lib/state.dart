@@ -719,6 +719,12 @@ class GlobalState {
       if (secret != null && secret.isNotEmpty) {
         rawConfig['secret'] = secret;
       }
+      // 通知栏切换卡片是原生 Activity，它不跑 Flutter，拿不到这份配置。
+      // 把地址和密钥写进 SharedPreferences，原生侧直接读。
+      unawaited(_persistCoreEndpoint(
+        rawConfig['external-controller']?.toString(),
+        realPatchConfig.secret,
+      ));
     }
     rawConfig['external-ui'] = await appPath.uiPath;
     rawConfig['external-ui-url'] =
@@ -1263,6 +1269,19 @@ class GlobalState {
       break;
     }
     return providerProxies;
+  }
+
+  /// 供原生卡片读取：内核地址 + 密钥。
+  Future<void> _persistCoreEndpoint(String? endpoint, String? secret) async {
+    try {
+      final prefs = await Preferences().sharedPreferencesCompleter.future;
+      if (endpoint != null && endpoint.isNotEmpty) {
+        await prefs?.setString('core_endpoint', endpoint);
+      }
+      await prefs?.setString('core_secret', secret ?? '');
+    } catch (e) {
+      commonPrint.log('persist core endpoint failed: $e');
+    }
   }
 
   Future<Map<String, dynamic>> getProfileConfig(String profileId) async {
