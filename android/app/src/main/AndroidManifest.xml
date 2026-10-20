@@ -32,6 +32,23 @@
         android:banner="@drawable/tv_banner"
         android:networkSecurityConfig="@xml/network_security_config"
         android:enableOnBackInvokedCallback="false">
+        <!-- 通知栏切换卡片：独立 Activity，透明主题。
+             excludeFromRecents + noHistory：它不是一个可以"回退"的界面，
+             关掉就该消失。 -->
+        <activity
+            android:name="io.fluxora.app.CardActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:launchMode="singleInstance"
+            android:taskAffinity="io.fluxora.app.card"
+            android:theme="@style/TranslucentTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode|colorMode"
+            android:windowSoftInputMode="adjustResize">
+            <meta-data
+                android:name="io.flutter.embedding.android.NormalTheme"
+                android:resource="@style/TranslucentTheme" />
+        </activity>
         <activity
             android:name="io.fluxora.app.MainActivity"
             android:icon="@mipmap/ic_launcher_light"
