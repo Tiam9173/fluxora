@@ -57,6 +57,10 @@ class EditProfileViewState extends State<EditProfileView> {
     ageSecretKeyController = TextEditingController(
       text: widget.profile.ageSecretKey,
     );
+    aggregateAliasController = TextEditingController(
+      text: widget.profile.aggregateAlias,
+    );
+    _joinAggregate = widget.profile.joinAggregate;
     if (widget.isNew) {
       urlFocusNode = FocusNode();
       WidgetsBinding.instance.addPostFrameCallback((_) {

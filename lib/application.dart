@@ -55,6 +55,9 @@ Future<void> runDetachedTask(
 /// 页之类的界面，系统会把它顶到前台 —— 用户看到的就是"关掉卡片却还在 App
 /// 里"。原生侧先 moveTaskToBack，再 finish，才会回到点通知之前的界面。
 Future<void> _closeCardOnlyMode() async {
+  // 先退出卡片模式：Activity 结束后进程可能还活着，下次正常打开 App 时
+  // 这个标志如果还是 true，会又只显示一张卡片。
+  globalState.cardOnlyMode.value = false;
   try {
     await const MethodChannel('vpn').invokeMethod('closeCardActivity');
   } catch (_) {
@@ -283,11 +286,17 @@ class ApplicationState extends ConsumerState<Application>
                 GlobalWidgetsLocalizations.delegate,
               ],
               builder: (_, child) {
+                // 必须监听而不是直接读 value：`builder` 只在路由/父级重建时
+                // 跑，光改 ValueNotifier 不会让它重跑 —— 卡片模式就永远进不去，
+                // 表现为"点了通知还是在 App 里弹了个普通对话框"。
+                return ValueListenableBuilder<bool>(
+                  valueListenable: globalState.cardOnlyMode,
+                  builder: (_, cardOnly, _) {
                 // Card-only mode keeps this MaterialApp (and therefore the
                 // theme) but replaces everything it draws. The window behind is
                 // translucent, so what shows around the card is whatever app the
                 // user was in.
-                if (globalState.cardOnlyMode.value) {
+                if (cardOnly) {
                   return Material(
                     color: Colors.transparent,
                     child: GestureDetector(
@@ -322,6 +331,8 @@ class ApplicationState extends ConsumerState<Application>
                       );
                     },
                   ),
+                );
+                  },
                 );
               },
               scrollBehavior: BaseScrollBehavior(),
