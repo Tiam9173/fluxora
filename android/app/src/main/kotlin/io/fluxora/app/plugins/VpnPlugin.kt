@@ -239,11 +239,11 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             "closeCardActivity" -> {
                 // 直接 finishAndRemoveTask：只 moveTaskToBack 的话 Activity
                 // 还活着，用户再点开 App 看到的仍是卡片页。
-                // 先退到后台再 finish：直接 finishAndRemoveTask 偶尔会留下
-                // 一个已经不可见的窗口，用户回到 App 后点击全被它吃掉。
-                GlobalState.currentActivity?.moveTaskToBack(true)
-                GlobalState.currentActivity?.finish()
+                // 只 finish：ownbox 也是这么做的。moveTaskToBack 之后再 finish
+                // 偶尔会留下一个不可见的窗口，回到 App 后点击全被它吃掉。
+                val activity = GlobalState.currentActivity
                 GlobalState.currentActivity = null
+                activity?.finish()
                 result.success(true)
             }
 

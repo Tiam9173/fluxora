@@ -42,7 +42,7 @@
             android:noHistory="true"
             android:launchMode="singleInstance"
             android:taskAffinity="io.fluxora.app.card"
-            android:theme="@style/TranslucentTheme"
+            android:theme="@style/CardTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode|colorMode"
             android:windowSoftInputMode="adjustResize">
             <meta-data

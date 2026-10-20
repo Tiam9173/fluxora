@@ -15,7 +15,18 @@
     </style>
     <!-- Hosts the notification switch card over the desktop: the window is
          transparent, so everything except the card shows the launcher. -->
-    <style name="TranslucentTheme" parent="@android:style/Theme.Translucent.NoTitleBar">
+    <!-- 通知栏切换卡片：对话框式窗口。
+     不是全屏透明 —— 全屏透明要求 Flutter 画布本身参与窗口合成，任何一层不透明
+     都会变成一大片白。对话框窗口由系统裁出实际区域，卡片外就是下层界面。 -->
+<style name="CardTheme" parent="@android:style/Theme.Translucent.NoTitleBar">
+    <item name="android:windowIsTranslucent">true</item>
+    <item name="android:windowBackground">@android:color/transparent</item>
+    <item name="android:windowIsFloating">true</item>
+    <item name="android:backgroundDimEnabled">true</item>
+    <item name="android:backgroundDimAmount">0.35</item>
+    <item name="android:windowNoTitle">true</item>
+</style>
+<style name="TranslucentTheme" parent="@android:style/Theme.Translucent.NoTitleBar">
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowIsTranslucent">true</item>
         <item name="android:windowNoTitle">true</item>
