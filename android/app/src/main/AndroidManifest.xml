@@ -43,18 +43,6 @@
             android:taskAffinity="io.fluxora.app.switchcard"
             android:theme="@style/SwitchCardTheme" />
         <activity
-            android:name="io.fluxora.app.CardActivity"
-            android:exported="false"
-            android:excludeFromRecents="true"
-            android:launchMode="singleTop"
-            android:theme="@style/TranslucentTheme"
-            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode|colorMode"
-            android:windowSoftInputMode="adjustResize">
-            <meta-data
-                android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/TranslucentTheme" />
-        </activity>
-        <activity
             android:name="io.fluxora.app.MainActivity"
             android:icon="@mipmap/ic_launcher_light"
             android:roundIcon="@mipmap/ic_launcher_round_light"

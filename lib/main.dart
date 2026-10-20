@@ -18,7 +18,6 @@ import 'package:synchronized/synchronized.dart';
 
 import 'application.dart';
 import 'clash/core.dart';
-import 'card_only_main.dart';
 import 'clash/lib.dart';
 import 'common/common.dart';
 import 'common/external_control.dart';
@@ -30,17 +29,6 @@ ReceivePort? _serviceReceiverPort;
 ReceivePort? _messageReceiverPort;
 
 Future<void> main(List<String> args) async {
-  // 通知栏卡片用独立引擎跑**同一个** main，只靠参数分流。
-  //
-  // 之前给它单独开了一个 `cardMain` 入口，引擎启动后什么都没画：独立入口的
-  // 库 URI 在 kernel 里不一定能解析到。走默认入口 + 参数最稳，而且这里直接
-  // return，不会碰下面任何初始化。
-  if (args.contains('card-only')) {
-    WidgetsFlutterBinding.ensureInitialized();
-    runApp(const CardOnlyApp());
-    return;
-  }
-
   globalState.isService = false;
   WidgetsFlutterBinding.ensureInitialized();
 
