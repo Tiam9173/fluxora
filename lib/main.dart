@@ -18,6 +18,10 @@ import 'package:synchronized/synchronized.dart';
 
 import 'application.dart';
 import 'clash/core.dart';
+// 卡片入口（`cardMain`）必须被主入口**引用**，否则它不会进 kernel 快照，
+// `CardActivity` 用独立引擎跑它时会找不到入口 —— 表现就是窗口透明但一片空白。
+// ignore: unused_import
+import 'card_only_main.dart';
 import 'clash/lib.dart';
 import 'common/common.dart';
 import 'common/external_control.dart';
