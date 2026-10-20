@@ -11,6 +11,7 @@ import 'package:collection/collection.dart';
 import 'package:emoji_regex/emoji_regex.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluxora/views/proxies/node_details_dialog.dart';
 
 final proxyIconProvider = Provider.family<String, String>((ref, proxyName) {
   if (proxyName.isEmpty) return '';
@@ -335,6 +336,12 @@ class ProxyCard extends StatelessWidget {
           // `min` cards only ever showed one line; the wider types showed two.
           nameMaxLines: type == ProxyCardType.min ? 1 : 2,
           onTap: () => _changeProxy(ref),
+          // 长按看配置：节点名、服务器、加密方式这些平时看不到的信息。
+          onLongPress: () => showNodeDetailsDialog(
+            context,
+            proxyName: proxy.name,
+            profileId: globalState.config.currentProfileId,
+          ),
           padding: const EdgeInsets.symmetric(horizontal: FluxoraSpacing.md),
           leading: subGroupIcon.isEmpty
               ? null

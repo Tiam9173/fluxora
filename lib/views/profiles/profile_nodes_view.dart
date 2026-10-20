@@ -5,6 +5,7 @@ import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:yaml/yaml.dart';
+import 'package:fluxora/views/proxies/node_details_dialog.dart';
 
 class ProfileNodesView extends StatefulWidget {
   final Profile profile;
@@ -326,6 +327,12 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 6,
+                    ),
+                    // 长按看完整配置，和代理页的行为保持一致。
+                    onLongPress: () => showNodeDetailsDialog(
+                      context,
+                      proxyName: name,
+                      profileId: _profile.id,
                     ),
                     leading: Container(
                       padding: const EdgeInsets.symmetric(
