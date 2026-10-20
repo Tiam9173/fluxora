@@ -1157,9 +1157,6 @@ class GlobalState {
     rawConfig.remove('rule');
     rawConfig['rules'] = rules;
 
-    // 手动节点：独立分组，和订阅节点并列。
-    await _injectManualNodes(rawConfig);
-
     // 多订阅聚合：先注入 provider，后面的链路/组生成才能看到聚合节点。
     final aggregateProxies =
         await _injectAggregateProviders(rawConfig, targetProfile.id);
@@ -1283,58 +1280,6 @@ class GlobalState {
       break;
     }
     return providerProxies;
-  }
-
-  /// 手动添加的节点单独成组。
-  ///
-  /// 名字可能和订阅节点撞车，而 mihomo 里节点名必须唯一 —— 撞了就加后缀，
-  /// 不去改用户起的名字。
-  Future<void> _injectManualNodes(Map<String, dynamic> rawConfig) async {
-    final manual = await ManualNodeStore.instance.load();
-    if (manual.isEmpty) return;
-
-    final proxies = rawConfig['proxies'];
-    final list = proxies is List ? proxies : <dynamic>[];
-    final existing = <String>{
-      for (final item in list)
-        if (item is Map && item['name'] != null) item['name'].toString(),
-    };
-
-    final added = <String>[];
-    for (final node in manual) {
-      final base = node['name']?.toString() ?? '手动节点';
-      var name = base;
-      var suffix = 2;
-      while (existing.contains(name)) {
-        name = '$base ($suffix)';
-        suffix++;
-      }
-      existing.add(name);
-      final entry = Map<String, dynamic>.from(node)..['name'] = name;
-      list.add(entry);
-      added.add(name);
-    }
-    if (added.isEmpty) return;
-    rawConfig['proxies'] = list;
-
-    final groups = rawConfig['proxy-groups'];
-    if (groups is! List) return;
-    const manualGroup = '📌 手动节点';
-    groups.add(<String, dynamic>{
-      'name': manualGroup,
-      'type': 'select',
-      'proxies': added,
-    });
-    // 挂进主选择组，否则用户得自己去代理页找这个组。
-    for (final group in groups) {
-      if (group is! Map) continue;
-      if (group['type'] != 'select') continue;
-      if (group['name'] == manualGroup) continue;
-      final members = group['proxies'];
-      if (members is! List) continue;
-      if (!members.contains(manualGroup)) members.insert(0, manualGroup);
-      break;
-    }
   }
 
   /// 供原生卡片读取：内核地址 + 密钥。

@@ -17,7 +17,6 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'add_profile.dart';
 import 'profile_nodes_view.dart';
 import 'profile_chain_dialog.dart';
-import 'manual_nodes.dart';
 
 class ProfilesView extends ConsumerStatefulWidget {
   const ProfilesView({super.key});
@@ -575,13 +574,6 @@ class ProfileItem extends StatelessWidget {
         label: appLocalizations.profileManageNodes,
         onPressed: () {
           BaseNavigator.push(context, ProfileNodesView(profile: profile));
-        },
-      ),
-      PopupMenuItemData(
-        icon: Icons.link,
-        label: '手动节点',
-        onPressed: () {
-          BaseNavigator.push(context, const ManualNodesView());
         },
       ),
       PopupMenuItemData(
