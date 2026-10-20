@@ -28,6 +28,7 @@ import 'manager/chain_proxy_manager.dart';
 import 'manager/warp_manager.dart';
 import 'manager/profile_chain_manager.dart';
 import 'models/models.dart';
+import 'package:fluxora/common/node_overrides.dart';
 
 typedef UpdateTasks = List<FutureOr Function()>;
 
@@ -1160,6 +1161,10 @@ class GlobalState {
     };
     configMap['rules'] = configMap['rule'];
     configMap.remove('rule');
+    // 本地覆盖在离开这个函数之前叠加：`patchRawConfig` 直接消费它的结果，
+    // 所以内核、链路生成、详情面板看到的是同一份「用户改过」的配置。
+    await NodeOverrideStore.instance.ensureLoaded();
+    NodeOverrideStore.instance.apply(profileId, configMap);
     return configMap;
   }
 

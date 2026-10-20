@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/state.dart';
+import 'package:fluxora/common/node_overrides.dart';
 
 /// 节点详情。
 ///
@@ -63,6 +64,30 @@ Future<void> showNodeDetailsDialog(
                 overflow: TextOverflow.ellipsis,
               ),
             ),
+            if (raw != null && profileId != null)
+              IconButton(
+                tooltip: '编辑',
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                onPressed: () async {
+                  // 闭包里不会保留 null 提升，取一份非空引用。
+                  final data = raw;
+                  if (data == null) return;
+                  final changed = await showNodeEditDialog(
+                    ctx,
+                    proxyName: proxyName,
+                    profileId: profileId,
+                    raw: data,
+                  );
+                  if (changed && ctx.mounted) {
+                    Navigator.of(ctx).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('已保存本地修改，重启内核后生效'),
+                      ),
+                    );
+                  }
+                },
+              ),
             IconButton(
               tooltip: '复制配置',
               icon: const Icon(Icons.copy_all_outlined, size: 18),
@@ -148,4 +173,79 @@ bool _isSecret(String key) {
 String _mask(String value) {
   if (value.length <= 4) return '••••';
   return '${value.substring(0, 2)}••••${value.substring(value.length - 2)}';
+}
+
+/// 编辑节点参数。
+///
+/// 只允许改**标量**字段（字符串 / 数字 / 布尔）：`name` 是配置里所有引用它的
+/// 地方（策略组、规则、链路）的锚点，`type` 改了整段参数都得跟着换，两者都不
+/// 是"顺手改一下"能承担的。改完写进覆盖层，订阅更新不会冲掉。
+Future<bool> showNodeEditDialog(
+  BuildContext context, {
+  required String proxyName,
+  required String profileId,
+  required Map<String, dynamic> raw,
+}) async {
+  final controllers = <String, TextEditingController>{};
+  for (final e in raw.entries) {
+    if (e.key == 'name' || e.key == 'type') continue;
+    final value = e.value;
+    if (value is Map || value is List || value == null) continue;
+    controllers[e.key] = TextEditingController(text: value.toString());
+  }
+  if (controllers.isEmpty) return false;
+
+  final saved = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text('编辑 $proxyName', style: const TextStyle(fontSize: 15)),
+      content: SizedBox(
+        width: 380,
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              for (final entry in controllers.entries)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: TextField(
+                    controller: entry.value,
+                    style: const TextStyle(fontSize: 13),
+                    decoration: InputDecoration(
+                      isDense: true,
+                      labelText: entry.key,
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(false),
+          child: const Text('取消'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(true),
+          child: const Text('保存'),
+        ),
+      ],
+    ),
+  );
+  if (saved != true) return false;
+
+  final fields = <String, dynamic>{};
+  for (final entry in controllers.entries) {
+    final original = raw[entry.key];
+    final text = entry.value.text;
+    if (text == original?.toString()) continue;
+    // 端口这类字段在配置里是数字，写成字符串内核会拒绝。
+    final asInt = int.tryParse(text);
+    fields[entry.key] = (original is int && asInt != null) ? asInt : text;
+  }
+
+  if (fields.isEmpty) return false;
+  await NodeOverrideStore.instance.setOverride(profileId, proxyName, fields);
+  return true;
 }
