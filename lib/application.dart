@@ -401,11 +401,19 @@ class ApplicationState extends ConsumerState<Application>
                   color: _getAppColorScheme(
                     brightness: Brightness.light,
                     primaryColor: themeProps.primaryColor,
-                  ).outlineVariant.withValues(alpha: 0.6),
+                  ).outline.withValues(alpha: 0.75),
                   thickness: 1,
                   space: 1,
                 ),
                 inputDecorationTheme: InputDecorationTheme(
+                  // 表单里字段多，默认高度会把弹窗撑得很长；紧凑一点。
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 14,
+                  ),
+                  labelStyle: const TextStyle(fontSize: 12),
+                  hintStyle: const TextStyle(fontSize: 12),
                   border: const OutlineInputBorder(
                     borderRadius: BorderRadius.all(Radius.circular(18)),
                   ),
@@ -415,7 +423,7 @@ class ApplicationState extends ConsumerState<Application>
                       color: _getAppColorScheme(
                         brightness: Brightness.light,
                         primaryColor: themeProps.primaryColor,
-                      ).outlineVariant.withValues(alpha: 0.6),
+                      ).outline.withValues(alpha: 0.75),
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
@@ -437,7 +445,7 @@ class ApplicationState extends ConsumerState<Application>
                     color: _getAppColorScheme(
                       brightness: Brightness.light,
                       primaryColor: themeProps.primaryColor,
-                    ).outlineVariant.withValues(alpha: 0.6),
+                    ).outline.withValues(alpha: 0.75),
                   ),
                 ),
                 tooltipTheme: const TooltipThemeData(
@@ -498,6 +506,14 @@ class ApplicationState extends ConsumerState<Application>
                   space: 1,
                 ),
                 inputDecorationTheme: InputDecorationTheme(
+                  // 表单里字段多，默认高度会把弹窗撑得很长；紧凑一点。
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 14,
+                  ),
+                  labelStyle: const TextStyle(fontSize: 12),
+                  hintStyle: const TextStyle(fontSize: 12),
                   border: const OutlineInputBorder(
                     borderRadius: BorderRadius.all(Radius.circular(18)),
                   ),
