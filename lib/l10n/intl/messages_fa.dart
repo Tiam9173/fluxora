@@ -2013,6 +2013,220 @@ class MessageLookup extends MessageLookupByLibrary {
     "wakelockDescription": MessageLookupByLibrary.simpleMessage(
       "جلوگیری از خاموش شدن خودکار صفحه نمایش برای فعال ماندن برنامه‌ها در پس‌زمینه.",
     ),
+    "warpStr0": MessageLookupByLibrary.simpleMessage("۰ (پیش‌فرض ۲۴۰۸)"),
+    "warpStr1": MessageLookupByLibrary.simpleMessage(
+      "۱۲۸۰ (پیشنهادی، بهترین برای UDP)",
+    ),
+    "warpStr10": MessageLookupByLibrary.simpleMessage(
+      "MTU روی ۱۴۲۰ تنظیم شد (استاندارد)",
+    ),
+    "warpStr100": MessageLookupByLibrary.simpleMessage("WARP از طریق پروکسی"),
+    "warpStr101": MessageLookupByLibrary.simpleMessage("پروکسی از طریق WARP"),
+    "warpStr102": MessageLookupByLibrary.simpleMessage("ساخت دوباره کلیدها"),
+    "warpStr103": MessageLookupByLibrary.simpleMessage("بازنشانی"),
+    "warpStr104": MessageLookupByLibrary.simpleMessage(
+      "بازگشت به تنظیمات پیش‌فرض",
+    ),
+    "warpStr105": MessageLookupByLibrary.simpleMessage(
+      "🎉 لایسنس WARP+ فعال شد",
+    ),
+    "warpStr106": MessageLookupByLibrary.simpleMessage(
+      "🎉 دستگاه و کلیدها ساخته شد",
+    ),
+    "warpStr107": MessageLookupByLibrary.simpleMessage("👑 دستگاه WARP+"),
+    "warpStr108": MessageLookupByLibrary.simpleMessage("💡 کاربرد هر حالت"),
+    "warpStr109": MessageLookupByLibrary.simpleMessage(
+      "🛡️ جستجوی بومی (عالی)",
+    ),
+    "warpStr11": MessageLookupByLibrary.simpleMessage(
+      "اعتبارنامه‌ها و جزئیات WARP",
+    ),
+    "warpStr110": MessageLookupByLibrary.simpleMessage("🟢 دستگاه رایگان رسمی"),
+    "warpStr111": MessageLookupByLibrary.simpleMessage("🟢 بدون محدودیت"),
+    "warpStr12": MessageLookupByLibrary.simpleMessage(
+      "WARP به تنظیمات پیش‌فرض بازگشت",
+    ),
+    "warpStr13": MessageLookupByLibrary.simpleMessage("حالت مسیریابی WARP"),
+    "warpStr14": MessageLookupByLibrary.simpleMessage(
+      "فعال‌سازی سرعت WARP+ (warp=plus)",
+    ),
+    "warpStr15": MessageLookupByLibrary.simpleMessage("کلیدهای WireGuard"),
+    "warpStr16": MessageLookupByLibrary.simpleMessage("auto (پیش‌فرض)"),
+    "warpStr17": MessageLookupByLibrary.simpleMessage(
+      "auto یا مثلاً 162.159.193.1",
+    ),
+    "warpStr18": MessageLookupByLibrary.simpleMessage(
+      "⚠️ ممکن است منطقه افشا شود",
+    ),
+    "warpStr19": MessageLookupByLibrary.simpleMessage(
+      "⚡ بررسی وضعیت واقعی WARP",
+    ),
+    "warpStr2": MessageLookupByLibrary.simpleMessage("۱۳۶۰ (متوازن)"),
+    "warpStr20": MessageLookupByLibrary.simpleMessage(
+      "⚡ پیروی از انتخاب اصلی (پیشنهادی)",
+    ),
+    "warpStr21": MessageLookupByLibrary.simpleMessage(
+      "⚡ پیروی از انتخاب اصلی (از گره فعال ارائه‌دهنده استفاده می‌شود)",
+    ),
+    "warpStr22": MessageLookupByLibrary.simpleMessage("⚪ جفت‌کلید محلی"),
+    "warpStr23": MessageLookupByLibrary.simpleMessage("✈️ دیالر WARP"),
+    "warpStr24": MessageLookupByLibrary.simpleMessage("بهینه‌سازی"),
+    "warpStr25": MessageLookupByLibrary.simpleMessage(
+      "ساخت جفت‌کلید X25519 و ثبت دستگاه در Cloudflare",
+    ),
+    "warpStr26": MessageLookupByLibrary.simpleMessage("اجرای عیب‌یابی"),
+    "warpStr27": MessageLookupByLibrary.simpleMessage(
+      "همان نمای کارت تعویض، با تأخیر زنده",
+    ),
+    "warpStr28": MessageLookupByLibrary.simpleMessage(
+      "انتخاب از فهرست گره‌ها…",
+    ),
+    "warpStr29": MessageLookupByLibrary.simpleMessage("IP ترجیحی"),
+    "warpStr3": MessageLookupByLibrary.simpleMessage("۱۴۲۰ (استاندارد)"),
+    "warpStr30": MessageLookupByLibrary.simpleMessage("IP ترجیحی / نام میزبان"),
+    "warpStr31": MessageLookupByLibrary.simpleMessage("IP ترجیحی ذخیره شد"),
+    "warpStr32": MessageLookupByLibrary.simpleMessage(
+      "IP ترجیحی به auto بازگشت",
+    ),
+    "warpStr33": MessageLookupByLibrary.simpleMessage("اسکن IP ترجیحی"),
+    "warpStr34": MessageLookupByLibrary.simpleMessage(
+      "IP ترجیحی همان آدرس ورودی است و بر سرعت و پایداری اثر می‌گذارد.",
+    ),
+    "warpStr35": MessageLookupByLibrary.simpleMessage("نحوه کار"),
+    "warpStr36": MessageLookupByLibrary.simpleMessage("استفاده از سریع‌ترین"),
+    "warpStr37": MessageLookupByLibrary.simpleMessage("ذخیره"),
+    "warpStr38": MessageLookupByLibrary.simpleMessage("بستن"),
+    "warpStr39": MessageLookupByLibrary.simpleMessage(
+      "IP خروجی را نزدیک‌ترین مسیریابی Cloudflare تعیین می‌کند و تغییر نمی‌کند.",
+    ),
+    "warpStr4": MessageLookupByLibrary.simpleMessage(
+      "باز کردن قفل هوش مصنوعی و استریم",
+    ),
+    "warpStr40": MessageLookupByLibrary.simpleMessage("IP واقعی خروجی"),
+    "warpStr41": MessageLookupByLibrary.simpleMessage("پروکسی دیالر"),
+    "warpStr42": MessageLookupByLibrary.simpleMessage("لغو"),
+    "warpStr43": MessageLookupByLibrary.simpleMessage("فعال‌سازی WARP"),
+    "warpStr44": MessageLookupByLibrary.simpleMessage("کلید عمومی کلاینت"),
+    "warpStr45": MessageLookupByLibrary.simpleMessage("کلید خصوصی کلاینت"),
+    "warpStr46": MessageLookupByLibrary.simpleMessage("بایت‌های رزرو کلاینت"),
+    "warpStr47": MessageLookupByLibrary.simpleMessage(
+      "هنوز قاعده‌ای نیست — در این حالت بدون قاعده تقسیمی انجام نمی‌شود",
+    ),
+    "warpStr48": MessageLookupByLibrary.simpleMessage("هنوز بررسی نشده"),
+    "warpStr49": MessageLookupByLibrary.simpleMessage(
+      "کلید ذخیره شد؛ در دست‌دادن یا ثبت بعدی اعمال می‌شود",
+    ),
+    "warpStr5": MessageLookupByLibrary.simpleMessage(
+      "کلید عمومی همتای Cloudflare",
+    ),
+    "warpStr50": MessageLookupByLibrary.simpleMessage("WARP خاموش شد"),
+    "warpStr51": MessageLookupByLibrary.simpleMessage(
+      "Cloudflare WARP فعال شد",
+    ),
+    "warpStr52": MessageLookupByLibrary.simpleMessage("WARP فعال شد"),
+    "warpStr53": MessageLookupByLibrary.simpleMessage("کلید لایسنس پاک شد"),
+    "warpStr54": MessageLookupByLibrary.simpleMessage(
+      "روی پیروی از انتخاب اصلی تنظیم شد",
+    ),
+    "warpStr55": MessageLookupByLibrary.simpleMessage(
+      "جفت‌کلید Curve25519 دوباره ساخته شد",
+    ),
+    "warpStr56": MessageLookupByLibrary.simpleMessage(
+      "به پیش‌فرض «WARP از طریق پروکسی» بازگشت",
+    ),
+    "warpStr57": MessageLookupByLibrary.simpleMessage(
+      "حالت «WARP از طریق پروکسی»: همه گره‌های ارائه‌دهنده از تونل WARP عبور می‌کنند و گره‌های مسدودشده توسط GFW را نجات می‌دهد. نیازی به انتخاب دیالر نیست.",
+    ),
+    "warpStr58": MessageLookupByLibrary.simpleMessage("بررسی نشده"),
+    "warpStr59": MessageLookupByLibrary.simpleMessage(
+      "برای دقیق‌ترین عدد، پیش از اسکن پروکسی را خاموش کنید.",
+    ),
+    "warpStr6": MessageLookupByLibrary.simpleMessage(
+      "DIRECT (اتصال مستقیم به Cloudflare)",
+    ),
+    "warpStr60": MessageLookupByLibrary.simpleMessage(
+      "توجه: تأخیر اندازه‌گیری‌شده با پروکسی روشن شامل سرباز تونل است.",
+    ),
+    "warpStr61": MessageLookupByLibrary.simpleMessage("فعال نیست"),
+    "warpStr62": MessageLookupByLibrary.simpleMessage("تنظیم نشده"),
+    "warpStr63": MessageLookupByLibrary.simpleMessage("گره‌های ارائه‌دهنده"),
+    "warpStr64": MessageLookupByLibrary.simpleMessage(
+      "نمایش کامل کلیدهای WireGuard",
+    ),
+    "warpStr65": MessageLookupByLibrary.simpleMessage("در حال بررسی…"),
+    "warpStr66": MessageLookupByLibrary.simpleMessage(
+      "ثبت دستگاه در Cloudflare و ساخت کلیدها…",
+    ),
+    "warpStr67": MessageLookupByLibrary.simpleMessage("عیب‌یابی عمیق…"),
+    "warpStr68": MessageLookupByLibrary.simpleMessage(
+      "ساخت کلید X25519 و ثبت دستگاه…",
+    ),
+    "warpStr69": MessageLookupByLibrary.simpleMessage(
+      "اتصال کلید از طریق API رسمی…",
+    ),
+    "warpStr7": MessageLookupByLibrary.simpleMessage(
+      "بررسی افشای منطقه Google",
+    ),
+    "warpStr70": MessageLookupByLibrary.simpleMessage(
+      "گره قابل‌دسترسی پیدا نشد. شبکه را بررسی کنید یا پروکسی را خاموش کرده و دوباره تلاش کنید.",
+    ),
+    "warpStr71": MessageLookupByLibrary.simpleMessage(
+      "ترافیک ابتدا از WARP و سپس به گره ارائه‌دهنده می‌رود — مناسب وقتی گره مسدود است",
+    ),
+    "warpStr72": MessageLookupByLibrary.simpleMessage(
+      "ترافیک از گره ارائه‌دهنده و سپس از WARP خارج می‌شود — مانع افشای منطقه و بازکننده هوش مصنوعی",
+    ),
+    "warpStr73": MessageLookupByLibrary.simpleMessage("فعال‌سازی و اتصال"),
+    "warpStr74": MessageLookupByLibrary.simpleMessage(
+      "برای فعال‌سازی WARP ضربه بزنید",
+    ),
+    "warpStr75": MessageLookupByLibrary.simpleMessage("ساخت پیکربندی WARP"),
+    "warpStr76": MessageLookupByLibrary.simpleMessage(
+      "ساخته شد (جفت‌کلید معتبر داخلی بارگذاری شد)",
+    ),
+    "warpStr77": MessageLookupByLibrary.simpleMessage(
+      "مستقیم یا پروکسی معمولی (warp=off)",
+    ),
+    "warpStr78": MessageLookupByLibrary.simpleMessage("تأیید"),
+    "warpStr79": MessageLookupByLibrary.simpleMessage("پورت"),
+    "warpStr8": MessageLookupByLibrary.simpleMessage(
+      "MTU روی ۱۲۸۰ تنظیم شد (پیشنهادی)",
+    ),
+    "warpStr80": MessageLookupByLibrary.simpleMessage("پورت"),
+    "warpStr81": MessageLookupByLibrary.simpleMessage("شماره پورت"),
+    "warpStr82": MessageLookupByLibrary.simpleMessage("پورت به‌روزرسانی شد"),
+    "warpStr83": MessageLookupByLibrary.simpleMessage(
+      "پورت به ۰ بازگشت (پیش‌فرض ۲۴۰۸)",
+    ),
+    "warpStr84": MessageLookupByLibrary.simpleMessage("گروه‌های سیاست"),
+    "warpStr85": MessageLookupByLibrary.simpleMessage(
+      "اتصال کلید لایسنس WARP+",
+    ),
+    "warpStr86": MessageLookupByLibrary.simpleMessage(
+      "از گره ارائه‌دهنده انتخاب‌شده در پنل استفاده می‌کند",
+    ),
+    "warpStr87": MessageLookupByLibrary.simpleMessage("قواعد سفارشی"),
+    "warpStr88": MessageLookupByLibrary.simpleMessage("IPv4 مجازی"),
+    "warpStr89": MessageLookupByLibrary.simpleMessage("IPv6 مجازی"),
+    "warpStr9": MessageLookupByLibrary.simpleMessage("MTU روی ۱۳۶۰ تنظیم شد"),
+    "warpStr90": MessageLookupByLibrary.simpleMessage(
+      "عبور از کپچا و قفل منطقه‌ای",
+    ),
+    "warpStr91": MessageLookupByLibrary.simpleMessage("قطع اتصال"),
+    "warpStr92": MessageLookupByLibrary.simpleMessage("کلید لایسنس"),
+    "warpStr93": MessageLookupByLibrary.simpleMessage(
+      "پورت WireGuard را تنظیم کنید (۰ یعنی پورت پیش‌فرض ۲۴۰۸):",
+    ),
+    "warpStr94": MessageLookupByLibrary.simpleMessage(
+      "IP ترجیحی برای Cloudflare WARP را تنظیم کنید؛ auto را وارد کنید تا از IP بهینه رسمی استفاده شود:",
+    ),
+    "warpStr95": MessageLookupByLibrary.simpleMessage("پیروی از دیالر"),
+    "warpStr96": MessageLookupByLibrary.simpleMessage("مرکز لبه (Colo)"),
+    "warpStr97": MessageLookupByLibrary.simpleMessage(
+      "اتصال کامل نشد یا بررسی منقضی شد",
+    ),
+    "warpStr98": MessageLookupByLibrary.simpleMessage("انتخاب دیالر WARP"),
+    "warpStr99": MessageLookupByLibrary.simpleMessage("انتخاب MTU WireGuard"),
     "wave": MessageLookupByLibrary.simpleMessage("موج"),
     "webDAVConfiguration": MessageLookupByLibrary.simpleMessage(
       "تنظیمات WebDAV",

@@ -2077,6 +2077,246 @@ class MessageLookup extends MessageLookupByLibrary {
     "wakelockDescription": MessageLookupByLibrary.simpleMessage(
       "Эта функция не требует специальных разрешений, так как использует только блокировку пробуждения экрана, а не CPU. Приложение остаётся активным в фоне, экран не гаснет автоматически, что полезно в некоторых сценариях.",
     ),
+    "warpStr0": MessageLookupByLibrary.simpleMessage("0 (по умолчанию 2408)"),
+    "warpStr1": MessageLookupByLibrary.simpleMessage(
+      "1280 (рекомендуется, лучше для UDP)",
+    ),
+    "warpStr10": MessageLookupByLibrary.simpleMessage(
+      "MTU установлен на 1420 (стандарт)",
+    ),
+    "warpStr100": MessageLookupByLibrary.simpleMessage("Прокси через WARP"),
+    "warpStr101": MessageLookupByLibrary.simpleMessage("WARP через прокси"),
+    "warpStr102": MessageLookupByLibrary.simpleMessage("Пересоздать ключи"),
+    "warpStr103": MessageLookupByLibrary.simpleMessage("Сброс"),
+    "warpStr104": MessageLookupByLibrary.simpleMessage(
+      "Сбросить к настройкам по умолчанию",
+    ),
+    "warpStr105": MessageLookupByLibrary.simpleMessage(
+      "🎉 Лицензия WARP+ активирована",
+    ),
+    "warpStr106": MessageLookupByLibrary.simpleMessage(
+      "🎉 Устройство и ключи созданы",
+    ),
+    "warpStr107": MessageLookupByLibrary.simpleMessage("👑 Устройство WARP+"),
+    "warpStr108": MessageLookupByLibrary.simpleMessage(
+      "💡 Когда какой режим использовать",
+    ),
+    "warpStr109": MessageLookupByLibrary.simpleMessage(
+      "🛡️ Нативный поиск (отлично)",
+    ),
+    "warpStr11": MessageLookupByLibrary.simpleMessage(
+      "Учётные данные и детали WARP",
+    ),
+    "warpStr110": MessageLookupByLibrary.simpleMessage(
+      "🟢 Официальное бесплатное устройство",
+    ),
+    "warpStr111": MessageLookupByLibrary.simpleMessage("🟢 Без ограничений"),
+    "warpStr12": MessageLookupByLibrary.simpleMessage(
+      "WARP сброшен к настройкам по умолчанию",
+    ),
+    "warpStr13": MessageLookupByLibrary.simpleMessage(
+      "Режим маршрутизации WARP",
+    ),
+    "warpStr14": MessageLookupByLibrary.simpleMessage(
+      "Активация ускорения WARP+ (warp=plus)",
+    ),
+    "warpStr15": MessageLookupByLibrary.simpleMessage("Ключи WireGuard"),
+    "warpStr16": MessageLookupByLibrary.simpleMessage("auto (по умолчанию)"),
+    "warpStr17": MessageLookupByLibrary.simpleMessage(
+      "auto или, например, 162.159.193.1",
+    ),
+    "warpStr18": MessageLookupByLibrary.simpleMessage(
+      "⚠️ Регион может раскрыться",
+    ),
+    "warpStr19": MessageLookupByLibrary.simpleMessage(
+      "⚡ Проверить состояние WARP",
+    ),
+    "warpStr2": MessageLookupByLibrary.simpleMessage("1360 (сбалансировано)"),
+    "warpStr20": MessageLookupByLibrary.simpleMessage(
+      "⚡ Следовать основному выбору (рекомендуется)",
+    ),
+    "warpStr21": MessageLookupByLibrary.simpleMessage(
+      "⚡ Следовать основному выбору (используется активный узел провайдера)",
+    ),
+    "warpStr22": MessageLookupByLibrary.simpleMessage(
+      "⚪ Локальная пара ключей",
+    ),
+    "warpStr23": MessageLookupByLibrary.simpleMessage("✈️ WARP-диалер"),
+    "warpStr24": MessageLookupByLibrary.simpleMessage("Оптимизировать"),
+    "warpStr25": MessageLookupByLibrary.simpleMessage(
+      "Создать пару ключей X25519 и зарегистрировать устройство в Cloudflare",
+    ),
+    "warpStr26": MessageLookupByLibrary.simpleMessage("Запустить диагностику"),
+    "warpStr27": MessageLookupByLibrary.simpleMessage(
+      "Тот же экран, что и карточка переключения, с задержкой в реальном времени",
+    ),
+    "warpStr28": MessageLookupByLibrary.simpleMessage(
+      "Выбрать из списка узлов…",
+    ),
+    "warpStr29": MessageLookupByLibrary.simpleMessage("Предпочтительный IP"),
+    "warpStr3": MessageLookupByLibrary.simpleMessage("1420 (стандарт)"),
+    "warpStr30": MessageLookupByLibrary.simpleMessage(
+      "Предпочтительный IP / домен",
+    ),
+    "warpStr31": MessageLookupByLibrary.simpleMessage(
+      "Предпочтительный IP сохранён",
+    ),
+    "warpStr32": MessageLookupByLibrary.simpleMessage(
+      "Предпочтительный IP сброшен на auto",
+    ),
+    "warpStr33": MessageLookupByLibrary.simpleMessage(
+      "Сканирование предпочтительного IP",
+    ),
+    "warpStr34": MessageLookupByLibrary.simpleMessage(
+      "Предпочтительный IP — это адрес входа; он влияет на скорость и стабильность.",
+    ),
+    "warpStr35": MessageLookupByLibrary.simpleMessage("Как это работает"),
+    "warpStr36": MessageLookupByLibrary.simpleMessage(
+      "Использовать самый быстрый",
+    ),
+    "warpStr37": MessageLookupByLibrary.simpleMessage("Сохранить"),
+    "warpStr38": MessageLookupByLibrary.simpleMessage("Закрыть"),
+    "warpStr39": MessageLookupByLibrary.simpleMessage(
+      "Выходной IP определяется ближайшей маршрутизацией Cloudflare и не меняется.",
+    ),
+    "warpStr4": MessageLookupByLibrary.simpleMessage(
+      "Разблокировка ИИ и стриминга",
+    ),
+    "warpStr40": MessageLookupByLibrary.simpleMessage("Реальный выходной IP"),
+    "warpStr41": MessageLookupByLibrary.simpleMessage("Прокси-диалер"),
+    "warpStr42": MessageLookupByLibrary.simpleMessage("Отмена"),
+    "warpStr43": MessageLookupByLibrary.simpleMessage("Включить WARP"),
+    "warpStr44": MessageLookupByLibrary.simpleMessage("Публичный ключ клиента"),
+    "warpStr45": MessageLookupByLibrary.simpleMessage("Приватный ключ клиента"),
+    "warpStr46": MessageLookupByLibrary.simpleMessage(
+      "Зарезервированные байты клиента",
+    ),
+    "warpStr47": MessageLookupByLibrary.simpleMessage(
+      "Правил пока нет — в этом режиме без правил трафик не разделяется",
+    ),
+    "warpStr48": MessageLookupByLibrary.simpleMessage("Ещё не проверено"),
+    "warpStr49": MessageLookupByLibrary.simpleMessage(
+      "Ключ сохранён; он применится при следующем рукопожатии или регистрации",
+    ),
+    "warpStr5": MessageLookupByLibrary.simpleMessage(
+      "Публичный ключ узла Cloudflare",
+    ),
+    "warpStr50": MessageLookupByLibrary.simpleMessage("WARP выключен"),
+    "warpStr51": MessageLookupByLibrary.simpleMessage(
+      "Cloudflare WARP включён",
+    ),
+    "warpStr52": MessageLookupByLibrary.simpleMessage("WARP включён"),
+    "warpStr53": MessageLookupByLibrary.simpleMessage(
+      "Лицензионный ключ очищен",
+    ),
+    "warpStr54": MessageLookupByLibrary.simpleMessage(
+      "Установлено следование основному выбору",
+    ),
+    "warpStr55": MessageLookupByLibrary.simpleMessage(
+      "Пара ключей Curve25519 создана заново",
+    ),
+    "warpStr56": MessageLookupByLibrary.simpleMessage(
+      "Сброшено к значению по умолчанию: WARP через прокси",
+    ),
+    "warpStr57": MessageLookupByLibrary.simpleMessage(
+      "Режим «прокси через WARP»: все узлы провайдера подключаются через туннель WARP, что спасает узлы, заблокированные GFW. Выбирать диалер не нужно.",
+    ),
+    "warpStr58": MessageLookupByLibrary.simpleMessage("Не проверено"),
+    "warpStr59": MessageLookupByLibrary.simpleMessage(
+      "Для самых чистых значений отключите прокси перед сканированием.",
+    ),
+    "warpStr6": MessageLookupByLibrary.simpleMessage(
+      "DIRECT (подключение к Cloudflare напрямую)",
+    ),
+    "warpStr60": MessageLookupByLibrary.simpleMessage(
+      "Примечание: задержка при включённом прокси включает накладные расходы туннеля.",
+    ),
+    "warpStr61": MessageLookupByLibrary.simpleMessage("Не включено"),
+    "warpStr62": MessageLookupByLibrary.simpleMessage("Не задано"),
+    "warpStr63": MessageLookupByLibrary.simpleMessage("Узлы провайдера"),
+    "warpStr64": MessageLookupByLibrary.simpleMessage(
+      "Показать все ключи WireGuard",
+    ),
+    "warpStr65": MessageLookupByLibrary.simpleMessage("Проверка…"),
+    "warpStr66": MessageLookupByLibrary.simpleMessage(
+      "Регистрация устройства в Cloudflare и создание ключей…",
+    ),
+    "warpStr67": MessageLookupByLibrary.simpleMessage("Глубокая диагностика…"),
+    "warpStr68": MessageLookupByLibrary.simpleMessage(
+      "Создание ключа X25519 и регистрация устройства…",
+    ),
+    "warpStr69": MessageLookupByLibrary.simpleMessage(
+      "Привязка ключа через официальный API…",
+    ),
+    "warpStr7": MessageLookupByLibrary.simpleMessage(
+      "Проверка утечки региона Google",
+    ),
+    "warpStr70": MessageLookupByLibrary.simpleMessage(
+      "Доступных узлов не найдено. Проверьте сеть или отключите прокси и повторите попытку.",
+    ),
+    "warpStr71": MessageLookupByLibrary.simpleMessage(
+      "Трафик сначала идёт через WARP, затем к узлу провайдера — помогает, когда узел заблокирован",
+    ),
+    "warpStr72": MessageLookupByLibrary.simpleMessage(
+      "Трафик идёт через узел провайдера, затем выходит через WARP — предотвращает утечку региона и разблокирует ИИ",
+    ),
+    "warpStr73": MessageLookupByLibrary.simpleMessage(
+      "Активировать и привязать",
+    ),
+    "warpStr74": MessageLookupByLibrary.simpleMessage(
+      "Нажмите, чтобы включить WARP",
+    ),
+    "warpStr75": MessageLookupByLibrary.simpleMessage(
+      "Создать конфигурацию WARP",
+    ),
+    "warpStr76": MessageLookupByLibrary.simpleMessage(
+      "Готово (загружена встроенная действующая пара ключей)",
+    ),
+    "warpStr77": MessageLookupByLibrary.simpleMessage(
+      "Напрямую или обычный прокси (warp=off)",
+    ),
+    "warpStr78": MessageLookupByLibrary.simpleMessage("ОК"),
+    "warpStr79": MessageLookupByLibrary.simpleMessage("Порт"),
+    "warpStr8": MessageLookupByLibrary.simpleMessage(
+      "MTU установлен на 1280 (рекомендуется)",
+    ),
+    "warpStr80": MessageLookupByLibrary.simpleMessage("Порт"),
+    "warpStr81": MessageLookupByLibrary.simpleMessage("Номер порта"),
+    "warpStr82": MessageLookupByLibrary.simpleMessage("Порт обновлён"),
+    "warpStr83": MessageLookupByLibrary.simpleMessage(
+      "Порт сброшен на 0 (по умолчанию 2408)",
+    ),
+    "warpStr84": MessageLookupByLibrary.simpleMessage("Группы политик"),
+    "warpStr85": MessageLookupByLibrary.simpleMessage(
+      "Привязать лицензионный ключ WARP+",
+    ),
+    "warpStr86": MessageLookupByLibrary.simpleMessage(
+      "Используется узел провайдера, выбранный на панели",
+    ),
+    "warpStr87": MessageLookupByLibrary.simpleMessage("Свои правила"),
+    "warpStr88": MessageLookupByLibrary.simpleMessage("Виртуальный IPv4"),
+    "warpStr89": MessageLookupByLibrary.simpleMessage("Виртуальный IPv6"),
+    "warpStr9": MessageLookupByLibrary.simpleMessage("MTU установлен на 1360"),
+    "warpStr90": MessageLookupByLibrary.simpleMessage(
+      "Обход капчи и региональных блокировок",
+    ),
+    "warpStr91": MessageLookupByLibrary.simpleMessage("Отвязать"),
+    "warpStr92": MessageLookupByLibrary.simpleMessage("Лицензионный ключ"),
+    "warpStr93": MessageLookupByLibrary.simpleMessage(
+      "Задайте порт WireGuard (0 — порт по умолчанию 2408):",
+    ),
+    "warpStr94": MessageLookupByLibrary.simpleMessage(
+      "Задайте предпочтительный IP для Cloudflare WARP; введите auto, чтобы использовать официальный лучший IP:",
+    ),
+    "warpStr95": MessageLookupByLibrary.simpleMessage("Следовать диалеру"),
+    "warpStr96": MessageLookupByLibrary.simpleMessage(
+      "Пограничный узел (Colo)",
+    ),
+    "warpStr97": MessageLookupByLibrary.simpleMessage(
+      "Соединение не завершено или проверка истекла",
+    ),
+    "warpStr98": MessageLookupByLibrary.simpleMessage("Выберите WARP-диалер"),
+    "warpStr99": MessageLookupByLibrary.simpleMessage("Выберите MTU WireGuard"),
     "wave": MessageLookupByLibrary.simpleMessage("Волна"),
     "webDAVConfiguration": MessageLookupByLibrary.simpleMessage(
       "Настройки WebDAV",
