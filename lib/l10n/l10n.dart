@@ -10054,6 +10054,236 @@ class AppLocalizations {
       args: [],
     );
   }
+
+  /// `IP or domain`
+  String get chainIpOrDomain {
+    return Intl.message(
+      'IP or domain',
+      name: 'chainIpOrDomain',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `WebRTC leak protection:`
+  String get chainWebrtcProtect {
+    return Intl.message(
+      'WebRTC leak protection:',
+      name: 'chainWebrtcProtect',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Connectivity to common services`
+  String get chainMainTargets {
+    return Intl.message(
+      'Connectivity to common services',
+      name: 'chainMainTargets',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Delete`
+  String get chainDelete {
+    return Intl.message('Delete', name: 'chainDelete', desc: '', args: []);
+  }
+
+  /// `Remove this hop`
+  String get chainDeleteHop {
+    return Intl.message(
+      'Remove this hop',
+      name: 'chainDeleteHop',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Live topology`
+  String get chainTopology {
+    return Intl.message(
+      'Live topology',
+      name: 'chainTopology',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Optional`
+  String get chainOptional {
+    return Intl.message('Optional', name: 'chainOptional', desc: '', args: []);
+  }
+
+  /// `Failed`
+  String get chainFailed {
+    return Intl.message('Failed', name: 'chainFailed', desc: '', args: []);
+  }
+
+  /// `No landing residential node yet`
+  String get chainNoResidential {
+    return Intl.message(
+      'No landing residential node yet',
+      name: 'chainNoResidential',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Ready`
+  String get chainReady {
+    return Intl.message('Ready', name: 'chainReady', desc: '', args: []);
+  }
+
+  /// `Chain proxy enabled`
+  String get chainEnabled {
+    return Intl.message(
+      'Chain proxy enabled',
+      name: 'chainEnabled',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No nodes match the filter`
+  String get chainNoMatch {
+    return Intl.message(
+      'No nodes match the filter',
+      name: 'chainNoMatch',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Device time zone:`
+  String get chainTz {
+    return Intl.message(
+      'Device time zone:',
+      name: 'chainTz',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Off`
+  String get chainDisabled {
+    return Intl.message('Off', name: 'chainDisabled', desc: '', args: []);
+  }
+
+  /// `Test`
+  String get chainSpeedTest {
+    return Intl.message('Test', name: 'chainSpeedTest', desc: '', args: []);
+  }
+
+  /// `Add relay server`
+  String get chainAddRelay {
+    return Intl.message(
+      'Add relay server',
+      name: 'chainAddRelay',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Empty uses the global default dialer`
+  String get chainInheritDefault {
+    return Intl.message(
+      'Empty uses the global default dialer',
+      name: 'chainInheritDefault',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Target network`
+  String get chainTargetNet {
+    return Intl.message(
+      'Target network',
+      name: 'chainTargetNet',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Edit`
+  String get chainEdit {
+    return Intl.message('Edit', name: 'chainEdit', desc: '', args: []);
+  }
+
+  /// `Edit landing proxy`
+  String get chainEditLanding {
+    return Intl.message(
+      'Edit landing proxy',
+      name: 'chainEditLanding',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `On device`
+  String get chainDeviceSide {
+    return Intl.message(
+      'On device',
+      name: 'chainDeviceSide',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Enter the server address first`
+  String get chainEnterServer {
+    return Intl.message(
+      'Enter the server address first',
+      name: 'chainEnterServer',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Enter the server address`
+  String get chainEnterServerHint {
+    return Intl.message(
+      'Enter the server address',
+      name: 'chainEnterServerHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Timeout`
+  String get chainTimeout {
+    return Intl.message('Timeout', name: 'chainTimeout', desc: '', args: []);
+  }
+
+  /// `Follow main selector`
+  String get chainFollowMain {
+    return Intl.message(
+      'Follow main selector',
+      name: 'chainFollowMain',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Reset filter`
+  String get chainResetFilter {
+    return Intl.message(
+      'Reset filter',
+      name: 'chainResetFilter',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Probing the chain…`
+  String get chainProbing {
+    return Intl.message(
+      'Probing the chain…',
+      name: 'chainProbing',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {

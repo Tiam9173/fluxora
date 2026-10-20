@@ -342,6 +342,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "پلتفرم‌های اجتماعی",
     ),
     "categoryStreaming": MessageLookupByLibrary.simpleMessage("رسانه‌های جاری"),
+    "chainAddRelay": MessageLookupByLibrary.simpleMessage("افزودن سرور میانی"),
     "chainAvgLatency": MessageLookupByLibrary.simpleMessage("تأخیر متوسط"),
     "chainCreateSupportPackage": MessageLookupByLibrary.simpleMessage(
       "ایجاد بسته پشتیبانی",
@@ -352,18 +353,39 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainDecisionSupport": MessageLookupByLibrary.simpleMessage(
       "پشتیبانی تصمیم",
     ),
+    "chainDelete": MessageLookupByLibrary.simpleMessage("حذف"),
+    "chainDeleteHop": MessageLookupByLibrary.simpleMessage("حذف این مرحله"),
+    "chainDeviceSide": MessageLookupByLibrary.simpleMessage("روی دستگاه"),
     "chainDiagnosticPackage": MessageLookupByLibrary.simpleMessage(
       "بسته تشخیصی",
     ),
     "chainDiagnosticTitle": MessageLookupByLibrary.simpleMessage(
       "تشخیص زنجیره",
     ),
+    "chainDisabled": MessageLookupByLibrary.simpleMessage("غیرفعال"),
+    "chainEdit": MessageLookupByLibrary.simpleMessage("ویرایش"),
+    "chainEditLanding": MessageLookupByLibrary.simpleMessage(
+      "ویرایش پروکسی خروج",
+    ),
+    "chainEnabled": MessageLookupByLibrary.simpleMessage(
+      "پروکسی زنجیره‌ای فعال شد",
+    ),
+    "chainEnterServer": MessageLookupByLibrary.simpleMessage(
+      "ابتدا آدرس سرور را وارد کنید",
+    ),
+    "chainEnterServerHint": MessageLookupByLibrary.simpleMessage(
+      "آدرس سرور را وارد کنید",
+    ),
     "chainEventsLabel": MessageLookupByLibrary.simpleMessage("رویدادها"),
     "chainExportReport": MessageLookupByLibrary.simpleMessage(
       "خروجی گرفتن گزارش",
     ),
     "chainExporting": MessageLookupByLibrary.simpleMessage("در حال خروجی…"),
+    "chainFailed": MessageLookupByLibrary.simpleMessage("ناموفق"),
     "chainFailuresLabel": MessageLookupByLibrary.simpleMessage("شکست‌ها"),
+    "chainFollowMain": MessageLookupByLibrary.simpleMessage(
+      "پیروی از انتخاب اصلی",
+    ),
     "chainGeneratedOn": MessageLookupByLibrary.simpleMessage("ایجاد شده در"),
     "chainHealthLabel": MessageLookupByLibrary.simpleMessage("سلامت"),
     "chainHealthScore": MessageLookupByLibrary.simpleMessage("امتیاز سلامت"),
@@ -384,9 +406,22 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainHopUnavailable": MessageLookupByLibrary.simpleMessage(
       "فهرست گره‌های موجود خوانده نشد، بنابراین بررسی دسترس‌پذیری گره انجام نشد",
     ),
+    "chainInheritDefault": MessageLookupByLibrary.simpleMessage(
+      "خالی = دیالر پیش‌فرض کلی",
+    ),
     "chainIntelAnalytics": MessageLookupByLibrary.simpleMessage("تحلیل هوشمند"),
+    "chainIpOrDomain": MessageLookupByLibrary.simpleMessage("IP یا دامنه"),
     "chainLandingProxyNone": MessageLookupByLibrary.simpleMessage(
       "پیش‌فرض (هیچ)",
+    ),
+    "chainMainTargets": MessageLookupByLibrary.simpleMessage(
+      "اتصال به سرویس‌های رایج",
+    ),
+    "chainNoMatch": MessageLookupByLibrary.simpleMessage(
+      "گره‌ای با این فیلتر نیست",
+    ),
+    "chainNoResidential": MessageLookupByLibrary.simpleMessage(
+      "گره خروجی تنظیم نشده",
     ),
     "chainNodeDeviceApp": MessageLookupByLibrary.simpleMessage(
       "اپلیکیشن دستگاه",
@@ -399,22 +434,36 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "chainNodeSubscription": MessageLookupByLibrary.simpleMessage("گره اشتراک"),
     "chainOpenFolder": MessageLookupByLibrary.simpleMessage("باز کردن پوشه"),
+    "chainOptional": MessageLookupByLibrary.simpleMessage("اختیاری"),
     "chainPackageReady": MessageLookupByLibrary.simpleMessage("بسته آماده است"),
     "chainPreProxyNone": MessageLookupByLibrary.simpleMessage("مستقیم (هیچ)"),
     "chainProbeNow": MessageLookupByLibrary.simpleMessage("بررسی زنجیره"),
+    "chainProbing": MessageLookupByLibrary.simpleMessage(
+      "در حال بررسی زنجیره…",
+    ),
     "chainProxy": MessageLookupByLibrary.simpleMessage("پروکسی زنجیره‌ای"),
     "chainProxyDesc": MessageLookupByLibrary.simpleMessage(
       "پیکربندی پرش ورودی و پروکسی فرود IP مسکونی ثابت",
     ),
+    "chainReady": MessageLookupByLibrary.simpleMessage("آماده"),
+    "chainResetFilter": MessageLookupByLibrary.simpleMessage("بازنشانی فیلتر"),
     "chainShareLabel": MessageLookupByLibrary.simpleMessage("اشتراک‌گذاری"),
+    "chainSpeedTest": MessageLookupByLibrary.simpleMessage("تست"),
     "chainSupportTitle": MessageLookupByLibrary.simpleMessage(
       "پشتیبانی زنجیره",
     ),
+    "chainTargetNet": MessageLookupByLibrary.simpleMessage("شبکه هدف"),
+    "chainTimeout": MessageLookupByLibrary.simpleMessage("مهلت تمام شد"),
     "chainTopFailureReason": MessageLookupByLibrary.simpleMessage(
       "اصلی‌ترین دلیل شکست",
     ),
+    "chainTopology": MessageLookupByLibrary.simpleMessage("توپولوژی زنده"),
     "chainTopologyPreview": MessageLookupByLibrary.simpleMessage(
       "پیش‌نمایش توپولوژی مسیریابی زنجیره‌ای",
+    ),
+    "chainTz": MessageLookupByLibrary.simpleMessage("منطقه زمانی دستگاه:"),
+    "chainWebrtcProtect": MessageLookupByLibrary.simpleMessage(
+      "محافظت در برابر نشت WebRTC:",
     ),
     "checkError": MessageLookupByLibrary.simpleMessage("بررسی ناموفق بود"),
     "checkFailed": MessageLookupByLibrary.simpleMessage("Timeout"),

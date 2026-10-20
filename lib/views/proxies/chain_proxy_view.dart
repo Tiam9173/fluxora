@@ -412,7 +412,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                           );
                         }
                         if (context.mounted) {
-                          context.showSnackBar('已成功启用链式代理模式');
+                          context.showSnackBar(appLocalizations.chainEnabled);
                         }
                       } else {
                         HapticFeedback.lightImpact();
@@ -463,7 +463,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                         if (frontHops.length > 1)
                           IconButton(
                             icon: const Icon(Icons.remove_circle_outline),
-                            tooltip: '删除这一跳',
+                            tooltip: appLocalizations.chainDeleteHop,
                             onPressed: () =>
                                 chainProxyManager.removeFrontHopAt(i),
                           ),
@@ -487,12 +487,12 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                   ),
                 ListItem(
                   leading: const Icon(Icons.add_circle_outline),
-                  title: const Text('添加中转服务器'),
+                  title: Text(appLocalizations.chainAddRelay),
                   subtitle: const Text('在现有链路末端、落地出口之前插入一级中转'),
                   onTap: () {
                     showChainHopPicker(
                       context: context,
-                      title: '添加中转服务器',
+                      title: appLocalizations.chainAddRelay,
                       allowFollowMain: false,
                       excludeNames: frontHops.toSet(),
                       onSelect: (hop) => chainProxyManager.addFrontHop(hop),
@@ -657,7 +657,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
               type: CommonCardType.filled,
               child: FluxoraEmptyState(
                 icon: Icons.alt_route_rounded,
-                title: '尚未配置落地住宅节点',
+                title: appLocalizations.chainNoResidential,
                 description: appLocalizations.emptyLandingTip,
                 action: Wrap(
                   spacing: 12,
@@ -684,10 +684,10 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
               child: FluxoraEmptyState(
                 compact: true,
                 icon: Icons.filter_list_off_outlined,
-                title: '当前筛选条件下没有节点',
+                title: appLocalizations.chainNoMatch,
                 action: TextButton.icon(
                   icon: const Icon(Icons.refresh, size: 16),
-                  label: const Text('重置筛选'),
+                  label: Text(appLocalizations.chainResetFilter),
                   onPressed: () => setState(() => _selectedFilter = 0),
                 ),
               ),
@@ -1117,7 +1117,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
         probeNoticeIcon = Icons.error_outline;
         probeNoticeColor = context.colorScheme.error;
       } else if (anyChecking) {
-        probeNoticeText = '链路探测中…';
+        probeNoticeText = appLocalizations.chainProbing;
         probeNoticeIcon = Icons.sync;
         probeNoticeColor = context.colorScheme.primary;
       } else if (noEvidence) {
@@ -1152,9 +1152,9 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                         color: context.colorScheme.primary,
                       ),
                       const SizedBox(width: 8),
-                      const Flexible(
+                      Flexible(
                         child: Text(
-                          '动态链路拓扑',
+                          appLocalizations.chainTopology,
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 15,
@@ -1195,7 +1195,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                       ),
                       const SizedBox(width: 5),
                       Text(
-                        isReady ? '已就绪' : '未启用',
+                        isReady ? appLocalizations.chainReady : appLocalizations.chainDisabled,
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
@@ -1225,7 +1225,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                     _buildTopologyNode(
                       icon: Icons.devices_rounded,
                       title: appLocalizations.topologyClient,
-                      subtitle: '设备端',
+                      subtitle: appLocalizations.chainDeviceSide,
                       state: clientState,
                     ),
                     for (var i = 0; i < config.effectiveFrontHops.length; i++) ...[
@@ -1279,7 +1279,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                     _buildTopologyNode(
                       icon: Icons.public_rounded,
                       title: appLocalizations.topologyTarget,
-                      subtitle: '目标网络',
+                      subtitle: appLocalizations.chainTargetNet,
                       state: targetState,
                     ),
                   ],
@@ -1570,8 +1570,8 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                           children: [
                             const Icon(Icons.schedule, size: 16, color: Colors.blueAccent),
                             const SizedBox(width: 8),
-                            const Text(
-                              '当前设备系统时区：',
+                            Text(
+                              appLocalizations.chainTz,
                               style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                             ),
                             Expanded(
@@ -1591,8 +1591,8 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                           children: [
                             const Icon(Icons.shield_outlined, size: 16, color: Colors.green),
                             const SizedBox(width: 8),
-                            const Text(
-                              'WebRTC 泄露防护：',
+                            Text(
+                              appLocalizations.chainWebrtcProtect,
                               style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                             ),
                             const Expanded(
@@ -1668,7 +1668,7 @@ class _LandingProxyCard extends ConsumerWidget {
     final report = chainProxyManager.getHealthReport(proxy.id);
     final effectiveHop = (proxy.dialerProxy != null && proxy.dialerProxy!.isNotEmpty)
         ? proxy.dialerProxy!
-        : (defaultHop.isEmpty ? '跟随主选择' : defaultHop);
+        : (defaultHop.isEmpty ? appLocalizations.chainFollowMain : defaultHop);
 
     return CommonCard(
       type: CommonCardType.filled,
@@ -1813,13 +1813,13 @@ class _LandingProxyCard extends ConsumerWidget {
                 _buildActionButton(
                   icon: Icons.edit_outlined,
                   color: null,
-                  tooltip: '编辑',
+                  tooltip: appLocalizations.chainEdit,
                   onPressed: onEdit,
                 ),
                 _buildActionButton(
                   icon: Icons.delete_outline,
                   color: Colors.redAccent,
-                  tooltip: '删除',
+                  tooltip: appLocalizations.chainDelete,
                   onPressed: onDelete,
                 ),
               ],
@@ -1968,14 +1968,14 @@ class _LandingProxyCard extends ConsumerWidget {
       return InkWell(
         onTap: onTest,
         borderRadius: BorderRadius.circular(4),
-        child: const Padding(
+        child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(Icons.bolt, size: 14, color: Colors.grey),
               SizedBox(width: 2),
-              Text('测速', style: TextStyle(fontSize: 11, color: Colors.grey)),
+              Text(appLocalizations.chainSpeedTest, style: TextStyle(fontSize: 11, color: Colors.grey)),
             ],
           ),
         ),
@@ -1988,7 +1988,7 @@ class _LandingProxyCard extends ConsumerWidget {
       _ => Colors.red,
     };
 
-    final text = delay > 0 ? '$delay ms' : '超时';
+    final text = delay > 0 ? '$delay ms' : appLocalizations.chainTimeout;
 
     return InkWell(
       onTap: onTest,
@@ -2180,7 +2180,7 @@ class _EditLandingProxyDialogState extends State<_EditLandingProxyDialog> {
     final server = _serverController.text.trim();
     final port = int.tryParse(_portController.text.trim()) ?? _protocol.defaultPort;
     if (server.isEmpty) {
-      context.showSnackBar('请先输入服务器地址');
+      context.showSnackBar(appLocalizations.chainEnterServer);
       return;
     }
 
@@ -2221,7 +2221,7 @@ class _EditLandingProxyDialogState extends State<_EditLandingProxyDialog> {
       title: Text(
         widget.proxy == null
             ? appLocalizations.addLandingProxy
-            : '编辑落地代理',
+            : appLocalizations.chainEditLanding,
       ),
       content: SizedBox(
         width: MediaQuery.of(context).size.width.clamp(0.0, 480.0),
@@ -2271,7 +2271,7 @@ class _EditLandingProxyDialogState extends State<_EditLandingProxyDialog> {
                       controller: _serverController,
                       decoration: InputDecoration(
                         labelText: appLocalizations.serverAddress,
-                        hintText: 'IP 或域名',
+                        hintText: appLocalizations.chainIpOrDomain,
                       ),
                     ),
                   ),
@@ -2293,7 +2293,7 @@ class _EditLandingProxyDialogState extends State<_EditLandingProxyDialog> {
                 controller: _userController,
                 decoration: InputDecoration(
                   labelText: appLocalizations.username,
-                  hintText: '可选',
+                  hintText: appLocalizations.chainOptional,
                 ),
               ),
               const SizedBox(height: 12),
@@ -2302,7 +2302,7 @@ class _EditLandingProxyDialogState extends State<_EditLandingProxyDialog> {
                 obscureText: !_showPassword,
                 decoration: InputDecoration(
                   labelText: appLocalizations.password,
-                  hintText: '可选',
+                  hintText: appLocalizations.chainOptional,
                   suffixIcon: IconButton(
                     icon: Icon(
                       _showPassword ? Icons.visibility_off : Icons.visibility,
@@ -2320,7 +2320,7 @@ class _EditLandingProxyDialogState extends State<_EditLandingProxyDialog> {
                 controller: _dialerController,
                 decoration: InputDecoration(
                   labelText: appLocalizations.specificDialerProxy,
-                  hintText: '留空则继承全局默认跳板',
+                  hintText: appLocalizations.chainInheritDefault,
                 ),
               ),
               const SizedBox(height: 8),
@@ -2413,7 +2413,7 @@ class _EditLandingProxyDialogState extends State<_EditLandingProxyDialog> {
             final server = _serverController.text.trim();
             final port = int.tryParse(_portController.text.trim()) ?? 1080;
             if (server.isEmpty) {
-              context.showSnackBar('请输入服务器地址');
+              context.showSnackBar(appLocalizations.chainEnterServerHint);
               return;
             }
 
@@ -2758,7 +2758,7 @@ class _ProxyHealthReportDialog extends ConsumerWidget {
 
               // 3. Targets test results
               Text(
-                '主流目标服务连通性',
+                appLocalizations.chainMainTargets,
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
@@ -2975,7 +2975,7 @@ class _ProxyHealthReportDialog extends ConsumerWidget {
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
-              isOk ? '${target.delay} ms' : (target.error ?? '失败'),
+              isOk ? '${target.delay} ms' : (target.error ?? appLocalizations.chainFailed),
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.bold,

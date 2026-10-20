@@ -340,6 +340,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "categoryGaming": MessageLookupByLibrary.simpleMessage("Gaming Center"),
     "categorySocial": MessageLookupByLibrary.simpleMessage("Social Platforms"),
     "categoryStreaming": MessageLookupByLibrary.simpleMessage("Streaming"),
+    "chainAddRelay": MessageLookupByLibrary.simpleMessage("Add relay server"),
     "chainAvgLatency": MessageLookupByLibrary.simpleMessage("Avg Latency"),
     "chainCreateSupportPackage": MessageLookupByLibrary.simpleMessage(
       "Create Support Package",
@@ -348,16 +349,35 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainDecisionSupport": MessageLookupByLibrary.simpleMessage(
       "Decision Support",
     ),
+    "chainDelete": MessageLookupByLibrary.simpleMessage("Delete"),
+    "chainDeleteHop": MessageLookupByLibrary.simpleMessage("Remove this hop"),
+    "chainDeviceSide": MessageLookupByLibrary.simpleMessage("On device"),
     "chainDiagnosticPackage": MessageLookupByLibrary.simpleMessage(
       "Diagnostic Package",
     ),
     "chainDiagnosticTitle": MessageLookupByLibrary.simpleMessage(
       "Chain Diagnostic",
     ),
+    "chainDisabled": MessageLookupByLibrary.simpleMessage("Off"),
+    "chainEdit": MessageLookupByLibrary.simpleMessage("Edit"),
+    "chainEditLanding": MessageLookupByLibrary.simpleMessage(
+      "Edit landing proxy",
+    ),
+    "chainEnabled": MessageLookupByLibrary.simpleMessage("Chain proxy enabled"),
+    "chainEnterServer": MessageLookupByLibrary.simpleMessage(
+      "Enter the server address first",
+    ),
+    "chainEnterServerHint": MessageLookupByLibrary.simpleMessage(
+      "Enter the server address",
+    ),
     "chainEventsLabel": MessageLookupByLibrary.simpleMessage("Events"),
     "chainExportReport": MessageLookupByLibrary.simpleMessage("Export Report"),
     "chainExporting": MessageLookupByLibrary.simpleMessage("Exporting..."),
+    "chainFailed": MessageLookupByLibrary.simpleMessage("Failed"),
     "chainFailuresLabel": MessageLookupByLibrary.simpleMessage("Failures"),
+    "chainFollowMain": MessageLookupByLibrary.simpleMessage(
+      "Follow main selector",
+    ),
     "chainGeneratedOn": MessageLookupByLibrary.simpleMessage("Generated on"),
     "chainHealthLabel": MessageLookupByLibrary.simpleMessage("Health"),
     "chainHealthScore": MessageLookupByLibrary.simpleMessage("Health Score"),
@@ -378,11 +398,24 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainHopUnavailable": MessageLookupByLibrary.simpleMessage(
       "Could not read the list of available nodes, so node availability could not be verified",
     ),
+    "chainInheritDefault": MessageLookupByLibrary.simpleMessage(
+      "Empty uses the global default dialer",
+    ),
     "chainIntelAnalytics": MessageLookupByLibrary.simpleMessage(
       "Intelligence Analytics",
     ),
+    "chainIpOrDomain": MessageLookupByLibrary.simpleMessage("IP or domain"),
     "chainLandingProxyNone": MessageLookupByLibrary.simpleMessage(
       "Default (none)",
+    ),
+    "chainMainTargets": MessageLookupByLibrary.simpleMessage(
+      "Connectivity to common services",
+    ),
+    "chainNoMatch": MessageLookupByLibrary.simpleMessage(
+      "No nodes match the filter",
+    ),
+    "chainNoResidential": MessageLookupByLibrary.simpleMessage(
+      "No landing residential node yet",
     ),
     "chainNodeDeviceApp": MessageLookupByLibrary.simpleMessage("Device app"),
     "chainNodeGroupNodes": MessageLookupByLibrary.simpleMessage("Group nodes"),
@@ -395,20 +428,32 @@ class MessageLookup extends MessageLookupByLibrary {
       "Subscription node",
     ),
     "chainOpenFolder": MessageLookupByLibrary.simpleMessage("Open Folder"),
+    "chainOptional": MessageLookupByLibrary.simpleMessage("Optional"),
     "chainPackageReady": MessageLookupByLibrary.simpleMessage("Package Ready"),
     "chainPreProxyNone": MessageLookupByLibrary.simpleMessage("Direct (none)"),
     "chainProbeNow": MessageLookupByLibrary.simpleMessage("Probe chain"),
+    "chainProbing": MessageLookupByLibrary.simpleMessage("Probing the chain…"),
     "chainProxy": MessageLookupByLibrary.simpleMessage("Chain Proxy"),
     "chainProxyDesc": MessageLookupByLibrary.simpleMessage(
       "Configure an entry hop and a static residential landing IP",
     ),
+    "chainReady": MessageLookupByLibrary.simpleMessage("Ready"),
+    "chainResetFilter": MessageLookupByLibrary.simpleMessage("Reset filter"),
     "chainShareLabel": MessageLookupByLibrary.simpleMessage("Share"),
+    "chainSpeedTest": MessageLookupByLibrary.simpleMessage("Test"),
     "chainSupportTitle": MessageLookupByLibrary.simpleMessage("Chain Support"),
+    "chainTargetNet": MessageLookupByLibrary.simpleMessage("Target network"),
+    "chainTimeout": MessageLookupByLibrary.simpleMessage("Timeout"),
     "chainTopFailureReason": MessageLookupByLibrary.simpleMessage(
       "Top Failure Reason",
     ),
+    "chainTopology": MessageLookupByLibrary.simpleMessage("Live topology"),
     "chainTopologyPreview": MessageLookupByLibrary.simpleMessage(
       "Chain routing topology preview",
+    ),
+    "chainTz": MessageLookupByLibrary.simpleMessage("Device time zone:"),
+    "chainWebrtcProtect": MessageLookupByLibrary.simpleMessage(
+      "WebRTC leak protection:",
     ),
     "checkError": MessageLookupByLibrary.simpleMessage("Check Failed"),
     "checkFailed": MessageLookupByLibrary.simpleMessage("Timeout"),

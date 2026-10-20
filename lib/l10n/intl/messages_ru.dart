@@ -356,6 +356,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "categoryGaming": MessageLookupByLibrary.simpleMessage("Игровой центр"),
     "categorySocial": MessageLookupByLibrary.simpleMessage("Сообщество"),
     "categoryStreaming": MessageLookupByLibrary.simpleMessage("Стриминг"),
+    "chainAddRelay": MessageLookupByLibrary.simpleMessage("Добавить релей"),
     "chainAvgLatency": MessageLookupByLibrary.simpleMessage("Средняя задержка"),
     "chainCreateSupportPackage": MessageLookupByLibrary.simpleMessage(
       "Создать пакет поддержки",
@@ -364,16 +365,39 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainDecisionSupport": MessageLookupByLibrary.simpleMessage(
       "Поддержка решений",
     ),
+    "chainDelete": MessageLookupByLibrary.simpleMessage("Удалить"),
+    "chainDeleteHop": MessageLookupByLibrary.simpleMessage(
+      "Удалить этот участок",
+    ),
+    "chainDeviceSide": MessageLookupByLibrary.simpleMessage("На устройстве"),
     "chainDiagnosticPackage": MessageLookupByLibrary.simpleMessage(
       "Диагностический пакет",
     ),
     "chainDiagnosticTitle": MessageLookupByLibrary.simpleMessage(
       "Диагностика цепочки",
     ),
+    "chainDisabled": MessageLookupByLibrary.simpleMessage("Выключено"),
+    "chainEdit": MessageLookupByLibrary.simpleMessage("Изменить"),
+    "chainEditLanding": MessageLookupByLibrary.simpleMessage(
+      "Изменить прокси выхода",
+    ),
+    "chainEnabled": MessageLookupByLibrary.simpleMessage(
+      "Цепочка прокси включена",
+    ),
+    "chainEnterServer": MessageLookupByLibrary.simpleMessage(
+      "Сначала укажите адрес сервера",
+    ),
+    "chainEnterServerHint": MessageLookupByLibrary.simpleMessage(
+      "Укажите адрес сервера",
+    ),
     "chainEventsLabel": MessageLookupByLibrary.simpleMessage("События"),
     "chainExportReport": MessageLookupByLibrary.simpleMessage("Экспорт отчёта"),
     "chainExporting": MessageLookupByLibrary.simpleMessage("Экспорт…"),
+    "chainFailed": MessageLookupByLibrary.simpleMessage("Ошибка"),
     "chainFailuresLabel": MessageLookupByLibrary.simpleMessage("Сбои"),
+    "chainFollowMain": MessageLookupByLibrary.simpleMessage(
+      "Следовать основному выбору",
+    ),
     "chainGeneratedOn": MessageLookupByLibrary.simpleMessage("Создан"),
     "chainHealthLabel": MessageLookupByLibrary.simpleMessage("Состояние"),
     "chainHealthScore": MessageLookupByLibrary.simpleMessage(
@@ -398,11 +422,24 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainHopUnavailable": MessageLookupByLibrary.simpleMessage(
       "Не удалось прочитать список доступных узлов, поэтому проверка доступности узлов не выполнена",
     ),
+    "chainInheritDefault": MessageLookupByLibrary.simpleMessage(
+      "Пусто — глобальный диалер",
+    ),
     "chainIntelAnalytics": MessageLookupByLibrary.simpleMessage(
       "Интеллектуальная аналитика",
     ),
+    "chainIpOrDomain": MessageLookupByLibrary.simpleMessage("IP или домен"),
     "chainLandingProxyNone": MessageLookupByLibrary.simpleMessage(
       "По умолчанию (нет)",
+    ),
+    "chainMainTargets": MessageLookupByLibrary.simpleMessage(
+      "Доступность основных сервисов",
+    ),
+    "chainNoMatch": MessageLookupByLibrary.simpleMessage(
+      "Нет узлов по фильтру",
+    ),
+    "chainNoResidential": MessageLookupByLibrary.simpleMessage(
+      "Узел выхода не настроен",
     ),
     "chainNodeDeviceApp": MessageLookupByLibrary.simpleMessage(
       "Приложение устройства",
@@ -417,22 +454,34 @@ class MessageLookup extends MessageLookupByLibrary {
       "Узел подписки",
     ),
     "chainOpenFolder": MessageLookupByLibrary.simpleMessage("Открыть папку"),
+    "chainOptional": MessageLookupByLibrary.simpleMessage("Необязательно"),
     "chainPackageReady": MessageLookupByLibrary.simpleMessage("Пакет готов"),
     "chainPreProxyNone": MessageLookupByLibrary.simpleMessage("Напрямую (нет)"),
     "chainProbeNow": MessageLookupByLibrary.simpleMessage("Проверить цепочку"),
+    "chainProbing": MessageLookupByLibrary.simpleMessage("Проверка цепочки…"),
     "chainProxy": MessageLookupByLibrary.simpleMessage("Цепочка прокси"),
     "chainProxyDesc": MessageLookupByLibrary.simpleMessage(
       "Настройте входной переход и статический резидентный IP-выход",
     ),
+    "chainReady": MessageLookupByLibrary.simpleMessage("Готово"),
+    "chainResetFilter": MessageLookupByLibrary.simpleMessage("Сбросить фильтр"),
     "chainShareLabel": MessageLookupByLibrary.simpleMessage("Поделиться"),
+    "chainSpeedTest": MessageLookupByLibrary.simpleMessage("Тест"),
     "chainSupportTitle": MessageLookupByLibrary.simpleMessage(
       "Поддержка цепочки",
     ),
+    "chainTargetNet": MessageLookupByLibrary.simpleMessage("Целевая сеть"),
+    "chainTimeout": MessageLookupByLibrary.simpleMessage("Таймаут"),
     "chainTopFailureReason": MessageLookupByLibrary.simpleMessage(
       "Основная причина сбоя",
     ),
+    "chainTopology": MessageLookupByLibrary.simpleMessage("Живая топология"),
     "chainTopologyPreview": MessageLookupByLibrary.simpleMessage(
       "Предпросмотр топологии цепной маршрутизации",
+    ),
+    "chainTz": MessageLookupByLibrary.simpleMessage("Часовой пояс устройства:"),
+    "chainWebrtcProtect": MessageLookupByLibrary.simpleMessage(
+      "Защита от утечки WebRTC:",
     ),
     "checkError": MessageLookupByLibrary.simpleMessage("Ошибка проверки"),
     "checkFailed": MessageLookupByLibrary.simpleMessage("Timeout"),
