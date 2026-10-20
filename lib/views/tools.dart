@@ -710,8 +710,8 @@ class _ToolViewState extends ConsumerState<ToolsView> {
       ),
       if (system.isAndroid)
         _SearchItem(
-          title: '重启内核时保持服务在线',
-          subtitle: '关闭时服务状态跟随内核',
+          title: appLocalizations.generalKeepService,
+          subtitle: appLocalizations.generalKeepServiceDesc,
           category: generalCategory,
           onTap: (context, _) => _pushPage(
             context,

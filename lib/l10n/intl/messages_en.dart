@@ -468,6 +468,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainNodeSubscription": MessageLookupByLibrary.simpleMessage(
       "Subscription node",
     ),
+    "chainNoneDirect": MessageLookupByLibrary.simpleMessage(
+      "None (use the subscription node directly)",
+    ),
     "chainNotProbed": MessageLookupByLibrary.simpleMessage(
       "Not probed yet: the colour reflects configuration, not health",
     ),
@@ -494,6 +497,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "e.g. US residential 01",
     ),
     "chainResidentialIp": m7,
+    "chainSearchNode": MessageLookupByLibrary.simpleMessage("Search nodes"),
     "chainShareLabel": MessageLookupByLibrary.simpleMessage("Share"),
     "chainSpeedTest": MessageLookupByLibrary.simpleMessage("Test"),
     "chainStunBlocked": MessageLookupByLibrary.simpleMessage(
@@ -2078,6 +2082,39 @@ class MessageLookup extends MessageLookupByLibrary {
     "tunnelTargetHint": MessageLookupByLibrary.simpleMessage(
       "e.g.: 114.114.114.114:53",
     ),
+    "tvConfigName": MessageLookupByLibrary.simpleMessage(
+      "Config name (optional)",
+    ),
+    "tvLocalFile": MessageLookupByLibrary.simpleMessage("Local config file"),
+    "tvNameHint": MessageLookupByLibrary.simpleMessage(
+      "Left empty, it is detected automatically",
+    ),
+    "tvNeedUrl": MessageLookupByLibrary.simpleMessage(
+      "Enter the subscription link first",
+    ),
+    "tvPickFile": MessageLookupByLibrary.simpleMessage(
+      "Choose a .yaml / .yml config",
+    ),
+    "tvPushConfig": MessageLookupByLibrary.simpleMessage("🚀 Send config file"),
+    "tvPushConnectFailed": MessageLookupByLibrary.simpleMessage(
+      "❌ Failed - cannot reach the TV:",
+    ),
+    "tvPushDoneAuto": MessageLookupByLibrary.simpleMessage(
+      "✅ Sent to the TV. It is importing the config now…",
+    ),
+    "tvPushDoneFile": MessageLookupByLibrary.simpleMessage(
+      "✅ Config file sent to the TV",
+    ),
+    "tvPushFailed": MessageLookupByLibrary.simpleMessage("❌ Failed:"),
+    "tvPushTitle": MessageLookupByLibrary.simpleMessage("Fluxora config push"),
+    "tvPushToTv": MessageLookupByLibrary.simpleMessage("🚀 Send to TV"),
+    "tvPushing": MessageLookupByLibrary.simpleMessage("Sending…"),
+    "tvReadFailed": MessageLookupByLibrary.simpleMessage(
+      "❌ Could not read the file",
+    ),
+    "tvReadingPushing": MessageLookupByLibrary.simpleMessage(
+      "Reading and sending…",
+    ),
     "tvScanManualUrl": MessageLookupByLibrary.simpleMessage(
       "Or enter directly in phone browser:",
     ),
@@ -2098,6 +2135,15 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "tvScanWaiting": MessageLookupByLibrary.simpleMessage(
       "Waiting for profile from phone...",
+    ),
+    "tvSubscriptionUrl": MessageLookupByLibrary.simpleMessage(
+      "Subscription link",
+    ),
+    "tvSubscriptionUrlLabel": MessageLookupByLibrary.simpleMessage(
+      "Subscription link (URL)",
+    ),
+    "tvUrlHint": MessageLookupByLibrary.simpleMessage(
+      "Paste a Clash Meta subscription link (https://…)",
     ),
     "twoColumns": MessageLookupByLibrary.simpleMessage("2 Columns"),
     "udpForwarding": MessageLookupByLibrary.simpleMessage("UDP Forwarding"),

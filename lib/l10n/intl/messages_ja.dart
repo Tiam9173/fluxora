@@ -377,6 +377,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainNodePreProxy": MessageLookupByLibrary.simpleMessage("プリプロキシ"),
     "chainNodeReliability": MessageLookupByLibrary.simpleMessage("ノード信頼性"),
     "chainNodeSubscription": MessageLookupByLibrary.simpleMessage("購読ノード"),
+    "chainNoneDirect": MessageLookupByLibrary.simpleMessage("なし（購読ノードに直接接続）"),
     "chainNotProbed": MessageLookupByLibrary.simpleMessage(
       "未確認：色は設定を表すだけで、健全性ではありません",
     ),
@@ -403,6 +404,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "例：米国住宅 IP 01",
     ),
     "chainResidentialIp": m7,
+    "chainSearchNode": MessageLookupByLibrary.simpleMessage("ノードを検索"),
     "chainShareLabel": MessageLookupByLibrary.simpleMessage("共有"),
     "chainSpeedTest": MessageLookupByLibrary.simpleMessage("速度テスト"),
     "chainStunBlocked": MessageLookupByLibrary.simpleMessage(
@@ -1683,6 +1685,27 @@ class MessageLookup extends MessageLookupByLibrary {
     "tunnelTargetHint": MessageLookupByLibrary.simpleMessage(
       "例: 114.114.114.114:53",
     ),
+    "tvConfigName": MessageLookupByLibrary.simpleMessage("設定名（任意）"),
+    "tvLocalFile": MessageLookupByLibrary.simpleMessage("ローカル設定ファイル"),
+    "tvNameHint": MessageLookupByLibrary.simpleMessage("空欄なら自動で判定します"),
+    "tvNeedUrl": MessageLookupByLibrary.simpleMessage("先に購読リンクを入力してください"),
+    "tvPickFile": MessageLookupByLibrary.simpleMessage(".yaml / .yml 設定を選択"),
+    "tvPushConfig": MessageLookupByLibrary.simpleMessage("🚀 設定ファイルを送信"),
+    "tvPushConnectFailed": MessageLookupByLibrary.simpleMessage(
+      "❌ 送信失敗：テレビに接続できません：",
+    ),
+    "tvPushDoneAuto": MessageLookupByLibrary.simpleMessage(
+      "✅ テレビへ送信しました。設定を自動で取り込んでいます…",
+    ),
+    "tvPushDoneFile": MessageLookupByLibrary.simpleMessage(
+      "✅ 設定ファイルをテレビへ送信しました",
+    ),
+    "tvPushFailed": MessageLookupByLibrary.simpleMessage("❌ 送信失敗："),
+    "tvPushTitle": MessageLookupByLibrary.simpleMessage("Fluxora 設定プッシュ"),
+    "tvPushToTv": MessageLookupByLibrary.simpleMessage("🚀 テレビへ送信"),
+    "tvPushing": MessageLookupByLibrary.simpleMessage("送信中…"),
+    "tvReadFailed": MessageLookupByLibrary.simpleMessage("❌ ファイルを読み込めません"),
+    "tvReadingPushing": MessageLookupByLibrary.simpleMessage("読み込みと送信中…"),
     "tvScanManualUrl": MessageLookupByLibrary.simpleMessage(
       "スマホのブラウザに直接入力も可能：",
     ),
@@ -1702,6 +1725,13 @@ class MessageLookup extends MessageLookupByLibrary {
       "設定がプッシュされました。インポート中...",
     ),
     "tvScanWaiting": MessageLookupByLibrary.simpleMessage("スマホからのプッシュを待機中..."),
+    "tvSubscriptionUrl": MessageLookupByLibrary.simpleMessage("購読リンク"),
+    "tvSubscriptionUrlLabel": MessageLookupByLibrary.simpleMessage(
+      "購読リンク (URL)",
+    ),
+    "tvUrlHint": MessageLookupByLibrary.simpleMessage(
+      "Clash Meta の購読リンクを貼り付け (https://…)",
+    ),
     "twoColumns": MessageLookupByLibrary.simpleMessage("2列"),
     "udpForwarding": MessageLookupByLibrary.simpleMessage("UDP 転送"),
     "udpForwardingDesc": MessageLookupByLibrary.simpleMessage(

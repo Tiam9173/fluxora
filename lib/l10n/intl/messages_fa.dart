@@ -472,6 +472,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "قابلیت اطمینان گره",
     ),
     "chainNodeSubscription": MessageLookupByLibrary.simpleMessage("گره اشتراک"),
+    "chainNoneDirect": MessageLookupByLibrary.simpleMessage(
+      "هیچ (اتصال مستقیم به گره اشتراک)",
+    ),
     "chainNotProbed": MessageLookupByLibrary.simpleMessage(
       "بررسی نشده: رنگ فقط تنظیمات را نشان می‌دهد نه سلامت",
     ),
@@ -500,6 +503,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "مثلاً IP خانگی آمریکا 01",
     ),
     "chainResidentialIp": m7,
+    "chainSearchNode": MessageLookupByLibrary.simpleMessage("جستجوی گره"),
     "chainShareLabel": MessageLookupByLibrary.simpleMessage("اشتراک‌گذاری"),
     "chainSpeedTest": MessageLookupByLibrary.simpleMessage("تست"),
     "chainStunBlocked": MessageLookupByLibrary.simpleMessage(
@@ -2124,6 +2128,43 @@ class MessageLookup extends MessageLookupByLibrary {
     "tunnelTargetHint": MessageLookupByLibrary.simpleMessage(
       "مثال: 114.114.114.114:53",
     ),
+    "tvConfigName": MessageLookupByLibrary.simpleMessage(
+      "نام پیکربندی (اختیاری)",
+    ),
+    "tvLocalFile": MessageLookupByLibrary.simpleMessage("فایل پیکربندی محلی"),
+    "tvNameHint": MessageLookupByLibrary.simpleMessage(
+      "خالی بماند، خودکار تشخیص داده می‌شود",
+    ),
+    "tvNeedUrl": MessageLookupByLibrary.simpleMessage(
+      "ابتدا پیوند اشتراک را وارد کنید",
+    ),
+    "tvPickFile": MessageLookupByLibrary.simpleMessage(
+      "یک فایل .yaml / .yml انتخاب کنید",
+    ),
+    "tvPushConfig": MessageLookupByLibrary.simpleMessage(
+      "🚀 ارسال فایل پیکربندی",
+    ),
+    "tvPushConnectFailed": MessageLookupByLibrary.simpleMessage(
+      "❌ ناموفق: تلویزیون در دسترس نیست:",
+    ),
+    "tvPushDoneAuto": MessageLookupByLibrary.simpleMessage(
+      "✅ به تلویزیون ارسال شد. پیکربندی در حال وارد شدن است…",
+    ),
+    "tvPushDoneFile": MessageLookupByLibrary.simpleMessage(
+      "✅ فایل پیکربندی به تلویزیون ارسال شد",
+    ),
+    "tvPushFailed": MessageLookupByLibrary.simpleMessage("❌ ناموفق:"),
+    "tvPushTitle": MessageLookupByLibrary.simpleMessage(
+      "ارسال پیکربندی Fluxora",
+    ),
+    "tvPushToTv": MessageLookupByLibrary.simpleMessage("🚀 ارسال به تلویزیون"),
+    "tvPushing": MessageLookupByLibrary.simpleMessage("در حال ارسال…"),
+    "tvReadFailed": MessageLookupByLibrary.simpleMessage(
+      "❌ خواندن فایل ممکن نشد",
+    ),
+    "tvReadingPushing": MessageLookupByLibrary.simpleMessage(
+      "در حال خواندن و ارسال…",
+    ),
     "tvScanManualUrl": MessageLookupByLibrary.simpleMessage(
       "یا آدرس را مستقیماً در مرورگر گوشی وارد کنید:",
     ),
@@ -2144,6 +2185,13 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "tvScanWaiting": MessageLookupByLibrary.simpleMessage(
       "در انتظار ارسال پروفایل از گوشی...",
+    ),
+    "tvSubscriptionUrl": MessageLookupByLibrary.simpleMessage("پیوند اشتراک"),
+    "tvSubscriptionUrlLabel": MessageLookupByLibrary.simpleMessage(
+      "پیوند اشتراک (URL)",
+    ),
+    "tvUrlHint": MessageLookupByLibrary.simpleMessage(
+      "پیوند اشتراک Clash Meta را بچسبانید (https://…)",
     ),
     "twoColumns": MessageLookupByLibrary.simpleMessage("۲ ستون"),
     "udpForwarding": MessageLookupByLibrary.simpleMessage("بازپخش UDP"),

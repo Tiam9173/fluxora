@@ -10779,6 +10779,196 @@ class AppLocalizations {
       args: [],
     );
   }
+
+  /// `Fluxora config push`
+  String get tvPushTitle {
+    return Intl.message(
+      'Fluxora config push',
+      name: 'tvPushTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `✅ Sent to the TV. It is importing the config now…`
+  String get tvPushDoneAuto {
+    return Intl.message(
+      '✅ Sent to the TV. It is importing the config now…',
+      name: 'tvPushDoneAuto',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `✅ Config file sent to the TV`
+  String get tvPushDoneFile {
+    return Intl.message(
+      '✅ Config file sent to the TV',
+      name: 'tvPushDoneFile',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `❌ Failed - cannot reach the TV:`
+  String get tvPushConnectFailed {
+    return Intl.message(
+      '❌ Failed - cannot reach the TV:',
+      name: 'tvPushConnectFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `❌ Failed:`
+  String get tvPushFailed {
+    return Intl.message('❌ Failed:', name: 'tvPushFailed', desc: '', args: []);
+  }
+
+  /// `❌ Could not read the file`
+  String get tvReadFailed {
+    return Intl.message(
+      '❌ Could not read the file',
+      name: 'tvReadFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Paste a Clash Meta subscription link (https://…)`
+  String get tvUrlHint {
+    return Intl.message(
+      'Paste a Clash Meta subscription link (https://…)',
+      name: 'tvUrlHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Left empty, it is detected automatically`
+  String get tvNameHint {
+    return Intl.message(
+      'Left empty, it is detected automatically',
+      name: 'tvNameHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Local config file`
+  String get tvLocalFile {
+    return Intl.message(
+      'Local config file',
+      name: 'tvLocalFile',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Sending…`
+  String get tvPushing {
+    return Intl.message('Sending…', name: 'tvPushing', desc: '', args: []);
+  }
+
+  /// `Reading and sending…`
+  String get tvReadingPushing {
+    return Intl.message(
+      'Reading and sending…',
+      name: 'tvReadingPushing',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Choose a .yaml / .yml config`
+  String get tvPickFile {
+    return Intl.message(
+      'Choose a .yaml / .yml config',
+      name: 'tvPickFile',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Subscription link`
+  String get tvSubscriptionUrl {
+    return Intl.message(
+      'Subscription link',
+      name: 'tvSubscriptionUrl',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Subscription link (URL)`
+  String get tvSubscriptionUrlLabel {
+    return Intl.message(
+      'Subscription link (URL)',
+      name: 'tvSubscriptionUrlLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Enter the subscription link first`
+  String get tvNeedUrl {
+    return Intl.message(
+      'Enter the subscription link first',
+      name: 'tvNeedUrl',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Config name (optional)`
+  String get tvConfigName {
+    return Intl.message(
+      'Config name (optional)',
+      name: 'tvConfigName',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `🚀 Send to TV`
+  String get tvPushToTv {
+    return Intl.message(
+      '🚀 Send to TV',
+      name: 'tvPushToTv',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `🚀 Send config file`
+  String get tvPushConfig {
+    return Intl.message(
+      '🚀 Send config file',
+      name: 'tvPushConfig',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Search nodes`
+  String get chainSearchNode {
+    return Intl.message(
+      'Search nodes',
+      name: 'chainSearchNode',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `None (use the subscription node directly)`
+  String get chainNoneDirect {
+    return Intl.message(
+      'None (use the subscription node directly)',
+      name: 'chainNoneDirect',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {

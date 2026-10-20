@@ -380,6 +380,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainNodePreProxy": MessageLookupByLibrary.simpleMessage("사전 프록시"),
     "chainNodeReliability": MessageLookupByLibrary.simpleMessage("노드 신뢰도"),
     "chainNodeSubscription": MessageLookupByLibrary.simpleMessage("구독 노드"),
+    "chainNoneDirect": MessageLookupByLibrary.simpleMessage("없음 (구독 노드 직접 사용)"),
     "chainNotProbed": MessageLookupByLibrary.simpleMessage(
       "미확인: 색상은 설정만 나타내며 상태를 뜻하지 않습니다",
     ),
@@ -406,6 +407,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "예: 미국 주거용 IP 01",
     ),
     "chainResidentialIp": m7,
+    "chainSearchNode": MessageLookupByLibrary.simpleMessage("노드 검색"),
     "chainShareLabel": MessageLookupByLibrary.simpleMessage("공유"),
     "chainSpeedTest": MessageLookupByLibrary.simpleMessage("속도 테스트"),
     "chainStunBlocked": MessageLookupByLibrary.simpleMessage(
@@ -1686,6 +1688,27 @@ class MessageLookup extends MessageLookupByLibrary {
     "tunnelTargetHint": MessageLookupByLibrary.simpleMessage(
       "예: 114.114.114.114:53",
     ),
+    "tvConfigName": MessageLookupByLibrary.simpleMessage("설정 이름 (선택)"),
+    "tvLocalFile": MessageLookupByLibrary.simpleMessage("로컬 설정 파일"),
+    "tvNameHint": MessageLookupByLibrary.simpleMessage("비우면 자동으로 인식합니다"),
+    "tvNeedUrl": MessageLookupByLibrary.simpleMessage("먼저 구독 링크를 입력하세요"),
+    "tvPickFile": MessageLookupByLibrary.simpleMessage("​.yaml / .yml 설정 선택"),
+    "tvPushConfig": MessageLookupByLibrary.simpleMessage("🚀 설정 파일 보내기"),
+    "tvPushConnectFailed": MessageLookupByLibrary.simpleMessage(
+      "❌ 전송 실패: TV에 연결할 수 없습니다:",
+    ),
+    "tvPushDoneAuto": MessageLookupByLibrary.simpleMessage(
+      "✅ TV로 보냈습니다. 설정을 가져오는 중입니다…",
+    ),
+    "tvPushDoneFile": MessageLookupByLibrary.simpleMessage(
+      "✅ 설정 파일을 TV로 보냈습니다",
+    ),
+    "tvPushFailed": MessageLookupByLibrary.simpleMessage("❌ 전송 실패:"),
+    "tvPushTitle": MessageLookupByLibrary.simpleMessage("Fluxora 설정 전송"),
+    "tvPushToTv": MessageLookupByLibrary.simpleMessage("🚀 TV로 보내기"),
+    "tvPushing": MessageLookupByLibrary.simpleMessage("전송 중…"),
+    "tvReadFailed": MessageLookupByLibrary.simpleMessage("❌ 파일을 읽을 수 없습니다"),
+    "tvReadingPushing": MessageLookupByLibrary.simpleMessage("읽고 전송 중…"),
     "tvScanManualUrl": MessageLookupByLibrary.simpleMessage(
       "스마트폰 브라우저에 직접 입력할 수도 있습니다:",
     ),
@@ -1706,6 +1729,13 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "tvScanWaiting": MessageLookupByLibrary.simpleMessage(
       "스마트폰에서 프로필 푸시 대기 중...",
+    ),
+    "tvSubscriptionUrl": MessageLookupByLibrary.simpleMessage("구독 링크"),
+    "tvSubscriptionUrlLabel": MessageLookupByLibrary.simpleMessage(
+      "구독 링크 (URL)",
+    ),
+    "tvUrlHint": MessageLookupByLibrary.simpleMessage(
+      "Clash Meta 구독 링크를 붙여넣으세요 (https://…)",
     ),
     "twoColumns": MessageLookupByLibrary.simpleMessage("2열"),
     "udpForwarding": MessageLookupByLibrary.simpleMessage("UDP 포워딩"),

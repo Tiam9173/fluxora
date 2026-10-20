@@ -348,6 +348,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainNodePreProxy": MessageLookupByLibrary.simpleMessage("前置代理"),
     "chainNodeReliability": MessageLookupByLibrary.simpleMessage("節點可靠性"),
     "chainNodeSubscription": MessageLookupByLibrary.simpleMessage("訂閱節點"),
+    "chainNoneDirect": MessageLookupByLibrary.simpleMessage("無（直連訂閱節點）"),
     "chainNotProbed": MessageLookupByLibrary.simpleMessage(
       "尚未探測：顏色僅表示設定，不代表鏈路健康",
     ),
@@ -374,6 +375,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "例：美國家庭住宅IP 01",
     ),
     "chainResidentialIp": m7,
+    "chainSearchNode": MessageLookupByLibrary.simpleMessage("搜尋節點"),
     "chainShareLabel": MessageLookupByLibrary.simpleMessage("分享"),
     "chainSpeedTest": MessageLookupByLibrary.simpleMessage("測速"),
     "chainStunBlocked": MessageLookupByLibrary.simpleMessage(
@@ -1514,6 +1516,25 @@ class MessageLookup extends MessageLookupByLibrary {
     "tunnelTargetHint": MessageLookupByLibrary.simpleMessage(
       "例如: 114.114.114.114:53",
     ),
+    "tvConfigName": MessageLookupByLibrary.simpleMessage("設定名稱（選填）"),
+    "tvLocalFile": MessageLookupByLibrary.simpleMessage("本機設定檔"),
+    "tvNameHint": MessageLookupByLibrary.simpleMessage("未填寫則自動辨識"),
+    "tvNeedUrl": MessageLookupByLibrary.simpleMessage("請先輸入訂閱連結"),
+    "tvPickFile": MessageLookupByLibrary.simpleMessage("點擊選擇 .yaml / .yml 設定檔"),
+    "tvPushConfig": MessageLookupByLibrary.simpleMessage("🚀 推送設定檔"),
+    "tvPushConnectFailed": MessageLookupByLibrary.simpleMessage(
+      "❌ 推送失敗，無法連線到電視：",
+    ),
+    "tvPushDoneAuto": MessageLookupByLibrary.simpleMessage(
+      "✅ 已成功推送至電視！電視端正在自動匯入設定...",
+    ),
+    "tvPushDoneFile": MessageLookupByLibrary.simpleMessage("✅ 設定檔已成功推送至電視！"),
+    "tvPushFailed": MessageLookupByLibrary.simpleMessage("❌ 推送失敗："),
+    "tvPushTitle": MessageLookupByLibrary.simpleMessage("Fluxora 設定推送"),
+    "tvPushToTv": MessageLookupByLibrary.simpleMessage("🚀 推送至電視"),
+    "tvPushing": MessageLookupByLibrary.simpleMessage("正在推送..."),
+    "tvReadFailed": MessageLookupByLibrary.simpleMessage("❌ 讀取檔案失敗"),
+    "tvReadingPushing": MessageLookupByLibrary.simpleMessage("正在讀取與推送..."),
     "tvScanManualUrl": MessageLookupByLibrary.simpleMessage("也可在手機瀏覽器中直接輸入："),
     "tvScanNoNetwork": MessageLookupByLibrary.simpleMessage(
       "未檢測到可用的局域網，請檢查 Wi-Fi",
@@ -1525,6 +1546,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "tvScanStep3": MessageLookupByLibrary.simpleMessage("在網頁中粘貼訂閱連結或上傳設定檔並推送"),
     "tvScanSuccess": MessageLookupByLibrary.simpleMessage("設定檔推送成功，正在導入..."),
     "tvScanWaiting": MessageLookupByLibrary.simpleMessage("等待手機推送設定檔中..."),
+    "tvSubscriptionUrl": MessageLookupByLibrary.simpleMessage("訂閱連結"),
+    "tvSubscriptionUrlLabel": MessageLookupByLibrary.simpleMessage(
+      "訂閱連結 (URL)",
+    ),
+    "tvUrlHint": MessageLookupByLibrary.simpleMessage(
+      "在此貼上 Clash Meta 訂閱連結 (https://...)",
+    ),
     "twoColumns": MessageLookupByLibrary.simpleMessage("兩列"),
     "udpForwarding": MessageLookupByLibrary.simpleMessage("UDP 轉發"),
     "udpForwardingDesc": MessageLookupByLibrary.simpleMessage(

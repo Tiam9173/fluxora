@@ -346,6 +346,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainNodePreProxy": MessageLookupByLibrary.simpleMessage("前置代理"),
     "chainNodeReliability": MessageLookupByLibrary.simpleMessage("节点可靠性"),
     "chainNodeSubscription": MessageLookupByLibrary.simpleMessage("订阅节点"),
+    "chainNoneDirect": MessageLookupByLibrary.simpleMessage("无（直连订阅节点）"),
     "chainNotProbed": MessageLookupByLibrary.simpleMessage(
       "尚未探测：颜色仅表示配置，不代表链路健康",
     ),
@@ -370,6 +371,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "例：美国家庭住宅IP 01",
     ),
     "chainResidentialIp": m7,
+    "chainSearchNode": MessageLookupByLibrary.simpleMessage("搜索节点"),
     "chainShareLabel": MessageLookupByLibrary.simpleMessage("分享"),
     "chainSpeedTest": MessageLookupByLibrary.simpleMessage("测速"),
     "chainStunBlocked": MessageLookupByLibrary.simpleMessage(
@@ -1502,6 +1504,27 @@ class MessageLookup extends MessageLookupByLibrary {
     "tunnelTargetHint": MessageLookupByLibrary.simpleMessage(
       "例如: 114.114.114.114:53",
     ),
+    "tvConfigName": MessageLookupByLibrary.simpleMessage("配置名称（可选）"),
+    "tvLocalFile": MessageLookupByLibrary.simpleMessage("本地配置文件"),
+    "tvNameHint": MessageLookupByLibrary.simpleMessage("未填写则自动识别"),
+    "tvNeedUrl": MessageLookupByLibrary.simpleMessage("请先输入订阅链接"),
+    "tvPickFile": MessageLookupByLibrary.simpleMessage(
+      "点击选择 .yaml / .yml 配置文件",
+    ),
+    "tvPushConfig": MessageLookupByLibrary.simpleMessage("🚀 推送配置文件"),
+    "tvPushConnectFailed": MessageLookupByLibrary.simpleMessage(
+      "❌ 推送失败，无法连接到电视：",
+    ),
+    "tvPushDoneAuto": MessageLookupByLibrary.simpleMessage(
+      "✅ 已成功推送至电视！电视端正在自动导入配置...",
+    ),
+    "tvPushDoneFile": MessageLookupByLibrary.simpleMessage("✅ 配置文件已成功推送至电视！"),
+    "tvPushFailed": MessageLookupByLibrary.simpleMessage("❌ 推送失败："),
+    "tvPushTitle": MessageLookupByLibrary.simpleMessage("Fluxora 配置推送"),
+    "tvPushToTv": MessageLookupByLibrary.simpleMessage("🚀 推送至电视"),
+    "tvPushing": MessageLookupByLibrary.simpleMessage("正在推送..."),
+    "tvReadFailed": MessageLookupByLibrary.simpleMessage("❌ 读取文件失败"),
+    "tvReadingPushing": MessageLookupByLibrary.simpleMessage("正在读取与推送..."),
     "tvScanManualUrl": MessageLookupByLibrary.simpleMessage("手机浏览器也可直接访问："),
     "tvScanNoNetwork": MessageLookupByLibrary.simpleMessage(
       "未检测到可用的局域网，请检查 Wi-Fi",
@@ -1513,6 +1536,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "tvScanStep3": MessageLookupByLibrary.simpleMessage("在网页中粘贴订阅链接或上传配置并推送"),
     "tvScanSuccess": MessageLookupByLibrary.simpleMessage("配置推送成功，正在导入..."),
     "tvScanWaiting": MessageLookupByLibrary.simpleMessage("等待手机推送配置中..."),
+    "tvSubscriptionUrl": MessageLookupByLibrary.simpleMessage("订阅链接"),
+    "tvSubscriptionUrlLabel": MessageLookupByLibrary.simpleMessage(
+      "订阅链接 (URL)",
+    ),
+    "tvUrlHint": MessageLookupByLibrary.simpleMessage(
+      "在此粘贴 Clash Meta 订阅链接 (https://...)",
+    ),
     "twoColumns": MessageLookupByLibrary.simpleMessage("两列"),
     "udpForwarding": MessageLookupByLibrary.simpleMessage("UDP 转发"),
     "udpForwardingDesc": MessageLookupByLibrary.simpleMessage(

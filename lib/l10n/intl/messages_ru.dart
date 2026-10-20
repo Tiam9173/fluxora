@@ -492,6 +492,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainNodeSubscription": MessageLookupByLibrary.simpleMessage(
       "Узел подписки",
     ),
+    "chainNoneDirect": MessageLookupByLibrary.simpleMessage(
+      "Нет (напрямую к узлу подписки)",
+    ),
     "chainNotProbed": MessageLookupByLibrary.simpleMessage(
       "Не проверено: цвет отражает настройку, а не состояние",
     ),
@@ -518,6 +521,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "напр. домашний IP США 01",
     ),
     "chainResidentialIp": m7,
+    "chainSearchNode": MessageLookupByLibrary.simpleMessage("Поиск узлов"),
     "chainShareLabel": MessageLookupByLibrary.simpleMessage("Поделиться"),
     "chainSpeedTest": MessageLookupByLibrary.simpleMessage("Тест"),
     "chainStunBlocked": MessageLookupByLibrary.simpleMessage(
@@ -2188,6 +2192,41 @@ class MessageLookup extends MessageLookupByLibrary {
     "tunnelTargetHint": MessageLookupByLibrary.simpleMessage(
       "Например: 114.114.114.114:53",
     ),
+    "tvConfigName": MessageLookupByLibrary.simpleMessage(
+      "Имя конфигурации (необязательно)",
+    ),
+    "tvLocalFile": MessageLookupByLibrary.simpleMessage("Локальный файл"),
+    "tvNameHint": MessageLookupByLibrary.simpleMessage(
+      "Если пусто — определится автоматически",
+    ),
+    "tvNeedUrl": MessageLookupByLibrary.simpleMessage(
+      "Сначала укажите ссылку подписки",
+    ),
+    "tvPickFile": MessageLookupByLibrary.simpleMessage("Выберите .yaml / .yml"),
+    "tvPushConfig": MessageLookupByLibrary.simpleMessage(
+      "🚀 Отправить файл конфигурации",
+    ),
+    "tvPushConnectFailed": MessageLookupByLibrary.simpleMessage(
+      "❌ Не удалось: телевизор недоступен:",
+    ),
+    "tvPushDoneAuto": MessageLookupByLibrary.simpleMessage(
+      "✅ Отправлено на ТВ. Идёт импорт конфигурации…",
+    ),
+    "tvPushDoneFile": MessageLookupByLibrary.simpleMessage(
+      "✅ Файл конфигурации отправлен на ТВ",
+    ),
+    "tvPushFailed": MessageLookupByLibrary.simpleMessage("❌ Ошибка:"),
+    "tvPushTitle": MessageLookupByLibrary.simpleMessage(
+      "Отправка конфигурации Fluxora",
+    ),
+    "tvPushToTv": MessageLookupByLibrary.simpleMessage("🚀 Отправить на ТВ"),
+    "tvPushing": MessageLookupByLibrary.simpleMessage("Отправка…"),
+    "tvReadFailed": MessageLookupByLibrary.simpleMessage(
+      "❌ Не удалось прочитать файл",
+    ),
+    "tvReadingPushing": MessageLookupByLibrary.simpleMessage(
+      "Чтение и отправка…",
+    ),
     "tvScanManualUrl": MessageLookupByLibrary.simpleMessage(
       "Или введите адрес в браузере телефона:",
     ),
@@ -2208,6 +2247,15 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "tvScanWaiting": MessageLookupByLibrary.simpleMessage(
       "Ожидание отправки профиля с телефона...",
+    ),
+    "tvSubscriptionUrl": MessageLookupByLibrary.simpleMessage(
+      "Ссылка подписки",
+    ),
+    "tvSubscriptionUrlLabel": MessageLookupByLibrary.simpleMessage(
+      "Ссылка подписки (URL)",
+    ),
+    "tvUrlHint": MessageLookupByLibrary.simpleMessage(
+      "Вставьте ссылку подписки Clash Meta (https://…)",
     ),
     "twoColumns": MessageLookupByLibrary.simpleMessage("2 колонки"),
     "udpForwarding": MessageLookupByLibrary.simpleMessage("Пересылка UDP"),

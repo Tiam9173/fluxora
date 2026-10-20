@@ -139,7 +139,7 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
         ? Colors.redAccent
         : (value < 200 ? Colors.green : (value < 500 ? Colors.orange : Colors.red));
     return Text(
-      failed ? '超时' : '${value}ms',
+      failed ? appLocalizations.chainTimeout : '${value}ms',
       style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w500),
     );
   }
@@ -177,7 +177,7 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                             child: CircularProgressIndicator(strokeWidth: 1.5),
                           )
                         : const Icon(Icons.speed, size: 16),
-                    label: const Text('测延迟', style: TextStyle(fontSize: 12)),
+                    label: Text(appLocalizations.chainSpeedTest, style: TextStyle(fontSize: 12)),
                   ),
                 ],
               ),
@@ -188,10 +188,10 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                   children: [
                     TextField(
                       autofocus: false,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         isDense: true,
                         prefixIcon: Icon(Icons.search, size: 18),
-                        hintText: '搜索节点',
+                        hintText: appLocalizations.chainSearchNode,
                         border: OutlineInputBorder(),
                       ),
                       onChanged: (v) => setLocal(() => keyword = v),
@@ -203,7 +203,7 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                           ListTile(
                             dense: true,
                             leading: const Icon(Icons.block, size: 18),
-                            title: const Text('无（直连订阅节点）',
+                            title: Text(appLocalizations.chainNoneDirect,
                                 style: TextStyle(fontSize: 13)),
                             trailing: (current == null || current.isEmpty)
                                 ? const Icon(Icons.check, size: 18)
