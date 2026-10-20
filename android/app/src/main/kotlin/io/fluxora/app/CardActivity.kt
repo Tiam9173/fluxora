@@ -34,6 +34,9 @@ class CardActivity : FlutterActivity() {
         // Dart 侧据此把根节点换成卡片；由 `isCardOnlyLaunch` 读取并清零。
         GlobalState.cardOnlyLaunch = true
         GlobalState.currentActivity = this
+        // 复用主引擎时窗口格式不会自动跟着变透明，必须显式设置；否则主题
+        // 是半透明的、画布却按不透明合成，四周就是一片白。
+        window.setFormat(android.graphics.PixelFormat.TRANSLUCENT)
         window.setBackgroundDrawable(
             android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT)
         )

@@ -1162,5 +1162,12 @@
   "warpNoSignature": "注意：出口 {ip} に接続しましたが WARP 署名がありません。ダイヤラー設定を確認してください",
   "warpDialerSet": "ダイヤラーを {name} に設定しました",
   "profileManageNodes": "ノード管理 / ノード追加",
-  "profileChainProxies": "前置と着地プロキシ"
+  "profileChainProxies": "前置と着地プロキシ",
+  "warpModeTitle": "分流モード (Routing Mode)",
+  "warpModeSmart": "スマート: AI 解除 (推奨)",
+  "warpModeSmartDesc": "Google・OpenAI・Claude・Gemini などを WARP 経由にし、それ以外はプロバイダ本来の速度を維持します",
+  "warpModeAll": "全トラフィックを WARP 経由",
+  "warpModeAllDesc": "すべてのプロキシ通信を WARP で再カプセル化し、プロバイダの実出口 IP を隠します",
+  "warpModeCustom": "カスタムルール分流",
+  "warpModeCustomDesc": "指定したドメインまたは IP のルールで WARP 経由かどうかを決めます"
 }

@@ -1450,6 +1450,21 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpDialerSet": m35,
     "warpFastestChosen": m36,
     "warpIpChosen": m37,
+    "warpModeAll": MessageLookupByLibrary.simpleMessage("全域接管模式"),
+    "warpModeAllDesc": MessageLookupByLibrary.simpleMessage(
+      "所有代理出站流量全部經過 WARP 進行二次封裝，隱藏真實機場落地 IP",
+    ),
+    "warpModeCustom": MessageLookupByLibrary.simpleMessage("自訂規則分流"),
+    "warpModeCustomDesc": MessageLookupByLibrary.simpleMessage(
+      "根據指定網域或 IP 規則決定是否通過 WARP 出口",
+    ),
+    "warpModeSmart": MessageLookupByLibrary.simpleMessage("智慧防送中與 AI 解鎖 (推薦)"),
+    "warpModeSmartDesc": MessageLookupByLibrary.simpleMessage(
+      "針對 Google、OpenAI、Claude、Gemini 等平台套 WARP 出口，其餘保持機場原生高速",
+    ),
+    "warpModeTitle": MessageLookupByLibrary.simpleMessage(
+      "分流工作模式 (Routing Mode)",
+    ),
     "warpNoSignature": m38,
     "warpRegion": m39,
     "warpStr0": MessageLookupByLibrary.simpleMessage("0 (默認 2408)"),

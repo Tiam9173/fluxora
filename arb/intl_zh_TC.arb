@@ -1160,5 +1160,12 @@
   "warpNoSignature": "提示：已連線出口 {ip}，但未偵測到 WARP 簽名，請確認跳板設定",
   "warpDialerSet": "已指定前置跳板為 {name}",
   "profileManageNodes": "節點管理 / 新增節點",
-  "profileChainProxies": "前置與落地代理"
+  "profileChainProxies": "前置與落地代理",
+  "warpModeTitle": "分流工作模式 (Routing Mode)",
+  "warpModeSmart": "智慧防送中與 AI 解鎖 (推薦)",
+  "warpModeSmartDesc": "針對 Google、OpenAI、Claude、Gemini 等平台套 WARP 出口，其餘保持機場原生高速",
+  "warpModeAll": "全域接管模式",
+  "warpModeAllDesc": "所有代理出站流量全部經過 WARP 進行二次封裝，隱藏真實機場落地 IP",
+  "warpModeCustom": "自訂規則分流",
+  "warpModeCustomDesc": "根據指定網域或 IP 規則決定是否通過 WARP 出口"
 }

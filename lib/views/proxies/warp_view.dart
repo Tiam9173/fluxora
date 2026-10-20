@@ -11,6 +11,19 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluxora/manager/warp_clean_ip_scanner.dart';
 import 'package:fluxora/views/proxies/chain_hop_picker.dart';
+import 'package:fluxora/l10n/l10n.dart';
+
+String _modeLabel(WarpMode m, AppLocalizations l) => switch (m) {
+  WarpMode.googleAndAi => l.warpModeSmart,
+  WarpMode.all => l.warpModeAll,
+  WarpMode.custom => l.warpModeCustom,
+};
+
+String _modeDesc(WarpMode m, AppLocalizations l) => switch (m) {
+  WarpMode.googleAndAi => l.warpModeSmartDesc,
+  WarpMode.all => l.warpModeAllDesc,
+  WarpMode.custom => l.warpModeCustomDesc,
+};
 
 class WarpView extends ConsumerStatefulWidget {
   final SheetType? type;
@@ -1297,9 +1310,12 @@ class _WarpViewState extends ConsumerState<WarpView> {
               children: [
                 Icon(Icons.tune, color: colorScheme.primary, size: 20),
                 const SizedBox(width: 8),
-                const Text(
-                  '分流工作模式 (Routing Mode)',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                Text(
+                  appLocalizations.warpModeTitle,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
                 ),
               ],
             ),
@@ -1320,14 +1336,14 @@ class _WarpViewState extends ConsumerState<WarpView> {
                     RadioListTile<WarpMode>(
                       contentPadding: EdgeInsets.zero,
                       title: Text(
-                        m.label,
+                        _modeLabel(m, appLocalizations),
                         style: const TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
                         ),
                       ),
                       subtitle: Text(
-                        m.description,
+                        _modeDesc(m, appLocalizations),
                         style: const TextStyle(
                           fontSize: 12,
                           color: Colors.grey,

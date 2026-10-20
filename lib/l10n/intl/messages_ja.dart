@@ -1617,6 +1617,21 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpDialerSet": m35,
     "warpFastestChosen": m36,
     "warpIpChosen": m37,
+    "warpModeAll": MessageLookupByLibrary.simpleMessage("全トラフィックを WARP 経由"),
+    "warpModeAllDesc": MessageLookupByLibrary.simpleMessage(
+      "すべてのプロキシ通信を WARP で再カプセル化し、プロバイダの実出口 IP を隠します",
+    ),
+    "warpModeCustom": MessageLookupByLibrary.simpleMessage("カスタムルール分流"),
+    "warpModeCustomDesc": MessageLookupByLibrary.simpleMessage(
+      "指定したドメインまたは IP のルールで WARP 経由かどうかを決めます",
+    ),
+    "warpModeSmart": MessageLookupByLibrary.simpleMessage("スマート: AI 解除 (推奨)"),
+    "warpModeSmartDesc": MessageLookupByLibrary.simpleMessage(
+      "Google・OpenAI・Claude・Gemini などを WARP 経由にし、それ以外はプロバイダ本来の速度を維持します",
+    ),
+    "warpModeTitle": MessageLookupByLibrary.simpleMessage(
+      "分流モード (Routing Mode)",
+    ),
     "warpNoSignature": m38,
     "warpRegion": m39,
     "warpStr0": MessageLookupByLibrary.simpleMessage("0（既定 2408）"),

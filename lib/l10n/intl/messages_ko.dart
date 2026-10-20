@@ -1624,6 +1624,21 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpDialerSet": m35,
     "warpFastestChosen": m36,
     "warpIpChosen": m37,
+    "warpModeAll": MessageLookupByLibrary.simpleMessage("모든 트래픽을 WARP 경유"),
+    "warpModeAllDesc": MessageLookupByLibrary.simpleMessage(
+      "모든 프록시 트래픽을 WARP로 다시 캡슐화하여 프로바이더의 실제 출구 IP를 숨깁니다",
+    ),
+    "warpModeCustom": MessageLookupByLibrary.simpleMessage("사용자 지정 규칙 분기"),
+    "warpModeCustomDesc": MessageLookupByLibrary.simpleMessage(
+      "지정한 도메인 또는 IP 규칙에 따라 WARP 경유 여부를 결정합니다",
+    ),
+    "warpModeSmart": MessageLookupByLibrary.simpleMessage("스마트: AI 차단 해제 (권장)"),
+    "warpModeSmartDesc": MessageLookupByLibrary.simpleMessage(
+      "Google, OpenAI, Claude, Gemini 등은 WARP를 거치고 나머지는 프로바이더 원래 속도를 유지합니다",
+    ),
+    "warpModeTitle": MessageLookupByLibrary.simpleMessage(
+      "분기 모드 (Routing Mode)",
+    ),
     "warpNoSignature": m38,
     "warpRegion": m39,
     "warpStr0": MessageLookupByLibrary.simpleMessage("0 (기본 2408)"),

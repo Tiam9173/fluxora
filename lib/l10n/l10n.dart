@@ -9954,6 +9954,76 @@ class AppLocalizations {
       args: [],
     );
   }
+
+  /// `Routing mode`
+  String get warpModeTitle {
+    return Intl.message(
+      'Routing mode',
+      name: 'warpModeTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Smart: AI unlock (recommended)`
+  String get warpModeSmart {
+    return Intl.message(
+      'Smart: AI unlock (recommended)',
+      name: 'warpModeSmart',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Routes Google, OpenAI, Claude and Gemini through WARP; everything else keeps the provider's native speed`
+  String get warpModeSmartDesc {
+    return Intl.message(
+      'Routes Google, OpenAI, Claude and Gemini through WARP; everything else keeps the provider\'s native speed',
+      name: 'warpModeSmartDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Route everything through WARP`
+  String get warpModeAll {
+    return Intl.message(
+      'Route everything through WARP',
+      name: 'warpModeAll',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `All proxy traffic is encapsulated through WARP, hiding the provider's real exit IP`
+  String get warpModeAllDesc {
+    return Intl.message(
+      'All proxy traffic is encapsulated through WARP, hiding the provider\'s real exit IP',
+      name: 'warpModeAllDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Custom rule-based routing`
+  String get warpModeCustom {
+    return Intl.message(
+      'Custom rule-based routing',
+      name: 'warpModeCustom',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Decides per rule whether traffic goes out through WARP`
+  String get warpModeCustomDesc {
+    return Intl.message(
+      'Decides per rule whether traffic goes out through WARP',
+      name: 'warpModeCustomDesc',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {

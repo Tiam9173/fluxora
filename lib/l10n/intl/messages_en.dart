@@ -1994,6 +1994,25 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpDialerSet": m35,
     "warpFastestChosen": m36,
     "warpIpChosen": m37,
+    "warpModeAll": MessageLookupByLibrary.simpleMessage(
+      "Route everything through WARP",
+    ),
+    "warpModeAllDesc": MessageLookupByLibrary.simpleMessage(
+      "All proxy traffic is encapsulated through WARP, hiding the provider\'s real exit IP",
+    ),
+    "warpModeCustom": MessageLookupByLibrary.simpleMessage(
+      "Custom rule-based routing",
+    ),
+    "warpModeCustomDesc": MessageLookupByLibrary.simpleMessage(
+      "Decides per rule whether traffic goes out through WARP",
+    ),
+    "warpModeSmart": MessageLookupByLibrary.simpleMessage(
+      "Smart: AI unlock (recommended)",
+    ),
+    "warpModeSmartDesc": MessageLookupByLibrary.simpleMessage(
+      "Routes Google, OpenAI, Claude and Gemini through WARP; everything else keeps the provider\'s native speed",
+    ),
+    "warpModeTitle": MessageLookupByLibrary.simpleMessage("Routing mode"),
     "warpNoSignature": m38,
     "warpRegion": m39,
     "warpStr0": MessageLookupByLibrary.simpleMessage("0 (default 2408)"),

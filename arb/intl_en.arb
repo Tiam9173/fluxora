@@ -1557,5 +1557,12 @@
     }
   },
   "profileManageNodes": "Manage / add nodes",
-  "profileChainProxies": "Pre and landing proxies"
+  "profileChainProxies": "Pre and landing proxies",
+  "warpModeTitle": "Routing mode",
+  "warpModeSmart": "Smart: AI unlock (recommended)",
+  "warpModeSmartDesc": "Routes Google, OpenAI, Claude and Gemini through WARP; everything else keeps the provider's native speed",
+  "warpModeAll": "Route everything through WARP",
+  "warpModeAllDesc": "All proxy traffic is encapsulated through WARP, hiding the provider's real exit IP",
+  "warpModeCustom": "Custom rule-based routing",
+  "warpModeCustomDesc": "Decides per rule whether traffic goes out through WARP"
 }

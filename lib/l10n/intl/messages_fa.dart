@@ -2042,6 +2042,23 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpDialerSet": m35,
     "warpFastestChosen": m36,
     "warpIpChosen": m37,
+    "warpModeAll": MessageLookupByLibrary.simpleMessage("همه ترافیک از WARP"),
+    "warpModeAllDesc": MessageLookupByLibrary.simpleMessage(
+      "تمام ترافیک پروکسی از WARP کپسوله می‌شود و IP واقعی خروجی ارائه‌دهنده پنهان می‌ماند",
+    ),
+    "warpModeCustom": MessageLookupByLibrary.simpleMessage(
+      "مسیریابی با قواعد سفارشی",
+    ),
+    "warpModeCustomDesc": MessageLookupByLibrary.simpleMessage(
+      "بر اساس قواعد دامنه یا IP تصمیم می‌گیرد که از WARP عبور کند یا نه",
+    ),
+    "warpModeSmart": MessageLookupByLibrary.simpleMessage(
+      "هوشمند: باز کردن قفل هوش مصنوعی (پیشنهادی)",
+    ),
+    "warpModeSmartDesc": MessageLookupByLibrary.simpleMessage(
+      "Google، OpenAI، Claude و Gemini از WARP عبور می‌کنند؛ بقیه سرعت اصلی ارائه‌دهنده را حفظ می‌کنند",
+    ),
+    "warpModeTitle": MessageLookupByLibrary.simpleMessage("حالت مسیریابی"),
     "warpNoSignature": m38,
     "warpRegion": m39,
     "warpStr0": MessageLookupByLibrary.simpleMessage("۰ (پیش‌فرض ۲۴۰۸)"),

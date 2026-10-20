@@ -1162,5 +1162,12 @@
   "warpNoSignature": "참고: 출구 {ip}에 연결되었지만 WARP 서명이 없습니다. 다이얼러 설정을 확인하세요",
   "warpDialerSet": "다이얼러를 {name}(으)로 설정했습니다",
   "profileManageNodes": "노드 관리 / 노드 추가",
-  "profileChainProxies": "프론트 및 랜딩 프록시"
+  "profileChainProxies": "프론트 및 랜딩 프록시",
+  "warpModeTitle": "분기 모드 (Routing Mode)",
+  "warpModeSmart": "스마트: AI 차단 해제 (권장)",
+  "warpModeSmartDesc": "Google, OpenAI, Claude, Gemini 등은 WARP를 거치고 나머지는 프로바이더 원래 속도를 유지합니다",
+  "warpModeAll": "모든 트래픽을 WARP 경유",
+  "warpModeAllDesc": "모든 프록시 트래픽을 WARP로 다시 캡슐화하여 프로바이더의 실제 출구 IP를 숨깁니다",
+  "warpModeCustom": "사용자 지정 규칙 분기",
+  "warpModeCustomDesc": "지정한 도메인 또는 IP 규칙에 따라 WARP 경유 여부를 결정합니다"
 }

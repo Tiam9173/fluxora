@@ -1162,5 +1162,12 @@
   "warpNoSignature": "توجه: به خروجی {ip} متصل شد اما امضای WARP یافت نشد — تنظیمات دیالر را بررسی کنید",
   "warpDialerSet": "دیالر روی {name} تنظیم شد",
   "profileManageNodes": "مدیریت و افزودن گره",
-  "profileChainProxies": "پروکسی ورودی و خروجی"
+  "profileChainProxies": "پروکسی ورودی و خروجی",
+  "warpModeTitle": "حالت مسیریابی",
+  "warpModeSmart": "هوشمند: باز کردن قفل هوش مصنوعی (پیشنهادی)",
+  "warpModeSmartDesc": "Google، OpenAI، Claude و Gemini از WARP عبور می‌کنند؛ بقیه سرعت اصلی ارائه‌دهنده را حفظ می‌کنند",
+  "warpModeAll": "همه ترافیک از WARP",
+  "warpModeAllDesc": "تمام ترافیک پروکسی از WARP کپسوله می‌شود و IP واقعی خروجی ارائه‌دهنده پنهان می‌ماند",
+  "warpModeCustom": "مسیریابی با قواعد سفارشی",
+  "warpModeCustomDesc": "بر اساس قواعد دامنه یا IP تصمیم می‌گیرد که از WARP عبور کند یا نه"
 }

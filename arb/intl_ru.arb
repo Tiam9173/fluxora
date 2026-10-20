@@ -1166,5 +1166,12 @@
   "warpNoSignature": "Примечание: подключено к выходу {ip}, но подпись WARP не найдена — проверьте диалер",
   "warpDialerSet": "Диалер: {name}",
   "profileManageNodes": "Узлы: управление и добавление",
-  "profileChainProxies": "Прокси входа и выхода"
+  "profileChainProxies": "Прокси входа и выхода",
+  "warpModeTitle": "Режим маршрутизации",
+  "warpModeSmart": "Умный: разблокировка ИИ (рекомендуется)",
+  "warpModeSmartDesc": "Google, OpenAI, Claude и Gemini идут через WARP; остальное сохраняет скорость провайдера",
+  "warpModeAll": "Весь трафик через WARP",
+  "warpModeAllDesc": "Весь прокси-трафик инкапсулируется через WARP, скрывая реальный выходной IP провайдера",
+  "warpModeCustom": "Свои правила маршрутизации",
+  "warpModeCustomDesc": "По правилам домена или IP решает, идти ли через WARP"
 }

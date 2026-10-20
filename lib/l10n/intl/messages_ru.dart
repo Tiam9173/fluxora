@@ -2106,6 +2106,27 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpDialerSet": m35,
     "warpFastestChosen": m36,
     "warpIpChosen": m37,
+    "warpModeAll": MessageLookupByLibrary.simpleMessage(
+      "Весь трафик через WARP",
+    ),
+    "warpModeAllDesc": MessageLookupByLibrary.simpleMessage(
+      "Весь прокси-трафик инкапсулируется через WARP, скрывая реальный выходной IP провайдера",
+    ),
+    "warpModeCustom": MessageLookupByLibrary.simpleMessage(
+      "Свои правила маршрутизации",
+    ),
+    "warpModeCustomDesc": MessageLookupByLibrary.simpleMessage(
+      "По правилам домена или IP решает, идти ли через WARP",
+    ),
+    "warpModeSmart": MessageLookupByLibrary.simpleMessage(
+      "Умный: разблокировка ИИ (рекомендуется)",
+    ),
+    "warpModeSmartDesc": MessageLookupByLibrary.simpleMessage(
+      "Google, OpenAI, Claude и Gemini идут через WARP; остальное сохраняет скорость провайдера",
+    ),
+    "warpModeTitle": MessageLookupByLibrary.simpleMessage(
+      "Режим маршрутизации",
+    ),
     "warpNoSignature": m38,
     "warpRegion": m39,
     "warpStr0": MessageLookupByLibrary.simpleMessage("0 (по умолчанию 2408)"),
