@@ -1167,5 +1167,8 @@
   "warpModeAll": "全域接管模式",
   "warpModeAllDesc": "所有代理出站流量全部經過 WARP 進行二次封裝，隱藏真實機場落地 IP",
   "warpModeCustom": "自訂規則分流",
-  "warpModeCustomDesc": "根據指定網域或 IP 規則決定是否通過 WARP 出口"
+  "warpModeCustomDesc": "根據指定網域或 IP 規則決定是否通過 WARP 出口",
+  "aggregateJoin": "參與多訂閱聚合",
+  "aggregateJoinDesc": "把本訂閱的節點合併進「聚合節點」組",
+  "aggregatePrefix": "聚合前綴 (留空用訂閱名)"
 }

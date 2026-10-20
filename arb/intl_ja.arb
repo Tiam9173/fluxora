@@ -1169,5 +1169,8 @@
   "warpModeAll": "全トラフィックを WARP 経由",
   "warpModeAllDesc": "すべてのプロキシ通信を WARP で再カプセル化し、プロバイダの実出口 IP を隠します",
   "warpModeCustom": "カスタムルール分流",
-  "warpModeCustomDesc": "指定したドメインまたは IP のルールで WARP 経由かどうかを決めます"
+  "warpModeCustomDesc": "指定したドメインまたは IP のルールで WARP 経由かどうかを決めます",
+  "aggregateJoin": "集約グループに参加",
+  "aggregateJoinDesc": "この購読のノードを集約グループに統合します",
+  "aggregatePrefix": "集約プレフィックス（空欄なら購読名）"
 }

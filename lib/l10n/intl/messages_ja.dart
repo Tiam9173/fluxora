@@ -159,6 +159,13 @@ class MessageLookup extends MessageLookupByLibrary {
       "有効な Age 秘密鍵を入力してください (AGE-SECRET-KEY- で始まる必要があります)",
     ),
     "ageSecretKeyOptional": MessageLookupByLibrary.simpleMessage("Age 秘密鍵（任意）"),
+    "aggregateJoin": MessageLookupByLibrary.simpleMessage("集約グループに参加"),
+    "aggregateJoinDesc": MessageLookupByLibrary.simpleMessage(
+      "この購読のノードを集約グループに統合します",
+    ),
+    "aggregatePrefix": MessageLookupByLibrary.simpleMessage(
+      "集約プレフィックス（空欄なら購読名）",
+    ),
     "ago": MessageLookupByLibrary.simpleMessage("前"),
     "agree": MessageLookupByLibrary.simpleMessage("同意する"),
     "allApps": MessageLookupByLibrary.simpleMessage("すべてのアプリ"),

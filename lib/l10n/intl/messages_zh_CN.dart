@@ -152,6 +152,11 @@ class MessageLookup extends MessageLookupByLibrary {
       "请输入有效的 Age 私钥（必须以 AGE-SECRET-KEY- 开头）",
     ),
     "ageSecretKeyOptional": MessageLookupByLibrary.simpleMessage("Age 私钥（可选）"),
+    "aggregateJoin": MessageLookupByLibrary.simpleMessage("参与多订阅聚合"),
+    "aggregateJoinDesc": MessageLookupByLibrary.simpleMessage(
+      "把本订阅的节点合并进「聚合节点」组",
+    ),
+    "aggregatePrefix": MessageLookupByLibrary.simpleMessage("聚合前缀 (留空用订阅名)"),
     "ago": MessageLookupByLibrary.simpleMessage("前"),
     "agree": MessageLookupByLibrary.simpleMessage("同意"),
     "allApps": MessageLookupByLibrary.simpleMessage("所有应用"),

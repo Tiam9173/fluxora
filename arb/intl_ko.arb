@@ -1169,5 +1169,8 @@
   "warpModeAll": "모든 트래픽을 WARP 경유",
   "warpModeAllDesc": "모든 프록시 트래픽을 WARP로 다시 캡슐화하여 프로바이더의 실제 출구 IP를 숨깁니다",
   "warpModeCustom": "사용자 지정 규칙 분기",
-  "warpModeCustomDesc": "지정한 도메인 또는 IP 규칙에 따라 WARP 경유 여부를 결정합니다"
+  "warpModeCustomDesc": "지정한 도메인 또는 IP 규칙에 따라 WARP 경유 여부를 결정합니다",
+  "aggregateJoin": "통합 그룹에 참여",
+  "aggregateJoinDesc": "이 구독의 노드를 통합 그룹에 합칩니다",
+  "aggregatePrefix": "통합 접두사 (비우면 구독 이름)"
 }

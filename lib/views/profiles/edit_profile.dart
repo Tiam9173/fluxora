@@ -385,8 +385,8 @@ class EditProfileViewState extends State<EditProfileView> {
           ),
         ),
         ListItem.switchItem(
-          title: const Text('参与多订阅聚合'),
-          subtitle: const Text('把本订阅的节点合并进「聚合节点」组'),
+          title: Text(appLocalizations.aggregateJoin),
+          subtitle: Text(appLocalizations.aggregateJoinDesc),
           delegate: SwitchDelegate<bool>(
             value: _joinAggregate,
             onChanged: _setJoinAggregate,

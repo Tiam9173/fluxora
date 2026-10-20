@@ -182,6 +182,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "ageSecretKeyOptional": MessageLookupByLibrary.simpleMessage(
       "Age Secret Key (Optional)",
     ),
+    "aggregateJoin": MessageLookupByLibrary.simpleMessage(
+      "Join the aggregate group",
+    ),
+    "aggregateJoinDesc": MessageLookupByLibrary.simpleMessage(
+      "Merges this profile\'s nodes into the aggregate group",
+    ),
+    "aggregatePrefix": MessageLookupByLibrary.simpleMessage(
+      "Aggregate prefix (empty uses the profile name)",
+    ),
     "ago": MessageLookupByLibrary.simpleMessage(" ago"),
     "agree": MessageLookupByLibrary.simpleMessage("Agree"),
     "allApps": MessageLookupByLibrary.simpleMessage("All Apps"),

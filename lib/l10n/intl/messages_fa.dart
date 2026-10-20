@@ -176,6 +176,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "ageSecretKeyOptional": MessageLookupByLibrary.simpleMessage(
       "کلید خصوصی Age (اختیاری)",
     ),
+    "aggregateJoin": MessageLookupByLibrary.simpleMessage(
+      "عضویت در گروه تجمیعی",
+    ),
+    "aggregateJoinDesc": MessageLookupByLibrary.simpleMessage(
+      "گره‌های این اشتراک را در گروه تجمیعی ادغام می‌کند",
+    ),
+    "aggregatePrefix": MessageLookupByLibrary.simpleMessage(
+      "پیشوند تجمیع (خالی = نام اشتراک)",
+    ),
     "ago": MessageLookupByLibrary.simpleMessage("قبل"),
     "agree": MessageLookupByLibrary.simpleMessage("موافقم"),
     "allApps": MessageLookupByLibrary.simpleMessage("همه برنامه‌ها"),

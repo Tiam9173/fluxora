@@ -10024,6 +10024,36 @@ class AppLocalizations {
       args: [],
     );
   }
+
+  /// `Join the aggregate group`
+  String get aggregateJoin {
+    return Intl.message(
+      'Join the aggregate group',
+      name: 'aggregateJoin',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Merges this profile's nodes into the aggregate group`
+  String get aggregateJoinDesc {
+    return Intl.message(
+      'Merges this profile\'s nodes into the aggregate group',
+      name: 'aggregateJoinDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Aggregate prefix (empty uses the profile name)`
+  String get aggregatePrefix {
+    return Intl.message(
+      'Aggregate prefix (empty uses the profile name)',
+      name: 'aggregatePrefix',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {

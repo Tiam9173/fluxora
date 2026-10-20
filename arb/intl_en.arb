@@ -1564,5 +1564,8 @@
   "warpModeAll": "Route everything through WARP",
   "warpModeAllDesc": "All proxy traffic is encapsulated through WARP, hiding the provider's real exit IP",
   "warpModeCustom": "Custom rule-based routing",
-  "warpModeCustomDesc": "Decides per rule whether traffic goes out through WARP"
+  "warpModeCustomDesc": "Decides per rule whether traffic goes out through WARP",
+  "aggregateJoin": "Join the aggregate group",
+  "aggregateJoinDesc": "Merges this profile's nodes into the aggregate group",
+  "aggregatePrefix": "Aggregate prefix (empty uses the profile name)"
 }

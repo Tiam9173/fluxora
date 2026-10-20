@@ -160,6 +160,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "ageSecretKeyOptional": MessageLookupByLibrary.simpleMessage(
       "Age 개인키 (선택사항)",
     ),
+    "aggregateJoin": MessageLookupByLibrary.simpleMessage("통합 그룹에 참여"),
+    "aggregateJoinDesc": MessageLookupByLibrary.simpleMessage(
+      "이 구독의 노드를 통합 그룹에 합칩니다",
+    ),
+    "aggregatePrefix": MessageLookupByLibrary.simpleMessage(
+      "통합 접두사 (비우면 구독 이름)",
+    ),
     "ago": MessageLookupByLibrary.simpleMessage("전"),
     "agree": MessageLookupByLibrary.simpleMessage("동의함"),
     "allApps": MessageLookupByLibrary.simpleMessage("모든 앱"),

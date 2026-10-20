@@ -186,6 +186,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "ageSecretKeyOptional": MessageLookupByLibrary.simpleMessage(
       "Приватный ключ Age (необязательно)",
     ),
+    "aggregateJoin": MessageLookupByLibrary.simpleMessage(
+      "Участвовать в общей группе",
+    ),
+    "aggregateJoinDesc": MessageLookupByLibrary.simpleMessage(
+      "Объединяет узлы этой подписки в общую группу",
+    ),
+    "aggregatePrefix": MessageLookupByLibrary.simpleMessage(
+      "Префикс (пусто — имя подписки)",
+    ),
     "ago": MessageLookupByLibrary.simpleMessage(" назад"),
     "agree": MessageLookupByLibrary.simpleMessage("Согласен"),
     "allApps": MessageLookupByLibrary.simpleMessage("Все приложения"),
