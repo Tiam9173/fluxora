@@ -44,7 +44,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
     // The WARP hop group is the single exception: its only definition is a
     // function-local `const` inside `warp_config.dart` that is not exported, so
     // there is no accessible source to reference.
-    const warpHopGroupName = '✈️ WARP跳板';
+    final warpHopGroupName = appLocalizations.warpStr23;
 
     bool isInternalGroup(String name) =>
         name == chainGroupName ||
@@ -82,7 +82,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
       builder: (ctx, type) {
         return AdaptiveSheetScaffold(
           type: type,
-          title: '选择 WARP 前置跳板',
+          title: appLocalizations.warpStr98,
           body: ListView(
             padding: const EdgeInsets.symmetric(vertical: 8),
             children: [
@@ -91,13 +91,13 @@ class _WarpViewState extends ConsumerState<WarpView> {
               // 因为卡片只能选节点。
               ListTile(
                 leading: const Icon(Icons.grid_view_rounded, color: Colors.teal),
-                title: const Text('从节点列表选择…'),
-                subtitle: const Text('与切换卡片相同的界面，可看到实时延迟'),
+                title: Text(appLocalizations.warpStr28),
+                subtitle: Text(appLocalizations.warpStr27),
                 onTap: () {
                   Navigator.of(ctx).pop();
                   showChainHopPicker(
                     context: context,
-                    title: '选择 WARP 前置跳板',
+                    title: appLocalizations.warpStr98,
                     excludeNames: {config.proxyName},
                     onSelect: onSelect,
                   );
@@ -106,8 +106,8 @@ class _WarpViewState extends ConsumerState<WarpView> {
               const Divider(height: 1),
               ListTile(
                 leading: const Icon(Icons.auto_mode, color: Colors.blue),
-                title: const Text('⚡ 跟随后台主选择 (推荐)'),
-                subtitle: const Text('自动匹配您在控制面板中选中的当前机场节点'),
+                title: Text(appLocalizations.warpStr20),
+                subtitle: Text(appLocalizations.warpStr86),
                 trailing: currentHop.isEmpty
                     ? const Icon(Icons.check, color: Colors.blue)
                     : null,
@@ -118,7 +118,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
               ),
               ListTile(
                 leading: const Icon(Icons.directions, color: Colors.green),
-                title: const Text('DIRECT (直连 Cloudflare)'),
+                title: Text(appLocalizations.warpStr6),
                 subtitle: const Text('不经过机场直接连接 WARP（需本地网络未屏蔽 CF Anycast IP）'),
                 trailing: currentHop == 'DIRECT'
                     ? const Icon(Icons.check, color: Colors.blue)
@@ -129,10 +129,10 @@ class _WarpViewState extends ConsumerState<WarpView> {
                 },
               ),
               if (groupNames.isNotEmpty) ...[
-                const Padding(
+                Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Text(
-                    '策略组',
+                    appLocalizations.warpStr84,
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                   ),
                 ),
@@ -150,10 +150,10 @@ class _WarpViewState extends ConsumerState<WarpView> {
                   ),
               ],
               if (proxyList.isNotEmpty) ...[
-                const Padding(
+                Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Text(
-                    '机场代理节点',
+                    appLocalizations.warpStr63,
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                   ),
                 ),
@@ -185,8 +185,8 @@ class _WarpViewState extends ConsumerState<WarpView> {
         return StatefulBuilder(
           builder: (context, setDlgState) {
             return AlertDialog(
-              title: const Text(
-                'WARP 路由模式',
+              title: Text(
+                appLocalizations.warpStr13,
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               content: RadioGroup<WarpRoutingMode>(
@@ -201,13 +201,13 @@ class _WarpViewState extends ConsumerState<WarpView> {
                   children: [
                     RadioListTile<WarpRoutingMode>(
                       value: WarpRoutingMode.proxyOverWarp,
-                      title: const Text('通过 WARP 路由代理'),
-                      subtitle: const Text('流量先经过 WARP 再连接代理节点，用于节点被阻断时救砖'),
+                      title: Text(appLocalizations.warpStr100),
+                      subtitle: Text(appLocalizations.warpStr71),
                     ),
                     RadioListTile<WarpRoutingMode>(
                       value: WarpRoutingMode.warpOverProxy,
-                      title: const Text('通过代理路由 WARP'),
-                      subtitle: const Text('流量经代理节点后再连 WARP 出口，用于防送中与解锁 AI'),
+                      title: Text(appLocalizations.warpStr101),
+                      subtitle: Text(appLocalizations.warpStr72),
                     ),
                   ],
                 ),
@@ -217,13 +217,13 @@ class _WarpViewState extends ConsumerState<WarpView> {
                   onPressed: () {
                     warpManager.setRoutingMode(WarpRoutingMode.warpOverProxy);
                     Navigator.of(ctx).pop();
-                    context.showSnackBar('已重置为默认「通过代理路由 WARP」');
+                    context.showSnackBar(appLocalizations.warpStr56);
                   },
-                  child: const Text('重置'),
+                  child: Text(appLocalizations.warpStr103),
                 ),
                 TextButton(
                   onPressed: () => Navigator.of(ctx).pop(),
-                  child: const Text('取消'),
+                  child: Text(appLocalizations.warpStr42),
                 ),
                 FilledButton(
                   onPressed: () {
@@ -231,7 +231,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
                     Navigator.of(ctx).pop();
                     context.showSnackBar('已切换为 ${selected.label}');
                   },
-                  child: const Text('确定'),
+                  child: Text(appLocalizations.warpStr78),
                 ),
               ],
             );
@@ -287,18 +287,17 @@ class _WarpViewState extends ConsumerState<WarpView> {
             final reachable = results.where((r) => r.ok).take(8).toList();
 
             return AlertDialog(
-              title: const Text('优选 IP 扫描'),
+              title: Text(appLocalizations.warpStr33),
               content: SizedBox(
                 width: 320,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Padding(
+                    Padding(
                       padding: EdgeInsets.only(bottom: 10),
                       child: Text(
-                        '提示：开启代理时测得的延迟包含隧道开销。'
-                        '想拿到最干净的数值，可先关闭代理再扫描。',
+                        appLocalizations.warpStr60,
                         style: TextStyle(fontSize: 11, color: Colors.grey),
                       ),
                     ),
@@ -317,8 +316,8 @@ class _WarpViewState extends ConsumerState<WarpView> {
                         ],
                       )
                     else if (reachable.isEmpty)
-                      const Text(
-                        '没有探测到可用节点。请检查网络，或关闭代理后重试。',
+                      Text(
+                        appLocalizations.warpStr70,
                         style: TextStyle(fontSize: 13),
                       )
                     else
@@ -363,7 +362,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
               actions: [
                 TextButton(
                   onPressed: scanning ? null : () => Navigator.of(ctx).pop(),
-                  child: const Text('关闭'),
+                  child: Text(appLocalizations.warpStr38),
                 ),
                 if (!scanning && reachable.isNotEmpty)
                   FilledButton(
@@ -372,7 +371,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
                       Navigator.of(ctx).pop();
                       context.showSnackBar('已选用最快节点 ${reachable.first.ip}');
                     },
-                    child: const Text('使用最快'),
+                    child: Text(appLocalizations.warpStr36),
                   ),
               ],
             );
@@ -393,22 +392,21 @@ class _WarpViewState extends ConsumerState<WarpView> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                '设置连接 Cloudflare WARP 的优选 IP，输入 auto 则自动使用官方最优 IP：',
+              Text(
+                appLocalizations.warpStr94,
                 style: TextStyle(fontSize: 13),
               ),
               const SizedBox(height: 6),
-              const Text(
-                '优选 IP 改变的是「入口地址」，影响速度与稳定性；'
-                '出口 IP 由 Cloudflare 就近调度决定，不会因此变化。',
+              Text(
+                appLocalizations.warpStr34,
                 style: TextStyle(fontSize: 11, color: Colors.grey),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: ctrl,
-                decoration: const InputDecoration(
-                  labelText: '优选 IP / 域名',
-                  hintText: 'auto 或例如 162.159.193.1',
+                decoration: InputDecoration(
+                  labelText: appLocalizations.warpStr30,
+                  hintText: appLocalizations.warpStr17,
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.auto_awesome),
                 ),
@@ -419,7 +417,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
                 runSpacing: 8,
                 children: [
                   ActionChip(
-                    label: const Text('auto (默认)'),
+                    label: Text(appLocalizations.warpStr16),
                     onPressed: () => ctrl.text = 'auto',
                   ),
                   ActionChip(
@@ -443,29 +441,29 @@ class _WarpViewState extends ConsumerState<WarpView> {
               onPressed: () {
                 warpManager.setCleanIp('auto');
                 Navigator.of(ctx).pop();
-                context.showSnackBar('优选 IP 已重置为 auto');
+                context.showSnackBar(appLocalizations.warpStr32);
               },
-              child: const Text('重置'),
+              child: Text(appLocalizations.warpStr103),
             ),
             TextButton(
               onPressed: () {
                 Navigator.of(ctx).pop();
                 _showCleanIpScanDialog(ctrl);
               },
-              child: const Text('一键优选'),
+              child: Text(appLocalizations.warpStr24),
             ),
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('取消'),
+              child: Text(appLocalizations.warpStr42),
             ),
             FilledButton(
               onPressed: () {
                 final val = ctrl.text.trim();
                 warpManager.setCleanIp(val.isEmpty ? 'auto' : val);
                 Navigator.of(ctx).pop();
-                context.showSnackBar('优选 IP 已保存');
+                context.showSnackBar(appLocalizations.warpStr31);
               },
-              child: const Text('保存'),
+              child: Text(appLocalizations.warpStr37),
             ),
           ],
         );
@@ -481,21 +479,21 @@ class _WarpViewState extends ConsumerState<WarpView> {
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          title: const Text('端口 (Port)'),
+          title: Text(appLocalizations.warpStr80),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                '设置 WireGuard 端口（0 为默认 2408 端口）：',
+              Text(
+                appLocalizations.warpStr93,
                 style: TextStyle(fontSize: 13),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: ctrl,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: '端口号',
+                decoration: InputDecoration(
+                  labelText: appLocalizations.warpStr81,
                   hintText: '0, 2408, 500, 1701, 4500',
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.device_hub),
@@ -507,7 +505,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
                 runSpacing: 8,
                 children: [
                   ActionChip(
-                    label: const Text('0 (默认 2408)'),
+                    label: Text(appLocalizations.warpStr0),
                     onPressed: () => ctrl.text = '0',
                   ),
                   ActionChip(
@@ -535,22 +533,22 @@ class _WarpViewState extends ConsumerState<WarpView> {
               onPressed: () {
                 warpManager.setPort(0);
                 Navigator.of(ctx).pop();
-                context.showSnackBar('端口已重置为 0 (默认 2408)');
+                context.showSnackBar(appLocalizations.warpStr83);
               },
-              child: const Text('重置'),
+              child: Text(appLocalizations.warpStr103),
             ),
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('取消'),
+              child: Text(appLocalizations.warpStr42),
             ),
             FilledButton(
               onPressed: () {
                 final p = int.tryParse(ctrl.text.trim()) ?? 0;
                 warpManager.setPort(p);
                 Navigator.of(ctx).pop();
-                context.showSnackBar('端口已更新');
+                context.showSnackBar(appLocalizations.warpStr82);
               },
-              child: const Text('保存'),
+              child: Text(appLocalizations.warpStr37),
             ),
           ],
         );
@@ -563,7 +561,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('绑定 WARP+ 许可证密钥'),
+        title: Text(appLocalizations.warpStr85),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -587,35 +585,35 @@ class _WarpViewState extends ConsumerState<WarpView> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('取消'),
+            child: Text(appLocalizations.warpStr42),
           ),
           if (config.licenseKey.isNotEmpty)
             TextButton(
               onPressed: () {
                 warpManager.setLicenseKey('');
                 Navigator.of(ctx).pop();
-                context.showSnackBar('已清除许可证密钥');
+                context.showSnackBar(appLocalizations.warpStr53);
               },
-              child: const Text('解绑'),
+              child: Text(appLocalizations.warpStr91),
             ),
           FilledButton(
             onPressed: () async {
               final lic = ctrl.text.trim();
               Navigator.of(ctx).pop();
-              context.showSnackBar('正在通过官方接口绑定密钥...');
+              context.showSnackBar(appLocalizations.warpStr69);
               final success = await warpManager.registerCloudflareAccount(
                 license: lic,
               );
               if (mounted) {
                 if (success) {
-                  context.showSnackBar('🎉 WARP+ 许可证激活成功！');
+                  context.showSnackBar(appLocalizations.warpStr105);
                 } else {
-                  context.showSnackBar('已保存密钥，将在下次握手或注册时生效');
+                  context.showSnackBar(appLocalizations.warpStr49);
                   warpManager.setLicenseKey(lic);
                 }
               }
             },
-            child: const Text('激活绑定'),
+            child: Text(appLocalizations.warpStr73),
           ),
         ],
       ),
@@ -626,23 +624,23 @@ class _WarpViewState extends ConsumerState<WarpView> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('WireGuard 密钥信息'),
+        title: Text(appLocalizations.warpStr15),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildKeyField('客户端私钥 (PrivateKey)', config.privateKey),
+              _buildKeyField(appLocalizations.warpStr45, config.privateKey),
               const SizedBox(height: 12),
-              _buildKeyField('客户端公钥 (PublicKey)', config.publicKey),
+              _buildKeyField(appLocalizations.warpStr44, config.publicKey),
               const SizedBox(height: 12),
-              _buildKeyField('Cloudflare 对端公钥', config.peerPublicKey),
+              _buildKeyField(appLocalizations.warpStr5, config.peerPublicKey),
               const SizedBox(height: 12),
-              _buildKeyField('客户端预留字段 (Reserved)', config.reserved.toString()),
+              _buildKeyField(appLocalizations.warpStr46, config.reserved.toString()),
               const SizedBox(height: 12),
-              _buildKeyField('虚拟 IPv4', config.ip),
+              _buildKeyField(appLocalizations.warpStr88, config.ip),
               const SizedBox(height: 12),
-              _buildKeyField('虚拟 IPv6', config.ipv6),
+              _buildKeyField(appLocalizations.warpStr89, config.ipv6),
             ],
           ),
         ),
@@ -654,14 +652,14 @@ class _WarpViewState extends ConsumerState<WarpView> {
                 Navigator.of(ctx).pop();
               }
               if (mounted) {
-                context.showSnackBar('已重新生成 Curve25519 密钥对');
+                context.showSnackBar(appLocalizations.warpStr55);
               }
             },
-            child: const Text('重新生成密钥'),
+            child: Text(appLocalizations.warpStr102),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('关闭'),
+            child: Text(appLocalizations.warpStr38),
           ),
         ],
       ),
@@ -687,7 +685,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
             children: [
               Expanded(
                 child: SelectableText(
-                  value.isNotEmpty ? value : '未设置',
+                  value.isNotEmpty ? value : appLocalizations.warpStr62,
                   style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
                 ),
               ),
@@ -719,7 +717,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
 
     final actions = [
       IconButton(
-        tooltip: '一键诊断检测',
+        tooltip: appLocalizations.warpStr26,
         icon: isTesting
             ? const SizedBox(
                 width: 20,
@@ -730,17 +728,17 @@ class _WarpViewState extends ConsumerState<WarpView> {
         onPressed: isTesting ? null : () => warpManager.checkWarpStatus(),
       ),
       IconButton(
-        tooltip: '重置为默认配置',
+        tooltip: appLocalizations.warpStr104,
         icon: const Icon(Icons.restart_alt),
         onPressed: () async {
           await warpManager.resetConfig();
           if (context.mounted) {
-            context.showSnackBar('WARP 已重置为初始默认配置');
+            context.showSnackBar(appLocalizations.warpStr12);
           }
         },
       ),
       IconButton(
-        tooltip: '使用指南与原理解释',
+        tooltip: appLocalizations.warpStr35,
         icon: Icon(
           _isGuideExpanded ? Icons.info : Icons.info_outline,
           color: _isGuideExpanded ? colorScheme.primary : null,
@@ -818,7 +816,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  '💡 使用场景与路由模式原理',
+                  appLocalizations.warpStr108,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
@@ -854,10 +852,10 @@ class _WarpViewState extends ConsumerState<WarpView> {
         : (report?.isSuccess == true ? Colors.blue : Colors.grey);
 
     final statusText = isWarp
-        ? (isPlus ? 'WARP+ 极速加速激活 (warp=plus)' : 'WARP 正常接管保护中 (warp=on)')
+        ? (isPlus ? appLocalizations.warpStr14 : 'WARP 正常接管保护中 (warp=on)')
         : (report == null
-              ? '尚未进行真实有效性检测'
-              : (report.isSuccess ? '直连或普通代理 (warp=off)' : '连接未完成或检测超时'));
+              ? appLocalizations.warpStr48
+              : (report.isSuccess ? appLocalizations.warpStr77 : appLocalizations.warpStr97));
 
     return Card(
       elevation: 2,
@@ -939,10 +937,10 @@ class _WarpViewState extends ConsumerState<WarpView> {
               children: [
                 Expanded(
                   child: _buildMetricTile(
-                    title: '出口真实 IP',
+                    title: appLocalizations.warpStr40,
                     value: report?.ip.isNotEmpty == true
                         ? report!.ip
-                        : (config.enable ? '检测中...' : '未启用'),
+                        : (config.enable ? appLocalizations.warpStr65 : appLocalizations.warpStr61),
                     subtitle: 'Cloudflare Anycast',
                     icon: Icons.public,
                     onCopy: report?.ip.isNotEmpty == true ? report!.ip : null,
@@ -951,10 +949,10 @@ class _WarpViewState extends ConsumerState<WarpView> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildMetricTile(
-                    title: '边缘机房 (Colo)',
+                    title: appLocalizations.warpStr96,
                     value: report?.colo.isNotEmpty == true
                         ? '${report!.colo} (${report.coloCityName})'
-                        : '待检测',
+                        : appLocalizations.warpStr58,
                     subtitle: report?.loc.isNotEmpty == true
                         ? '归属地: ${report!.loc}'
                         : 'Anycast 节点',
@@ -970,11 +968,11 @@ class _WarpViewState extends ConsumerState<WarpView> {
               children: [
                 Expanded(
                   child: _buildMetricTile(
-                    title: 'Google 防送中评定',
+                    title: appLocalizations.warpStr7,
                     value: report?.isGoogleAntiRedirect == true
-                        ? '🛡️ 原生搜索 (极佳)'
-                        : (report == null ? '待检测' : '⚠️ 可能送中'),
-                    subtitle: report?.googleStatus ?? '规避验证码/区域锁定',
+                        ? appLocalizations.warpStr109
+                        : (report == null ? appLocalizations.warpStr58 : appLocalizations.warpStr18),
+                    subtitle: report?.googleStatus ?? appLocalizations.warpStr90,
                     icon: Icons.search,
                     valueColor: report?.isGoogleAntiRedirect == true
                         ? Colors.green
@@ -984,8 +982,8 @@ class _WarpViewState extends ConsumerState<WarpView> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildMetricTile(
-                    title: 'AI 与流媒体解锁',
-                    value: isWarp ? '🟢 畅通无阻' : '跟随跳板',
+                    title: appLocalizations.warpStr4,
+                    value: isWarp ? appLocalizations.warpStr111 : appLocalizations.warpStr95,
                     subtitle: 'OpenAI / Claude / Gemini',
                     icon: Icons.psychology,
                     valueColor: isWarp ? Colors.green : null,
@@ -1018,7 +1016,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
                             ),
                           )
                         : const Icon(Icons.flash_on, size: 18),
-                    label: Text(isTesting ? '正在深度诊断...' : '⚡ 一键检测 WARP 真实状态'),
+                    label: Text(isTesting ? appLocalizations.warpStr67 : appLocalizations.warpStr19),
                     onPressed: isTesting
                         ? null
                         : () async {
@@ -1124,12 +1122,12 @@ class _WarpViewState extends ConsumerState<WarpView> {
           // 1. 启用 WARP
           SwitchListTile(
             secondary: Icon(Icons.cloud, color: colorScheme.primary),
-            title: const Text(
-              '启用 WARP',
+            title: Text(
+              appLocalizations.warpStr43,
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             subtitle: Text(
-              config.enable ? '已启用 Cloudflare WARP' : '点击开启 WARP 功能',
+              config.enable ? appLocalizations.warpStr51 : appLocalizations.warpStr74,
               style: TextStyle(
                 fontSize: 12,
                 color: config.enable ? colorScheme.primary : Colors.grey,
@@ -1138,7 +1136,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
             value: config.enable,
             onChanged: (val) {
               warpManager.setEnable(val);
-              context.showSnackBar(val ? '已开启 WARP' : '已关闭 WARP');
+              context.showSnackBar(val ? appLocalizations.warpStr52 : appLocalizations.warpStr50);
             },
           ),
           const Divider(height: 1),
@@ -1146,16 +1144,16 @@ class _WarpViewState extends ConsumerState<WarpView> {
           // 2. 生成 WARP 配置
           ListTile(
             leading: Icon(Icons.build_rounded, color: colorScheme.primary),
-            title: const Text('生成 WARP 配置'),
+            title: Text(appLocalizations.warpStr75),
             subtitle: isRegistering
-                ? const Text(
-                    '正在向 Cloudflare 官方注册设备并生成密钥...',
+                ? Text(
+                    appLocalizations.warpStr66,
                     style: TextStyle(fontSize: 12, color: Colors.blue),
                   )
                 : Text(
                     config.accountId.isNotEmpty
                         ? '设备已就绪 (ID: ${config.accountId})，点击可重新生成'
-                        : '一键生成 X25519 密钥对并向 Cloudflare 注册设备',
+                        : appLocalizations.warpStr25,
                     style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
             trailing: isRegistering
@@ -1168,13 +1166,13 @@ class _WarpViewState extends ConsumerState<WarpView> {
             onTap: isRegistering
                 ? null
                 : () async {
-                    context.showSnackBar('正在生成 X25519 密钥并向 Cloudflare 注册设备...');
+                    context.showSnackBar(appLocalizations.warpStr68);
                     final ok = await warpManager.registerCloudflareAccount();
                     if (mounted) {
                       if (ok) {
-                        context.showSnackBar('🎉 官方设备与密钥生成成功！');
+                        context.showSnackBar(appLocalizations.warpStr106);
                       } else {
-                        context.showSnackBar('生成完成（已载入内置合法密钥对）');
+                        context.showSnackBar(appLocalizations.warpStr76);
                       }
                     }
                   },
@@ -1184,7 +1182,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
           // 3. WARP 路由模式
           ListTile(
             leading: Icon(Icons.alt_route_rounded, color: colorScheme.primary),
-            title: const Text('WARP 路由模式'),
+            title: Text(appLocalizations.warpStr13),
             subtitle: Text(
               config.routingMode.label,
               style: TextStyle(fontSize: 12, color: colorScheme.primary),
@@ -1197,10 +1195,10 @@ class _WarpViewState extends ConsumerState<WarpView> {
           // 4. 许可证密钥
           ListTile(
             leading: Icon(Icons.vpn_key_rounded, color: colorScheme.primary),
-            title: const Text('许可证密钥'),
+            title: Text(appLocalizations.warpStr92),
             subtitle: Text(
               config.licenseKey.isEmpty
-                  ? '未设置'
+                  ? appLocalizations.warpStr62
                   : (config.accountType == 'plus'
                         ? '👑 WARP+ (已激活): ${config.licenseKey}'
                         : config.licenseKey),
@@ -1224,7 +1222,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
               Icons.auto_awesome_rounded,
               color: colorScheme.primary,
             ),
-            title: const Text('优选 IP'),
+            title: Text(appLocalizations.warpStr29),
             subtitle: Text(
               config.cleanIp.isEmpty ? 'auto' : config.cleanIp,
               style: TextStyle(fontSize: 12, color: colorScheme.primary),
@@ -1237,7 +1235,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
           // 6. 端口
           ListTile(
             leading: Icon(Icons.device_hub_rounded, color: colorScheme.primary),
-            title: const Text('端口'),
+            title: Text(appLocalizations.warpStr79),
             subtitle: Text(
               config.port == 0 ? '0' : config.port.toString(),
               style: TextStyle(fontSize: 12, color: colorScheme.primary),
@@ -1260,7 +1258,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(color: Colors.blue.withValues(alpha: 0.3)),
       ),
-      child: const Padding(
+      child: Padding(
         padding: EdgeInsets.all(16),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1269,7 +1267,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
             SizedBox(width: 12),
             Expanded(
               child: Text(
-                '当前为「通过 WARP 路由代理」模式：所有机场代理节点均自动级联经由 WARP 隧道出境连接，能有效拯救被 GFW 阻断的节点，无需额外选择前置跳板。',
+                appLocalizations.warpStr57,
                 style: TextStyle(fontSize: 13, height: 1.4),
               ),
             ),
@@ -1339,10 +1337,10 @@ class _WarpViewState extends ConsumerState<WarpView> {
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: Icon(Icons.rule, color: colorScheme.primary),
-                title: const Text('自定义规则'),
+                title: Text(appLocalizations.warpStr87),
                 subtitle: Text(
                   config.customRules.isEmpty
-                      ? '尚未添加规则 —— 此模式下规则为空则不分流'
+                      ? appLocalizations.warpStr47
                       : '已配置 ${config.customRules.length} 条规则',
                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
@@ -1370,7 +1368,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          title: const Text('自定义规则'),
+          title: Text(appLocalizations.warpStr87),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -1397,7 +1395,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('取消'),
+              child: Text(appLocalizations.warpStr42),
             ),
             FilledButton(
               onPressed: () {
@@ -1410,7 +1408,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
                 Navigator.of(ctx).pop();
                 context.showSnackBar('已保存 ${lines.length} 条自定义规则');
               },
-              child: const Text('保存'),
+              child: Text(appLocalizations.warpStr37),
             ),
           ],
         );
@@ -1420,9 +1418,9 @@ class _WarpViewState extends ConsumerState<WarpView> {
 
   Widget _buildHopSelectorCard(WarpConfig config, ColorScheme colorScheme) {
     final hopName = config.defaultDialerProxy.isEmpty
-        ? '⚡ 跟随后台主选择 (自动匹配当前机场节点)'
+        ? appLocalizations.warpStr21
         : (config.defaultDialerProxy == 'DIRECT'
-              ? 'DIRECT (直连 Cloudflare)'
+              ? appLocalizations.warpStr6
               : '✈️ 指定前置节点: ${config.defaultDialerProxy}');
 
     return Card(
@@ -1434,8 +1432,8 @@ class _WarpViewState extends ConsumerState<WarpView> {
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         leading: Icon(Icons.flight_takeoff, color: colorScheme.primary),
-        title: const Text(
-          '前置跳板代理 (Dialer-Proxy)',
+        title: Text(
+          appLocalizations.warpStr41,
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
         ),
         subtitle: Text(
@@ -1450,7 +1448,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
             onSelect: (selected) {
               warpManager.setDefaultDialer(selected);
               context.showSnackBar(
-                selected.isEmpty ? '已设为跟随后台主选择' : '已指定前置跳板为 $selected',
+                selected.isEmpty ? appLocalizations.warpStr54 : '已指定前置跳板为 $selected',
               );
             },
           );
@@ -1465,8 +1463,8 @@ class _WarpViewState extends ConsumerState<WarpView> {
     ColorScheme colorScheme,
   ) {
     final accountText = config.accountType == 'plus'
-        ? '👑 WARP+ 极速会员设备'
-        : (config.accountId.isNotEmpty ? '🟢 官方免费设备' : '⚪ 本地密钥对');
+        ? appLocalizations.warpStr107
+        : (config.accountId.isNotEmpty ? appLocalizations.warpStr110 : appLocalizations.warpStr22);
 
     return Card(
       elevation: 0,
@@ -1490,8 +1488,8 @@ class _WarpViewState extends ConsumerState<WarpView> {
                       size: 20,
                     ),
                     const SizedBox(width: 8),
-                    const Text(
-                      'WARP 凭据与高级详情',
+                    Text(
+                      appLocalizations.warpStr11,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
@@ -1531,7 +1529,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
               children: [
                 OutlinedButton.icon(
                   icon: const Icon(Icons.vpn_key_outlined, size: 16),
-                  label: const Text('查看完整 WireGuard 密钥'),
+                  label: Text(appLocalizations.warpStr64),
                   onPressed: () => _showKeyDetailsDialog(config),
                 ),
                 OutlinedButton.icon(
@@ -1541,31 +1539,31 @@ class _WarpViewState extends ConsumerState<WarpView> {
                     showDialog(
                       context: context,
                       builder: (ctx) => SimpleDialog(
-                        title: const Text('选择 WireGuard MTU'),
+                        title: Text(appLocalizations.warpStr99),
                         children: [
                           SimpleDialogOption(
                             onPressed: () {
                               warpManager.setMtu(1280);
                               Navigator.of(ctx).pop();
-                              context.showSnackBar('MTU 已设为 1280 (推荐)');
+                              context.showSnackBar(appLocalizations.warpStr8);
                             },
-                            child: const Text('1280 (推荐，UDP代理最优)'),
+                            child: Text(appLocalizations.warpStr1),
                           ),
                           SimpleDialogOption(
                             onPressed: () {
                               warpManager.setMtu(1360);
                               Navigator.of(ctx).pop();
-                              context.showSnackBar('MTU 已设为 1360');
+                              context.showSnackBar(appLocalizations.warpStr9);
                             },
-                            child: const Text('1360 (适中)'),
+                            child: Text(appLocalizations.warpStr2),
                           ),
                           SimpleDialogOption(
                             onPressed: () {
                               warpManager.setMtu(1420);
                               Navigator.of(ctx).pop();
-                              context.showSnackBar('MTU 已设为 1420 (标准)');
+                              context.showSnackBar(appLocalizations.warpStr10);
                             },
-                            child: const Text('1420 (标准)'),
+                            child: Text(appLocalizations.warpStr3),
                           ),
                         ],
                       ),

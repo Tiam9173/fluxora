@@ -8784,6 +8784,1076 @@ class AppLocalizations {
       args: [],
     );
   }
+
+  /// `0 (default 2408)`
+  String get warpStr0 {
+    return Intl.message(
+      '0 (default 2408)',
+      name: 'warpStr0',
+      desc: '0 (默认 2408)',
+      args: [],
+    );
+  }
+
+  /// `1280 (recommended, best for UDP)`
+  String get warpStr1 {
+    return Intl.message(
+      '1280 (recommended, best for UDP)',
+      name: 'warpStr1',
+      desc: '1280 (推荐，UDP代理最优)',
+      args: [],
+    );
+  }
+
+  /// `1360 (balanced)`
+  String get warpStr2 {
+    return Intl.message(
+      '1360 (balanced)',
+      name: 'warpStr2',
+      desc: '1360 (适中)',
+      args: [],
+    );
+  }
+
+  /// `1420 (standard)`
+  String get warpStr3 {
+    return Intl.message(
+      '1420 (standard)',
+      name: 'warpStr3',
+      desc: '1420 (标准)',
+      args: [],
+    );
+  }
+
+  /// `AI and streaming unlock`
+  String get warpStr4 {
+    return Intl.message(
+      'AI and streaming unlock',
+      name: 'warpStr4',
+      desc: 'AI 与流媒体解锁',
+      args: [],
+    );
+  }
+
+  /// `Cloudflare peer public key`
+  String get warpStr5 {
+    return Intl.message(
+      'Cloudflare peer public key',
+      name: 'warpStr5',
+      desc: 'Cloudflare 对端公钥',
+      args: [],
+    );
+  }
+
+  /// `DIRECT (connect to Cloudflare directly)`
+  String get warpStr6 {
+    return Intl.message(
+      'DIRECT (connect to Cloudflare directly)',
+      name: 'warpStr6',
+      desc: 'DIRECT (直连 Cloudflare)',
+      args: [],
+    );
+  }
+
+  /// `Google region-leak check`
+  String get warpStr7 {
+    return Intl.message(
+      'Google region-leak check',
+      name: 'warpStr7',
+      desc: 'Google 防送中评定',
+      args: [],
+    );
+  }
+
+  /// `MTU set to 1280 (recommended)`
+  String get warpStr8 {
+    return Intl.message(
+      'MTU set to 1280 (recommended)',
+      name: 'warpStr8',
+      desc: 'MTU 已设为 1280 (推荐)',
+      args: [],
+    );
+  }
+
+  /// `MTU set to 1360`
+  String get warpStr9 {
+    return Intl.message(
+      'MTU set to 1360',
+      name: 'warpStr9',
+      desc: 'MTU 已设为 1360',
+      args: [],
+    );
+  }
+
+  /// `MTU set to 1420 (standard)`
+  String get warpStr10 {
+    return Intl.message(
+      'MTU set to 1420 (standard)',
+      name: 'warpStr10',
+      desc: 'MTU 已设为 1420 (标准)',
+      args: [],
+    );
+  }
+
+  /// `WARP credentials and details`
+  String get warpStr11 {
+    return Intl.message(
+      'WARP credentials and details',
+      name: 'warpStr11',
+      desc: 'WARP 凭据与高级详情',
+      args: [],
+    );
+  }
+
+  /// `WARP reset to its default configuration`
+  String get warpStr12 {
+    return Intl.message(
+      'WARP reset to its default configuration',
+      name: 'warpStr12',
+      desc: 'WARP 已重置为初始默认配置',
+      args: [],
+    );
+  }
+
+  /// `WARP routing mode`
+  String get warpStr13 {
+    return Intl.message(
+      'WARP routing mode',
+      name: 'warpStr13',
+      desc: 'WARP 路由模式',
+      args: [],
+    );
+  }
+
+  /// `WARP+ activation (warp=plus)`
+  String get warpStr14 {
+    return Intl.message(
+      'WARP+ activation (warp=plus)',
+      name: 'warpStr14',
+      desc: 'WARP+ 极速加速激活 (warp=plus)',
+      args: [],
+    );
+  }
+
+  /// `WireGuard keys`
+  String get warpStr15 {
+    return Intl.message(
+      'WireGuard keys',
+      name: 'warpStr15',
+      desc: 'WireGuard 密钥信息',
+      args: [],
+    );
+  }
+
+  /// `auto (default)`
+  String get warpStr16 {
+    return Intl.message(
+      'auto (default)',
+      name: 'warpStr16',
+      desc: 'auto (默认)',
+      args: [],
+    );
+  }
+
+  /// `auto, or e.g. 162.159.193.1`
+  String get warpStr17 {
+    return Intl.message(
+      'auto, or e.g. 162.159.193.1',
+      name: 'warpStr17',
+      desc: 'auto 或例如 162.159.193.1',
+      args: [],
+    );
+  }
+
+  /// `⚠️ Region may be exposed`
+  String get warpStr18 {
+    return Intl.message(
+      '⚠️ Region may be exposed',
+      name: 'warpStr18',
+      desc: '⚠️ 可能送中',
+      args: [],
+    );
+  }
+
+  /// `⚡ Check WARP status`
+  String get warpStr19 {
+    return Intl.message(
+      '⚡ Check WARP status',
+      name: 'warpStr19',
+      desc: '⚡ 一键检测 WARP 真实状态',
+      args: [],
+    );
+  }
+
+  /// `⚡ Follow main selector (recommended)`
+  String get warpStr20 {
+    return Intl.message(
+      '⚡ Follow main selector (recommended)',
+      name: 'warpStr20',
+      desc: '⚡ 跟随后台主选择 (推荐)',
+      args: [],
+    );
+  }
+
+  /// `⚡ Follow main selector (uses the active provider node)`
+  String get warpStr21 {
+    return Intl.message(
+      '⚡ Follow main selector (uses the active provider node)',
+      name: 'warpStr21',
+      desc: '⚡ 跟随后台主选择 (自动匹配当前机场节点)',
+      args: [],
+    );
+  }
+
+  /// `⚪ Local key pair`
+  String get warpStr22 {
+    return Intl.message(
+      '⚪ Local key pair',
+      name: 'warpStr22',
+      desc: '⚪ 本地密钥对',
+      args: [],
+    );
+  }
+
+  /// `✈️ WARP dialer`
+  String get warpStr23 {
+    return Intl.message(
+      '✈️ WARP dialer',
+      name: 'warpStr23',
+      desc: '✈️ WARP跳板',
+      args: [],
+    );
+  }
+
+  /// `Optimize`
+  String get warpStr24 {
+    return Intl.message('Optimize', name: 'warpStr24', desc: '一键优选', args: []);
+  }
+
+  /// `Generate an X25519 key pair and register with Cloudflare`
+  String get warpStr25 {
+    return Intl.message(
+      'Generate an X25519 key pair and register with Cloudflare',
+      name: 'warpStr25',
+      desc: '一键生成 X25519 密钥对并向 Cloudflare 注册设备',
+      args: [],
+    );
+  }
+
+  /// `Run diagnostics`
+  String get warpStr26 {
+    return Intl.message(
+      'Run diagnostics',
+      name: 'warpStr26',
+      desc: '一键诊断检测',
+      args: [],
+    );
+  }
+
+  /// `Same view as the switch card, with live latency`
+  String get warpStr27 {
+    return Intl.message(
+      'Same view as the switch card, with live latency',
+      name: 'warpStr27',
+      desc: '与切换卡片相同的界面，可看到实时延迟',
+      args: [],
+    );
+  }
+
+  /// `Choose from node list…`
+  String get warpStr28 {
+    return Intl.message(
+      'Choose from node list…',
+      name: 'warpStr28',
+      desc: '从节点列表选择…',
+      args: [],
+    );
+  }
+
+  /// `Preferred IP`
+  String get warpStr29 {
+    return Intl.message(
+      'Preferred IP',
+      name: 'warpStr29',
+      desc: '优选 IP',
+      args: [],
+    );
+  }
+
+  /// `Preferred IP / hostname`
+  String get warpStr30 {
+    return Intl.message(
+      'Preferred IP / hostname',
+      name: 'warpStr30',
+      desc: '优选 IP / 域名',
+      args: [],
+    );
+  }
+
+  /// `Preferred IP saved`
+  String get warpStr31 {
+    return Intl.message(
+      'Preferred IP saved',
+      name: 'warpStr31',
+      desc: '优选 IP 已保存',
+      args: [],
+    );
+  }
+
+  /// `Preferred IP reset to auto`
+  String get warpStr32 {
+    return Intl.message(
+      'Preferred IP reset to auto',
+      name: 'warpStr32',
+      desc: '优选 IP 已重置为 auto',
+      args: [],
+    );
+  }
+
+  /// `Preferred IP scan`
+  String get warpStr33 {
+    return Intl.message(
+      'Preferred IP scan',
+      name: 'warpStr33',
+      desc: '优选 IP 扫描',
+      args: [],
+    );
+  }
+
+  /// `The preferred IP is the entry address; it affects speed and stability.`
+  String get warpStr34 {
+    return Intl.message(
+      'The preferred IP is the entry address; it affects speed and stability.',
+      name: 'warpStr34',
+      desc: '优选 IP 改变的是「入口地址」，影响速度与稳定性；',
+      args: [],
+    );
+  }
+
+  /// `How it works`
+  String get warpStr35 {
+    return Intl.message(
+      'How it works',
+      name: 'warpStr35',
+      desc: '使用指南与原理解释',
+      args: [],
+    );
+  }
+
+  /// `Use the fastest`
+  String get warpStr36 {
+    return Intl.message(
+      'Use the fastest',
+      name: 'warpStr36',
+      desc: '使用最快',
+      args: [],
+    );
+  }
+
+  /// `Save`
+  String get warpStr37 {
+    return Intl.message('Save', name: 'warpStr37', desc: '保存', args: []);
+  }
+
+  /// `Close`
+  String get warpStr38 {
+    return Intl.message('Close', name: 'warpStr38', desc: '关闭', args: []);
+  }
+
+  /// `The exit IP is chosen by Cloudflare's nearest routing and does not change.`
+  String get warpStr39 {
+    return Intl.message(
+      'The exit IP is chosen by Cloudflare\'s nearest routing and does not change.',
+      name: 'warpStr39',
+      desc: '出口 IP 由 Cloudflare 就近调度决定，不会因此变化。',
+      args: [],
+    );
+  }
+
+  /// `Real exit IP`
+  String get warpStr40 {
+    return Intl.message(
+      'Real exit IP',
+      name: 'warpStr40',
+      desc: '出口真实 IP',
+      args: [],
+    );
+  }
+
+  /// `Dialer proxy`
+  String get warpStr41 {
+    return Intl.message(
+      'Dialer proxy',
+      name: 'warpStr41',
+      desc: '前置跳板代理 (Dialer-Proxy)',
+      args: [],
+    );
+  }
+
+  /// `Cancel`
+  String get warpStr42 {
+    return Intl.message('Cancel', name: 'warpStr42', desc: '取消', args: []);
+  }
+
+  /// `Enable WARP`
+  String get warpStr43 {
+    return Intl.message(
+      'Enable WARP',
+      name: 'warpStr43',
+      desc: '启用 WARP',
+      args: [],
+    );
+  }
+
+  /// `Client public key`
+  String get warpStr44 {
+    return Intl.message(
+      'Client public key',
+      name: 'warpStr44',
+      desc: '客户端公钥 (PublicKey)',
+      args: [],
+    );
+  }
+
+  /// `Client private key`
+  String get warpStr45 {
+    return Intl.message(
+      'Client private key',
+      name: 'warpStr45',
+      desc: '客户端私钥 (PrivateKey)',
+      args: [],
+    );
+  }
+
+  /// `Client reserved bytes`
+  String get warpStr46 {
+    return Intl.message(
+      'Client reserved bytes',
+      name: 'warpStr46',
+      desc: '客户端预留字段 (Reserved)',
+      args: [],
+    );
+  }
+
+  /// `No rules yet - with no rules nothing is routed in this mode`
+  String get warpStr47 {
+    return Intl.message(
+      'No rules yet - with no rules nothing is routed in this mode',
+      name: 'warpStr47',
+      desc: '尚未添加规则 —— 此模式下规则为空则不分流',
+      args: [],
+    );
+  }
+
+  /// `Not verified yet`
+  String get warpStr48 {
+    return Intl.message(
+      'Not verified yet',
+      name: 'warpStr48',
+      desc: '尚未进行真实有效性检测',
+      args: [],
+    );
+  }
+
+  /// `Key saved; it applies on the next handshake or registration`
+  String get warpStr49 {
+    return Intl.message(
+      'Key saved; it applies on the next handshake or registration',
+      name: 'warpStr49',
+      desc: '已保存密钥，将在下次握手或注册时生效',
+      args: [],
+    );
+  }
+
+  /// `WARP disabled`
+  String get warpStr50 {
+    return Intl.message(
+      'WARP disabled',
+      name: 'warpStr50',
+      desc: '已关闭 WARP',
+      args: [],
+    );
+  }
+
+  /// `Cloudflare WARP enabled`
+  String get warpStr51 {
+    return Intl.message(
+      'Cloudflare WARP enabled',
+      name: 'warpStr51',
+      desc: '已启用 Cloudflare WARP',
+      args: [],
+    );
+  }
+
+  /// `WARP enabled`
+  String get warpStr52 {
+    return Intl.message(
+      'WARP enabled',
+      name: 'warpStr52',
+      desc: '已开启 WARP',
+      args: [],
+    );
+  }
+
+  /// `License key cleared`
+  String get warpStr53 {
+    return Intl.message(
+      'License key cleared',
+      name: 'warpStr53',
+      desc: '已清除许可证密钥',
+      args: [],
+    );
+  }
+
+  /// `Set to follow the main selector`
+  String get warpStr54 {
+    return Intl.message(
+      'Set to follow the main selector',
+      name: 'warpStr54',
+      desc: '已设为跟随后台主选择',
+      args: [],
+    );
+  }
+
+  /// `Curve25519 key pair regenerated`
+  String get warpStr55 {
+    return Intl.message(
+      'Curve25519 key pair regenerated',
+      name: 'warpStr55',
+      desc: '已重新生成 Curve25519 密钥对',
+      args: [],
+    );
+  }
+
+  /// `Reset to the default: route WARP through the proxy`
+  String get warpStr56 {
+    return Intl.message(
+      'Reset to the default: route WARP through the proxy',
+      name: 'warpStr56',
+      desc: '已重置为默认「通过代理路由 WARP」',
+      args: [],
+    );
+  }
+
+  /// `Mode: route the proxy through WARP. Every provider node is chained through the WARP tunnel, which rescues nodes blocked by the GFW. No dialer needs to be chosen.`
+  String get warpStr57 {
+    return Intl.message(
+      'Mode: route the proxy through WARP. Every provider node is chained through the WARP tunnel, which rescues nodes blocked by the GFW. No dialer needs to be chosen.',
+      name: 'warpStr57',
+      desc: '当前为「通过 WARP 路由代理」模式：所有机场代理节点均自动级联经由 WARP 隧道出境连接，能有效拯救被 GFW 阻断的节点，无需额外选择前置跳板。',
+      args: [],
+    );
+  }
+
+  /// `Not checked`
+  String get warpStr58 {
+    return Intl.message(
+      'Not checked',
+      name: 'warpStr58',
+      desc: '待检测',
+      args: [],
+    );
+  }
+
+  /// `For the cleanest result, turn the proxy off before scanning.`
+  String get warpStr59 {
+    return Intl.message(
+      'For the cleanest result, turn the proxy off before scanning.',
+      name: 'warpStr59',
+      desc: '想拿到最干净的数值，可先关闭代理再扫描。',
+      args: [],
+    );
+  }
+
+  /// `Note: latency measured with the proxy on includes tunnel overhead.`
+  String get warpStr60 {
+    return Intl.message(
+      'Note: latency measured with the proxy on includes tunnel overhead.',
+      name: 'warpStr60',
+      desc: '提示：开启代理时测得的延迟包含隧道开销。',
+      args: [],
+    );
+  }
+
+  /// `Not enabled`
+  String get warpStr61 {
+    return Intl.message(
+      'Not enabled',
+      name: 'warpStr61',
+      desc: '未启用',
+      args: [],
+    );
+  }
+
+  /// `Not set`
+  String get warpStr62 {
+    return Intl.message('Not set', name: 'warpStr62', desc: '未设置', args: []);
+  }
+
+  /// `Provider nodes`
+  String get warpStr63 {
+    return Intl.message(
+      'Provider nodes',
+      name: 'warpStr63',
+      desc: '机场代理节点',
+      args: [],
+    );
+  }
+
+  /// `Show full WireGuard keys`
+  String get warpStr64 {
+    return Intl.message(
+      'Show full WireGuard keys',
+      name: 'warpStr64',
+      desc: '查看完整 WireGuard 密钥',
+      args: [],
+    );
+  }
+
+  /// `Checking…`
+  String get warpStr65 {
+    return Intl.message(
+      'Checking…',
+      name: 'warpStr65',
+      desc: '检测中...',
+      args: [],
+    );
+  }
+
+  /// `Registering the device with Cloudflare and generating keys…`
+  String get warpStr66 {
+    return Intl.message(
+      'Registering the device with Cloudflare and generating keys…',
+      name: 'warpStr66',
+      desc: '正在向 Cloudflare 官方注册设备并生成密钥...',
+      args: [],
+    );
+  }
+
+  /// `Running diagnostics…`
+  String get warpStr67 {
+    return Intl.message(
+      'Running diagnostics…',
+      name: 'warpStr67',
+      desc: '正在深度诊断...',
+      args: [],
+    );
+  }
+
+  /// `Generating an X25519 key and registering the device…`
+  String get warpStr68 {
+    return Intl.message(
+      'Generating an X25519 key and registering the device…',
+      name: 'warpStr68',
+      desc: '正在生成 X25519 密钥并向 Cloudflare 注册设备...',
+      args: [],
+    );
+  }
+
+  /// `Binding the key through the official API…`
+  String get warpStr69 {
+    return Intl.message(
+      'Binding the key through the official API…',
+      name: 'warpStr69',
+      desc: '正在通过官方接口绑定密钥...',
+      args: [],
+    );
+  }
+
+  /// `No reachable nodes. Check the network, or turn the proxy off and retry.`
+  String get warpStr70 {
+    return Intl.message(
+      'No reachable nodes. Check the network, or turn the proxy off and retry.',
+      name: 'warpStr70',
+      desc: '没有探测到可用节点。请检查网络，或关闭代理后重试。',
+      args: [],
+    );
+  }
+
+  /// `Traffic goes through WARP first, then to the provider node - useful when a node is blocked`
+  String get warpStr71 {
+    return Intl.message(
+      'Traffic goes through WARP first, then to the provider node - useful when a node is blocked',
+      name: 'warpStr71',
+      desc: '流量先经过 WARP 再连接代理节点，用于节点被阻断时救砖',
+      args: [],
+    );
+  }
+
+  /// `Traffic goes through the provider node, then out via WARP - avoids region leaks and unlocks AI`
+  String get warpStr72 {
+    return Intl.message(
+      'Traffic goes through the provider node, then out via WARP - avoids region leaks and unlocks AI',
+      name: 'warpStr72',
+      desc: '流量经代理节点后再连 WARP 出口，用于防送中与解锁 AI',
+      args: [],
+    );
+  }
+
+  /// `Activate and bind`
+  String get warpStr73 {
+    return Intl.message(
+      'Activate and bind',
+      name: 'warpStr73',
+      desc: '激活绑定',
+      args: [],
+    );
+  }
+
+  /// `Tap to enable WARP`
+  String get warpStr74 {
+    return Intl.message(
+      'Tap to enable WARP',
+      name: 'warpStr74',
+      desc: '点击开启 WARP 功能',
+      args: [],
+    );
+  }
+
+  /// `Generate WARP configuration`
+  String get warpStr75 {
+    return Intl.message(
+      'Generate WARP configuration',
+      name: 'warpStr75',
+      desc: '生成 WARP 配置',
+      args: [],
+    );
+  }
+
+  /// `Generated (a built-in valid key pair was loaded)`
+  String get warpStr76 {
+    return Intl.message(
+      'Generated (a built-in valid key pair was loaded)',
+      name: 'warpStr76',
+      desc: '生成完成（已载入内置合法密钥对）',
+      args: [],
+    );
+  }
+
+  /// `Direct or normal proxy (warp=off)`
+  String get warpStr77 {
+    return Intl.message(
+      'Direct or normal proxy (warp=off)',
+      name: 'warpStr77',
+      desc: '直连或普通代理 (warp=off)',
+      args: [],
+    );
+  }
+
+  /// `OK`
+  String get warpStr78 {
+    return Intl.message('OK', name: 'warpStr78', desc: '确定', args: []);
+  }
+
+  /// `Port`
+  String get warpStr79 {
+    return Intl.message('Port', name: 'warpStr79', desc: '端口', args: []);
+  }
+
+  /// `Port`
+  String get warpStr80 {
+    return Intl.message('Port', name: 'warpStr80', desc: '端口 (Port)', args: []);
+  }
+
+  /// `Port number`
+  String get warpStr81 {
+    return Intl.message(
+      'Port number',
+      name: 'warpStr81',
+      desc: '端口号',
+      args: [],
+    );
+  }
+
+  /// `Port updated`
+  String get warpStr82 {
+    return Intl.message(
+      'Port updated',
+      name: 'warpStr82',
+      desc: '端口已更新',
+      args: [],
+    );
+  }
+
+  /// `Port reset to 0 (default 2408)`
+  String get warpStr83 {
+    return Intl.message(
+      'Port reset to 0 (default 2408)',
+      name: 'warpStr83',
+      desc: '端口已重置为 0 (默认 2408)',
+      args: [],
+    );
+  }
+
+  /// `Policy groups`
+  String get warpStr84 {
+    return Intl.message(
+      'Policy groups',
+      name: 'warpStr84',
+      desc: '策略组',
+      args: [],
+    );
+  }
+
+  /// `Bind a WARP+ license key`
+  String get warpStr85 {
+    return Intl.message(
+      'Bind a WARP+ license key',
+      name: 'warpStr85',
+      desc: '绑定 WARP+ 许可证密钥',
+      args: [],
+    );
+  }
+
+  /// `Uses the provider node currently selected in the panel`
+  String get warpStr86 {
+    return Intl.message(
+      'Uses the provider node currently selected in the panel',
+      name: 'warpStr86',
+      desc: '自动匹配您在控制面板中选中的当前机场节点',
+      args: [],
+    );
+  }
+
+  /// `Custom rules`
+  String get warpStr87 {
+    return Intl.message(
+      'Custom rules',
+      name: 'warpStr87',
+      desc: '自定义规则',
+      args: [],
+    );
+  }
+
+  /// `Virtual IPv4`
+  String get warpStr88 {
+    return Intl.message(
+      'Virtual IPv4',
+      name: 'warpStr88',
+      desc: '虚拟 IPv4',
+      args: [],
+    );
+  }
+
+  /// `Virtual IPv6`
+  String get warpStr89 {
+    return Intl.message(
+      'Virtual IPv6',
+      name: 'warpStr89',
+      desc: '虚拟 IPv6',
+      args: [],
+    );
+  }
+
+  /// `Avoids captchas and region locks`
+  String get warpStr90 {
+    return Intl.message(
+      'Avoids captchas and region locks',
+      name: 'warpStr90',
+      desc: '规避验证码/区域锁定',
+      args: [],
+    );
+  }
+
+  /// `Unbind`
+  String get warpStr91 {
+    return Intl.message('Unbind', name: 'warpStr91', desc: '解绑', args: []);
+  }
+
+  /// `License key`
+  String get warpStr92 {
+    return Intl.message(
+      'License key',
+      name: 'warpStr92',
+      desc: '许可证密钥',
+      args: [],
+    );
+  }
+
+  /// `Set the WireGuard port (0 means the default 2408):`
+  String get warpStr93 {
+    return Intl.message(
+      'Set the WireGuard port (0 means the default 2408):',
+      name: 'warpStr93',
+      desc: '设置 WireGuard 端口（0 为默认 2408 端口）：',
+      args: [],
+    );
+  }
+
+  /// `Set the preferred IP for Cloudflare WARP; enter auto to use the official best IP:`
+  String get warpStr94 {
+    return Intl.message(
+      'Set the preferred IP for Cloudflare WARP; enter auto to use the official best IP:',
+      name: 'warpStr94',
+      desc: '设置连接 Cloudflare WARP 的优选 IP，输入 auto 则自动使用官方最优 IP：',
+      args: [],
+    );
+  }
+
+  /// `Follow dialer`
+  String get warpStr95 {
+    return Intl.message(
+      'Follow dialer',
+      name: 'warpStr95',
+      desc: '跟随跳板',
+      args: [],
+    );
+  }
+
+  /// `Edge colo`
+  String get warpStr96 {
+    return Intl.message(
+      'Edge colo',
+      name: 'warpStr96',
+      desc: '边缘机房 (Colo)',
+      args: [],
+    );
+  }
+
+  /// `Connection incomplete or check timed out`
+  String get warpStr97 {
+    return Intl.message(
+      'Connection incomplete or check timed out',
+      name: 'warpStr97',
+      desc: '连接未完成或检测超时',
+      args: [],
+    );
+  }
+
+  /// `Choose the WARP dialer`
+  String get warpStr98 {
+    return Intl.message(
+      'Choose the WARP dialer',
+      name: 'warpStr98',
+      desc: '选择 WARP 前置跳板',
+      args: [],
+    );
+  }
+
+  /// `Choose the WireGuard MTU`
+  String get warpStr99 {
+    return Intl.message(
+      'Choose the WireGuard MTU',
+      name: 'warpStr99',
+      desc: '选择 WireGuard MTU',
+      args: [],
+    );
+  }
+
+  /// `Route the proxy through WARP`
+  String get warpStr100 {
+    return Intl.message(
+      'Route the proxy through WARP',
+      name: 'warpStr100',
+      desc: '通过 WARP 路由代理',
+      args: [],
+    );
+  }
+
+  /// `Route WARP through the proxy`
+  String get warpStr101 {
+    return Intl.message(
+      'Route WARP through the proxy',
+      name: 'warpStr101',
+      desc: '通过代理路由 WARP',
+      args: [],
+    );
+  }
+
+  /// `Regenerate keys`
+  String get warpStr102 {
+    return Intl.message(
+      'Regenerate keys',
+      name: 'warpStr102',
+      desc: '重新生成密钥',
+      args: [],
+    );
+  }
+
+  /// `Reset`
+  String get warpStr103 {
+    return Intl.message('Reset', name: 'warpStr103', desc: '重置', args: []);
+  }
+
+  /// `Reset to defaults`
+  String get warpStr104 {
+    return Intl.message(
+      'Reset to defaults',
+      name: 'warpStr104',
+      desc: '重置为默认配置',
+      args: [],
+    );
+  }
+
+  /// `🎉 WARP+ license activated`
+  String get warpStr105 {
+    return Intl.message(
+      '🎉 WARP+ license activated',
+      name: 'warpStr105',
+      desc: '🎉 WARP+ 许可证激活成功！',
+      args: [],
+    );
+  }
+
+  /// `🎉 Device and keys generated`
+  String get warpStr106 {
+    return Intl.message(
+      '🎉 Device and keys generated',
+      name: 'warpStr106',
+      desc: '🎉 官方设备与密钥生成成功！',
+      args: [],
+    );
+  }
+
+  /// `👑 WARP+ device`
+  String get warpStr107 {
+    return Intl.message(
+      '👑 WARP+ device',
+      name: 'warpStr107',
+      desc: '👑 WARP+ 极速会员设备',
+      args: [],
+    );
+  }
+
+  /// `💡 When to use each mode`
+  String get warpStr108 {
+    return Intl.message(
+      '💡 When to use each mode',
+      name: 'warpStr108',
+      desc: '💡 使用场景与路由模式原理',
+      args: [],
+    );
+  }
+
+  /// `🛡️ Native search (excellent)`
+  String get warpStr109 {
+    return Intl.message(
+      '🛡️ Native search (excellent)',
+      name: 'warpStr109',
+      desc: '🛡️ 原生搜索 (极佳)',
+      args: [],
+    );
+  }
+
+  /// `🟢 Official free device`
+  String get warpStr110 {
+    return Intl.message(
+      '🟢 Official free device',
+      name: 'warpStr110',
+      desc: '🟢 官方免费设备',
+      args: [],
+    );
+  }
+
+  /// `🟢 Unrestricted`
+  String get warpStr111 {
+    return Intl.message(
+      '🟢 Unrestricted',
+      name: 'warpStr111',
+      desc: '🟢 畅通无阻',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {

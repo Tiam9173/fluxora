@@ -1965,6 +1965,224 @@ class MessageLookup extends MessageLookupByLibrary {
     "wakelockDescription": MessageLookupByLibrary.simpleMessage(
       "Keeps the screen on and app active in the background without requiring special CPU wakelock permissions.",
     ),
+    "warpStr0": MessageLookupByLibrary.simpleMessage("0 (default 2408)"),
+    "warpStr1": MessageLookupByLibrary.simpleMessage(
+      "1280 (recommended, best for UDP)",
+    ),
+    "warpStr10": MessageLookupByLibrary.simpleMessage(
+      "MTU set to 1420 (standard)",
+    ),
+    "warpStr100": MessageLookupByLibrary.simpleMessage(
+      "Route the proxy through WARP",
+    ),
+    "warpStr101": MessageLookupByLibrary.simpleMessage(
+      "Route WARP through the proxy",
+    ),
+    "warpStr102": MessageLookupByLibrary.simpleMessage("Regenerate keys"),
+    "warpStr103": MessageLookupByLibrary.simpleMessage("Reset"),
+    "warpStr104": MessageLookupByLibrary.simpleMessage("Reset to defaults"),
+    "warpStr105": MessageLookupByLibrary.simpleMessage(
+      "🎉 WARP+ license activated",
+    ),
+    "warpStr106": MessageLookupByLibrary.simpleMessage(
+      "🎉 Device and keys generated",
+    ),
+    "warpStr107": MessageLookupByLibrary.simpleMessage("👑 WARP+ device"),
+    "warpStr108": MessageLookupByLibrary.simpleMessage(
+      "💡 When to use each mode",
+    ),
+    "warpStr109": MessageLookupByLibrary.simpleMessage(
+      "🛡️ Native search (excellent)",
+    ),
+    "warpStr11": MessageLookupByLibrary.simpleMessage(
+      "WARP credentials and details",
+    ),
+    "warpStr110": MessageLookupByLibrary.simpleMessage(
+      "🟢 Official free device",
+    ),
+    "warpStr111": MessageLookupByLibrary.simpleMessage("🟢 Unrestricted"),
+    "warpStr12": MessageLookupByLibrary.simpleMessage(
+      "WARP reset to its default configuration",
+    ),
+    "warpStr13": MessageLookupByLibrary.simpleMessage("WARP routing mode"),
+    "warpStr14": MessageLookupByLibrary.simpleMessage(
+      "WARP+ activation (warp=plus)",
+    ),
+    "warpStr15": MessageLookupByLibrary.simpleMessage("WireGuard keys"),
+    "warpStr16": MessageLookupByLibrary.simpleMessage("auto (default)"),
+    "warpStr17": MessageLookupByLibrary.simpleMessage(
+      "auto, or e.g. 162.159.193.1",
+    ),
+    "warpStr18": MessageLookupByLibrary.simpleMessage(
+      "⚠️ Region may be exposed",
+    ),
+    "warpStr19": MessageLookupByLibrary.simpleMessage("⚡ Check WARP status"),
+    "warpStr2": MessageLookupByLibrary.simpleMessage("1360 (balanced)"),
+    "warpStr20": MessageLookupByLibrary.simpleMessage(
+      "⚡ Follow main selector (recommended)",
+    ),
+    "warpStr21": MessageLookupByLibrary.simpleMessage(
+      "⚡ Follow main selector (uses the active provider node)",
+    ),
+    "warpStr22": MessageLookupByLibrary.simpleMessage("⚪ Local key pair"),
+    "warpStr23": MessageLookupByLibrary.simpleMessage("✈️ WARP dialer"),
+    "warpStr24": MessageLookupByLibrary.simpleMessage("Optimize"),
+    "warpStr25": MessageLookupByLibrary.simpleMessage(
+      "Generate an X25519 key pair and register with Cloudflare",
+    ),
+    "warpStr26": MessageLookupByLibrary.simpleMessage("Run diagnostics"),
+    "warpStr27": MessageLookupByLibrary.simpleMessage(
+      "Same view as the switch card, with live latency",
+    ),
+    "warpStr28": MessageLookupByLibrary.simpleMessage("Choose from node list…"),
+    "warpStr29": MessageLookupByLibrary.simpleMessage("Preferred IP"),
+    "warpStr3": MessageLookupByLibrary.simpleMessage("1420 (standard)"),
+    "warpStr30": MessageLookupByLibrary.simpleMessage(
+      "Preferred IP / hostname",
+    ),
+    "warpStr31": MessageLookupByLibrary.simpleMessage("Preferred IP saved"),
+    "warpStr32": MessageLookupByLibrary.simpleMessage(
+      "Preferred IP reset to auto",
+    ),
+    "warpStr33": MessageLookupByLibrary.simpleMessage("Preferred IP scan"),
+    "warpStr34": MessageLookupByLibrary.simpleMessage(
+      "The preferred IP is the entry address; it affects speed and stability.",
+    ),
+    "warpStr35": MessageLookupByLibrary.simpleMessage("How it works"),
+    "warpStr36": MessageLookupByLibrary.simpleMessage("Use the fastest"),
+    "warpStr37": MessageLookupByLibrary.simpleMessage("Save"),
+    "warpStr38": MessageLookupByLibrary.simpleMessage("Close"),
+    "warpStr39": MessageLookupByLibrary.simpleMessage(
+      "The exit IP is chosen by Cloudflare\'s nearest routing and does not change.",
+    ),
+    "warpStr4": MessageLookupByLibrary.simpleMessage("AI and streaming unlock"),
+    "warpStr40": MessageLookupByLibrary.simpleMessage("Real exit IP"),
+    "warpStr41": MessageLookupByLibrary.simpleMessage("Dialer proxy"),
+    "warpStr42": MessageLookupByLibrary.simpleMessage("Cancel"),
+    "warpStr43": MessageLookupByLibrary.simpleMessage("Enable WARP"),
+    "warpStr44": MessageLookupByLibrary.simpleMessage("Client public key"),
+    "warpStr45": MessageLookupByLibrary.simpleMessage("Client private key"),
+    "warpStr46": MessageLookupByLibrary.simpleMessage("Client reserved bytes"),
+    "warpStr47": MessageLookupByLibrary.simpleMessage(
+      "No rules yet - with no rules nothing is routed in this mode",
+    ),
+    "warpStr48": MessageLookupByLibrary.simpleMessage("Not verified yet"),
+    "warpStr49": MessageLookupByLibrary.simpleMessage(
+      "Key saved; it applies on the next handshake or registration",
+    ),
+    "warpStr5": MessageLookupByLibrary.simpleMessage(
+      "Cloudflare peer public key",
+    ),
+    "warpStr50": MessageLookupByLibrary.simpleMessage("WARP disabled"),
+    "warpStr51": MessageLookupByLibrary.simpleMessage(
+      "Cloudflare WARP enabled",
+    ),
+    "warpStr52": MessageLookupByLibrary.simpleMessage("WARP enabled"),
+    "warpStr53": MessageLookupByLibrary.simpleMessage("License key cleared"),
+    "warpStr54": MessageLookupByLibrary.simpleMessage(
+      "Set to follow the main selector",
+    ),
+    "warpStr55": MessageLookupByLibrary.simpleMessage(
+      "Curve25519 key pair regenerated",
+    ),
+    "warpStr56": MessageLookupByLibrary.simpleMessage(
+      "Reset to the default: route WARP through the proxy",
+    ),
+    "warpStr57": MessageLookupByLibrary.simpleMessage(
+      "Mode: route the proxy through WARP. Every provider node is chained through the WARP tunnel, which rescues nodes blocked by the GFW. No dialer needs to be chosen.",
+    ),
+    "warpStr58": MessageLookupByLibrary.simpleMessage("Not checked"),
+    "warpStr59": MessageLookupByLibrary.simpleMessage(
+      "For the cleanest result, turn the proxy off before scanning.",
+    ),
+    "warpStr6": MessageLookupByLibrary.simpleMessage(
+      "DIRECT (connect to Cloudflare directly)",
+    ),
+    "warpStr60": MessageLookupByLibrary.simpleMessage(
+      "Note: latency measured with the proxy on includes tunnel overhead.",
+    ),
+    "warpStr61": MessageLookupByLibrary.simpleMessage("Not enabled"),
+    "warpStr62": MessageLookupByLibrary.simpleMessage("Not set"),
+    "warpStr63": MessageLookupByLibrary.simpleMessage("Provider nodes"),
+    "warpStr64": MessageLookupByLibrary.simpleMessage(
+      "Show full WireGuard keys",
+    ),
+    "warpStr65": MessageLookupByLibrary.simpleMessage("Checking…"),
+    "warpStr66": MessageLookupByLibrary.simpleMessage(
+      "Registering the device with Cloudflare and generating keys…",
+    ),
+    "warpStr67": MessageLookupByLibrary.simpleMessage("Running diagnostics…"),
+    "warpStr68": MessageLookupByLibrary.simpleMessage(
+      "Generating an X25519 key and registering the device…",
+    ),
+    "warpStr69": MessageLookupByLibrary.simpleMessage(
+      "Binding the key through the official API…",
+    ),
+    "warpStr7": MessageLookupByLibrary.simpleMessage(
+      "Google region-leak check",
+    ),
+    "warpStr70": MessageLookupByLibrary.simpleMessage(
+      "No reachable nodes. Check the network, or turn the proxy off and retry.",
+    ),
+    "warpStr71": MessageLookupByLibrary.simpleMessage(
+      "Traffic goes through WARP first, then to the provider node - useful when a node is blocked",
+    ),
+    "warpStr72": MessageLookupByLibrary.simpleMessage(
+      "Traffic goes through the provider node, then out via WARP - avoids region leaks and unlocks AI",
+    ),
+    "warpStr73": MessageLookupByLibrary.simpleMessage("Activate and bind"),
+    "warpStr74": MessageLookupByLibrary.simpleMessage("Tap to enable WARP"),
+    "warpStr75": MessageLookupByLibrary.simpleMessage(
+      "Generate WARP configuration",
+    ),
+    "warpStr76": MessageLookupByLibrary.simpleMessage(
+      "Generated (a built-in valid key pair was loaded)",
+    ),
+    "warpStr77": MessageLookupByLibrary.simpleMessage(
+      "Direct or normal proxy (warp=off)",
+    ),
+    "warpStr78": MessageLookupByLibrary.simpleMessage("OK"),
+    "warpStr79": MessageLookupByLibrary.simpleMessage("Port"),
+    "warpStr8": MessageLookupByLibrary.simpleMessage(
+      "MTU set to 1280 (recommended)",
+    ),
+    "warpStr80": MessageLookupByLibrary.simpleMessage("Port"),
+    "warpStr81": MessageLookupByLibrary.simpleMessage("Port number"),
+    "warpStr82": MessageLookupByLibrary.simpleMessage("Port updated"),
+    "warpStr83": MessageLookupByLibrary.simpleMessage(
+      "Port reset to 0 (default 2408)",
+    ),
+    "warpStr84": MessageLookupByLibrary.simpleMessage("Policy groups"),
+    "warpStr85": MessageLookupByLibrary.simpleMessage(
+      "Bind a WARP+ license key",
+    ),
+    "warpStr86": MessageLookupByLibrary.simpleMessage(
+      "Uses the provider node currently selected in the panel",
+    ),
+    "warpStr87": MessageLookupByLibrary.simpleMessage("Custom rules"),
+    "warpStr88": MessageLookupByLibrary.simpleMessage("Virtual IPv4"),
+    "warpStr89": MessageLookupByLibrary.simpleMessage("Virtual IPv6"),
+    "warpStr9": MessageLookupByLibrary.simpleMessage("MTU set to 1360"),
+    "warpStr90": MessageLookupByLibrary.simpleMessage(
+      "Avoids captchas and region locks",
+    ),
+    "warpStr91": MessageLookupByLibrary.simpleMessage("Unbind"),
+    "warpStr92": MessageLookupByLibrary.simpleMessage("License key"),
+    "warpStr93": MessageLookupByLibrary.simpleMessage(
+      "Set the WireGuard port (0 means the default 2408):",
+    ),
+    "warpStr94": MessageLookupByLibrary.simpleMessage(
+      "Set the preferred IP for Cloudflare WARP; enter auto to use the official best IP:",
+    ),
+    "warpStr95": MessageLookupByLibrary.simpleMessage("Follow dialer"),
+    "warpStr96": MessageLookupByLibrary.simpleMessage("Edge colo"),
+    "warpStr97": MessageLookupByLibrary.simpleMessage(
+      "Connection incomplete or check timed out",
+    ),
+    "warpStr98": MessageLookupByLibrary.simpleMessage("Choose the WARP dialer"),
+    "warpStr99": MessageLookupByLibrary.simpleMessage(
+      "Choose the WireGuard MTU",
+    ),
     "wave": MessageLookupByLibrary.simpleMessage("Wave"),
     "webDAVConfiguration": MessageLookupByLibrary.simpleMessage(
       "WebDAV Configuration",
