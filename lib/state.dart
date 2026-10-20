@@ -708,13 +708,17 @@ class GlobalState {
             config.networkProps.realBypassPrivateRouteAddress,
       ),
     );
+    // 通知栏切换卡片走的是内核的 HTTP 接口，控制器必须是开着的。用户关掉
+    // 「外部控制器」时仍然绑到本机回环地址：只有本机进程能访问，和"对局域网
+    // 开放"是两件事，后者才由 allowLan 控制。
+    final controllerValue = realPatchConfig.externalController ==
+            ExternalControllerStatus.open
+        ? realPatchConfig.externalController.value
+        : ExternalControllerStatus.open.value;
     rawConfig['external-controller'] = realPatchConfig.allowLan
-        ? realPatchConfig.externalController.value.replaceAll(
-            '127.0.0.1',
-            '0.0.0.0',
-          )
-        : realPatchConfig.externalController.value;
-    if (realPatchConfig.externalController == ExternalControllerStatus.open) {
+        ? controllerValue.replaceAll('127.0.0.1', '0.0.0.0')
+        : controllerValue;
+    {
       final secret = realPatchConfig.secret;
       if (secret != null && secret.isNotEmpty) {
         rawConfig['secret'] = secret;

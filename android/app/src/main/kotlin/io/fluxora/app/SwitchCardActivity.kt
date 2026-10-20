@@ -68,10 +68,40 @@ class SwitchCardActivity : Activity() {
         super.onDestroy()
     }
 
+    /// 地址和密钥有两个来源：
+    /// 1. Dart 在生成配置时写下的 `core_endpoint` / `core_secret`（首选）
+    /// 2. 直接读 Dart 的整份 `config`，从里面取 `external-controller`
+    ///
+    /// 第二条是兜底：App 刚装好、还没生成过配置时，第一条还不存在。
     private fun readEndpoint() {
         val prefs = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
-        endpoint = prefs.getString("flutter.core_endpoint", null)
-        secret = prefs.getString("flutter.core_secret", null)
+        var host = prefs.getString("flutter.core_endpoint", null)
+        var key = prefs.getString("flutter.core_secret", null)
+
+        if (host.isNullOrEmpty()) {
+            val raw = prefs.getString("flutter.config", null)
+            if (!raw.isNullOrEmpty()) {
+                try {
+                    val config = JSONObject(raw)
+                    val controller = config.opt("external-controller")
+                    host = when (controller) {
+                        is JSONObject -> controller.optString("value", "")
+                        is String -> controller
+                        else -> ""
+                    }
+                    if (key.isNullOrEmpty()) {
+                        key = config.optString("secret", "")
+                    }
+                } catch (_: Exception) {
+                    // 配置格式变了也不该让卡片直接崩掉。
+                }
+            }
+        }
+
+        // 只写了端口时补上主机名。
+        if (!host.isNullOrEmpty() && !host.contains(":")) host = "$host:9090"
+        endpoint = host?.takeIf { it.isNotEmpty() }
+        secret = key
     }
 
     private fun request(path: String, method: String = "GET", body: String? = null): String {

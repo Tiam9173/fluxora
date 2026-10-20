@@ -39,7 +39,8 @@
             android:name="io.fluxora.app.SwitchCardActivity"
             android:exported="false"
             android:excludeFromRecents="true"
-            android:launchMode="singleTop"
+            android:launchMode="singleInstance"
+            android:taskAffinity="io.fluxora.app.switchcard"
             android:theme="@style/SwitchCardTheme" />
         <activity
             android:name="io.fluxora.app.CardActivity"
