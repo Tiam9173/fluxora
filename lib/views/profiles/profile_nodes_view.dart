@@ -838,7 +838,9 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                     vertical: 8,
                   ),
                 ),
-                items: ManualProtocol.values.map((p) {
+                items: ManualProtocol.values
+                    .where((p) => p.kernelSupported)
+                    .map((p) {
                   return DropdownMenuItem(
                     value: p,
                     child: Row(

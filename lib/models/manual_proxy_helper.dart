@@ -29,6 +29,18 @@ enum ManualProtocol {
 }
 
 extension ManualProtocolExt on ManualProtocol {
+  /// 内核（mihomo）不实现的协议。
+  ///
+  /// 这些是 sing-box 才有的类型，写进配置内核会拒绝加载 —— 保留枚举值是为了
+  /// 兼容历史上已经存下来的节点，但选择器里不再提供。
+  bool get kernelSupported => switch (this) {
+    ManualProtocol.trojanGo ||
+    ManualProtocol.amneziaWg ||
+    ManualProtocol.juicity ||
+    ManualProtocol.naive => false,
+    _ => true,
+  };
+
   String get displayName => switch (this) {
     ManualProtocol.vmess => 'VMess',
     ManualProtocol.vless => 'VLESS',
