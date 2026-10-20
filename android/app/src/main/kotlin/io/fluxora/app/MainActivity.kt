@@ -124,7 +124,9 @@ class MainActivity : FlutterActivity() {
         //
         // 通知动作只能从通知栏触发，而通知栏出现时 Activity 必然已 pause，
         // 因此"收到这个 intent"本身就等价于"用户不在 App 界面里"。
-        GlobalState.cardOnlyLaunch = true
+        // 卡片模式依赖透明窗口，而透明窗口在复用主引擎时并不成立；这里先
+        // 回到"应用内弹卡片"的行为，至少不会黑屏、也不会挡住点击。
+        GlobalState.cardOnlyLaunch = false
         // When the app is already in the foreground there is no lifecycle
         // change, so nothing would ever pull the pending action. Push it now;
         // Dart ignores it if it has no navigator yet and pulls it on resume.

@@ -93,10 +93,10 @@ fun Service.buildExpandedNotificationViews(
 /// navigator context — null whenever the UI had been torn down, so the button
 /// did nothing. Launching the activity first guarantees there is a UI to draw in.
 fun Service.buildSwitchCardIntent(flags: Int): PendingIntent {
-    // 直接启动独立的透明 Activity：主窗口一旦创建就是不透明的，复用它永远
-    // 得不到"卡片浮在桌面上"的效果。
-    val intent = Intent(this, io.fluxora.app.CardActivity::class.java).apply {
-        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+    // 暂时回到主窗口 + 应用内卡片：独立 CardActivity 目前画不出内容，而它
+    // 又会盖在最上面挡住点击，用户等于被锁死。等功能可用再切回去。
+    val intent = Intent(this, io.fluxora.app.MainActivity::class.java).apply {
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         putExtra(EXTRA_SHOW_SWITCH_CARD, true)
     }
     return PendingIntent.getActivity(this, 102, intent, flags)
