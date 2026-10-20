@@ -83,6 +83,7 @@ Fluxora is an independent product with no official affiliation to any upstream p
 ### Profiles
 - Multiple profiles (local file / subscription URL)
 - Config import and update, rule providers
+- Support multi-subscription aggregation
 
 ### Tools
 - Network detection, intranet IP, media-unlock checks
