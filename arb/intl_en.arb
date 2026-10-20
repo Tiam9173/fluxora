@@ -1555,5 +1555,7 @@
         "type": "String"
       }
     }
-  }
+  },
+  "profileManageNodes": "Manage / add nodes",
+  "profileChainProxies": "Pre and landing proxies"
 }

@@ -1160,5 +1160,7 @@
   "warpRegion": "지역: {loc}",
   "warpDiagOk": "🎉 진단 성공! WARP가 적용되었습니다 (거점: {colo}, 출구: {ip})",
   "warpNoSignature": "참고: 출구 {ip}에 연결되었지만 WARP 서명이 없습니다. 다이얼러 설정을 확인하세요",
-  "warpDialerSet": "다이얼러를 {name}(으)로 설정했습니다"
+  "warpDialerSet": "다이얼러를 {name}(으)로 설정했습니다",
+  "profileManageNodes": "노드 관리 / 노드 추가",
+  "profileChainProxies": "프론트 및 랜딩 프록시"
 }

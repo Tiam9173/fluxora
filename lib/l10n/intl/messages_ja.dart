@@ -1145,6 +1145,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "profileAutoUpdateIntervalNullValidationDesc":
         MessageLookupByLibrary.simpleMessage("更新間隔を入力してください"),
     "profileChainDialogTitle": m28,
+    "profileChainProxies": MessageLookupByLibrary.simpleMessage("前置と着地プロキシ"),
     "profileChainSaved": MessageLookupByLibrary.simpleMessage(
       "プリプロキシとランディングプロキシの設定を保存しました",
     ),
@@ -1155,6 +1156,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "プロファイルが変更されました。自動更新をオフにしますか？",
     ),
     "profileImportFailed": m29,
+    "profileManageNodes": MessageLookupByLibrary.simpleMessage("ノード管理 / ノード追加"),
     "profileNameNullValidationDesc": MessageLookupByLibrary.simpleMessage(
       "設定名を入力してください",
     ),

@@ -1410,6 +1410,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "profileAutoUpdateIntervalNullValidationDesc":
         MessageLookupByLibrary.simpleMessage("Please enter update interval"),
     "profileChainDialogTitle": m28,
+    "profileChainProxies": MessageLookupByLibrary.simpleMessage(
+      "Pre and landing proxies",
+    ),
     "profileChainSaved": MessageLookupByLibrary.simpleMessage(
       "Pre-proxy and landing proxy settings saved",
     ),
@@ -1420,6 +1423,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "Profile modified. Disable auto-update?",
     ),
     "profileImportFailed": m29,
+    "profileManageNodes": MessageLookupByLibrary.simpleMessage(
+      "Manage / add nodes",
+    ),
     "profileNameNullValidationDesc": MessageLookupByLibrary.simpleMessage(
       "Please enter a profile name",
     ),

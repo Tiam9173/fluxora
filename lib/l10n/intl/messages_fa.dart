@@ -1438,6 +1438,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "profileAutoUpdateIntervalNullValidationDesc":
         MessageLookupByLibrary.simpleMessage("لطفاً فاصله زمانی را وارد کنید"),
     "profileChainDialogTitle": m28,
+    "profileChainProxies": MessageLookupByLibrary.simpleMessage(
+      "پروکسی ورودی و خروجی",
+    ),
     "profileChainSaved": MessageLookupByLibrary.simpleMessage(
       "تنظیمات پروکسی مقدماتی و فرود ذخیره شد",
     ),
@@ -1448,6 +1451,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "پروفایل تغییر یافته است. آیا بروزرسانی خودکار غیرفعال شود؟",
     ),
     "profileImportFailed": m29,
+    "profileManageNodes": MessageLookupByLibrary.simpleMessage(
+      "مدیریت و افزودن گره",
+    ),
     "profileNameNullValidationDesc": MessageLookupByLibrary.simpleMessage(
       "لطفاً نام پروفایل را وارد کنید",
     ),

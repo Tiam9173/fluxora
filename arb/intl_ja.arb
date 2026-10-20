@@ -1160,5 +1160,7 @@
   "warpRegion": "地域: {loc}",
   "warpDiagOk": "🎉 診断成功！WARP は有効です (拠点: {colo}, 出口: {ip})",
   "warpNoSignature": "注意：出口 {ip} に接続しましたが WARP 署名がありません。ダイヤラー設定を確認してください",
-  "warpDialerSet": "ダイヤラーを {name} に設定しました"
+  "warpDialerSet": "ダイヤラーを {name} に設定しました",
+  "profileManageNodes": "ノード管理 / ノード追加",
+  "profileChainProxies": "前置と着地プロキシ"
 }

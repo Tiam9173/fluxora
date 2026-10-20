@@ -1160,5 +1160,7 @@
   "warpRegion": "منطقه: {loc}",
   "warpDiagOk": "🎉 عیب‌یابی موفق بود. WARP فعال است (مرکز: {colo}, خروجی: {ip})",
   "warpNoSignature": "توجه: به خروجی {ip} متصل شد اما امضای WARP یافت نشد — تنظیمات دیالر را بررسی کنید",
-  "warpDialerSet": "دیالر روی {name} تنظیم شد"
+  "warpDialerSet": "دیالر روی {name} تنظیم شد",
+  "profileManageNodes": "مدیریت و افزودن گره",
+  "profileChainProxies": "پروکسی ورودی و خروجی"
 }

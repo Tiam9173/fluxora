@@ -1032,12 +1032,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "profileAutoUpdateIntervalNullValidationDesc":
         MessageLookupByLibrary.simpleMessage("请输入自动更新间隔时间"),
     "profileChainDialogTitle": m28,
+    "profileChainProxies": MessageLookupByLibrary.simpleMessage("前置与落地代理"),
     "profileChainSaved": MessageLookupByLibrary.simpleMessage("已保存前置与落地代理设置"),
     "profileFallbackFailed": MessageLookupByLibrary.simpleMessage("旧配置也无法恢复"),
     "profileHasUpdate": MessageLookupByLibrary.simpleMessage(
       "配置文件已经修改，是否关闭自动更新？",
     ),
     "profileImportFailed": m29,
+    "profileManageNodes": MessageLookupByLibrary.simpleMessage("节点管理 / 添加节点"),
     "profileNameNullValidationDesc": MessageLookupByLibrary.simpleMessage(
       "请输入配置名称",
     ),

@@ -9934,6 +9934,26 @@ class AppLocalizations {
       args: [name],
     );
   }
+
+  /// `Manage / add nodes`
+  String get profileManageNodes {
+    return Intl.message(
+      'Manage / add nodes',
+      name: 'profileManageNodes',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Pre and landing proxies`
+  String get profileChainProxies {
+    return Intl.message(
+      'Pre and landing proxies',
+      name: 'profileChainProxies',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {

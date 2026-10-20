@@ -1160,5 +1160,7 @@
   "warpRegion": "归属地: {loc}",
   "warpDiagOk": "🎉 诊断成功！WARP 已生效 (机房: {colo}, 出口: {ip})",
   "warpNoSignature": "提示：已连接出口 {ip}，但未检测到 WARP 签名，请确认跳板配置",
-  "warpDialerSet": "已指定前置跳板为 {name}"
+  "warpDialerSet": "已指定前置跳板为 {name}",
+  "profileManageNodes": "节点管理 / 添加节点",
+  "profileChainProxies": "前置与落地代理"
 }

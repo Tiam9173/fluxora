@@ -1492,6 +1492,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "profileAutoUpdateIntervalNullValidationDesc":
         MessageLookupByLibrary.simpleMessage("Введите интервал автообновления"),
     "profileChainDialogTitle": m28,
+    "profileChainProxies": MessageLookupByLibrary.simpleMessage(
+      "Прокси входа и выхода",
+    ),
     "profileChainSaved": MessageLookupByLibrary.simpleMessage(
       "Настройки предпрокси и прокси-выхода сохранены",
     ),
@@ -1502,6 +1505,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "Конфигурация изменена. Отключить автообновление?",
     ),
     "profileImportFailed": m29,
+    "profileManageNodes": MessageLookupByLibrary.simpleMessage(
+      "Узлы: управление и добавление",
+    ),
     "profileNameNullValidationDesc": MessageLookupByLibrary.simpleMessage(
       "Введите имя профиля",
     ),

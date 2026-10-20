@@ -571,14 +571,14 @@ class ProfileItem extends StatelessWidget {
     return [
       PopupMenuItemData(
         icon: Icons.dns_outlined,
-        label: '节点管理 / 添加节点',
+        label: appLocalizations.profileManageNodes,
         onPressed: () {
           BaseNavigator.push(context, ProfileNodesView(profile: profile));
         },
       ),
       PopupMenuItemData(
         icon: Icons.alt_route_rounded,
-        label: '前置与落地代理',
+        label: appLocalizations.profileChainProxies,
         onPressed: () {
           ProfileChainDialog.show(context, profile);
         },

@@ -1164,5 +1164,7 @@
   "warpRegion": "Регион: {loc}",
   "warpDiagOk": "🎉 Диагностика пройдена. WARP работает (узел: {colo}, выход: {ip})",
   "warpNoSignature": "Примечание: подключено к выходу {ip}, но подпись WARP не найдена — проверьте диалер",
-  "warpDialerSet": "Диалер: {name}"
+  "warpDialerSet": "Диалер: {name}",
+  "profileManageNodes": "Узлы: управление и добавление",
+  "profileChainProxies": "Прокси входа и выхода"
 }
