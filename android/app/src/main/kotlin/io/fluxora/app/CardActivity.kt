@@ -47,6 +47,14 @@ class CardActivity : FlutterActivity() {
         }
     }
 
+    override fun onDestroy() {
+        // 让 Dart 把根节点切回主界面，否则下次正常打开 App 还是卡片页。
+        flutterEngine?.dartExecutor?.binaryMessenger?.let { messenger ->
+            MethodChannel(messenger, "vpn").invokeMethod("cardModeOff", null)
+        }
+        super.onDestroy()
+    }
+
     private fun notifyDart() {
         val messenger = flutterEngine?.dartExecutor?.binaryMessenger ?: return
         MethodChannel(messenger, "vpn").invokeMethod("notificationSwitch", null)

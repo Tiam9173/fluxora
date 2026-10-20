@@ -129,6 +129,11 @@ class Vpn {
           }
           break;
         // Notification action buttons.
+        case 'cardModeOff':
+          // 卡片 Activity 正在销毁：把根节点切回主界面。不切的话下次正常
+          // 打开 App 会又只显示一张卡片，而那个窗口是不透明的，看起来就是黑屏。
+          globalState.cardOnlyMode.value = false;
+          break;
         case 'notificationStop':
           // The app's own stop path, not a bare service kill: it also tears
           // down the core and tells the state machine the tunnel is gone.

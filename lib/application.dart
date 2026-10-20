@@ -301,17 +301,31 @@ class ApplicationState extends ConsumerState<Application>
                 // translucent, so what shows around the card is whatever app the
                 // user was in.
                 if (cardOnly) {
+                  final colors = Theme.of(context).colorScheme;
                   return Material(
                     color: Colors.transparent,
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onTap: _closeCardOnlyMode,
-                      child: Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: GestureDetector(
-                            onTap: () {},
-                            child: SwitchCard(onFinished: _closeCardOnlyMode),
+                      // 一层很淡的压暗：App 内的卡片是弹在遮罩上的，没有这层
+                      // 会显得卡片"浮在壁纸上"，和 App 内的观感差很多。
+                      child: ColoredBox(
+                        color: Colors.black.withValues(alpha: 0.28),
+                        child: Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: GestureDetector(
+                              onTap: () {},
+                              child: Material(
+                                elevation: 12,
+                                borderRadius: BorderRadius.circular(24),
+                                clipBehavior: Clip.antiAlias,
+                                color: colors.surface,
+                                child: SwitchCard(
+                                  onFinished: _closeCardOnlyMode,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ),

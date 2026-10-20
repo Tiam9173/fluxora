@@ -342,15 +342,20 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
                       final delay = delayMap[delayUrl]?[proxy.name];
                       return InkWell(
                         onTap: selectable
-                            ? () {
+                            ? () async {
                                 final handler = widget.onSelect;
                                 if (handler != null) {
                                   handler(proxy.name, currentGroup.name);
                                 } else {
-                                  globalState.appController
-                                      .changeProxyDebounce(
-                                    currentGroup.name,
-                                    proxy.name,
+                                  // 必须等切换真正发出去再关卡片：卡片模式关掉
+                                  // 就 finishAndRemoveTask，进程可能随之结束，
+                                  // 没发完的请求会连同引擎一起消失 —— 表现就是
+                                  // "点了节点但没切换"。
+                                  // 用非防抖的版本：防抖会延后执行，而卡片关掉
+                                  // 后进程可能就没了，延后的那次调用永远不会发生。
+                                  await globalState.appController.changeProxy(
+                                    groupName: currentGroup.name,
+                                    proxyName: proxy.name,
                                   );
                                 }
                                 setState(() {});
