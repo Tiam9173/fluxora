@@ -133,7 +133,7 @@ class IntelligentNodeCard extends ConsumerWidget {
     if (viewModel.isUntested) {
       badges.add(_MiniBadge(
         icon: Icons.auto_awesome_outlined,
-        text: '暂无评分',
+        text: appLocalizations.smartNoScore,
         color: colorScheme.onSurfaceVariant,
       ));
     } else if (viewModel.score != null) {
@@ -166,7 +166,7 @@ class IntelligentNodeCard extends ConsumerWidget {
     if (viewModel.isUntested) {
       badges.add(_MiniBadge(
         icon: Icons.shield_outlined,
-        text: '暂无数据',
+        text: appLocalizations.smartNoData,
         color: colorScheme.onSurfaceVariant,
       ));
     } else if (viewModel.score != null && viewModel.score!.reliabilityScore > 0) {
@@ -184,7 +184,7 @@ class IntelligentNodeCard extends ConsumerWidget {
     if (viewModel.isNonConnectable) {
       badges.add(_MiniBadge(
         icon: Icons.link_off,
-        text: '疑似不可用',
+        text: appLocalizations.smartSuspect,
         color: colorScheme.onErrorContainer,
         backgroundColor: colorScheme.errorContainer,
       ));
@@ -313,13 +313,13 @@ class IntelligentNodeCard extends ConsumerWidget {
     if (!isCurrentChainNode) {
       probeAction = TextButton(
         onPressed: () =>
-            context.showSnackBar('请先将该节点设为当前链路节点后再体检'),
-        child: const Text('设为当前链路后体检'),
+            context.showSnackBar(appLocalizations.smartNeedCurrent),
+        child: Text(appLocalizations.smartSetAsCurrent),
       );
     } else if (isProbing) {
-      probeAction = const TextButton(
+      probeAction = TextButton(
         onPressed: null,
-        child: Text('体检中…'),
+        child: Text(appLocalizations.smartChecking),
       );
     } else {
       probeAction = FilledButton.tonal(
@@ -331,11 +331,11 @@ class IntelligentNodeCard extends ConsumerWidget {
             );
           } catch (e) {
             if (context.mounted) {
-              context.showSnackBar('体检失败：$e');
+              context.showSnackBar(appLocalizations.smartCheckFailed('$e'));
             }
           }
         },
-        child: Text(viewModel.isUntested ? '立即体检' : '重新体检'),
+        child: Text(viewModel.isUntested ? appLocalizations.smartCheckNow : appLocalizations.smartRecheck),
       );
     }
 

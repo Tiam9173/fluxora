@@ -1670,5 +1670,37 @@
   "generalCardCoreTitle": "Card can reach the core",
   "generalCardCoreDesc": "The core always listens on the loopback address so the notification card can talk to it",
   "generalKeepService": "Keep the service up when restarting the core",
-  "generalKeepServiceDesc": "Off: the service follows the core and the notification briefly shows disconnected"
+  "generalKeepServiceDesc": "Off: the service follows the core and the notification briefly shows disconnected",
+  "cardNodeSelect": "Choose a node",
+  "cardFollowMain": "Follow main selector",
+  "cardSelect": "Select",
+  "cardHopValue": "🔗 Dialer: {hop}",
+  "@cardHopValue": {
+    "placeholders": {
+      "hop": {
+        "type": "String"
+      }
+    }
+  },
+  "smartChecking": "Checking…",
+  "smartCheckFailed": "Check failed: {error}",
+  "@smartCheckFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "smartNoData": "No data",
+  "smartNoScore": "No score",
+  "smartSuspect": "Possibly unavailable",
+  "smartCheckNow": "Check now",
+  "smartSetAsCurrent": "Set as current route, then check",
+  "smartNeedCurrent": "Set this node as the current route before checking",
+  "smartRecheck": "Check again",
+  "pickerName": "Name",
+  "pickerLatency": "Latency",
+  "pickerSmart": "Smart",
+  "pickerNoDelay": "No latency yet - sorting by name until a node is tested",
+  "pickerProbing": "Probing latency…"
 }

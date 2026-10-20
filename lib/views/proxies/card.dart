@@ -224,10 +224,10 @@ class ProxyCard extends StatelessWidget {
             if (targetToSelect != null) {
               final isMainOrGlobal =
                   g.name == 'GLOBAL' ||
-                  g.name.contains('节点选择') ||
+                  g.name.contains(appLocalizations.cardNodeSelect) ||
                   g.name.contains('Proxy') ||
                   g.name.contains('PROXY') ||
-                  g.name.contains('选择') ||
+                  g.name.contains(appLocalizations.cardSelect) ||
                   g.name ==
                       groups
                           .firstWhereOrNull((grp) => grp.name != 'GLOBAL')
@@ -273,10 +273,10 @@ class ProxyCard extends StatelessWidget {
           if (g.all.any((p) => p.name == dedicatedGroupName)) {
             final isMainOrGlobal =
                 g.name == 'GLOBAL' ||
-                g.name.contains('节点选择') ||
+                g.name.contains(appLocalizations.cardNodeSelect) ||
                 g.name.contains('Proxy') ||
                 g.name.contains('PROXY') ||
-                g.name.contains('选择');
+                g.name.contains(appLocalizations.cardSelect);
             if (isMainOrGlobal) {
               batchMap[g.name] = dedicatedGroupName;
             }
@@ -381,8 +381,8 @@ class _ProxyDesc extends ConsumerWidget {
             ? landing.dialerProxy!
             : (chainConfig.defaultDialerProxy.isNotEmpty
                   ? chainConfig.defaultDialerProxy
-                  : '跟随主选择');
-        return _ProxyMetaTag('🔗 跳板: $hop');
+                  : appLocalizations.cardFollowMain);
+        return _ProxyMetaTag(appLocalizations.cardHopValue(hop));
       }
     }
 

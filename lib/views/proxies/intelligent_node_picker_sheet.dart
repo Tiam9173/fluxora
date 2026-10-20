@@ -138,22 +138,22 @@ class _IntelligentNodePickerSheetState
         children: [
           // Sort Options
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: SegmentedButton<String>(
-              segments: const [
+              segments: [
                 ButtonSegment(
                   value: 'adaptive',
-                  label: Text('智能'),
+                  label: Text(appLocalizations.pickerSmart),
                   icon: Icon(Icons.auto_awesome),
                 ),
                 ButtonSegment(
                   value: 'latency',
-                  label: Text('延迟'),
+                  label: Text(appLocalizations.pickerLatency),
                   icon: Icon(Icons.speed),
                 ),
                 ButtonSegment(
                   value: 'name',
-                  label: Text('名称'),
+                  label: Text(appLocalizations.pickerName),
                   icon: Icon(Icons.sort_by_alpha),
                 ),
               ],
@@ -181,8 +181,8 @@ class _IntelligentNodePickerSheetState
                   Expanded(
                     child: Text(
                       chainProxyManager.isProbingChain
-                          ? '正在探测节点延迟…'
-                          : '暂无延迟数据：尚未测得任何节点延迟，当前按名称排序',
+                          ? appLocalizations.pickerProbing
+                          : appLocalizations.pickerNoDelay,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),

@@ -10639,6 +10639,146 @@ class AppLocalizations {
       args: [],
     );
   }
+
+  /// `Choose a node`
+  String get cardNodeSelect {
+    return Intl.message(
+      'Choose a node',
+      name: 'cardNodeSelect',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Follow main selector`
+  String get cardFollowMain {
+    return Intl.message(
+      'Follow main selector',
+      name: 'cardFollowMain',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Select`
+  String get cardSelect {
+    return Intl.message('Select', name: 'cardSelect', desc: '', args: []);
+  }
+
+  /// `🔗 Dialer: {hop}`
+  String cardHopValue(String hop) {
+    return Intl.message(
+      '🔗 Dialer: $hop',
+      name: 'cardHopValue',
+      desc: '',
+      args: [hop],
+    );
+  }
+
+  /// `Checking…`
+  String get smartChecking {
+    return Intl.message('Checking…', name: 'smartChecking', desc: '', args: []);
+  }
+
+  /// `Check failed: {error}`
+  String smartCheckFailed(String error) {
+    return Intl.message(
+      'Check failed: $error',
+      name: 'smartCheckFailed',
+      desc: '',
+      args: [error],
+    );
+  }
+
+  /// `No data`
+  String get smartNoData {
+    return Intl.message('No data', name: 'smartNoData', desc: '', args: []);
+  }
+
+  /// `No score`
+  String get smartNoScore {
+    return Intl.message('No score', name: 'smartNoScore', desc: '', args: []);
+  }
+
+  /// `Possibly unavailable`
+  String get smartSuspect {
+    return Intl.message(
+      'Possibly unavailable',
+      name: 'smartSuspect',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Check now`
+  String get smartCheckNow {
+    return Intl.message('Check now', name: 'smartCheckNow', desc: '', args: []);
+  }
+
+  /// `Set as current route, then check`
+  String get smartSetAsCurrent {
+    return Intl.message(
+      'Set as current route, then check',
+      name: 'smartSetAsCurrent',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Set this node as the current route before checking`
+  String get smartNeedCurrent {
+    return Intl.message(
+      'Set this node as the current route before checking',
+      name: 'smartNeedCurrent',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Check again`
+  String get smartRecheck {
+    return Intl.message(
+      'Check again',
+      name: 'smartRecheck',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Name`
+  String get pickerName {
+    return Intl.message('Name', name: 'pickerName', desc: '', args: []);
+  }
+
+  /// `Latency`
+  String get pickerLatency {
+    return Intl.message('Latency', name: 'pickerLatency', desc: '', args: []);
+  }
+
+  /// `Smart`
+  String get pickerSmart {
+    return Intl.message('Smart', name: 'pickerSmart', desc: '', args: []);
+  }
+
+  /// `No latency yet - sorting by name until a node is tested`
+  String get pickerNoDelay {
+    return Intl.message(
+      'No latency yet - sorting by name until a node is tested',
+      name: 'pickerNoDelay',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Probing latency…`
+  String get pickerProbing {
+    return Intl.message(
+      'Probing latency…',
+      name: 'pickerProbing',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {

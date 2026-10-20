@@ -28,101 +28,105 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m3(count) => "Успешно импортировано узлов: ${count}";
 
-  static String m4(name) => "Диалер: ${name}";
+  static String m4(hop) => "🔗 Диалер: ${hop}";
 
-  static String m5(index) => "Релей ${index}";
+  static String m5(name) => "Диалер: ${name}";
 
-  static String m6(server, port) => "Домашний IP ${server}:${port}";
+  static String m6(index) => "Релей ${index}";
 
-  static String m7(count) => "Удалено недействительных узлов: ${count}";
+  static String m7(server, port) => "Домашний IP ${server}:${port}";
 
-  static String m8(name) => "Вы уверены, что хотите удалить узел «${name}»?";
+  static String m8(count) => "Удалено недействительных узлов: ${count}";
 
-  static String m9(error) => "Не удалось создать группу: ${error}";
+  static String m9(name) => "Вы уверены, что хотите удалить узел «${name}»?";
 
-  static String m10(name) => "Пустая группа «${name}» создана, добавьте узлы";
+  static String m10(error) => "Не удалось создать группу: ${error}";
 
-  static String m11(count) =>
+  static String m11(name) => "Пустая группа «${name}» создана, добавьте узлы";
+
+  static String m12(count) =>
       "${Intl.plural(count, one: 'день', few: 'дня', many: 'дней', other: 'дней')}";
 
-  static String m12(label) => "Удалить выбранные ${label}?";
+  static String m13(label) => "Удалить выбранные ${label}?";
 
-  static String m13(label) => "Удалить текущий ${label}?";
+  static String m14(label) => "Удалить текущий ${label}?";
 
-  static String m14(label) => "${label} не может быть пустым";
+  static String m15(label) => "${label} не может быть пустым";
 
-  static String m15(label) => "${label} уже существует";
+  static String m16(label) => "${label} уже существует";
 
-  static String m16(reason) => "Аварийное переключение не удалось: ${reason}";
+  static String m17(reason) => "Аварийное переключение не удалось: ${reason}";
 
-  static String m17(node) =>
+  static String m18(node) =>
       "Аварийное переключение выполнено, перешли на [${node}]";
 
-  static String m18(count) =>
+  static String m19(count) =>
       "${Intl.plural(count, one: 'час', few: 'часа', many: 'часов', other: 'часов')}";
 
-  static String m19(count) => "Импортировано узлов прокси выхода: ${count}";
+  static String m20(count) => "Импортировано узлов прокси выхода: ${count}";
 
-  static String m20(count) => "${count}";
-
-  static String m21(count) =>
-      "${Intl.plural(count, one: 'минуту', few: 'минуты', many: 'минут', other: 'минут')}";
+  static String m21(count) => "${count}";
 
   static String m22(count) =>
+      "${Intl.plural(count, one: 'минуту', few: 'минуты', many: 'минут', other: 'минут')}";
+
+  static String m23(count) =>
       "${Intl.plural(count, one: 'месяц', few: 'месяца', many: 'месяцев', other: 'месяцев')}";
 
-  static String m23(name) => "Узел добавлен: ${name}";
+  static String m24(name) => "Узел добавлен: ${name}";
 
-  static String m24(name) => "Узел удалён: ${name}";
+  static String m25(name) => "Узел удалён: ${name}";
 
-  static String m25(name) => "Изменить ${name}";
+  static String m26(name) => "Изменить ${name}";
 
-  static String m26(name) => "Управление узлами · ${name}";
+  static String m27(name) => "Управление узлами · ${name}";
 
-  static String m27(proto) => "напр. Гонконг 01 - ${proto}";
+  static String m28(proto) => "напр. Гонконг 01 - ${proto}";
 
-  static String m28(label) => "${label} отсутствует";
+  static String m29(label) => "${label} отсутствует";
 
-  static String m29(label) => "${label} должен быть числом";
+  static String m30(label) => "${label} должен быть числом";
 
-  static String m30(from, to) =>
+  static String m31(from, to) =>
       "Порт ${from} занят; в этом сеансе используется ${to}";
 
-  static String m31(label) =>
+  static String m32(label) =>
       "${label} должен быть от 1024 до 49151, 0 для отключения";
 
-  static String m32(name) => "Предпрокси и прокси-выход · ${name}";
+  static String m33(name) => "Предпрокси и прокси-выход · ${name}";
 
-  static String m33(statusCode) =>
+  static String m34(statusCode) =>
       "Не удалось импортировать профиль. Проверьте состояние сети или попробуйте сбросить ссылку подписки ( код ошибки HTTP: ${statusCode} )";
 
-  static String m34(count) => "Выбрано: ${count}";
+  static String m35(count) => "Выбрано: ${count}";
 
-  static String m35(name) => "Используется: ${name}";
+  static String m36(error) => "Проверка не удалась: ${error}";
 
-  static String m36(label) => "${label} должен быть URL";
+  static String m37(name) => "Используется: ${name}";
 
-  static String m37(label) => "Скопировано: ${label}";
+  static String m38(label) => "${label} должен быть URL";
 
-  static String m38(colo, ip) =>
+  static String m39(label) => "Скопировано: ${label}";
+
+  static String m40(colo, ip) =>
       "🎉 Диагностика пройдена. WARP работает (узел: ${colo}, выход: ${ip})";
 
-  static String m39(name) => "Диалер: ${name}";
+  static String m41(name) => "Диалер: ${name}";
 
-  static String m40(code) => "Пограничный узел ${code}";
+  static String m42(code) => "Пограничный узел ${code}";
 
-  static String m41(ip) => "Используется самый быстрый узел: ${ip}";
+  static String m43(ip) => "Используется самый быстрый узел: ${ip}";
 
-  static String m42(ip) => "Используется ${ip}";
+  static String m44(ip) => "Используется ${ip}";
 
-  static String m43(ip) =>
+  static String m45(ip) =>
       "Примечание: подключено к выходу ${ip}, но подпись WARP не найдена — проверьте диалер";
 
-  static String m44(loc) => "Регион: ${loc}";
+  static String m46(loc) => "Регион: ${loc}";
 
-  static String m45(label) => "Переключено на ${label}";
+  static String m47(label) => "Переключено на ${label}";
 
-  static String m46(count) =>
+  static String m48(count) =>
       "${Intl.plural(count, one: 'год', few: 'года', many: 'лет', other: 'лет')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
@@ -356,6 +360,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "Показать системные приложения",
     ),
     "cancelSelectAll": MessageLookupByLibrary.simpleMessage("Отменить выбор"),
+    "cardFollowMain": MessageLookupByLibrary.simpleMessage(
+      "Следовать основному выбору",
+    ),
+    "cardHopValue": m4,
+    "cardNodeSelect": MessageLookupByLibrary.simpleMessage("Выбор узла"),
+    "cardSelect": MessageLookupByLibrary.simpleMessage("Выбрать"),
     "categoryAi": MessageLookupByLibrary.simpleMessage("AI"),
     "categoryAll": MessageLookupByLibrary.simpleMessage("Все"),
     "categoryChina": MessageLookupByLibrary.simpleMessage("Китай (прямой)"),
@@ -389,7 +399,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainDiagnosticTitle": MessageLookupByLibrary.simpleMessage(
       "Диагностика цепочки",
     ),
-    "chainDialerValue": m4,
+    "chainDialerValue": m5,
     "chainDisabled": MessageLookupByLibrary.simpleMessage("Выключено"),
     "chainEdit": MessageLookupByLibrary.simpleMessage("Изменить"),
     "chainEditLanding": MessageLookupByLibrary.simpleMessage(
@@ -502,12 +512,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "Настройте входной переход и статический резидентный IP-выход",
     ),
     "chainReady": MessageLookupByLibrary.simpleMessage("Готово"),
-    "chainRelayIndex": m5,
+    "chainRelayIndex": m6,
     "chainResetFilter": MessageLookupByLibrary.simpleMessage("Сбросить фильтр"),
     "chainResidentialExample": MessageLookupByLibrary.simpleMessage(
       "напр. домашний IP США 01",
     ),
-    "chainResidentialIp": m6,
+    "chainResidentialIp": m7,
     "chainShareLabel": MessageLookupByLibrary.simpleMessage("Поделиться"),
     "chainSpeedTest": MessageLookupByLibrary.simpleMessage("Тест"),
     "chainStunBlocked": MessageLookupByLibrary.simpleMessage(
@@ -571,7 +581,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "clearInvalidProxies": MessageLookupByLibrary.simpleMessage(
       "Удалить недоступные узлы",
     ),
-    "clearedInvalidCount": m7,
+    "clearedInvalidCount": m8,
     "clipboard": MessageLookupByLibrary.simpleMessage("Буфер обмена"),
     "clipboardDesc": MessageLookupByLibrary.simpleMessage(
       "Автоматически получать ссылки из буфера обмена",
@@ -600,7 +610,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "confirmDelete": MessageLookupByLibrary.simpleMessage(
       "Подтвердите удаление",
     ),
-    "confirmDeleteNodeMsg": m8,
+    "confirmDeleteNodeMsg": m9,
     "confirmImport": MessageLookupByLibrary.simpleMessage("Подтвердить импорт"),
     "confirmPassword": MessageLookupByLibrary.simpleMessage(
       "Подтвердите пароль",
@@ -652,8 +662,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "createEmptyGroupHint": MessageLookupByLibrary.simpleMessage(
       "После создания пустой группы вы можете вручную добавить узлы для каждого протокола или массово импортировать ссылки в один клик.",
     ),
-    "createGroupFailed": m9,
-    "createGroupSuccess": m10,
+    "createGroupFailed": m10,
+    "createGroupSuccess": m11,
     "creationTime": MessageLookupByLibrary.simpleMessage("Время создания"),
     "custom": MessageLookupByLibrary.simpleMessage("Пользовательский"),
     "customConfigHintText": MessageLookupByLibrary.simpleMessage(
@@ -686,7 +696,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Вручную переключить на тёмную иконку приложения",
     ),
     "dashboard": MessageLookupByLibrary.simpleMessage("Главная"),
-    "days": m11,
+    "days": m12,
     "dedicatedGroup": MessageLookupByLibrary.simpleMessage(
       "Создать отдельную группу цепочки прокси",
     ),
@@ -715,9 +725,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "delaySort": MessageLookupByLibrary.simpleMessage("По задержке"),
     "delete": MessageLookupByLibrary.simpleMessage("Удалить"),
-    "deleteMultipTip": m12,
+    "deleteMultipTip": m13,
     "deleteNode": MessageLookupByLibrary.simpleMessage("Удалить узел"),
-    "deleteTip": m13,
+    "deleteTip": m14,
     "deleteTunnel": MessageLookupByLibrary.simpleMessage(
       "Удалить перенаправление",
     ),
@@ -802,7 +812,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "emptyLandingTip": MessageLookupByLibrary.simpleMessage(
       "Резидентных узлов выхода пока нет. Вставьте распространённые форматы основных провайдеров резидентных IP (IPRoyal, LunaProxy, Oxylabs и другие) для импорта в один клик.",
     ),
-    "emptyTip": m14,
+    "emptyTip": m15,
     "enableChainProxy": MessageLookupByLibrary.simpleMessage(
       "Включить цепочку прокси",
     ),
@@ -853,7 +863,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "excludeDesc": MessageLookupByLibrary.simpleMessage(
       "Скрыть приложение из недавних задач",
     ),
-    "existsTip": m15,
+    "existsTip": m16,
     "exit": MessageLookupByLibrary.simpleMessage("Выход"),
     "expand": MessageLookupByLibrary.simpleMessage("Максимальная"),
     "experimental": MessageLookupByLibrary.simpleMessage("Экспериментальное"),
@@ -883,7 +893,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "failoverEnableFirst": MessageLookupByLibrary.simpleMessage(
       "Сначала включите цепочку прокси",
     ),
-    "failoverFailed": m16,
+    "failoverFailed": m17,
     "failoverInProgress": MessageLookupByLibrary.simpleMessage(
       "Выполняется аварийное переключение...",
     ),
@@ -896,7 +906,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "failoverNoCandidatesAdvice": MessageLookupByLibrary.simpleMessage(
       "Добавьте резервного кандидата хотя бы для одной роли выше и повторите попытку",
     ),
-    "failoverSuccess": m17,
+    "failoverSuccess": m18,
     "failoverTrigger": MessageLookupByLibrary.simpleMessage(
       "Переключить сейчас",
     ),
@@ -1076,7 +1086,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "hotkeyManagementDesc": MessageLookupByLibrary.simpleMessage(
       "Управление приложением с клавиатуры",
     ),
-    "hours": m18,
+    "hours": m19,
     "httpPortSniffer": MessageLookupByLibrary.simpleMessage(
       "HTTP порты сниффера",
     ),
@@ -1097,7 +1107,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "importShareLinks": MessageLookupByLibrary.simpleMessage(
       "Импортировать ссылки",
     ),
-    "importSuccessCount": m19,
+    "importSuccessCount": m20,
     "importUrl": MessageLookupByLibrary.simpleMessage("Импорт по URL"),
     "infiniteTime": MessageLookupByLibrary.simpleMessage("Бессрочно"),
     "inheritDefaultDialer": MessageLookupByLibrary.simpleMessage(
@@ -1181,7 +1191,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Разрешить входящие IPv6",
     ),
     "isp": MessageLookupByLibrary.simpleMessage("Провайдер"),
-    "itemsCount": m20,
+    "itemsCount": m21,
     "jcLabel": MessageLookupByLibrary.simpleMessage(
       "Jc (число мусорных пакетов)",
     ),
@@ -1302,11 +1312,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "minimizeOnExitDesc": MessageLookupByLibrary.simpleMessage(
       "Изменить поведение при выходе",
     ),
-    "minutes": m21,
+    "minutes": m22,
     "mixedPort": MessageLookupByLibrary.simpleMessage("Смешанный порт"),
     "mode": MessageLookupByLibrary.simpleMessage("Режим"),
     "monochromeScheme": MessageLookupByLibrary.simpleMessage("Монохром"),
-    "months": m22,
+    "months": m23,
     "more": MessageLookupByLibrary.simpleMessage("Подробности"),
     "moreIpInfo": MessageLookupByLibrary.simpleMessage(
       "Подробная информация об IP",
@@ -1391,8 +1401,8 @@ class MessageLookup extends MessageLookupByLibrary {
       "Статус недоступен",
     ),
     "noUsageData": MessageLookupByLibrary.simpleMessage("Нет статистики"),
-    "nodeAdded": m23,
-    "nodeDeleted": m24,
+    "nodeAdded": m24,
+    "nodeDeleted": m25,
     "nodeDetailCancel": MessageLookupByLibrary.simpleMessage("Отмена"),
     "nodeDetailClose": MessageLookupByLibrary.simpleMessage("Закрыть"),
     "nodeDetailCopied": MessageLookupByLibrary.simpleMessage("Скопировано"),
@@ -1400,7 +1410,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Копировать конфиг",
     ),
     "nodeDetailEdit": MessageLookupByLibrary.simpleMessage("Изменить"),
-    "nodeDetailEditTitle": m25,
+    "nodeDetailEditTitle": m26,
     "nodeDetailMissing": MessageLookupByLibrary.simpleMessage(
       "Исходный конфиг узла не найден — возможно, он из группы или заменён обновлением",
     ),
@@ -1422,9 +1432,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "nodeExclusionPlaceholder": MessageLookupByLibrary.simpleMessage(
       "HK|Гонконг|🇭🇰",
     ),
-    "nodeManagement": m26,
+    "nodeManagement": m27,
     "nodeName": MessageLookupByLibrary.simpleMessage("Имя узла"),
-    "nodeNameHint": m27,
+    "nodeNameHint": m28,
     "nodeNameLabel": MessageLookupByLibrary.simpleMessage("Имя узла"),
     "nodeProtocol": MessageLookupByLibrary.simpleMessage("Протокол узла"),
     "none": MessageLookupByLibrary.simpleMessage("Нет"),
@@ -1456,8 +1466,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "nullProfileDesc": MessageLookupByLibrary.simpleMessage(
       "Нет профиля, добавьте его",
     ),
-    "nullTip": m28,
-    "numberTip": m29,
+    "nullTip": m29,
+    "numberTip": m30,
     "obfsModeLabel": MessageLookupByLibrary.simpleMessage("Режим обфускации"),
     "obfsNoneOff": MessageLookupByLibrary.simpleMessage("Нет (выкл.)"),
     "officialCommunity": MessageLookupByLibrary.simpleMessage(
@@ -1558,6 +1568,13 @@ class MessageLookup extends MessageLookupByLibrary {
       "Вставить из буфера обмена",
     ),
     "peerPublicKey": MessageLookupByLibrary.simpleMessage("Открытый ключ пира"),
+    "pickerLatency": MessageLookupByLibrary.simpleMessage("Задержка"),
+    "pickerName": MessageLookupByLibrary.simpleMessage("Имя"),
+    "pickerNoDelay": MessageLookupByLibrary.simpleMessage(
+      "Задержек нет — до первого замера сортировка по имени",
+    ),
+    "pickerProbing": MessageLookupByLibrary.simpleMessage("Замер задержки…"),
+    "pickerSmart": MessageLookupByLibrary.simpleMessage("Умный"),
     "pin": MessageLookupByLibrary.simpleMessage("Закрепить"),
     "pleaseBindWebDAV": MessageLookupByLibrary.simpleMessage(
       "Привяжите WebDAV",
@@ -1588,9 +1605,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "portFallbackDesc": MessageLookupByLibrary.simpleMessage(
       "Использовать другой порт, если заданный уже занят",
     ),
-    "portFallbackNotice": m30,
+    "portFallbackNotice": m31,
     "portLabel": MessageLookupByLibrary.simpleMessage("Порт"),
-    "portTip": m31,
+    "portTip": m32,
     "powerSwitch": MessageLookupByLibrary.simpleMessage("Запуск"),
     "preProxyOptionCustom": MessageLookupByLibrary.simpleMessage(
       "✏️ Ввести имя узла предпрокси вручную...",
@@ -1635,7 +1652,7 @@ class MessageLookup extends MessageLookupByLibrary {
         ),
     "profileAutoUpdateIntervalNullValidationDesc":
         MessageLookupByLibrary.simpleMessage("Введите интервал автообновления"),
-    "profileChainDialogTitle": m32,
+    "profileChainDialogTitle": m33,
     "profileChainProxies": MessageLookupByLibrary.simpleMessage(
       "Прокси входа и выхода",
     ),
@@ -1648,7 +1665,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "profileHasUpdate": MessageLookupByLibrary.simpleMessage(
       "Конфигурация изменена. Отключить автообновление?",
     ),
-    "profileImportFailed": m33,
+    "profileImportFailed": m34,
     "profileManageNodes": MessageLookupByLibrary.simpleMessage(
       "Узлы: управление и добавление",
     ),
@@ -1858,7 +1875,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Выберите версию резервной копии",
     ),
     "selected": MessageLookupByLibrary.simpleMessage("Выбрано"),
-    "selectedCountTitle": m34,
+    "selectedCountTitle": m35,
     "serverAddress": MessageLookupByLibrary.simpleMessage("Адрес сервера"),
     "serverAddressHint": MessageLookupByLibrary.simpleMessage("IP или домен"),
     "serverAddressLabel": MessageLookupByLibrary.simpleMessage("Адрес сервера"),
@@ -1910,9 +1927,24 @@ class MessageLookup extends MessageLookupByLibrary {
     "smartAutoStopServiceRunning": MessageLookupByLibrary.simpleMessage(
       "Служба умной остановки работает",
     ),
+    "smartCheckFailed": m36,
+    "smartCheckNow": MessageLookupByLibrary.simpleMessage("Проверить"),
+    "smartChecking": MessageLookupByLibrary.simpleMessage("Проверка…"),
     "smartDelayLaunch": MessageLookupByLibrary.simpleMessage("Умная задержка"),
     "smartDelayLaunchDesc": MessageLookupByLibrary.simpleMessage(
       "Запуск после успешного подключения к сети",
+    ),
+    "smartNeedCurrent": MessageLookupByLibrary.simpleMessage(
+      "Сначала сделайте узел текущим маршрутом",
+    ),
+    "smartNoData": MessageLookupByLibrary.simpleMessage("Нет данных"),
+    "smartNoScore": MessageLookupByLibrary.simpleMessage("Нет оценки"),
+    "smartRecheck": MessageLookupByLibrary.simpleMessage("Проверить снова"),
+    "smartSetAsCurrent": MessageLookupByLibrary.simpleMessage(
+      "Сначала сделать текущим, затем проверить",
+    ),
+    "smartSuspect": MessageLookupByLibrary.simpleMessage(
+      "Возможно, недоступен",
     ),
     "snellVersion": MessageLookupByLibrary.simpleMessage("Версия Snell (1-4)"),
     "sniHint": MessageLookupByLibrary.simpleMessage(
@@ -1958,7 +1990,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "statusDesc": MessageLookupByLibrary.simpleMessage(
       "Использовать системный DNS при выключении",
     ),
-    "stillUsingProfile": m35,
+    "stillUsingProfile": m37,
     "stop": MessageLookupByLibrary.simpleMessage("Остановка"),
     "stopVpn": MessageLookupByLibrary.simpleMessage("Остановка VPN"),
     "storeFix": MessageLookupByLibrary.simpleMessage("Исправление Google Play"),
@@ -2204,7 +2236,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "upload": MessageLookupByLibrary.simpleMessage("Отправка"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage("Получить профиль по URL"),
-    "urlTip": m36,
+    "urlTip": m38,
     "useGlobalScriptOverride": MessageLookupByLibrary.simpleMessage(
       "Глобальное переопределение",
     ),
@@ -2245,12 +2277,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "wakelockDescription": MessageLookupByLibrary.simpleMessage(
       "Эта функция не требует специальных разрешений, так как использует только блокировку пробуждения экрана, а не CPU. Приложение остаётся активным в фоне, экран не гаснет автоматически, что полезно в некоторых сценариях.",
     ),
-    "warpCopied": m37,
-    "warpDiagOk": m38,
-    "warpDialerSet": m39,
-    "warpEdgeNode": m40,
-    "warpFastestChosen": m41,
-    "warpIpChosen": m42,
+    "warpCopied": m39,
+    "warpDiagOk": m40,
+    "warpDialerSet": m41,
+    "warpEdgeNode": m42,
+    "warpFastestChosen": m43,
+    "warpIpChosen": m44,
     "warpModeAll": MessageLookupByLibrary.simpleMessage(
       "Весь трафик через WARP",
     ),
@@ -2272,8 +2304,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpModeTitle": MessageLookupByLibrary.simpleMessage(
       "Режим маршрутизации",
     ),
-    "warpNoSignature": m43,
-    "warpRegion": m44,
+    "warpNoSignature": m45,
+    "warpRegion": m46,
     "warpRouteProxyOverWarp": MessageLookupByLibrary.simpleMessage(
       "Прокси через WARP",
     ),
@@ -2526,7 +2558,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "warpStr98": MessageLookupByLibrary.simpleMessage("Выберите WARP-диалер"),
     "warpStr99": MessageLookupByLibrary.simpleMessage("Выберите MTU WireGuard"),
-    "warpSwitchedTo": m45,
+    "warpSwitchedTo": m47,
     "warpUnknownColo": MessageLookupByLibrary.simpleMessage("Неизвестный узел"),
     "wave": MessageLookupByLibrary.simpleMessage("Волна"),
     "webDAVConfiguration": MessageLookupByLibrary.simpleMessage(
@@ -2543,6 +2575,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "wrongBackupPassword": MessageLookupByLibrary.simpleMessage(
       "Неверный пароль или резервная копия изменена",
     ),
-    "years": m46,
+    "years": m48,
   };
 }
