@@ -426,9 +426,13 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
           ),
           const SizedBox(height: 12),
 
-          // 1b. Manual failover card (P1.1-F)
-          _buildFailoverCard(context, config),
-          const SizedBox(height: 12),
+          // 1b. 故障转移卡片：功能尚未完成验证，先从界面隐藏。
+          // 逻辑（`_buildFailoverCard` / ChainFailoverService）保持完整，改
+          // 这里的开关就能恢复。
+          if (_showFailoverCard) ...[
+            _buildFailoverCard(context, config),
+            const SizedBox(height: 12),
+          ],
 
           // 2. Default Hop & Integration settings
           CommonCard(
@@ -715,6 +719,9 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
       ),
     );
   }
+
+  /// 故障转移入口暂时隐藏（功能未验证完成）。改 true 即恢复显示。
+  static const bool _showFailoverCard = false;
 
   /// P1.1-F — manual failover entry point.
   ///
