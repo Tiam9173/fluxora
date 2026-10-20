@@ -40,7 +40,7 @@
             android:exported="false"
             android:excludeFromRecents="true"
             android:launchMode="singleTop"
-            android:theme="@style/CardTheme"
+            android:theme="@style/TranslucentTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode|colorMode"
             android:windowSoftInputMode="adjustResize">
             <meta-data

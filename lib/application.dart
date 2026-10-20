@@ -307,11 +307,9 @@ class ApplicationState extends ConsumerState<Application>
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onTap: _closeCardOnlyMode,
-                      // 一层很淡的压暗：App 内的卡片是弹在遮罩上的，没有这层
-                      // 会显得卡片"浮在壁纸上"，和 App 内的观感差很多。
-                      child: ColoredBox(
-                        color: Colors.black.withValues(alpha: 0.28),
-                        child: Center(
+                      // 不再铺满屏压暗：全屏不透明的一层会把整个窗口染成
+                      // 一片色块，反而盖掉了"卡片外能看到下层界面"这件事。
+                      child: Center(
                           child: Padding(
                             // 和 App 内弹窗一样贴边：多加的内边距会让卡片比
                             // App 内窄一圈，看起来"周围都是空白"。
@@ -331,7 +329,6 @@ class ApplicationState extends ConsumerState<Application>
                           ),
                         ),
                       ),
-                    ),
                   );
                 }
                 return Directionality(
