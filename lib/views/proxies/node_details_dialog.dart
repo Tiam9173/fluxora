@@ -32,11 +32,12 @@ Future<void> showNodeDetailsDialog(
     commonPrint.log('showNodeDetailsDialog: $e');
   }
 
+  // 先读覆盖层，再做 mounted 检查：中间不再有 await，context 不会跨异步间隙。
+  await NodeOverrideStore.instance.ensureLoaded();
   if (!context.mounted) return;
 
   // 覆盖状态在打开时取一次：这个面板显示的是**叠加之后**的配置，不看一眼
   // 覆盖层，用户没法知道自己看到的是订阅原样还是自己改过的。
-  await NodeOverrideStore.instance.ensureLoaded();
   final hasOverride = profileId != null &&
       NodeOverrideStore.instance.hasOverride(profileId, proxyName);
   final overriddenFields = profileId == null
