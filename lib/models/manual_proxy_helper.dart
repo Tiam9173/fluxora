@@ -131,6 +131,19 @@ class ManualProxyHelper {
     final raw = link.trim();
     if (raw.isEmpty) return null;
 
+    // 内核（mihomo）没有这些协议，导入进来只会生成一个加载失败的配置。
+    // 与其让它静默失败，不如在这里就拒掉。
+    const unsupported = [
+      'trojan-go://',
+      'awg://',
+      'amnezia://',
+      'amneziawg://',
+      'juicity://',
+      'naive+https://',
+      'naive://',
+    ];
+    if (unsupported.any(raw.startsWith)) return null;
+
     try {
       if (raw.startsWith('vmess://')) {
         return _parseVMess(raw);

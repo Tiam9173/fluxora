@@ -96,8 +96,10 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
                 children: [
                   Text(
                     '${appLocalizations.batchImportSupportHint}\n'
-                    'vmess://, vless://, ss://, ssr://, trojan://, trojan-go://, hy2://, hysteria://, tuic://, '
-                    'wireguard://, awg://, snell://, ssh://, shadow-tls://, juicity://, naive://, socks5://, http://, direct://',
+                    // 只列内核真正支持的协议：trojan-go / awg / juicity / naive
+                    // 是 sing-box 的东西，导入进来也加载不了。
+                    'vmess://, vless://, ss://, ssr://, trojan://, hy2://, hysteria://, tuic://, '
+                    'wireguard://, snell://, ssh://, shadow-tls://, socks5://, http://, direct://',
                     style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                   const SizedBox(height: 12),
