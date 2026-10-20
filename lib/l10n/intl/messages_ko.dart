@@ -88,7 +88,24 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m32(label) => "${label} 항목은 올바른 URL이어야 합니다";
 
-  static String m33(count) => "${Intl.plural(count, other: '#년')}";
+  static String m33(label) => "${label}을(를) 복사했습니다";
+
+  static String m34(colo, ip) =>
+      "🎉 진단 성공! WARP가 적용되었습니다 (거점: ${colo}, 출구: ${ip})";
+
+  static String m35(name) => "다이얼러를 ${name}(으)로 설정했습니다";
+
+  static String m36(ip) => "가장 빠른 노드 ${ip}을(를) 사용합니다";
+
+  static String m37(ip) => "${ip}을(를) 사용합니다";
+
+  static String m38(ip) => "참고: 출구 ${ip}에 연결되었지만 WARP 서명이 없습니다. 다이얼러 설정을 확인하세요";
+
+  static String m39(loc) => "지역: ${loc}";
+
+  static String m40(label) => "${label}(으)로 전환했습니다";
+
+  static String m41(count) => "${Intl.plural(count, other: '#년')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -1600,6 +1617,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "wakelockDescription": MessageLookupByLibrary.simpleMessage(
       "화면 자동 꺼짐을 방지하는 스크린 웨이크록을 활성화합니다. 백그라운드 작업을 유지할 때 유용합니다.",
     ),
+    "warpCopied": m33,
+    "warpDiagOk": m34,
+    "warpDialerSet": m35,
+    "warpFastestChosen": m36,
+    "warpIpChosen": m37,
+    "warpNoSignature": m38,
+    "warpRegion": m39,
     "warpStr0": MessageLookupByLibrary.simpleMessage("0 (기본 2408)"),
     "warpStr1": MessageLookupByLibrary.simpleMessage("1280 (권장, UDP 최적)"),
     "warpStr10": MessageLookupByLibrary.simpleMessage("MTU를 1420으로 설정 (표준)"),
@@ -1766,6 +1790,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpStr97": MessageLookupByLibrary.simpleMessage("연결 미완료 또는 확인 시간 초과"),
     "warpStr98": MessageLookupByLibrary.simpleMessage("WARP 다이얼러 선택"),
     "warpStr99": MessageLookupByLibrary.simpleMessage("WireGuard MTU 선택"),
+    "warpSwitchedTo": m40,
     "wave": MessageLookupByLibrary.simpleMessage("웨이브"),
     "webDAVConfiguration": MessageLookupByLibrary.simpleMessage("WebDAV 설정"),
     "whitelist": MessageLookupByLibrary.simpleMessage("화이트리스트"),
@@ -1775,6 +1800,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "wrongBackupPassword": MessageLookupByLibrary.simpleMessage(
       "비밀번호가 틀리거나 백업이 변조되었습니다",
     ),
-    "years": m33,
+    "years": m41,
   };
 }

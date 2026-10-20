@@ -1152,5 +1152,13 @@
   "warpStr108": "💡 모드별 사용 상황",
   "warpStr109": "🛡️ 네이티브 검색 (최상)",
   "warpStr110": "🟢 공식 무료 기기",
-  "warpStr111": "🟢 제한 없음"
+  "warpStr111": "🟢 제한 없음",
+  "warpSwitchedTo": "{label}(으)로 전환했습니다",
+  "warpCopied": "{label}을(를) 복사했습니다",
+  "warpIpChosen": "{ip}을(를) 사용합니다",
+  "warpFastestChosen": "가장 빠른 노드 {ip}을(를) 사용합니다",
+  "warpRegion": "지역: {loc}",
+  "warpDiagOk": "🎉 진단 성공! WARP가 적용되었습니다 (거점: {colo}, 출구: {ip})",
+  "warpNoSignature": "참고: 출구 {ip}에 연결되었지만 WARP 서명이 없습니다. 다이얼러 설정을 확인하세요",
+  "warpDialerSet": "다이얼러를 {name}(으)로 설정했습니다"
 }

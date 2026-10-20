@@ -87,7 +87,24 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m32(label) => "${label} は有効なURLである必要があります";
 
-  static String m33(count) => "${Intl.plural(count, other: '年')}";
+  static String m33(label) => "${label} をコピーしました";
+
+  static String m34(colo, ip) => "🎉 診断成功！WARP は有効です (拠点: ${colo}, 出口: ${ip})";
+
+  static String m35(name) => "ダイヤラーを ${name} に設定しました";
+
+  static String m36(ip) => "最速ノード ${ip} を使用します";
+
+  static String m37(ip) => "${ip} を使用します";
+
+  static String m38(ip) =>
+      "注意：出口 ${ip} に接続しましたが WARP 署名がありません。ダイヤラー設定を確認してください";
+
+  static String m39(loc) => "地域: ${loc}";
+
+  static String m40(label) => "${label} に切り替えました";
+
+  static String m41(count) => "${Intl.plural(count, other: '年')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -1593,6 +1610,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "wakelockDescription": MessageLookupByLibrary.simpleMessage(
       "画面の自動消灯を防ぐ画面ウェイクロックを有効にします（CPUウェイクは使用しません）。バックグラウンド処理を維持したい場合に便利です。",
     ),
+    "warpCopied": m33,
+    "warpDiagOk": m34,
+    "warpDialerSet": m35,
+    "warpFastestChosen": m36,
+    "warpIpChosen": m37,
+    "warpNoSignature": m38,
+    "warpRegion": m39,
     "warpStr0": MessageLookupByLibrary.simpleMessage("0（既定 2408）"),
     "warpStr1": MessageLookupByLibrary.simpleMessage("1280（推奨・UDP 最適）"),
     "warpStr10": MessageLookupByLibrary.simpleMessage("MTU を 1420 に設定（標準）"),
@@ -1753,6 +1777,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpStr97": MessageLookupByLibrary.simpleMessage("接続未完了または確認がタイムアウト"),
     "warpStr98": MessageLookupByLibrary.simpleMessage("WARP ダイヤラーを選択"),
     "warpStr99": MessageLookupByLibrary.simpleMessage("WireGuard MTU を選択"),
+    "warpSwitchedTo": m40,
     "wave": MessageLookupByLibrary.simpleMessage("ウェーブ"),
     "webDAVConfiguration": MessageLookupByLibrary.simpleMessage("WebDAV設定"),
     "whitelist": MessageLookupByLibrary.simpleMessage("ホワイトリスト"),
@@ -1762,6 +1787,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "wrongBackupPassword": MessageLookupByLibrary.simpleMessage(
       "パスワードが違うか、バックアップが改ざんされています",
     ),
-    "years": m33,
+    "years": m41,
   };
 }

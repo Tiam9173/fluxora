@@ -1152,5 +1152,13 @@
   "warpStr108": "💡 کاربرد هر حالت",
   "warpStr109": "🛡️ جستجوی بومی (عالی)",
   "warpStr110": "🟢 دستگاه رایگان رسمی",
-  "warpStr111": "🟢 بدون محدودیت"
+  "warpStr111": "🟢 بدون محدودیت",
+  "warpSwitchedTo": "به {label} تغییر یافت",
+  "warpCopied": "{label} کپی شد",
+  "warpIpChosen": "از {ip} استفاده می‌شود",
+  "warpFastestChosen": "از سریع‌ترین گره {ip} استفاده می‌شود",
+  "warpRegion": "منطقه: {loc}",
+  "warpDiagOk": "🎉 عیب‌یابی موفق بود. WARP فعال است (مرکز: {colo}, خروجی: {ip})",
+  "warpNoSignature": "توجه: به خروجی {ip} متصل شد اما امضای WARP یافت نشد — تنظیمات دیالر را بررسی کنید",
+  "warpDialerSet": "دیالر روی {name} تنظیم شد"
 }

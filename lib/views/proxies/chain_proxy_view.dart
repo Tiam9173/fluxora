@@ -487,12 +487,12 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                   ),
                 ListItem(
                   leading: const Icon(Icons.add_circle_outline),
-                  title: const Text('添加一跳'),
-                  subtitle: const Text('在最后一跳之后、落地出口之前插入'),
+                  title: const Text('添加中转服务器'),
+                  subtitle: const Text('在现有链路末端、落地出口之前插入一级中转'),
                   onTap: () {
                     showChainHopPicker(
                       context: context,
-                      title: '添加一跳',
+                      title: '添加中转服务器',
                       allowFollowMain: false,
                       excludeNames: frontHops.toSet(),
                       onSelect: (hop) => chainProxyManager.addFrontHop(hop),

@@ -313,7 +313,9 @@ class ApplicationState extends ConsumerState<Application>
                         color: Colors.black.withValues(alpha: 0.28),
                         child: Center(
                           child: Padding(
-                            padding: const EdgeInsets.all(20),
+                            // 和 App 内弹窗一样贴边：多加的内边距会让卡片比
+                            // App 内窄一圈，看起来"周围都是空白"。
+                            padding: const EdgeInsets.all(8),
                             child: GestureDetector(
                               onTap: () {},
                               child: Material(

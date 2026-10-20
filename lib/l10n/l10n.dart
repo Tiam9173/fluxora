@@ -9854,6 +9854,86 @@ class AppLocalizations {
       args: [],
     );
   }
+
+  /// `Switched to {label}`
+  String warpSwitchedTo(String label) {
+    return Intl.message(
+      'Switched to $label',
+      name: 'warpSwitchedTo',
+      desc: '',
+      args: [label],
+    );
+  }
+
+  /// `Copied {label}`
+  String warpCopied(String label) {
+    return Intl.message(
+      'Copied $label',
+      name: 'warpCopied',
+      desc: '',
+      args: [label],
+    );
+  }
+
+  /// `Using {ip}`
+  String warpIpChosen(String ip) {
+    return Intl.message(
+      'Using $ip',
+      name: 'warpIpChosen',
+      desc: '',
+      args: [ip],
+    );
+  }
+
+  /// `Using the fastest node: {ip}`
+  String warpFastestChosen(String ip) {
+    return Intl.message(
+      'Using the fastest node: $ip',
+      name: 'warpFastestChosen',
+      desc: '',
+      args: [ip],
+    );
+  }
+
+  /// `Region: {loc}`
+  String warpRegion(String loc) {
+    return Intl.message(
+      'Region: $loc',
+      name: 'warpRegion',
+      desc: '',
+      args: [loc],
+    );
+  }
+
+  /// `🎉 Diagnostics passed. WARP is active (colo: {colo}, exit: {ip})`
+  String warpDiagOk(String colo, String ip) {
+    return Intl.message(
+      '🎉 Diagnostics passed. WARP is active (colo: $colo, exit: $ip)',
+      name: 'warpDiagOk',
+      desc: '',
+      args: [colo, ip],
+    );
+  }
+
+  /// `Note: connected to exit {ip} but no WARP signature was found - check the dialer`
+  String warpNoSignature(String ip) {
+    return Intl.message(
+      'Note: connected to exit $ip but no WARP signature was found - check the dialer',
+      name: 'warpNoSignature',
+      desc: '',
+      args: [ip],
+    );
+  }
+
+  /// `Dialer set to {name}`
+  String warpDialerSet(String name) {
+    return Intl.message(
+      'Dialer set to $name',
+      name: 'warpDialerSet',
+      desc: '',
+      args: [name],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {

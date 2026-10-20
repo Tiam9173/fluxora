@@ -94,7 +94,25 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m32(label) => "${label} должен быть URL";
 
-  static String m33(count) =>
+  static String m33(label) => "Скопировано: ${label}";
+
+  static String m34(colo, ip) =>
+      "🎉 Диагностика пройдена. WARP работает (узел: ${colo}, выход: ${ip})";
+
+  static String m35(name) => "Диалер: ${name}";
+
+  static String m36(ip) => "Используется самый быстрый узел: ${ip}";
+
+  static String m37(ip) => "Используется ${ip}";
+
+  static String m38(ip) =>
+      "Примечание: подключено к выходу ${ip}, но подпись WARP не найдена — проверьте диалер";
+
+  static String m39(loc) => "Регион: ${loc}";
+
+  static String m40(label) => "Переключено на ${label}";
+
+  static String m41(count) =>
       "${Intl.plural(count, one: 'год', few: 'года', many: 'лет', other: 'лет')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
@@ -2077,6 +2095,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "wakelockDescription": MessageLookupByLibrary.simpleMessage(
       "Эта функция не требует специальных разрешений, так как использует только блокировку пробуждения экрана, а не CPU. Приложение остаётся активным в фоне, экран не гаснет автоматически, что полезно в некоторых сценариях.",
     ),
+    "warpCopied": m33,
+    "warpDiagOk": m34,
+    "warpDialerSet": m35,
+    "warpFastestChosen": m36,
+    "warpIpChosen": m37,
+    "warpNoSignature": m38,
+    "warpRegion": m39,
     "warpStr0": MessageLookupByLibrary.simpleMessage("0 (по умолчанию 2408)"),
     "warpStr1": MessageLookupByLibrary.simpleMessage(
       "1280 (рекомендуется, лучше для UDP)",
@@ -2317,6 +2342,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "warpStr98": MessageLookupByLibrary.simpleMessage("Выберите WARP-диалер"),
     "warpStr99": MessageLookupByLibrary.simpleMessage("Выберите MTU WireGuard"),
+    "warpSwitchedTo": m40,
     "wave": MessageLookupByLibrary.simpleMessage("Волна"),
     "webDAVConfiguration": MessageLookupByLibrary.simpleMessage(
       "Настройки WebDAV",
@@ -2332,6 +2358,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "wrongBackupPassword": MessageLookupByLibrary.simpleMessage(
       "Неверный пароль или резервная копия изменена",
     ),
-    "years": m33,
+    "years": m41,
   };
 }

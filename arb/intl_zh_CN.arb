@@ -1152,5 +1152,13 @@
   "warpStr108": "💡 使用場景與路由模式原理",
   "warpStr109": "🛡️ 原生搜索 (極佳)",
   "warpStr110": "🟢 官方免費設備",
-  "warpStr111": "🟢 暢通無阻"
+  "warpStr111": "🟢 暢通無阻",
+  "warpSwitchedTo": "已切换为 {label}",
+  "warpCopied": "已复制 {label}",
+  "warpIpChosen": "已选用 {ip}",
+  "warpFastestChosen": "已选用最快节点 {ip}",
+  "warpRegion": "归属地: {loc}",
+  "warpDiagOk": "🎉 诊断成功！WARP 已生效 (机房: {colo}, 出口: {ip})",
+  "warpNoSignature": "提示：已连接出口 {ip}，但未检测到 WARP 签名，请确认跳板配置",
+  "warpDialerSet": "已指定前置跳板为 {name}"
 }

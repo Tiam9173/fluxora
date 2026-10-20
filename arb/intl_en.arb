@@ -1488,5 +1488,72 @@
   "warpStr111": "🟢 Unrestricted",
   "@warpStr111": {
     "description": "🟢 畅通无阻"
+  },
+  "warpSwitchedTo": "Switched to {label}",
+  "@warpSwitchedTo": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "warpCopied": "Copied {label}",
+  "@warpCopied": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "warpIpChosen": "Using {ip}",
+  "@warpIpChosen": {
+    "placeholders": {
+      "ip": {
+        "type": "String"
+      }
+    }
+  },
+  "warpFastestChosen": "Using the fastest node: {ip}",
+  "@warpFastestChosen": {
+    "placeholders": {
+      "ip": {
+        "type": "String"
+      }
+    }
+  },
+  "warpRegion": "Region: {loc}",
+  "@warpRegion": {
+    "placeholders": {
+      "loc": {
+        "type": "String"
+      }
+    }
+  },
+  "warpDiagOk": "🎉 Diagnostics passed. WARP is active (colo: {colo}, exit: {ip})",
+  "@warpDiagOk": {
+    "placeholders": {
+      "colo": {
+        "type": "String"
+      },
+      "ip": {
+        "type": "String"
+      }
+    }
+  },
+  "warpNoSignature": "Note: connected to exit {ip} but no WARP signature was found - check the dialer",
+  "@warpNoSignature": {
+    "placeholders": {
+      "ip": {
+        "type": "String"
+      }
+    }
+  },
+  "warpDialerSet": "Dialer set to {name}",
+  "@warpDialerSet": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   }
 }

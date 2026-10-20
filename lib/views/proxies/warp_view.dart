@@ -229,7 +229,9 @@ class _WarpViewState extends ConsumerState<WarpView> {
                   onPressed: () {
                     warpManager.setRoutingMode(selected);
                     Navigator.of(ctx).pop();
-                    context.showSnackBar('已切换为 ${selected.label}');
+                    context.showSnackBar(
+                      appLocalizations.warpSwitchedTo(selected.label),
+                    );
                   },
                   child: Text(appLocalizations.warpStr78),
                 ),
@@ -349,7 +351,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
                                   onTap: () {
                                     ctrl.text = r.ip;
                                     Navigator.of(ctx).pop();
-                                    context.showSnackBar('已选用 ${r.ip}');
+                                    context.showSnackBar(appLocalizations.warpIpChosen(r.ip));
                                   },
                                 ),
                             ],
@@ -369,7 +371,9 @@ class _WarpViewState extends ConsumerState<WarpView> {
                     onPressed: () {
                       ctrl.text = reachable.first.ip;
                       Navigator.of(ctx).pop();
-                      context.showSnackBar('已选用最快节点 ${reachable.first.ip}');
+                      context.showSnackBar(
+                        appLocalizations.warpFastestChosen(reachable.first.ip),
+                      );
                     },
                     child: Text(appLocalizations.warpStr36),
                   ),
@@ -695,7 +699,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
                 constraints: const BoxConstraints(),
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: value));
-                  context.showSnackBar('已复制 $label');
+                  context.showSnackBar(appLocalizations.warpCopied(label));
                 },
               ),
             ],
@@ -954,7 +958,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
                         ? '${report!.colo} (${report.coloCityName})'
                         : appLocalizations.warpStr58,
                     subtitle: report?.loc.isNotEmpty == true
-                        ? '归属地: ${report!.loc}'
+                        ? appLocalizations.warpRegion(report!.loc)
                         : 'Anycast 节点',
                     icon: Icons.business,
                   ),
@@ -1024,11 +1028,11 @@ class _WarpViewState extends ConsumerState<WarpView> {
                             if (mounted) {
                               if (res.isWarpActive) {
                                 context.showSnackBar(
-                                  '🎉 诊断成功！WARP 已生效 (机房: ${res.colo}, 出口: ${res.ip})',
+                                  appLocalizations.warpDiagOk(res.colo, res.ip),
                                 );
                               } else if (res.isSuccess) {
                                 context.showSnackBar(
-                                  '提示：已连接出口 ${res.ip}，但未检测到 WARP 签名，请确认跳板配置',
+                                  appLocalizations.warpNoSignature(res.ip),
                                 );
                               } else {
                                 context.showSnackBar(res.googleStatus);
@@ -1077,7 +1081,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
                 InkWell(
                   onTap: () {
                     Clipboard.setData(ClipboardData(text: onCopy));
-                    context.showSnackBar('已复制 $onCopy');
+                    context.showSnackBar(appLocalizations.warpCopied(onCopy));
                   },
                   child: const Icon(Icons.copy, size: 13, color: Colors.blue),
                 ),
@@ -1305,7 +1309,9 @@ class _WarpViewState extends ConsumerState<WarpView> {
               onChanged: (val) {
                 if (val != null) {
                   warpManager.setMode(val);
-                  context.showSnackBar('已切换为 ${val.label}');
+                  context.showSnackBar(
+                    appLocalizations.warpSwitchedTo(val.label),
+                  );
                 }
               },
               child: Column(
@@ -1448,7 +1454,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
             onSelect: (selected) {
               warpManager.setDefaultDialer(selected);
               context.showSnackBar(
-                selected.isEmpty ? appLocalizations.warpStr54 : '已指定前置跳板为 $selected',
+                selected.isEmpty ? appLocalizations.warpStr54 : appLocalizations.warpDialerSet(selected),
               );
             },
           );

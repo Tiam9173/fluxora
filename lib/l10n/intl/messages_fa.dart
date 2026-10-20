@@ -91,7 +91,25 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m32(label) => "${label} باید یک URL معتبر باشد";
 
-  static String m33(count) => "${Intl.plural(count, other: '# سال')}";
+  static String m33(label) => "${label} کپی شد";
+
+  static String m34(colo, ip) =>
+      "🎉 عیب‌یابی موفق بود. WARP فعال است (مرکز: ${colo}, خروجی: ${ip})";
+
+  static String m35(name) => "دیالر روی ${name} تنظیم شد";
+
+  static String m36(ip) => "از سریع‌ترین گره ${ip} استفاده می‌شود";
+
+  static String m37(ip) => "از ${ip} استفاده می‌شود";
+
+  static String m38(ip) =>
+      "توجه: به خروجی ${ip} متصل شد اما امضای WARP یافت نشد — تنظیمات دیالر را بررسی کنید";
+
+  static String m39(loc) => "منطقه: ${loc}";
+
+  static String m40(label) => "به ${label} تغییر یافت";
+
+  static String m41(count) => "${Intl.plural(count, other: '# سال')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -2013,6 +2031,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "wakelockDescription": MessageLookupByLibrary.simpleMessage(
       "جلوگیری از خاموش شدن خودکار صفحه نمایش برای فعال ماندن برنامه‌ها در پس‌زمینه.",
     ),
+    "warpCopied": m33,
+    "warpDiagOk": m34,
+    "warpDialerSet": m35,
+    "warpFastestChosen": m36,
+    "warpIpChosen": m37,
+    "warpNoSignature": m38,
+    "warpRegion": m39,
     "warpStr0": MessageLookupByLibrary.simpleMessage("۰ (پیش‌فرض ۲۴۰۸)"),
     "warpStr1": MessageLookupByLibrary.simpleMessage(
       "۱۲۸۰ (پیشنهادی، بهترین برای UDP)",
@@ -2227,6 +2252,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "warpStr98": MessageLookupByLibrary.simpleMessage("انتخاب دیالر WARP"),
     "warpStr99": MessageLookupByLibrary.simpleMessage("انتخاب MTU WireGuard"),
+    "warpSwitchedTo": m40,
     "wave": MessageLookupByLibrary.simpleMessage("موج"),
     "webDAVConfiguration": MessageLookupByLibrary.simpleMessage(
       "تنظیمات WebDAV",
@@ -2240,6 +2266,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "wrongBackupPassword": MessageLookupByLibrary.simpleMessage(
       "گذرواژه نادرست است یا پشتیبان دستکاری شده است",
     ),
-    "years": m33,
+    "years": m41,
   };
 }

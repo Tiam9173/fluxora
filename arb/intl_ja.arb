@@ -1152,5 +1152,13 @@
   "warpStr108": "💡 各モードの使い分け",
   "warpStr109": "🛡️ ネイティブ検索（最良）",
   "warpStr110": "🟢 公式の無料デバイス",
-  "warpStr111": "🟢 制限なし"
+  "warpStr111": "🟢 制限なし",
+  "warpSwitchedTo": "{label} に切り替えました",
+  "warpCopied": "{label} をコピーしました",
+  "warpIpChosen": "{ip} を使用します",
+  "warpFastestChosen": "最速ノード {ip} を使用します",
+  "warpRegion": "地域: {loc}",
+  "warpDiagOk": "🎉 診断成功！WARP は有効です (拠点: {colo}, 出口: {ip})",
+  "warpNoSignature": "注意：出口 {ip} に接続しましたが WARP 署名がありません。ダイヤラー設定を確認してください",
+  "warpDialerSet": "ダイヤラーを {name} に設定しました"
 }

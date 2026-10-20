@@ -92,7 +92,25 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m32(label) => "${label} must be a URL";
 
-  static String m33(count) =>
+  static String m33(label) => "Copied ${label}";
+
+  static String m34(colo, ip) =>
+      "🎉 Diagnostics passed. WARP is active (colo: ${colo}, exit: ${ip})";
+
+  static String m35(name) => "Dialer set to ${name}";
+
+  static String m36(ip) => "Using the fastest node: ${ip}";
+
+  static String m37(ip) => "Using ${ip}";
+
+  static String m38(ip) =>
+      "Note: connected to exit ${ip} but no WARP signature was found - check the dialer";
+
+  static String m39(loc) => "Region: ${loc}";
+
+  static String m40(label) => "Switched to ${label}";
+
+  static String m41(count) =>
       "${Intl.plural(count, one: 'year', other: 'years')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
@@ -1965,6 +1983,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "wakelockDescription": MessageLookupByLibrary.simpleMessage(
       "Keeps the screen on and app active in the background without requiring special CPU wakelock permissions.",
     ),
+    "warpCopied": m33,
+    "warpDiagOk": m34,
+    "warpDialerSet": m35,
+    "warpFastestChosen": m36,
+    "warpIpChosen": m37,
+    "warpNoSignature": m38,
+    "warpRegion": m39,
     "warpStr0": MessageLookupByLibrary.simpleMessage("0 (default 2408)"),
     "warpStr1": MessageLookupByLibrary.simpleMessage(
       "1280 (recommended, best for UDP)",
@@ -2183,6 +2208,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpStr99": MessageLookupByLibrary.simpleMessage(
       "Choose the WireGuard MTU",
     ),
+    "warpSwitchedTo": m40,
     "wave": MessageLookupByLibrary.simpleMessage("Wave"),
     "webDAVConfiguration": MessageLookupByLibrary.simpleMessage(
       "WebDAV Configuration",
@@ -2196,6 +2222,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "wrongBackupPassword": MessageLookupByLibrary.simpleMessage(
       "Wrong password or the backup was tampered with",
     ),
-    "years": m33,
+    "years": m41,
   };
 }

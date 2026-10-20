@@ -87,7 +87,23 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m32(label) => "${label}必須為 URL";
 
-  static String m33(count) => "${Intl.plural(count, other: '年')}";
+  static String m33(label) => "已複製 ${label}";
+
+  static String m34(colo, ip) => "🎉 診斷成功！WARP 已生效 (機房: ${colo}, 出口: ${ip})";
+
+  static String m35(name) => "已指定前置跳板為 ${name}";
+
+  static String m36(ip) => "已選用最快節點 ${ip}";
+
+  static String m37(ip) => "已選用 ${ip}";
+
+  static String m38(ip) => "提示：已連線出口 ${ip}，但未偵測到 WARP 簽名，請確認跳板設定";
+
+  static String m39(loc) => "歸屬地: ${loc}";
+
+  static String m40(label) => "已切換為 ${label}";
+
+  static String m41(count) => "${Intl.plural(count, other: '年')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -1427,6 +1443,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "wakelockDescription": MessageLookupByLibrary.simpleMessage(
       "本功能不需要任何特殊權限，因為它僅啟用螢幕喚醒鎖，而不是任何 CPU 喚醒鎖，應用會在後台保持必要的活躍，且螢幕不會自動熄滅，這在一些場景下會很有用",
     ),
+    "warpCopied": m33,
+    "warpDiagOk": m34,
+    "warpDialerSet": m35,
+    "warpFastestChosen": m36,
+    "warpIpChosen": m37,
+    "warpNoSignature": m38,
+    "warpRegion": m39,
     "warpStr0": MessageLookupByLibrary.simpleMessage("0 (默認 2408)"),
     "warpStr1": MessageLookupByLibrary.simpleMessage("1280 (推荐，UDP代理最優)"),
     "warpStr10": MessageLookupByLibrary.simpleMessage("MTU 已設為 1420 (标准)"),
@@ -1563,6 +1586,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpStr97": MessageLookupByLibrary.simpleMessage("連接未完成或檢測超時"),
     "warpStr98": MessageLookupByLibrary.simpleMessage("選擇 WARP 前置跳板"),
     "warpStr99": MessageLookupByLibrary.simpleMessage("選擇 WireGuard MTU"),
+    "warpSwitchedTo": m40,
     "wave": MessageLookupByLibrary.simpleMessage("波浪起伏"),
     "webDAVConfiguration": MessageLookupByLibrary.simpleMessage("WebDAV 設定"),
     "whitelist": MessageLookupByLibrary.simpleMessage("白名單"),
@@ -1570,6 +1594,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystem": MessageLookupByLibrary.simpleMessage("寫入系統"),
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage("需要管理員權限"),
     "wrongBackupPassword": MessageLookupByLibrary.simpleMessage("密碼錯誤或備份已被竄改"),
-    "years": m33,
+    "years": m41,
   };
 }
