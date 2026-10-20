@@ -1212,5 +1212,12 @@
   "chainProbePassed": "逐跳探测通过；端到端出口可用性请以实际访问为准",
   "chainPartialProbe": "部分链路缺少探测结果：未探测的节点保持中性色",
   "chainTzAdvice": "针对 ToDetect / Whoer / IPpure 检测的时区与风控排查建议",
-  "chainFingerprintGuide": "🎯 跨境养号与指纹防关联环境指南"
+  "chainFingerprintGuide": "🎯 跨境养号与指纹防关联环境指南",
+  "chainRelayIndex": "中转节点 {index}",
+  "chainResidentialIp": "住宅IP-{server}:{port}",
+  "chainDialerValue": "跳板: {name}",
+  "warpRouteWarpOverProxy": "通过代理路由 WARP",
+  "warpRouteWarpOverProxyDesc": "通过代理路由 WARP (推荐: 机场套 WARP 出口，防送中、解锁流媒体与 AI)",
+  "warpRouteProxyOverWarp": "通过 WARP 路由代理",
+  "warpRouteProxyOverWarpDesc": "通过 WARP 路由代理 (WARP 作为前置跳板连通被封锁的节点)"
 }

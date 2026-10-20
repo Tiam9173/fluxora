@@ -1210,5 +1210,12 @@
   "chainProbePassed": "逐跳探測通過；端到端出口可用性請以實際存取為準",
   "chainPartialProbe": "部分鏈路缺少探測結果：未探測的節點保持中性色",
   "chainTzAdvice": "針對 ToDetect / Whoer / IPpure 偵測的時區與風控排查建議",
-  "chainFingerprintGuide": "🎯 跨境養號與指紋防關聯環境指南"
+  "chainFingerprintGuide": "🎯 跨境養號與指紋防關聯環境指南",
+  "chainRelayIndex": "中轉節點 {index}",
+  "chainResidentialIp": "住宅IP-{server}:{port}",
+  "chainDialerValue": "跳板: {name}",
+  "warpRouteWarpOverProxy": "透過代理路由 WARP",
+  "warpRouteWarpOverProxyDesc": "透過代理路由 WARP (推薦: 機場套 WARP 出口，防送中、解鎖串流與 AI)",
+  "warpRouteProxyOverWarp": "透過 WARP 路由代理",
+  "warpRouteProxyOverWarpDesc": "透過 WARP 路由代理 (WARP 作為前置跳板連通被封鎖的節點)"
 }

@@ -1212,5 +1212,12 @@
   "chainProbePassed": "각 홉 확인 통과. 실제 도달 여부는 직접 접속으로 확인하세요",
   "chainPartialProbe": "일부 홉에 결과가 없습니다. 미확인 노드는 중립색으로 표시됩니다",
   "chainTzAdvice": "ToDetect / Whoer / IPpure용 시간대 및 위험 관리 팁",
-  "chainFingerprintGuide": "🎯 해외 계정 운영과 핑거프린트 분리 가이드"
+  "chainFingerprintGuide": "🎯 해외 계정 운영과 핑거프린트 분리 가이드",
+  "chainRelayIndex": "중계 노드 {index}",
+  "chainResidentialIp": "주거용 IP {server}:{port}",
+  "chainDialerValue": "다이얼러: {name}",
+  "warpRouteWarpOverProxy": "프록시를 통한 WARP",
+  "warpRouteWarpOverProxyDesc": "프록시를 통한 WARP (권장: 프로바이더 + WARP 출구로 지역 노출 방지, 스트리밍과 AI 해제)",
+  "warpRouteProxyOverWarp": "WARP를 통한 프록시",
+  "warpRouteProxyOverWarpDesc": "WARP를 통한 프록시 (WARP를 다이얼러로 사용해 차단된 노드 연결)"
 }

@@ -10414,6 +10414,76 @@ class AppLocalizations {
       args: [],
     );
   }
+
+  /// `Relay {index}`
+  String chainRelayIndex(String index) {
+    return Intl.message(
+      'Relay $index',
+      name: 'chainRelayIndex',
+      desc: '',
+      args: [index],
+    );
+  }
+
+  /// `Residential {server}:{port}`
+  String chainResidentialIp(String server, String port) {
+    return Intl.message(
+      'Residential $server:$port',
+      name: 'chainResidentialIp',
+      desc: '',
+      args: [server, port],
+    );
+  }
+
+  /// `Dialer: {name}`
+  String chainDialerValue(String name) {
+    return Intl.message(
+      'Dialer: $name',
+      name: 'chainDialerValue',
+      desc: '',
+      args: [name],
+    );
+  }
+
+  /// `Route WARP through the proxy`
+  String get warpRouteWarpOverProxy {
+    return Intl.message(
+      'Route WARP through the proxy',
+      name: 'warpRouteWarpOverProxy',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Route WARP through the proxy (recommended: provider plus WARP exit, avoids region leaks and unlocks streaming and AI)`
+  String get warpRouteWarpOverProxyDesc {
+    return Intl.message(
+      'Route WARP through the proxy (recommended: provider plus WARP exit, avoids region leaks and unlocks streaming and AI)',
+      name: 'warpRouteWarpOverProxyDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Route the proxy through WARP`
+  String get warpRouteProxyOverWarp {
+    return Intl.message(
+      'Route the proxy through WARP',
+      name: 'warpRouteProxyOverWarp',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Route the proxy through WARP (WARP as the dialer that reaches blocked nodes)`
+  String get warpRouteProxyOverWarpDesc {
+    return Intl.message(
+      'Route the proxy through WARP (WARP as the dialer that reaches blocked nodes)',
+      name: 'warpRouteProxyOverWarpDesc',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {

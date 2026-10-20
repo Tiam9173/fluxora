@@ -1607,5 +1607,36 @@
   "chainProbePassed": "Every hop probed cleanly; end-to-end reachability depends on the real request",
   "chainPartialProbe": "Some hops have no result; unprobed nodes stay neutral",
   "chainTzAdvice": "Time zone and risk-control tips for ToDetect / Whoer / IPpure",
-  "chainFingerprintGuide": "🎯 Guide to cross-border accounts and fingerprint isolation"
+  "chainFingerprintGuide": "🎯 Guide to cross-border accounts and fingerprint isolation",
+  "chainRelayIndex": "Relay {index}",
+  "@chainRelayIndex": {
+    "placeholders": {
+      "index": {
+        "type": "String"
+      }
+    }
+  },
+  "chainResidentialIp": "Residential {server}:{port}",
+  "@chainResidentialIp": {
+    "placeholders": {
+      "server": {
+        "type": "String"
+      },
+      "port": {
+        "type": "String"
+      }
+    }
+  },
+  "chainDialerValue": "Dialer: {name}",
+  "@chainDialerValue": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "warpRouteWarpOverProxy": "Route WARP through the proxy",
+  "warpRouteWarpOverProxyDesc": "Route WARP through the proxy (recommended: provider plus WARP exit, avoids region leaks and unlocks streaming and AI)",
+  "warpRouteProxyOverWarp": "Route the proxy through WARP",
+  "warpRouteProxyOverWarpDesc": "Route the proxy through WARP (WARP as the dialer that reaches blocked nodes)"
 }

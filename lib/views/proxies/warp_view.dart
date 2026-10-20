@@ -19,6 +19,16 @@ String _modeLabel(WarpMode m, AppLocalizations l) => switch (m) {
   WarpMode.custom => l.warpModeCustom,
 };
 
+String _routingLabel(WarpRoutingMode m, AppLocalizations l) => switch (m) {
+  WarpRoutingMode.warpOverProxy => l.warpRouteWarpOverProxy,
+  WarpRoutingMode.proxyOverWarp => l.warpRouteProxyOverWarp,
+};
+
+String _routingDesc(WarpRoutingMode m, AppLocalizations l) => switch (m) {
+  WarpRoutingMode.warpOverProxy => l.warpRouteWarpOverProxyDesc,
+  WarpRoutingMode.proxyOverWarp => l.warpRouteProxyOverWarpDesc,
+};
+
 String _modeDesc(WarpMode m, AppLocalizations l) => switch (m) {
   WarpMode.googleAndAi => l.warpModeSmartDesc,
   WarpMode.all => l.warpModeAllDesc,
@@ -1201,7 +1211,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
             leading: Icon(Icons.alt_route_rounded, color: colorScheme.primary),
             title: Text(appLocalizations.warpStr13),
             subtitle: Text(
-              config.routingMode.label,
+              _routingLabel(config.routingMode, appLocalizations),
               style: TextStyle(fontSize: 12, color: colorScheme.primary),
             ),
             trailing: const Icon(Icons.arrow_forward_ios, size: 14),

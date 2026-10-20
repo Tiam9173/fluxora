@@ -1216,5 +1216,12 @@
   "chainProbePassed": "Все участки проверены; реальную доступность проверяйте запросом",
   "chainPartialProbe": "Для части участков нет результата; непроверенные узлы нейтральны",
   "chainTzAdvice": "Советы по часовому поясу и рискам для ToDetect / Whoer / IPpure",
-  "chainFingerprintGuide": "🎯 Гид по зарубежным аккаунтам и изоляции отпечатков"
+  "chainFingerprintGuide": "🎯 Гид по зарубежным аккаунтам и изоляции отпечатков",
+  "chainRelayIndex": "Релей {index}",
+  "chainResidentialIp": "Домашний IP {server}:{port}",
+  "chainDialerValue": "Диалер: {name}",
+  "warpRouteWarpOverProxy": "WARP через прокси",
+  "warpRouteWarpOverProxyDesc": "WARP через прокси (рекомендуется: провайдер плюс выход WARP)",
+  "warpRouteProxyOverWarp": "Прокси через WARP",
+  "warpRouteProxyOverWarpDesc": "Прокси через WARP (WARP как диалер для заблокированных узлов)"
 }

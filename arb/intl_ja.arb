@@ -1212,5 +1212,12 @@
   "chainProbePassed": "各ホップの確認は通過。実際の到達性は実アクセスでご確認ください",
   "chainPartialProbe": "一部のホップに結果がありません。未確認のノードは中立色のままです",
   "chainTzAdvice": "ToDetect / Whoer / IPpure 向けのタイムゾーンとリスク管理のヒント",
-  "chainFingerprintGuide": "🎯 越境アカウント運用とフィンガープリント分離のガイド"
+  "chainFingerprintGuide": "🎯 越境アカウント運用とフィンガープリント分離のガイド",
+  "chainRelayIndex": "中継ノード {index}",
+  "chainResidentialIp": "住宅 IP {server}:{port}",
+  "chainDialerValue": "ダイヤラー: {name}",
+  "warpRouteWarpOverProxy": "プロキシ経由で WARP",
+  "warpRouteWarpOverProxyDesc": "プロキシ経由で WARP（推奨：プロバイダ＋WARP 出口で地域露見を防ぎ、配信と AI を解除）",
+  "warpRouteProxyOverWarp": "WARP 経由でプロキシ",
+  "warpRouteProxyOverWarpDesc": "WARP 経由でプロキシ（WARP をダイヤラーとして遮断されたノードに接続）"
 }

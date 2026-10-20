@@ -444,7 +444,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                     ),
                     // 第 1 跳保留原名，后续按顺序叫中转节点 1、2、3…
                     title: Text(
-                      i == 0 ? appLocalizations.defaultDialerProxy : '中转节点 $i',
+                      i == 0 ? appLocalizations.defaultDialerProxy : appLocalizations.chainRelayIndex('$i'),
                     ),
                     subtitle: Text(
                       frontHops[i].isEmpty
@@ -475,7 +475,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                         context: context,
                         title: i == 0
                             ? appLocalizations.defaultDialerProxy
-                            : '中转节点 $i',
+                            : appLocalizations.chainRelayIndex('$i'),
                         allowFollowMain: i == 0,
                         excludeNames: frontHops
                             .where((h) => h != frontHops[i])
@@ -1075,7 +1075,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
         (
           label: i == 0
               ? appLocalizations.topologyHop
-              : '中转节点 $i',
+              : appLocalizations.chainRelayIndex('$i'),
           name: config.effectiveFrontHops[i],
           state: i == 0
               ? entryState
@@ -1246,7 +1246,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                             : Icons.swap_horiz_rounded,
                         title: i == 0
                             ? appLocalizations.topologyHop
-                            : '中转节点 $i',
+                            : appLocalizations.chainRelayIndex('$i'),
                         subtitle: config.effectiveFrontHops[i],
                         state: hopStateAt(i),
                       ),
@@ -1785,7 +1785,7 @@ class _LandingProxyCard extends ConsumerWidget {
                         const SizedBox(width: 4),
                         Flexible(
                           child: Text(
-                            '跳板: $effectiveHop',
+                            appLocalizations.chainDialerValue(effectiveHop),
                             style: const TextStyle(fontSize: 11),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -2419,7 +2419,7 @@ class _EditLandingProxyDialogState extends State<_EditLandingProxyDialog> {
 
             final name = _nameController.text.trim().isNotEmpty
                 ? _nameController.text.trim()
-                : '住宅IP-$server:$port';
+                : appLocalizations.chainResidentialIp(server, '$port');
 
             final updated = LandingProxy(
               id: widget.proxy?.id ?? utils.uuidV4,
@@ -2720,7 +2720,7 @@ class _ProxyHealthReportDialog extends ConsumerWidget {
                           child: _buildTopologyNode(
                             i == 0 ? Icons.alt_route : Icons.swap_horiz,
                             '${chainConfig.effectiveFrontHops[i]}\n'
-                                '(${i == 0 ? appLocalizations.topologyHop : '中转节点 $i'})',
+                                '(${i == 0 ? appLocalizations.topologyHop : appLocalizations.chainRelayIndex('$i')})',
                             context,
                             color: Colors.blue,
                           ),
