@@ -1199,5 +1199,18 @@
   "chainTimeout": "タイムアウト",
   "chainFollowMain": "メイン選択に追従",
   "chainResetFilter": "フィルタをリセット",
-  "chainProbing": "チェーンを確認中…"
+  "chainProbing": "チェーンを確認中…",
+  "chainHelpHop": "• ダイヤラー（Hop）：端末が最初に接続する中継ノードで、経路の第一区間を担います。",
+  "chainHelpMultiHop": "• マルチホップ：ダイヤラーと着地ノードで段階的に経路を分け、トポロジーを分離します。",
+  "chainTzWhy": "⚠️ ToDetect が「IP のタイムゾーン」を赤く表示する理由と対処：",
+  "chainHelpTitle": "ダイヤラーと着地ノードとは？",
+  "chainResidentialExample": "例：米国住宅 IP 01",
+  "chainAddRelayDesc": "既存チェーンの末端、着地出口の手前に中継を挿入します",
+  "chainNotProbed": "未確認：色は設定を表すだけで、健全性ではありません",
+  "chainStunBlocked": "STUN/TURN を遮断済み（漏洩ゼロ）",
+  "chainNeedLanding": "先に着地プロキシを1つ以上追加して有効にしてください",
+  "chainProbePassed": "各ホップの確認は通過。実際の到達性は実アクセスでご確認ください",
+  "chainPartialProbe": "一部のホップに結果がありません。未確認のノードは中立色のままです",
+  "chainTzAdvice": "ToDetect / Whoer / IPpure 向けのタイムゾーンとリスク管理のヒント",
+  "chainFingerprintGuide": "🎯 越境アカウント運用とフィンガープリント分離のガイド"
 }

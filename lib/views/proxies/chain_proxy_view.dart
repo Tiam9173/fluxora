@@ -390,7 +390,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                         final hasActive = landingProxies.any((p) => p.enable);
                         if (!hasActive) {
                           HapticFeedback.heavyImpact();
-                          context.showSnackBar('请先添加并启用至少一个落地代理节点');
+                          context.showSnackBar(appLocalizations.chainNeedLanding);
                           return;
                         }
                         HapticFeedback.lightImpact();
@@ -488,7 +488,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                 ListItem(
                   leading: const Icon(Icons.add_circle_outline),
                   title: Text(appLocalizations.chainAddRelay),
-                  subtitle: const Text('在现有链路末端、落地出口之前插入一级中转'),
+                  subtitle: Text(appLocalizations.chainAddRelayDesc),
                   onTap: () {
                     showChainHopPicker(
                       context: context,
@@ -1121,13 +1121,13 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
         probeNoticeIcon = Icons.sync;
         probeNoticeColor = context.colorScheme.primary;
       } else if (noEvidence) {
-        probeNoticeText = '尚未探测：颜色仅表示配置，不代表链路健康';
+        probeNoticeText = appLocalizations.chainNotProbed;
       } else if (allHealthy) {
-        probeNoticeText = '逐跳探测通过；端到端出口可用性请以实际访问为准';
+        probeNoticeText = appLocalizations.chainProbePassed;
         probeNoticeIcon = Icons.check_circle_outline;
         probeNoticeColor = context.colorScheme.primary;
       } else {
-        probeNoticeText = '部分链路缺少探测结果：未探测的节点保持中性色';
+        probeNoticeText = appLocalizations.chainPartialProbe;
       }
     }
 
@@ -1369,24 +1369,24 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                 dense: true,
                 visualDensity: VisualDensity.compact,
                 leading: const Icon(Icons.info_outline, size: 16),
-                title: const Text(
-                  '什么是前置跳板与落地节点？',
+                title: Text(
+                  appLocalizations.chainHelpTitle,
                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                 ),
                 children: [
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(10),
-                    margin: const EdgeInsets.only(top: 4),
+                    margin: EdgeInsets.only(top: 4),
                     decoration: BoxDecoration(
                       color: context.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         Text(
-                          '• 前置跳板 (Hop)：由本机连接的首级中继节点，负责第一级网络中转。',
+                          appLocalizations.chainHelpHop,
                           style: TextStyle(fontSize: 11, height: 1.4),
                         ),
                         SizedBox(height: 4),
@@ -1396,7 +1396,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                         ),
                         SizedBox(height: 4),
                         Text(
-                          '• 多跳链路传输：通过前置跳板与落地节点分级路由，实现流量分层转发与网络拓扑解耦。',
+                          appLocalizations.chainHelpMultiHop,
                           style: TextStyle(fontSize: 11, height: 1.4),
                         ),
                       ],
@@ -1538,12 +1538,12 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
             color: Colors.teal,
             size: 28,
           ),
-          title: const Text(
-            '🎯 跨境养号与指纹防关联环境指南',
+          title: Text(
+            appLocalizations.chainFingerprintGuide,
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
           ),
           subtitle: Text(
-            '针对 ToDetect / Whoer / IPpure 检测的时区与风控排查建议',
+            appLocalizations.chainTzAdvice,
             style: TextStyle(
               fontSize: 12,
               color: context.colorScheme.onSurfaceVariant,
@@ -1595,9 +1595,9 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                               appLocalizations.chainWebrtcProtect,
                               style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                             ),
-                            const Expanded(
+                            Expanded(
                               child: Text(
-                                '已硬核拦截 STUN/TURN (0泄露)',
+                                appLocalizations.chainStunBlocked,
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
@@ -1611,8 +1611,8 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  const Text(
-                    '⚠️ 针对 ToDetect 检测到“IP地址时区”异常标红的原因与方案：',
+                  Text(
+                    appLocalizations.chainTzWhy,
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
@@ -2233,7 +2233,7 @@ class _EditLandingProxyDialogState extends State<_EditLandingProxyDialog> {
                 controller: _nameController,
                 decoration: InputDecoration(
                   labelText: appLocalizations.nodeName,
-                  hintText: '例：美国家庭住宅IP 01',
+                  hintText: appLocalizations.chainResidentialExample,
                 ),
               ),
               const SizedBox(height: 12),

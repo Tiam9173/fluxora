@@ -343,6 +343,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "categoryStreaming": MessageLookupByLibrary.simpleMessage("رسانه‌های جاری"),
     "chainAddRelay": MessageLookupByLibrary.simpleMessage("افزودن سرور میانی"),
+    "chainAddRelayDesc": MessageLookupByLibrary.simpleMessage(
+      "یک رله در انتهای زنجیره و پیش از خروجی اضافه می‌کند",
+    ),
     "chainAvgLatency": MessageLookupByLibrary.simpleMessage("تأخیر متوسط"),
     "chainCreateSupportPackage": MessageLookupByLibrary.simpleMessage(
       "ایجاد بسته پشتیبانی",
@@ -383,12 +386,24 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainExporting": MessageLookupByLibrary.simpleMessage("در حال خروجی…"),
     "chainFailed": MessageLookupByLibrary.simpleMessage("ناموفق"),
     "chainFailuresLabel": MessageLookupByLibrary.simpleMessage("شکست‌ها"),
+    "chainFingerprintGuide": MessageLookupByLibrary.simpleMessage(
+      "🎯 راهنمای حساب‌های خارجی و جداسازی اثر انگشت",
+    ),
     "chainFollowMain": MessageLookupByLibrary.simpleMessage(
       "پیروی از انتخاب اصلی",
     ),
     "chainGeneratedOn": MessageLookupByLibrary.simpleMessage("ایجاد شده در"),
     "chainHealthLabel": MessageLookupByLibrary.simpleMessage("سلامت"),
     "chainHealthScore": MessageLookupByLibrary.simpleMessage("امتیاز سلامت"),
+    "chainHelpHop": MessageLookupByLibrary.simpleMessage(
+      "• دیالر (Hop): نخستین رله‌ای که دستگاه به آن وصل می‌شود.",
+    ),
+    "chainHelpMultiHop": MessageLookupByLibrary.simpleMessage(
+      "• چندمرحله‌ای: ترافیک مرحله‌به‌مرحله از دیالر و گره خروجی عبور می‌کند.",
+    ),
+    "chainHelpTitle": MessageLookupByLibrary.simpleMessage(
+      "دیالر و گره خروجی چیست؟",
+    ),
     "chainHopExitNode": MessageLookupByLibrary.simpleMessage(
       "پرش سوم (گره خروجی)",
     ),
@@ -417,6 +432,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainMainTargets": MessageLookupByLibrary.simpleMessage(
       "اتصال به سرویس‌های رایج",
     ),
+    "chainNeedLanding": MessageLookupByLibrary.simpleMessage(
+      "ابتدا حداقل یک پروکسی خروجی اضافه و فعال کنید",
+    ),
     "chainNoMatch": MessageLookupByLibrary.simpleMessage(
       "گره‌ای با این فیلتر نیست",
     ),
@@ -433,11 +451,20 @@ class MessageLookup extends MessageLookupByLibrary {
       "قابلیت اطمینان گره",
     ),
     "chainNodeSubscription": MessageLookupByLibrary.simpleMessage("گره اشتراک"),
+    "chainNotProbed": MessageLookupByLibrary.simpleMessage(
+      "بررسی نشده: رنگ فقط تنظیمات را نشان می‌دهد نه سلامت",
+    ),
     "chainOpenFolder": MessageLookupByLibrary.simpleMessage("باز کردن پوشه"),
     "chainOptional": MessageLookupByLibrary.simpleMessage("اختیاری"),
     "chainPackageReady": MessageLookupByLibrary.simpleMessage("بسته آماده است"),
+    "chainPartialProbe": MessageLookupByLibrary.simpleMessage(
+      "برای برخی مراحل نتیجه‌ای نیست؛ گره‌های بررسی‌نشده خنثی می‌مانند",
+    ),
     "chainPreProxyNone": MessageLookupByLibrary.simpleMessage("مستقیم (هیچ)"),
     "chainProbeNow": MessageLookupByLibrary.simpleMessage("بررسی زنجیره"),
+    "chainProbePassed": MessageLookupByLibrary.simpleMessage(
+      "همه مراحل بررسی شد؛ دسترسی واقعی را با درخواست بسنجید",
+    ),
     "chainProbing": MessageLookupByLibrary.simpleMessage(
       "در حال بررسی زنجیره…",
     ),
@@ -447,8 +474,14 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "chainReady": MessageLookupByLibrary.simpleMessage("آماده"),
     "chainResetFilter": MessageLookupByLibrary.simpleMessage("بازنشانی فیلتر"),
+    "chainResidentialExample": MessageLookupByLibrary.simpleMessage(
+      "مثلاً IP خانگی آمریکا 01",
+    ),
     "chainShareLabel": MessageLookupByLibrary.simpleMessage("اشتراک‌گذاری"),
     "chainSpeedTest": MessageLookupByLibrary.simpleMessage("تست"),
+    "chainStunBlocked": MessageLookupByLibrary.simpleMessage(
+      "STUN/TURN مسدود شده (بدون نشت)",
+    ),
     "chainSupportTitle": MessageLookupByLibrary.simpleMessage(
       "پشتیبانی زنجیره",
     ),
@@ -462,6 +495,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "پیش‌نمایش توپولوژی مسیریابی زنجیره‌ای",
     ),
     "chainTz": MessageLookupByLibrary.simpleMessage("منطقه زمانی دستگاه:"),
+    "chainTzAdvice": MessageLookupByLibrary.simpleMessage(
+      "نکات منطقه زمانی و کنترل ریسک برای ToDetect / Whoer / IPpure",
+    ),
+    "chainTzWhy": MessageLookupByLibrary.simpleMessage(
+      "⚠️ چرا ToDetect منطقه زمانی IP را قرمز می‌کند و چه باید کرد:",
+    ),
     "chainWebrtcProtect": MessageLookupByLibrary.simpleMessage(
       "محافظت در برابر نشت WebRTC:",
     ),

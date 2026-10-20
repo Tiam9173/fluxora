@@ -1199,5 +1199,18 @@
   "chainTimeout": "مهلت تمام شد",
   "chainFollowMain": "پیروی از انتخاب اصلی",
   "chainResetFilter": "بازنشانی فیلتر",
-  "chainProbing": "در حال بررسی زنجیره…"
+  "chainProbing": "در حال بررسی زنجیره…",
+  "chainHelpHop": "• دیالر (Hop): نخستین رله‌ای که دستگاه به آن وصل می‌شود.",
+  "chainHelpMultiHop": "• چندمرحله‌ای: ترافیک مرحله‌به‌مرحله از دیالر و گره خروجی عبور می‌کند.",
+  "chainTzWhy": "⚠️ چرا ToDetect منطقه زمانی IP را قرمز می‌کند و چه باید کرد:",
+  "chainHelpTitle": "دیالر و گره خروجی چیست؟",
+  "chainResidentialExample": "مثلاً IP خانگی آمریکا 01",
+  "chainAddRelayDesc": "یک رله در انتهای زنجیره و پیش از خروجی اضافه می‌کند",
+  "chainNotProbed": "بررسی نشده: رنگ فقط تنظیمات را نشان می‌دهد نه سلامت",
+  "chainStunBlocked": "STUN/TURN مسدود شده (بدون نشت)",
+  "chainNeedLanding": "ابتدا حداقل یک پروکسی خروجی اضافه و فعال کنید",
+  "chainProbePassed": "همه مراحل بررسی شد؛ دسترسی واقعی را با درخواست بسنجید",
+  "chainPartialProbe": "برای برخی مراحل نتیجه‌ای نیست؛ گره‌های بررسی‌نشده خنثی می‌مانند",
+  "chainTzAdvice": "نکات منطقه زمانی و کنترل ریسک برای ToDetect / Whoer / IPpure",
+  "chainFingerprintGuide": "🎯 راهنمای حساب‌های خارجی و جداسازی اثر انگشت"
 }

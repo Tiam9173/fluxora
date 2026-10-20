@@ -357,6 +357,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "categorySocial": MessageLookupByLibrary.simpleMessage("Сообщество"),
     "categoryStreaming": MessageLookupByLibrary.simpleMessage("Стриминг"),
     "chainAddRelay": MessageLookupByLibrary.simpleMessage("Добавить релей"),
+    "chainAddRelayDesc": MessageLookupByLibrary.simpleMessage(
+      "Вставляет релей в конец цепочки, перед выходом",
+    ),
     "chainAvgLatency": MessageLookupByLibrary.simpleMessage("Средняя задержка"),
     "chainCreateSupportPackage": MessageLookupByLibrary.simpleMessage(
       "Создать пакет поддержки",
@@ -395,6 +398,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainExporting": MessageLookupByLibrary.simpleMessage("Экспорт…"),
     "chainFailed": MessageLookupByLibrary.simpleMessage("Ошибка"),
     "chainFailuresLabel": MessageLookupByLibrary.simpleMessage("Сбои"),
+    "chainFingerprintGuide": MessageLookupByLibrary.simpleMessage(
+      "🎯 Гид по зарубежным аккаунтам и изоляции отпечатков",
+    ),
     "chainFollowMain": MessageLookupByLibrary.simpleMessage(
       "Следовать основному выбору",
     ),
@@ -402,6 +408,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainHealthLabel": MessageLookupByLibrary.simpleMessage("Состояние"),
     "chainHealthScore": MessageLookupByLibrary.simpleMessage(
       "Оценка состояния",
+    ),
+    "chainHelpHop": MessageLookupByLibrary.simpleMessage(
+      "• Диалер (hop): первый релей, к которому подключается устройство.",
+    ),
+    "chainHelpMultiHop": MessageLookupByLibrary.simpleMessage(
+      "• Мультихоп: трафик идёт по этапам через диалер и узел выхода.",
+    ),
+    "chainHelpTitle": MessageLookupByLibrary.simpleMessage(
+      "Что такое диалер и узел выхода?",
     ),
     "chainHopExitNode": MessageLookupByLibrary.simpleMessage(
       "3-й переход (выходной узел)",
@@ -435,6 +450,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainMainTargets": MessageLookupByLibrary.simpleMessage(
       "Доступность основных сервисов",
     ),
+    "chainNeedLanding": MessageLookupByLibrary.simpleMessage(
+      "Сначала добавьте и включите хотя бы один прокси выхода",
+    ),
     "chainNoMatch": MessageLookupByLibrary.simpleMessage(
       "Нет узлов по фильтру",
     ),
@@ -453,11 +471,20 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainNodeSubscription": MessageLookupByLibrary.simpleMessage(
       "Узел подписки",
     ),
+    "chainNotProbed": MessageLookupByLibrary.simpleMessage(
+      "Не проверено: цвет отражает настройку, а не состояние",
+    ),
     "chainOpenFolder": MessageLookupByLibrary.simpleMessage("Открыть папку"),
     "chainOptional": MessageLookupByLibrary.simpleMessage("Необязательно"),
     "chainPackageReady": MessageLookupByLibrary.simpleMessage("Пакет готов"),
+    "chainPartialProbe": MessageLookupByLibrary.simpleMessage(
+      "Для части участков нет результата; непроверенные узлы нейтральны",
+    ),
     "chainPreProxyNone": MessageLookupByLibrary.simpleMessage("Напрямую (нет)"),
     "chainProbeNow": MessageLookupByLibrary.simpleMessage("Проверить цепочку"),
+    "chainProbePassed": MessageLookupByLibrary.simpleMessage(
+      "Все участки проверены; реальную доступность проверяйте запросом",
+    ),
     "chainProbing": MessageLookupByLibrary.simpleMessage("Проверка цепочки…"),
     "chainProxy": MessageLookupByLibrary.simpleMessage("Цепочка прокси"),
     "chainProxyDesc": MessageLookupByLibrary.simpleMessage(
@@ -465,8 +492,14 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "chainReady": MessageLookupByLibrary.simpleMessage("Готово"),
     "chainResetFilter": MessageLookupByLibrary.simpleMessage("Сбросить фильтр"),
+    "chainResidentialExample": MessageLookupByLibrary.simpleMessage(
+      "напр. домашний IP США 01",
+    ),
     "chainShareLabel": MessageLookupByLibrary.simpleMessage("Поделиться"),
     "chainSpeedTest": MessageLookupByLibrary.simpleMessage("Тест"),
+    "chainStunBlocked": MessageLookupByLibrary.simpleMessage(
+      "STUN/TURN заблокированы (утечек нет)",
+    ),
     "chainSupportTitle": MessageLookupByLibrary.simpleMessage(
       "Поддержка цепочки",
     ),
@@ -480,6 +513,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "Предпросмотр топологии цепной маршрутизации",
     ),
     "chainTz": MessageLookupByLibrary.simpleMessage("Часовой пояс устройства:"),
+    "chainTzAdvice": MessageLookupByLibrary.simpleMessage(
+      "Советы по часовому поясу и рискам для ToDetect / Whoer / IPpure",
+    ),
+    "chainTzWhy": MessageLookupByLibrary.simpleMessage(
+      "⚠️ Почему ToDetect подсвечивает часовой пояс IP и что делать:",
+    ),
     "chainWebrtcProtect": MessageLookupByLibrary.simpleMessage(
       "Защита от утечки WebRTC:",
     ),

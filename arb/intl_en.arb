@@ -1594,5 +1594,18 @@
   "chainTimeout": "Timeout",
   "chainFollowMain": "Follow main selector",
   "chainResetFilter": "Reset filter",
-  "chainProbing": "Probing the chain…"
+  "chainProbing": "Probing the chain…",
+  "chainHelpHop": "• Dialer (hop): the first relay the device connects to, carrying the first leg of the route.",
+  "chainHelpMultiHop": "• Multi-hop: traffic is routed in stages through the dialer and the landing node, so the topology stays decoupled.",
+  "chainTzWhy": "⚠️ Why ToDetect flags the IP time zone in red, and what to do:",
+  "chainHelpTitle": "What are the dialer and the landing node?",
+  "chainResidentialExample": "e.g. US residential 01",
+  "chainAddRelayDesc": "Inserts a relay at the end of the chain, before the exit",
+  "chainNotProbed": "Not probed yet: the colour reflects configuration, not health",
+  "chainStunBlocked": "STUN/TURN blocked (zero leaks)",
+  "chainNeedLanding": "Add and enable at least one landing proxy first",
+  "chainProbePassed": "Every hop probed cleanly; end-to-end reachability depends on the real request",
+  "chainPartialProbe": "Some hops have no result; unprobed nodes stay neutral",
+  "chainTzAdvice": "Time zone and risk-control tips for ToDetect / Whoer / IPpure",
+  "chainFingerprintGuide": "🎯 Guide to cross-border accounts and fingerprint isolation"
 }

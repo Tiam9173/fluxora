@@ -291,6 +291,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "categorySocial": MessageLookupByLibrary.simpleMessage("커뮤니티 플랫폼"),
     "categoryStreaming": MessageLookupByLibrary.simpleMessage("스트리밍"),
     "chainAddRelay": MessageLookupByLibrary.simpleMessage("중계 서버 추가"),
+    "chainAddRelayDesc": MessageLookupByLibrary.simpleMessage(
+      "기존 체인 끝, 출구 앞에 중계를 삽입합니다",
+    ),
     "chainAvgLatency": MessageLookupByLibrary.simpleMessage("평균 지연"),
     "chainCreateSupportPackage": MessageLookupByLibrary.simpleMessage(
       "지원 패키지 만들기",
@@ -313,10 +316,20 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainExporting": MessageLookupByLibrary.simpleMessage("내보내는 중…"),
     "chainFailed": MessageLookupByLibrary.simpleMessage("실패"),
     "chainFailuresLabel": MessageLookupByLibrary.simpleMessage("실패"),
+    "chainFingerprintGuide": MessageLookupByLibrary.simpleMessage(
+      "🎯 해외 계정 운영과 핑거프린트 분리 가이드",
+    ),
     "chainFollowMain": MessageLookupByLibrary.simpleMessage("메인 선택 따르기"),
     "chainGeneratedOn": MessageLookupByLibrary.simpleMessage("생성일"),
     "chainHealthLabel": MessageLookupByLibrary.simpleMessage("상태"),
     "chainHealthScore": MessageLookupByLibrary.simpleMessage("상태 점수"),
+    "chainHelpHop": MessageLookupByLibrary.simpleMessage(
+      "• 다이얼러(Hop): 기기가 가장 먼저 연결하는 중계 노드로 첫 구간을 담당합니다.",
+    ),
+    "chainHelpMultiHop": MessageLookupByLibrary.simpleMessage(
+      "• 멀티홉: 다이얼러와 랜딩 노드를 거쳐 단계적으로 라우팅해 토폴로지를 분리합니다.",
+    ),
+    "chainHelpTitle": MessageLookupByLibrary.simpleMessage("다이얼러와 랜딩 노드란?"),
     "chainHopExitNode": MessageLookupByLibrary.simpleMessage("3번째 홉(출구 노드)"),
     "chainHopIncomplete": MessageLookupByLibrary.simpleMessage(
       "3홉 체인이 불완전합니다: 중계 노드와 출구 노드를 선택하세요",
@@ -337,6 +350,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainIpOrDomain": MessageLookupByLibrary.simpleMessage("IP 또는 도메인"),
     "chainLandingProxyNone": MessageLookupByLibrary.simpleMessage("기본 (없음)"),
     "chainMainTargets": MessageLookupByLibrary.simpleMessage("주요 서비스 연결성"),
+    "chainNeedLanding": MessageLookupByLibrary.simpleMessage(
+      "먼저 랜딩 프록시를 하나 이상 추가하고 활성화하세요",
+    ),
     "chainNoMatch": MessageLookupByLibrary.simpleMessage("필터에 맞는 노드가 없습니다"),
     "chainNoResidential": MessageLookupByLibrary.simpleMessage("랜딩 주거용 노드 미설정"),
     "chainNodeDeviceApp": MessageLookupByLibrary.simpleMessage("장치 앱"),
@@ -345,11 +361,20 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainNodePreProxy": MessageLookupByLibrary.simpleMessage("사전 프록시"),
     "chainNodeReliability": MessageLookupByLibrary.simpleMessage("노드 신뢰도"),
     "chainNodeSubscription": MessageLookupByLibrary.simpleMessage("구독 노드"),
+    "chainNotProbed": MessageLookupByLibrary.simpleMessage(
+      "미확인: 색상은 설정만 나타내며 상태를 뜻하지 않습니다",
+    ),
     "chainOpenFolder": MessageLookupByLibrary.simpleMessage("폴더 열기"),
     "chainOptional": MessageLookupByLibrary.simpleMessage("선택"),
     "chainPackageReady": MessageLookupByLibrary.simpleMessage("패키지 준비 완료"),
+    "chainPartialProbe": MessageLookupByLibrary.simpleMessage(
+      "일부 홉에 결과가 없습니다. 미확인 노드는 중립색으로 표시됩니다",
+    ),
     "chainPreProxyNone": MessageLookupByLibrary.simpleMessage("직접 (없음)"),
     "chainProbeNow": MessageLookupByLibrary.simpleMessage("체인 검사"),
+    "chainProbePassed": MessageLookupByLibrary.simpleMessage(
+      "각 홉 확인 통과. 실제 도달 여부는 직접 접속으로 확인하세요",
+    ),
     "chainProbing": MessageLookupByLibrary.simpleMessage("체인 확인 중…"),
     "chainProxy": MessageLookupByLibrary.simpleMessage("체인 프록시"),
     "chainProxyDesc": MessageLookupByLibrary.simpleMessage(
@@ -357,8 +382,14 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "chainReady": MessageLookupByLibrary.simpleMessage("준비됨"),
     "chainResetFilter": MessageLookupByLibrary.simpleMessage("필터 초기화"),
+    "chainResidentialExample": MessageLookupByLibrary.simpleMessage(
+      "예: 미국 주거용 IP 01",
+    ),
     "chainShareLabel": MessageLookupByLibrary.simpleMessage("공유"),
     "chainSpeedTest": MessageLookupByLibrary.simpleMessage("속도 테스트"),
+    "chainStunBlocked": MessageLookupByLibrary.simpleMessage(
+      "STUN/TURN 차단됨 (유출 없음)",
+    ),
     "chainSupportTitle": MessageLookupByLibrary.simpleMessage("체인 지원"),
     "chainTargetNet": MessageLookupByLibrary.simpleMessage("대상 네트워크"),
     "chainTimeout": MessageLookupByLibrary.simpleMessage("시간 초과"),
@@ -368,6 +399,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "체인 라우팅 토폴로지 미리보기",
     ),
     "chainTz": MessageLookupByLibrary.simpleMessage("기기 시간대:"),
+    "chainTzAdvice": MessageLookupByLibrary.simpleMessage(
+      "ToDetect / Whoer / IPpure용 시간대 및 위험 관리 팁",
+    ),
+    "chainTzWhy": MessageLookupByLibrary.simpleMessage(
+      "⚠️ ToDetect가 \'IP 시간대\'를 빨갛게 표시하는 이유와 대응:",
+    ),
     "chainWebrtcProtect": MessageLookupByLibrary.simpleMessage("WebRTC 유출 방지:"),
     "checkError": MessageLookupByLibrary.simpleMessage("확인 실패"),
     "checkFailed": MessageLookupByLibrary.simpleMessage("Timeout"),

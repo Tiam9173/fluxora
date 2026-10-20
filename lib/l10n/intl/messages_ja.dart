@@ -286,6 +286,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "categorySocial": MessageLookupByLibrary.simpleMessage("コミュニティ"),
     "categoryStreaming": MessageLookupByLibrary.simpleMessage("動画配信"),
     "chainAddRelay": MessageLookupByLibrary.simpleMessage("中継サーバーを追加"),
+    "chainAddRelayDesc": MessageLookupByLibrary.simpleMessage(
+      "既存チェーンの末端、着地出口の手前に中継を挿入します",
+    ),
     "chainAvgLatency": MessageLookupByLibrary.simpleMessage("平均遅延"),
     "chainCreateSupportPackage": MessageLookupByLibrary.simpleMessage(
       "サポートパッケージを作成",
@@ -310,10 +313,20 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainExporting": MessageLookupByLibrary.simpleMessage("書き出し中…"),
     "chainFailed": MessageLookupByLibrary.simpleMessage("失敗"),
     "chainFailuresLabel": MessageLookupByLibrary.simpleMessage("失敗"),
+    "chainFingerprintGuide": MessageLookupByLibrary.simpleMessage(
+      "🎯 越境アカウント運用とフィンガープリント分離のガイド",
+    ),
     "chainFollowMain": MessageLookupByLibrary.simpleMessage("メイン選択に追従"),
     "chainGeneratedOn": MessageLookupByLibrary.simpleMessage("生成日時"),
     "chainHealthLabel": MessageLookupByLibrary.simpleMessage("状態"),
     "chainHealthScore": MessageLookupByLibrary.simpleMessage("ヘルススコア"),
+    "chainHelpHop": MessageLookupByLibrary.simpleMessage(
+      "• ダイヤラー（Hop）：端末が最初に接続する中継ノードで、経路の第一区間を担います。",
+    ),
+    "chainHelpMultiHop": MessageLookupByLibrary.simpleMessage(
+      "• マルチホップ：ダイヤラーと着地ノードで段階的に経路を分け、トポロジーを分離します。",
+    ),
+    "chainHelpTitle": MessageLookupByLibrary.simpleMessage("ダイヤラーと着地ノードとは？"),
     "chainHopExitNode": MessageLookupByLibrary.simpleMessage("第3ホップ（出口ノード）"),
     "chainHopIncomplete": MessageLookupByLibrary.simpleMessage(
       "スリーホップチェーンが不完全です：中継ノードと出口ノードを選択してください",
@@ -334,6 +347,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainIpOrDomain": MessageLookupByLibrary.simpleMessage("IP またはドメイン"),
     "chainLandingProxyNone": MessageLookupByLibrary.simpleMessage("デフォルト (なし)"),
     "chainMainTargets": MessageLookupByLibrary.simpleMessage("主要サービスの接続性"),
+    "chainNeedLanding": MessageLookupByLibrary.simpleMessage(
+      "先に着地プロキシを1つ以上追加して有効にしてください",
+    ),
     "chainNoMatch": MessageLookupByLibrary.simpleMessage("条件に合うノードがありません"),
     "chainNoResidential": MessageLookupByLibrary.simpleMessage("着地住宅ノードが未設定"),
     "chainNodeDeviceApp": MessageLookupByLibrary.simpleMessage("デバイスアプリ"),
@@ -342,11 +358,20 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainNodePreProxy": MessageLookupByLibrary.simpleMessage("プリプロキシ"),
     "chainNodeReliability": MessageLookupByLibrary.simpleMessage("ノード信頼性"),
     "chainNodeSubscription": MessageLookupByLibrary.simpleMessage("購読ノード"),
+    "chainNotProbed": MessageLookupByLibrary.simpleMessage(
+      "未確認：色は設定を表すだけで、健全性ではありません",
+    ),
     "chainOpenFolder": MessageLookupByLibrary.simpleMessage("フォルダーを開く"),
     "chainOptional": MessageLookupByLibrary.simpleMessage("任意"),
     "chainPackageReady": MessageLookupByLibrary.simpleMessage("パッケージ準備完了"),
+    "chainPartialProbe": MessageLookupByLibrary.simpleMessage(
+      "一部のホップに結果がありません。未確認のノードは中立色のままです",
+    ),
     "chainPreProxyNone": MessageLookupByLibrary.simpleMessage("直接 (なし)"),
     "chainProbeNow": MessageLookupByLibrary.simpleMessage("チェーンを検査"),
+    "chainProbePassed": MessageLookupByLibrary.simpleMessage(
+      "各ホップの確認は通過。実際の到達性は実アクセスでご確認ください",
+    ),
     "chainProbing": MessageLookupByLibrary.simpleMessage("チェーンを確認中…"),
     "chainProxy": MessageLookupByLibrary.simpleMessage("チェーンプロキシ"),
     "chainProxyDesc": MessageLookupByLibrary.simpleMessage(
@@ -354,8 +379,14 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "chainReady": MessageLookupByLibrary.simpleMessage("準備完了"),
     "chainResetFilter": MessageLookupByLibrary.simpleMessage("フィルタをリセット"),
+    "chainResidentialExample": MessageLookupByLibrary.simpleMessage(
+      "例：米国住宅 IP 01",
+    ),
     "chainShareLabel": MessageLookupByLibrary.simpleMessage("共有"),
     "chainSpeedTest": MessageLookupByLibrary.simpleMessage("速度テスト"),
+    "chainStunBlocked": MessageLookupByLibrary.simpleMessage(
+      "STUN/TURN を遮断済み（漏洩ゼロ）",
+    ),
     "chainSupportTitle": MessageLookupByLibrary.simpleMessage("チェーンサポート"),
     "chainTargetNet": MessageLookupByLibrary.simpleMessage("対象ネットワーク"),
     "chainTimeout": MessageLookupByLibrary.simpleMessage("タイムアウト"),
@@ -365,6 +396,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "チェーンルーティングトポロジのプレビュー",
     ),
     "chainTz": MessageLookupByLibrary.simpleMessage("端末のタイムゾーン："),
+    "chainTzAdvice": MessageLookupByLibrary.simpleMessage(
+      "ToDetect / Whoer / IPpure 向けのタイムゾーンとリスク管理のヒント",
+    ),
+    "chainTzWhy": MessageLookupByLibrary.simpleMessage(
+      "⚠️ ToDetect が「IP のタイムゾーン」を赤く表示する理由と対処：",
+    ),
     "chainWebrtcProtect": MessageLookupByLibrary.simpleMessage("WebRTC リーク防止："),
     "checkError": MessageLookupByLibrary.simpleMessage("確認失敗"),
     "checkFailed": MessageLookupByLibrary.simpleMessage("Timeout"),

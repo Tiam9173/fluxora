@@ -1197,5 +1197,18 @@
   "chainTimeout": "逾時",
   "chainFollowMain": "跟隨主選擇",
   "chainResetFilter": "重設篩選",
-  "chainProbing": "鏈路探測中…"
+  "chainProbing": "鏈路探測中…",
+  "chainHelpHop": "• 前置跳板 (Hop)：由本機連接的首級中繼節點，負責第一級網路中轉。",
+  "chainHelpMultiHop": "• 多跳鏈路傳輸：透過前置跳板與落地節點分級路由，實現流量分層轉發與網路拓撲解耦。",
+  "chainTzWhy": "⚠️ 針對 ToDetect 偵測到「IP位址時區」異常標紅的原因與方案：",
+  "chainHelpTitle": "什麼是前置跳板與落地節點？",
+  "chainResidentialExample": "例：美國家庭住宅IP 01",
+  "chainAddRelayDesc": "在現有鏈路末端、落地出口之前插入一級中轉",
+  "chainNotProbed": "尚未探測：顏色僅表示設定，不代表鏈路健康",
+  "chainStunBlocked": "已硬核攔截 STUN/TURN (0洩漏)",
+  "chainNeedLanding": "請先新增並啟用至少一個落地代理節點",
+  "chainProbePassed": "逐跳探測通過；端到端出口可用性請以實際存取為準",
+  "chainPartialProbe": "部分鏈路缺少探測結果：未探測的節點保持中性色",
+  "chainTzAdvice": "針對 ToDetect / Whoer / IPpure 偵測的時區與風控排查建議",
+  "chainFingerprintGuide": "🎯 跨境養號與指紋防關聯環境指南"
 }

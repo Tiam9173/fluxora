@@ -263,6 +263,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "categorySocial": MessageLookupByLibrary.simpleMessage("社群平台"),
     "categoryStreaming": MessageLookupByLibrary.simpleMessage("串流媒體"),
     "chainAddRelay": MessageLookupByLibrary.simpleMessage("新增中轉伺服器"),
+    "chainAddRelayDesc": MessageLookupByLibrary.simpleMessage(
+      "在現有鏈路末端、落地出口之前插入一級中轉",
+    ),
     "chainAvgLatency": MessageLookupByLibrary.simpleMessage("平均延遲"),
     "chainCreateSupportPackage": MessageLookupByLibrary.simpleMessage("建立支援套件"),
     "chainCreatingPackage": MessageLookupByLibrary.simpleMessage("建立中…"),
@@ -283,10 +286,20 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainExporting": MessageLookupByLibrary.simpleMessage("匯出中…"),
     "chainFailed": MessageLookupByLibrary.simpleMessage("失敗"),
     "chainFailuresLabel": MessageLookupByLibrary.simpleMessage("失敗"),
+    "chainFingerprintGuide": MessageLookupByLibrary.simpleMessage(
+      "🎯 跨境養號與指紋防關聯環境指南",
+    ),
     "chainFollowMain": MessageLookupByLibrary.simpleMessage("跟隨主選擇"),
     "chainGeneratedOn": MessageLookupByLibrary.simpleMessage("產生於"),
     "chainHealthLabel": MessageLookupByLibrary.simpleMessage("健康"),
     "chainHealthScore": MessageLookupByLibrary.simpleMessage("健康評分"),
+    "chainHelpHop": MessageLookupByLibrary.simpleMessage(
+      "• 前置跳板 (Hop)：由本機連接的首級中繼節點，負責第一級網路中轉。",
+    ),
+    "chainHelpMultiHop": MessageLookupByLibrary.simpleMessage(
+      "• 多跳鏈路傳輸：透過前置跳板與落地節點分級路由，實現流量分層轉發與網路拓撲解耦。",
+    ),
+    "chainHelpTitle": MessageLookupByLibrary.simpleMessage("什麼是前置跳板與落地節點？"),
     "chainHopExitNode": MessageLookupByLibrary.simpleMessage("第三跳（出口節點）"),
     "chainHopIncomplete": MessageLookupByLibrary.simpleMessage(
       "三跳鏈路未完整：請選擇中轉節點與出口節點",
@@ -305,6 +318,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainIpOrDomain": MessageLookupByLibrary.simpleMessage("IP 或域名"),
     "chainLandingProxyNone": MessageLookupByLibrary.simpleMessage("預設 (無)"),
     "chainMainTargets": MessageLookupByLibrary.simpleMessage("主流目標服務連通性"),
+    "chainNeedLanding": MessageLookupByLibrary.simpleMessage(
+      "請先新增並啟用至少一個落地代理節點",
+    ),
     "chainNoMatch": MessageLookupByLibrary.simpleMessage("目前篩選條件下沒有節點"),
     "chainNoResidential": MessageLookupByLibrary.simpleMessage("尚未設定落地住宅節點"),
     "chainNodeDeviceApp": MessageLookupByLibrary.simpleMessage("裝置應用"),
@@ -313,11 +329,20 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainNodePreProxy": MessageLookupByLibrary.simpleMessage("前置代理"),
     "chainNodeReliability": MessageLookupByLibrary.simpleMessage("節點可靠性"),
     "chainNodeSubscription": MessageLookupByLibrary.simpleMessage("訂閱節點"),
+    "chainNotProbed": MessageLookupByLibrary.simpleMessage(
+      "尚未探測：顏色僅表示設定，不代表鏈路健康",
+    ),
     "chainOpenFolder": MessageLookupByLibrary.simpleMessage("開啟資料夾"),
     "chainOptional": MessageLookupByLibrary.simpleMessage("選填"),
     "chainPackageReady": MessageLookupByLibrary.simpleMessage("套件已就緒"),
+    "chainPartialProbe": MessageLookupByLibrary.simpleMessage(
+      "部分鏈路缺少探測結果：未探測的節點保持中性色",
+    ),
     "chainPreProxyNone": MessageLookupByLibrary.simpleMessage("直連 (無)"),
     "chainProbeNow": MessageLookupByLibrary.simpleMessage("探測鏈路"),
+    "chainProbePassed": MessageLookupByLibrary.simpleMessage(
+      "逐跳探測通過；端到端出口可用性請以實際存取為準",
+    ),
     "chainProbing": MessageLookupByLibrary.simpleMessage("鏈路探測中…"),
     "chainProxy": MessageLookupByLibrary.simpleMessage("鏈式代理"),
     "chainProxyDesc": MessageLookupByLibrary.simpleMessage(
@@ -325,8 +350,14 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "chainReady": MessageLookupByLibrary.simpleMessage("已就緒"),
     "chainResetFilter": MessageLookupByLibrary.simpleMessage("重設篩選"),
+    "chainResidentialExample": MessageLookupByLibrary.simpleMessage(
+      "例：美國家庭住宅IP 01",
+    ),
     "chainShareLabel": MessageLookupByLibrary.simpleMessage("分享"),
     "chainSpeedTest": MessageLookupByLibrary.simpleMessage("測速"),
+    "chainStunBlocked": MessageLookupByLibrary.simpleMessage(
+      "已硬核攔截 STUN/TURN (0洩漏)",
+    ),
     "chainSupportTitle": MessageLookupByLibrary.simpleMessage("鏈式支援"),
     "chainTargetNet": MessageLookupByLibrary.simpleMessage("目標網路"),
     "chainTimeout": MessageLookupByLibrary.simpleMessage("逾時"),
@@ -334,6 +365,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainTopology": MessageLookupByLibrary.simpleMessage("動態鏈路拓撲"),
     "chainTopologyPreview": MessageLookupByLibrary.simpleMessage("鏈式路由拓撲預覽"),
     "chainTz": MessageLookupByLibrary.simpleMessage("目前裝置系統時區："),
+    "chainTzAdvice": MessageLookupByLibrary.simpleMessage(
+      "針對 ToDetect / Whoer / IPpure 偵測的時區與風控排查建議",
+    ),
+    "chainTzWhy": MessageLookupByLibrary.simpleMessage(
+      "⚠️ 針對 ToDetect 偵測到「IP位址時區」異常標紅的原因與方案：",
+    ),
     "chainWebrtcProtect": MessageLookupByLibrary.simpleMessage("WebRTC 洩漏防護："),
     "checkError": MessageLookupByLibrary.simpleMessage("檢測失敗"),
     "checkFailed": MessageLookupByLibrary.simpleMessage("Timeout"),

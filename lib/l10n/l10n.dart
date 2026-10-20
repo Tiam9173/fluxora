@@ -10284,6 +10284,136 @@ class AppLocalizations {
       args: [],
     );
   }
+
+  /// `• Dialer (hop): the first relay the device connects to, carrying the first leg of the route.`
+  String get chainHelpHop {
+    return Intl.message(
+      '• Dialer (hop): the first relay the device connects to, carrying the first leg of the route.',
+      name: 'chainHelpHop',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `• Multi-hop: traffic is routed in stages through the dialer and the landing node, so the topology stays decoupled.`
+  String get chainHelpMultiHop {
+    return Intl.message(
+      '• Multi-hop: traffic is routed in stages through the dialer and the landing node, so the topology stays decoupled.',
+      name: 'chainHelpMultiHop',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `⚠️ Why ToDetect flags the IP time zone in red, and what to do:`
+  String get chainTzWhy {
+    return Intl.message(
+      '⚠️ Why ToDetect flags the IP time zone in red, and what to do:',
+      name: 'chainTzWhy',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `What are the dialer and the landing node?`
+  String get chainHelpTitle {
+    return Intl.message(
+      'What are the dialer and the landing node?',
+      name: 'chainHelpTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `e.g. US residential 01`
+  String get chainResidentialExample {
+    return Intl.message(
+      'e.g. US residential 01',
+      name: 'chainResidentialExample',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Inserts a relay at the end of the chain, before the exit`
+  String get chainAddRelayDesc {
+    return Intl.message(
+      'Inserts a relay at the end of the chain, before the exit',
+      name: 'chainAddRelayDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Not probed yet: the colour reflects configuration, not health`
+  String get chainNotProbed {
+    return Intl.message(
+      'Not probed yet: the colour reflects configuration, not health',
+      name: 'chainNotProbed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `STUN/TURN blocked (zero leaks)`
+  String get chainStunBlocked {
+    return Intl.message(
+      'STUN/TURN blocked (zero leaks)',
+      name: 'chainStunBlocked',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Add and enable at least one landing proxy first`
+  String get chainNeedLanding {
+    return Intl.message(
+      'Add and enable at least one landing proxy first',
+      name: 'chainNeedLanding',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Every hop probed cleanly; end-to-end reachability depends on the real request`
+  String get chainProbePassed {
+    return Intl.message(
+      'Every hop probed cleanly; end-to-end reachability depends on the real request',
+      name: 'chainProbePassed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Some hops have no result; unprobed nodes stay neutral`
+  String get chainPartialProbe {
+    return Intl.message(
+      'Some hops have no result; unprobed nodes stay neutral',
+      name: 'chainPartialProbe',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Time zone and risk-control tips for ToDetect / Whoer / IPpure`
+  String get chainTzAdvice {
+    return Intl.message(
+      'Time zone and risk-control tips for ToDetect / Whoer / IPpure',
+      name: 'chainTzAdvice',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `🎯 Guide to cross-border accounts and fingerprint isolation`
+  String get chainFingerprintGuide {
+    return Intl.message(
+      '🎯 Guide to cross-border accounts and fingerprint isolation',
+      name: 'chainFingerprintGuide',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {

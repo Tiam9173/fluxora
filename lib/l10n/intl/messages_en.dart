@@ -341,6 +341,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "categorySocial": MessageLookupByLibrary.simpleMessage("Social Platforms"),
     "categoryStreaming": MessageLookupByLibrary.simpleMessage("Streaming"),
     "chainAddRelay": MessageLookupByLibrary.simpleMessage("Add relay server"),
+    "chainAddRelayDesc": MessageLookupByLibrary.simpleMessage(
+      "Inserts a relay at the end of the chain, before the exit",
+    ),
     "chainAvgLatency": MessageLookupByLibrary.simpleMessage("Avg Latency"),
     "chainCreateSupportPackage": MessageLookupByLibrary.simpleMessage(
       "Create Support Package",
@@ -375,12 +378,24 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainExporting": MessageLookupByLibrary.simpleMessage("Exporting..."),
     "chainFailed": MessageLookupByLibrary.simpleMessage("Failed"),
     "chainFailuresLabel": MessageLookupByLibrary.simpleMessage("Failures"),
+    "chainFingerprintGuide": MessageLookupByLibrary.simpleMessage(
+      "🎯 Guide to cross-border accounts and fingerprint isolation",
+    ),
     "chainFollowMain": MessageLookupByLibrary.simpleMessage(
       "Follow main selector",
     ),
     "chainGeneratedOn": MessageLookupByLibrary.simpleMessage("Generated on"),
     "chainHealthLabel": MessageLookupByLibrary.simpleMessage("Health"),
     "chainHealthScore": MessageLookupByLibrary.simpleMessage("Health Score"),
+    "chainHelpHop": MessageLookupByLibrary.simpleMessage(
+      "• Dialer (hop): the first relay the device connects to, carrying the first leg of the route.",
+    ),
+    "chainHelpMultiHop": MessageLookupByLibrary.simpleMessage(
+      "• Multi-hop: traffic is routed in stages through the dialer and the landing node, so the topology stays decoupled.",
+    ),
+    "chainHelpTitle": MessageLookupByLibrary.simpleMessage(
+      "What are the dialer and the landing node?",
+    ),
     "chainHopExitNode": MessageLookupByLibrary.simpleMessage(
       "Hop 3 (exit node)",
     ),
@@ -411,6 +426,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainMainTargets": MessageLookupByLibrary.simpleMessage(
       "Connectivity to common services",
     ),
+    "chainNeedLanding": MessageLookupByLibrary.simpleMessage(
+      "Add and enable at least one landing proxy first",
+    ),
     "chainNoMatch": MessageLookupByLibrary.simpleMessage(
       "No nodes match the filter",
     ),
@@ -427,11 +445,20 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainNodeSubscription": MessageLookupByLibrary.simpleMessage(
       "Subscription node",
     ),
+    "chainNotProbed": MessageLookupByLibrary.simpleMessage(
+      "Not probed yet: the colour reflects configuration, not health",
+    ),
     "chainOpenFolder": MessageLookupByLibrary.simpleMessage("Open Folder"),
     "chainOptional": MessageLookupByLibrary.simpleMessage("Optional"),
     "chainPackageReady": MessageLookupByLibrary.simpleMessage("Package Ready"),
+    "chainPartialProbe": MessageLookupByLibrary.simpleMessage(
+      "Some hops have no result; unprobed nodes stay neutral",
+    ),
     "chainPreProxyNone": MessageLookupByLibrary.simpleMessage("Direct (none)"),
     "chainProbeNow": MessageLookupByLibrary.simpleMessage("Probe chain"),
+    "chainProbePassed": MessageLookupByLibrary.simpleMessage(
+      "Every hop probed cleanly; end-to-end reachability depends on the real request",
+    ),
     "chainProbing": MessageLookupByLibrary.simpleMessage("Probing the chain…"),
     "chainProxy": MessageLookupByLibrary.simpleMessage("Chain Proxy"),
     "chainProxyDesc": MessageLookupByLibrary.simpleMessage(
@@ -439,8 +466,14 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "chainReady": MessageLookupByLibrary.simpleMessage("Ready"),
     "chainResetFilter": MessageLookupByLibrary.simpleMessage("Reset filter"),
+    "chainResidentialExample": MessageLookupByLibrary.simpleMessage(
+      "e.g. US residential 01",
+    ),
     "chainShareLabel": MessageLookupByLibrary.simpleMessage("Share"),
     "chainSpeedTest": MessageLookupByLibrary.simpleMessage("Test"),
+    "chainStunBlocked": MessageLookupByLibrary.simpleMessage(
+      "STUN/TURN blocked (zero leaks)",
+    ),
     "chainSupportTitle": MessageLookupByLibrary.simpleMessage("Chain Support"),
     "chainTargetNet": MessageLookupByLibrary.simpleMessage("Target network"),
     "chainTimeout": MessageLookupByLibrary.simpleMessage("Timeout"),
@@ -452,6 +485,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "Chain routing topology preview",
     ),
     "chainTz": MessageLookupByLibrary.simpleMessage("Device time zone:"),
+    "chainTzAdvice": MessageLookupByLibrary.simpleMessage(
+      "Time zone and risk-control tips for ToDetect / Whoer / IPpure",
+    ),
+    "chainTzWhy": MessageLookupByLibrary.simpleMessage(
+      "⚠️ Why ToDetect flags the IP time zone in red, and what to do:",
+    ),
     "chainWebrtcProtect": MessageLookupByLibrary.simpleMessage(
       "WebRTC leak protection:",
     ),
