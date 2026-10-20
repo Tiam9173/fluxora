@@ -39,9 +39,7 @@
             android:name="io.fluxora.app.CardActivity"
             android:exported="false"
             android:excludeFromRecents="true"
-            android:noHistory="true"
-            android:launchMode="singleInstance"
-            android:taskAffinity="io.fluxora.app.card"
+            android:launchMode="singleTop"
             android:theme="@style/CardTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode|colorMode"
             android:windowSoftInputMode="adjustResize">
