@@ -46,14 +46,15 @@ class MainActivity : FlutterActivity() {
         intent?.getBooleanExtra(EXTRA_SHOW_SWITCH_CARD, false) == true
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        val cardOnly = isCardOnlyLaunch(intent)
-        if (cardOnly) {
-            GlobalState.cardOnlyLaunch = true
-            window.setFormat(android.graphics.PixelFormat.TRANSLUCENT)
-            window.setBackgroundDrawable(
-                android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT)
-            )
-        }
+        // 窗口始终透明：正常模式下 Flutter 根节点自己画不透明背景，看起来
+        // 和以前完全一样；卡片模式下根节点画透明，桌面就透出来了。
+        //
+        // 之所以不能只在卡片启动时设：窗口属性只能在窗口创建前定，而"App 已
+        // 在后台、点通知切节点"走的是 onNewIntent，那时窗口早就存在了。
+        window.setFormat(android.graphics.PixelFormat.TRANSLUCENT)
+        window.setBackgroundDrawable(
+            android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT)
+        )
         val isEngineCached = FlutterEngineCache.getInstance().contains(MAIN_ENGINE_ID)
         if (isTvDevice(this) || isEngineCached) {
             setTheme(R.style.NormalTheme)
@@ -62,6 +63,16 @@ class MainActivity : FlutterActivity() {
         }
         super.onCreate(savedInstanceState)
         handleSwitchCardIntent(intent, isColdStart = true)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        GlobalState.appInBackground = true
+    }
+
+    override fun onResume() {
+        super.onResume()
+        GlobalState.appInBackground = false
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -81,11 +92,12 @@ class MainActivity : FlutterActivity() {
         // still booting and a fixed delay either fires too early (no handler
         // yet) or too late (user already navigated). Dart pulls it when ready.
         GlobalState.pendingNotificationAction = "switch"
-        // Card-only needs a translucent window, and that can only be set before
-        // the window exists. Reusing a running activity keeps its opaque window,
-        // so there the card has to be the normal in-app dialog - otherwise the
-        // root flips to card-only over a black background.
-        GlobalState.cardOnlyLaunch = isColdStart
+        // 窗口现在始终透明，所以卡片模式不再受"冷启动"限制：只要用户不是在
+        // App 里（后台或刚启动），就浮在桌面上显示卡片。
+        //
+        // `appInBackground` 在 onStop 置位、onResume 清除，而 onNewIntent 在
+        // onResume 之前触发，所以这里读到的仍是启动前的状态。
+        GlobalState.cardOnlyLaunch = isColdStart || GlobalState.appInBackground
         // When the app is already in the foreground there is no lifecycle
         // change, so nothing would ever pull the pending action. Push it now;
         // Dart ignores it if it has no navigator yet and pulls it on resume.

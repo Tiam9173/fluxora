@@ -196,6 +196,12 @@ object GlobalState {
     @Volatile
     var cardOnlyLaunch: Boolean = false
 
+    /// 主界面是否在后台。
+    ///
+    /// onStop 置位、onResume 清除。通知动作走 onNewIntent（在 onResume 之前），
+    /// 所以那时读到的仍是"点通知前"的状态——用它判断该不该浮出卡片。
+    var appInBackground: Boolean = false
+
     /// Notification button labels pushed from Dart so they follow the in-app
     /// language rather than the system one.
     @Volatile
