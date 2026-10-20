@@ -113,7 +113,7 @@ Future<void> showNodeDetailsDialog(
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        '已修改',
+                        appLocalizations.nodeDetailModified,
                         style: TextStyle(
                           fontSize: 10,
                           color: colors.onTertiaryContainer,
@@ -127,7 +127,7 @@ Future<void> showNodeDetailsDialog(
             ),
             if (raw != null && profileId != null)
               IconButton(
-                tooltip: '编辑',
+                tooltip: appLocalizations.nodeDetailEdit,
                 icon: const Icon(Icons.edit_outlined, size: 18),
                 onPressed: () async {
                   // 闭包里不会保留 null 提升，取一份非空引用。
@@ -142,15 +142,15 @@ Future<void> showNodeDetailsDialog(
                   if (changed && ctx.mounted) {
                     Navigator.of(ctx).pop();
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('已保存本地修改，重启内核后生效'),
+                      SnackBar(
+                        content: Text(appLocalizations.nodeDetailSaved),
                       ),
                     );
                   }
                 },
               ),
             IconButton(
-              tooltip: '复制配置',
+              tooltip: appLocalizations.nodeDetailCopyConfig,
               icon: const Icon(Icons.copy_all_outlined, size: 18),
               onPressed: () {
                 final text = raw == null
@@ -160,7 +160,7 @@ Future<void> showNodeDetailsDialog(
                         .join('\n');
                 Clipboard.setData(ClipboardData(text: text));
                 ScaffoldMessenger.of(ctx).showSnackBar(
-                  const SnackBar(content: Text('已复制到剪贴板')),
+                  SnackBar(content: Text(appLocalizations.nodeDetailCopied)),
                 );
               },
             ),
@@ -171,7 +171,7 @@ Future<void> showNodeDetailsDialog(
           child: SingleChildScrollView(
             child: raw == null
                 ? Text(
-                    '找不到这个节点的原始配置（可能来自策略组或已被订阅更新替换）',
+                    appLocalizations.nodeDetailMissing,
                     style: TextStyle(fontSize: 13, color: colors.outline),
                   )
                 : Column(
@@ -219,14 +219,14 @@ Future<void> showNodeDetailsDialog(
                 if (!ctx.mounted) return;
                 Navigator.of(ctx).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('已恢复订阅原始配置，重启内核后生效')),
+                  SnackBar(content: Text(appLocalizations.nodeDetailRestored)),
                 );
               },
-              child: const Text('恢复原始配置'),
+              child: Text(appLocalizations.nodeDetailRestore),
             ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('关闭'),
+            child: Text(appLocalizations.nodeDetailClose),
           ),
         ],
       );
@@ -277,7 +277,7 @@ Future<bool> showNodeEditDialog(
   final saved = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
-      title: Text('编辑 $proxyName', style: const TextStyle(fontSize: 15)),
+      title: Text(appLocalizations.nodeDetailEditTitle(proxyName), style: const TextStyle(fontSize: 15)),
       content: SizedBox(
         width: 380,
         child: SingleChildScrollView(
@@ -303,11 +303,11 @@ Future<bool> showNodeEditDialog(
       actions: [
         TextButton(
           onPressed: () => Navigator.of(ctx).pop(false),
-          child: const Text('取消'),
+          child: Text(appLocalizations.nodeDetailCancel),
         ),
         TextButton(
           onPressed: () => Navigator.of(ctx).pop(true),
-          child: const Text('保存'),
+          child: Text(appLocalizations.nodeDetailSave),
         ),
       ],
     ),

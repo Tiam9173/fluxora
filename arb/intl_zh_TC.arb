@@ -1219,5 +1219,21 @@
   "warpRouteProxyOverWarp": "透過 WARP 路由代理",
   "warpRouteProxyOverWarpDesc": "透過 WARP 路由代理 (WARP 作為前置跳板連通被封鎖的節點)",
   "warpEdgeNode": "邊緣節點 {code}",
-  "warpUnknownColo": "未知邊緣節點"
+  "warpUnknownColo": "未知邊緣節點",
+  "nodeDetailSave": "儲存",
+  "nodeDetailClose": "關閉",
+  "nodeDetailCancel": "取消",
+  "nodeDetailCopyConfig": "複製設定",
+  "nodeDetailCopied": "已複製到剪貼簿",
+  "nodeDetailSaved": "已儲存本機修改，重啟核心後生效",
+  "nodeDetailModified": "已修改",
+  "nodeDetailRestored": "已還原訂閱原始設定，重啟核心後生效",
+  "nodeDetailRestore": "還原原始設定",
+  "nodeDetailMissing": "找不到這個節點的原始設定（可能來自策略組或已被訂閱更新替換）",
+  "nodeDetailEdit": "編輯",
+  "nodeDetailEditTitle": "編輯 {name}",
+  "generalCardCoreTitle": "通知列卡片可存取核心",
+  "generalCardCoreDesc": "開啟後核心始終在本機回環位址提供介面，供通知列切換卡片使用",
+  "generalKeepService": "重啟核心時保持服務在線",
+  "generalKeepServiceDesc": "關閉時服務狀態跟隨核心（通知列會短暫顯示中斷）"
 }

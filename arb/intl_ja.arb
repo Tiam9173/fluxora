@@ -1221,5 +1221,21 @@
   "warpRouteProxyOverWarp": "WARP 経由でプロキシ",
   "warpRouteProxyOverWarpDesc": "WARP 経由でプロキシ（WARP をダイヤラーとして遮断されたノードに接続）",
   "warpEdgeNode": "エッジ拠点 {code}",
-  "warpUnknownColo": "不明なエッジ拠点"
+  "warpUnknownColo": "不明なエッジ拠点",
+  "nodeDetailSave": "保存",
+  "nodeDetailClose": "閉じる",
+  "nodeDetailCancel": "キャンセル",
+  "nodeDetailCopyConfig": "設定をコピー",
+  "nodeDetailCopied": "クリップボードにコピーしました",
+  "nodeDetailSaved": "保存しました。コア再起動で反映されます",
+  "nodeDetailModified": "変更済み",
+  "nodeDetailRestored": "元の設定に戻しました。コア再起動で反映されます",
+  "nodeDetailRestore": "元の設定に戻す",
+  "nodeDetailMissing": "このノードの元設定が見つかりません（グループ由来か、購読更新で置き換えられた可能性）",
+  "nodeDetailEdit": "編集",
+  "nodeDetailEditTitle": "{name} を編集",
+  "generalCardCoreTitle": "通知カードからコアへ接続",
+  "generalCardCoreDesc": "オンにするとコアは常にループバックで待ち受け、通知カードが接続できます",
+  "generalKeepService": "コア再起動中もサービスを維持",
+  "generalKeepServiceDesc": "オフ：サービスはコアに追従し、通知は一時的に切断と表示されます"
 }

@@ -1221,5 +1221,21 @@
   "warpRouteProxyOverWarp": "通过 WARP 路由代理",
   "warpRouteProxyOverWarpDesc": "通过 WARP 路由代理 (WARP 作为前置跳板连通被封锁的节点)",
   "warpEdgeNode": "边缘节点 {code}",
-  "warpUnknownColo": "未知边缘节点"
+  "warpUnknownColo": "未知边缘节点",
+  "nodeDetailSave": "保存",
+  "nodeDetailClose": "关闭",
+  "nodeDetailCancel": "取消",
+  "nodeDetailCopyConfig": "复制配置",
+  "nodeDetailCopied": "已复制到剪贴板",
+  "nodeDetailSaved": "已保存本地修改，重启内核后生效",
+  "nodeDetailModified": "已修改",
+  "nodeDetailRestored": "已恢复订阅原始配置，重启内核后生效",
+  "nodeDetailRestore": "恢复原始配置",
+  "nodeDetailMissing": "找不到这个节点的原始配置（可能来自策略组或已被订阅更新替换）",
+  "nodeDetailEdit": "编辑",
+  "nodeDetailEditTitle": "编辑 {name}",
+  "generalCardCoreTitle": "通知栏卡片可访问内核",
+  "generalCardCoreDesc": "开启后内核始终在本机回环地址提供接口，供通知栏切换卡片使用",
+  "generalKeepService": "重启内核时保持服务在线",
+  "generalKeepServiceDesc": "关闭时服务状态跟随内核（通知栏会短暂显示断开）"
 }

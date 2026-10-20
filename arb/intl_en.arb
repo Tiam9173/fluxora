@@ -1647,5 +1647,28 @@
       }
     }
   },
-  "warpUnknownColo": "Unknown edge node"
+  "warpUnknownColo": "Unknown edge node",
+  "nodeDetailSave": "Save",
+  "nodeDetailClose": "Close",
+  "nodeDetailCancel": "Cancel",
+  "nodeDetailCopyConfig": "Copy config",
+  "nodeDetailCopied": "Copied",
+  "nodeDetailSaved": "Saved; restart the core to apply",
+  "nodeDetailModified": "Modified",
+  "nodeDetailRestored": "Restored the original config; restart the core to apply",
+  "nodeDetailRestore": "Restore original",
+  "nodeDetailMissing": "No original config for this node - it may come from a group or have been replaced by a subscription update",
+  "nodeDetailEdit": "Edit",
+  "nodeDetailEditTitle": "Edit {name}",
+  "@nodeDetailEditTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "generalCardCoreTitle": "Card can reach the core",
+  "generalCardCoreDesc": "The core always listens on the loopback address so the notification card can talk to it",
+  "generalKeepService": "Keep the service up when restarting the core",
+  "generalKeepServiceDesc": "Off: the service follows the core and the notification briefly shows disconnected"
 }

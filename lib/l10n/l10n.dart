@@ -10504,6 +10504,141 @@ class AppLocalizations {
       args: [],
     );
   }
+
+  /// `Save`
+  String get nodeDetailSave {
+    return Intl.message('Save', name: 'nodeDetailSave', desc: '', args: []);
+  }
+
+  /// `Close`
+  String get nodeDetailClose {
+    return Intl.message('Close', name: 'nodeDetailClose', desc: '', args: []);
+  }
+
+  /// `Cancel`
+  String get nodeDetailCancel {
+    return Intl.message('Cancel', name: 'nodeDetailCancel', desc: '', args: []);
+  }
+
+  /// `Copy config`
+  String get nodeDetailCopyConfig {
+    return Intl.message(
+      'Copy config',
+      name: 'nodeDetailCopyConfig',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Copied`
+  String get nodeDetailCopied {
+    return Intl.message('Copied', name: 'nodeDetailCopied', desc: '', args: []);
+  }
+
+  /// `Saved; restart the core to apply`
+  String get nodeDetailSaved {
+    return Intl.message(
+      'Saved; restart the core to apply',
+      name: 'nodeDetailSaved',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Modified`
+  String get nodeDetailModified {
+    return Intl.message(
+      'Modified',
+      name: 'nodeDetailModified',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Restored the original config; restart the core to apply`
+  String get nodeDetailRestored {
+    return Intl.message(
+      'Restored the original config; restart the core to apply',
+      name: 'nodeDetailRestored',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Restore original`
+  String get nodeDetailRestore {
+    return Intl.message(
+      'Restore original',
+      name: 'nodeDetailRestore',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No original config for this node - it may come from a group or have been replaced by a subscription update`
+  String get nodeDetailMissing {
+    return Intl.message(
+      'No original config for this node - it may come from a group or have been replaced by a subscription update',
+      name: 'nodeDetailMissing',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Edit`
+  String get nodeDetailEdit {
+    return Intl.message('Edit', name: 'nodeDetailEdit', desc: '', args: []);
+  }
+
+  /// `Edit {name}`
+  String nodeDetailEditTitle(String name) {
+    return Intl.message(
+      'Edit $name',
+      name: 'nodeDetailEditTitle',
+      desc: '',
+      args: [name],
+    );
+  }
+
+  /// `Card can reach the core`
+  String get generalCardCoreTitle {
+    return Intl.message(
+      'Card can reach the core',
+      name: 'generalCardCoreTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The core always listens on the loopback address so the notification card can talk to it`
+  String get generalCardCoreDesc {
+    return Intl.message(
+      'The core always listens on the loopback address so the notification card can talk to it',
+      name: 'generalCardCoreDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Keep the service up when restarting the core`
+  String get generalKeepService {
+    return Intl.message(
+      'Keep the service up when restarting the core',
+      name: 'generalKeepService',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Off: the service follows the core and the notification briefly shows disconnected`
+  String get generalKeepServiceDesc {
+    return Intl.message(
+      'Off: the service follows the core and the notification briefly shows disconnected',
+      name: 'generalKeepServiceDesc',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {

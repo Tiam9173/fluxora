@@ -1221,5 +1221,21 @@
   "warpRouteProxyOverWarp": "پروکسی از طریق WARP",
   "warpRouteProxyOverWarpDesc": "پروکسی از طریق WARP (WARP به‌عنوان دیالر برای گره‌های مسدود)",
   "warpEdgeNode": "گره لبه {code}",
-  "warpUnknownColo": "گره لبه ناشناخته"
+  "warpUnknownColo": "گره لبه ناشناخته",
+  "nodeDetailSave": "ذخیره",
+  "nodeDetailClose": "بستن",
+  "nodeDetailCancel": "لغو",
+  "nodeDetailCopyConfig": "کپی پیکربندی",
+  "nodeDetailCopied": "کپی شد",
+  "nodeDetailSaved": "ذخیره شد؛ برای اعمال، هسته را دوباره راه‌اندازی کنید",
+  "nodeDetailModified": "تغییر یافته",
+  "nodeDetailRestored": "پیکربندی اصلی بازگردانده شد؛ هسته را دوباره راه‌اندازی کنید",
+  "nodeDetailRestore": "بازگردانی اصلی",
+  "nodeDetailMissing": "پیکربندی اصلی این گره پیدا نشد — شاید از یک گروه آمده یا با به‌روزرسانی اشتراک جایگزین شده",
+  "nodeDetailEdit": "ویرایش",
+  "nodeDetailEditTitle": "ویرایش {name}",
+  "generalCardCoreTitle": "دسترسی کارت به هسته",
+  "generalCardCoreDesc": "هسته همیشه روی لوپ‌بک گوش می‌دهد تا کارت بتواند وصل شود",
+  "generalKeepService": "حفظ سرویس هنگام راه‌اندازی دوباره هسته",
+  "generalKeepServiceDesc": "خاموش: سرویس از هسته پیروی می‌کند و اعلان موقتاً قطع را نشان می‌دهد"
 }

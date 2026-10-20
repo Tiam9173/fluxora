@@ -989,8 +989,8 @@ class _RestartCoreKeepServiceItemState
   @override
   Widget build(BuildContext context) {
     return ListItem.switchItem(
-      title: const Text('重启内核时保持服务在线'),
-      subtitle: const Text('关闭时服务状态跟随内核（通知栏会短暂显示断开）'),
+      title: Text(appLocalizations.generalKeepService),
+      subtitle: Text(appLocalizations.generalKeepServiceDesc),
       delegate: SwitchDelegate(
         value: globalState.restartCoreKeepsService,
         onChanged: (value) async {
@@ -1423,8 +1423,8 @@ class _ForceLoopbackControllerItemState
   Widget build(BuildContext context) {
     return ListItem.switchItem(
       leading: const Icon(Icons.settings_ethernet),
-      title: const Text('通知栏卡片可访问内核'),
-      subtitle: const Text('开启后内核始终在本机回环地址提供接口，供通知栏切换卡片使用'),
+      title: Text(appLocalizations.generalCardCoreTitle),
+      subtitle: Text(appLocalizations.generalCardCoreDesc),
       delegate: SwitchDelegate(value: _enabled, onChanged: _set),
     );
   }

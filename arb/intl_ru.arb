@@ -1225,5 +1225,21 @@
   "warpRouteProxyOverWarp": "Прокси через WARP",
   "warpRouteProxyOverWarpDesc": "Прокси через WARP (WARP как диалер для заблокированных узлов)",
   "warpEdgeNode": "Пограничный узел {code}",
-  "warpUnknownColo": "Неизвестный узел"
+  "warpUnknownColo": "Неизвестный узел",
+  "nodeDetailSave": "Сохранить",
+  "nodeDetailClose": "Закрыть",
+  "nodeDetailCancel": "Отмена",
+  "nodeDetailCopyConfig": "Копировать конфиг",
+  "nodeDetailCopied": "Скопировано",
+  "nodeDetailSaved": "Сохранено; перезапустите ядро",
+  "nodeDetailModified": "Изменено",
+  "nodeDetailRestored": "Исходный конфиг восстановлен; перезапустите ядро",
+  "nodeDetailRestore": "Восстановить исходный",
+  "nodeDetailMissing": "Исходный конфиг узла не найден — возможно, он из группы или заменён обновлением",
+  "nodeDetailEdit": "Изменить",
+  "nodeDetailEditTitle": "Изменить {name}",
+  "generalCardCoreTitle": "Карточка видит ядро",
+  "generalCardCoreDesc": "Ядро всегда слушает loopback, чтобы карточка могла к нему обращаться",
+  "generalKeepService": "Не гасить сервис при перезапуске ядра",
+  "generalKeepServiceDesc": "Выкл.: сервис следует за ядром, в уведомлении кратко «отключено»"
 }

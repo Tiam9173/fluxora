@@ -70,50 +70,52 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m24(name) => "노드를 삭제했습니다: ${name}";
 
-  static String m25(name) => "노드 관리 · ${name}";
+  static String m25(name) => "${name} 편집";
 
-  static String m26(proto) => "예: 홍콩 01 - ${proto}";
+  static String m26(name) => "노드 관리 · ${name}";
 
-  static String m27(label) => "${label} 항목이 없습니다";
+  static String m27(proto) => "예: 홍콩 01 - ${proto}";
 
-  static String m28(label) => "${label} 항목은 숫자여야 합니다";
+  static String m28(label) => "${label} 항목이 없습니다";
 
-  static String m29(from, to) =>
+  static String m29(label) => "${label} 항목은 숫자여야 합니다";
+
+  static String m30(from, to) =>
       "포트 ${from}이(가) 사용 중이라 이번 세션에서는 ${to}을(를) 사용합니다";
 
-  static String m30(label) => "${label} 항목은 1024~49151 사이여야 합니다 (0은 비활성화)";
+  static String m31(label) => "${label} 항목은 1024~49151 사이여야 합니다 (0은 비활성화)";
 
-  static String m31(name) => "사전 프록시 및 랜딩 프록시 · ${name}";
+  static String m32(name) => "사전 프록시 및 랜딩 프록시 · ${name}";
 
-  static String m32(statusCode) =>
+  static String m33(statusCode) =>
       "프로필 가져오기에 실패했습니다. 네트워크 상태를 확인하거나 구독 링크를 재설정해 보세요 ( HTTP 오류 코드: ${statusCode} )";
 
-  static String m33(count) => "${count}개 선택됨";
+  static String m34(count) => "${count}개 선택됨";
 
-  static String m34(name) => "사용 중: ${name}";
+  static String m35(name) => "사용 중: ${name}";
 
-  static String m35(label) => "${label} 항목은 올바른 URL이어야 합니다";
+  static String m36(label) => "${label} 항목은 올바른 URL이어야 합니다";
 
-  static String m36(label) => "${label}을(를) 복사했습니다";
+  static String m37(label) => "${label}을(를) 복사했습니다";
 
-  static String m37(colo, ip) =>
+  static String m38(colo, ip) =>
       "🎉 진단 성공! WARP가 적용되었습니다 (거점: ${colo}, 출구: ${ip})";
 
-  static String m38(name) => "다이얼러를 ${name}(으)로 설정했습니다";
+  static String m39(name) => "다이얼러를 ${name}(으)로 설정했습니다";
 
-  static String m39(code) => "엣지 노드 ${code}";
+  static String m40(code) => "엣지 노드 ${code}";
 
-  static String m40(ip) => "가장 빠른 노드 ${ip}을(를) 사용합니다";
+  static String m41(ip) => "가장 빠른 노드 ${ip}을(를) 사용합니다";
 
-  static String m41(ip) => "${ip}을(를) 사용합니다";
+  static String m42(ip) => "${ip}을(를) 사용합니다";
 
-  static String m42(ip) => "참고: 출구 ${ip}에 연결되었지만 WARP 서명이 없습니다. 다이얼러 설정을 확인하세요";
+  static String m43(ip) => "참고: 출구 ${ip}에 연결되었지만 WARP 서명이 없습니다. 다이얼러 설정을 확인하세요";
 
-  static String m43(loc) => "지역: ${loc}";
+  static String m44(loc) => "지역: ${loc}";
 
-  static String m44(label) => "${label}(으)로 전환했습니다";
+  static String m45(label) => "${label}(으)로 전환했습니다";
 
-  static String m45(count) => "${Intl.plural(count, other: '#년')}";
+  static String m46(count) => "${Intl.plural(count, other: '#년')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -778,7 +780,19 @@ class MessageLookup extends MessageLookupByLibrary {
     "fourColumns": MessageLookupByLibrary.simpleMessage("4열"),
     "fruitSaladScheme": MessageLookupByLibrary.simpleMessage("프루트 샐러드"),
     "general": MessageLookupByLibrary.simpleMessage("일반"),
+    "generalCardCoreDesc": MessageLookupByLibrary.simpleMessage(
+      "켜면 코어가 항상 루프백에서 대기해 알림 카드가 접속할 수 있습니다",
+    ),
+    "generalCardCoreTitle": MessageLookupByLibrary.simpleMessage(
+      "알림 카드에서 코어 접근",
+    ),
     "generalDesc": MessageLookupByLibrary.simpleMessage("글로벌 일반 설정 변경"),
+    "generalKeepService": MessageLookupByLibrary.simpleMessage(
+      "코어 재시작 중 서비스 유지",
+    ),
+    "generalKeepServiceDesc": MessageLookupByLibrary.simpleMessage(
+      "끔: 서비스가 코어를 따르며 알림에 잠시 끊김이 표시됩니다",
+    ),
     "generateFromPrivateKey": MessageLookupByLibrary.simpleMessage("개인키에서 생성"),
     "generateSecret": MessageLookupByLibrary.simpleMessage("생성"),
     "geoData": MessageLookupByLibrary.simpleMessage("Geo 데이터"),
@@ -1061,6 +1075,24 @@ class MessageLookup extends MessageLookupByLibrary {
     "noUsageData": MessageLookupByLibrary.simpleMessage("사용량 통계 없음"),
     "nodeAdded": m23,
     "nodeDeleted": m24,
+    "nodeDetailCancel": MessageLookupByLibrary.simpleMessage("취소"),
+    "nodeDetailClose": MessageLookupByLibrary.simpleMessage("닫기"),
+    "nodeDetailCopied": MessageLookupByLibrary.simpleMessage("클립보드에 복사했습니다"),
+    "nodeDetailCopyConfig": MessageLookupByLibrary.simpleMessage("설정 복사"),
+    "nodeDetailEdit": MessageLookupByLibrary.simpleMessage("편집"),
+    "nodeDetailEditTitle": m25,
+    "nodeDetailMissing": MessageLookupByLibrary.simpleMessage(
+      "이 노드의 원래 설정을 찾을 수 없습니다 (그룹에서 왔거나 구독 업데이트로 교체되었을 수 있음)",
+    ),
+    "nodeDetailModified": MessageLookupByLibrary.simpleMessage("수정됨"),
+    "nodeDetailRestore": MessageLookupByLibrary.simpleMessage("원래 설정으로 복원"),
+    "nodeDetailRestored": MessageLookupByLibrary.simpleMessage(
+      "원래 설정으로 되돌렸습니다. 코어를 다시 시작하면 적용됩니다",
+    ),
+    "nodeDetailSave": MessageLookupByLibrary.simpleMessage("저장"),
+    "nodeDetailSaved": MessageLookupByLibrary.simpleMessage(
+      "저장했습니다. 코어를 다시 시작하면 적용됩니다",
+    ),
     "nodeExclusion": MessageLookupByLibrary.simpleMessage("노드 제외"),
     "nodeExclusionDesc": MessageLookupByLibrary.simpleMessage(
       "지정한 키워드와 일치하는 노드 제외",
@@ -1068,9 +1100,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "nodeExclusionPlaceholder": MessageLookupByLibrary.simpleMessage(
       "HK|홍콩|🇭🇰",
     ),
-    "nodeManagement": m25,
+    "nodeManagement": m26,
     "nodeName": MessageLookupByLibrary.simpleMessage("노드 이름"),
-    "nodeNameHint": m26,
+    "nodeNameHint": m27,
     "nodeNameLabel": MessageLookupByLibrary.simpleMessage("노드 이름"),
     "nodeProtocol": MessageLookupByLibrary.simpleMessage("노드 프로토콜"),
     "none": MessageLookupByLibrary.simpleMessage("없음"),
@@ -1096,8 +1128,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "nullProfileDesc": MessageLookupByLibrary.simpleMessage(
       "프로필이 없습니다. 프로필을 추가해주세요",
     ),
-    "nullTip": m27,
-    "numberTip": m28,
+    "nullTip": m28,
+    "numberTip": m29,
     "obfsModeLabel": MessageLookupByLibrary.simpleMessage("난독화 모드"),
     "obfsNoneOff": MessageLookupByLibrary.simpleMessage("없음 (끔)"),
     "officialCommunity": MessageLookupByLibrary.simpleMessage("공식 커뮤니티"),
@@ -1198,9 +1230,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "portFallbackDesc": MessageLookupByLibrary.simpleMessage(
       "설정한 포트가 사용 중이면 다른 포트를 임시로 사용합니다",
     ),
-    "portFallbackNotice": m29,
+    "portFallbackNotice": m30,
     "portLabel": MessageLookupByLibrary.simpleMessage("포트"),
-    "portTip": m30,
+    "portTip": m31,
     "powerSwitch": MessageLookupByLibrary.simpleMessage("전원 스위치"),
     "preProxyOptionCustom": MessageLookupByLibrary.simpleMessage(
       "✏️ 사전 프록시 노드 이름 수동 입력...",
@@ -1233,7 +1265,7 @@ class MessageLookup extends MessageLookupByLibrary {
         MessageLookupByLibrary.simpleMessage("올바른 시간 형식을 입력하세요"),
     "profileAutoUpdateIntervalNullValidationDesc":
         MessageLookupByLibrary.simpleMessage("업데이트 간격을 입력하세요"),
-    "profileChainDialogTitle": m31,
+    "profileChainDialogTitle": m32,
     "profileChainProxies": MessageLookupByLibrary.simpleMessage("프론트 및 랜딩 프록시"),
     "profileChainSaved": MessageLookupByLibrary.simpleMessage(
       "사전 프록시 및 랜딩 프록시 설정을 저장했습니다",
@@ -1244,7 +1276,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "profileHasUpdate": MessageLookupByLibrary.simpleMessage(
       "프로필이 수정되었습니다. 자동 업데이트를 끄시겠습니까?",
     ),
-    "profileImportFailed": m32,
+    "profileImportFailed": m33,
     "profileManageNodes": MessageLookupByLibrary.simpleMessage("노드 관리 / 노드 추가"),
     "profileNameNullValidationDesc": MessageLookupByLibrary.simpleMessage(
       "프로필 이름을 입력하세요",
@@ -1396,7 +1428,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "selectAll": MessageLookupByLibrary.simpleMessage("전체 선택"),
     "selectBackupVersion": MessageLookupByLibrary.simpleMessage("백업 버전 선택"),
     "selected": MessageLookupByLibrary.simpleMessage("선택됨"),
-    "selectedCountTitle": m33,
+    "selectedCountTitle": m34,
     "serverAddress": MessageLookupByLibrary.simpleMessage("서버 주소"),
     "serverAddressHint": MessageLookupByLibrary.simpleMessage("IP 또는 도메인"),
     "serverAddressLabel": MessageLookupByLibrary.simpleMessage("서버 주소"),
@@ -1472,7 +1504,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "startVpn": MessageLookupByLibrary.simpleMessage("시작 중..."),
     "status": MessageLookupByLibrary.simpleMessage("상태"),
     "statusDesc": MessageLookupByLibrary.simpleMessage("끄면 시스템 DNS를 사용합니다"),
-    "stillUsingProfile": m34,
+    "stillUsingProfile": m35,
     "stop": MessageLookupByLibrary.simpleMessage("정지"),
     "stopVpn": MessageLookupByLibrary.simpleMessage("정지 중..."),
     "storeFix": MessageLookupByLibrary.simpleMessage("스토어 복구"),
@@ -1672,7 +1704,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "upload": MessageLookupByLibrary.simpleMessage("업로드"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage("URL 주소로 프로필 가져오기"),
-    "urlTip": m35,
+    "urlTip": m36,
     "useGlobalScriptOverride": MessageLookupByLibrary.simpleMessage(
       "글로벌 스크립트 오버라이드 사용",
     ),
@@ -1703,12 +1735,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "wakelockDescription": MessageLookupByLibrary.simpleMessage(
       "화면 자동 꺼짐을 방지하는 스크린 웨이크록을 활성화합니다. 백그라운드 작업을 유지할 때 유용합니다.",
     ),
-    "warpCopied": m36,
-    "warpDiagOk": m37,
-    "warpDialerSet": m38,
-    "warpEdgeNode": m39,
-    "warpFastestChosen": m40,
-    "warpIpChosen": m41,
+    "warpCopied": m37,
+    "warpDiagOk": m38,
+    "warpDialerSet": m39,
+    "warpEdgeNode": m40,
+    "warpFastestChosen": m41,
+    "warpIpChosen": m42,
     "warpModeAll": MessageLookupByLibrary.simpleMessage("모든 트래픽을 WARP 경유"),
     "warpModeAllDesc": MessageLookupByLibrary.simpleMessage(
       "모든 프록시 트래픽을 WARP로 다시 캡슐화하여 프로바이더의 실제 출구 IP를 숨깁니다",
@@ -1724,8 +1756,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpModeTitle": MessageLookupByLibrary.simpleMessage(
       "분기 모드 (Routing Mode)",
     ),
-    "warpNoSignature": m42,
-    "warpRegion": m43,
+    "warpNoSignature": m43,
+    "warpRegion": m44,
     "warpRouteProxyOverWarp": MessageLookupByLibrary.simpleMessage(
       "WARP를 통한 프록시",
     ),
@@ -1904,7 +1936,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpStr97": MessageLookupByLibrary.simpleMessage("연결 미완료 또는 확인 시간 초과"),
     "warpStr98": MessageLookupByLibrary.simpleMessage("WARP 다이얼러 선택"),
     "warpStr99": MessageLookupByLibrary.simpleMessage("WireGuard MTU 선택"),
-    "warpSwitchedTo": m44,
+    "warpSwitchedTo": m45,
     "warpUnknownColo": MessageLookupByLibrary.simpleMessage("알 수 없는 엣지 노드"),
     "wave": MessageLookupByLibrary.simpleMessage("웨이브"),
     "webDAVConfiguration": MessageLookupByLibrary.simpleMessage("WebDAV 설정"),
@@ -1915,6 +1947,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "wrongBackupPassword": MessageLookupByLibrary.simpleMessage(
       "비밀번호가 틀리거나 백업이 변조되었습니다",
     ),
-    "years": m45,
+    "years": m46,
   };
 }
