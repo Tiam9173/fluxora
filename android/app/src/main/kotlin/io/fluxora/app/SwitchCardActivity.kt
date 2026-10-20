@@ -65,6 +65,15 @@ class SwitchCardActivity : Activity() {
         }
 
         findViewById<TextView>(R.id.btn_close).setOnClickListener { finish() }
+        findViewById<TextView>(R.id.btn_profiles).setOnClickListener {
+            // 切订阅要重新生成配置，原生卡片做不到 —— 直接把用户送到订阅页。
+            startActivity(
+                android.content.Intent(this, MainActivity::class.java).apply {
+                    addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                },
+            )
+            finish()
+        }
         findViewById<TextView>(R.id.btn_test).setOnClickListener { testAll() }
 
         readEndpoint()
@@ -146,7 +155,11 @@ class SwitchCardActivity : Activity() {
                 val collected = mutableListOf<Group>()
                 for (groupName in proxies.keys()) {
                     val group = proxies.optJSONObject(groupName) ?: continue
-                    if (group.optString("type") != "Selector") continue
+                    // 只认 Selector 会漏掉 url-test / fallback / load-balance
+                    // 这些组 —— 它们同样是"可以切换的组"，只是类型不同。
+                    val groupType = group.optString("type")
+                    if (groupType == "Direct" || groupType == "Reject") continue
+                    if (group.optJSONArray("all") == null) continue
                     val all = group.optJSONArray("all") ?: continue
                     val now = group.optString("now")
                     val entry = Group(groupName)
@@ -241,8 +254,10 @@ class SwitchCardActivity : Activity() {
     }
 
     private fun testAll() {
+        val current = nodes.toList()
+        if (current.isEmpty()) return
         statusView.text = "正在测速…"
-        for (node in nodes) testDelay(node)
+        for (node in current) testDelay(node)
     }
 
     private fun testDelay(node: Node) {
@@ -261,7 +276,10 @@ class SwitchCardActivity : Activity() {
             }
             node.delay = value
             node.testing = false
-            runOnUiThread { adapter?.notifyDataSetChanged() }
+            runOnUiThread {
+                adapter?.notifyDataSetChanged()
+                if (nodes.none { it.testing }) updateStatus()
+            }
         }
     }
 

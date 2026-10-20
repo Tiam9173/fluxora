@@ -40,6 +40,18 @@
             android:textSize="12sp" />
 
         <TextView
+            android:id="@+id/btn_profiles"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp"
+            android:text="订阅"
+            android:textColor="@color/switch_card_sub"
+            android:textSize="12sp" />
+
+        <TextView
             android:id="@+id/btn_close"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

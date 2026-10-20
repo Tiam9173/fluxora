@@ -711,10 +711,17 @@ class GlobalState {
     // 通知栏切换卡片走的是内核的 HTTP 接口，控制器必须是开着的。用户关掉
     // 「外部控制器」时仍然绑到本机回环地址：只有本机进程能访问，和"对局域网
     // 开放"是两件事，后者才由 allowLan 控制。
-    final controllerValue = realPatchConfig.externalController ==
-            ExternalControllerStatus.open
-        ? realPatchConfig.externalController.value
-        : ExternalControllerStatus.open.value;
+    // 卡片功能依赖内核 HTTP 接口；用户可以在设置里关掉这个强制开启。
+    final forceLoopback = (await Preferences()
+            .sharedPreferencesCompleter
+            .future)
+        ?.getBool('force_loopback_controller') ??
+        true;
+    final controllerValue =
+        (realPatchConfig.externalController == ExternalControllerStatus.open ||
+                forceLoopback)
+            ? ExternalControllerStatus.open.value
+            : realPatchConfig.externalController.value;
     rawConfig['external-controller'] = realPatchConfig.allowLan
         ? controllerValue.replaceAll('127.0.0.1', '0.0.0.0')
         : controllerValue;
