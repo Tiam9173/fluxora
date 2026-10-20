@@ -196,6 +196,9 @@ object GlobalState {
     @Volatile
     var cardOnlyLaunch: Boolean = false
 
+    /// 当前前台 Activity。卡片关闭时需要它把任务退到后台。
+    var currentActivity: android.app.Activity? = null
+
     /// 主界面是否在后台。
     ///
     /// onStop 置位、onResume 清除。通知动作走 onNewIntent（在 onResume 之前），

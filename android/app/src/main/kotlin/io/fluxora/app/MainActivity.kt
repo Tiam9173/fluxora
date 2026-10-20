@@ -73,6 +73,7 @@ class MainActivity : FlutterActivity() {
     override fun onResume() {
         super.onResume()
         GlobalState.appInBackground = false
+        GlobalState.currentActivity = this
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -92,12 +93,15 @@ class MainActivity : FlutterActivity() {
         // still booting and a fixed delay either fires too early (no handler
         // yet) or too late (user already navigated). Dart pulls it when ready.
         GlobalState.pendingNotificationAction = "switch"
-        // 窗口现在始终透明，所以卡片模式不再受"冷启动"限制：只要用户不是在
-        // App 里（后台或刚启动），就浮在桌面上显示卡片。
+        // 卡片一律浮出，不再判断前后台。
         //
-        // `appInBackground` 在 onStop 置位、onResume 清除，而 onNewIntent 在
-        // onResume 之前触发，所以这里读到的仍是启动前的状态。
-        GlobalState.cardOnlyLaunch = isColdStart || GlobalState.appInBackground
+        // 之前用 onStop 判断"是否在后台"，但下拉通知栏只会 pause 不会 stop，
+        // 所以 App 明明在后台、通知栏一拉，判断仍然是 false —— 结果卡片被塞进
+        // App 界面里显示，关掉还留在 App 里。
+        //
+        // 通知动作只能从通知栏触发，而通知栏出现时 Activity 必然已 pause，
+        // 因此"收到这个 intent"本身就等价于"用户不在 App 界面里"。
+        GlobalState.cardOnlyLaunch = true
         // When the app is already in the foreground there is no lifecycle
         // change, so nothing would ever pull the pending action. Push it now;
         // Dart ignores it if it has no navigator yet and pulls it on resume.

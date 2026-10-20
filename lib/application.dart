@@ -49,6 +49,20 @@ Future<void> runDetachedTask(
   }
 }
 
+/// 关闭"只有卡片"的界面。
+///
+/// 只调用 SystemNavigator.pop() 会 finish 掉 Activity，但任务栈里若还有代理
+/// 页之类的界面，系统会把它顶到前台 —— 用户看到的就是"关掉卡片却还在 App
+/// 里"。原生侧先 moveTaskToBack，再 finish，才会回到点通知之前的界面。
+Future<void> _closeCardOnlyMode() async {
+  try {
+    await const MethodChannel('vpn').invokeMethod('closeCardActivity');
+  } catch (_) {
+    // 通道不可用（例如桌面端）时退回默认行为。
+    SystemNavigator.pop();
+  }
+}
+
 class Application extends ConsumerStatefulWidget {
   const Application({super.key});
 
@@ -278,15 +292,13 @@ class ApplicationState extends ConsumerState<Application>
                     color: Colors.transparent,
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTap: () => SystemNavigator.pop(),
+                      onTap: _closeCardOnlyMode,
                       child: Center(
                         child: Padding(
                           padding: const EdgeInsets.all(24),
                           child: GestureDetector(
                             onTap: () {},
-                            child: SwitchCard(
-                              onFinished: () => SystemNavigator.pop(),
-                            ),
+                            child: SwitchCard(onFinished: _closeCardOnlyMode),
                           ),
                         ),
                       ),

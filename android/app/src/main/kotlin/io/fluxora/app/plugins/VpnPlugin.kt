@@ -232,6 +232,16 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 result.success(true)
             }
 
+            // 卡片关闭：先把任务退到后台，再结束 Activity。
+            //
+            // 只 finish 的话，若任务栈里还有别的界面（例如用户之前停在代理
+            // 页），系统会把它顶上来 —— 看起来就是"关掉卡片却还在 App 里"。
+            "closeCardActivity" -> {
+                GlobalState.currentActivity?.moveTaskToBack(true)
+                GlobalState.currentActivity?.finish()
+                result.success(true)
+            }
+
             "isCardOnlyLaunch" -> {
                 // Consumed, not read: a stale true would flip every later switch
                 // into card-only mode and hide the whole app.

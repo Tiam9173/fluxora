@@ -4,6 +4,7 @@ import 'package:fluxora/models/models.dart';
 import 'package:fluxora/state.dart';
 import 'package:flutter/material.dart';
 import 'package:fluxora/widgets/widgets.dart';
+import 'package:fluxora/clash/clash.dart';
 
 class ProfileChainDialog extends StatefulWidget {
   final Profile profile;
@@ -30,6 +31,10 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
   final _customLandingCtrl = TextEditingController();
 
   List<String> _candidateProxies = [];
+
+  /// 每个节点的延迟，键是节点名。值 `-1` 表示测过但失败。
+  final Map<String, int> _delays = {};
+  bool _testingDelays = false;
   bool _isLoading = true;
 
   @override
@@ -66,8 +71,77 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
       setState(() {
         _candidateProxies = candidates.toList();
         _isLoading = false;
+        _seedKnownDelays();
       });
     }
+  }
+
+  /// 把已有测量结果读进 `_delays`，让面板一打开就有数字。
+  void _seedKnownDelays() {
+    final map = globalState.appState.delayMap;
+    for (final perUrl in map.values) {
+      for (final entry in perUrl.entries) {
+        if (!_candidateProxies.contains(entry.key)) continue;
+        final value = entry.value;
+        if (value == null || value == 0) continue; // 0 = 排队未测，不是结果
+        _delays[entry.key] = value;
+      }
+    }
+  }
+
+  /// 逐个测延迟。
+  ///
+  /// 这些节点属于**当前订阅**，只有正在运行的那个订阅的节点才在内核里，所以
+  /// 非活动订阅会全部失败——面板上会显示「—」，不会假装测过。
+  Future<void> _testDelays() async {
+    if (_testingDelays) return;
+    setState(() => _testingDelays = true);
+    const int concurrency = 6;
+    final url = globalState.appController.getRealTestUrl('');
+    try {
+      for (var i = 0; i < _candidateProxies.length; i += concurrency) {
+        if (!mounted) return;
+        final batch = _candidateProxies.skip(i).take(concurrency);
+        final results = await Future.wait(batch.map((name) async {
+          try {
+            final delay = await clashCore.getDelay(url, name);
+            return MapEntry(name, delay.value);
+          } catch (_) {
+            return MapEntry(name, -1);
+          }
+        }));
+        if (!mounted) return;
+        setState(() {
+          for (final e in results) {
+            final value = e.value;
+            if (value != null && value != 0) _delays[e.key] = value;
+          }
+        });
+      }
+    } finally {
+      if (mounted) setState(() => _testingDelays = false);
+    }
+  }
+
+  /// 延迟徽标：未测不占位，失败显示超时，正常显示毫秒。
+  Widget _delayBadge(String name) {
+    if (_testingDelays && !_delays.containsKey(name)) {
+      return const SizedBox(
+        width: 12,
+        height: 12,
+        child: CircularProgressIndicator(strokeWidth: 1.5),
+      );
+    }
+    final value = _delays[name];
+    if (value == null) return const SizedBox.shrink();
+    final failed = value < 0;
+    final color = failed
+        ? Colors.redAccent
+        : (value < 200 ? Colors.green : (value < 500 ? Colors.orange : Colors.red));
+    return Text(
+      failed ? '超时' : '${value}ms',
+      style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w500),
+    );
   }
 
   /// 从当前订阅自己的节点里选一个。
@@ -91,7 +165,22 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                 .where((n) => keyword.isEmpty || n.toLowerCase().contains(keyword.toLowerCase()))
                 .toList();
             return AlertDialog(
-              title: Text(title, style: const TextStyle(fontSize: 16)),
+              title: Row(
+                children: [
+                  Expanded(child: Text(title, style: const TextStyle(fontSize: 16))),
+                  TextButton.icon(
+                    onPressed: _testingDelays ? null : _testDelays,
+                    icon: _testingDelays
+                        ? const SizedBox(
+                            width: 12,
+                            height: 12,
+                            child: CircularProgressIndicator(strokeWidth: 1.5),
+                          )
+                        : const Icon(Icons.speed, size: 16),
+                    label: const Text('测延迟', style: TextStyle(fontSize: 12)),
+                  ),
+                ],
+              ),
               content: SizedBox(
                 width: 360,
                 height: 420,
@@ -128,9 +217,16 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                               title: Text(name,
                                   style: const TextStyle(fontSize: 13),
                                   overflow: TextOverflow.ellipsis),
-                              trailing: name == current
-                                  ? const Icon(Icons.check, size: 18)
-                                  : null,
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _delayBadge(name),
+                                  if (name == current) ...[
+                                    const SizedBox(width: 6),
+                                    const Icon(Icons.check, size: 18),
+                                  ],
+                                ],
+                              ),
                               onTap: () => Navigator.of(ctx).pop(name),
                             ),
                         ],
