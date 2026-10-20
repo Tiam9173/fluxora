@@ -23,7 +23,7 @@ import io.flutter.plugins.GeneratedPluginRegistrant
 ///   分组、延迟），共用引擎才拿得到；另起引擎等于把整个 App 再启动一遍。
 class CardActivity : FlutterActivity() {
     companion object {
-        private const val MAIN_ENGINE_ID = "fluxora_main_engine"
+        private const val CARD_ENGINE_ID = "fluxora_card_engine"
     }
 
     override fun getRenderMode(): RenderMode = RenderMode.texture
@@ -31,8 +31,6 @@ class CardActivity : FlutterActivity() {
     override fun shouldDestroyEngineWithHost(): Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Dart 侧据此把根节点换成卡片；由 `isCardOnlyLaunch` 读取并清零。
-        GlobalState.cardOnlyLaunch = true
         GlobalState.currentActivity = this
         // 复用主引擎时窗口格式不会自动跟着变透明，必须显式设置；否则主题
         // 是半透明的、画布却按不透明合成，四周就是一片白。
@@ -41,41 +39,35 @@ class CardActivity : FlutterActivity() {
             android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT)
         )
         super.onCreate(savedInstanceState)
-
-        // 引擎可能在 onCreate 期间才建好，等它就绪再把 Dart 切到卡片模式。
-        if (flutterEngine != null) {
-            notifyDart()
-        } else {
-            window.decorView.postDelayed({ notifyDart() }, 150)
-        }
-    }
-
-    override fun onDestroy() {
-        // 让 Dart 把根节点切回主界面，否则下次正常打开 App 还是卡片页。
-        flutterEngine?.dartExecutor?.binaryMessenger?.let { messenger ->
-            MethodChannel(messenger, "vpn").invokeMethod("cardModeOff", null)
-        }
-        super.onDestroy()
-    }
-
-    private fun notifyDart() {
-        val messenger = flutterEngine?.dartExecutor?.binaryMessenger ?: return
-        MethodChannel(messenger, "vpn").invokeMethod("notificationSwitch", null)
     }
 
     override fun provideFlutterEngine(context: Context): FlutterEngine {
         val cache = FlutterEngineCache.getInstance()
-        cache.get(MAIN_ENGINE_ID)?.let { return it }
+        cache.get(CARD_ENGINE_ID)?.let { return it }
 
-        // 主 App 没跑过：按默认入口起一个，Dart 侧会因为 cardOnlyLaunch 直接
-        // 进入卡片模式，不会去渲染主界面。
+        // 独立引擎：一个 FlutterEngine 只能服务一个 Activity，共用主引擎会让
+        // 主界面回来时黑屏；而且渲染表面的透明性在第一个窗口创建时就定死，
+        // 共用必然不透明。
         val app = applicationContext as FluxoraApplication
         val options = FlutterEngineGroup.Options(app).apply {
-            dartEntrypoint = DartExecutor.DartEntrypoint.createDefault()
+            dartEntrypoint = DartExecutor.DartEntrypoint(
+                "package:fluxora/card_only_main.dart",
+                "cardMain",
+            )
         }
         return app.engineGroup.createAndRunEngine(options).apply {
             GeneratedPluginRegistrant.registerWith(this)
-            cache.put(MAIN_ENGINE_ID, this)
+            cache.put(CARD_ENGINE_ID, this)
+            MethodChannel(dartExecutor.binaryMessenger, "card")
+                .setMethodCallHandler { call, result ->
+                    when (call.method) {
+                        "close" -> {
+                            result.success(true)
+                            finish()
+                        }
+                        else -> result.notImplemented()
+                    }
+                }
         }
     }
 }
