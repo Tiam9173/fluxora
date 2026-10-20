@@ -57,6 +57,8 @@ _Profile _$ProfileFromJson(Map<String, dynamic> json) => _Profile(
         (k, e) => MapEntry(k, e as bool),
       ) ??
       const {},
+  joinAggregate: json['joinAggregate'] as bool? ?? false,
+  aggregateAlias: json['aggregateAlias'] as String? ?? '',
 );
 
 Map<String, dynamic> _$ProfileToJson(_Profile instance) => <String, dynamic>{
@@ -74,6 +76,8 @@ Map<String, dynamic> _$ProfileToJson(_Profile instance) => <String, dynamic>{
   'useScriptOverride': instance.useScriptOverride,
   'ageSecretKey': instance.ageSecretKey,
   'group-switches': instance.groupSwitches,
+  'joinAggregate': instance.joinAggregate,
+  'aggregateAlias': instance.aggregateAlias,
 };
 
 _OverrideData _$OverrideDataFromJson(Map<String, dynamic> json) =>

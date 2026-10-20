@@ -79,6 +79,15 @@ abstract class Profile with _$Profile {
     @Default(true) bool useScriptOverride,
     String? ageSecretKey,
     @JsonKey(name: 'group-switches') @Default({}) Map<String, bool> groupSwitches,
+
+    /// 是否参与多订阅聚合。
+    ///
+    /// 打开后这个订阅会作为一个 `proxy-providers` 条目注入运行配置，节点出现在
+    /// 「聚合节点」组里。聚合由内核完成，我们只负责把 provider 写进 YAML。
+    @Default(false) bool joinAggregate,
+
+    /// 聚合时的节点名前缀，留空则用 label。
+    @Default('') String aggregateAlias,
   }) = _Profile;
 
   factory Profile.fromJson(Map<String, Object?> json) =>

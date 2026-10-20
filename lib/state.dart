@@ -1140,6 +1140,9 @@ class GlobalState {
     rawConfig.remove('rule');
     rawConfig['rules'] = rules;
 
+    // 多订阅聚合：先注入 provider，后面的链路/组生成才能看到聚合节点。
+    await _injectAggregateProviders(rawConfig, targetProfile.id);
+
     // Apply chain proxy configuration if enabled (including WebRTC leak prevention rules)
     chainProxyManager.applyToClashConfig(rawConfig);
 
@@ -1150,6 +1153,91 @@ class GlobalState {
     profileChainManager.applyToClashConfig(rawConfig, targetProfile.id);
 
     return rawConfig;
+  }
+
+  /// 把其它勾选了「参与聚合」的订阅注入成 `proxy-providers`。
+  ///
+  /// 用 `type: file` 指向订阅已经下载好的本地缓存，而不是 `type: http` 重新
+  /// 拉一遍：内核本来就要读这个文件，网络和解析都是白付的。
+  ///
+  /// 重名交给内核的 `override.additional-prefix`，我们不自己改名——那等于把
+  /// 内核已经做好的事再做一遍，还得先算出全集冲突。
+  Future<void> _injectAggregateProviders(
+    Map<String, dynamic> rawConfig,
+    String currentProfileId,
+  ) async {
+    final others = config.profiles
+        .where((p) => p.id != currentProfileId && p.joinAggregate)
+        .toList();
+    if (others.isEmpty) return;
+
+    final providers = <String, dynamic>{};
+    final providerNames = <String>[];
+    for (final profile in others) {
+      final path = await appPath.getProfilePath(profile.id);
+      if (!await File(path).exists()) {
+        // 还没下载过就跳过：注入一个指向空文件的 provider 会让内核直接报错。
+        commonPrint.log('aggregate: skip ${profile.id}, no cached config');
+        continue;
+      }
+      final alias = profile.aggregateAlias.isNotEmpty
+          ? profile.aggregateAlias
+          : (profile.label ?? profile.id);
+      final key = 'agg_${profile.id}';
+      providers[key] = {
+        'type': 'file',
+        'path': path,
+        'override': {'additional-prefix': '[$alias] '},
+        'health-check': {
+          'enable': true,
+          'url': 'https://www.gstatic.com/generate_204',
+          'interval': 300,
+          'lazy': true,
+        },
+        if ((profile.ageSecretKey ?? '').isNotEmpty)
+          'age-secret-key': profile.ageSecretKey,
+      };
+      providerNames.add(key);
+    }
+    if (providers.isEmpty) return;
+
+    final existingProviders = rawConfig['proxy-providers'];
+    rawConfig['proxy-providers'] = <String, dynamic>{
+      if (existingProviders is Map)
+        ...Map<String, dynamic>.from(existingProviders),
+      ...providers,
+    };
+
+    final groups = rawConfig['proxy-groups'];
+    if (groups is! List) return;
+    const aggregateGroup = '🌐 聚合节点';
+    const aggregateAutoGroup = '♻️ 聚合自动选择';
+    groups.add(<String, dynamic>{
+      'name': aggregateGroup,
+      'type': 'select',
+      'use': providerNames,
+    });
+    groups.add(<String, dynamic>{
+      'name': aggregateAutoGroup,
+      'type': 'url-test',
+      'url': 'https://www.gstatic.com/generate_204',
+      'interval': 300,
+      'use': providerNames,
+    });
+
+    // 挂进主选择组，否则用户得先去代理页手动找这个组。
+    // 约定第一个 select 组就是主选择组。
+    for (final group in groups) {
+      if (group is! Map) continue;
+      if (group['type'] != 'select') continue;
+      if (group['name'] == aggregateGroup) continue;
+      final proxies = group['proxies'];
+      if (proxies is! List) continue;
+      if (!proxies.contains(aggregateGroup)) {
+        proxies.insert(0, aggregateGroup);
+      }
+      break;
+    }
   }
 
   Future<Map<String, dynamic>> getProfileConfig(String profileId) async {
