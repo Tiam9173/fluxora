@@ -107,18 +107,20 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m38(name) => "Диалер: ${name}";
 
-  static String m39(ip) => "Используется самый быстрый узел: ${ip}";
+  static String m39(code) => "Пограничный узел ${code}";
 
-  static String m40(ip) => "Используется ${ip}";
+  static String m40(ip) => "Используется самый быстрый узел: ${ip}";
 
-  static String m41(ip) =>
+  static String m41(ip) => "Используется ${ip}";
+
+  static String m42(ip) =>
       "Примечание: подключено к выходу ${ip}, но подпись WARP не найдена — проверьте диалер";
 
-  static String m42(loc) => "Регион: ${loc}";
+  static String m43(loc) => "Регион: ${loc}";
 
-  static String m43(label) => "Переключено на ${label}";
+  static String m44(label) => "Переключено на ${label}";
 
-  static String m44(count) =>
+  static String m45(count) =>
       "${Intl.plural(count, one: 'год', few: 'года', many: 'лет', other: 'лет')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
@@ -2210,8 +2212,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpCopied": m36,
     "warpDiagOk": m37,
     "warpDialerSet": m38,
-    "warpFastestChosen": m39,
-    "warpIpChosen": m40,
+    "warpEdgeNode": m39,
+    "warpFastestChosen": m40,
+    "warpIpChosen": m41,
     "warpModeAll": MessageLookupByLibrary.simpleMessage(
       "Весь трафик через WARP",
     ),
@@ -2233,8 +2236,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpModeTitle": MessageLookupByLibrary.simpleMessage(
       "Режим маршрутизации",
     ),
-    "warpNoSignature": m41,
-    "warpRegion": m42,
+    "warpNoSignature": m42,
+    "warpRegion": m43,
     "warpRouteProxyOverWarp": MessageLookupByLibrary.simpleMessage(
       "Прокси через WARP",
     ),
@@ -2487,7 +2490,8 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "warpStr98": MessageLookupByLibrary.simpleMessage("Выберите WARP-диалер"),
     "warpStr99": MessageLookupByLibrary.simpleMessage("Выберите MTU WireGuard"),
-    "warpSwitchedTo": m43,
+    "warpSwitchedTo": m44,
+    "warpUnknownColo": MessageLookupByLibrary.simpleMessage("Неизвестный узел"),
     "wave": MessageLookupByLibrary.simpleMessage("Волна"),
     "webDAVConfiguration": MessageLookupByLibrary.simpleMessage(
       "Настройки WebDAV",
@@ -2503,6 +2507,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "wrongBackupPassword": MessageLookupByLibrary.simpleMessage(
       "Неверный пароль или резервная копия изменена",
     ),
-    "years": m44,
+    "years": m45,
   };
 }

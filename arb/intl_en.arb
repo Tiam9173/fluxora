@@ -1638,5 +1638,14 @@
   "warpRouteWarpOverProxy": "Route WARP through the proxy",
   "warpRouteWarpOverProxyDesc": "Route WARP through the proxy (recommended: provider plus WARP exit, avoids region leaks and unlocks streaming and AI)",
   "warpRouteProxyOverWarp": "Route the proxy through WARP",
-  "warpRouteProxyOverWarpDesc": "Route the proxy through WARP (WARP as the dialer that reaches blocked nodes)"
+  "warpRouteProxyOverWarpDesc": "Route the proxy through WARP (WARP as the dialer that reaches blocked nodes)",
+  "warpEdgeNode": "Edge node {code}",
+  "@warpEdgeNode": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "warpUnknownColo": "Unknown edge node"
 }

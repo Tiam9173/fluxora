@@ -99,18 +99,20 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m38(name) => "ダイヤラーを ${name} に設定しました";
 
-  static String m39(ip) => "最速ノード ${ip} を使用します";
+  static String m39(code) => "エッジ拠点 ${code}";
 
-  static String m40(ip) => "${ip} を使用します";
+  static String m40(ip) => "最速ノード ${ip} を使用します";
 
-  static String m41(ip) =>
+  static String m41(ip) => "${ip} を使用します";
+
+  static String m42(ip) =>
       "注意：出口 ${ip} に接続しましたが WARP 署名がありません。ダイヤラー設定を確認してください";
 
-  static String m42(loc) => "地域: ${loc}";
+  static String m43(loc) => "地域: ${loc}";
 
-  static String m43(label) => "${label} に切り替えました";
+  static String m44(label) => "${label} に切り替えました";
 
-  static String m44(count) => "${Intl.plural(count, other: '年')}";
+  static String m45(count) => "${Intl.plural(count, other: '年')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -1699,8 +1701,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpCopied": m36,
     "warpDiagOk": m37,
     "warpDialerSet": m38,
-    "warpFastestChosen": m39,
-    "warpIpChosen": m40,
+    "warpEdgeNode": m39,
+    "warpFastestChosen": m40,
+    "warpIpChosen": m41,
     "warpModeAll": MessageLookupByLibrary.simpleMessage("全トラフィックを WARP 経由"),
     "warpModeAllDesc": MessageLookupByLibrary.simpleMessage(
       "すべてのプロキシ通信を WARP で再カプセル化し、プロバイダの実出口 IP を隠します",
@@ -1716,8 +1719,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpModeTitle": MessageLookupByLibrary.simpleMessage(
       "分流モード (Routing Mode)",
     ),
-    "warpNoSignature": m41,
-    "warpRegion": m42,
+    "warpNoSignature": m42,
+    "warpRegion": m43,
     "warpRouteProxyOverWarp": MessageLookupByLibrary.simpleMessage(
       "WARP 経由でプロキシ",
     ),
@@ -1890,7 +1893,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpStr97": MessageLookupByLibrary.simpleMessage("接続未完了または確認がタイムアウト"),
     "warpStr98": MessageLookupByLibrary.simpleMessage("WARP ダイヤラーを選択"),
     "warpStr99": MessageLookupByLibrary.simpleMessage("WireGuard MTU を選択"),
-    "warpSwitchedTo": m43,
+    "warpSwitchedTo": m44,
+    "warpUnknownColo": MessageLookupByLibrary.simpleMessage("不明なエッジ拠点"),
     "wave": MessageLookupByLibrary.simpleMessage("ウェーブ"),
     "webDAVConfiguration": MessageLookupByLibrary.simpleMessage("WebDAV設定"),
     "whitelist": MessageLookupByLibrary.simpleMessage("ホワイトリスト"),
@@ -1900,6 +1904,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "wrongBackupPassword": MessageLookupByLibrary.simpleMessage(
       "パスワードが違うか、バックアップが改ざんされています",
     ),
-    "years": m44,
+    "years": m45,
   };
 }

@@ -104,18 +104,20 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m38(name) => "دیالر روی ${name} تنظیم شد";
 
-  static String m39(ip) => "از سریع‌ترین گره ${ip} استفاده می‌شود";
+  static String m39(code) => "گره لبه ${code}";
 
-  static String m40(ip) => "از ${ip} استفاده می‌شود";
+  static String m40(ip) => "از سریع‌ترین گره ${ip} استفاده می‌شود";
 
-  static String m41(ip) =>
+  static String m41(ip) => "از ${ip} استفاده می‌شود";
+
+  static String m42(ip) =>
       "توجه: به خروجی ${ip} متصل شد اما امضای WARP یافت نشد — تنظیمات دیالر را بررسی کنید";
 
-  static String m42(loc) => "منطقه: ${loc}";
+  static String m43(loc) => "منطقه: ${loc}";
 
-  static String m43(label) => "به ${label} تغییر یافت";
+  static String m44(label) => "به ${label} تغییر یافت";
 
-  static String m44(count) => "${Intl.plural(count, other: '# سال')}";
+  static String m45(count) => "${Intl.plural(count, other: '# سال')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -2146,8 +2148,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpCopied": m36,
     "warpDiagOk": m37,
     "warpDialerSet": m38,
-    "warpFastestChosen": m39,
-    "warpIpChosen": m40,
+    "warpEdgeNode": m39,
+    "warpFastestChosen": m40,
+    "warpIpChosen": m41,
     "warpModeAll": MessageLookupByLibrary.simpleMessage("همه ترافیک از WARP"),
     "warpModeAllDesc": MessageLookupByLibrary.simpleMessage(
       "تمام ترافیک پروکسی از WARP کپسوله می‌شود و IP واقعی خروجی ارائه‌دهنده پنهان می‌ماند",
@@ -2165,8 +2168,8 @@ class MessageLookup extends MessageLookupByLibrary {
       "Google، OpenAI، Claude و Gemini از WARP عبور می‌کنند؛ بقیه سرعت اصلی ارائه‌دهنده را حفظ می‌کنند",
     ),
     "warpModeTitle": MessageLookupByLibrary.simpleMessage("حالت مسیریابی"),
-    "warpNoSignature": m41,
-    "warpRegion": m42,
+    "warpNoSignature": m42,
+    "warpRegion": m43,
     "warpRouteProxyOverWarp": MessageLookupByLibrary.simpleMessage(
       "پروکسی از طریق WARP",
     ),
@@ -2393,7 +2396,8 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "warpStr98": MessageLookupByLibrary.simpleMessage("انتخاب دیالر WARP"),
     "warpStr99": MessageLookupByLibrary.simpleMessage("انتخاب MTU WireGuard"),
-    "warpSwitchedTo": m43,
+    "warpSwitchedTo": m44,
+    "warpUnknownColo": MessageLookupByLibrary.simpleMessage("گره لبه ناشناخته"),
     "wave": MessageLookupByLibrary.simpleMessage("موج"),
     "webDAVConfiguration": MessageLookupByLibrary.simpleMessage(
       "تنظیمات WebDAV",
@@ -2407,6 +2411,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "wrongBackupPassword": MessageLookupByLibrary.simpleMessage(
       "گذرواژه نادرست است یا پشتیبان دستکاری شده است",
     ),
-    "years": m44,
+    "years": m45,
   };
 }

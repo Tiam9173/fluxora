@@ -101,17 +101,19 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m38(name) => "다이얼러를 ${name}(으)로 설정했습니다";
 
-  static String m39(ip) => "가장 빠른 노드 ${ip}을(를) 사용합니다";
+  static String m39(code) => "엣지 노드 ${code}";
 
-  static String m40(ip) => "${ip}을(를) 사용합니다";
+  static String m40(ip) => "가장 빠른 노드 ${ip}을(를) 사용합니다";
 
-  static String m41(ip) => "참고: 출구 ${ip}에 연결되었지만 WARP 서명이 없습니다. 다이얼러 설정을 확인하세요";
+  static String m41(ip) => "${ip}을(를) 사용합니다";
 
-  static String m42(loc) => "지역: ${loc}";
+  static String m42(ip) => "참고: 출구 ${ip}에 연결되었지만 WARP 서명이 없습니다. 다이얼러 설정을 확인하세요";
 
-  static String m43(label) => "${label}(으)로 전환했습니다";
+  static String m43(loc) => "지역: ${loc}";
 
-  static String m44(count) => "${Intl.plural(count, other: '#년')}";
+  static String m44(label) => "${label}(으)로 전환했습니다";
+
+  static String m45(count) => "${Intl.plural(count, other: '#년')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -1704,8 +1706,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpCopied": m36,
     "warpDiagOk": m37,
     "warpDialerSet": m38,
-    "warpFastestChosen": m39,
-    "warpIpChosen": m40,
+    "warpEdgeNode": m39,
+    "warpFastestChosen": m40,
+    "warpIpChosen": m41,
     "warpModeAll": MessageLookupByLibrary.simpleMessage("모든 트래픽을 WARP 경유"),
     "warpModeAllDesc": MessageLookupByLibrary.simpleMessage(
       "모든 프록시 트래픽을 WARP로 다시 캡슐화하여 프로바이더의 실제 출구 IP를 숨깁니다",
@@ -1721,8 +1724,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpModeTitle": MessageLookupByLibrary.simpleMessage(
       "분기 모드 (Routing Mode)",
     ),
-    "warpNoSignature": m41,
-    "warpRegion": m42,
+    "warpNoSignature": m42,
+    "warpRegion": m43,
     "warpRouteProxyOverWarp": MessageLookupByLibrary.simpleMessage(
       "WARP를 통한 프록시",
     ),
@@ -1901,7 +1904,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpStr97": MessageLookupByLibrary.simpleMessage("연결 미완료 또는 확인 시간 초과"),
     "warpStr98": MessageLookupByLibrary.simpleMessage("WARP 다이얼러 선택"),
     "warpStr99": MessageLookupByLibrary.simpleMessage("WireGuard MTU 선택"),
-    "warpSwitchedTo": m43,
+    "warpSwitchedTo": m44,
+    "warpUnknownColo": MessageLookupByLibrary.simpleMessage("알 수 없는 엣지 노드"),
     "wave": MessageLookupByLibrary.simpleMessage("웨이브"),
     "webDAVConfiguration": MessageLookupByLibrary.simpleMessage("WebDAV 설정"),
     "whitelist": MessageLookupByLibrary.simpleMessage("화이트리스트"),
@@ -1911,6 +1915,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "wrongBackupPassword": MessageLookupByLibrary.simpleMessage(
       "비밀번호가 틀리거나 백업이 변조되었습니다",
     ),
-    "years": m44,
+    "years": m45,
   };
 }

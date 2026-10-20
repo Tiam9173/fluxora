@@ -99,17 +99,19 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m38(name) => "已指定前置跳板為 ${name}";
 
-  static String m39(ip) => "已選用最快節點 ${ip}";
+  static String m39(code) => "邊緣節點 ${code}";
 
-  static String m40(ip) => "已選用 ${ip}";
+  static String m40(ip) => "已選用最快節點 ${ip}";
 
-  static String m41(ip) => "提示：已連線出口 ${ip}，但未偵測到 WARP 簽名，請確認跳板設定";
+  static String m41(ip) => "已選用 ${ip}";
 
-  static String m42(loc) => "歸屬地: ${loc}";
+  static String m42(ip) => "提示：已連線出口 ${ip}，但未偵測到 WARP 簽名，請確認跳板設定";
 
-  static String m43(label) => "已切換為 ${label}";
+  static String m43(loc) => "歸屬地: ${loc}";
 
-  static String m44(count) => "${Intl.plural(count, other: '年')}";
+  static String m44(label) => "已切換為 ${label}";
+
+  static String m45(count) => "${Intl.plural(count, other: '年')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -1526,8 +1528,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpCopied": m36,
     "warpDiagOk": m37,
     "warpDialerSet": m38,
-    "warpFastestChosen": m39,
-    "warpIpChosen": m40,
+    "warpEdgeNode": m39,
+    "warpFastestChosen": m40,
+    "warpIpChosen": m41,
     "warpModeAll": MessageLookupByLibrary.simpleMessage("全域接管模式"),
     "warpModeAllDesc": MessageLookupByLibrary.simpleMessage(
       "所有代理出站流量全部經過 WARP 進行二次封裝，隱藏真實機場落地 IP",
@@ -1543,8 +1546,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpModeTitle": MessageLookupByLibrary.simpleMessage(
       "分流工作模式 (Routing Mode)",
     ),
-    "warpNoSignature": m41,
-    "warpRegion": m42,
+    "warpNoSignature": m42,
+    "warpRegion": m43,
     "warpRouteProxyOverWarp": MessageLookupByLibrary.simpleMessage(
       "透過 WARP 路由代理",
     ),
@@ -1693,7 +1696,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpStr97": MessageLookupByLibrary.simpleMessage("連接未完成或檢測超時"),
     "warpStr98": MessageLookupByLibrary.simpleMessage("選擇 WARP 前置跳板"),
     "warpStr99": MessageLookupByLibrary.simpleMessage("選擇 WireGuard MTU"),
-    "warpSwitchedTo": m43,
+    "warpSwitchedTo": m44,
+    "warpUnknownColo": MessageLookupByLibrary.simpleMessage("未知邊緣節點"),
     "wave": MessageLookupByLibrary.simpleMessage("波浪起伏"),
     "webDAVConfiguration": MessageLookupByLibrary.simpleMessage("WebDAV 設定"),
     "whitelist": MessageLookupByLibrary.simpleMessage("白名單"),
@@ -1701,6 +1705,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystem": MessageLookupByLibrary.simpleMessage("寫入系統"),
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage("需要管理員權限"),
     "wrongBackupPassword": MessageLookupByLibrary.simpleMessage("密碼錯誤或備份已被竄改"),
-    "years": m44,
+    "years": m45,
   };
 }

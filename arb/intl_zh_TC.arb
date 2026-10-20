@@ -1217,5 +1217,7 @@
   "warpRouteWarpOverProxy": "透過代理路由 WARP",
   "warpRouteWarpOverProxyDesc": "透過代理路由 WARP (推薦: 機場套 WARP 出口，防送中、解鎖串流與 AI)",
   "warpRouteProxyOverWarp": "透過 WARP 路由代理",
-  "warpRouteProxyOverWarpDesc": "透過 WARP 路由代理 (WARP 作為前置跳板連通被封鎖的節點)"
+  "warpRouteProxyOverWarpDesc": "透過 WARP 路由代理 (WARP 作為前置跳板連通被封鎖的節點)",
+  "warpEdgeNode": "邊緣節點 {code}",
+  "warpUnknownColo": "未知邊緣節點"
 }

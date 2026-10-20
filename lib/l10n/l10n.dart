@@ -10484,6 +10484,26 @@ class AppLocalizations {
       args: [],
     );
   }
+
+  /// `Edge node {code}`
+  String warpEdgeNode(String code) {
+    return Intl.message(
+      'Edge node $code',
+      name: 'warpEdgeNode',
+      desc: '',
+      args: [code],
+    );
+  }
+
+  /// `Unknown edge node`
+  String get warpUnknownColo {
+    return Intl.message(
+      'Unknown edge node',
+      name: 'warpUnknownColo',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {

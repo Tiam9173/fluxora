@@ -1219,5 +1219,7 @@
   "warpRouteWarpOverProxy": "WARP از طریق پروکسی",
   "warpRouteWarpOverProxyDesc": "WARP از طریق پروکسی (پیشنهادی: ارائه‌دهنده به‌همراه خروجی WARP)",
   "warpRouteProxyOverWarp": "پروکسی از طریق WARP",
-  "warpRouteProxyOverWarpDesc": "پروکسی از طریق WARP (WARP به‌عنوان دیالر برای گره‌های مسدود)"
+  "warpRouteProxyOverWarpDesc": "پروکسی از طریق WARP (WARP به‌عنوان دیالر برای گره‌های مسدود)",
+  "warpEdgeNode": "گره لبه {code}",
+  "warpUnknownColo": "گره لبه ناشناخته"
 }

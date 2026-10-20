@@ -107,18 +107,20 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m38(name) => "Dialer set to ${name}";
 
-  static String m39(ip) => "Using the fastest node: ${ip}";
+  static String m39(code) => "Edge node ${code}";
 
-  static String m40(ip) => "Using ${ip}";
+  static String m40(ip) => "Using the fastest node: ${ip}";
 
-  static String m41(ip) =>
+  static String m41(ip) => "Using ${ip}";
+
+  static String m42(ip) =>
       "Note: connected to exit ${ip} but no WARP signature was found - check the dialer";
 
-  static String m42(loc) => "Region: ${loc}";
+  static String m43(loc) => "Region: ${loc}";
 
-  static String m43(label) => "Switched to ${label}";
+  static String m44(label) => "Switched to ${label}";
 
-  static String m44(count) =>
+  static String m45(count) =>
       "${Intl.plural(count, one: 'year', other: 'years')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
@@ -2096,8 +2098,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpCopied": m36,
     "warpDiagOk": m37,
     "warpDialerSet": m38,
-    "warpFastestChosen": m39,
-    "warpIpChosen": m40,
+    "warpEdgeNode": m39,
+    "warpFastestChosen": m40,
+    "warpIpChosen": m41,
     "warpModeAll": MessageLookupByLibrary.simpleMessage(
       "Route everything through WARP",
     ),
@@ -2117,8 +2120,8 @@ class MessageLookup extends MessageLookupByLibrary {
       "Routes Google, OpenAI, Claude and Gemini through WARP; everything else keeps the provider\'s native speed",
     ),
     "warpModeTitle": MessageLookupByLibrary.simpleMessage("Routing mode"),
-    "warpNoSignature": m41,
-    "warpRegion": m42,
+    "warpNoSignature": m42,
+    "warpRegion": m43,
     "warpRouteProxyOverWarp": MessageLookupByLibrary.simpleMessage(
       "Route the proxy through WARP",
     ),
@@ -2349,7 +2352,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpStr99": MessageLookupByLibrary.simpleMessage(
       "Choose the WireGuard MTU",
     ),
-    "warpSwitchedTo": m43,
+    "warpSwitchedTo": m44,
+    "warpUnknownColo": MessageLookupByLibrary.simpleMessage(
+      "Unknown edge node",
+    ),
     "wave": MessageLookupByLibrary.simpleMessage("Wave"),
     "webDAVConfiguration": MessageLookupByLibrary.simpleMessage(
       "WebDAV Configuration",
@@ -2363,6 +2369,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "wrongBackupPassword": MessageLookupByLibrary.simpleMessage(
       "Wrong password or the backup was tampered with",
     ),
-    "years": m44,
+    "years": m45,
   };
 }

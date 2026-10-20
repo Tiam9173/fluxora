@@ -1223,5 +1223,7 @@
   "warpRouteWarpOverProxy": "WARP через прокси",
   "warpRouteWarpOverProxyDesc": "WARP через прокси (рекомендуется: провайдер плюс выход WARP)",
   "warpRouteProxyOverWarp": "Прокси через WARP",
-  "warpRouteProxyOverWarpDesc": "Прокси через WARP (WARP как диалер для заблокированных узлов)"
+  "warpRouteProxyOverWarpDesc": "Прокси через WARP (WARP как диалер для заблокированных узлов)",
+  "warpEdgeNode": "Пограничный узел {code}",
+  "warpUnknownColo": "Неизвестный узел"
 }

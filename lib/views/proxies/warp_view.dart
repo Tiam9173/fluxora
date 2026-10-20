@@ -19,6 +19,15 @@ String _modeLabel(WarpMode m, AppLocalizations l) => switch (m) {
   WarpMode.custom => l.warpModeCustom,
 };
 
+String _coloCityLabel(WarpStatusReport report) {
+  final city = report.coloCityName;
+  if (city.startsWith('边缘节点 ')) {
+    return appLocalizations.warpEdgeNode(report.colo);
+  }
+  if (city == '未知边缘节点') return appLocalizations.warpUnknownColo;
+  return city;
+}
+
 String _routingLabel(WarpRoutingMode m, AppLocalizations l) => switch (m) {
   WarpRoutingMode.warpOverProxy => l.warpRouteWarpOverProxy,
   WarpRoutingMode.proxyOverWarp => l.warpRouteProxyOverWarp,
@@ -977,8 +986,10 @@ class _WarpViewState extends ConsumerState<WarpView> {
                 Expanded(
                   child: _buildMetricTile(
                     title: appLocalizations.warpStr96,
+                    // 城市名保留模型里的中英对照；只有"未知/边缘节点"这种
+                    // 兜底文案需要跟随语言。
                     value: report?.colo.isNotEmpty == true
-                        ? '${report!.colo} (${report.coloCityName})'
+                        ? '${report!.colo} (${_coloCityLabel(report)})'
                         : appLocalizations.warpStr58,
                     subtitle: report?.loc.isNotEmpty == true
                         ? appLocalizations.warpRegion(report!.loc)

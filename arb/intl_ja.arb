@@ -1219,5 +1219,7 @@
   "warpRouteWarpOverProxy": "プロキシ経由で WARP",
   "warpRouteWarpOverProxyDesc": "プロキシ経由で WARP（推奨：プロバイダ＋WARP 出口で地域露見を防ぎ、配信と AI を解除）",
   "warpRouteProxyOverWarp": "WARP 経由でプロキシ",
-  "warpRouteProxyOverWarpDesc": "WARP 経由でプロキシ（WARP をダイヤラーとして遮断されたノードに接続）"
+  "warpRouteProxyOverWarpDesc": "WARP 経由でプロキシ（WARP をダイヤラーとして遮断されたノードに接続）",
+  "warpEdgeNode": "エッジ拠点 {code}",
+  "warpUnknownColo": "不明なエッジ拠点"
 }
