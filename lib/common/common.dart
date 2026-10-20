@@ -47,3 +47,5 @@ export 'ui_manager.dart';
 export 'utils.dart';
 export 'window.dart';
 export 'media_unlock_checker.dart';
+export 'manual_node_store.dart';
+export 'share_link_parser.dart';
