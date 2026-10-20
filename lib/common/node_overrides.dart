@@ -23,6 +23,12 @@ class NodeOverrideStore {
   /// profileId → nodeName → (field → value)
   final Map<String, Map<String, Map<String, dynamic>>> _data = {};
 
+  /// profileId → 原名 → 新名。
+  ///
+  /// 改名不能只改 `proxies[i].name`：策略组的 `proxies` 列表和规则的最后一段
+  /// 都在按名字引用它，只改一处会让引用指向一个不存在的节点，内核直接拒绝加载。
+  final Map<String, Map<String, String>> _renames = {};
+
   bool _loaded = false;
 
   Future<void> ensureLoaded() async {
@@ -34,7 +40,19 @@ class NodeOverrideStore {
       if (raw == null || raw.isEmpty) return;
       final decoded = json.decode(raw);
       if (decoded is! Map) return;
-      decoded.forEach((profileId, nodes) {
+      final renames = decoded['renames'];
+      if (renames is Map) {
+        renames.forEach((profileId, map) {
+          if (map is Map) {
+            _renames[profileId.toString()] = {
+              for (final e in map.entries) e.key.toString(): e.value.toString(),
+            };
+          }
+        });
+      }
+      final nodes = decoded['nodes'];
+      if (nodes is! Map) return;
+      nodes.forEach((profileId, nodes) {
         if (nodes is! Map) return;
         final nodeMap = <String, Map<String, dynamic>>{};
         nodes.forEach((name, fields) {
@@ -54,7 +72,10 @@ class NodeOverrideStore {
   Future<void> _save() async {
     try {
       final prefs = await Preferences().sharedPreferencesCompleter.future;
-      await prefs?.setString(_prefsKey, json.encode(_data));
+      await prefs?.setString(
+        _prefsKey,
+        json.encode({'nodes': _data, 'renames': _renames}),
+      );
     } catch (e) {
       commonPrint.log('NodeOverrideStore: save failed: $e');
     }
@@ -85,6 +106,26 @@ class NodeOverrideStore {
   Future<void> clear(String profileId, String nodeName) =>
       setOverride(profileId, nodeName, const {});
 
+  String? renameFor(String profileId, String nodeName) =>
+      _renames[profileId]?[nodeName];
+
+  /// 改名。`newName` 传空等于恢复原名。
+  Future<void> setRename(
+    String profileId,
+    String nodeName,
+    String newName,
+  ) async {
+    await ensureLoaded();
+    final map = _renames[profileId];
+    if (newName.isEmpty || newName == nodeName) {
+      map?.remove(nodeName);
+      if (map?.isEmpty ?? false) _renames.remove(profileId);
+    } else {
+      (_renames[profileId] ??= {})[nodeName] = newName;
+    }
+    await _save();
+  }
+
   /// 把覆盖叠进一份配置的 `proxies`。
   ///
   /// 只改已存在的节点：覆盖层不能凭空造节点，否则配置里会出现一个只有名字、
@@ -102,6 +143,53 @@ class NodeOverrideStore {
       if (fields == null || fields.isEmpty) continue;
       for (final e in fields.entries) {
         item[e.key] = e.value;
+      }
+    }
+    _applyRenames(profileId, configMap);
+  }
+
+  /// 改名要连引用一起改，否则策略组和规则会指向一个不存在的节点。
+  void _applyRenames(String profileId, Map<String, dynamic> configMap) {
+    final renames = _renames[profileId];
+    if (renames == null || renames.isEmpty) return;
+
+    String? mapName(String name) => renames[name];
+
+    final proxies = configMap['proxies'];
+    if (proxies is List) {
+      for (final item in proxies) {
+        if (item is! Map) continue;
+        final name = item['name']?.toString();
+        final renamed = name == null ? null : mapName(name);
+        if (renamed != null) item['name'] = renamed;
+      }
+    }
+
+    final groups = configMap['proxy-groups'];
+    if (groups is List) {
+      for (final group in groups) {
+        if (group is! Map) continue;
+        final list = group['proxies'];
+        if (list is! List) continue;
+        for (var i = 0; i < list.length; i++) {
+          final renamed = mapName(list[i]?.toString() ?? '');
+          if (renamed != null) list[i] = renamed;
+        }
+      }
+    }
+
+    // 规则形如 `DOMAIN,x.com,节点名`，只有最后一段可能是节点名。
+    final rules = configMap['rules'];
+    if (rules is List) {
+      for (var i = 0; i < rules.length; i++) {
+        final rule = rules[i];
+        if (rule is! String) continue;
+        final parts = rule.split(',');
+        if (parts.length < 3) continue;
+        final renamed = mapName(parts.last.trim());
+        if (renamed == null) continue;
+        parts[parts.length - 1] = renamed;
+        rules[i] = parts.join(',');
       }
     }
   }

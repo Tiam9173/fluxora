@@ -697,6 +697,28 @@ class _ToolViewState extends ConsumerState<ToolsView> {
 
     final generalCategory = '$configCategory/${appLocalizations.general}';
     items.addAll([
+      // 重启内核是通用页的第一项，之前漏在索引外，搜"重启"什么都搜不到。
+      _SearchItem(
+        title: appLocalizations.restartCore,
+        subtitle: appLocalizations.restartCoreDesc,
+        category: generalCategory,
+        onTap: (context, _) => _pushPage(
+          context,
+          appLocalizations.general,
+          const _GeneralListView(),
+        ),
+      ),
+      if (system.isAndroid)
+        _SearchItem(
+          title: '重启内核时保持服务在线',
+          subtitle: '关闭时服务状态跟随内核',
+          category: generalCategory,
+          onTap: (context, _) => _pushPage(
+            context,
+            appLocalizations.general,
+            const _GeneralListView(),
+          ),
+        ),
       _SearchItem(
         title: appLocalizations.logLevel,
         category: generalCategory,

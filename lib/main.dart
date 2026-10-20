@@ -18,9 +18,6 @@ import 'package:synchronized/synchronized.dart';
 
 import 'application.dart';
 import 'clash/core.dart';
-// 卡片入口（`cardMain`）必须被主入口**引用**，否则它不会进 kernel 快照，
-// `CardActivity` 用独立引擎跑它时会找不到入口 —— 表现就是窗口透明但一片空白。
-// ignore: unused_import
 import 'card_only_main.dart';
 import 'clash/lib.dart';
 import 'common/common.dart';
@@ -33,6 +30,17 @@ ReceivePort? _serviceReceiverPort;
 ReceivePort? _messageReceiverPort;
 
 Future<void> main(List<String> args) async {
+  // 通知栏卡片用独立引擎跑**同一个** main，只靠参数分流。
+  //
+  // 之前给它单独开了一个 `cardMain` 入口，引擎启动后什么都没画：独立入口的
+  // 库 URI 在 kernel 里不一定能解析到。走默认入口 + 参数最稳，而且这里直接
+  // return，不会碰下面任何初始化。
+  if (args.contains('card-only')) {
+    WidgetsFlutterBinding.ensureInitialized();
+    runApp(const CardOnlyApp());
+    return;
+  }
+
   globalState.isService = false;
   WidgetsFlutterBinding.ensureInitialized();
 

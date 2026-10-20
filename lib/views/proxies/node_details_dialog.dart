@@ -266,7 +266,8 @@ Future<bool> showNodeEditDialog(
 }) async {
   final controllers = <String, TextEditingController>{};
   for (final e in raw.entries) {
-    if (e.key == 'name' || e.key == 'type') continue;
+    // name 现在允许改：改名会连带更新策略组和规则里的引用，见 NodeOverrideStore。
+    if (e.key == 'type') continue;
     final value = e.value;
     if (value is Map || value is List || value == null) continue;
     controllers[e.key] = TextEditingController(text: value.toString());
@@ -314,16 +315,28 @@ Future<bool> showNodeEditDialog(
   if (saved != true) return false;
 
   final fields = <String, dynamic>{};
+  String? newName;
   for (final entry in controllers.entries) {
     final original = raw[entry.key];
     final text = entry.value.text;
     if (text == original?.toString()) continue;
+    if (entry.key == 'name') {
+      final trimmed = text.trim();
+      if (trimmed.isEmpty || trimmed == proxyName) continue;
+      newName = trimmed;
+      continue;
+    }
     // 端口这类字段在配置里是数字，写成字符串内核会拒绝。
     final asInt = int.tryParse(text);
     fields[entry.key] = (original is int && asInt != null) ? asInt : text;
   }
 
-  if (fields.isEmpty) return false;
-  await NodeOverrideStore.instance.setOverride(profileId, proxyName, fields);
+  if (fields.isEmpty && newName == null) return false;
+  if (fields.isNotEmpty) {
+    await NodeOverrideStore.instance.setOverride(profileId, proxyName, fields);
+  }
+  if (newName != null) {
+    await NodeOverrideStore.instance.setRename(profileId, proxyName, newName);
+  }
   return true;
 }
