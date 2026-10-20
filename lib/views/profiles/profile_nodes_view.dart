@@ -824,6 +824,9 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // 顶部留白：第一个字段的浮动标签画在边框之上，紧贴内容顶部
+              // 会被裁掉一半（"节点协议"显示不全就是这个原因）。
+              const SizedBox(height: 10),
               // Protocol Picker
               DropdownButtonFormField<ManualProtocol>(
                 key: ValueKey(_protocol),
