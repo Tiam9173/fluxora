@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:fluxora/l10n/l10n.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -107,7 +108,10 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: const MaterialApp(home: WarpView()),
+          child: const MaterialApp(
+            localizationsDelegates: const [AppLocalizationDelegate()],
+            supportedLocales: const [Locale('en')],
+            locale: const Locale('en'),home: WarpView()),
         ),
       );
       // Bounded pumps rather than `pumpAndSettle`: the page must not be required

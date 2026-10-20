@@ -51,6 +51,9 @@ void main() {
         adaptiveRankingProvider.overrideWith((ref, params) => nodes),
       ],
       child: MaterialApp(
+            localizationsDelegates: const [AppLocalizationDelegate()],
+            supportedLocales: const [Locale('en')],
+            locale: const Locale('en'),
         home: Scaffold(
           body: IntelligentNodePickerSheet(
             title: 'T',

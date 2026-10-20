@@ -157,19 +157,11 @@ void main() {
       expect(proxy['version'], 3);
     });
 
-    test('Parse Juicity link', () {
-      const link = 'juicity://myuuid:mypass@1.2.3.4:443?sni=test.com&allow_insecure=1&congestion_control=bbr#Test-Juicity';
-      final proxy = ManualProxyHelper.parseShareLink(link);
-      expect(proxy, isNotNull);
-      expect(proxy!['name'], 'Test-Juicity');
-      expect(proxy['type'], 'juicity');
-      expect(proxy['server'], '1.2.3.4');
-      expect(proxy['port'], 443);
-      expect(proxy['uuid'], 'myuuid');
-      expect(proxy['password'], 'mypass');
-      expect(proxy['sni'], 'test.com');
-      expect(proxy['allow-insecure'], true);
-      expect(proxy['congestion-control'], 'bbr');
+    // mihomo 没有 juicity 类型：解析出来也只会生成一个加载失败的配置，
+    // 所以这里断言的是"拒绝"，而不是"能解析"。
+    test('Juicity link is rejected', () {
+      const link = 'juicity://myuuid:mypass@1.2.3.4:443?sni=test.com#Test-Juicity';
+      expect(ManualProxyHelper.parseShareLink(link), isNull);
     });
 
     test('Parse Hysteria 1 link', () {
@@ -186,19 +178,10 @@ void main() {
       expect(proxy['sni'], 'hy1.com');
     });
 
-    test('Parse AmneziaWG link', () {
-      const link = 'awg://privatekey123@1.2.3.4:51820?public_key=pub123&ip=10.0.0.2&jc=5&jmin=50&jmax=80#Test-AWG';
-      final proxy = ManualProxyHelper.parseShareLink(link);
-      expect(proxy, isNotNull);
-      expect(proxy!['name'], 'Test-AWG');
-      expect(proxy['type'], 'wireguard');
-      expect(proxy['server'], '1.2.3.4');
-      expect(proxy['port'], 51820);
-      expect(proxy['private-key'], 'privatekey123');
-      expect(proxy['public-key'], 'pub123');
-      expect(proxy['jc'], 5);
-      expect(proxy['jmin'], 50);
-      expect(proxy['jmax'], 80);
+    // AmneziaWG 是 sing-box 的 wireguard 变体，mihomo 不认。
+    test('AmneziaWG link is rejected', () {
+      const link = 'awg://privatekey123@1.2.3.4:51820?public_key=pub123&ip=10.0.0.2#Test-AWG';
+      expect(ManualProxyHelper.parseShareLink(link), isNull);
     });
 
     test('Parse Direct link', () {

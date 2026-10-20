@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fluxora/l10n/l10n.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluxora/models/chain_proxy_node_view_model.dart';
@@ -47,6 +48,11 @@ void main() {
         ],
         child: MaterialApp(
           theme: theme ?? ThemeData.light(),
+          // 卡片文案走 appLocalizations，测试里必须装上 delegate，
+          // 否则 AppLocalizations.current 未初始化，整棵树 build 失败。
+          localizationsDelegates: const [AppLocalizationDelegate()],
+          supportedLocales: const [Locale('en')],
+          locale: const Locale('en'),
           home: Scaffold(
             body: IntelligentNodeCard(
               viewModel: vm,
@@ -156,7 +162,7 @@ void main() {
       expect(find.text('Score: --'), findsOneWidget);
     });
 
-    testWidgets('13. Untested node shows 暂无评分 instead of a prior score', (
+    testWidgets('13. Untested node shows no score instead of a prior score', (
       tester,
     ) async {
       final vm = ChainProxyNodeViewModel(
@@ -176,11 +182,11 @@ void main() {
         ),
       );
       await tester.pumpWidget(createTestableWidget(vm));
-      expect(find.text('暂无评分'), findsOneWidget);
+      expect(find.text('No score'), findsOneWidget);
       expect(find.text('Score: 47'), findsNothing);
     });
 
-    testWidgets('14. Untested node shows 暂无数据 instead of a prior reliability', (
+    testWidgets('14. Untested node shows no data instead of a prior reliability', (
       tester,
     ) async {
       final vm = ChainProxyNodeViewModel(
@@ -197,7 +203,7 @@ void main() {
         ),
       );
       await tester.pumpWidget(createTestableWidget(vm));
-      expect(find.text('暂无数据'), findsOneWidget);
+      expect(find.text('No data'), findsOneWidget);
       expect(find.text('50%'), findsNothing);
     });
 
