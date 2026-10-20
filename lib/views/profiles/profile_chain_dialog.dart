@@ -3,6 +3,7 @@ import 'package:fluxora/manager/profile_chain_manager.dart';
 import 'package:fluxora/models/models.dart';
 import 'package:fluxora/state.dart';
 import 'package:flutter/material.dart';
+import 'package:fluxora/widgets/widgets.dart';
 
 class ProfileChainDialog extends StatefulWidget {
   final Profile profile;
@@ -67,6 +68,89 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
         _isLoading = false;
       });
     }
+  }
+
+  /// 从当前订阅自己的节点里选一个。
+  ///
+  /// 这里不能用切换卡片：卡片读的是**正在运行**的订阅，而这个对话框编辑的
+  /// 是任意一个订阅的链路，用卡片会拿到错的节点列表。所以列表来自
+  /// `_candidateProxies`（本订阅配置里的 proxies），再加一个搜索框——节点
+  /// 多的时候，下拉列表根本翻不动。
+  Future<void> _showProxyPicker({
+    required String title,
+    required String? current,
+    required ValueChanged<String?> onSelect,
+  }) async {
+    final selected = await showDialog<String>(
+      context: context,
+      builder: (ctx) {
+        var keyword = '';
+        return StatefulBuilder(
+          builder: (ctx, setLocal) {
+            final options = _candidateProxies
+                .where((n) => keyword.isEmpty || n.toLowerCase().contains(keyword.toLowerCase()))
+                .toList();
+            return AlertDialog(
+              title: Text(title, style: const TextStyle(fontSize: 16)),
+              content: SizedBox(
+                width: 360,
+                height: 420,
+                child: Column(
+                  children: [
+                    TextField(
+                      autofocus: false,
+                      decoration: const InputDecoration(
+                        isDense: true,
+                        prefixIcon: Icon(Icons.search, size: 18),
+                        hintText: '搜索节点',
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (v) => setLocal(() => keyword = v),
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: ListView(
+                        children: [
+                          ListTile(
+                            dense: true,
+                            leading: const Icon(Icons.block, size: 18),
+                            title: const Text('无（直连订阅节点）',
+                                style: TextStyle(fontSize: 13)),
+                            trailing: (current == null || current.isEmpty)
+                                ? const Icon(Icons.check, size: 18)
+                                : null,
+                            onTap: () => Navigator.of(ctx).pop(''),
+                          ),
+                          for (final name in options)
+                            ListTile(
+                              dense: true,
+                              leading: const Icon(Icons.dns_outlined, size: 18),
+                              title: Text(name,
+                                  style: const TextStyle(fontSize: 13),
+                                  overflow: TextOverflow.ellipsis),
+                              trailing: name == current
+                                  ? const Icon(Icons.check, size: 18)
+                                  : null,
+                              onTap: () => Navigator.of(ctx).pop(name),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: Text(appLocalizations.cancel),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+    if (selected != null) onSelect(selected.isEmpty ? null : selected);
   }
 
   /// Shows what a section actually does.
@@ -235,38 +319,29 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    DropdownButtonFormField<String>(
-                      key: ValueKey('preProxy_${_config.preProxy}'),
-                      // RC.8: without this the button sizes to its content and
-                      // InputDecorator's internal Row overflows in a narrow
-                      // window (measured 99 px at 360 px width).
-                      isExpanded: true,
-                      initialValue: _config.preProxy != null && _candidateProxies.contains(_config.preProxy)
-                          ? _config.preProxy
-                          : (_config.preProxy?.isNotEmpty == true ? 'CUSTOM' : 'NONE'),
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ListItem(
+                      leading: const Icon(Icons.hub_outlined),
+                      title: Text(
+                        _config.preProxy?.isNotEmpty == true
+                            ? _config.preProxy!
+                            : appLocalizations.preProxyOptionNone,
+                        style: const TextStyle(fontSize: 13),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      items: [
-                        DropdownMenuItem(value: 'NONE', child: Text(appLocalizations.preProxyOptionNone)),
-                        for (final p in _candidateProxies)
-                          DropdownMenuItem(value: p, child: Text(p, overflow: TextOverflow.ellipsis)),
-                        DropdownMenuItem(value: 'CUSTOM', child: Text(appLocalizations.preProxyOptionCustom)),
-                      ],
-                      onChanged: (val) {
-                        setState(() {
-                          if (val == 'NONE') {
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _showProxyPicker(
+                        title: appLocalizations.preProxySectionTitle,
+                        current: _config.preProxy,
+                        onSelect: (val) => setState(() {
+                          if (val == null) {
                             _config = _config.copyWith(clearPreProxy: true);
                             _customPreCtrl.clear();
-                          } else if (val == 'CUSTOM') {
-                            // keep text
-                          } else if (val != null) {
+                          } else {
                             _config = _config.copyWith(preProxy: val);
                             _customPreCtrl.text = val;
                           }
-                        });
-                      },
+                        }),
+                      ),
                     ),
                     if (_config.preProxy?.isNotEmpty == true &&
                         !_candidateProxies.contains(_config.preProxy)) ...[
@@ -309,36 +384,29 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    DropdownButtonFormField<String>(
-                      key: ValueKey('landingProxy_${_config.landingProxy}'),
-                      // RC.8: see the pre-proxy picker above.
-                      isExpanded: true,
-                      initialValue: _config.landingProxy != null && _candidateProxies.contains(_config.landingProxy)
-                          ? _config.landingProxy
-                          : (_config.landingProxy?.isNotEmpty == true ? 'CUSTOM' : 'NONE'),
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ListItem(
+                      leading: const Icon(Icons.flight_land_outlined),
+                      title: Text(
+                        _config.landingProxy?.isNotEmpty == true
+                            ? _config.landingProxy!
+                            : appLocalizations.landingProxyOptionNone,
+                        style: const TextStyle(fontSize: 13),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      items: [
-                        DropdownMenuItem(value: 'NONE', child: Text(appLocalizations.landingProxyOptionNone)),
-                        for (final p in _candidateProxies)
-                          DropdownMenuItem(value: p, child: Text(p, overflow: TextOverflow.ellipsis)),
-                        DropdownMenuItem(value: 'CUSTOM', child: Text(appLocalizations.landingProxyOptionCustom)),
-                      ],
-                      onChanged: (val) {
-                        setState(() {
-                          if (val == 'NONE') {
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _showProxyPicker(
+                        title: appLocalizations.landingProxySectionTitle,
+                        current: _config.landingProxy,
+                        onSelect: (val) => setState(() {
+                          if (val == null) {
                             _config = _config.copyWith(clearLandingProxy: true);
                             _customLandingCtrl.clear();
-                          } else if (val == 'CUSTOM') {
-                            // keep text
-                          } else if (val != null) {
+                          } else {
                             _config = _config.copyWith(landingProxy: val);
                             _customLandingCtrl.text = val;
                           }
-                        });
-                      },
+                        }),
+                      ),
                     ),
                     if (_config.landingProxy?.isNotEmpty == true &&
                         !_candidateProxies.contains(_config.landingProxy)) ...[

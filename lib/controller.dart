@@ -190,8 +190,16 @@ class AppController {
     }
     if (system.isAndroid) {
       await clashCore.closeConnections();
+      // Bettbox 在这里多刷一次 fake-ip：不刷的话旧映射会留下来，新内核起来
+      // 之后解析仍然指向已经失效的连接，表现就是"重启完还是不通"。
+      await clashCore.flushFakeIP();
       await clashCore.flushDnsCache();
       await clashCore.requestGc(forceFreeOSMemory: true);
+      if (wasRunning) {
+        // 给系统一点时间真正拆掉 TUN。Bettbox 用的是固定 500ms，这里保留
+        // 同样的下限，再叠加前面的状态轮询。
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
     }
     if (system.isDesktop) {
       lastProfileModified = null;
