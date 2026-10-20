@@ -28,6 +28,28 @@ Future<void> showNodeDetailsDialog(
         }
       }
     }
+    // 聚合节点不在当前订阅里：它们带 `[别名] ` 前缀，属于另一个订阅。
+    if (raw == null) {
+      for (final profile in globalState.config.profiles) {
+        if (!profile.joinAggregate) continue;
+        final alias = profile.aggregateAlias.isNotEmpty
+            ? profile.aggregateAlias
+            : (profile.label ?? profile.id);
+        final prefix = '[$alias] ';
+        if (!proxyName.startsWith(prefix)) continue;
+        final original = proxyName.substring(prefix.length);
+        final otherConfig = await globalState.getProfileConfig(profile.id);
+        final others = otherConfig['proxies'];
+        if (others is! List) continue;
+        for (final item in others) {
+          if (item is Map && item['name']?.toString() == original) {
+            raw = Map<String, dynamic>.from(item);
+            break;
+          }
+        }
+        if (raw != null) break;
+      }
+    }
   } catch (e) {
     commonPrint.log('showNodeDetailsDialog: $e');
   }

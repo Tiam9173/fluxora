@@ -1141,10 +1141,14 @@ class GlobalState {
     rawConfig['rules'] = rules;
 
     // 多订阅聚合：先注入 provider，后面的链路/组生成才能看到聚合节点。
-    await _injectAggregateProviders(rawConfig, targetProfile.id);
+    final aggregateProxies =
+        await _injectAggregateProviders(rawConfig, targetProfile.id);
 
     // Apply chain proxy configuration if enabled (including WebRTC leak prevention rules)
-    chainProxyManager.applyToClashConfig(rawConfig);
+    chainProxyManager.applyToClashConfig(
+      rawConfig,
+      extraProxyConfigs: aggregateProxies,
+    );
 
     // Apply Cloudflare WARP on Proxy configuration if enabled (including Google anti-redirect & AI unlock rules)
     warpManager.applyToClashConfig(rawConfig);
@@ -1162,16 +1166,20 @@ class GlobalState {
   ///
   /// 重名交给内核的 `override.additional-prefix`，我们不自己改名——那等于把
   /// 内核已经做好的事再做一遍，还得先算出全集冲突。
-  Future<void> _injectAggregateProviders(
+  Future<Map<String, Map<String, dynamic>>> _injectAggregateProviders(
     Map<String, dynamic> rawConfig,
     String currentProfileId,
   ) async {
     final others = config.profiles
         .where((p) => p.id != currentProfileId && p.joinAggregate)
         .toList();
-    if (others.isEmpty) return;
+    if (others.isEmpty) return const {};
 
     final providers = <String, dynamic>{};
+    // 供链路挑选跳板用：provider 节点不在 rawConfig['proxies'] 里，但用户能
+    // 在代理页看到它们。直接读订阅文件构造，而不是问内核要 —— 内核要下一次
+    // 重启才会加载刚写进去的 provider。
+    final providerProxies = <String, Map<String, dynamic>>{};
     final providerNames = <String>[];
     for (final profile in others) {
       final path = await appPath.getProfilePath(profile.id);
@@ -1198,8 +1206,24 @@ class GlobalState {
           'age-secret-key': profile.ageSecretKey,
       };
       providerNames.add(key);
+
+      try {
+        final nodeConfig = await getProfileConfig(profile.id);
+        final nodes = nodeConfig['proxies'];
+        if (nodes is List) {
+          for (final node in nodes) {
+            if (node is! Map || node['name'] == null) continue;
+            // 前缀必须和 override.additional-prefix 完全一致，否则选中的名字
+            // 在运行时对不上内核里的节点。
+            final prefixed = '[$alias] ${node['name']}';
+            providerProxies[prefixed] = Map<String, dynamic>.from(node);
+          }
+        }
+      } catch (e) {
+        commonPrint.log('aggregate: read nodes of ${profile.id} failed: $e');
+      }
     }
-    if (providers.isEmpty) return;
+    if (providers.isEmpty) return const {};
 
     final existingProviders = rawConfig['proxy-providers'];
     rawConfig['proxy-providers'] = <String, dynamic>{
@@ -1209,7 +1233,7 @@ class GlobalState {
     };
 
     final groups = rawConfig['proxy-groups'];
-    if (groups is! List) return;
+    if (groups is! List) return providerProxies;
     const aggregateGroup = '🌐 聚合节点';
     const aggregateAutoGroup = '♻️ 聚合自动选择';
     groups.add(<String, dynamic>{
@@ -1238,6 +1262,7 @@ class GlobalState {
       }
       break;
     }
+    return providerProxies;
   }
 
   Future<Map<String, dynamic>> getProfileConfig(String profileId) async {

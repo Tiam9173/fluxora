@@ -744,7 +744,15 @@ class ChainProxyConfig {
     'REMATCH',
   };
 
-  void applyToClashConfig(Map<String, dynamic> rawConfig) {
+  /// [extraProxyConfigs] 是**只用于查找**的节点配置，来自聚合 provider。
+  ///
+  /// provider 的节点不在 `rawConfig['proxies']` 里，但用户能在代理页看到它们，
+  /// 自然也想拿它们当跳板。把这些配置合并进查找表就能选中；它们不会被写回
+  /// `proxies`，否则同一个节点会同时以静态和 provider 两种身份出现。
+  void applyToClashConfig(
+    Map<String, dynamic> rawConfig, {
+    Map<String, Map<String, dynamic>> extraProxyConfigs = const {},
+  }) {
     final rawProxies = rawConfig['proxies'];
     final rawGroups = rawConfig['proxy-groups'];
 
@@ -916,6 +924,12 @@ class ChainProxyConfig {
         airportProxyNames.add(name);
         proxyConfigMap[name] = Map<String, dynamic>.from(item);
       }
+    }
+    // 聚合 provider 的节点只进查找表，不进 proxiesList。
+    for (final entry in extraProxyConfigs.entries) {
+      if (proxyConfigMap.containsKey(entry.key)) continue;
+      airportProxyNames.add(entry.key);
+      proxyConfigMap[entry.key] = Map<String, dynamic>.from(entry.value);
     }
 
     for (final landing in activeLandings) {

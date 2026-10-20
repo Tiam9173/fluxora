@@ -898,8 +898,14 @@ class ChainProxyManager extends ChangeNotifier {
 
   /// Injects chain proxies and groups into the Clash config map at runtime.
   /// This is called in `patchRawConfig` before writing config.yaml.
-  void applyToClashConfig(Map<String, dynamic> rawConfig) {
-    _config.applyToClashConfig(rawConfig);
+  void applyToClashConfig(
+    Map<String, dynamic> rawConfig, {
+    Map<String, Map<String, dynamic>> extraProxyConfigs = const {},
+  }) {
+    _config.applyToClashConfig(
+      rawConfig,
+      extraProxyConfigs: extraProxyConfigs,
+    );
   }
 
   // ─── Phase 5.x Runtime State ─────────────────────────────────────────────
