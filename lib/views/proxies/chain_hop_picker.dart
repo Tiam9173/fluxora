@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fluxora/common/common.dart';
 import 'package:fluxora/views/proxies/notification_switch_card.dart';
 
 /// Picks a node for one front hop.
@@ -21,8 +22,8 @@ Future<void> showChainHopPicker({
       excludeNames: excludeNames,
       specialOptions: [
         if (allowFollowMain)
-          const SwitchCardSpecialOption(
-            label: '跟随主选择',
+          SwitchCardSpecialOption(
+            label: appLocalizations.cardFollowMain,
             value: '',
             icon: Icons.auto_awesome,
           ),

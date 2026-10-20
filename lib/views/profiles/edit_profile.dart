@@ -397,9 +397,9 @@ class EditProfileViewState extends State<EditProfileView> {
             title: TextFormField(
               textInputAction: TextInputAction.next,
               controller: aggregateAliasController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 border: OutlineInputBorder(),
-                labelText: '聚合前缀（留空用订阅名）',
+                labelText: appLocalizations.aggregatePrefix,
               ),
             ),
           ),
