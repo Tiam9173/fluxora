@@ -432,6 +432,12 @@ class GlobalState {
     }
   }
 
+  /// VPN 服务当前是否真的在跑。
+  ///
+  /// `stopVpn()` 返回不代表系统已经拆完隧道，重启内核时要靠这个轮询确认，
+  /// 否则紧接着的 start 会撞上旧会话。
+  Future<bool> isVpnServiceRunning() async => await service?.getStatus() ?? false;
+
   Future handleStop([bool includeVpnService = true]) async {
     startTime = null;
     if (system.isAndroid && isService) {

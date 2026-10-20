@@ -178,6 +178,15 @@ class AppController {
     if (wasRunning) {
       await globalState.handleStop(!keepVpnService);
       _ref.read(runTimeProvider.notifier).value = null;
+      if (!keepVpnService) {
+        // Android 的 VpnService 不会在 stopVpn() 返回时立刻消失：紧接着
+        // startVpn() 会撞上还没拆完的旧会话，表现就是"重启后服务起不来"，
+        // 偶尔能成是因为那一次拆得够快。等它真的停了再继续。
+        for (var i = 0; i < 15; i++) {
+          if (!await globalState.isVpnServiceRunning()) break;
+          await Future.delayed(const Duration(milliseconds: 200));
+        }
+      }
     }
     if (system.isAndroid) {
       await clashCore.closeConnections();
@@ -198,10 +207,20 @@ class AppController {
     }
 
     if (wasRunning) {
-      await globalState.handleStart([
-        updateRunTime,
-        updateTraffic,
-      ], !keepVpnService);
+      // 起服务同样可能被系统拒绝（旧会话未释放 / 前台限制），重试几次再放弃。
+      for (var attempt = 0; attempt < 3; attempt++) {
+        try {
+          await globalState.handleStart([
+            updateRunTime,
+            updateTraffic,
+          ], !keepVpnService);
+          break;
+        } catch (e) {
+          commonPrint.log('restartCore: start attempt ${attempt + 1} failed: $e');
+          if (attempt == 2) rethrow;
+          await Future.delayed(const Duration(milliseconds: 400));
+        }
+      }
       _scheduleCheckIpRefresh();
       _backgroundLoad();
     }

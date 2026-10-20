@@ -3,7 +3,6 @@ import 'package:fluxora/providers/config.dart';
 import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:fluxora/state.dart';
 
 class CloseConnectionsItem extends ConsumerWidget {
   const CloseConnectionsItem({super.key});
@@ -257,58 +256,11 @@ class ApplicationSettingView extends StatelessWidget {
           const AlwaysShowTitleBarItem(),
       ],
       const ShowStartSwitchItem(),
-      if (system.isAndroid) ...[
-        NavBarHapticFeedbackItem(),
-        const RestartCoreKeepServiceItem(),
-      ],
+      if (system.isAndroid) ...[NavBarHapticFeedbackItem()],
       CloseConnectionsItem(),
       UsageItem(),
       AutoCheckUpdateItem(),
     ];
     return generateListView(generateSection(items: items));
-  }
-}
-
-/// 重启内核的两种语义。
-///
-/// 关闭（默认，Bettbox 行为）：服务状态跟着内核走，通知栏会看到短暂断开。
-/// 打开：重启期间保持隧道在线，所有 App 不会掉网。
-class RestartCoreKeepServiceItem extends StatefulWidget {
-  const RestartCoreKeepServiceItem({super.key});
-
-  @override
-  State<RestartCoreKeepServiceItem> createState() =>
-      _RestartCoreKeepServiceItemState();
-}
-
-class _RestartCoreKeepServiceItemState
-    extends State<RestartCoreKeepServiceItem> {
-  static const String _key = 'restart_core_keeps_service';
-
-  @override
-  void initState() {
-    super.initState();
-    Preferences().sharedPreferencesCompleter.future.then((prefs) {
-      final value = prefs?.getBool(_key) ?? false;
-      globalState.restartCoreKeepsService = value;
-      if (mounted) setState(() {});
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ListItem.switchItem(
-      title: const Text('重启内核时保持服务在线'),
-      subtitle: const Text('关闭时服务状态跟随内核（通知栏会短暂显示断开）'),
-      delegate: SwitchDelegate(
-        value: globalState.restartCoreKeepsService,
-        onChanged: (value) async {
-          globalState.restartCoreKeepsService = value;
-          final prefs = await Preferences().sharedPreferencesCompleter.future;
-          await prefs?.setBool(_key, value);
-          if (mounted) setState(() {});
-        },
-      ),
-    );
   }
 }
