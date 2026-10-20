@@ -237,8 +237,10 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             // 只 finish 的话，若任务栈里还有别的界面（例如用户之前停在代理
             // 页），系统会把它顶上来 —— 看起来就是"关掉卡片却还在 App 里"。
             "closeCardActivity" -> {
-                GlobalState.currentActivity?.moveTaskToBack(true)
-                GlobalState.currentActivity?.finish()
+                // 直接 finishAndRemoveTask：只 moveTaskToBack 的话 Activity
+                // 还活着，用户再点开 App 看到的仍是卡片页。
+                GlobalState.currentActivity?.finishAndRemoveTask()
+                GlobalState.currentActivity = null
                 result.success(true)
             }
 

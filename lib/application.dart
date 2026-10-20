@@ -278,6 +278,10 @@ class ApplicationState extends ConsumerState<Application>
 
             return MaterialApp(
               debugShowCheckedModeBanner: false,
+              // MaterialApp 自己会画一层背景色，卡片模式的透明 Material 只是
+              // 盖在它上面 —— 不把它也设透明，卡片周围永远是纯黑。
+              // 正常模式下每个页面都有自己的 Scaffold 背景，这层看不到。
+              color: Colors.transparent,
               navigatorKey: globalState.navigatorKey,
               localizationsDelegates: const [
                 AppLocalizations.delegate,

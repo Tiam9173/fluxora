@@ -116,7 +116,16 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
       ),
       actions: [
         TextButton(
-          onPressed: () => globalState.navigatorKey.currentState?.pop(),
+          // 卡片模式下这张卡片就是根节点，没有 dialog 可 pop：只 pop 会让
+          // 「确定」变成死按钮，卡片永远关不掉，Activity 也就一直留着。
+          onPressed: () {
+            final finished = widget.onFinished;
+            if (finished != null) {
+              finished();
+            } else {
+              globalState.navigatorKey.currentState?.pop();
+            }
+          },
           child: Text(appLocalizations.confirm),
         ),
       ],
