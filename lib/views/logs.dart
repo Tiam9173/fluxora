@@ -10,7 +10,11 @@ import '../models/models.dart';
 import '../widgets/widgets.dart';
 
 class LogsView extends ConsumerStatefulWidget {
-  const LogsView({super.key});
+  /// 历史日志的来源。为空时走内核（生产路径）；测试注入假数据，
+  /// 这样布局用例不需要真的内核二进制。
+  final Future<List<Log>> Function()? historyLoader;
+
+  const LogsView({super.key, this.historyLoader});
 
   @override
   ConsumerState<LogsView> createState() => _LogsViewState();
@@ -40,11 +44,16 @@ class _LogsViewState extends ConsumerState<LogsView> {
     // core process to satisfy a request, which in a fresh desktop session means
     // spawning `FluxoraDevCore.exe` just to read a log — and in tests it throws
     // a `ProcessException` after the test has finished.
-    // 用被动标志：`isInit` 会为了回答这个问题去启动内核。
-    if (!clashCore.hasLiveProcess) return;
+    final loader = widget.historyLoader;
     final List<Log> history;
     try {
-      history = await clashCore.getLogs();
+      if (loader != null) {
+        history = await loader();
+      } else {
+        // 用被动标志：`isInit` 会为了回答这个问题去启动内核。
+        if (!clashCore.hasLiveProcess) return;
+        history = await clashCore.getLogs();
+      }
     } catch (_) {
       // Reading history is best-effort: the page still works off the stream.
       return;

@@ -6,6 +6,30 @@ import 'package:fluxora/common/common.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 
+/// 解析内核二进制的位置。
+///
+/// 纯函数：所有输入都显式传入，不读全局状态也不碰 Platform。这样测试可以用
+/// 同一套规则判断"这台机器上到底有没有内核"，而不是各自拼一份路径猜。
+String resolveCorePath({
+  required String? devWorkspacePath,
+  required String executableDir,
+  required bool isWindows,
+}) {
+  final extension = isWindows ? '.exe' : '';
+  if (devWorkspacePath != null) {
+    final devPath = join(
+      devWorkspacePath,
+      'libclash',
+      'windows',
+      '${AppIdentity.coreExecutableName}$extension',
+    );
+    if (File(devPath).existsSync()) {
+      return devPath;
+    }
+  }
+  return join(executableDir, '${AppIdentity.coreExecutableName}$extension');
+}
+
 class AppPath {
   static AppPath? _instance;
   Completer<Directory> dataDir = Completer();
@@ -68,25 +92,11 @@ class AppPath {
     return dirname(currentExecutablePath);
   }
 
-  String get corePath {
-    final devWorkspacePath = _devWorkspacePath;
-    if (devWorkspacePath != null) {
-      final corePath = join(
-        devWorkspacePath,
-        'libclash',
-        'windows',
-        '${AppIdentity.coreExecutableName}$executableExtension',
-      );
-      if (File(corePath).existsSync()) {
-        return corePath;
-      }
-    }
-
-    return join(
-      executableDirPath,
-      '${AppIdentity.coreExecutableName}$executableExtension',
-    );
-  }
+  String get corePath => resolveCorePath(
+    devWorkspacePath: _devWorkspacePath,
+    executableDir: executableDirPath,
+    isWindows: system.isWindows,
+  );
 
   String get helperPath {
     final devWorkspacePath = _devWorkspacePath;

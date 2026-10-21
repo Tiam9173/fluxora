@@ -1,3 +1,4 @@
+
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -336,7 +337,10 @@ void main() {
     'TrafficUsage': const TrafficUsage(),
     'OnlinePanel': const OnlinePanel(),
     'BackupAndRecovery': const BackupAndRecovery(),
-    'LogsView': const LogsView(),
+    // LogsView 打开时会向内核拉取历史日志。CI runner 上没有内核二进制，
+    // 那个调用会抛 ProcessException 而不是溢出。这里注入一个空的历史来源，
+    // 让布局用例不依赖内核——生产路径不变。
+    'LogsView': LogsView(historyLoader: () async => const <Log>[]),
     'TrackerInfoItem': TrackerInfoItem(
       trackerInfo: TrackerInfo(
         id: 'item4',
