@@ -823,27 +823,79 @@ class Utils {
     return brightness == Brightness.dark ? darkPath : lightPath;
   }
 
+  /// 比较两个版本号，按语义化版本规则。
+  ///
+  /// 支持 `1.2.3`、`1.2.3-rc.4`、`1.2.3+build`：
+  ///
+  /// * 主版本号逐段比大小；
+  /// * 主版本相同时，带预发布标记的**更小**（`1.0.0-rc.1 < 1.0.0`）；
+  /// * 预发布标记同名时比其后的数字（`rc.9 < rc.10`）；
+  /// * 最后才比 `+build`。
+  ///
+  /// 旧实现直接 `split('.')` 再 `int.parse(v[2])`，遇到 `1.1.0-rc.11` 会得到
+  /// `"0-rc"` 并抛 FormatException。更新检查把这个调用包在 try 里，异常被
+  /// 吞掉后整个函数返回 null —— 结果是**所有 RC 版本都永远检测不到新版**。
   int compareVersions(String version1, String version2) {
-    List<String> v1 = version1.split('+')[0].split('.');
-    List<String> v2 = version2.split('+')[0].split('.');
-    int major1 = int.parse(v1[0]);
-    int major2 = int.parse(v2[0]);
-    if (major1 != major2) {
-      return major1.compareTo(major2);
+    final a = _parseVersion(version1);
+    final b = _parseVersion(version2);
+
+    for (var i = 0; i < 3; i++) {
+      final cmp = a.numbers[i].compareTo(b.numbers[i]);
+      if (cmp != 0) return cmp;
     }
-    int minor1 = v1.length > 1 ? int.parse(v1[1]) : 0;
-    int minor2 = v2.length > 1 ? int.parse(v2[1]) : 0;
-    if (minor1 != minor2) {
-      return minor1.compareTo(minor2);
+
+    final aPre = a.prerelease;
+    final bPre = b.prerelease;
+    if (aPre == null && bPre != null) return 1;
+    if (aPre != null && bPre == null) return -1;
+    if (aPre != null && bPre != null) {
+      final byName = aPre.name.compareTo(bPre.name);
+      if (byName != 0) return byName;
+      final byNumber = aPre.number.compareTo(bPre.number);
+      if (byNumber != 0) return byNumber;
     }
-    int patch1 = v1.length > 2 ? int.parse(v1[2]) : 0;
-    int patch2 = v2.length > 2 ? int.parse(v2[2]) : 0;
-    if (patch1 != patch2) {
-      return patch1.compareTo(patch2);
+
+    return a.build.compareTo(b.build);
+  }
+
+  /// 把 `v1.2.3-rc.4+20261021` 拆成可以比较的三部分。
+  ///
+  /// 任何一段解析失败都按 0 处理，绝不抛异常：版本号来自远端 release 标题，
+  /// 格式不可控，抛一次就会让整个更新检查失效。
+  ({List<int> numbers, ({String name, int number})? prerelease, int build})
+  _parseVersion(String raw) {
+    var text = raw.trim();
+    if (text.startsWith('v') || text.startsWith('V')) {
+      text = text.substring(1);
     }
-    int build1 = version1.contains('+') ? int.parse(version1.split('+')[1]) : 0;
-    int build2 = version2.contains('+') ? int.parse(version2.split('+')[1]) : 0;
-    return build1.compareTo(build2);
+
+    var build = 0;
+    final plusIndex = text.indexOf('+');
+    if (plusIndex >= 0) {
+      build = int.tryParse(text.substring(plusIndex + 1)) ?? 0;
+      text = text.substring(0, plusIndex);
+    }
+
+    ({String name, int number})? prerelease;
+    final dashIndex = text.indexOf('-');
+    if (dashIndex >= 0) {
+      final pre = text.substring(dashIndex + 1);
+      text = text.substring(0, dashIndex);
+      final dotIndex = pre.indexOf('.');
+      final name = dotIndex >= 0 ? pre.substring(0, dotIndex) : pre;
+      final number = dotIndex >= 0
+          ? (int.tryParse(pre.substring(dotIndex + 1)) ?? 0)
+          : 0;
+      prerelease = (name: name.toLowerCase(), number: number);
+    }
+
+    final parts = text.split('.');
+    final numbers = List<int>.generate(
+      3,
+      (i) => i < parts.length ? (int.tryParse(parts[i]) ?? 0) : 0,
+    );
+
+    return (numbers: numbers, prerelease: prerelease, build: build);
   }
 
   String getPinyin(String value) {

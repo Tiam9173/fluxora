@@ -503,12 +503,17 @@ class AppController {
       commonPrint.log('updateTraffic: getTotalTraffic failed: $e');
     }
 
-    var traffic = Traffic();
+    // null 表示这一轮没读到，不是"这一轮没有流量"。
+    Traffic? traffic;
     try {
       traffic = await clashCore.getTraffic();
     } catch (e) {
-      commonPrint.log('updateTraffic: getTraffic failed: $e');
+      commonPrint.log('[traffic] getTraffic failed: ${e.runtimeType}: $e');
     }
+
+    // 读失败就整轮跳过，不要拿一个默认的 Traffic()（全 0）去覆盖通知栏：
+    // 用户看到的是"速度在真实值和 0 之间跳"，比不更新更糟。
+    if (traffic == null) return;
 
     if (shouldUpdateDashboard) {
       _ref.read(trafficsProvider.notifier).addTraffic(traffic);
