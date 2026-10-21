@@ -239,7 +239,7 @@ void main() {
       expect(find.text('HopInternal'), findsNothing);
 
       // ── the 「策略组」 section still offers proxy groups independently ──────
-      expect(find.text('策略组'), findsOneWidget);
+      expect(find.text(appLocalizations.warpStr84), findsOneWidget);
       expect(find.text('Airport-Manual'), findsOneWidget);
       expect(find.text('Airport-Auto'), findsOneWidget);
       // …but the internal groups are not offered as策略组 either.
