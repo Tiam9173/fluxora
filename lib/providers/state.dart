@@ -353,7 +353,8 @@ TrayState trayState(Ref ref) {
 
   return TrayState(
     mode: clashConfig.mode,
-    port: clashConfig.mixedPort,
+    // 端口避让生效时，托盘里的局域网地址必须跟着变，否则用户按它连会失败。
+    port: ref.watch(mixedPortFallbackProvider) ?? clashConfig.mixedPort,
     autoLaunch: appSetting.autoLaunch,
     systemProxy: networkProps.systemProxy,
     tunEnable: clashConfig.tun.enable,

@@ -1094,6 +1094,10 @@ class MessageLookup extends MessageLookupByLibrary {
       "فرمت IP یا CIDR نامعتبر است",
     ),
     "ipAddress": MessageLookupByLibrary.simpleMessage("آدرس IP"),
+    "ipCheckCoreNotReady": MessageLookupByLibrary.simpleMessage(
+      "هسته آماده نیست",
+    ),
+    "ipCheckTimeout": MessageLookupByLibrary.simpleMessage("گره پاسخ نمی‌دهد"),
     "ipClickBehavior": MessageLookupByLibrary.simpleMessage("تغییر نمایش"),
     "ipPrivacyProtection": MessageLookupByLibrary.simpleMessage(
       "پنهان‌سازی IP",

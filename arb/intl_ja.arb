@@ -1275,5 +1275,7 @@
   "tvPushToTv": "🚀 テレビへ送信",
   "tvPushConfig": "🚀 設定ファイルを送信",
   "chainSearchNode": "ノードを検索",
-  "chainNoneDirect": "なし（購読ノードに直接接続）"
+  "chainNoneDirect": "なし（購読ノードに直接接続）",
+  "ipCheckTimeout": "ノードが応答しません",
+  "ipCheckCoreNotReady": "コアの準備ができていません"
 }

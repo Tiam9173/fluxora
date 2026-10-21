@@ -10969,6 +10969,26 @@ class AppLocalizations {
       args: [],
     );
   }
+
+  /// `No response from the node`
+  String get ipCheckTimeout {
+    return Intl.message(
+      'No response from the node',
+      name: 'ipCheckTimeout',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Core is not ready`
+  String get ipCheckCoreNotReady {
+    return Intl.message(
+      'Core is not ready',
+      name: 'ipCheckCoreNotReady',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {

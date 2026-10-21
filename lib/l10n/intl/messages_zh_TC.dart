@@ -808,6 +808,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "intranetIP": MessageLookupByLibrary.simpleMessage("內網 IP"),
     "invalidIpFormat": MessageLookupByLibrary.simpleMessage("無效的 IP 或 CIDR 格式"),
     "ipAddress": MessageLookupByLibrary.simpleMessage("IP 位址"),
+    "ipCheckCoreNotReady": MessageLookupByLibrary.simpleMessage("內核尚未就緒"),
+    "ipCheckTimeout": MessageLookupByLibrary.simpleMessage("節點無回應"),
     "ipClickBehavior": MessageLookupByLibrary.simpleMessage("顯示切換"),
     "ipPrivacyProtection": MessageLookupByLibrary.simpleMessage("隱藏 IP 顯示"),
     "ipRiskAbuse": MessageLookupByLibrary.simpleMessage("濫用記錄"),

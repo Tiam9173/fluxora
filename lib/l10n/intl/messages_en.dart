@@ -1084,6 +1084,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "Invalid IP or CIDR format",
     ),
     "ipAddress": MessageLookupByLibrary.simpleMessage("IP Address"),
+    "ipCheckCoreNotReady": MessageLookupByLibrary.simpleMessage(
+      "Core is not ready",
+    ),
+    "ipCheckTimeout": MessageLookupByLibrary.simpleMessage(
+      "No response from the node",
+    ),
     "ipClickBehavior": MessageLookupByLibrary.simpleMessage("Toggle Display"),
     "ipPrivacyProtection": MessageLookupByLibrary.simpleMessage(
       "Hide IP Display",

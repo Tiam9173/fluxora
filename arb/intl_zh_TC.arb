@@ -1273,5 +1273,7 @@
   "tvPushToTv": "🚀 推送至電視",
   "tvPushConfig": "🚀 推送設定檔",
   "chainSearchNode": "搜尋節點",
-  "chainNoneDirect": "無（直連訂閱節點）"
+  "chainNoneDirect": "無（直連訂閱節點）",
+  "ipCheckTimeout": "節點無回應",
+  "ipCheckCoreNotReady": "內核尚未就緒"
 }

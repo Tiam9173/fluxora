@@ -1275,5 +1275,7 @@
   "tvPushToTv": "🚀 TV로 보내기",
   "tvPushConfig": "🚀 설정 파일 보내기",
   "chainSearchNode": "노드 검색",
-  "chainNoneDirect": "없음 (구독 노드 직접 사용)"
+  "chainNoneDirect": "없음 (구독 노드 직접 사용)",
+  "ipCheckTimeout": "노드가 응답하지 않습니다",
+  "ipCheckCoreNotReady": "코어가 준비되지 않았습니다"
 }

@@ -1585,10 +1585,23 @@ class DetectionState {
       ipInfo: _maskIpInfo(_rawIpInfo),
       errorMessage: _rawIpInfo != null
           ? null
-          : (state.value.ipInfo == null
-              ? appLocalizations.tryManualRefresh
-              : null),
+          : (state.value.ipInfo == null ? _ipFailureMessage() : null),
     );
+  }
+
+  /// 把失败原因翻译成用户看得懂的提示。
+  ///
+  /// 三种情况对用户来说要采取的动作完全不同：换节点 / 等内核起来 / 重试。
+  /// 统一显示「请尝试手动刷新」等于什么也没说。
+  String _ipFailureMessage() {
+    switch (request.lastIpFailureReason) {
+      case IpFailureReason.timeout:
+        return appLocalizations.ipCheckTimeout;
+      case IpFailureReason.coreNotReady:
+        return appLocalizations.ipCheckCoreNotReady;
+      case null:
+        return appLocalizations.tryManualRefresh;
+    }
   }
 
   Future<void> _checkIp({bool showLoading = false}) async {

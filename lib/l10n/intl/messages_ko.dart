@@ -890,6 +890,10 @@ class MessageLookup extends MessageLookupByLibrary {
       "유효하지 않은 IP 또는 CIDR 형식입니다",
     ),
     "ipAddress": MessageLookupByLibrary.simpleMessage("IP 주소"),
+    "ipCheckCoreNotReady": MessageLookupByLibrary.simpleMessage(
+      "코어가 준비되지 않았습니다",
+    ),
+    "ipCheckTimeout": MessageLookupByLibrary.simpleMessage("노드가 응답하지 않습니다"),
     "ipClickBehavior": MessageLookupByLibrary.simpleMessage("표시 전환"),
     "ipPrivacyProtection": MessageLookupByLibrary.simpleMessage("IP 표시 숨기기"),
     "ipRiskAbuse": MessageLookupByLibrary.simpleMessage("악용 신고"),

@@ -1136,6 +1136,10 @@ class MessageLookup extends MessageLookupByLibrary {
       "Неверный формат IP или CIDR",
     ),
     "ipAddress": MessageLookupByLibrary.simpleMessage("IP-адрес"),
+    "ipCheckCoreNotReady": MessageLookupByLibrary.simpleMessage(
+      "Ядро не готово",
+    ),
+    "ipCheckTimeout": MessageLookupByLibrary.simpleMessage("Узел не отвечает"),
     "ipClickBehavior": MessageLookupByLibrary.simpleMessage(
       "Режим отображения",
     ),

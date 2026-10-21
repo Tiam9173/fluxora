@@ -1275,5 +1275,7 @@
   "tvPushToTv": "🚀 ارسال به تلویزیون",
   "tvPushConfig": "🚀 ارسال فایل پیکربندی",
   "chainSearchNode": "جستجوی گره",
-  "chainNoneDirect": "هیچ (اتصال مستقیم به گره اشتراک)"
+  "chainNoneDirect": "هیچ (اتصال مستقیم به گره اشتراک)",
+  "ipCheckTimeout": "گره پاسخ نمی‌دهد",
+  "ipCheckCoreNotReady": "هسته آماده نیست"
 }

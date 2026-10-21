@@ -885,6 +885,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "intranetIP": MessageLookupByLibrary.simpleMessage("ローカル IP"),
     "invalidIpFormat": MessageLookupByLibrary.simpleMessage("無効なIPまたはCIDR形式"),
     "ipAddress": MessageLookupByLibrary.simpleMessage("IP アドレス"),
+    "ipCheckCoreNotReady": MessageLookupByLibrary.simpleMessage(
+      "コアの準備ができていません",
+    ),
+    "ipCheckTimeout": MessageLookupByLibrary.simpleMessage("ノードが応答しません"),
     "ipClickBehavior": MessageLookupByLibrary.simpleMessage("表示切替"),
     "ipPrivacyProtection": MessageLookupByLibrary.simpleMessage("IP表示を隠す"),
     "ipRiskAbuse": MessageLookupByLibrary.simpleMessage("不正利用報告"),

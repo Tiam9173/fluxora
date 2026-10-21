@@ -11,7 +11,21 @@ import 'package:fluxora/models/models.dart';
 import 'package:fluxora/state.dart';
 import 'package:flutter/cupertino.dart';
 
+/// IP 检测失败的原因。
+///
+/// 之前所有失败都显示同一句「请尝试手动刷新」，用户分不清是节点不通、内核
+/// 没起来，还是探测地址本身挂了。
+enum IpFailureReason {
+  /// 探测地址连上了但超时（多半是节点不通或链路很慢）。
+  timeout,
+
+  /// 连 127.0.0.1 的代理端口就被拒了（内核没起来 / 端口不对）。
+  coreNotReady,
+}
+
 class Request {
+  /// 最近一次 IP 检测失败的原因；成功时为 null。
+  IpFailureReason? lastIpFailureReason;
   late final Dio _dio;
   late final Dio _clashDio;
   String? userAgent;
@@ -350,6 +364,9 @@ class Request {
     IpInfo? fallbackInfo;
     int completedCount = 0;
     Timer? cleanupTimer;
+    var sawTimeout = false;
+    var sawConnectionError = false;
+    lastIpFailureReason = null;
 
     void cleanup() {
       cleanupTimer?.cancel();
@@ -365,7 +382,18 @@ class Request {
       if (completedCount == sources.length) {
         if (!firstCompleter.isCompleted) {
           final res = primaryInfo ?? fallbackInfo;
-          if (res != null) onUpdate?.call(res);
+          if (res != null) {
+            onUpdate?.call(res);
+          } else {
+            // 全部源都失败：记下原因，UI 据此选提示文案。
+            lastIpFailureReason = sawConnectionError
+                ? IpFailureReason.coreNotReady
+                : (sawTimeout ? IpFailureReason.timeout : null);
+            commonPrint.log(
+              '[ip] all ${sources.length} sources failed '
+              '(connectionError=$sawConnectionError, timeout=$sawTimeout)',
+            );
+          }
           firstCompleter.complete(Result.success(res));
         }
         cleanup();
@@ -375,6 +403,7 @@ class Request {
     for (int i = 0; i < sources.length; i++) {
       final url = sources[i];
       final isPrimary = i == 0;
+      final startedAt = DateTime.now();
       dio
           .get<Uint8List>(
             url,
@@ -425,9 +454,24 @@ class Request {
             checkAllFinished();
           })
           .catchError((e) {
-            if (e is DioException && e.type == DioExceptionType.cancel) {
-              if (!firstCompleter.isCompleted) {
-                firstCompleter.complete(Result.error('cancelled'));
+            final elapsed = DateTime.now().difference(startedAt).inMilliseconds;
+            commonPrint.log(
+              '[ip] $url -> ${e.runtimeType}: $e (${elapsed}ms)',
+            );
+            if (e is DioException) {
+              switch (e.type) {
+                case DioExceptionType.connectionTimeout:
+                case DioExceptionType.receiveTimeout:
+                case DioExceptionType.sendTimeout:
+                  sawTimeout = true;
+                case DioExceptionType.connectionError:
+                  sawConnectionError = true;
+                case DioExceptionType.cancel:
+                  if (!firstCompleter.isCompleted) {
+                    firstCompleter.complete(Result.error('cancelled'));
+                  }
+                default:
+                  break;
               }
             }
             checkAllFinished();
@@ -436,7 +480,14 @@ class Request {
 
     return await firstCompleter.future.timeout(
       effectiveTimeout,
-      onTimeout: () => Result.success(primaryInfo ?? fallbackInfo),
+      onTimeout: () {
+        final res = primaryInfo ?? fallbackInfo;
+        if (res == null) {
+          lastIpFailureReason = IpFailureReason.timeout;
+          commonPrint.log('[ip] overall timeout after ${effectiveTimeout.inSeconds}s');
+        }
+        return Result.success(res);
+      },
     );
   }
 

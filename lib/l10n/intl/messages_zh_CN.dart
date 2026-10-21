@@ -796,6 +796,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "intranetIP": MessageLookupByLibrary.simpleMessage("内网 IP"),
     "invalidIpFormat": MessageLookupByLibrary.simpleMessage("无效的 IP 或 CIDR 格式"),
     "ipAddress": MessageLookupByLibrary.simpleMessage("IP 地址"),
+    "ipCheckCoreNotReady": MessageLookupByLibrary.simpleMessage("内核尚未就绪"),
+    "ipCheckTimeout": MessageLookupByLibrary.simpleMessage("节点无响应"),
     "ipClickBehavior": MessageLookupByLibrary.simpleMessage("显示切换"),
     "ipPrivacyProtection": MessageLookupByLibrary.simpleMessage("隐藏 IP 显示"),
     "ipRiskAbuse": MessageLookupByLibrary.simpleMessage("滥用记录"),

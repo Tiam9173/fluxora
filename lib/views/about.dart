@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class AboutView extends StatelessWidget {
   const AboutView({super.key});
 
+  static const String githubRepoUrl = 'https://github.com/Tiam9173/fluxora';
   static const String telegramChannelUrl = 'https://t.me/Fluxora_Channel';
   static const String telegramGroupUrl = 'https://t.me/Fluxora_Group1';
 
@@ -70,6 +71,13 @@ class AboutView extends StatelessWidget {
                 icon: Icons.forum_outlined,
                 iconColor: const Color(0xFF2CA5E0),
                 onTap: () => globalState.openUrl(telegramGroupUrl),
+              ),
+              // 「GitHub」是品牌名，不做翻译。
+              _LinkGridTile(
+                title: 'GitHub',
+                icon: Icons.code,
+                iconColor: colorScheme.onSurface,
+                onTap: () => globalState.openUrl(githubRepoUrl),
               ),
             ],
           ),

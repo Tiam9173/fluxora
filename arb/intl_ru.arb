@@ -1279,5 +1279,7 @@
   "tvPushToTv": "🚀 Отправить на ТВ",
   "tvPushConfig": "🚀 Отправить файл конфигурации",
   "chainSearchNode": "Поиск узлов",
-  "chainNoneDirect": "Нет (напрямую к узлу подписки)"
+  "chainNoneDirect": "Нет (напрямую к узлу подписки)",
+  "ipCheckTimeout": "Узел не отвечает",
+  "ipCheckCoreNotReady": "Ядро не готово"
 }
