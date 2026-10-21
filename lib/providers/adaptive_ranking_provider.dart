@@ -26,7 +26,16 @@ final adaptiveRankingProvider =
   final role = params.role;
   final sortMode = params.sortMode;
   final delayMap = ref.watch(delayDataSourceProvider);
-  final testUrl = globalState.appController.getRealTestUrl('');
+  // `appController` 是 `late` 字段，测试和早期启动阶段还没赋值。这里只是
+  // 用来给延迟数据挑一个 URL，取不到就退回"没有 URL"，排序逻辑本身不受影响
+  // —— 不能让一个可选的数据源把整条排序链路打断。
+  // 注意：LateError 是 Error 不是 Exception，必须用裸 catch。
+  String? testUrl;
+  try {
+    testUrl = globalState.appController.getRealTestUrl('');
+  } catch (_) {
+    testUrl = null;
+  }
 
   // Read triggers that must invalidate the cache implicitly:
   final groups = ref.watch(groupsProvider);
@@ -264,9 +273,10 @@ String rankingStateFingerprint({
 /// latency, so neither may be shown as one.
 int? _measuredFromDelayMap(
   DelayMap delayMap,
-  String url,
+  String? url,
   String proxyName,
 ) {
+  if (url == null) return null;
   final value = delayMap[url]?[proxyName];
   if (value == null || value <= 0) return null;
   return value;

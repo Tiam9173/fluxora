@@ -480,12 +480,23 @@ class Groups extends _$Groups with AutoDisposeNotifierMixin {
 class DelayDataSource extends _$DelayDataSource with AutoDisposeNotifierMixin {
   @override
   DelayMap build() {
-    return globalState.appState.delayMap;
+    // `appState` 是 late 字段，测试和早期启动阶段还没赋值。延迟数据是可选的
+    // 辅助信息，读不到就当"还没有测过"，不能让整条排序链路因此报错。
+    // LateError 是 Error 不是 Exception，必须用裸 catch。
+    try {
+      return globalState.appState.delayMap;
+    } catch (_) {
+      return const {};
+    }
   }
 
   @override
   onUpdate(value) {
-    globalState.appState = globalState.appState.copyWith(delayMap: value);
+    try {
+      globalState.appState = globalState.appState.copyWith(delayMap: value);
+    } catch (_) {
+      // 同上：还没初始化时无处可写，丢掉这次更新即可。
+    }
   }
 
   void setDelay(Delay delay) {
