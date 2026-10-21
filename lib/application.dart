@@ -339,9 +339,13 @@ class ApplicationState extends ConsumerState<Application>
                       return TickerMode(
                         enabled: enabled,
                         child: AppEnvManager(
-                          child: _buildApp(
-                            AppSidebarContainer(
-                              child: _buildPlatformApp(child!),
+                          // 这里已经在 MaterialApp 之下，`Theme.of` 拿到的是
+                          // 解析后的主题；通知栏大图标据此选深/浅版本。
+                          child: _NotificationIconSync(
+                            child: _buildApp(
+                              AppSidebarContainer(
+                                child: _buildPlatformApp(child!),
+                              ),
                             ),
                           ),
                         ),
@@ -586,4 +590,34 @@ class ApplicationState extends ConsumerState<Application>
     }
     super.dispose();
   }
+}
+
+/// 把解析后的主题亮度同步给原生层（仅 Android）。
+///
+/// 通知栏的大图标有深/浅两个版本，之前由桌面启动图标的手动开关决定，所以
+/// 无论界面是深色还是浅色，通知里始终是同一个图标。
+class _NotificationIconSync extends StatefulWidget {
+  const _NotificationIconSync({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_NotificationIconSync> createState() => _NotificationIconSyncState();
+}
+
+class _NotificationIconSyncState extends State<_NotificationIconSync> {
+  bool? _lastIsDark;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!system.isAndroid) return;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    if (_lastIsDark == isDark) return;
+    _lastIsDark = isDark;
+    app.setNotificationDarkIcon(isDark);
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }

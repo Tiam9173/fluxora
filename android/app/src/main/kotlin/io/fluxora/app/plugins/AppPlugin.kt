@@ -246,6 +246,12 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
                 setLauncherIcon(call.argument<Boolean>("useDarkIcon") ?: false)
                 result.success(true)
             }
+            "setNotificationDarkIcon" -> {
+                io.fluxora.app.services.NotificationIconTheme.isDark =
+                    call.argument<Boolean>("isDark") ?: false
+                VpnPlugin.updateNotificationIcon()
+                result.success(true)
+            }
             "hasPackageListPermission" -> {
                 result.success(hasPackageListPermission())
             }

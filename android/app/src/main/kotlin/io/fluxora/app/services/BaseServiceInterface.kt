@@ -207,7 +207,8 @@ suspend fun Service.createFluxoraNotificationBuilder(
             PendingIntent.getActivity(this@createFluxoraNotificationBuilder, 0, intent, flags)
         }
 
-        val isDark = targetComponent == darkComponent
+        // 跟随当前界面主题，而不是桌面启动图标那个手动开关。
+        val isDark = io.fluxora.app.services.NotificationIconTheme.isDark
         val largeIconRes = if (isDark) {
             R.mipmap.ic_launcher
         } else {

@@ -142,6 +142,18 @@ class App {
     return result ?? false;
   }
 
+  /// 把当前界面主题的明暗同步给原生层，用于通知栏大图标。
+  ///
+  /// 和 [setLauncherIcon] 分开：桌面启动图标有独立的手动开关，而通知栏里的
+  /// 图标应该跟着用户此刻看到的界面走，两者不该互相牵连。
+  Future<bool> setNotificationDarkIcon(bool isDark) async {
+    final result = await methodChannel.invokeMethod<bool>(
+      'setNotificationDarkIcon',
+      {'isDark': isDark},
+    );
+    return result ?? false;
+  }
+
   Future<bool> isAndroidTV() async {
     final result = await methodChannel.invokeMethod<bool>('isAndroidTV');
     return result ?? false;

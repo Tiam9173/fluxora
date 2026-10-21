@@ -23,6 +23,13 @@ typedef EditorWidgetBuilder = Widget Function();
 
 const int _kLargeEditableLineThresholdMobile = 5800;
 const int _kLargeEditableLineThresholdDesktop = 5800;
+
+/// 语法高亮的关闭阈值，比"大文件降级"的阈值高得多。
+///
+/// 订阅配置动辄几千行，用 5800 行同时控制"关折叠"和"关高亮"，结果是常见
+/// 大小的配置一打开就没有颜色。高亮本身是增量渲染的，真正拖慢大文件的是
+/// 折叠和参考线，两者应该分开。
+const int _kSyntaxHighlightLineLimit = 20000;
 const Duration _kFindFocusDelay = Duration(milliseconds: 500);
 const Duration _kMinBusyDuration = Duration(milliseconds: 600);
 
@@ -121,6 +128,10 @@ class _EditorPageState extends ConsumerState<EditorPage> {
   }
 
   bool get _disableSyntaxHighlight =>
+      widget.simple || _lineCount > _kSyntaxHighlightLineLimit;
+
+  /// 折叠和参考线在中等大小的文件上就开始拖慢输入，仍按较低的阈值关掉。
+  bool get _disableEditorExtras =>
       widget.simple || _lineCount > _largeEditableLineThreshold;
 
   bool get _isLineWrapDisabled => _lineCount > _largeEditableLineThreshold;
@@ -607,9 +618,8 @@ class _EditorPageState extends ConsumerState<EditorPage> {
                         lineWrap: _lineWrap,
                         zoom: _zoom,
                         onZoomEnd: _handleZoomEnd,
-                        enableFolding: !widget.simple && !_disableSyntaxHighlight,
-                        enableGuideLines:
-                            !widget.simple && !_disableSyntaxHighlight,
+                        enableFolding: !_disableEditorExtras,
+                        enableGuideLines: !_disableEditorExtras,
                         enableGutter: true,
                         enableGutterDivider: false,
                         enableLocalSuggestions: true,
