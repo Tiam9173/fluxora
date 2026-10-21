@@ -170,6 +170,22 @@ jobs:
           linker = "${ANDROID_NDK}/toolchains/llvm/prebuilt/linux-x86_64/bin/i686-linux-android26-clang"
           EOF
 
+      # rquickjs 在 Android 上要用 bindgen 生成绑定，而 bindgen 需要 libclang
+      # 和**目标平台**的 C 头文件。缺了它构建会失败，但 Gradle 仍然会打印
+      # "Built app-debug.apk"——只是里面打的是上一次的 .so，非常容易误判。
+      - name: Configure bindgen for Android
+        if: matrix.platform == 'android'
+        shell: bash
+        run: |
+          LLVM="${ANDROID_NDK}/toolchains/llvm/prebuilt/linux-x86_64"
+          CLANG_INCLUDE="$(ls -d "${LLVM}"/lib/clang/*/include | head -1)"
+          echo "LIBCLANG_PATH=${LLVM}/lib" >> "$GITHUB_ENV"
+          for pair in             "aarch64_linux_android:aarch64-linux-android26"             "armv7_linux_androideabi:armv7a-linux-androideabi26"             "x86_64_linux_android:x86_64-linux-android26"             "i686_linux_android:i686-linux-android26"; do
+            key="${pair%%:*}"
+            triple="${pair##*:}"
+            echo "BINDGEN_EXTRA_CLANG_ARGS_${key}=--sysroot=${LLVM}/sysroot -isystem ${CLANG_INCLUDE} --target=${triple}" >> "$GITHUB_ENV"
+          done
+
       - name: Install Dependencies (Linux)
         if: matrix.platform == 'linux'
         run: |

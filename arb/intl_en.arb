@@ -1724,5 +1724,6 @@
   "chainSearchNode": "Search nodes",
   "chainNoneDirect": "None (use the subscription node directly)",
   "ipCheckTimeout": "No response from the node",
-  "ipCheckCoreNotReady": "Core is not ready"
+  "ipCheckCoreNotReady": "Core is not ready",
+  "scriptUrlNotAScript": "This link returned a web page, not a script file. On GitHub, use the Raw link."
 }

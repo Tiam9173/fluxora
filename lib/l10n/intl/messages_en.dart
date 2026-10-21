@@ -1777,6 +1777,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "scriptDesc": MessageLookupByLibrary.simpleMessage(
       "Global override script config",
     ),
+    "scriptUrlNotAScript": MessageLookupByLibrary.simpleMessage(
+      "This link returned a web page, not a script file. On GitHub, use the Raw link.",
+    ),
     "search": MessageLookupByLibrary.simpleMessage("Search"),
     "seconds": MessageLookupByLibrary.simpleMessage("Seconds"),
     "secretCopied": MessageLookupByLibrary.simpleMessage(

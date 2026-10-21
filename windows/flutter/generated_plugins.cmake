@@ -7,7 +7,6 @@ list(APPEND FLUTTER_PLUGIN_LIST
   connectivity_plus
   dynamic_color
   file_selector_windows
-  flutter_qjs
   hotkey_manager_windows
   proxy
   restart_app

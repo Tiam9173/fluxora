@@ -1,9 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:code_forge/code_forge.dart' as rust_script;
 import 'package:fluxora/common/common.dart';
-import 'package:flutter_qjs/flutter_qjs.dart';
-import 'package:synchronized/synchronized.dart';
 
 class _ScriptOptionsCache {
   static final _entries = <String, Map<String, dynamic>>{};
@@ -38,91 +37,82 @@ class _ScriptOptionsCache {
   }
 }
 
+/// 用 code_forge 里的 rquickjs 执行订阅脚本。
+///
+/// 之前是 `flutter_qjs`（QuickJS 的 Dart 绑定）。换引擎的直接原因不是性能，
+/// 而是**原来的实现不等 Promise**：`evaluate('main(cfg)')` 拿到的是 Promise
+/// 对象本身，回到 Dart 之后 `is Map` 为假，脚本等于没跑——同一个脚本在
+/// 上游能用、在这里不能用，就是这个原因。
+///
+/// rquickjs 这套实现还会等 Promise settle，并且带超时/内存/栈限制，
+/// 脚本写坏不会把整个 App 拖死。
 class JavaScriptRuntimeManager {
-  /// The `console` shim every script gets, injected once before the script
-  /// itself. Kept separate so the user's source is never concatenated into a
-  /// wrapper: any rewrite of their text can change how it parses.
-  static const String _consolePrelude = '''
-    var console = {
-      log: function() { if (typeof print !== 'undefined') print.apply(null, arguments); },
-      warn: function() { if (typeof print !== 'undefined') print.apply(null, ['WARN:'].concat(Array.prototype.slice.call(arguments))); },
-      error: function() { if (typeof print !== 'undefined') print.apply(null, ['ERROR:'].concat(Array.prototype.slice.call(arguments))); },
-      info: function() { if (typeof print !== 'undefined') print.apply(null, arguments); },
-      debug: function() { if (typeof print !== 'undefined') print.apply(null, arguments); }
-    };
-  ''';
+  static int _nextToken = 1;
 
+  /// 跑一次脚本，返回脚本产出的配置。
+  ///
+  /// 失败时抛 `JS Script Error: ...`，与旧实现的调用方约定保持一致。
   static Future<Map<String, dynamic>> evaluateScript(
     String scriptContent,
     Map<String, dynamic> config, {
     Map<String, bool>? customOptions,
   }) async {
-    final result = await _evaluateWithRetry(
-      scriptContent,
-      config,
-      customOptions: customOptions,
-    );
-    if (result is Map) {
-      return _deepCastMap(result);
+    final token = _nextToken++;
+    try {
+      final run = await rust_script.evaluateScript(
+        script: scriptContent,
+        configJson: json.encode(config),
+        customOptions: customOptions == null || customOptions.isEmpty
+            ? null
+            : json.encode(customOptions),
+        token: token,
+      );
+      _logScriptLines(run.logs);
+      final decoded = json.decode(run.config);
+      if (decoded is Map) {
+        return _deepCastMap(decoded);
+      }
+      // 脚本返回了非对象：保持旧行为，原样交回输入配置。
+      return config;
+    } on rust_script.ScriptError catch (error) {
+      _logScriptLines(error.logs);
+      // 带上脚本开头：语法错误只说"某个 token 不对"，不给出上下文的话，
+      // 用户只能反复截图猜是哪个脚本、哪一段。
+      throw 'JS Script Error: ${error.message}'
+          '${_snippetFor(scriptContent)}';
+    } catch (error) {
+      throw 'JS Script Error: $error';
     }
-    return config;
   }
 
-  static final Lock _engineLock = Lock();
-
+  /// 读出脚本声明的选项（`ruleOptionsEnable` / `serviceConfigs`），用于设置页。
   static Future<Map<String, dynamic>> extractScriptOptions(
     String scriptContent,
   ) async {
     final cached = _ScriptOptionsCache.get(scriptContent);
     if (cached != null) return cached;
 
-    return _engineLock.synchronized(() async {
-      // Double-check after acquiring lock
-      final recached = _ScriptOptionsCache.get(scriptContent);
-      if (recached != null) return recached;
-
-      final engine = IsolateQjs();
-      try {
-        // Same reason as _evaluateWithRetry: the script must parse as the user
-        // wrote it, not indented inside a function body.
-        await engine.evaluate(_consolePrelude);
-        await engine.evaluate(scriptContent);
-        final res = await engine.evaluate('''
-          (function() {
-            var options = typeof ruleOptionsEnable !== 'undefined' && ruleOptionsEnable && typeof ruleOptionsEnable === 'object' ? ruleOptionsEnable : {};
-            var icons = {};
-            if (typeof serviceConfigs !== 'undefined' && Array.isArray(serviceConfigs)) {
-              for (var i = 0; i < serviceConfigs.length; i++) {
-                var svc = serviceConfigs[i];
-                if (svc && svc.name && typeof svc.icon === 'string') {
-                  icons[svc.name] = svc.icon;
-                }
-              }
-            }
-            return JSON.stringify({ options: options, icons: icons });
-          })();
-        ''');
-
-        final result = <String, dynamic>{};
-        if (res is String) {
-          final decoded = json.decode(res);
-          if (decoded is Map) {
-            result.addAll(_deepCastMap(decoded));
-          }
-        }
-        _ScriptOptionsCache.put(scriptContent, result);
-        return result;
-      } catch (e) {
-        commonPrint.log('extractScriptOptions error: $e');
-        return <String, dynamic>{};
-      } finally {
-        try {
-          await engine.close();
-        } catch (e) {
-          commonPrint.log('engine.close error: $e');
-        }
+    try {
+      final raw = await rust_script.extractScriptOptions(
+        script: scriptContent,
+      );
+      final decoded = json.decode(raw);
+      final result = <String, dynamic>{};
+      if (decoded is Map) {
+        result.addAll(_deepCastMap(decoded));
       }
-    });
+      _ScriptOptionsCache.put(scriptContent, result);
+      return result;
+    } on rust_script.ScriptError catch (error) {
+      _logScriptLines(error.logs);
+      commonPrint.log(
+        'extractScriptOptions error: ${error.kind} ${error.message}',
+      );
+      return <String, dynamic>{};
+    } catch (error) {
+      commonPrint.log('extractScriptOptions error: $error');
+      return <String, dynamic>{};
+    }
   }
 
   static void invalidateCachedOptions(String scriptContent) {
@@ -137,46 +127,31 @@ class JavaScriptRuntimeManager {
     return _ScriptOptionsCache.get(scriptContent);
   }
 
-  static Future<dynamic> _evaluateWithRetry(
-    String scriptContent,
-    Map<String, dynamic> config, {
-    Map<String, bool>? customOptions,
-    int maxRetries = 1,
-  }) async {
-    var attempt = 0;
-    while (true) {
-      final engine = IsolateQjs();
-      try {
-        // The script is evaluated at **top level**, never inlined into an IIFE.
-        // Inlining used to break on perfectly valid scripts: the wrapper put the
-        // content inside a function body at a different indentation, so a
-        // top-level `return`, a trailing line comment swallowing the injected
-        // call, or an ASI-sensitive construct failed to parse. Three phases keep
-        // the script byte-identical to what the user imported.
-        await engine.evaluate(_consolePrelude);
-        await engine.evaluate(scriptContent);
-        final configJs = json.encode(config);
-        final customJs = customOptions != null && customOptions.isNotEmpty
-            ? json.encode(customOptions)
-            : null;
-        if (customJs != null) {
-          await engine.evaluate(
-            'if (typeof ruleOptionsEnable !== "undefined") { Object.assign(ruleOptionsEnable, $customJs); }',
-          );
-        }
-        return await engine.evaluate('main($configJs)');
-      } catch (e) {
-        if (attempt >= maxRetries) {
-          throw 'JS Script Error: $e';
-        }
-        attempt++;
-      } finally {
-        try {
-          await engine.close();
-        } catch (e) {
-          commonPrint.log('engine.close error: $e');
-        }
-      }
+  /// 下载回来的内容到底是不是一段脚本。
+  ///
+  /// 最常见的错误来源是把 GitHub 的**页面**地址当成 raw 地址：服务器照样返回
+  /// 200，正文是一整页 HTML。存下来只会在执行时报 `unexpected token '<'`，
+  /// 用户完全看不出是链接贴错了。
+  static bool looksLikeScript(String content) {
+    final trimmed = content.trimLeft();
+    if (trimmed.isEmpty) return false;
+    // HTML / XML 页面
+    if (trimmed.startsWith('<')) return false;
+    return true;
+  }
+
+  /// 出错时附上脚本开头，让错误信息能直接指认是哪个文件、哪一段。
+  static String _snippetFor(String scriptContent) {
+    final flat = scriptContent.replaceAll(RegExp(r'\s+'), ' ').trim();
+    if (flat.isEmpty) return '';
+    final head = flat.length > 80 ? flat.substring(0, 80) : flat;
+    return ' | 脚本开头: $head';
+  }
+
+  /// 把脚本里的 `console.*` 输出转到 App 日志，方便用户排查自己的脚本。
+  static void _logScriptLines(List<rust_script.ScriptLog> lines) {
+    for (final line in lines) {
+      commonPrint.log('[script] ${line.level}: ${line.text}');
     }
   }
 

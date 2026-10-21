@@ -1438,6 +1438,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "scenarioStreaming": MessageLookupByLibrary.simpleMessage("動画配信"),
     "script": MessageLookupByLibrary.simpleMessage("スクリプト"),
     "scriptDesc": MessageLookupByLibrary.simpleMessage("グローバルオーバーライドスクリプト設定"),
+    "scriptUrlNotAScript": MessageLookupByLibrary.simpleMessage(
+      "このリンクはスクリプトファイルではなく Web ページを返しました。GitHub では Raw リンクを使用してください。",
+    ),
     "search": MessageLookupByLibrary.simpleMessage("検索"),
     "seconds": MessageLookupByLibrary.simpleMessage("秒"),
     "secretCopied": MessageLookupByLibrary.simpleMessage(

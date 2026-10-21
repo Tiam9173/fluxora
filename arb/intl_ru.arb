@@ -1281,5 +1281,6 @@
   "chainSearchNode": "Поиск узлов",
   "chainNoneDirect": "Нет (напрямую к узлу подписки)",
   "ipCheckTimeout": "Узел не отвечает",
-  "ipCheckCoreNotReady": "Ядро не готово"
+  "ipCheckCoreNotReady": "Ядро не готово",
+  "scriptUrlNotAScript": "Ссылка вернула веб-страницу, а не файл скрипта. На GitHub используйте ссылку Raw."
 }

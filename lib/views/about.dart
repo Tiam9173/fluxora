@@ -72,7 +72,11 @@ class AboutView extends StatelessWidget {
                 iconColor: const Color(0xFF2CA5E0),
                 onTap: () => globalState.openUrl(telegramGroupUrl),
               ),
-              // 「GitHub」是品牌名，不做翻译。
+            ],
+          ),
+          // 「GitHub」是品牌名，不做翻译。单独一行：一行只放两个磁贴。
+          _LinkGridRow(
+            tiles: [
               _LinkGridTile(
                 title: 'GitHub',
                 icon: Icons.code,

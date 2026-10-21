@@ -24,12 +24,6 @@ typedef EditorWidgetBuilder = Widget Function();
 const int _kLargeEditableLineThresholdMobile = 5800;
 const int _kLargeEditableLineThresholdDesktop = 5800;
 
-/// 语法高亮的关闭阈值，比"大文件降级"的阈值高得多。
-///
-/// 订阅配置动辄几千行，用 5800 行同时控制"关折叠"和"关高亮"，结果是常见
-/// 大小的配置一打开就没有颜色。高亮本身是增量渲染的，真正拖慢大文件的是
-/// 折叠和参考线，两者应该分开。
-const int _kSyntaxHighlightLineLimit = 20000;
 const Duration _kFindFocusDelay = Duration(milliseconds: 500);
 const Duration _kMinBusyDuration = Duration(milliseconds: 600);
 
@@ -52,17 +46,28 @@ const Duration _kMinBusyDuration = Duration(milliseconds: 600);
 ///
 /// Only YAML needs this: the JavaScript grammar comments with `//`
 /// (`C_LINE_COMMENT_MODE`), which is unambiguous in that language.
-final _yamlWithSafeComments = Mode(
-  scope: langYaml.scope,
-  name: langYaml.name,
-  caseInsensitive: langYaml.caseInsensitive,
-  contains: [
-    for (final mode in langYaml.contains ?? const <Mode>[])
-      identical(mode, HASH_COMMENT_MODE)
-          ? Mode(scope: 'comment', begin: r'(?<![^\s])#', end: r'$')
-          : mode,
-  ],
-);
+/// YAML 的 `#` 注释规则，就地替换掉 stock 版本。
+///
+/// 之前是**新建一个 Mode 只拷 4 个字段**，其余（`aliases`、`supersetOf`、
+/// `refs` 等）全部丢失。重建出来的 mode 在 re_highlight 里解析不出任何
+/// scope，编辑器整页就是没有颜色的纯文本——脚本页用的是原样的
+/// `langJavascript`，所以那边一直正常。
+///
+/// 改成就地替换 `contains` 里的注释规则，其它字段原封不动。
+final _yamlWithSafeComments = _patchYamlComments();
+
+Mode _patchYamlComments() {
+  final contains = langYaml.contains;
+  if (contains is List<Mode>) {
+    langYaml.contains = <Mode>[
+      for (final mode in contains)
+        identical(mode, HASH_COMMENT_MODE)
+            ? Mode(scope: 'comment', begin: r'(?<![^\s])#', end: r'$')
+            : mode,
+    ];
+  }
+  return langYaml;
+}
 
 class EditorPage extends ConsumerStatefulWidget {
   final String title;
@@ -127,8 +132,12 @@ class _EditorPageState extends ConsumerState<EditorPage> {
     setState(() => _zoom = zoom);
   }
 
-  bool get _disableSyntaxHighlight =>
-      widget.simple || _lineCount > _kSyntaxHighlightLineLimit;
+  /// 只由 `simple` 决定。
+  ///
+  /// 之前还按行数关闭，结果订阅配置（尤其是「运行配置」预览，包含全部规则）
+  /// 一超阈值就整页没有颜色。高亮是按可视行增量生成的，成本有界；真正拖慢
+  /// 大文件的是折叠和参考线，那个仍然由 [_disableEditorExtras] 控制。
+  bool get _disableSyntaxHighlight => widget.simple;
 
   /// 折叠和参考线在中等大小的文件上就开始拖慢输入，仍按较低的阈值关掉。
   bool get _disableEditorExtras =>

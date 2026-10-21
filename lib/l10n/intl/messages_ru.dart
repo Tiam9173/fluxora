@@ -1869,6 +1869,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "scriptDesc": MessageLookupByLibrary.simpleMessage(
       "Настройка глобального скрипта переопределения",
     ),
+    "scriptUrlNotAScript": MessageLookupByLibrary.simpleMessage(
+      "Ссылка вернула веб-страницу, а не файл скрипта. На GitHub используйте ссылку Raw.",
+    ),
     "search": MessageLookupByLibrary.simpleMessage("Поиск"),
     "seconds": MessageLookupByLibrary.simpleMessage("секунд"),
     "secretCopied": MessageLookupByLibrary.simpleMessage(

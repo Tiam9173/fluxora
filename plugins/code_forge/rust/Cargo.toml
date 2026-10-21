@@ -11,6 +11,11 @@ flutter_rust_bridge = "=2.12.0"
 ropey = "1.6.1"
 zed-sum-tree = "0.2.0"
 unicode-bidi = "0.3.18"
+rquickjs = { version = "0.12", default-features = false }
+serde_json = { version = "1", features = ["preserve_order"] }
+
+[target.'cfg(target_os = "android")'.dependencies]
+rquickjs = { version = "0.12", default-features = false, features = ["bindgen"] }
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }

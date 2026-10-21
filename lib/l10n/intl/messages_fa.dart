@@ -1825,6 +1825,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "scriptDesc": MessageLookupByLibrary.simpleMessage(
       "تنظیمات اسکریپت اورراید سراسری",
     ),
+    "scriptUrlNotAScript": MessageLookupByLibrary.simpleMessage(
+      "این پیوند یک صفحه وب برگرداند، نه فایل اسکریپت. در GitHub از پیوند Raw استفاده کنید.",
+    ),
     "search": MessageLookupByLibrary.simpleMessage("جستجو"),
     "seconds": MessageLookupByLibrary.simpleMessage("ثانیه"),
     "secretCopied": MessageLookupByLibrary.simpleMessage(

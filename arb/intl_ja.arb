@@ -1277,5 +1277,6 @@
   "chainSearchNode": "ノードを検索",
   "chainNoneDirect": "なし（購読ノードに直接接続）",
   "ipCheckTimeout": "ノードが応答しません",
-  "ipCheckCoreNotReady": "コアの準備ができていません"
+  "ipCheckCoreNotReady": "コアの準備ができていません",
+  "scriptUrlNotAScript": "このリンクはスクリプトファイルではなく Web ページを返しました。GitHub では Raw リンクを使用してください。"
 }

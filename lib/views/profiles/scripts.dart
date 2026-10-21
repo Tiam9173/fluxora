@@ -358,10 +358,15 @@ class _ScriptsViewState extends ConsumerState<ScriptsView> {
     Script? script,
     String? initialContent,
     String? url,
+    String? fileName,
     bool delayedFocus = false,
   }) async {
-    final title = script?.label ?? '';
     final raw = initialContent ?? await script?.readContent() ?? scriptTemplate;
+    // 没有现成名字时，从脚本内容或链接推断一个，省得列表里全是「未命名」。
+    final title =
+        script?.label ??
+        suggestScriptLabel(content: raw, url: url, fileName: fileName) ??
+        '';
     if (!mounted) return;
     String? importedUrl = url ?? script?.url;
     BaseNavigator.push(
@@ -431,6 +436,14 @@ class _ScriptsViewState extends ConsumerState<ScriptsView> {
 
     try {
       final res = await request.getTextResponseForUrl(url);
+      if (!JavaScriptRuntimeManager.looksLikeScript(res.data)) {
+        // 直接进编辑器再存下来，只会在启用脚本时报一句看不懂的语法错误。
+        globalState.showMessage(
+          message: TextSpan(text: appLocalizations.scriptUrlNotAScript),
+          cancelable: false,
+        );
+        return;
+      }
       if (mounted) {
         _handleToEditor(initialContent: res.data, url: url);
       }
@@ -453,7 +466,7 @@ class _ScriptsViewState extends ConsumerState<ScriptsView> {
     }
     final content = utf8.decode(bytes);
     if (mounted) {
-      _handleToEditor(initialContent: content);
+      _handleToEditor(initialContent: content, fileName: file.name);
     }
   }
 

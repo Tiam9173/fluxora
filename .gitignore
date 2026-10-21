@@ -94,3 +94,5 @@ test_*.py
 
 # Agent workspace data (local only, never published)
 /.workbuddy-ai/
+# Rust build artifacts from the local cargo runs
+/plugins/code_forge/rust/target/

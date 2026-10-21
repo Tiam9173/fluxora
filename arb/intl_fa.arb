@@ -1277,5 +1277,6 @@
   "chainSearchNode": "جستجوی گره",
   "chainNoneDirect": "هیچ (اتصال مستقیم به گره اشتراک)",
   "ipCheckTimeout": "گره پاسخ نمی‌دهد",
-  "ipCheckCoreNotReady": "هسته آماده نیست"
+  "ipCheckCoreNotReady": "هسته آماده نیست",
+  "scriptUrlNotAScript": "این پیوند یک صفحه وب برگرداند، نه فایل اسکریپت. در GitHub از پیوند Raw استفاده کنید."
 }

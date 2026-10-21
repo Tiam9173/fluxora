@@ -1277,5 +1277,6 @@
   "chainSearchNode": "搜索节点",
   "chainNoneDirect": "无（直连订阅节点）",
   "ipCheckTimeout": "节点无响应",
-  "ipCheckCoreNotReady": "内核尚未就绪"
+  "ipCheckCoreNotReady": "内核尚未就绪",
+  "scriptUrlNotAScript": "该链接返回的是网页，不是脚本文件。GitHub 请使用 Raw 链接。"
 }

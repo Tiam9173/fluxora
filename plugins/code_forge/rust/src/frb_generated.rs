@@ -40,7 +40,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.12.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 434014572;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -85816452;
 
 // Section: executor
 
@@ -1838,6 +1838,41 @@ fn wire__crate__api__editor__build_viewport_frame_impl(
         },
     )
 }
+fn wire__crate__api__script__cancel_script_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "cancel_script",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_token = <u32>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::api::script::cancel_script(api_token);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
 fn wire__crate__api__editor__char_offset_default_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -1864,6 +1899,123 @@ fn wire__crate__api__editor__char_offset_default_impl(
             move |context| {
                 transform_result_sse::<_, ()>((move || {
                     let output_ok = Result::<_, ()>::Ok(crate::api::editor::CharOffset::default())?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__script__evaluate_script_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "evaluate_script",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_script = <String>::sse_decode(&mut deserializer);
+            let api_config_json = <String>::sse_decode(&mut deserializer);
+            let api_custom_options = <Option<String>>::sse_decode(&mut deserializer);
+            let api_token = <u32>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, crate::api::script::ScriptError>((move || {
+                    let output_ok = crate::api::script::evaluate_script(
+                        api_script,
+                        api_config_json,
+                        api_custom_options,
+                        api_token,
+                    )?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__script__evaluate_script_file_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "evaluate_script_file",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_script = <String>::sse_decode(&mut deserializer);
+            let api_input_path = <String>::sse_decode(&mut deserializer);
+            let api_output_path = <String>::sse_decode(&mut deserializer);
+            let api_custom_options = <Option<String>>::sse_decode(&mut deserializer);
+            let api_token = <u32>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, crate::api::script::ScriptError>((move || {
+                    let output_ok = crate::api::script::evaluate_script_file(
+                        api_script,
+                        api_input_path,
+                        api_output_path,
+                        api_custom_options,
+                        api_token,
+                    )?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__script__extract_script_options_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "extract_script_options",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_script = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, crate::api::script::ScriptError>((move || {
+                    let output_ok = crate::api::script::extract_script_options(api_script)?;
                     Ok(output_ok)
                 })())
             }
@@ -2476,6 +2628,29 @@ impl SseDecode for Vec<crate::api::editor::RustFoldRange> {
     }
 }
 
+impl SseDecode for Vec<crate::api::script::ScriptLog> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(<crate::api::script::ScriptLog>::sse_decode(deserializer));
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Option<String> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<String>::sse_decode(deserializer));
+        } else {
+            return None;
+        }
+    }
+}
+
 impl SseDecode for crate::api::editor::PixelHeight {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -2492,6 +2667,77 @@ impl SseDecode for crate::api::editor::RustFoldRange {
         return crate::api::editor::RustFoldRange {
             start_line: var_startLine,
             end_line: var_endLine,
+        };
+    }
+}
+
+impl SseDecode for crate::api::script::ScriptError {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_kind = <crate::api::script::ScriptErrorKind>::sse_decode(deserializer);
+        let mut var_message = <String>::sse_decode(deserializer);
+        let mut var_stack = <Option<String>>::sse_decode(deserializer);
+        let mut var_logs = <Vec<crate::api::script::ScriptLog>>::sse_decode(deserializer);
+        return crate::api::script::ScriptError {
+            kind: var_kind,
+            message: var_message,
+            stack: var_stack,
+            logs: var_logs,
+        };
+    }
+}
+
+impl SseDecode for crate::api::script::ScriptErrorKind {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <i32>::sse_decode(deserializer);
+        return match inner {
+            0 => crate::api::script::ScriptErrorKind::Syntax,
+            1 => crate::api::script::ScriptErrorKind::Runtime,
+            2 => crate::api::script::ScriptErrorKind::Timeout,
+            3 => crate::api::script::ScriptErrorKind::OutOfMemory,
+            4 => crate::api::script::ScriptErrorKind::Cancelled,
+            5 => crate::api::script::ScriptErrorKind::InvalidInput,
+            6 => crate::api::script::ScriptErrorKind::InvalidOutput,
+            _ => unreachable!("Invalid variant for ScriptErrorKind: {}", inner),
+        };
+    }
+}
+
+impl SseDecode for crate::api::script::ScriptLog {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_level = <String>::sse_decode(deserializer);
+        let mut var_text = <String>::sse_decode(deserializer);
+        return crate::api::script::ScriptLog {
+            level: var_level,
+            text: var_text,
+        };
+    }
+}
+
+impl SseDecode for crate::api::script::ScriptOutput {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_logs = <Vec<crate::api::script::ScriptLog>>::sse_decode(deserializer);
+        let mut var_elapsedMs = <u32>::sse_decode(deserializer);
+        return crate::api::script::ScriptOutput {
+            logs: var_logs,
+            elapsed_ms: var_elapsedMs,
+        };
+    }
+}
+
+impl SseDecode for crate::api::script::ScriptRun {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_config = <String>::sse_decode(deserializer);
+        let mut var_logs = <Vec<crate::api::script::ScriptLog>>::sse_decode(deserializer);
+        let mut var_elapsedMs = <u32>::sse_decode(deserializer);
+        return crate::api::script::ScriptRun {
+            config: var_config,
+            logs: var_logs,
+            elapsed_ms: var_elapsedMs,
         };
     }
 }
@@ -2518,6 +2764,13 @@ impl SseDecode for crate::api::rope::TextDirection {
             2 => crate::api::rope::TextDirection::Mixed,
             _ => unreachable!("Invalid variant for TextDirection: {}", inner),
         };
+    }
+}
+
+impl SseDecode for u32 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        deserializer.cursor.read_u32::<NativeEndian>().unwrap()
     }
 }
 
@@ -2579,17 +2832,25 @@ fn pde_ffi_dispatcher_primary_impl(
 ) {
     // Codec=Pde (Serialization + dispatch), see doc to use other codecs
     match func_id {
-        37 => wire__crate__api__editor__char_offset_default_impl(port, ptr, rust_vec_len, data_len),
-        38 => wire__crate__api__editor__folds_compute_all_impl(port, ptr, rust_vec_len, data_len),
-        41 => wire__crate__api__editor__init_app_impl(port, ptr, rust_vec_len, data_len),
-        42 => wire__crate__api__editor__line_count_default_impl(port, ptr, rust_vec_len, data_len),
-        43 => {
+        37 => wire__crate__api__script__cancel_script_impl(port, ptr, rust_vec_len, data_len),
+        38 => wire__crate__api__editor__char_offset_default_impl(port, ptr, rust_vec_len, data_len),
+        39 => wire__crate__api__script__evaluate_script_impl(port, ptr, rust_vec_len, data_len),
+        40 => {
+            wire__crate__api__script__evaluate_script_file_impl(port, ptr, rust_vec_len, data_len)
+        }
+        41 => {
+            wire__crate__api__script__extract_script_options_impl(port, ptr, rust_vec_len, data_len)
+        }
+        42 => wire__crate__api__editor__folds_compute_all_impl(port, ptr, rust_vec_len, data_len),
+        45 => wire__crate__api__editor__init_app_impl(port, ptr, rust_vec_len, data_len),
+        46 => wire__crate__api__editor__line_count_default_impl(port, ptr, rust_vec_len, data_len),
+        47 => {
             wire__crate__api__editor__line_summary_default_impl(port, ptr, rust_vec_len, data_len)
         }
-        44 => {
+        48 => {
             wire__crate__api__editor__pixel_height_default_impl(port, ptr, rust_vec_len, data_len)
         }
-        46 => wire__crate__api__editor__words_extract_impl(port, ptr, rust_vec_len, data_len),
+        50 => wire__crate__api__editor__words_extract_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -2666,11 +2927,11 @@ fn pde_ffi_dispatcher_sync_impl(
         34 => wire__crate__api__rope__RopeBridge_slice_impl(ptr, rust_vec_len, data_len),
         35 => wire__crate__api__rope__RopeBridge_text_direction_impl(ptr, rust_vec_len, data_len),
         36 => wire__crate__api__editor__build_viewport_frame_impl(ptr, rust_vec_len, data_len),
-        39 => {
+        43 => {
             wire__crate__api__editor__folds_find_matching_bracket_impl(ptr, rust_vec_len, data_len)
         }
-        40 => wire__crate__api__editor__guides_compute_viewport_impl(ptr, rust_vec_len, data_len),
-        45 => {
+        44 => wire__crate__api__editor__guides_compute_viewport_impl(ptr, rust_vec_len, data_len),
+        49 => {
             wire__crate__api__editor__visible_line_range_unwrapped_impl(ptr, rust_vec_len, data_len)
         }
         _ => unreachable!(),
@@ -2839,6 +3100,113 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::editor::RustFoldRange>
     for crate::api::editor::RustFoldRange
 {
     fn into_into_dart(self) -> crate::api::editor::RustFoldRange {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::script::ScriptError {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.kind.into_into_dart().into_dart(),
+            self.message.into_into_dart().into_dart(),
+            self.stack.into_into_dart().into_dart(),
+            self.logs.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::script::ScriptError
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::script::ScriptError>
+    for crate::api::script::ScriptError
+{
+    fn into_into_dart(self) -> crate::api::script::ScriptError {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::script::ScriptErrorKind {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        match self {
+            Self::Syntax => 0.into_dart(),
+            Self::Runtime => 1.into_dart(),
+            Self::Timeout => 2.into_dart(),
+            Self::OutOfMemory => 3.into_dart(),
+            Self::Cancelled => 4.into_dart(),
+            Self::InvalidInput => 5.into_dart(),
+            Self::InvalidOutput => 6.into_dart(),
+            _ => unreachable!(),
+        }
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::script::ScriptErrorKind
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::script::ScriptErrorKind>
+    for crate::api::script::ScriptErrorKind
+{
+    fn into_into_dart(self) -> crate::api::script::ScriptErrorKind {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::script::ScriptLog {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.level.into_into_dart().into_dart(),
+            self.text.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::api::script::ScriptLog {}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::script::ScriptLog>
+    for crate::api::script::ScriptLog
+{
+    fn into_into_dart(self) -> crate::api::script::ScriptLog {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::script::ScriptOutput {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.logs.into_into_dart().into_dart(),
+            self.elapsed_ms.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::script::ScriptOutput
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::script::ScriptOutput>
+    for crate::api::script::ScriptOutput
+{
+    fn into_into_dart(self) -> crate::api::script::ScriptOutput {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::script::ScriptRun {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.config.into_into_dart().into_dart(),
+            self.logs.into_into_dart().into_dart(),
+            self.elapsed_ms.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::api::script::ScriptRun {}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::script::ScriptRun>
+    for crate::api::script::ScriptRun
+{
+    fn into_into_dart(self) -> crate::api::script::ScriptRun {
         self
     }
 }
@@ -3111,6 +3479,26 @@ impl SseEncode for Vec<crate::api::editor::RustFoldRange> {
     }
 }
 
+impl SseEncode for Vec<crate::api::script::ScriptLog> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::api::script::ScriptLog>::sse_encode(item, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<String> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <String>::sse_encode(value, serializer);
+        }
+    }
+}
+
 impl SseEncode for crate::api::editor::PixelHeight {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -3123,6 +3511,62 @@ impl SseEncode for crate::api::editor::RustFoldRange {
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <i32>::sse_encode(self.start_line, serializer);
         <i32>::sse_encode(self.end_line, serializer);
+    }
+}
+
+impl SseEncode for crate::api::script::ScriptError {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <crate::api::script::ScriptErrorKind>::sse_encode(self.kind, serializer);
+        <String>::sse_encode(self.message, serializer);
+        <Option<String>>::sse_encode(self.stack, serializer);
+        <Vec<crate::api::script::ScriptLog>>::sse_encode(self.logs, serializer);
+    }
+}
+
+impl SseEncode for crate::api::script::ScriptErrorKind {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(
+            match self {
+                crate::api::script::ScriptErrorKind::Syntax => 0,
+                crate::api::script::ScriptErrorKind::Runtime => 1,
+                crate::api::script::ScriptErrorKind::Timeout => 2,
+                crate::api::script::ScriptErrorKind::OutOfMemory => 3,
+                crate::api::script::ScriptErrorKind::Cancelled => 4,
+                crate::api::script::ScriptErrorKind::InvalidInput => 5,
+                crate::api::script::ScriptErrorKind::InvalidOutput => 6,
+                _ => {
+                    unimplemented!("");
+                }
+            },
+            serializer,
+        );
+    }
+}
+
+impl SseEncode for crate::api::script::ScriptLog {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.level, serializer);
+        <String>::sse_encode(self.text, serializer);
+    }
+}
+
+impl SseEncode for crate::api::script::ScriptOutput {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Vec<crate::api::script::ScriptLog>>::sse_encode(self.logs, serializer);
+        <u32>::sse_encode(self.elapsed_ms, serializer);
+    }
+}
+
+impl SseEncode for crate::api::script::ScriptRun {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.config, serializer);
+        <Vec<crate::api::script::ScriptLog>>::sse_encode(self.logs, serializer);
+        <u32>::sse_encode(self.elapsed_ms, serializer);
     }
 }
 
@@ -3148,6 +3592,13 @@ impl SseEncode for crate::api::rope::TextDirection {
             },
             serializer,
         );
+    }
+}
+
+impl SseEncode for u32 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        serializer.cursor.write_u32::<NativeEndian>(self).unwrap();
     }
 }
 

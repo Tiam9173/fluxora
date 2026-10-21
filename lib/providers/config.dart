@@ -355,6 +355,8 @@ class ScriptState extends _$ScriptState with AutoDisposeNotifierMixin {
     final url = script.url;
     if (url == null || url.isEmpty) return;
     final res = await request.getTextResponseForUrl(url);
+    // 订阅源被改成网页（比如 GitHub 改了重定向）时不要把旧脚本覆盖掉。
+    if (!JavaScriptRuntimeManager.looksLikeScript(res.data)) return;
     final oldContent = await script.readContent();
     if (oldContent != res.data) {
       JavaScriptRuntimeManager.invalidateCachedOptions(oldContent);

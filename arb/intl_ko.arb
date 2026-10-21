@@ -1277,5 +1277,6 @@
   "chainSearchNode": "노드 검색",
   "chainNoneDirect": "없음 (구독 노드 직접 사용)",
   "ipCheckTimeout": "노드가 응답하지 않습니다",
-  "ipCheckCoreNotReady": "코어가 준비되지 않았습니다"
+  "ipCheckCoreNotReady": "코어가 준비되지 않았습니다",
+  "scriptUrlNotAScript": "이 링크는 스크립트 파일이 아니라 웹 페이지를 반환했습니다. GitHub에서는 Raw 링크를 사용하세요."
 }

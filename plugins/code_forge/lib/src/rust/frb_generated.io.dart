@@ -5,6 +5,7 @@
 
 import 'api/editor.dart';
 import 'api/rope.dart';
+import 'api/script.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi' as ffi;
@@ -121,16 +122,40 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<RustFoldRange> dco_decode_list_rust_fold_range(dynamic raw);
 
   @protected
+  List<ScriptLog> dco_decode_list_script_log(dynamic raw);
+
+  @protected
+  String? dco_decode_opt_String(dynamic raw);
+
+  @protected
   PixelHeight dco_decode_pixel_height(dynamic raw);
 
   @protected
   RustFoldRange dco_decode_rust_fold_range(dynamic raw);
 
   @protected
+  ScriptError dco_decode_script_error(dynamic raw);
+
+  @protected
+  ScriptErrorKind dco_decode_script_error_kind(dynamic raw);
+
+  @protected
+  ScriptLog dco_decode_script_log(dynamic raw);
+
+  @protected
+  ScriptOutput dco_decode_script_output(dynamic raw);
+
+  @protected
+  ScriptRun dco_decode_script_run(dynamic raw);
+
+  @protected
   SelectionState dco_decode_selection_state(dynamic raw);
 
   @protected
   TextDirection dco_decode_text_direction(dynamic raw);
+
+  @protected
+  int dco_decode_u_32(dynamic raw);
 
   @protected
   int dco_decode_u_8(dynamic raw);
@@ -243,16 +268,40 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  List<ScriptLog> sse_decode_list_script_log(SseDeserializer deserializer);
+
+  @protected
+  String? sse_decode_opt_String(SseDeserializer deserializer);
+
+  @protected
   PixelHeight sse_decode_pixel_height(SseDeserializer deserializer);
 
   @protected
   RustFoldRange sse_decode_rust_fold_range(SseDeserializer deserializer);
 
   @protected
+  ScriptError sse_decode_script_error(SseDeserializer deserializer);
+
+  @protected
+  ScriptErrorKind sse_decode_script_error_kind(SseDeserializer deserializer);
+
+  @protected
+  ScriptLog sse_decode_script_log(SseDeserializer deserializer);
+
+  @protected
+  ScriptOutput sse_decode_script_output(SseDeserializer deserializer);
+
+  @protected
+  ScriptRun sse_decode_script_run(SseDeserializer deserializer);
+
+  @protected
   SelectionState sse_decode_selection_state(SseDeserializer deserializer);
 
   @protected
   TextDirection sse_decode_text_direction(SseDeserializer deserializer);
+
+  @protected
+  int sse_decode_u_32(SseDeserializer deserializer);
 
   @protected
   int sse_decode_u_8(SseDeserializer deserializer);
@@ -385,10 +434,37 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_list_script_log(
+    List<ScriptLog> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_String(String? self, SseSerializer serializer);
+
+  @protected
   void sse_encode_pixel_height(PixelHeight self, SseSerializer serializer);
 
   @protected
   void sse_encode_rust_fold_range(RustFoldRange self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_script_error(ScriptError self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_script_error_kind(
+    ScriptErrorKind self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_script_log(ScriptLog self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_script_output(ScriptOutput self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_script_run(ScriptRun self, SseSerializer serializer);
 
   @protected
   void sse_encode_selection_state(
@@ -398,6 +474,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_text_direction(TextDirection self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_u_32(int self, SseSerializer serializer);
 
   @protected
   void sse_encode_u_8(int self, SseSerializer serializer);

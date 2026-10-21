@@ -1441,6 +1441,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "scenarioStreaming": MessageLookupByLibrary.simpleMessage("스트리밍"),
     "script": MessageLookupByLibrary.simpleMessage("스크립트"),
     "scriptDesc": MessageLookupByLibrary.simpleMessage("글로벌 오버라이드 스크립트 설정"),
+    "scriptUrlNotAScript": MessageLookupByLibrary.simpleMessage(
+      "이 링크는 스크립트 파일이 아니라 웹 페이지를 반환했습니다. GitHub에서는 Raw 링크를 사용하세요.",
+    ),
     "search": MessageLookupByLibrary.simpleMessage("검색"),
     "seconds": MessageLookupByLibrary.simpleMessage("초"),
     "secretCopied": MessageLookupByLibrary.simpleMessage("비밀번호가 클립보드에 복사되었습니다"),

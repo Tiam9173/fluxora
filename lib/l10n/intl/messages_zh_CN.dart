@@ -1295,6 +1295,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "scenarioStreaming": MessageLookupByLibrary.simpleMessage("流媒体 / 短视频"),
     "script": MessageLookupByLibrary.simpleMessage("脚本"),
     "scriptDesc": MessageLookupByLibrary.simpleMessage("配置全局覆写脚本"),
+    "scriptUrlNotAScript": MessageLookupByLibrary.simpleMessage(
+      "该链接返回的是网页，不是脚本文件。GitHub 请使用 Raw 链接。",
+    ),
     "search": MessageLookupByLibrary.simpleMessage("搜索"),
     "seconds": MessageLookupByLibrary.simpleMessage("秒"),
     "secretCopied": MessageLookupByLibrary.simpleMessage("密码已复制到剪贴板"),

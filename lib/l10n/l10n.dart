@@ -10989,6 +10989,16 @@ class AppLocalizations {
       args: [],
     );
   }
+
+  /// `This link returned a web page, not a script file. On GitHub, use the Raw link.`
+  String get scriptUrlNotAScript {
+    return Intl.message(
+      'This link returned a web page, not a script file. On GitHub, use the Raw link.',
+      name: 'scriptUrlNotAScript',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {
