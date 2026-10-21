@@ -384,6 +384,7 @@ class AppController {
     // handleStart() (which sets runTime) before that, so the guard was always
     // false and the fallback never happened.
     await _resolveMixedPortFallback();
+    await _resolveExternalControllerFallback();
     await currentProfile.checkAndUpdate();
     final patchConfig = _ref.read(patchClashConfigProvider);
     final targetTun = enableTun ?? patchConfig.tun.enable;
@@ -689,6 +690,18 @@ class AppController {
       _ref.read(mixedPortFallbackProvider) ??
       _ref.read(patchClashConfigProvider).mixedPort;
 
+  /// 控制器地址（`host:port`）在**本次会话**里实际生效的值。
+  ///
+  /// 和 [effectiveMixedPort] 同一个道理：配置里写的是 9090，端口被占用时会话
+  /// 换到别的端口。所有要用控制器地址的地方——写进内核配置、告诉原生通知栏
+  /// 卡片——都必须读这个，否则就是"内核换了端口、别处还连着老端口"。
+  String get effectiveExternalController =>
+      _externalControllerFallback ??
+      _ref.read(patchClashConfigProvider).externalController.value;
+
+  /// 会话内避让出来的控制器地址；null 表示沿用配置值。
+  String? _externalControllerFallback;
+
   int getProxiesColumns() {
     return _ref.read(getProxiesColumnsProvider);
   }
@@ -781,6 +794,49 @@ class AppController {
     // the two. The configured port is not modified — this is session-only.
     globalState.showNotifier(
       appLocalizations.portFallbackNotice('$configured', '$next'),
+    );
+  }
+
+  /// 控制器端口被别的程序占用时，给本次会话换一个。
+  ///
+  /// 和混合端口不同，控制器地址没法用 `copyWith` 传下去（枚举里写死），所以
+  /// 这里存成会话字段，由 `patchRawConfig` 读 [effectiveExternalController]。
+  /// 这样"写进内核配置"和"告诉原生通知栏卡片"用的是同一个值——上一轮混合
+  /// 端口出问题，就是因为改了一处、另一处还读老配置。
+  Future<void> _resolveExternalControllerFallback() async {
+    // 复用同一个开关：用户关掉端口避让，就完全不介入。
+    if (!_ref.read(vpnSettingProvider).portFallback) return;
+
+    final configured =
+        _ref.read(patchClashConfigProvider).externalController.value;
+    if (_externalControllerFallback != null &&
+        _externalControllerFallback == configured) {
+      return;
+    }
+
+    final separator = configured.lastIndexOf(':');
+    if (separator <= 0) return;
+    final host = configured.substring(0, separator);
+    final port = int.tryParse(configured.substring(separator + 1));
+    if (port == null) return;
+
+    if (await isPortAvailable(port)) {
+      _externalControllerFallback = null;
+      return;
+    }
+
+    final next = await findNextAvailablePort(
+      port,
+      isAvailable: (candidate) => isPortAvailable(candidate),
+    );
+    if (next == null) return;
+
+    commonPrint.log(
+      'Controller port $port is in use, using $next for this session',
+    );
+    _externalControllerFallback = '$host:$next';
+    globalState.showNotifier(
+      appLocalizations.portFallbackNotice('$port', '$next'),
     );
   }
 

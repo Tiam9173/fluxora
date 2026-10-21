@@ -76,6 +76,7 @@ class AboutView extends StatelessWidget {
           ),
           // 「GitHub」是品牌名，不做翻译。单独一行：一行只放两个磁贴。
           _LinkGridRow(
+            halfWidth: true,
             tiles: [
               _LinkGridTile(
                 title: 'GitHub',
@@ -241,11 +242,17 @@ class _LinkGridRow extends StatelessWidget {
   /// credits gives every project exactly the same space.
   final List<_LinkGridTile> tiles;
 
-  const _LinkGridRow({required this.tiles});
+  /// 只有一格时让它只占一半宽度，另一半留空。
+  ///
+  /// 单独一格默认会拉满整行，看起来像一条横幅；社区区块里的链接都是两列
+  /// 排布，落单的那个也该保持同样的格子大小。
+  final bool halfWidth;
+
+  const _LinkGridRow({required this.tiles, this.halfWidth = false});
 
   @override
   Widget build(BuildContext context) {
-    if (tiles.length == 1) return tiles.first;
+    if (tiles.length == 1 && !halfWidth) return tiles.first;
     final dividerColor = context.colorScheme.outlineVariant.withValues(
       alpha: context.colorScheme.brightness == Brightness.light ? 0.6 : 0.45,
     );
@@ -264,6 +271,8 @@ class _LinkGridRow extends StatelessWidget {
               ),
             Expanded(child: tiles[i]),
           ],
+          if (halfWidth && tiles.length == 1)
+            const Expanded(child: SizedBox.shrink()),
         ],
       ),
     );

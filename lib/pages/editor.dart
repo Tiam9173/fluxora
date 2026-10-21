@@ -78,6 +78,12 @@ class EditorPage extends ConsumerStatefulWidget {
   final bool readOnly;
   final bool delayedFocus;
   final bool simple;
+
+  /// 这次编辑是在**新建**一项（脚本 / 配置），而不是修改已有的。
+  ///
+  /// 之前用 `title.isEmpty` 判断"新建"，一旦导入时自动填了名字，标题就非空，
+  /// 内容又和初始内容一致，保存按钮会一直是灰的——刚导入完却点不了保存。
+  final bool isNew;
   final Function(BuildContext context, String title, String content)? onSave;
   final Future<bool> Function(
     BuildContext context,
@@ -95,6 +101,7 @@ class EditorPage extends ConsumerStatefulWidget {
     this.readOnly = false,
     this.delayedFocus = false,
     this.simple = false,
+    this.isNew = false,
     this.onSave,
     this.onPop,
     this.onUrlImport,
@@ -288,7 +295,7 @@ class _EditorPageState extends ConsumerState<EditorPage> {
     final currentText = _hasRustBackend && _controller != null
         ? _controller!.text
         : _fallbackTextController.text;
-    final isNewScript = widget.title.isEmpty;
+    final isNewScript = widget.isNew || widget.title.isEmpty;
     if (!isNewScript &&
         currentText == widget.content &&
         _titleController.text == widget.title) {
@@ -472,7 +479,7 @@ class _EditorPageState extends ConsumerState<EditorPage> {
             : _fallbackTextController.text;
         if (globalState.isAndroidTV &&
             (_focusNode.hasFocus || _titleFocusNode.hasFocus)) {
-          final isNewScript = widget.title.isEmpty;
+          final isNewScript = widget.isNew || widget.title.isEmpty;
           final hasChanges =
               isNewScript ||
               currentText != widget.content ||
@@ -542,9 +549,33 @@ class _EditorPageState extends ConsumerState<EditorPage> {
               ),
               actions: genActions([
                 if (widget.onSave != null && !readOnly)
+                  // 撤销/重做放到工具栏：之前只在溢出菜单里，得先点 ⋮ 才看得到。
+                  if (_hasRustBackend && _undoController != null)
+                    ListenableBuilder(
+                      listenable: _undoController!,
+                      builder: (context, _) => Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            tooltip: appLocalizations.undo,
+                            icon: const Icon(Icons.undo),
+                            onPressed: _undoController!.canUndo
+                                ? () => _undoController!.undo()
+                                : null,
+                          ),
+                          IconButton(
+                            tooltip: appLocalizations.redo,
+                            icon: const Icon(Icons.redo),
+                            onPressed: _undoController!.canRedo
+                                ? () => _undoController!.redo()
+                                : null,
+                          ),
+                        ],
+                      ),
+                    ),
                   _wrapTitleController(
                     () {
-                      final isNewScript = widget.title.isEmpty;
+                      final isNewScript = widget.isNew || widget.title.isEmpty;
                       final currentContent = _hasRustBackend && _controller != null
                           ? _controller!.text
                           : _fallbackTextController.text;

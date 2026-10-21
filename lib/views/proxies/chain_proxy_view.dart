@@ -279,6 +279,11 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
   void _testAll() {
     final testUrl = globalState.config.appSetting.testUrl;
     chainProxyManager.testAllDelays(testUrl);
+    // 节点延迟和"每一跳的延迟"是两份数据：上面那行刷的是按节点的延迟，
+    // 而前置/落地行显示的是链路探针报告里的 hop 延迟。不触发探针的话，
+    // 点了按钮只有节点列表在变，hop 上的数字永远停在旧值——看起来就像
+    // "测延迟没有效果"。
+    chainProxyManager.probeCurrentChain();
   }
 
   void _checkAllHealth() {

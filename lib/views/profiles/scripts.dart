@@ -373,6 +373,9 @@ class _ScriptsViewState extends ConsumerState<ScriptsView> {
       context,
       EditorPage(
         titleEditable: true,
+        // 新建脚本时保存按钮必须可用：标题已经自动填好，内容和初始内容一样，
+        // 只靠"有没有改动"判断的话按钮会一直是灰的。
+        isNew: script == null,
         title: title,
         supportRemoteDownload: true,
         delayedFocus: delayedFocus,

@@ -726,10 +726,12 @@ class GlobalState {
     } catch (e) {
       commonPrint.log('read force_loopback_controller failed: $e');
     }
+    // 用会话里实际生效的地址：控制器端口被占用时会被避让到别的端口，这里
+    // 若还写配置里的 9090，内核监听的和 App/通知栏卡片连的就不是同一个端口。
     final controllerValue =
         (realPatchConfig.externalController == ExternalControllerStatus.open ||
                 forceLoopback)
-            ? ExternalControllerStatus.open.value
+            ? globalState.appController.effectiveExternalController
             : realPatchConfig.externalController.value;
     rawConfig['external-controller'] = realPatchConfig.allowLan
         ? controllerValue.replaceAll('127.0.0.1', '0.0.0.0')
