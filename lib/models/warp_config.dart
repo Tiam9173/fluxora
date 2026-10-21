@@ -45,6 +45,12 @@ enum WarpRoutingMode {
 }
 
 class WarpConfig {
+  /// WARP 跳板策略组的名字。
+  ///
+  /// 这是**标识符**，不是文案：配置生成、组过滤都按它做字符串比较，所以不能
+  /// 走 l10n —— 一旦按语言变化，英文界面下就认不出自己的组了。
+  static const String warpHopGroupName = '✈️ WARP跳板';
+
   static const String defaultPeerPublicKey =
       'bmXOC+F1FxEMF9dyiK2H5/1SUtzH0JuVo51h2wPfgyo=';
   static const String defaultEndpoint = '162.159.192.1';
@@ -430,7 +436,7 @@ class WarpConfig {
 
     // Case B: warpOverProxy ("通过代理路由 WARP", default)
     // Client -> Airport Proxy (hop) -> WARP (WireGuard) -> Destination
-    const String dedicatedWarpHopGroup = '✈️ WARP跳板';
+    const String dedicatedWarpHopGroup = WarpConfig.warpHopGroupName;
     String configuredHop = defaultDialerProxy.trim();
 
     final bool isHopSpecificProxy = configuredHop.isNotEmpty &&

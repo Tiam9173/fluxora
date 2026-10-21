@@ -4,6 +4,7 @@ import 'chain_score.dart';
 import 'protocol_capability.dart';
 import '../services/chain_probe_service.dart';
 import '../services/proxy_semantic_classifier.dart';
+import '../common/pinyin_sort.dart';
 
 @immutable
 class ChainProxyNodeViewModel {
@@ -90,11 +91,13 @@ class ChainProxyNodeViewModel {
   ) {
     final aLat = a.latencyMs;
     final bLat = b.latencyMs;
-    if (aLat == null && bLat == null) return a.nodeName.compareTo(b.nodeName);
+    if (aLat == null && bLat == null) {
+      return compareByPinyin(a.nodeName, b.nodeName);
+    }
     if (aLat == null) return 1;
     if (bLat == null) return -1;
     if (aLat != bLat) return aLat.compareTo(bLat);
-    return a.nodeName.compareTo(b.nodeName);
+    return compareByPinyin(a.nodeName, b.nodeName);
   }
 
   /// Mirrors `ChainFallbackService.selectCandidates`'s local `healthRank`

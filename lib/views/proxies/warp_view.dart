@@ -72,7 +72,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
     // The WARP hop group is the single exception: its only definition is a
     // function-local `const` inside `warp_config.dart` that is not exported, so
     // there is no accessible source to reference.
-    final warpHopGroupName = appLocalizations.warpStr23;
+    const warpHopGroupName = WarpConfig.warpHopGroupName;
 
     bool isInternalGroup(String name) =>
         name == chainGroupName ||

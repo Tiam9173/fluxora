@@ -227,8 +227,9 @@ void main() {
           .toList();
 
       expect(names.toSet(), {'Tokyo-01', 'Osaka-02', '剩余流量：103.23 GB'});
-      // `sortMode: 'name'` ⇒ deterministic order.
-      expect(names, ['Osaka-02', 'Tokyo-01', '剩余流量：103.23 GB']);
+      // `sortMode: 'name'` ⇒ 拼音序（O → S → T）。「剩」的拼音首字母是 S，
+      // 所以排在 Tokyo（T）之前；旧断言用的是 UTF-16 码点序。
+      expect(names, ['Osaka-02', '剩余流量：103.23 GB', 'Tokyo-01']);
     });
 
     test('the GLOBAL group itself is never a node', () {
