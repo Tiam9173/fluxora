@@ -728,7 +728,12 @@ class MtuItem extends ConsumerWidget {
 
           // If custom option selected
           if (value == 'custom') {
-            await _showCustomMtuDialog(context, ref, mtu);
+            // 选项面板此时正在 pop，同一帧里再 push 一个对话框会让 Navigator
+            // 在移除节点时仍持有 dependents，触发 framework 的断言红屏。
+            // 等这一帧结束、面板真正关掉之后再开输入框。
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _showCustomMtuDialog(context, ref, mtu);
+            });
           } else {
             // Apply preset value directly
             final intValue = int.parse(value);
