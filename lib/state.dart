@@ -712,11 +712,20 @@ class GlobalState {
     // 「外部控制器」时仍然绑到本机回环地址：只有本机进程能访问，和"对局域网
     // 开放"是两件事，后者才由 allowLan 控制。
     // 卡片功能依赖内核 HTTP 接口；用户可以在设置里关掉这个强制开启。
-    final forceLoopback = (await Preferences()
-            .sharedPreferencesCompleter
-            .future)
-        ?.getBool('force_loopback_controller') ??
-        true;
+    //
+    // 这里必须能容忍"读不到"：没有 SharedPreferences 插件时（单元测试、
+    // 早期启动）那个 future 永远不会完成，一旦无条件 await，配置生成就会
+    // 卡死在这一行，appState 也永远赋不上值。
+    var forceLoopback = true;
+    try {
+      final prefs = await Preferences()
+          .sharedPreferencesCompleter
+          .future
+          .timeout(const Duration(milliseconds: 300), onTimeout: () => null);
+      forceLoopback = prefs?.getBool('force_loopback_controller') ?? true;
+    } catch (e) {
+      commonPrint.log('read force_loopback_controller failed: $e');
+    }
     final controllerValue =
         (realPatchConfig.externalController == ExternalControllerStatus.open ||
                 forceLoopback)
