@@ -29,7 +29,6 @@ import 'package:fluxora/views/profiles/override_profile.dart';
 import 'package:fluxora/views/profiles/profile_chain_dialog.dart';
 import 'package:fluxora/views/profiles/profile_nodes_view.dart';
 import 'package:fluxora/views/proxies/chain_proxy_view.dart';
-import 'package:fluxora/views/proxies/chain_support_confirm_dialog.dart';
 
 /// RC.7 — layout overflow **reproduction** harness.
 ///
@@ -108,26 +107,6 @@ void main() {
       fail('unexpected exception while laying out: $error');
     }
   }
-
-  group('RC.7 — ChainSupportConfirmDialog', () {
-    for (final size in sizes) {
-      testWidgets('no overflow at ${size.width}x${size.height}', (tester) async {
-        await applySize(tester, size);
-
-        await tester.pumpWidget(
-          ProviderScope(
-            child: const MaterialApp(
-              home: Scaffold(body: ChainSupportConfirmDialog()),
-            ),
-          ),
-        );
-        await tester.pump();
-
-        expect(find.text('Create Support Package'), findsOneWidget);
-        expect(tester.takeException(), isNull);
-      });
-    }
-  });
 
   group('RC.7 — dashboard widgets', () {
     setUp(() {

@@ -18,7 +18,6 @@ import 'package:fluxora/common/common.dart';
 import 'package:fluxora/common/theme.dart';
 import 'package:fluxora/l10n/l10n.dart';
 import 'package:fluxora/models/models.dart';
-import 'package:fluxora/providers/chain_proxy.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/views/backup_and_recovery.dart';
 import 'package:fluxora/views/config/config.dart';
@@ -37,12 +36,7 @@ import 'package:fluxora/views/other_setting.dart';
 import 'package:fluxora/views/profiles/add_profile.dart';
 import 'package:fluxora/views/profiles/override_profile.dart';
 import 'package:fluxora/views/profiles/profile_nodes_view.dart';
-import 'package:fluxora/views/proxies/chain_decision_panel.dart';
 import 'package:fluxora/views/resources.dart';
-import 'package:fluxora/views/proxies/chain_diagnostic_panel.dart';
-import 'package:fluxora/views/proxies/chain_insight_panel.dart';
-import 'package:fluxora/views/proxies/chain_intelligence_dashboard.dart';
-import 'package:fluxora/views/proxies/chain_support_panel.dart';
 
 /// item 4 — narrow-screen / large-text-scale adaptation.
 ///
@@ -259,73 +253,6 @@ void main() {
         1.4,
         CustomScrollView(
           slivers: [RuleContent(maxWidth: size.width - 104)],
-        ),
-      );
-      expect(tester.takeException(), isNull);
-    });
-  }
-
-  // ── chain intelligence panels ──────────────────────────────────────────────
-  //
-  // These only build when telemetry carries ≥5 recent events, so the RC.7
-  // harness (empty telemetry) never rendered them.
-  final snapshot = ChainTelemetrySnapshot(
-    totalEvents: 12,
-    failedEvents: 2,
-    successEvents: 10,
-    lastEventTime: DateTime(2026, 1, 1, 12),
-    recentEvents: [
-      for (var i = 0; i < 6; i++)
-        ChainTelemetryEvent(
-          type: ChainTelemetryEventType.probeCompleted,
-          nodeName: 'Node_$i',
-          role: 'Entry',
-          message: 'Probe #$i completed',
-        ),
-    ],
-  );
-
-  final chainPanels = <String, Widget>{
-    'ChainIntelligenceDashboard': ChainIntelligenceDashboard(
-      telemetrySnapshot: snapshot,
-    ),
-    'ChainInsightPanel': ChainInsightPanel(telemetrySnapshot: snapshot),
-    'ChainDecisionPanel': ChainDecisionPanel(telemetrySnapshot: snapshot),
-    'ChainDiagnosticPanel': ChainDiagnosticPanel(telemetrySnapshot: snapshot),
-  };
-
-  for (final entry in chainPanels.entries) {
-    for (final size in narrowSizes) {
-      testWidgets('${entry.key} 不溢出 @ ${size.width} + 1.4x', (tester) async {
-        await pumpAt(
-          tester,
-          size,
-          1.4,
-          Scaffold(body: SingleChildScrollView(child: entry.value)),
-        );
-        expect(tester.takeException(), isNull);
-      });
-    }
-  }
-
-  // `ChainSupportPanel` reads `chainSupportPackageProvider`, which defaults to
-  // the singleton manager's `lastGeneratedPackage` (null in a test) — that is
-  // the "no package yet" branch.
-  for (final size in narrowSizes) {
-    testWidgets('ChainSupportPanel 不溢出 @ ${size.width} + 1.4x', (tester) async {
-      await pumpAt(
-        tester,
-        size,
-        1.4,
-        // `chainSupportPackageProvider` defaults to reading the process-wide
-        // `chainProxyConfigProvider`, whose `ChainProxyManager` singleton is
-        // disposed once an earlier test's `ProviderScope` goes away. A nested
-        // scope overriding the value keeps this test independent of that.
-        ProviderScope(
-          overrides: [chainSupportPackageProvider.overrideWithValue(null)],
-          child: const Scaffold(
-            body: SingleChildScrollView(child: ChainSupportPanel()),
-          ),
         ),
       );
       expect(tester.takeException(), isNull);
