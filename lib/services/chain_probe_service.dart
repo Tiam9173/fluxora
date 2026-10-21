@@ -861,13 +861,11 @@ class ChainProbeService implements IChainProbeService {
         // 这里测的其实是 exitNode：两跳模式下它就是第二跳，三跳模式下是
         // 第三跳。failureHop 跟着模式走，别一律写 2。
         failureHop: mode == ChainHopMode.threeHop ? 3 : 2,
-        errorCode: mode == ChainHopMode.threeHop
-            ? (hop2Timeout
-                  ? ChainProbeErrorCodes.hop2Timeout
-                  : ChainProbeErrorCodes.hop2Failed)
-            : (hop2Timeout
-                  ? ChainProbeErrorCodes.exitTimeout
-                  : ChainProbeErrorCodes.exitFailed),
+        // 这次探测打的是 exitNode：两种模式下失败都属于"出口失败"，
+        // 三跳模式也应该是 EXIT_* 而不是 HOP2_*。
+        errorCode: hop2Timeout
+            ? ChainProbeErrorCodes.exitTimeout
+            : ChainProbeErrorCodes.exitFailed,
         rootCauseAnalysis: failureReason,
         timestamp: DateTime.now(),
       );
