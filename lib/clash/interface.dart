@@ -16,6 +16,12 @@ mixin ClashInterface {
 
   Future<bool> get isInit;
 
+  /// 内核进程是否已经存在。
+  ///
+  /// 与 `isInit` 的区别：`isInit` 走 invoke，**会为了回答问题而启动内核**；
+  /// 这个只读本地状态，不会产生副作用。需要"内核在跑才做事"的地方用它。
+  bool get hasLiveProcess;
+
   Future<bool> forceGc({bool forceFreeOSMemory = false});
 
   FutureOr<String> validateConfig(String data, {String? ageSecretKey});

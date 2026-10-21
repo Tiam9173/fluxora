@@ -15,6 +15,10 @@ import 'generated/clash_ffi.dart';
 import 'interface.dart';
 
 class ClashLib extends ClashHandlerInterface with AndroidClashInterface {
+
+  // 内核跑在同一进程里，没有独立进程可观察；保持原有行为。
+  @override
+  bool get hasLiveProcess => true;
   static ClashLib? _instance;
   Completer<bool> _canSendCompleter = Completer();
   SendPort? sendPort;

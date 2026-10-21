@@ -25,6 +25,9 @@ class ClashService extends ClashHandlerInterface {
 
   Process? process;
 
+  @override
+  bool get hasLiveProcess => process != null;
+
   Completer<void>? _restartCompleter;
 
   TransportType _transportType = TransportType.unixSocket;

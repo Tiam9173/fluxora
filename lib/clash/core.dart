@@ -120,6 +120,8 @@ class ClashCore {
 
   FutureOr<bool> get isInit => clashInterface.isInit;
 
+  bool get hasLiveProcess => clashInterface.hasLiveProcess;
+
   FutureOr<String> validateConfig(String data, {String? ageSecretKey}) {
     return clashInterface.validateConfig(data, ageSecretKey: ageSecretKey);
   }

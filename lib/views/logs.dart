@@ -40,7 +40,8 @@ class _LogsViewState extends ConsumerState<LogsView> {
     // core process to satisfy a request, which in a fresh desktop session means
     // spawning `FluxoraDevCore.exe` just to read a log — and in tests it throws
     // a `ProcessException` after the test has finished.
-    if (!await clashCore.isInit) return;
+    // 用被动标志：`isInit` 会为了回答这个问题去启动内核。
+    if (!clashCore.hasLiveProcess) return;
     final List<Log> history;
     try {
       history = await clashCore.getLogs();
