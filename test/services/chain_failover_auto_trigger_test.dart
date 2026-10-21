@@ -145,7 +145,6 @@ void main() {
       manager.updateConfig((c) => c.copyWith(autoFailover: true));
 
   setUp(() async {
-    print("SETUP START");
     tmp = Directory.systemTemp.createTempSync('fluxora_auto_failover_');
     configPath = p.join(tmp.path, 'chain_proxies.json');
     poolPath = p.join(tmp.path, 'chain_fallback_pool.json');
@@ -170,16 +169,11 @@ void main() {
     _applyGate = null;
 
     chainFlapDampenerService.reset();
-    print("SETUP: created manager");
     manager = ChainProxyManager();
     manager.stopChainHealthCheck();
-    print("SETUP: stopped health check");
     await manager.setAutoFailover(false);
-    print("SETUP: setAutoFailover false done");
     await manager.updateConfig((_) => chainConfig);
-    print("SETUP: updateConfig done");
     await manager.updateFallbackPool((_) => const ChainFallbackPool());
-    print("SETUP END");
   });
 
   tearDown(() async {

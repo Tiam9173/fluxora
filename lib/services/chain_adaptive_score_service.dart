@@ -46,14 +46,15 @@ class ChainAdaptiveScoreService {
       // Using formula: max(0.2, 1.0 - (consecutiveFailures * 0.1) - some extra penalty for higher numbers?)
       if (stats.consecutiveFailures == 1) {
         stabilityMultiplier = 0.9;
-      } else if (stats.consecutiveFailures == 2)
+      } else if (stats.consecutiveFailures == 2) {
         stabilityMultiplier = 0.8;
-      else if (stats.consecutiveFailures == 3)
+      } else if (stats.consecutiveFailures == 3) {
         stabilityMultiplier = 0.6;
-      else if (stats.consecutiveFailures == 4)
+      } else if (stats.consecutiveFailures == 4) {
         stabilityMultiplier = 0.4;
-      else
+      } else {
         stabilityMultiplier = 0.2;
+      }
     }
 
     confidence = confidence * stabilityMultiplier;

@@ -55,12 +55,10 @@ void main() {
           },
         );
 
-        final scoreUntested = ChainAdaptiveScoreService.calculateNodeScore(
-          candidate: untested,
-        );
-        final scoreReliable = ChainAdaptiveScoreService.calculateNodeScore(
-          candidate: reliable,
-        );
+        // 这个用例目前只验证"不抛异常"；两个评分结果没有被断言，
+        // 直接调用即可（保留调用，确保服务在两类候选上都能跑通）。
+        ChainAdaptiveScoreService.calculateNodeScore(candidate: untested);
+        ChainAdaptiveScoreService.calculateNodeScore(candidate: reliable);
 
         expect(true, isTrue);
       },

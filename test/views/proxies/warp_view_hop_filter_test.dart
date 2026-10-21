@@ -108,10 +108,12 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: const MaterialApp(
+          child: MaterialApp(
             localizationsDelegates: const [AppLocalizationDelegate()],
             supportedLocales: const [Locale('en')],
-            locale: const Locale('en'),home: WarpView()),
+            locale: const Locale('en'),
+            home: const WarpView(),
+          ),
         ),
       );
       // Bounded pumps rather than `pumpAndSettle`: the page must not be required

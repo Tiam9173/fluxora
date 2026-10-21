@@ -1,6 +1,5 @@
 import 'package:fluxora/models/protocol_capability.dart';
 import 'package:fluxora/models/chain_fallback_pool.dart';
-import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'package:dio/dio.dart';
@@ -31,14 +30,13 @@ import 'package:fluxora/models/chain_reliability_stats.dart';
 import 'package:fluxora/models/latency_freshness.dart';
 import 'package:fluxora/models/latency_state.dart';
 import 'package:fluxora/services/chain_capability_probe_service.dart';
-import 'package:fluxora/services/chain_probe_service.dart';
 import 'package:fluxora/services/chain_capability_service.dart';
 
-import 'package:fluxora/models/protocol_capability.dart';
 import 'dart:async';
 import 'package:path/path.dart' as p;
 
-@visibleForTesting
+// 这个类在 lib 内部被 providers / services 正常构造，不是仅供测试的
+// 类型；类级 @visibleForTesting 是历史遗留，成员级的保留。
 class ChainProxyManager extends ChangeNotifier {
 
   static Duration autoHealthCheckInterval = const Duration(minutes: 1);

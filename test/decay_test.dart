@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluxora/models/chain_reliability_stats.dart';
+import 'package:flutter/foundation.dart';
 
 void main() {
   test('time decay', () {
@@ -26,7 +27,7 @@ void main() {
       );
       // We subtract 1 to see what the decayed weighted success was *before* adding the new +1
       final preEventSuccess = decayed.weightedSuccess - 1.0;
-      print(
+      debugPrint(
         't$daysLater days -> decayed weight: ${preEventSuccess.toStringAsFixed(2)} / 1000',
       );
     }

@@ -894,7 +894,7 @@ class ChainFailoverService implements IChainFailoverService {
             // chain (best-effort) and surface a `failed` result whose
             // rootCause carries 'Commit'. The exception must not escape as an
             // unhandled async error.
-            if (executor != null) {
+            {
               try {
                 await executor.rollbackToOriginal(currentConfig, null);
               } catch (_) {

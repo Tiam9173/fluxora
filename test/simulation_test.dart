@@ -3,6 +3,7 @@ import 'package:fluxora/models/chain_fallback_pool.dart';
 import 'package:fluxora/models/chain_reliability_stats.dart';
 import 'package:fluxora/services/chain_adaptive_score_service.dart';
 import 'package:fluxora/services/network_fingerprint_provider.dart';
+import 'package:flutter/foundation.dart';
 
 void main() {
   test('simulation', () {
@@ -11,7 +12,7 @@ void main() {
     void printScore(String name, ChainFallbackCandidate c) {
       final score = ChainAdaptiveScoreService.calculateNodeScore(candidate: c);
       final stats = c.statsByContext['test_env']!;
-      print(
+      debugPrint(
         '$name => Confidence: ${score.confidence}, Score: ${score.totalScore}, Rel: ${score.reliabilityScore}, S: ${stats.weightedSuccess.toStringAsFixed(2)}, F: ${stats.weightedFailure.toStringAsFixed(2)}, ConsFail: ${stats.consecutiveFailures}',
       );
     }
