@@ -576,7 +576,9 @@ class ChainProbeService implements IChainProbeService {
         ),
       HopProbeState(
         hopIndex: frontChain.length + 1,
-        role: HopRole.hop2Exit,
+        // 出口的跳位由前置跳数量决定：1 个前置跳是第二跳，2 个是第三跳。
+        // 写死 hop2Exit 会让三跳链路的诊断数据把出口标成第二跳。
+        role: frontChain.length >= 2 ? HopRole.hop3Exit : HopRole.hop2Exit,
         nodeName: exitNode,
         nodeAddress: exitNode,
         status: HopProbeStatus.unknown,
@@ -819,8 +821,11 @@ class ChainProbeService implements IChainProbeService {
                 ? '第一跳就绪，但第二跳落地节点 [$hop2] 握手失败（连接超时）'
                 : '第一跳就绪，但第二跳落地节点 [$hop2] 握手失败');
 
-      if (mode == ChainHopMode.threeHop && hops.length > 2) {
-        hops[exitIndex + 1] = hops[exitIndex + 1].copyWith(
+      // exitIndex 本身就是出口跳的下标（= frontChain.length）。三跳模式下
+      // 第二跳失败，受影响的是出口那一跳，不是"出口的下一跳"——写成
+      // exitIndex + 1 会越界（hops 只有 frontChain.length + 1 项）。
+      if (mode == ChainHopMode.threeHop && exitIndex < hops.length) {
+        hops[exitIndex] = hops[exitIndex].copyWith(
           status: HopProbeStatus.failed,
           healthStatus: ChainHealthStatus.failed,
           errorMessage: '上游中转跳中断导致此跳无法连接',
@@ -839,13 +844,10 @@ class ChainProbeService implements IChainProbeService {
         status: HopProbeStatus.failed,
         healthStatus: ChainHealthStatus.failed,
         errorMessage: failureReason,
-        errorCode: mode == ChainHopMode.threeHop
-            ? (hop2Timeout
-                  ? ChainProbeErrorCodes.hop2Timeout
-                  : ChainProbeErrorCodes.hop2Failed)
-            : (hop2Timeout
-                  ? ChainProbeErrorCodes.exitTimeout
-                  : ChainProbeErrorCodes.exitFailed),
+        // 同上：这次探测打的是 exitNode，两种模式下失败都属于"出口失败"。
+        errorCode: hop2Timeout
+            ? ChainProbeErrorCodes.exitTimeout
+            : ChainProbeErrorCodes.exitFailed,
         diagnosticTip: '第二跳节点连接异常，全链路建立失败',
         testedAt: DateTime.now(),
       );
@@ -856,7 +858,9 @@ class ChainProbeService implements IChainProbeService {
         healthStatus: ChainHealthStatus.failed,
         hops: List.unmodifiable(hops),
         finalExit: finalExit,
-        failureHop: 2,
+        // 这里测的其实是 exitNode：两跳模式下它就是第二跳，三跳模式下是
+        // 第三跳。failureHop 跟着模式走，别一律写 2。
+        failureHop: mode == ChainHopMode.threeHop ? 3 : 2,
         errorCode: mode == ChainHopMode.threeHop
             ? (hop2Timeout
                   ? ChainProbeErrorCodes.hop2Timeout
