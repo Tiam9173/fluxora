@@ -33,10 +33,6 @@ String _routingLabel(WarpRoutingMode m, AppLocalizations l) => switch (m) {
   WarpRoutingMode.proxyOverWarp => l.warpRouteProxyOverWarp,
 };
 
-String _routingDesc(WarpRoutingMode m, AppLocalizations l) => switch (m) {
-  WarpRoutingMode.warpOverProxy => l.warpRouteWarpOverProxyDesc,
-  WarpRoutingMode.proxyOverWarp => l.warpRouteProxyOverWarpDesc,
-};
 
 String _modeDesc(WarpMode m, AppLocalizations l) => switch (m) {
   WarpMode.googleAndAi => l.warpModeSmartDesc,
@@ -118,13 +114,12 @@ class _WarpViewState extends ConsumerState<WarpView> {
           body: ListView(
             padding: const EdgeInsets.symmetric(vertical: 8),
             children: [
-              // 卡片式浏览：和链式跳板用的是同一套界面，订阅→分组→节点。
-              // 保留下面那些「不是节点」的选项（跟随/DIRECT/策略组），
-              // 因为卡片只能选节点。
-              ListTile(
-                leading: const Icon(Icons.grid_view_rounded, color: Colors.teal),
-                title: Text(appLocalizations.warpStr28),
-                subtitle: Text(appLocalizations.warpStr27),
+              // 和链式跳板用同一套视觉：圆角卡片 + 带底色的图标块 + 右侧对勾。
+              _hopOption(
+                icon: Icons.grid_view_rounded,
+                color: Colors.teal,
+                title: appLocalizations.warpStr28,
+                subtitle: appLocalizations.warpStr27,
                 onTap: () {
                   Navigator.of(ctx).pop();
                   showChainHopPicker(
@@ -135,46 +130,36 @@ class _WarpViewState extends ConsumerState<WarpView> {
                   );
                 },
               ),
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.auto_mode, color: Colors.blue),
-                title: Text(appLocalizations.warpStr20),
-                subtitle: Text(appLocalizations.warpStr86),
-                trailing: currentHop.isEmpty
-                    ? const Icon(Icons.check, color: Colors.blue)
-                    : null,
+              _hopOption(
+                icon: Icons.auto_mode,
+                color: Colors.blue,
+                title: appLocalizations.warpStr20,
+                subtitle: appLocalizations.warpStr86,
+                selected: currentHop.isEmpty,
                 onTap: () {
                   onSelect('');
                   Navigator.of(ctx).pop();
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.directions, color: Colors.green),
-                title: Text(appLocalizations.warpStr6),
-                subtitle: const Text('不经过机场直接连接 WARP（需本地网络未屏蔽 CF Anycast IP）'),
-                trailing: currentHop == 'DIRECT'
-                    ? const Icon(Icons.check, color: Colors.blue)
-                    : null,
+              _hopOption(
+                icon: Icons.directions,
+                color: Colors.green,
+                title: appLocalizations.warpStr6,
+                subtitle: '不经过机场直接连接 WARP（需本地网络未屏蔽 CF Anycast IP）',
+                selected: currentHop == 'DIRECT',
                 onTap: () {
                   onSelect('DIRECT');
                   Navigator.of(ctx).pop();
                 },
               ),
               if (groupNames.isNotEmpty) ...[
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Text(
-                    appLocalizations.warpStr84,
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                  ),
-                ),
+                _hopSection(appLocalizations.warpStr84),
                 for (final g in groupNames)
-                  ListTile(
-                    leading: const Icon(Icons.folder_outlined),
-                    title: Text(g),
-                    trailing: currentHop == g
-                        ? const Icon(Icons.check, color: Colors.blue)
-                        : null,
+                  _hopOption(
+                    icon: Icons.folder_outlined,
+                    color: Colors.amber,
+                    title: g,
+                    selected: currentHop == g,
                     onTap: () {
                       onSelect(g);
                       Navigator.of(ctx).pop();
@@ -182,20 +167,13 @@ class _WarpViewState extends ConsumerState<WarpView> {
                   ),
               ],
               if (proxyList.isNotEmpty) ...[
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Text(
-                    appLocalizations.warpStr63,
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                  ),
-                ),
+                _hopSection(appLocalizations.warpStr63),
                 for (final p in proxyList)
-                  ListTile(
-                    leading: const Icon(Icons.flight_takeoff, size: 20),
-                    title: Text(p),
-                    trailing: currentHop == p
-                        ? const Icon(Icons.check, color: Colors.blue)
-                        : null,
+                  _hopOption(
+                    icon: Icons.flight_takeoff,
+                    color: Colors.indigo,
+                    title: p,
+                    selected: currentHop == p,
                     onTap: () {
                       onSelect(p);
                       Navigator.of(ctx).pop();
@@ -206,6 +184,103 @@ class _WarpViewState extends ConsumerState<WarpView> {
           ),
         );
       },
+    );
+  }
+
+  /// 分区标题：和卡片之间的间距保持一致。
+  Widget _hopSection(String title) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: scheme.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+
+  /// 单个可选项：圆角卡片 + 带底色的图标块，和链式跳板的 SwitchCard 一致。
+  Widget _hopOption({
+    required IconData icon,
+    required Color color,
+    required String title,
+    String? subtitle,
+    bool selected = false,
+    required VoidCallback onTap,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    final radius = BorderRadius.circular(14);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: Material(
+        color: selected
+            ? scheme.primary.withValues(alpha: 0.10)
+            : scheme.surfaceContainerHighest.withValues(alpha: 0.45),
+        borderRadius: radius,
+        child: InkWell(
+          borderRadius: radius,
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              children: [
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, size: 18, color: color),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      if (subtitle != null && subtitle.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                if (selected)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: Icon(
+                      Icons.check_circle,
+                      size: 18,
+                      color: scheme.primary,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
