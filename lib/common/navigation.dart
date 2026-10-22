@@ -37,19 +37,14 @@ class Navigation {
         builder: (_) =>
             ProfilesView(key: const GlobalObjectKey(PageLabel.profiles)),
       ),
-      NavigationItem(
-        icon: Icon(Icons.view_timeline),
-        label: PageLabel.requests,
-        builder: (_) =>
-            RequestsView(key: const GlobalObjectKey(PageLabel.requests)),
-        description: 'requestsDesc',
-        modes: [NavigationItemMode.desktop, NavigationItemMode.more],
-      ),
+      // 请求和连接合成一个入口：内容是一件事的两面，分成两个导航项只是让人
+      // 来回切。页面内的「请求 | 连接」切换器负责分栏。
       NavigationItem(
         icon: Icon(Icons.ballot),
         label: PageLabel.connections,
-        builder: (_) =>
-            ConnectionsView(key: const GlobalObjectKey(PageLabel.connections)),
+        builder: (_) => RequestsConnectionsView(
+          key: const GlobalObjectKey(PageLabel.connections),
+        ),
         description: 'connectionsDesc',
         modes: [NavigationItemMode.desktop, NavigationItemMode.more],
       ),

@@ -18,7 +18,7 @@ import 'package:fluxora/views/config/network.dart';
 import 'package:fluxora/views/config/ntp.dart';
 import 'package:fluxora/views/config/sniffer.dart';
 import 'package:fluxora/views/config/tunnel.dart';
-import 'package:fluxora/views/connection/connections.dart';
+import 'package:fluxora/views/connection/requests_connections.dart';
 import 'package:fluxora/views/hotkey.dart';
 import 'package:fluxora/views/other_setting.dart';
 import 'package:fluxora/views/proxies/chain_proxy_view.dart';
@@ -68,7 +68,10 @@ class ToolsView extends ConsumerStatefulWidget {
 class _ToolViewState extends ConsumerState<ToolsView> {
   Widget _buildNavigationPage(NavigationItem navigationItem) {
     if (navigationItem.label == PageLabel.connections) {
-      return const ConnectionsView(respectCurrentPage: false);
+      // 合并页面后从工具箱点进来要落在「连接」那一栏，而不是默认的请求栏。
+      return const RequestsConnectionsView(
+        startOnConnections: true,
+      );
     }
     return navigationItem.builder(context);
   }

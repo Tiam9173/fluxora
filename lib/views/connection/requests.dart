@@ -8,7 +8,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'item.dart';
 
 class RequestsView extends ConsumerStatefulWidget {
-  const RequestsView({super.key});
+  /// 合并页面用：把标题位置让给「请求 / 连接」切换器。
+  ///
+  /// 只换标题，页面自己的搜索、动作和滚动状态全部保留——两页共用一套
+  /// 头部结构，而不是把两个 Scaffold 嵌套起来。
+  final Widget? titleWidgetOverride;
+
+  const RequestsView({super.key, this.titleWidgetOverride});
 
   @override
   ConsumerState<RequestsView> createState() => _RequestsViewState();
@@ -58,7 +64,10 @@ class _RequestsViewState extends ConsumerState<RequestsView> {
     final hasRequests = requests.isNotEmpty;
 
     return CommonScaffold(
-      title: appLocalizations.requests,
+      title: widget.titleWidgetOverride == null
+          ? appLocalizations.requests
+          : null,
+      titleWidget: widget.titleWidgetOverride,
       actions: [
         IconButton(
           onPressed: () {

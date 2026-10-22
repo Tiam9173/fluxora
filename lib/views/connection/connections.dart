@@ -16,7 +16,14 @@ import 'item.dart';
 class ConnectionsView extends ConsumerStatefulWidget {
   final bool respectCurrentPage;
 
-  const ConnectionsView({super.key, this.respectCurrentPage = true});
+  /// 合并页面用：把标题位置让给「请求 / 连接」切换器。
+  final Widget? titleWidgetOverride;
+
+  const ConnectionsView({
+    super.key,
+    this.respectCurrentPage = true,
+    this.titleWidgetOverride,
+  });
 
   @override
   ConsumerState<ConnectionsView> createState() => _ConnectionsViewState();
@@ -183,7 +190,10 @@ class _ConnectionsViewState extends ConsumerState<ConnectionsView>
   @override
   Widget build(BuildContext context) {
     return CommonScaffold(
-      title: appLocalizations.connections,
+      title: widget.titleWidgetOverride == null
+          ? appLocalizations.connections
+          : null,
+      titleWidget: widget.titleWidgetOverride,
       onKeywordsUpdate: _onKeywordsUpdate,
       searchState: AppBarSearchState(onSearch: _onSearch),
       actions: [
