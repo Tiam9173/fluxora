@@ -170,6 +170,7 @@ _Tun _$TunFromJson(Map<String, dynamic> json) => _Tun(
   device: json['device'] as String? ?? tunDeviceName,
   autoRoute: json['auto-route'] as bool? ?? false,
   stack: $enumDecodeNullable(_$TunStackEnumMap, json['stack']) ?? TunStack.mips,
+  dnsMode: json['dns-mode'] as String? ?? '',
   dnsHijack:
       (json['dns-hijack'] as List<dynamic>?)
           ?.map((e) => e as String)
@@ -197,6 +198,7 @@ Map<String, dynamic> _$TunToJson(_Tun instance) => <String, dynamic>{
   'device': instance.device,
   'auto-route': instance.autoRoute,
   'stack': _$TunStackEnumMap[instance.stack]!,
+  'dns-mode': instance.dnsMode,
   'dns-hijack': instance.dnsHijack,
   'route-address': instance.routeAddress,
   'route-exclude-address': instance.routeExcludeAddress,

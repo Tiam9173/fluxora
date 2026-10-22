@@ -1685,6 +1685,20 @@ class MessageLookup extends MessageLookupByLibrary {
     "tunActualStatus": MessageLookupByLibrary.simpleMessage("TUN 실제 상태"),
     "tunChecking": MessageLookupByLibrary.simpleMessage("TUN 실제 상태 확인 중…"),
     "tunDesc": MessageLookupByLibrary.simpleMessage("TUN 모드로 기기 전체 트래픽 제어"),
+    "tunDnsMode": MessageLookupByLibrary.simpleMessage("시스템 DNS 모드"),
+    "tunDnsModeDefault": MessageLookupByLibrary.simpleMessage("코어 기본값"),
+    "tunDnsModeDesc": MessageLookupByLibrary.simpleMessage(
+      "TUN 사용 시 코어가 시스템 DNS를 설정하는 방식입니다.",
+    ),
+    "tunDnsModeDisabled": MessageLookupByLibrary.simpleMessage(
+      "시스템 DNS를 변경하지 않음",
+    ),
+    "tunDnsModeHijack": MessageLookupByLibrary.simpleMessage(
+      "다른 인터페이스로 가는 DNS도 가로챔",
+    ),
+    "tunDnsModeNative": MessageLookupByLibrary.simpleMessage(
+      "TUN 주소를 시스템 DNS로 설정",
+    ),
     "tunEnableRequireAdmin": MessageLookupByLibrary.simpleMessage(
       "TUN 가상 어댑터 기능을 사용하려면 관리자(ROOT) 권한이 필요합니다",
     ),

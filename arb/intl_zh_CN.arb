@@ -1289,5 +1289,11 @@
   "chainDiagnosticsOk": "已探测过，展开可看它用的拓扑。",
   "chainDiagnosticsFailed": "上次探测失败，展开可看它到底测了什么。",
   "residentialIpCheckDirect": "直连检测",
-  "residentialIpCheckViaChain": "经链路检测"
+  "residentialIpCheckViaChain": "经链路检测",
+  "tunDnsMode": "系统 DNS 模式",
+  "tunDnsModeDesc": "TUN 模式下内核如何配置系统 DNS。",
+  "tunDnsModeDefault": "跟随内核默认",
+  "tunDnsModeDisabled": "不修改系统 DNS",
+  "tunDnsModeNative": "把 TUN 地址设为系统 DNS",
+  "tunDnsModeHijack": "额外拦截发往其他网卡的 DNS"
 }

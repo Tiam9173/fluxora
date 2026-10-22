@@ -295,6 +295,9 @@ abstract class Tun with _$Tun {
     @Default(tunDeviceName) String device,
     @JsonKey(name: 'auto-route') @Default(false) bool autoRoute,
     @Default(TunStack.mips) TunStack stack,
+    /// 系统 DNS 的配置方式：`disabled` / `native` / `hijack`，空串表示沿用
+    /// 内核的旧行为（Windows/Linux 开 auto-route 时默认 hijack）。
+    @JsonKey(name: 'dns-mode') @Default('') String dnsMode,
     @JsonKey(name: 'dns-hijack') @Default(['any:53']) List<String> dnsHijack,
     @JsonKey(name: 'route-address') @Default([]) List<String> routeAddress,
     @JsonKey(name: 'route-exclude-address')

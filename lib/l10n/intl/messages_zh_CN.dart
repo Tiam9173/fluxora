@@ -1501,6 +1501,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "tunActualStatus": MessageLookupByLibrary.simpleMessage("TUN 实际状态"),
     "tunChecking": MessageLookupByLibrary.simpleMessage("正在检测 TUN 实际状态…"),
     "tunDesc": MessageLookupByLibrary.simpleMessage("使用 TUN 接管设备流量"),
+    "tunDnsMode": MessageLookupByLibrary.simpleMessage("系统 DNS 模式"),
+    "tunDnsModeDefault": MessageLookupByLibrary.simpleMessage("跟随内核默认"),
+    "tunDnsModeDesc": MessageLookupByLibrary.simpleMessage(
+      "TUN 模式下内核如何配置系统 DNS。",
+    ),
+    "tunDnsModeDisabled": MessageLookupByLibrary.simpleMessage("不修改系统 DNS"),
+    "tunDnsModeHijack": MessageLookupByLibrary.simpleMessage("额外拦截发往其他网卡的 DNS"),
+    "tunDnsModeNative": MessageLookupByLibrary.simpleMessage(
+      "把 TUN 地址设为系统 DNS",
+    ),
     "tunEnableRequireAdmin": MessageLookupByLibrary.simpleMessage(
       "启用 TUN 虚拟网卡功能需要管理员或 Root 权限",
     ),

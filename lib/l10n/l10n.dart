@@ -11109,6 +11109,66 @@ class AppLocalizations {
       args: [],
     );
   }
+
+  /// `System DNS mode`
+  String get tunDnsMode {
+    return Intl.message(
+      'System DNS mode',
+      name: 'tunDnsMode',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `How the core configures system DNS under TUN.`
+  String get tunDnsModeDesc {
+    return Intl.message(
+      'How the core configures system DNS under TUN.',
+      name: 'tunDnsModeDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Follow core default`
+  String get tunDnsModeDefault {
+    return Intl.message(
+      'Follow core default',
+      name: 'tunDnsModeDefault',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Do not touch system DNS`
+  String get tunDnsModeDisabled {
+    return Intl.message(
+      'Do not touch system DNS',
+      name: 'tunDnsModeDisabled',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Set TUN address as system DNS`
+  String get tunDnsModeNative {
+    return Intl.message(
+      'Set TUN address as system DNS',
+      name: 'tunDnsModeNative',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Also intercept DNS sent to other interfaces`
+  String get tunDnsModeHijack {
+    return Intl.message(
+      'Also intercept DNS sent to other interfaces',
+      name: 'tunDnsModeHijack',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {

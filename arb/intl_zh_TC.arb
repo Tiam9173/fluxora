@@ -1287,5 +1287,11 @@
   "chainDiagnosticsOk": "已探測過，展開可看它用的拓撲。",
   "chainDiagnosticsFailed": "上次探測失敗，展開可看它到底測了什麼。",
   "residentialIpCheckDirect": "直連檢測",
-  "residentialIpCheckViaChain": "經鏈路檢測"
+  "residentialIpCheckViaChain": "經鏈路檢測",
+  "tunDnsMode": "系統 DNS 模式",
+  "tunDnsModeDesc": "TUN 模式下內核如何設定系統 DNS。",
+  "tunDnsModeDefault": "跟隨內核預設",
+  "tunDnsModeDisabled": "不修改系統 DNS",
+  "tunDnsModeNative": "將 TUN 位址設為系統 DNS",
+  "tunDnsModeHijack": "額外攔截送往其他網卡的 DNS"
 }

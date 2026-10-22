@@ -2131,6 +2131,20 @@ class MessageLookup extends MessageLookupByLibrary {
     "tunDesc": MessageLookupByLibrary.simpleMessage(
       "مدیریت تمام ترافیک دستگاه با حالت TUN",
     ),
+    "tunDnsMode": MessageLookupByLibrary.simpleMessage("حالت DNS سیستم"),
+    "tunDnsModeDefault": MessageLookupByLibrary.simpleMessage("پیش‌فرض هسته"),
+    "tunDnsModeDesc": MessageLookupByLibrary.simpleMessage(
+      "نحوه پیکربندی DNS سیستم توسط هسته در حالت TUN.",
+    ),
+    "tunDnsModeDisabled": MessageLookupByLibrary.simpleMessage(
+      "تغییر ندادن DNS سیستم",
+    ),
+    "tunDnsModeHijack": MessageLookupByLibrary.simpleMessage(
+      "رهگیری DNS ارسالی به رابط‌های دیگر",
+    ),
+    "tunDnsModeNative": MessageLookupByLibrary.simpleMessage(
+      "تنظیم آدرس TUN به‌عنوان DNS سیستم",
+    ),
     "tunEnableRequireAdmin": MessageLookupByLibrary.simpleMessage(
       "استفاده از حالت TUN نیازمند دسترسی Admin یا ROOT است",
     ),

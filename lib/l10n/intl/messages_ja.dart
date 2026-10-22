@@ -1684,6 +1684,20 @@ class MessageLookup extends MessageLookupByLibrary {
     "tunActualStatus": MessageLookupByLibrary.simpleMessage("TUN の実際の状態"),
     "tunChecking": MessageLookupByLibrary.simpleMessage("TUN の実際の状態を検出中…"),
     "tunDesc": MessageLookupByLibrary.simpleMessage("TUNモードでデバイスの全通信を管理"),
+    "tunDnsMode": MessageLookupByLibrary.simpleMessage("システム DNS モード"),
+    "tunDnsModeDefault": MessageLookupByLibrary.simpleMessage("コアの既定"),
+    "tunDnsModeDesc": MessageLookupByLibrary.simpleMessage(
+      "TUN 使用時にコアがシステム DNS をどう設定するか。",
+    ),
+    "tunDnsModeDisabled": MessageLookupByLibrary.simpleMessage(
+      "システム DNS を変更しない",
+    ),
+    "tunDnsModeHijack": MessageLookupByLibrary.simpleMessage(
+      "他のインターフェース宛の DNS も傍受する",
+    ),
+    "tunDnsModeNative": MessageLookupByLibrary.simpleMessage(
+      "TUN アドレスをシステム DNS にする",
+    ),
     "tunEnableRequireAdmin": MessageLookupByLibrary.simpleMessage(
       "TUN仮想NIC機能の有効化には管理者（ROOT）権限が必要です",
     ),

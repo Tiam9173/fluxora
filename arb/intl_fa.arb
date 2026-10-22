@@ -1289,5 +1289,11 @@
   "chainDiagnosticsOk": "بررسی انجام شده است؛ برای دیدن توپولوژی باز کنید.",
   "chainDiagnosticsFailed": "بررسی قبلی ناموفق بود؛ برای دیدن آنچه آزمایش شد باز کنید.",
   "residentialIpCheckDirect": "مستقیم",
-  "residentialIpCheckViaChain": "از طریق زنجیره"
+  "residentialIpCheckViaChain": "از طریق زنجیره",
+  "tunDnsMode": "حالت DNS سیستم",
+  "tunDnsModeDesc": "نحوه پیکربندی DNS سیستم توسط هسته در حالت TUN.",
+  "tunDnsModeDefault": "پیش‌فرض هسته",
+  "tunDnsModeDisabled": "تغییر ندادن DNS سیستم",
+  "tunDnsModeNative": "تنظیم آدرس TUN به‌عنوان DNS سیستم",
+  "tunDnsModeHijack": "رهگیری DNS ارسالی به رابط‌های دیگر"
 }

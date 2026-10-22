@@ -1736,5 +1736,11 @@
   "chainDiagnosticsOk": "A probe ran; open for the topology it used.",
   "chainDiagnosticsFailed": "The last probe failed; open for what it actually tested.",
   "residentialIpCheckDirect": "Direct",
-  "residentialIpCheckViaChain": "Via chain"
+  "residentialIpCheckViaChain": "Via chain",
+  "tunDnsMode": "System DNS mode",
+  "tunDnsModeDesc": "How the core configures system DNS under TUN.",
+  "tunDnsModeDefault": "Follow core default",
+  "tunDnsModeDisabled": "Do not touch system DNS",
+  "tunDnsModeNative": "Set TUN address as system DNS",
+  "tunDnsModeHijack": "Also intercept DNS sent to other interfaces"
 }

@@ -610,6 +610,52 @@ class TunStackItem extends ConsumerWidget {
   }
 }
 
+/// TUN 下的系统 DNS 模式（内核 v1.19.33 新增）。
+///
+/// 空串表示不写这个字段，由内核按平台决定——这是升级前的行为，默认值必须
+/// 保持它，否则老用户升级后 DNS 行为会莫名改变。
+class TunDnsModeItem extends ConsumerWidget {
+  const TunDnsModeItem({super.key});
+
+  static const _values = ['', 'disabled', 'native', 'hijack'];
+
+  String _label(String value) {
+    return switch (value) {
+      'disabled' => appLocalizations.tunDnsModeDisabled,
+      'native' => appLocalizations.tunDnsModeNative,
+      'hijack' => appLocalizations.tunDnsModeHijack,
+      _ => appLocalizations.tunDnsModeDefault,
+    };
+  }
+
+  @override
+  Widget build(BuildContext context, ref) {
+    final mode = ref.watch(
+      patchClashConfigProvider.select((state) => state.tun.dnsMode),
+    );
+
+    return ListItem.options(
+      title: Text(appLocalizations.tunDnsMode),
+      subtitle: Text(appLocalizations.tunDnsModeDesc),
+      delegate: OptionsDelegate<String>(
+        value: mode,
+        options: _values,
+        textBuilder: _label,
+        onChanged: (value) async {
+          if (value == null) {
+            return;
+          }
+          ref
+              .read(patchClashConfigProvider.notifier)
+              .updateState((state) => state.copyWith.tun(dnsMode: value));
+          await _handleNetworkConfigChange(ref);
+        },
+        title: appLocalizations.tunDnsMode,
+      ),
+    );
+  }
+}
+
 class MtuItem extends ConsumerWidget {
   const MtuItem({super.key});
 
@@ -945,6 +991,7 @@ final networkItems = [
       const DnsHijackItem(),
       const EndpointIndependentNatItem(),
       const TunStackItem(),
+      const TunDnsModeItem(),
       const MtuItem(),
       const BypassPrivateRouteItem(),
     ],

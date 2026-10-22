@@ -1293,5 +1293,11 @@
   "chainDiagnosticsOk": "Проверка выполнена; откройте, чтобы увидеть топологию.",
   "chainDiagnosticsFailed": "Последняя проверка не удалась; откройте, чтобы увидеть, что проверялось.",
   "residentialIpCheckDirect": "Напрямую",
-  "residentialIpCheckViaChain": "Через цепочку"
+  "residentialIpCheckViaChain": "Через цепочку",
+  "tunDnsMode": "Режим системного DNS",
+  "tunDnsModeDesc": "Как ядро настраивает системный DNS в режиме TUN.",
+  "tunDnsModeDefault": "По умолчанию ядра",
+  "tunDnsModeDisabled": "Не изменять системный DNS",
+  "tunDnsModeNative": "Использовать адрес TUN как системный DNS",
+  "tunDnsModeHijack": "Также перехватывать DNS к другим интерфейсам"
 }

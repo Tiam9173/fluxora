@@ -2185,6 +2185,22 @@ class MessageLookup extends MessageLookupByLibrary {
     "tunDesc": MessageLookupByLibrary.simpleMessage(
       "Использовать TUN для перехвата трафика устройства",
     ),
+    "tunDnsMode": MessageLookupByLibrary.simpleMessage("Режим системного DNS"),
+    "tunDnsModeDefault": MessageLookupByLibrary.simpleMessage(
+      "По умолчанию ядра",
+    ),
+    "tunDnsModeDesc": MessageLookupByLibrary.simpleMessage(
+      "Как ядро настраивает системный DNS в режиме TUN.",
+    ),
+    "tunDnsModeDisabled": MessageLookupByLibrary.simpleMessage(
+      "Не изменять системный DNS",
+    ),
+    "tunDnsModeHijack": MessageLookupByLibrary.simpleMessage(
+      "Также перехватывать DNS к другим интерфейсам",
+    ),
+    "tunDnsModeNative": MessageLookupByLibrary.simpleMessage(
+      "Использовать адрес TUN как системный DNS",
+    ),
     "tunEnableRequireAdmin": MessageLookupByLibrary.simpleMessage(
       "Для включения режима TUN требуются права администратора или ROOT.",
     ),

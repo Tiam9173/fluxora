@@ -2081,6 +2081,22 @@ class MessageLookup extends MessageLookupByLibrary {
     "tunDesc": MessageLookupByLibrary.simpleMessage(
       "Use TUN to take over device traffic",
     ),
+    "tunDnsMode": MessageLookupByLibrary.simpleMessage("System DNS mode"),
+    "tunDnsModeDefault": MessageLookupByLibrary.simpleMessage(
+      "Follow core default",
+    ),
+    "tunDnsModeDesc": MessageLookupByLibrary.simpleMessage(
+      "How the core configures system DNS under TUN.",
+    ),
+    "tunDnsModeDisabled": MessageLookupByLibrary.simpleMessage(
+      "Do not touch system DNS",
+    ),
+    "tunDnsModeHijack": MessageLookupByLibrary.simpleMessage(
+      "Also intercept DNS sent to other interfaces",
+    ),
+    "tunDnsModeNative": MessageLookupByLibrary.simpleMessage(
+      "Set TUN address as system DNS",
+    ),
     "tunEnableRequireAdmin": MessageLookupByLibrary.simpleMessage(
       "Enabling the TUN virtual network adapter requires Administrator or ROOT privileges.",
     ),
