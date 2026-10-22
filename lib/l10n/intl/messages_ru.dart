@@ -662,6 +662,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "copyLink": MessageLookupByLibrary.simpleMessage("Копировать ссылку"),
     "copySuccess": MessageLookupByLibrary.simpleMessage("Скопировано"),
     "core": MessageLookupByLibrary.simpleMessage("Ядро"),
+    "coreAutoRestart": MessageLookupByLibrary.simpleMessage(
+      "Ядро неожиданно завершилось. Перезапускаем.",
+    ),
+    "coreAutoRestartFailed": MessageLookupByLibrary.simpleMessage(
+      "Ядро завершается постоянно. Автоперезапуск остановлен.",
+    ),
     "coreConnected": MessageLookupByLibrary.simpleMessage("Подключено"),
     "coreInfo": MessageLookupByLibrary.simpleMessage("Информация о ядре"),
     "coreStatus": MessageLookupByLibrary.simpleMessage("Статус ядра"),

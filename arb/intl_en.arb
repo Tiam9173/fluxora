@@ -1742,5 +1742,7 @@
   "tunDnsModeDefault": "Follow core default",
   "tunDnsModeDisabled": "Do not touch system DNS",
   "tunDnsModeNative": "Set TUN address as system DNS",
-  "tunDnsModeHijack": "Also intercept DNS sent to other interfaces"
+  "tunDnsModeHijack": "Also intercept DNS sent to other interfaces",
+  "coreAutoRestart": "The core stopped unexpectedly. Restarting it.",
+  "coreAutoRestartFailed": "The core keeps stopping. Automatic restart has given up."
 }

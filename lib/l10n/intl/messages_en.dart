@@ -634,6 +634,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "copyLink": MessageLookupByLibrary.simpleMessage("Copy Link"),
     "copySuccess": MessageLookupByLibrary.simpleMessage("Copy Successful"),
     "core": MessageLookupByLibrary.simpleMessage("Core"),
+    "coreAutoRestart": MessageLookupByLibrary.simpleMessage(
+      "The core stopped unexpectedly. Restarting it.",
+    ),
+    "coreAutoRestartFailed": MessageLookupByLibrary.simpleMessage(
+      "The core keeps stopping. Automatic restart has given up.",
+    ),
     "coreConnected": MessageLookupByLibrary.simpleMessage("Connected"),
     "coreInfo": MessageLookupByLibrary.simpleMessage("Core Info"),
     "coreStatus": MessageLookupByLibrary.simpleMessage("Core Status"),

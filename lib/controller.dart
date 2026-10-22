@@ -1661,6 +1661,112 @@ class AppController {
     }
   }
 
+  /// 内核看门狗：内核意外退出后自动拉起。
+  ///
+  /// 之前只有托盘菜单里的手动「重启内核」。内核崩掉时界面还是"已连接"，
+  /// 用户只能靠上不了网发现，而且得自己找到那个菜单项。
+  ///
+  /// 只在内核**该在跑**的时候介入：用户手动停止、正在重启、或者 App 本来
+  /// 就没启动时一律不碰。
+  Timer? _coreWatchdogTimer;
+  int _coreDeadTicks = 0;
+  int _coreRestartAttempts = 0;
+  bool _coreRestartInFlight = false;
+
+  /// 连续多少个 tick 判定死亡才动手。内核启动/重启的瞬间 `hasLiveProcess`
+  /// 会短暂为 false，一次就重启会变成自己打断自己。
+  static const _coreDeadTicksThreshold = 2;
+  static const _coreWatchdogInterval = Duration(seconds: 5);
+  static const _coreRestartBackoff = [
+    Duration(seconds: 1),
+    Duration(seconds: 5),
+    Duration(seconds: 15),
+  ];
+
+  /// 看门狗的判定，抽成纯函数：给定"连续死了几拍"和"已经重启过几次"，
+  /// 返回现在该不该动手。测试不需要起 Timer，也不用 mock 内核。
+  @visibleForTesting
+  static bool coreWatchdogWantsRestart({
+    required int deadTicks,
+    required int attempts,
+  }) {
+    if (deadTicks < _coreDeadTicksThreshold) return false;
+    return attempts < _coreRestartBackoff.length;
+  }
+
+  void startCoreWatchdog() {
+    _coreWatchdogTimer?.cancel();
+    _coreWatchdogTimer = Timer.periodic(
+      _coreWatchdogInterval,
+      (_) => _checkCoreAlive(),
+    );
+  }
+
+  void stopCoreWatchdog() {
+    _coreWatchdogTimer?.cancel();
+    _coreWatchdogTimer = null;
+    _coreDeadTicks = 0;
+  }
+
+  Future<void> _checkCoreAlive() async {
+    if (_coreRestartInFlight) return;
+
+    // 用户没让内核跑，就不是"意外退出"。
+    if (!globalState.isStart) {
+      _coreDeadTicks = 0;
+      _coreRestartAttempts = 0;
+      return;
+    }
+    if (_ref.read(isRestartingCoreProvider)) {
+      _coreDeadTicks = 0;
+      return;
+    }
+
+    if (clashCore.hasLiveProcess) {
+      _coreDeadTicks = 0;
+      // 活过一次就认为恢复了，下次崩溃重新从最短退避开始。
+      _coreRestartAttempts = 0;
+      return;
+    }
+
+    _coreDeadTicks++;
+    if (_coreDeadTicks < _coreDeadTicksThreshold) return;
+    _coreDeadTicks = 0;
+
+    if (!coreWatchdogWantsRestart(
+      deadTicks: _coreDeadTicksThreshold,
+      attempts: _coreRestartAttempts,
+    )) {
+      commonPrint.log(
+        'core watchdog: giving up after $_coreRestartAttempts attempts',
+      );
+      globalState.showNotifier(appLocalizations.coreAutoRestartFailed);
+      stopCoreWatchdog();
+      return;
+    }
+
+    final delay = _coreRestartBackoff[_coreRestartAttempts];
+    _coreRestartAttempts++;
+    commonPrint.log(
+      'core watchdog: core is gone, restart attempt $_coreRestartAttempts '
+      'after ${delay.inSeconds}s',
+    );
+    if (_coreRestartAttempts == 1) {
+      globalState.showNotifier(appLocalizations.coreAutoRestart);
+    }
+
+    _coreRestartInFlight = true;
+    try {
+      await Future.delayed(delay);
+      if (!globalState.isStart) return;
+      await restartCore();
+    } catch (err) {
+      commonPrint.log('core watchdog: restart failed: $err');
+    } finally {
+      _coreRestartInFlight = false;
+    }
+  }
+
   void startWakelockAutoRecovery() {
     _wakelockSyncTimer?.cancel();
     _wakelockSyncTimer = Timer.periodic(const Duration(seconds: 168), (
@@ -1756,6 +1862,7 @@ class AppController {
     await updateTray(true);
 
     await _initCore();
+    startCoreWatchdog();
     try {
       await _initStatus();
     } catch (e) {

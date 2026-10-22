@@ -642,6 +642,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "copyLink": MessageLookupByLibrary.simpleMessage("کپی لینک"),
     "copySuccess": MessageLookupByLibrary.simpleMessage("با موفقیت کپی شد"),
     "core": MessageLookupByLibrary.simpleMessage("هسته"),
+    "coreAutoRestart": MessageLookupByLibrary.simpleMessage(
+      "هسته به‌طور غیرمنتظره متوقف شد. در حال راه‌اندازی مجدد.",
+    ),
+    "coreAutoRestartFailed": MessageLookupByLibrary.simpleMessage(
+      "هسته مدام متوقف می‌شود. راه‌اندازی خودکار متوقف شد.",
+    ),
     "coreConnected": MessageLookupByLibrary.simpleMessage("متصل شد"),
     "coreInfo": MessageLookupByLibrary.simpleMessage("اطلاعات هسته"),
     "coreStatus": MessageLookupByLibrary.simpleMessage("وضعیت هسته"),

@@ -11169,6 +11169,26 @@ class AppLocalizations {
       args: [],
     );
   }
+
+  /// `The core stopped unexpectedly. Restarting it.`
+  String get coreAutoRestart {
+    return Intl.message(
+      'The core stopped unexpectedly. Restarting it.',
+      name: 'coreAutoRestart',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The core keeps stopping. Automatic restart has given up.`
+  String get coreAutoRestartFailed {
+    return Intl.message(
+      'The core keeps stopping. Automatic restart has given up.',
+      name: 'coreAutoRestartFailed',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {

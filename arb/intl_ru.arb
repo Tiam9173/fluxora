@@ -1299,5 +1299,7 @@
   "tunDnsModeDefault": "По умолчанию ядра",
   "tunDnsModeDisabled": "Не изменять системный DNS",
   "tunDnsModeNative": "Использовать адрес TUN как системный DNS",
-  "tunDnsModeHijack": "Также перехватывать DNS к другим интерфейсам"
+  "tunDnsModeHijack": "Также перехватывать DNS к другим интерфейсам",
+  "coreAutoRestart": "Ядро неожиданно завершилось. Перезапускаем.",
+  "coreAutoRestartFailed": "Ядро завершается постоянно. Автоперезапуск остановлен."
 }

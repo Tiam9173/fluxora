@@ -1295,5 +1295,7 @@
   "tunDnsModeDefault": "跟随内核默认",
   "tunDnsModeDisabled": "不修改系统 DNS",
   "tunDnsModeNative": "把 TUN 地址设为系统 DNS",
-  "tunDnsModeHijack": "额外拦截发往其他网卡的 DNS"
+  "tunDnsModeHijack": "额外拦截发往其他网卡的 DNS",
+  "coreAutoRestart": "内核意外退出，正在自动重启",
+  "coreAutoRestartFailed": "内核反复退出，已停止自动重启"
 }

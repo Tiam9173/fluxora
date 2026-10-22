@@ -1295,5 +1295,7 @@
   "tunDnsModeDefault": "コアの既定",
   "tunDnsModeDisabled": "システム DNS を変更しない",
   "tunDnsModeNative": "TUN アドレスをシステム DNS にする",
-  "tunDnsModeHijack": "他のインターフェース宛の DNS も傍受する"
+  "tunDnsModeHijack": "他のインターフェース宛の DNS も傍受する",
+  "coreAutoRestart": "コアが予期せず終了しました。自動で再起動します",
+  "coreAutoRestartFailed": "コアが繰り返し終了するため、自動再起動を停止しました"
 }

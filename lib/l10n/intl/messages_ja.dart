@@ -517,6 +517,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "copyLink": MessageLookupByLibrary.simpleMessage("リンクをコピー"),
     "copySuccess": MessageLookupByLibrary.simpleMessage("コピー成功"),
     "core": MessageLookupByLibrary.simpleMessage("カーネル"),
+    "coreAutoRestart": MessageLookupByLibrary.simpleMessage(
+      "コアが予期せず終了しました。自動で再起動します",
+    ),
+    "coreAutoRestartFailed": MessageLookupByLibrary.simpleMessage(
+      "コアが繰り返し終了するため、自動再起動を停止しました",
+    ),
     "coreConnected": MessageLookupByLibrary.simpleMessage("接続済み"),
     "coreInfo": MessageLookupByLibrary.simpleMessage("カーネル情報"),
     "coreStatus": MessageLookupByLibrary.simpleMessage("コア負荷詳細"),

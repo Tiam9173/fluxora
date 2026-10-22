@@ -474,6 +474,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "copyLink": MessageLookupByLibrary.simpleMessage("复制链接"),
     "copySuccess": MessageLookupByLibrary.simpleMessage("复制成功"),
     "core": MessageLookupByLibrary.simpleMessage("内核"),
+    "coreAutoRestart": MessageLookupByLibrary.simpleMessage("内核意外退出，正在自动重启"),
+    "coreAutoRestartFailed": MessageLookupByLibrary.simpleMessage(
+      "内核反复退出，已停止自动重启",
+    ),
     "coreConnected": MessageLookupByLibrary.simpleMessage("已连接"),
     "coreInfo": MessageLookupByLibrary.simpleMessage("内核信息"),
     "coreStatus": MessageLookupByLibrary.simpleMessage("内核负载详情"),
