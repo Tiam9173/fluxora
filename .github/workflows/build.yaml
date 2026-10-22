@@ -173,17 +173,29 @@ jobs:
       # rquickjs 在 Android 上要用 bindgen 生成绑定，而 bindgen 需要 libclang
       # 和**目标平台**的 C 头文件。缺了它构建会失败，但 Gradle 仍然会打印
       # "Built app-debug.apk"——只是里面打的是上一次的 .so，非常容易误判。
-      - name: Configure bindgen for Android
+      # rquickjs 需要 bindgen（C 头文件）和 cc（编译 quickjs 本身）。两者都必须
+      # 用**NDK 自带的 clang**：runner 上还有系统 llvm-18，混用会把 clang 18 的
+      # builtin 头和 NDK 的 sysroot 头拼在一起，报 "unknown type name uint32_t"。
+      - name: Configure Android C toolchain
         if: matrix.platform == 'android'
         shell: bash
         run: |
           LLVM="${ANDROID_NDK}/toolchains/llvm/prebuilt/linux-x86_64"
           CLANG_INCLUDE="$(ls -d "${LLVM}"/lib/clang/*/include | head -1)"
           echo "LIBCLANG_PATH=${LLVM}/lib" >> "$GITHUB_ENV"
-          for pair in             "aarch64_linux_android:aarch64-linux-android26"             "armv7_linux_androideabi:armv7a-linux-androideabi26"             "x86_64_linux_android:x86_64-linux-android26"             "i686_linux_android:i686-linux-android26"; do
-            key="${pair%%:*}"
-            triple="${pair##*:}"
+          for entry in "aarch64_linux_android:aarch64-linux-android26:aarch64-linux-android26-clang" "armv7_linux_androideabi:armv7a-linux-androideabi26:armv7a-linux-androideabi26-clang" "x86_64_linux_android:x86_64-linux-android26:x86_64-linux-android26-clang" "i686_linux_android:i686-linux-android26:i686-linux-android26-clang"; do
+            key="${entry%%:*}"
+            rest="${entry#*:}"
+            triple="${rest%%:*}"
+            cc="${rest##*:}"
             echo "BINDGEN_EXTRA_CLANG_ARGS_${key}=--sysroot=${LLVM}/sysroot -isystem ${CLANG_INCLUDE} --target=${triple}" >> "$GITHUB_ENV"
+            echo "CC_${key}=${LLVM}/bin/${cc}" >> "$GITHUB_ENV"
+            echo "CXX_${key}=${LLVM}/bin/${cc}++" >> "$GITHUB_ENV"
+            echo "AR_${key}=${LLVM}/bin/llvm-ar" >> "$GITHUB_ENV"
+            dashed="${key//_/-}"
+            echo "CC_${dashed}=${LLVM}/bin/${cc}" >> "$GITHUB_ENV"
+            echo "CXX_${dashed}=${LLVM}/bin/${cc}++" >> "$GITHUB_ENV"
+            echo "AR_${dashed}=${LLVM}/bin/llvm-ar" >> "$GITHUB_ENV"
           done
 
       - name: Install Dependencies (Linux)
