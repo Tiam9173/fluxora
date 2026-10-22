@@ -153,7 +153,13 @@ class SwitchCardActivity : Activity() {
 
     private fun loadNodes() {
         io.execute {
+            // 冷启动时内核可能还没开始监听，Dart 也可能还没把地址写进 prefs。
+            // 只试一次就报错，用户看到的就是"读取节点失败"，过一会儿再打开
+            // 又正常——所以这里退避重试，并且每次重试都重读一次地址。
+            var lastError: Exception? = null
+            for (attempt in 0 until 8) {
             try {
+                readEndpoint()
                 val json = JSONObject(request("/proxies"))
                 val proxies = json.getJSONObject("proxies")
                 val collected = mutableListOf<Group>()
@@ -188,9 +194,19 @@ class SwitchCardActivity : Activity() {
                     renderChips()
                     updateStatus()
                 }
+                return@execute
             } catch (e: Exception) {
-                runOnUiThread { statusView.text = "读取节点失败：${e.message}" }
+                lastError = e
+                if (attempt < 7) {
+                    try {
+                        Thread.sleep(250L + attempt * 150L)
+                    } catch (_: InterruptedException) {
+                        // 卡片关掉了，别再等
+                    }
+                }
             }
+            }
+            runOnUiThread { statusView.text = "读取节点失败：${lastError?.message}" }
         }
     }
 
