@@ -12,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluxora/models/chain_fallback_pool.dart';
 import 'package:fluxora/models/latency_freshness.dart';
 import 'package:fluxora/services/chain_probe_service.dart';
+import 'package:fluxora/services/residential_ip_check_service.dart';
 import 'package:fluxora/views/proxies/chain_hop_picker.dart';
 
 
@@ -232,6 +233,13 @@ class ChainProxyView extends ConsumerStatefulWidget {
 class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
   bool _isGuideExpanded = false;
 
+  /// 住宅 IP 体检的结果与进行状态。只读检测，不改任何配置。
+  ResidentialIpCheckResult? _ipCheckResult;
+  bool _ipChecking = false;
+
+  /// 「诊断信息」展开状态：探针报失败时，用户最需要看的就是它。
+  bool _isDiagnosticsExpanded = false;
+
   @override
   void initState() {
     super.initState();
@@ -353,6 +361,8 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
     final config = manager.config;
     // 前置跳板链（至少一跳）。出口不在此列，它由落地节点决定。
     final frontHops = config.effectiveFrontHops;
+    // 列表为空就是"跟随主选择"，但这一行必须仍然显示，否则用户点不进去。
+    final hopsForUi = frontHops.isEmpty ? const <String>[''] : frontHops;
     final landingProxies = config.landingProxies;
     final filteredProxies = _filterProxies(landingProxies);
 
@@ -375,6 +385,12 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
           // 0. Dynamic Topology Visualization Card
           _buildTopologyCard(context, config, landingProxies),
           const SizedBox(height: 12),
+
+          // 0b. 诊断信息：探针失败时能直接看到"它到底测了什么"。
+          if (manager.lastProbeReport != null) ...[
+            _buildProbeDiagnostics(context, config, manager.lastProbeReport!),
+            const SizedBox(height: 12),
+          ],
 
           // 1. Master enable card
           CommonCard(
@@ -439,6 +455,10 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
             const SizedBox(height: 12),
           ],
 
+          // 1c. 住宅 IP 体检
+          _buildResidentialIpCheckCard(context, config),
+          const SizedBox(height: 12),
+
           // 2. Default Hop & Integration settings
           CommonCard(
             type: CommonCardType.filled,
@@ -446,7 +466,9 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
               children: [
                 // 前置跳板可以有多跳，每跳单独选节点。出口不在这里：它由
                 // 落地节点决定，所以增删中间跳不会改变最终出口。
-                for (var i = 0; i < frontHops.length; i++)
+                // 第 0 行无条件渲染：`frontHops` 为空正是"跟随主选择"的表示，
+                // 按长度循环会让整行消失，用户就再也点不进去改。
+                for (var i = 0; i < hopsForUi.length; i++)
                   ListItem(
                     leading: Icon(
                       i == 0 ? Icons.hub_outlined : Icons.swap_horiz_rounded,
@@ -456,9 +478,9 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                       i == 0 ? appLocalizations.defaultDialerProxy : appLocalizations.chainRelayIndex('$i'),
                     ),
                     subtitle: Text(
-                      frontHops[i].isEmpty
+                      hopsForUi[i].isEmpty
                           ? appLocalizations.followMainSelector
-                          : frontHops[i],
+                          : hopsForUi[i],
                       style: TextStyle(
                         color: context.colorScheme.primary,
                         fontWeight: FontWeight.w500,
@@ -485,9 +507,11 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                         title: i == 0
                             ? appLocalizations.defaultDialerProxy
                             : appLocalizations.chainRelayIndex('$i'),
-                        allowFollowMain: i == 0,
-                        excludeNames: frontHops
-                            .where((h) => h != frontHops[i])
+                        // 中转跳也允许"跟随主选择"：以前只放给第 1 跳，
+                        // 用户想整条链路都跟着主选择走时没有入口。
+                        allowFollowMain: true,
+                        excludeNames: hopsForUi
+                            .where((h) => h != hopsForUi[i])
                             .toSet(),
                         onSelect: (hop) =>
                             chainProxyManager.setFrontHopAt(i, hop),
@@ -869,6 +893,242 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
       FallbackCandidateRole.relay => appLocalizations.roleRelay,
       FallbackCandidateRole.exit => appLocalizations.roleExit,
     };
+  }
+
+  /// 探针的诊断信息。
+  ///
+  /// 只回答一个问题：**这次探测用的是哪套拓扑、出口算的是谁**。住宅 IP 在
+  /// 别处能用、这里报失败时，先看这几行和实际配置对不对得上，再谈改逻辑。
+  Widget _buildProbeDiagnostics(
+    BuildContext context,
+    ChainProxyConfig config,
+    ChainProbeReport report,
+  ) {
+    final scheme = context.colorScheme;
+    final hops = config.effectiveFrontHops;
+    final exitName = config.effectiveExitNode;
+    final exitSource = config.hop2Node.isNotEmpty &&
+            config.landingProxies.any((p) => p.name == config.hop2Node)
+        ? 'hop2Node'
+        : '落地列表';
+    final exitHop = report.hops.where((h) => h.role == HopRole.finalExit).firstOrNull;
+    final failed = report.hops
+        .where((h) => h.errorMessage != null && h.errorMessage!.isNotEmpty)
+        .toList();
+
+    final rows = <(String, String)>[
+      ('模式', config.hopMode.label),
+      ('前置跳板', hops.isEmpty ? appLocalizations.followMainSelector : hops.join(' → ')),
+      ('落地出口', exitName.isEmpty ? '—' : '$exitName（来源：$exitSource）'),
+      (
+        '检测目标',
+        globalState.config.appSetting.testUrl.isEmpty
+            ? '默认 204'
+            : globalState.config.appSetting.testUrl,
+      ),
+      (
+        '出口 IP',
+        exitHop?.observedPublicIp?.ip ?? '未取得',
+      ),
+      for (final hop in failed) ('失败跳', '${hop.nodeName}：${hop.errorMessage}'),
+    ];
+
+    return CommonCard(
+      type: CommonCardType.filled,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ListItem(
+            leading: const Icon(Icons.bug_report_outlined),
+            title: Text(appLocalizations.chainDiagnostics),
+            subtitle: Text(
+              failed.isEmpty
+                  ? appLocalizations.chainDiagnosticsOk
+                  : appLocalizations.chainDiagnosticsFailed,
+            ),
+            trailing: Icon(
+              _isDiagnosticsExpanded
+                  ? Icons.keyboard_arrow_up
+                  : Icons.keyboard_arrow_down,
+            ),
+            onTap: () => setState(
+              () => _isDiagnosticsExpanded = !_isDiagnosticsExpanded,
+            ),
+          ),
+          if (_isDiagnosticsExpanded)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (final (label, value) in rows)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: 72,
+                            child: Text(
+                              label,
+                              style: context.textTheme.bodySmall?.copyWith(
+                                color: scheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: SelectableText(
+                              value,
+                              style: context.textTheme.bodySmall,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// 住宅 IP 体检：验账号密码 + 看真实出口。
+  ///
+  /// 和链路探针分开：探针测的是"这条链路的延迟与健康"，而这里回答的是
+  /// "我买的这个住宅 IP 到底能不能用、出口是不是它"。
+  Widget _buildResidentialIpCheckCard(
+    BuildContext context,
+    ChainProxyConfig config,
+  ) {
+    final result = _ipCheckResult;
+    final landing = config.landingProxies.where((p) => p.enable).firstOrNull;
+    final scheme = context.colorScheme;
+
+    return CommonCard(
+      type: CommonCardType.filled,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ListItem(
+            leading: const Icon(Icons.fingerprint),
+            title: Text(appLocalizations.residentialIpCheck),
+            subtitle: Text(appLocalizations.residentialIpCheckDesc),
+            trailing: const SizedBox.shrink(),
+          ),
+          if (landing == null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Text(
+                appLocalizations.chainNeedLanding,
+                style: context.textTheme.bodySmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            )
+          else ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                '${landing.name} · ${landing.server}:${landing.port}',
+                style: context.textTheme.bodySmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            if (result != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                child: Row(
+                  children: [
+                    Icon(
+                      result.isUsable
+                          ? Icons.check_circle
+                          : Icons.error_outline,
+                      size: 18,
+                      color: result.isUsable ? scheme.primary : scheme.error,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        [
+                          result.message,
+                          if (result.exitIp != null) result.exitIp!,
+                          if (result.country != null) result.country!,
+                          if (result.latencyMs != null)
+                            '${result.latencyMs}ms',
+                        ].join(' · '),
+                        style: context.textTheme.bodySmall,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: _ipChecking
+                          ? null
+                          : () => _runResidentialIpCheck(landing),
+                      child: Text(appLocalizations.residentialIpCheckDirect),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: _ipChecking
+                          ? null
+                          : () => _runResidentialIpCheck(
+                              landing,
+                              viaChain: true,
+                            ),
+                      icon: _ipChecking
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.alt_route, size: 18),
+                      label: Text(
+                        _ipChecking
+                            ? appLocalizations.residentialIpChecking
+                            : appLocalizations.residentialIpCheckViaChain,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _runResidentialIpCheck(
+    LandingProxy landing, {
+    bool viaChain = false,
+  }) async {
+    setState(() {
+      _ipChecking = true;
+      _ipCheckResult = null;
+    });
+    const service = ResidentialIpCheckService();
+    // 经链路必须用**本次会话实际生效**的 mixed 端口：端口被占用时会避让，
+    // 读配置里的原始值会连到一个没人监听的端口。
+    final result = viaChain
+        ? await service.checkThroughMixedPort(
+            mixedPort: globalState.appController.effectiveMixedPort,
+          )
+        : await service.check(landing);
+    if (!mounted) return;
+    setState(() {
+      _ipChecking = false;
+      _ipCheckResult = result;
+    });
   }
 
   /// item 3-B — one hop's own probe outcome.

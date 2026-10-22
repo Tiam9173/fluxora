@@ -695,9 +695,12 @@ class AppController {
   /// 和 [effectiveMixedPort] 同一个道理：配置里写的是 9090，端口被占用时会话
   /// 换到别的端口。所有要用控制器地址的地方——写进内核配置、告诉原生通知栏
   /// 卡片——都必须读这个，否则就是"内核换了端口、别处还连着老端口"。
+  /// 注意这里**不能**回退到配置值：控制器设为关闭时配置值是空串，但
+  /// `forceLoopback`（默认开启）仍然会把内核控制器强制监听在回环地址上。
+  /// 回退到空串等于告诉内核"别监听"，通知栏卡片就只能报
+  /// `failed to connect to 127.0.0.1:9090`。
   String get effectiveExternalController =>
-      _externalControllerFallback ??
-      _ref.read(patchClashConfigProvider).externalController.value;
+      _externalControllerFallback ?? ExternalControllerStatus.open.value;
 
   /// 会话内避让出来的控制器地址；null 表示沿用配置值。
   String? _externalControllerFallback;
@@ -797,6 +800,21 @@ class AppController {
     );
   }
 
+  /// `force_loopback_controller` 默认开启：即使控制器开关是关的，内核也会
+  /// 监听回环地址供 App 自己用。
+  Future<bool> _forceLoopbackController() async {
+    try {
+      final prefs = await Preferences()
+          .sharedPreferencesCompleter
+          .future
+          .timeout(const Duration(milliseconds: 300), onTimeout: () => null);
+      return prefs?.getBool('force_loopback_controller') ?? true;
+    } catch (e) {
+      commonPrint.log('read force_loopback_controller failed: $e');
+      return true;
+    }
+  }
+
   /// 控制器端口被别的程序占用时，给本次会话换一个。
   ///
   /// 和混合端口不同，控制器地址没法用 `copyWith` 传下去（枚举里写死），所以
@@ -804,11 +822,20 @@ class AppController {
   /// 这样"写进内核配置"和"告诉原生通知栏卡片"用的是同一个值——上一轮混合
   /// 端口出问题，就是因为改了一处、另一处还读老配置。
   Future<void> _resolveExternalControllerFallback() async {
-    // 复用同一个开关：用户关掉端口避让，就完全不介入。
-    if (!_ref.read(vpnSettingProvider).portFallback) return;
+    // 控制器端口有独立的开关，和混合端口避让互不影响。
+    if (!_ref.read(vpnSettingProvider).controllerPortFallback) return;
 
-    final configured =
-        _ref.read(patchClashConfigProvider).externalController.value;
+    // 控制器关闭且没有强制回环时，内核根本不监听，避让没有意义。
+    final status = _ref.read(patchClashConfigProvider).externalController;
+    if (status == ExternalControllerStatus.close &&
+        !await _forceLoopbackController()) {
+      _externalControllerFallback = null;
+      return;
+    }
+
+    final configured = status == ExternalControllerStatus.open
+        ? status.value
+        : ExternalControllerStatus.open.value;
     if (_externalControllerFallback != null &&
         _externalControllerFallback == configured) {
       return;

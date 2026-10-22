@@ -10999,6 +10999,116 @@ class AppLocalizations {
       args: [],
     );
   }
+
+  /// `Controller port fallback`
+  String get controllerPortFallback {
+    return Intl.message(
+      'Controller port fallback',
+      name: 'controllerPortFallback',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `When 9090 is taken at start-up, this session uses the next free port instead of leaving the switch card unable to reach the core.`
+  String get controllerPortFallbackDesc {
+    return Intl.message(
+      'When 9090 is taken at start-up, this session uses the next free port instead of leaving the switch card unable to reach the core.',
+      name: 'controllerPortFallbackDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Residential IP check`
+  String get residentialIpCheck {
+    return Intl.message(
+      'Residential IP check',
+      name: 'residentialIpCheck',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Verifies the landing proxy credentials and the real exit IP.`
+  String get residentialIpCheckDesc {
+    return Intl.message(
+      'Verifies the landing proxy credentials and the real exit IP.',
+      name: 'residentialIpCheckDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Checking…`
+  String get residentialIpChecking {
+    return Intl.message(
+      'Checking…',
+      name: 'residentialIpChecking',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Run check`
+  String get residentialIpCheckStart {
+    return Intl.message(
+      'Run check',
+      name: 'residentialIpCheckStart',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Diagnostics`
+  String get chainDiagnostics {
+    return Intl.message(
+      'Diagnostics',
+      name: 'chainDiagnostics',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `A probe ran; open for the topology it used.`
+  String get chainDiagnosticsOk {
+    return Intl.message(
+      'A probe ran; open for the topology it used.',
+      name: 'chainDiagnosticsOk',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The last probe failed; open for what it actually tested.`
+  String get chainDiagnosticsFailed {
+    return Intl.message(
+      'The last probe failed; open for what it actually tested.',
+      name: 'chainDiagnosticsFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Direct`
+  String get residentialIpCheckDirect {
+    return Intl.message(
+      'Direct',
+      name: 'residentialIpCheckDirect',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Via chain`
+  String get residentialIpCheckViaChain {
+    return Intl.message(
+      'Via chain',
+      name: 'residentialIpCheckViaChain',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -291,6 +291,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainDeviceSide": MessageLookupByLibrary.simpleMessage("设备端"),
     "chainDiagnosticPackage": MessageLookupByLibrary.simpleMessage("诊断包"),
     "chainDiagnosticTitle": MessageLookupByLibrary.simpleMessage("链式诊断"),
+    "chainDiagnostics": MessageLookupByLibrary.simpleMessage("诊断信息"),
+    "chainDiagnosticsFailed": MessageLookupByLibrary.simpleMessage(
+      "上次探测失败，展开可看它到底测了什么。",
+    ),
+    "chainDiagnosticsOk": MessageLookupByLibrary.simpleMessage(
+      "已探测过，展开可看它用的拓扑。",
+    ),
     "chainDialerValue": m5,
     "chainDisabled": MessageLookupByLibrary.simpleMessage("未启用"),
     "chainEdit": MessageLookupByLibrary.simpleMessage("编辑"),
@@ -455,6 +462,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "controlSecret": MessageLookupByLibrary.simpleMessage("控制密码"),
     "controlSecretDesc": MessageLookupByLibrary.simpleMessage(
       "RESTful API 的访问密码",
+    ),
+    "controllerPortFallback": MessageLookupByLibrary.simpleMessage("控制器端口避让"),
+    "controllerPortFallbackDesc": MessageLookupByLibrary.simpleMessage(
+      "启动时 9090 被占用就换一个空闲端口，否则通知栏卡片会连不上内核。",
     ),
     "copiedPackageName": MessageLookupByLibrary.simpleMessage("已复制包名"),
     "copiedToClipboard": MessageLookupByLibrary.simpleMessage("已复制到剪贴板"),
@@ -1250,6 +1261,14 @@ class MessageLookup extends MessageLookupByLibrary {
       "是否重置本地图标缓存？这个操作是安全的，因为应用会再次从远程链接自动获取。",
     ),
     "resetTip": MessageLookupByLibrary.simpleMessage("确定要重置吗?"),
+    "residentialIpCheck": MessageLookupByLibrary.simpleMessage("住宅 IP 体检"),
+    "residentialIpCheckDesc": MessageLookupByLibrary.simpleMessage(
+      "校验落地代理的账号密码与真实出口 IP。",
+    ),
+    "residentialIpCheckDirect": MessageLookupByLibrary.simpleMessage("直连检测"),
+    "residentialIpCheckStart": MessageLookupByLibrary.simpleMessage("开始检测"),
+    "residentialIpCheckViaChain": MessageLookupByLibrary.simpleMessage("经链路检测"),
+    "residentialIpChecking": MessageLookupByLibrary.simpleMessage("检测中…"),
     "resources": MessageLookupByLibrary.simpleMessage("资源"),
     "resourcesDesc": MessageLookupByLibrary.simpleMessage("外部资源相关信息"),
     "respectRules": MessageLookupByLibrary.simpleMessage("遵守规则"),

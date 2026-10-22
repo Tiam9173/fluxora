@@ -399,6 +399,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainDiagnosticTitle": MessageLookupByLibrary.simpleMessage(
       "Диагностика цепочки",
     ),
+    "chainDiagnostics": MessageLookupByLibrary.simpleMessage("Диагностика"),
+    "chainDiagnosticsFailed": MessageLookupByLibrary.simpleMessage(
+      "Последняя проверка не удалась; откройте, чтобы увидеть, что проверялось.",
+    ),
+    "chainDiagnosticsOk": MessageLookupByLibrary.simpleMessage(
+      "Проверка выполнена; откройте, чтобы увидеть топологию.",
+    ),
     "chainDialerValue": m5,
     "chainDisabled": MessageLookupByLibrary.simpleMessage("Выключено"),
     "chainEdit": MessageLookupByLibrary.simpleMessage("Изменить"),
@@ -635,6 +642,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "controlSecret": MessageLookupByLibrary.simpleMessage("Пароль управления"),
     "controlSecretDesc": MessageLookupByLibrary.simpleMessage(
       "Пароль для доступа к RESTful API",
+    ),
+    "controllerPortFallback": MessageLookupByLibrary.simpleMessage(
+      "Резервный порт контроллера",
+    ),
+    "controllerPortFallbackDesc": MessageLookupByLibrary.simpleMessage(
+      "Если порт 9090 занят при запуске, сессия использует свободный порт — иначе карточка в уведомлении не сможет подключиться к ядру.",
     ),
     "copiedPackageName": MessageLookupByLibrary.simpleMessage(
       "Скопировано имя пакета",
@@ -1806,6 +1819,22 @@ class MessageLookup extends MessageLookupByLibrary {
       "Сбросить локальный кэш значков? Это безопасно: приложение автоматически загрузит их заново по удалённым ссылкам.",
     ),
     "resetTip": MessageLookupByLibrary.simpleMessage("Сбросить настройки?"),
+    "residentialIpCheck": MessageLookupByLibrary.simpleMessage(
+      "Проверка резидентного IP",
+    ),
+    "residentialIpCheckDesc": MessageLookupByLibrary.simpleMessage(
+      "Проверяет логин/пароль прокси и реальный выходной IP.",
+    ),
+    "residentialIpCheckDirect": MessageLookupByLibrary.simpleMessage(
+      "Напрямую",
+    ),
+    "residentialIpCheckStart": MessageLookupByLibrary.simpleMessage(
+      "Начать проверку",
+    ),
+    "residentialIpCheckViaChain": MessageLookupByLibrary.simpleMessage(
+      "Через цепочку",
+    ),
+    "residentialIpChecking": MessageLookupByLibrary.simpleMessage("Проверка…"),
     "resources": MessageLookupByLibrary.simpleMessage("Ресурсы"),
     "resourcesDesc": MessageLookupByLibrary.simpleMessage(
       "Управление внешними ресурсами",

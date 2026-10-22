@@ -1278,5 +1278,16 @@
   "chainNoneDirect": "无（直连订阅节点）",
   "ipCheckTimeout": "节点无响应",
   "ipCheckCoreNotReady": "内核尚未就绪",
-  "scriptUrlNotAScript": "该链接返回的是网页，不是脚本文件。GitHub 请使用 Raw 链接。"
+  "scriptUrlNotAScript": "该链接返回的是网页，不是脚本文件。GitHub 请使用 Raw 链接。",
+  "controllerPortFallback": "控制器端口避让",
+  "controllerPortFallbackDesc": "启动时 9090 被占用就换一个空闲端口，否则通知栏卡片会连不上内核。",
+  "residentialIpCheck": "住宅 IP 体检",
+  "residentialIpCheckDesc": "校验落地代理的账号密码与真实出口 IP。",
+  "residentialIpChecking": "检测中…",
+  "residentialIpCheckStart": "开始检测",
+  "chainDiagnostics": "诊断信息",
+  "chainDiagnosticsOk": "已探测过，展开可看它用的拓扑。",
+  "chainDiagnosticsFailed": "上次探测失败，展开可看它到底测了什么。",
+  "residentialIpCheckDirect": "直连检测",
+  "residentialIpCheckViaChain": "经链路检测"
 }

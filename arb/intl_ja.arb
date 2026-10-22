@@ -1278,5 +1278,16 @@
   "chainNoneDirect": "なし（購読ノードに直接接続）",
   "ipCheckTimeout": "ノードが応答しません",
   "ipCheckCoreNotReady": "コアの準備ができていません",
-  "scriptUrlNotAScript": "このリンクはスクリプトファイルではなく Web ページを返しました。GitHub では Raw リンクを使用してください。"
+  "scriptUrlNotAScript": "このリンクはスクリプトファイルではなく Web ページを返しました。GitHub では Raw リンクを使用してください。",
+  "controllerPortFallback": "コントローラポートのフォールバック",
+  "controllerPortFallbackDesc": "起動時に 9090 が使用中の場合は空いているポートを使用します。そうしないと通知カードがコアに接続できません。",
+  "residentialIpCheck": "住宅 IP チェック",
+  "residentialIpCheckDesc": "ランディングプロキシの認証情報と実際の出口 IP を確認します。",
+  "residentialIpChecking": "確認中…",
+  "residentialIpCheckStart": "チェック開始",
+  "chainDiagnostics": "診断情報",
+  "chainDiagnosticsOk": "検出済み。使用したトポロジを確認できます。",
+  "chainDiagnosticsFailed": "前回の検出は失敗しました。実際に何を測ったかを確認できます。",
+  "residentialIpCheckDirect": "直接",
+  "residentialIpCheckViaChain": "経路"
 }

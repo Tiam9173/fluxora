@@ -383,6 +383,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainDiagnosticTitle": MessageLookupByLibrary.simpleMessage(
       "Chain Diagnostic",
     ),
+    "chainDiagnostics": MessageLookupByLibrary.simpleMessage("Diagnostics"),
+    "chainDiagnosticsFailed": MessageLookupByLibrary.simpleMessage(
+      "The last probe failed; open for what it actually tested.",
+    ),
+    "chainDiagnosticsOk": MessageLookupByLibrary.simpleMessage(
+      "A probe ran; open for the topology it used.",
+    ),
     "chainDialerValue": m5,
     "chainDisabled": MessageLookupByLibrary.simpleMessage("Off"),
     "chainEdit": MessageLookupByLibrary.simpleMessage("Edit"),
@@ -607,6 +614,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "controlSecret": MessageLookupByLibrary.simpleMessage("Control Secret"),
     "controlSecretDesc": MessageLookupByLibrary.simpleMessage(
       "RESTful API access password",
+    ),
+    "controllerPortFallback": MessageLookupByLibrary.simpleMessage(
+      "Controller port fallback",
+    ),
+    "controllerPortFallbackDesc": MessageLookupByLibrary.simpleMessage(
+      "When 9090 is taken at start-up, this session uses the next free port instead of leaving the switch card unable to reach the core.",
     ),
     "copiedPackageName": MessageLookupByLibrary.simpleMessage(
       "Copied package name",
@@ -1718,6 +1731,20 @@ class MessageLookup extends MessageLookupByLibrary {
     "resetTip": MessageLookupByLibrary.simpleMessage(
       "Are you sure you want to reset?",
     ),
+    "residentialIpCheck": MessageLookupByLibrary.simpleMessage(
+      "Residential IP check",
+    ),
+    "residentialIpCheckDesc": MessageLookupByLibrary.simpleMessage(
+      "Verifies the landing proxy credentials and the real exit IP.",
+    ),
+    "residentialIpCheckDirect": MessageLookupByLibrary.simpleMessage("Direct"),
+    "residentialIpCheckStart": MessageLookupByLibrary.simpleMessage(
+      "Run check",
+    ),
+    "residentialIpCheckViaChain": MessageLookupByLibrary.simpleMessage(
+      "Via chain",
+    ),
+    "residentialIpChecking": MessageLookupByLibrary.simpleMessage("Checking…"),
     "resources": MessageLookupByLibrary.simpleMessage("Resources"),
     "resourcesDesc": MessageLookupByLibrary.simpleMessage(
       "External resource info",

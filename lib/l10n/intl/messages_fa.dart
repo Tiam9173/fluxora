@@ -385,6 +385,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainDiagnosticTitle": MessageLookupByLibrary.simpleMessage(
       "تشخیص زنجیره",
     ),
+    "chainDiagnostics": MessageLookupByLibrary.simpleMessage(
+      "اطلاعات عیب‌یابی",
+    ),
+    "chainDiagnosticsFailed": MessageLookupByLibrary.simpleMessage(
+      "بررسی قبلی ناموفق بود؛ برای دیدن آنچه آزمایش شد باز کنید.",
+    ),
+    "chainDiagnosticsOk": MessageLookupByLibrary.simpleMessage(
+      "بررسی انجام شده است؛ برای دیدن توپولوژی باز کنید.",
+    ),
     "chainDialerValue": m5,
     "chainDisabled": MessageLookupByLibrary.simpleMessage("غیرفعال"),
     "chainEdit": MessageLookupByLibrary.simpleMessage("ویرایش"),
@@ -615,6 +624,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "controlSecret": MessageLookupByLibrary.simpleMessage("رمز عبور کنترل"),
     "controlSecretDesc": MessageLookupByLibrary.simpleMessage(
       "رمز عبور دسترسی به RESTful API",
+    ),
+    "controllerPortFallback": MessageLookupByLibrary.simpleMessage(
+      "پورت جایگزین کنترلر",
+    ),
+    "controllerPortFallbackDesc": MessageLookupByLibrary.simpleMessage(
+      "اگر هنگام اجرا پورت 9090 اشغال باشد، این نشست از یک پورت آزاد استفاده می‌کند؛ در غیر این صورت کارت اعلان به هسته متصل نمی‌شود.",
     ),
     "copiedPackageName": MessageLookupByLibrary.simpleMessage(
       "نام پکیج کپی شد",
@@ -1753,6 +1768,22 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "resetTip": MessageLookupByLibrary.simpleMessage(
       "آیا از بازنشانی اطمینان دارید؟",
+    ),
+    "residentialIpCheck": MessageLookupByLibrary.simpleMessage(
+      "بررسی IP مسکونی",
+    ),
+    "residentialIpCheckDesc": MessageLookupByLibrary.simpleMessage(
+      "اطلاعات ورود پروکسی و IP خروجی واقعی را بررسی می‌کند.",
+    ),
+    "residentialIpCheckDirect": MessageLookupByLibrary.simpleMessage("مستقیم"),
+    "residentialIpCheckStart": MessageLookupByLibrary.simpleMessage(
+      "شروع بررسی",
+    ),
+    "residentialIpCheckViaChain": MessageLookupByLibrary.simpleMessage(
+      "از طریق زنجیره",
+    ),
+    "residentialIpChecking": MessageLookupByLibrary.simpleMessage(
+      "در حال بررسی…",
     ),
     "resources": MessageLookupByLibrary.simpleMessage("منابع"),
     "resourcesDesc": MessageLookupByLibrary.simpleMessage(

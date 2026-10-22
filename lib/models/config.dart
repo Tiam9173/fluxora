@@ -292,6 +292,11 @@ abstract class VpnProps with _$VpnProps {
     /// start on the next free port for this session instead of failing.
     /// On by default: the alternative is a core that simply will not start.
     @Default(true) bool portFallback,
+    /// 控制器端口（默认 9090）被占用时，本次会话换一个端口。
+    ///
+    /// 和 [portFallback] 分开：混合端口是给"上网"用的，控制器端口只服务于
+    /// App 自己和通知栏卡片，有人希望前者自动避让、后者保持固定便于调试。
+    @Default(true) bool controllerPortFallback,
     @Default(false) bool trayEnhancement,
     @Default(TrayClickBehavior.showPanel)
     TrayClickBehavior trayLeftClickBehavior,

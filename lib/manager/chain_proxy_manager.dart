@@ -1220,8 +1220,15 @@ class ChainProxyManager extends ChangeNotifier {
 
   Future<void> setFrontHopAt(int index, String name) async {
     final current = List<String>.from(_config.effectiveFrontHops);
-    if (index < 0 || index >= current.length) return;
-    current[index] = name;
+    if (index < 0) return;
+    if (current.isEmpty && index == 0) {
+      // 空列表表示"跟随主选择"，也就是还没有这一跳。用户在这里选了一个具体
+      // 节点，得先把这一跳建出来，否则写入会被下面的越界判断吞掉。
+      current.add(name);
+    } else {
+      if (index >= current.length) return;
+      current[index] = name;
+    }
     await setFrontHops(current);
   }
 

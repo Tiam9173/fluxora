@@ -293,6 +293,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainDeviceSide": MessageLookupByLibrary.simpleMessage("裝置端"),
     "chainDiagnosticPackage": MessageLookupByLibrary.simpleMessage("診斷套件"),
     "chainDiagnosticTitle": MessageLookupByLibrary.simpleMessage("鏈式診斷"),
+    "chainDiagnostics": MessageLookupByLibrary.simpleMessage("診斷資訊"),
+    "chainDiagnosticsFailed": MessageLookupByLibrary.simpleMessage(
+      "上次探測失敗，展開可看它到底測了什麼。",
+    ),
+    "chainDiagnosticsOk": MessageLookupByLibrary.simpleMessage(
+      "已探測過，展開可看它用的拓撲。",
+    ),
     "chainDialerValue": m5,
     "chainDisabled": MessageLookupByLibrary.simpleMessage("未啟用"),
     "chainEdit": MessageLookupByLibrary.simpleMessage("編輯"),
@@ -459,6 +466,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "controlSecret": MessageLookupByLibrary.simpleMessage("控制密碼"),
     "controlSecretDesc": MessageLookupByLibrary.simpleMessage(
       "RESTful API 的存取密碼",
+    ),
+    "controllerPortFallback": MessageLookupByLibrary.simpleMessage("控制器連接埠避讓"),
+    "controllerPortFallbackDesc": MessageLookupByLibrary.simpleMessage(
+      "啟動時 9090 被佔用就換一個空閒連接埠，否則通知列卡片會連不上內核。",
     ),
     "copiedPackageName": MessageLookupByLibrary.simpleMessage("已複製包名"),
     "copiedToClipboard": MessageLookupByLibrary.simpleMessage("已複製到剪貼簿"),
@@ -1262,6 +1273,14 @@ class MessageLookup extends MessageLookupByLibrary {
       "是否重置本機圖示快取？這個操作是安全的，因為應用會再次從遠端連結自動取得。",
     ),
     "resetTip": MessageLookupByLibrary.simpleMessage("確定要重設嗎？"),
+    "residentialIpCheck": MessageLookupByLibrary.simpleMessage("住宅 IP 體檢"),
+    "residentialIpCheckDesc": MessageLookupByLibrary.simpleMessage(
+      "校驗落地代理的帳號密碼與真實出口 IP。",
+    ),
+    "residentialIpCheckDirect": MessageLookupByLibrary.simpleMessage("直連檢測"),
+    "residentialIpCheckStart": MessageLookupByLibrary.simpleMessage("開始檢測"),
+    "residentialIpCheckViaChain": MessageLookupByLibrary.simpleMessage("經鏈路檢測"),
+    "residentialIpChecking": MessageLookupByLibrary.simpleMessage("檢測中…"),
     "resources": MessageLookupByLibrary.simpleMessage("資源"),
     "resourcesDesc": MessageLookupByLibrary.simpleMessage("外部資源相關資訊"),
     "respectRules": MessageLookupByLibrary.simpleMessage("遵守規則"),

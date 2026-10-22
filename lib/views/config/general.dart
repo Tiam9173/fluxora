@@ -815,6 +815,39 @@ class ExternalControllerItem extends ConsumerWidget {
             },
           ),
         ),
+        Divider(
+          height: 1,
+          thickness: 1,
+          color: context.colorScheme.outlineVariant.withValues(
+            alpha: context.colorScheme.brightness == Brightness.light
+                ? 0.6
+                : 0.45,
+          ),
+          indent: 16,
+          endIndent: 16,
+        ),
+        // 控制器端口避让单独一个开关：和「混合端口避让」解耦，有人希望
+        // 上网端口自动避让，但控制器保持固定便于调试。
+        ListItem.switchItem(
+          leading: const Icon(Icons.settings_ethernet),
+          title: Text(appLocalizations.controllerPortFallback),
+          subtitle: Text(appLocalizations.controllerPortFallbackDesc),
+          delegate: SwitchDelegate(
+            value: ref.watch(
+              vpnSettingProvider.select(
+                (state) => state.controllerPortFallback,
+              ),
+            ),
+            onChanged: (bool value) async {
+              ref
+                  .read(vpnSettingProvider.notifier)
+                  .updateState(
+                    (state) => state.copyWith(controllerPortFallback: value),
+                  );
+              await globalState.appController.applyProfile();
+            },
+          ),
+        ),
         if (hasExternalController) ...[
           Divider(
             height: 1,

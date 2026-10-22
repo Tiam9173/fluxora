@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:fluxora/common/common.dart';
+import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/providers/config.dart';
 import 'package:fluxora/state.dart';
+import 'package:fluxora/widgets/card.dart';
 import 'package:fluxora/widgets/list.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -74,19 +76,51 @@ class AboutView extends StatelessWidget {
               ),
             ],
           ),
-          // 「GitHub」是品牌名，不做翻译。单独一行：一行只放两个磁贴。
-          _LinkGridRow(
-            halfWidth: true,
-            tiles: [
-              _LinkGridTile(
-                title: 'GitHub',
-                icon: Icons.code,
-                iconColor: colorScheme.onSurface,
-                onTap: () => globalState.openUrl(githubRepoUrl),
+        ],
+      ),
+      // GitHub 单独一张卡片：和 Telegram 放在同一张里时，即使只占一半宽度，
+      // 看上去仍然是"社区区块的第三行"。独立成块才读得出是另一个入口。
+      // 「GitHub」是品牌名，不做翻译。
+      // GitHub 单独一张卡片，并且**整张卡片**只占一半宽度。
+      //
+      // 之前只把里面的磁贴压到一半，卡片本身仍是满宽——看上去还是一条，
+      // 右边界落在"群组"那一格的位置。用户要的是右边界和"频道"对齐。
+      // GitHub 单独一张卡片，卡片本身和上面「官方社区」同宽，但磁贴只占左边
+      // 那一格，右边留空——这样它的右边界正好落在「Telegram 频道」的右边界上。
+      //
+      // 用两个 Expanded 平分，不靠比例换算：SectionContainer 内部有 16 的内边距，
+      // 按比例算出来的边界会偏。
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+        child: CommonCard(
+          type: CommonCardType.filled,
+          child: Row(
+            children: [
+              Expanded(
+                child: _LinkGridTile(
+                  title: 'GitHub',
+                  icon: Icons.code,
+                  iconColor: colorScheme.onSurface,
+                  onTap: () => globalState.openUrl(githubRepoUrl),
+                ),
               ),
+              // 中间这道竖线和上面「频道 | 群组」那条是同一条线：GitHub 的
+              // 右边界就落在它上面，右边半格留空。
+              VerticalDivider(
+                width: 1,
+                thickness: 1,
+                indent: 8,
+                endIndent: 8,
+                color: colorScheme.outlineVariant.withValues(
+                  alpha: colorScheme.brightness == Brightness.light
+                      ? 0.6
+                      : 0.45,
+                ),
+              ),
+              const Expanded(child: SizedBox.shrink()),
             ],
           ),
-        ],
+        ),
       ),
       ...generateSection(
         title: appLocalizations.more,
@@ -242,17 +276,11 @@ class _LinkGridRow extends StatelessWidget {
   /// credits gives every project exactly the same space.
   final List<_LinkGridTile> tiles;
 
-  /// 只有一格时让它只占一半宽度，另一半留空。
-  ///
-  /// 单独一格默认会拉满整行，看起来像一条横幅；社区区块里的链接都是两列
-  /// 排布，落单的那个也该保持同样的格子大小。
-  final bool halfWidth;
-
-  const _LinkGridRow({required this.tiles, this.halfWidth = false});
+  const _LinkGridRow({required this.tiles});
 
   @override
   Widget build(BuildContext context) {
-    if (tiles.length == 1 && !halfWidth) return tiles.first;
+    if (tiles.length == 1) return tiles.first;
     final dividerColor = context.colorScheme.outlineVariant.withValues(
       alpha: context.colorScheme.brightness == Brightness.light ? 0.6 : 0.45,
     );
@@ -271,8 +299,6 @@ class _LinkGridRow extends StatelessWidget {
               ),
             Expanded(child: tiles[i]),
           ],
-          if (halfWidth && tiles.length == 1)
-            const Expanded(child: SizedBox.shrink()),
         ],
       ),
     );

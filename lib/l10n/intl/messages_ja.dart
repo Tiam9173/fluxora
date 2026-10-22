@@ -318,6 +318,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainDeviceSide": MessageLookupByLibrary.simpleMessage("端末側"),
     "chainDiagnosticPackage": MessageLookupByLibrary.simpleMessage("診断パッケージ"),
     "chainDiagnosticTitle": MessageLookupByLibrary.simpleMessage("チェーン診断"),
+    "chainDiagnostics": MessageLookupByLibrary.simpleMessage("診断情報"),
+    "chainDiagnosticsFailed": MessageLookupByLibrary.simpleMessage(
+      "前回の検出は失敗しました。実際に何を測ったかを確認できます。",
+    ),
+    "chainDiagnosticsOk": MessageLookupByLibrary.simpleMessage(
+      "検出済み。使用したトポロジを確認できます。",
+    ),
     "chainDialerValue": m5,
     "chainDisabled": MessageLookupByLibrary.simpleMessage("無効"),
     "chainEdit": MessageLookupByLibrary.simpleMessage("編集"),
@@ -494,6 +501,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "controlSecret": MessageLookupByLibrary.simpleMessage("制御パスワード"),
     "controlSecretDesc": MessageLookupByLibrary.simpleMessage(
       "RESTful APIアクセスパスワード",
+    ),
+    "controllerPortFallback": MessageLookupByLibrary.simpleMessage(
+      "コントローラポートのフォールバック",
+    ),
+    "controllerPortFallbackDesc": MessageLookupByLibrary.simpleMessage(
+      "起動時に 9090 が使用中の場合は空いているポートを使用します。そうしないと通知カードがコアに接続できません。",
     ),
     "copiedPackageName": MessageLookupByLibrary.simpleMessage("パッケージ名をコピーしました"),
     "copiedToClipboard": MessageLookupByLibrary.simpleMessage(
@@ -1391,6 +1404,14 @@ class MessageLookup extends MessageLookupByLibrary {
       "ローカルのアイコンキャッシュをリセットしますか？アプリがリモートリンクから自動的に再取得するため、この操作は安全です。",
     ),
     "resetTip": MessageLookupByLibrary.simpleMessage("本当にリセットしますか？"),
+    "residentialIpCheck": MessageLookupByLibrary.simpleMessage("住宅 IP チェック"),
+    "residentialIpCheckDesc": MessageLookupByLibrary.simpleMessage(
+      "ランディングプロキシの認証情報と実際の出口 IP を確認します。",
+    ),
+    "residentialIpCheckDirect": MessageLookupByLibrary.simpleMessage("直接"),
+    "residentialIpCheckStart": MessageLookupByLibrary.simpleMessage("チェック開始"),
+    "residentialIpCheckViaChain": MessageLookupByLibrary.simpleMessage("経路"),
+    "residentialIpChecking": MessageLookupByLibrary.simpleMessage("確認中…"),
     "resources": MessageLookupByLibrary.simpleMessage("リソース"),
     "resourcesDesc": MessageLookupByLibrary.simpleMessage("外部リソース情報"),
     "respectRules": MessageLookupByLibrary.simpleMessage("ルールに従う"),

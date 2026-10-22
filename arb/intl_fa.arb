@@ -1278,5 +1278,16 @@
   "chainNoneDirect": "هیچ (اتصال مستقیم به گره اشتراک)",
   "ipCheckTimeout": "گره پاسخ نمی‌دهد",
   "ipCheckCoreNotReady": "هسته آماده نیست",
-  "scriptUrlNotAScript": "این پیوند یک صفحه وب برگرداند، نه فایل اسکریپت. در GitHub از پیوند Raw استفاده کنید."
+  "scriptUrlNotAScript": "این پیوند یک صفحه وب برگرداند، نه فایل اسکریپت. در GitHub از پیوند Raw استفاده کنید.",
+  "controllerPortFallback": "پورت جایگزین کنترلر",
+  "controllerPortFallbackDesc": "اگر هنگام اجرا پورت 9090 اشغال باشد، این نشست از یک پورت آزاد استفاده می‌کند؛ در غیر این صورت کارت اعلان به هسته متصل نمی‌شود.",
+  "residentialIpCheck": "بررسی IP مسکونی",
+  "residentialIpCheckDesc": "اطلاعات ورود پروکسی و IP خروجی واقعی را بررسی می‌کند.",
+  "residentialIpChecking": "در حال بررسی…",
+  "residentialIpCheckStart": "شروع بررسی",
+  "chainDiagnostics": "اطلاعات عیب‌یابی",
+  "chainDiagnosticsOk": "بررسی انجام شده است؛ برای دیدن توپولوژی باز کنید.",
+  "chainDiagnosticsFailed": "بررسی قبلی ناموفق بود؛ برای دیدن آنچه آزمایش شد باز کنید.",
+  "residentialIpCheckDirect": "مستقیم",
+  "residentialIpCheckViaChain": "از طریق زنجیره"
 }

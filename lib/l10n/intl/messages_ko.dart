@@ -323,6 +323,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainDeviceSide": MessageLookupByLibrary.simpleMessage("기기 측"),
     "chainDiagnosticPackage": MessageLookupByLibrary.simpleMessage("진단 패키지"),
     "chainDiagnosticTitle": MessageLookupByLibrary.simpleMessage("체인 진단"),
+    "chainDiagnostics": MessageLookupByLibrary.simpleMessage("진단 정보"),
+    "chainDiagnosticsFailed": MessageLookupByLibrary.simpleMessage(
+      "지난 검사가 실패했습니다. 실제로 무엇을 측정했는지 확인하세요.",
+    ),
+    "chainDiagnosticsOk": MessageLookupByLibrary.simpleMessage(
+      "검사 완료. 사용한 토폴로지를 확인할 수 있습니다.",
+    ),
     "chainDialerValue": m5,
     "chainDisabled": MessageLookupByLibrary.simpleMessage("사용 안 함"),
     "chainEdit": MessageLookupByLibrary.simpleMessage("편집"),
@@ -501,6 +508,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "controlSecret": MessageLookupByLibrary.simpleMessage("제어 비밀번호"),
     "controlSecretDesc": MessageLookupByLibrary.simpleMessage(
       "RESTful API 접근 비밀번호",
+    ),
+    "controllerPortFallback": MessageLookupByLibrary.simpleMessage(
+      "컨트롤러 포트 대체",
+    ),
+    "controllerPortFallbackDesc": MessageLookupByLibrary.simpleMessage(
+      "시작 시 9090이 사용 중이면 빈 포트로 대체합니다. 그렇지 않으면 알림 카드가 코어에 연결할 수 없습니다.",
     ),
     "copiedPackageName": MessageLookupByLibrary.simpleMessage(
       "패키지 이름이 복사되었습니다",
@@ -1392,6 +1405,14 @@ class MessageLookup extends MessageLookupByLibrary {
       "로컬 아이콘 캐시를 초기화하시겠습니까? 앱이 원격 링크에서 자동으로 다시 가져오므로 안전한 작업입니다.",
     ),
     "resetTip": MessageLookupByLibrary.simpleMessage("정말 초기화하시겠습니까?"),
+    "residentialIpCheck": MessageLookupByLibrary.simpleMessage("주거용 IP 점검"),
+    "residentialIpCheckDesc": MessageLookupByLibrary.simpleMessage(
+      "랜딩 프록시의 계정 정보와 실제 출구 IP를 확인합니다.",
+    ),
+    "residentialIpCheckDirect": MessageLookupByLibrary.simpleMessage("직접"),
+    "residentialIpCheckStart": MessageLookupByLibrary.simpleMessage("점검 시작"),
+    "residentialIpCheckViaChain": MessageLookupByLibrary.simpleMessage("경유"),
+    "residentialIpChecking": MessageLookupByLibrary.simpleMessage("확인 중…"),
     "resources": MessageLookupByLibrary.simpleMessage("리소스"),
     "resourcesDesc": MessageLookupByLibrary.simpleMessage("외부 리소스 정보"),
     "respectRules": MessageLookupByLibrary.simpleMessage("규칙 준수"),

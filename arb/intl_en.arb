@@ -1725,5 +1725,16 @@
   "chainNoneDirect": "None (use the subscription node directly)",
   "ipCheckTimeout": "No response from the node",
   "ipCheckCoreNotReady": "Core is not ready",
-  "scriptUrlNotAScript": "This link returned a web page, not a script file. On GitHub, use the Raw link."
+  "scriptUrlNotAScript": "This link returned a web page, not a script file. On GitHub, use the Raw link.",
+  "controllerPortFallback": "Controller port fallback",
+  "controllerPortFallbackDesc": "When 9090 is taken at start-up, this session uses the next free port instead of leaving the switch card unable to reach the core.",
+  "residentialIpCheck": "Residential IP check",
+  "residentialIpCheckDesc": "Verifies the landing proxy credentials and the real exit IP.",
+  "residentialIpChecking": "Checking…",
+  "residentialIpCheckStart": "Run check",
+  "chainDiagnostics": "Diagnostics",
+  "chainDiagnosticsOk": "A probe ran; open for the topology it used.",
+  "chainDiagnosticsFailed": "The last probe failed; open for what it actually tested.",
+  "residentialIpCheckDirect": "Direct",
+  "residentialIpCheckViaChain": "Via chain"
 }

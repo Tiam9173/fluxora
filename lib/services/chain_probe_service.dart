@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:fluxora/clash/core.dart';
+import 'package:fluxora/common/common.dart';
 import 'package:fluxora/models/chain_proxy.dart';
 import 'package:fluxora/models/common.dart';
 import 'package:fluxora/models/public_ip_info.dart';
@@ -425,6 +426,17 @@ abstract class IChainProbeService {
   });
 }
 
+/// 诊断日志不能反过来把探针搞挂。
+///
+/// `commonPrint.log` 最终走 AppController.addLog，那里会 `ref.read`——widget
+/// 已经卸载（测试收尾、页面退出）时会抛「Using ref when a widget is about to
+/// or has been unmounted」。日志是给人看的，不该让探针因此失败。
+void _diag(String message) {
+  try {
+    commonPrint.log(message);
+  } catch (_) {}
+}
+
 class ChainProbeService implements IChainProbeService {
   final PublicIpService _ipService;
   final DelayTester? _customDelayTester;
@@ -537,6 +549,14 @@ class ChainProbeService implements IChainProbeService {
       return invalidReport;
     }
 
+    // 一次性诊断：探针看到的拓扑 vs 实际生成配置用的拓扑。住宅 IP 在别处
+    // 可用、这里却报失败时，先看这两行是否一致，再谈改逻辑。
+    _diag(
+      '[chain-probe] mode=${mode.name} hop1=$hop1 hop2=$hop2 hop3=$hop3 '
+      'frontHops=${config.effectiveFrontHops} '
+      'exit=$hop2 (source=${mode == ChainHopMode.threeHop ? 'hop2Node' : 'effectiveExitNode'}) '
+      'dedicatedGroup=${config.dedicatedGroupName}',
+    );
     if (cancelToken?.isCancelled == true) {
       return ChainProbeReport.cancelled(mode: mode, timestamp: now);
     }
@@ -644,6 +664,10 @@ class ChainProbeService implements IChainProbeService {
       testedAt: DateTime.now(),
     );
     onHopUpdate?.call(hops[0]);
+    _diag(
+      '[chain-probe] hop1 [$hop1] delay=$hop1Delay '
+      'healthy=$hop1Healthy timeout=$hop1Timeout',
+    );
 
     if (!hop1Healthy) {
       final failureReason = hop1Timeout
@@ -1035,6 +1059,12 @@ class ChainProbeService implements IChainProbeService {
 
       if (_customExitIpDetector != null) {
         exitIpInfo = await _customExitIpDetector();
+        // 出口 IP 是判断"链路到底通没通"的唯一硬证据：延迟测不出时，
+        // 这一行能区分"链路真的断了"和"只是测速目标被拒"。
+        _diag(
+          '[chain-probe] exit ip detect -> ${exitIpInfo?.ip ?? 'null'} '
+          '(${exitIpInfo?.country ?? '-'})',
+        );
         if (exitIpInfo == null) {
           ipApiUnavailable = true;
           ipProbeError = '公网 IP 探测服务未返回有效数据';

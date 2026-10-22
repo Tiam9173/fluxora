@@ -1282,5 +1282,16 @@
   "chainNoneDirect": "Нет (напрямую к узлу подписки)",
   "ipCheckTimeout": "Узел не отвечает",
   "ipCheckCoreNotReady": "Ядро не готово",
-  "scriptUrlNotAScript": "Ссылка вернула веб-страницу, а не файл скрипта. На GitHub используйте ссылку Raw."
+  "scriptUrlNotAScript": "Ссылка вернула веб-страницу, а не файл скрипта. На GitHub используйте ссылку Raw.",
+  "controllerPortFallback": "Резервный порт контроллера",
+  "controllerPortFallbackDesc": "Если порт 9090 занят при запуске, сессия использует свободный порт — иначе карточка в уведомлении не сможет подключиться к ядру.",
+  "residentialIpCheck": "Проверка резидентного IP",
+  "residentialIpCheckDesc": "Проверяет логин/пароль прокси и реальный выходной IP.",
+  "residentialIpChecking": "Проверка…",
+  "residentialIpCheckStart": "Начать проверку",
+  "chainDiagnostics": "Диагностика",
+  "chainDiagnosticsOk": "Проверка выполнена; откройте, чтобы увидеть топологию.",
+  "chainDiagnosticsFailed": "Последняя проверка не удалась; откройте, чтобы увидеть, что проверялось.",
+  "residentialIpCheckDirect": "Напрямую",
+  "residentialIpCheckViaChain": "Через цепочку"
 }

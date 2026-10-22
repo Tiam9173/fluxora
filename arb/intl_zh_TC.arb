@@ -1276,5 +1276,16 @@
   "chainNoneDirect": "無（直連訂閱節點）",
   "ipCheckTimeout": "節點無回應",
   "ipCheckCoreNotReady": "內核尚未就緒",
-  "scriptUrlNotAScript": "該連結回傳的是網頁，不是腳本檔案。GitHub 請使用 Raw 連結。"
+  "scriptUrlNotAScript": "該連結回傳的是網頁，不是腳本檔案。GitHub 請使用 Raw 連結。",
+  "controllerPortFallback": "控制器連接埠避讓",
+  "controllerPortFallbackDesc": "啟動時 9090 被佔用就換一個空閒連接埠，否則通知列卡片會連不上內核。",
+  "residentialIpCheck": "住宅 IP 體檢",
+  "residentialIpCheckDesc": "校驗落地代理的帳號密碼與真實出口 IP。",
+  "residentialIpChecking": "檢測中…",
+  "residentialIpCheckStart": "開始檢測",
+  "chainDiagnostics": "診斷資訊",
+  "chainDiagnosticsOk": "已探測過，展開可看它用的拓撲。",
+  "chainDiagnosticsFailed": "上次探測失敗，展開可看它到底測了什麼。",
+  "residentialIpCheckDirect": "直連檢測",
+  "residentialIpCheckViaChain": "經鏈路檢測"
 }
