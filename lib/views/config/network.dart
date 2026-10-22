@@ -985,7 +985,7 @@ final networkItems = [
     title: appLocalizations.options,
     items: [
       if (system.isDesktop) const TUNItem(),
-      if (system.isMacOS) const AutoSetSystemDnsItem(),
+      if (system.isMacOS || system.isLinux) const AutoSetSystemDnsItem(),
       if (!system.isAndroid) const StrictRouteItem(),
       const IcmpForwardingItem(),
       const DnsHijackItem(),

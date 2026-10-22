@@ -711,4 +711,182 @@ class MacOS {
   }
 }
 
+/// Linux 上的系统 DNS 管理。
+///
+/// 走 systemd-resolved 的 `resolvectl`：主流发行版默认就是它，而且支持
+/// **按链路**设置并 `revert` 回原状，不像直接改 /etc/resolv.conf 那样既需要
+/// root、又会被各种工具覆盖回去。
+///
+/// 没有 `resolvectl` 的系统（非 systemd）报告"不支持"，界面上把开关置灰，
+/// 而不是假装设置成功。
+class LinuxSystemDns {
+  static LinuxSystemDns? _instance;
+  static const _hijackDns = '223.5.5.5';
+  static const _backupFileName = 'linux_system_dns_backup.json';
+  final Lock _lock = Lock();
+
+  LinuxSystemDns._internal();
+
+  factory LinuxSystemDns() {
+    _instance ??= LinuxSystemDns._internal();
+    return _instance!;
+  }
+
+  /// 默认路由所在的网卡。`resolvectl` 是按链路设置的，不指定链路就没法改。
+  Future<String?> get defaultInterface async {
+    try {
+      final result = await Process.run('ip', ['route', 'show', 'default']);
+      if (result.exitCode != 0) return null;
+      final line = result.stdout
+          .toString()
+          .split('\n')
+          .firstWhere((l) => l.contains(' dev '), orElse: () => '');
+      return RegExp(r'dev\s+(\S+)').firstMatch(line)?.group(1);
+    } catch (e) {
+      commonPrint.log('Failed to read the default route: $e');
+      return null;
+    }
+  }
+
+  /// 当前环境能不能管 DNS。非 systemd 的系统返回 false。
+  Future<bool> get isSupported async {
+    try {
+      final result = await Process.run('sh', ['-c', 'command -v resolvectl']);
+      return result.exitCode == 0;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> updateDns(bool restore) {
+    return _lock.synchronized(() async {
+      if (restore) {
+        await _restoreDns();
+      } else {
+        await _setDns();
+      }
+    });
+  }
+
+  Future<List<String>?> _currentDns(String iface) async {
+    try {
+      final result = await Process.run('resolvectl', ['dns', iface]);
+      if (result.exitCode != 0) return null;
+      return parseDnsOutput(result.stdout.toString(), iface);
+    } catch (e) {
+      commonPrint.log('Failed to read the Linux system DNS: $e');
+      return null;
+    }
+  }
+
+  /// 解析 `resolvectl dns <iface>` 的输出，抽成纯函数方便测试。
+  ///
+  /// 输出形如：
+  /// ```
+  /// Global: 8.8.8.8
+  /// Link 2 (wlan0): 192.168.1.1 223.5.5.5
+  /// ```
+  /// 找不到对应链路返回 null，和"这条链路本来就没有 DNS"（空列表）区分开。
+  @visibleForTesting
+  static List<String>? parseDnsOutput(String output, String iface) {
+    final line = output
+        .split('\n')
+        .firstWhere((l) => l.contains('($iface)'), orElse: () => '');
+    if (line.isEmpty) return null;
+    final colon = line.indexOf(':');
+    if (colon < 0) return null;
+    return line
+        .substring(colon + 1)
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((s) => s.isNotEmpty)
+        .toList();
+  }
+
+  Future<void> _setDns() async {
+    // 先还原一次：重复开启时不能把 Fluxora 自己写进去的值当成"原始 DNS"存下来。
+    if (!await _restoreDns()) return;
+
+    final iface = await defaultInterface;
+    if (iface == null) {
+      commonPrint.log('Linux DNS: no default interface, skipping');
+      return;
+    }
+    final current = await _currentDns(iface);
+    if (current == null || current.contains(_hijackDns)) return;
+
+    try {
+      final backupFile = await _dnsBackupFile;
+      await backupFile.parent.create(recursive: true);
+      final temporaryFile = File('${backupFile.path}.tmp');
+      await temporaryFile.writeAsString(
+        jsonEncode({'interface': iface, 'servers': current}),
+        flush: true,
+      );
+      await temporaryFile.rename(backupFile.path);
+    } catch (e) {
+      commonPrint.log('Failed to persist the original Linux system DNS: $e');
+      return;
+    }
+
+    final result = await Process.run('resolvectl', [
+      'dns',
+      iface,
+      ...current,
+      _hijackDns,
+    ]);
+    if (result.exitCode != 0) {
+      commonPrint.log(
+        'Failed to set the Linux system DNS: '
+        '${result.stderr.toString().trim()}',
+      );
+      return;
+    }
+    await Process.run('resolvectl', ['flush-caches']);
+  }
+
+  Future<bool> _restoreDns() async {
+    final backupFile = await _dnsBackupFile;
+    if (!await backupFile.exists()) return true;
+
+    try {
+      final decoded = jsonDecode(await backupFile.readAsString());
+      if (decoded is! Map) {
+        throw const FormatException('Invalid Linux system DNS backup');
+      }
+      final backup = Map<String, dynamic>.from(decoded);
+      final iface = backup['interface'] as String?;
+      final servers = (backup['servers'] as List?)
+          ?.whereType<String>()
+          .toList();
+      if (iface == null || iface.isEmpty || servers == null) {
+        throw const FormatException('Invalid Linux system DNS backup');
+      }
+
+      // 原本没有 DNS 就 revert 回链路默认，而不是塞一个空列表进去。
+      final result = servers.isEmpty
+          ? await Process.run('resolvectl', ['revert', iface])
+          : await Process.run('resolvectl', ['dns', iface, ...servers]);
+      if (result.exitCode != 0) {
+        commonPrint.log(
+          'Failed to restore the Linux system DNS: '
+          '${result.stderr.toString().trim()}',
+        );
+        return false;
+      }
+      await backupFile.delete();
+      return true;
+    } catch (e) {
+      commonPrint.log('Failed to read the Linux system DNS backup: $e');
+      return false;
+    }
+  }
+
+  Future<File> get _dnsBackupFile async {
+    return File(join(await appPath.homeDirPath, _backupFileName));
+  }
+}
+
+final linuxSystemDns = system.isLinux ? LinuxSystemDns() : null;
+
 final macOS = system.isMacOS ? MacOS() : null;

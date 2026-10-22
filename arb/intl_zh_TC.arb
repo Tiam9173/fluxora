@@ -1295,5 +1295,6 @@
   "tunDnsModeNative": "將 TUN 位址設為系統 DNS",
   "tunDnsModeHijack": "額外攔截送往其他網卡的 DNS",
   "coreAutoRestart": "內核意外退出，正在自動重啟",
-  "coreAutoRestartFailed": "內核反覆退出，已停止自動重啟"
+  "coreAutoRestartFailed": "內核反覆退出，已停止自動重啟",
+  "autoSetSystemDnsUnsupported": "自動設定 DNS 需要 systemd-resolved（resolvectl），目前系統沒有。"
 }

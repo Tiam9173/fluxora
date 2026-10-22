@@ -79,6 +79,18 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
         return;
       }
       final shouldSet = next.a == true && next.b == true;
+      if (system.isLinux) {
+        // 非 systemd 的发行版没有 resolvectl：明确告诉用户不支持，而不是
+        // 让开关看起来打开了、实际什么都没做。
+        if (shouldSet && !await LinuxSystemDns().isSupported) {
+          globalState.showNotifier(
+            appLocalizations.autoSetSystemDnsUnsupported,
+          );
+          return;
+        }
+        await linuxSystemDns?.updateDns(!shouldSet);
+        return;
+      }
       await macOS?.updateDns(!shouldSet);
     });
     ref.listenManual(currentBrightnessProvider, (prev, next) {

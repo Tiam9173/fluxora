@@ -278,6 +278,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "autoSetSystemDns": MessageLookupByLibrary.simpleMessage(
       "Auto Set System DNS",
     ),
+    "autoSetSystemDnsUnsupported": MessageLookupByLibrary.simpleMessage(
+      "Automatic DNS needs systemd-resolved (resolvectl), which this system does not provide.",
+    ),
     "autoUpdate": MessageLookupByLibrary.simpleMessage("Auto Update"),
     "autoUpdateInterval": MessageLookupByLibrary.simpleMessage(
       "Auto update interval (min)",

@@ -220,6 +220,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "autoRunDesc": MessageLookupByLibrary.simpleMessage("應用打開後自動連線"),
     "autoScroll": MessageLookupByLibrary.simpleMessage("自動滾動"),
     "autoSetSystemDns": MessageLookupByLibrary.simpleMessage("自動設定系統 DNS"),
+    "autoSetSystemDnsUnsupported": MessageLookupByLibrary.simpleMessage(
+      "自動設定 DNS 需要 systemd-resolved（resolvectl），目前系統沒有。",
+    ),
     "autoUpdate": MessageLookupByLibrary.simpleMessage("自動更新"),
     "autoUpdateInterval": MessageLookupByLibrary.simpleMessage("自動更新間隔（分鐘）"),
     "back": MessageLookupByLibrary.simpleMessage("返回"),

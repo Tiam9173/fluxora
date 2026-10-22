@@ -1297,5 +1297,6 @@
   "tunDnsModeNative": "TUN 주소를 시스템 DNS로 설정",
   "tunDnsModeHijack": "다른 인터페이스로 가는 DNS도 가로챔",
   "coreAutoRestart": "코어가 예기치 않게 종료되어 자동으로 다시 시작합니다",
-  "coreAutoRestartFailed": "코어가 반복 종료되어 자동 재시작을 중단했습니다"
+  "coreAutoRestartFailed": "코어가 반복 종료되어 자동 재시작을 중단했습니다",
+  "autoSetSystemDnsUnsupported": "DNS 자동 설정에는 systemd-resolved(resolvectl)가 필요하지만 이 시스템에는 없습니다."
 }

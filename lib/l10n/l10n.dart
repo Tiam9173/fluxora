@@ -11189,6 +11189,16 @@ class AppLocalizations {
       args: [],
     );
   }
+
+  /// `Automatic DNS needs systemd-resolved (resolvectl), which this system does not provide.`
+  String get autoSetSystemDnsUnsupported {
+    return Intl.message(
+      'Automatic DNS needs systemd-resolved (resolvectl), which this system does not provide.',
+      name: 'autoSetSystemDnsUnsupported',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {
