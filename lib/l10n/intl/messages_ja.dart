@@ -1821,6 +1821,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "usernameOptional": MessageLookupByLibrary.simpleMessage("ユーザー名 (任意)"),
     "value": MessageLookupByLibrary.simpleMessage("値"),
+    "viaProxy": MessageLookupByLibrary.simpleMessage("プロキシ経由"),
     "vibrantScheme": MessageLookupByLibrary.simpleMessage("バイブラント"),
     "view": MessageLookupByLibrary.simpleMessage("表示"),
     "viewDetailedIpData": MessageLookupByLibrary.simpleMessage("詳細なIPデータを見る"),

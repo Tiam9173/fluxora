@@ -1298,5 +1298,6 @@
   "tunDnsModeHijack": "رهگیری DNS ارسالی به رابط‌های دیگر",
   "coreAutoRestart": "هسته به‌طور غیرمنتظره متوقف شد. در حال راه‌اندازی مجدد.",
   "coreAutoRestartFailed": "هسته مدام متوقف می‌شود. راه‌اندازی خودکار متوقف شد.",
-  "autoSetSystemDnsUnsupported": "تنظیم خودکار DNS به systemd-resolved (resolvectl) نیاز دارد که در این سیستم موجود نیست."
+  "autoSetSystemDnsUnsupported": "تنظیم خودکار DNS به systemd-resolved (resolvectl) نیاز دارد که در این سیستم موجود نیست.",
+  "viaProxy": "از طریق پروکسی"
 }

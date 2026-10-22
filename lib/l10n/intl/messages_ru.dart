@@ -2364,6 +2364,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Имя пользователя (необязательно)",
     ),
     "value": MessageLookupByLibrary.simpleMessage("Значение"),
+    "viaProxy": MessageLookupByLibrary.simpleMessage("через прокси"),
     "vibrantScheme": MessageLookupByLibrary.simpleMessage("Яркий"),
     "view": MessageLookupByLibrary.simpleMessage("Просмотр"),
     "viewDetailedIpData": MessageLookupByLibrary.simpleMessage(

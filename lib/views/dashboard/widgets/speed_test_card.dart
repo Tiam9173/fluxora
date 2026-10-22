@@ -193,6 +193,16 @@ class _SpeedTestCardState extends State<SpeedTestCard> {
             ),
             const SizedBox(height: 8),
             _PhaseDots(phase: p.phase),
+            if (p.serverName.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                  '${p.serverName} · ${appLocalizations.viaProxy}',
+                  style: context.textTheme.labelSmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,

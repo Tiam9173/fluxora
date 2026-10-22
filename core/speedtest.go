@@ -18,8 +18,6 @@ import (
 // 速度。放在 Dart 侧做单连接下载的话，高延迟线路上会严重偏低，用户会以为代理
 // 有问题。
 const (
-	speedTestDownURL   = "https://speed.cloudflare.com/__down?bytes=%d"
-	speedTestUpURL     = "https://speed.cloudflare.com/__up"
 	speedTestStreams   = 8
 	speedTestLatencyN  = 10
 	speedTestDownBytes = 20_000_000
@@ -51,6 +49,132 @@ type SpeedTestProgress struct {
 	Error      string  `json:"error,omitempty"`
 	ProxyUsed  bool    `json:"proxyUsed"`
 	ServerName string  `json:"serverName"`
+}
+
+const (
+	cloudflareDownURL = "https://speed.cloudflare.com/__down?bytes=%d"
+	cloudflareUpURL   = "https://speed.cloudflare.com/__up"
+	appleConfigURL    = "https://mensura.cdn-apple.com/api/v1/gm/config"
+)
+
+// 本轮实际使用的测速源。auto 时按延迟择优。
+var (
+	speedTestDownURL = cloudflareDownURL
+	speedTestUpURL   = cloudflareUpURL
+	speedTestName    = "Cloudflare"
+	// Apple 给的是一个固定 URL（自带大小参数），不能按 %d 拼。
+	speedTestDownFixed string
+)
+
+// 下载地址：Apple 的固定 URL 直接用，Cloudflare 的按本次要拉的字节数拼。
+func downURLFor(n int) string {
+	if speedTestDownFixed != "" {
+		return speedTestDownFixed
+	}
+	return fmt.Sprintf(speedTestDownURL, n)
+}
+
+// 解析 Apple 的 mensura 配置，拿到它给的真实下载/上传地址。
+//
+// 配置形如 {"urls":{"large_https_download_url":..,"https_upload_url":..}}，
+// 不解析就只能拿它当"探活目标"，测的还是 Cloudflare 的数据。
+// 真去拉一点数据，确认这个地址在当前网络下能用。
+//
+// 只看配置能不能取到是不够的：Apple 的 /gm/large 在小流量探测时正常，正式
+// 下载却会卡到超时。
+func probeUsable(ctx context.Context, client *http.Client, url string) bool {
+	pctx, cancel := context.WithTimeout(ctx, 6*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(pctx, http.MethodGet, url, nil)
+	if err != nil {
+		return false
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return false
+	}
+	buf := make([]byte, 32*1024)
+	_, err = io.ReadFull(resp.Body, buf)
+	return err == nil
+}
+
+func appleTarget(ctx context.Context, client *http.Client) (string, string, bool) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, appleConfigURL, nil)
+	if err != nil {
+		return "", "", false
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", "", false
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return "", "", false
+	}
+	var cfg struct {
+		Urls struct {
+			Large  string `json:"large_https_download_url"`
+			Upload string `json:"https_upload_url"`
+		} `json:"urls"`
+	}
+	if json.NewDecoder(io.LimitReader(resp.Body, 64*1024)).Decode(&cfg) != nil {
+		return "", "", false
+	}
+	if cfg.Urls.Large == "" || cfg.Urls.Upload == "" {
+		return "", "", false
+	}
+	return cfg.Urls.Large, cfg.Urls.Upload, true
+}
+
+// 在几个候选源里挑响应最快的那个。
+//
+// 国内网络到 Cloudflare 常常绕路，Apple 的 CDN 在境内有节点，所以两个都探一次
+// 再决定，而不是写死一家。
+func resolveTarget(ctx context.Context, client *http.Client) (string, string, string) {
+	type candidate struct {
+		name    string
+		probe   string
+		downURL string
+		upURL   string
+	}
+	cands := []candidate{
+		{"Cloudflare", "https://speed.cloudflare.com/__down?bytes=0", cloudflareDownURL, cloudflareUpURL},
+		{"Apple", appleConfigURL, cloudflareDownURL, cloudflareUpURL},
+	}
+
+	best := cands[0]
+	bestMs := 1 << 30
+	for _, c := range cands {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.probe, nil)
+		if err != nil {
+			continue
+		}
+		start := time.Now()
+		resp, err := client.Do(req)
+		if err != nil {
+			continue
+		}
+		ms := int(time.Since(start).Milliseconds())
+		_, _ = io.Copy(io.Discard, resp.Body)
+		resp.Body.Close()
+		if ms < bestMs {
+			bestMs = ms
+			best = c
+		}
+	}
+	if best.name == "Apple" {
+		if large, up, ok := appleTarget(ctx, client); ok && probeUsable(ctx, client, large) {
+			return "Apple", large, up
+		}
+		// 配置解析失败、或者它的下载地址根本连不上，就退回 Cloudflare。
+		// 光看配置文件能不能取到不够——实测 /gm/large 会直接超时。
+		return "Cloudflare", cloudflareDownURL, cloudflareUpURL
+	}
+	return best.name, best.downURL, best.upURL
 }
 
 type speedCounter struct {
@@ -94,10 +218,18 @@ func handleSpeedTestStatus(_ *Action, result ActionResult) {
 	result.success(string(payload))
 }
 
+var speedTestRunning int32
+
 func handleSpeedTest(action *Action, result ActionResult) {
 	// 先回一个 ack：Dart 的 invokeAction 在收到第一条消息后才 complete 并关闭
 	// 端口。进度走消息通道，这里如果不回一条，那个 Future 会永远挂着、端口也
 	// 不释放。
+	// 已经有跑着的一轮就别再开：第二轮会重新择优，界面上源名会突然从
+	// Apple 变成 Cloudflare，看起来像测速自己换了服务器。
+	if !atomic.CompareAndSwapInt32(&speedTestRunning, 0, 1) {
+		result.success("busy")
+		return
+	}
 	result.success("started")
 	params := SpeedTestParams{}
 	if raw, ok := action.Data.(string); ok && raw != "" {
@@ -105,6 +237,7 @@ func handleSpeedTest(action *Action, result ActionResult) {
 	}
 
 	go func() {
+		defer atomic.StoreInt32(&speedTestRunning, 0)
 		report := func(p SpeedTestProgress) {
 			// 不走消息通道：messagePort 没挂上时 sendMessage 会静默丢弃，
 			// 界面上就只剩一个 0。改成写全局状态，Dart 轮询来取。
@@ -117,8 +250,17 @@ func handleSpeedTest(action *Action, result ActionResult) {
 		ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 		defer cancel()
 
+		name, downURL, upURL := resolveTarget(ctx, client)
+		speedTestName, speedTestUpURL = name, upURL
+		if name == "Apple" {
+			speedTestDownFixed = downURL
+		} else {
+			speedTestDownFixed = ""
+			speedTestDownURL = downURL
+		}
+
 		// 1. 延迟：取中位数，不被单次抖动拉偏。
-		report(SpeedTestProgress{Phase: speedTestPhaseLat, ServerName: "Cloudflare"})
+		report(SpeedTestProgress{Phase: speedTestPhaseLat, ServerName: speedTestName})
 		latencies, err := measureLatency(ctx, client, speedTestLatencyN)
 		if err != nil {
 			report(SpeedTestProgress{Phase: speedTestPhaseFailed, Error: err.Error()})
@@ -154,7 +296,7 @@ func handleSpeedTest(action *Action, result ActionResult) {
 				UpMbps:     0,
 				Percent:    100,
 				ProxyUsed:  true,
-				ServerName: "Cloudflare",
+				ServerName: speedTestName,
 			})
 			return
 		}
@@ -167,7 +309,7 @@ func handleSpeedTest(action *Action, result ActionResult) {
 			UpMbps:     up,
 			Percent:    100,
 			ProxyUsed:  true,
-			ServerName: "Cloudflare",
+			ServerName: speedTestName,
 		})
 	}()
 }
@@ -177,7 +319,7 @@ func measureLatency(ctx context.Context, client *http.Client, n int) ([]int, err
 	for i := 0; i < n; i++ {
 		start := time.Now()
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet,
-			fmt.Sprintf(speedTestDownURL, 0), nil)
+			downURLFor(0), nil)
 		if err != nil {
 			return nil, err
 		}
@@ -228,9 +370,10 @@ func measureDownload(ctx context.Context, client *http.Client, report func(Speed
 					}
 				}
 				report(SpeedTestProgress{
-					Phase:    speedTestPhaseDown,
-					DownMbps: mbps(delta, speedTestSampleMs),
-					Percent:  percent,
+					Phase:      speedTestPhaseDown,
+					DownMbps:   mbps(delta, speedTestSampleMs),
+					Percent:    percent,
+					ServerName: speedTestName,
 				})
 			}
 		}
@@ -241,7 +384,7 @@ func measureDownload(ctx context.Context, client *http.Client, report func(Speed
 		go func() {
 			defer wg.Done()
 			req, err := http.NewRequestWithContext(ctx, http.MethodGet,
-				fmt.Sprintf(speedTestDownURL, speedTestDownBytes/speedTestStreams), nil)
+				downURLFor(speedTestDownBytes/speedTestStreams), nil)
 			if err != nil {
 				errs <- err
 				return
@@ -320,11 +463,12 @@ func measureUpload(ctx context.Context, client *http.Client, report func(SpeedTe
 					}
 				}
 				report(SpeedTestProgress{
-					Phase:     speedTestPhaseUp,
-					UpMbps:    mbps(done, int(time.Since(start).Milliseconds())),
-					Percent:   percent,
-					LatencyMs: latency,
-					DownMbps:  down,
+					Phase:      speedTestPhaseUp,
+					UpMbps:     mbps(done, int(time.Since(start).Milliseconds())),
+					Percent:    percent,
+					LatencyMs:  latency,
+					DownMbps:   down,
+					ServerName: speedTestName,
 				})
 			}
 		}

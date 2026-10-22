@@ -2298,6 +2298,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "نام کاربری (اختیاری)",
     ),
     "value": MessageLookupByLibrary.simpleMessage("مقدار"),
+    "viaProxy": MessageLookupByLibrary.simpleMessage("از طریق پروکسی"),
     "vibrantScheme": MessageLookupByLibrary.simpleMessage("پررنگ"),
     "view": MessageLookupByLibrary.simpleMessage("مشاهده"),
     "viewDetailedIpData": MessageLookupByLibrary.simpleMessage(

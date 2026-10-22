@@ -11199,6 +11199,11 @@ class AppLocalizations {
       args: [],
     );
   }
+
+  /// `via proxy`
+  String get viaProxy {
+    return Intl.message('via proxy', name: 'viaProxy', desc: '', args: []);
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {
