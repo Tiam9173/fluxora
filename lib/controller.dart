@@ -1661,6 +1661,9 @@ class AppController {
     }
   }
 
+  /// 触发一次内核测速。进度通过消息通道回来（见 SpeedTestService）。
+  Future<void> speedTest() => clashCore.speedTest();
+
   /// 内核看门狗：内核意外退出后自动拉起。
   ///
   /// 之前只有托盘菜单里的手动「重启内核」。内核崩掉时界面还是"已连接"，

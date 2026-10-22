@@ -191,6 +191,7 @@ const _$AppMessageTypeEnumMap = {
   AppMessageType.delay: 'delay',
   AppMessageType.request: 'request',
   AppMessageType.loaded: 'loaded',
+  AppMessageType.speedTest: 'speedTest',
 };
 
 _InvokeMessage _$InvokeMessageFromJson(Map<String, dynamic> json) =>

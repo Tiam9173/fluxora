@@ -7,6 +7,56 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'generated/core.freezed.dart';
 part 'generated/core.g.dart';
 
+/// 内核推上来的一帧测速进度。
+///
+/// 字段和 `core/speedtest.go` 的 `SpeedTestProgress` 一一对应。
+class SpeedTestProgress {
+  final String phase;
+  final int latencyMs;
+  final int jitterMs;
+  final double downMbps;
+  final double upMbps;
+  final int percent;
+  final String? error;
+  final String serverName;
+
+  const SpeedTestProgress({
+    this.phase = 'idle',
+    this.latencyMs = 0,
+    this.jitterMs = 0,
+    this.downMbps = 0,
+    this.upMbps = 0,
+    this.percent = 0,
+    this.error,
+    this.serverName = '',
+  });
+
+  factory SpeedTestProgress.fromJson(dynamic json) {
+    if (json is! Map) return const SpeedTestProgress();
+    final map = Map<String, dynamic>.from(json);
+    return SpeedTestProgress(
+      phase: map['phase'] as String? ?? 'idle',
+      latencyMs: (map['latencyMs'] as num?)?.toInt() ?? 0,
+      jitterMs: (map['jitterMs'] as num?)?.toInt() ?? 0,
+      downMbps: (map['downMbps'] as num?)?.toDouble() ?? 0,
+      upMbps: (map['upMbps'] as num?)?.toDouble() ?? 0,
+      percent: (map['percent'] as num?)?.toInt() ?? 0,
+      error: map['error'] as String?,
+      serverName: map['serverName'] as String? ?? '',
+    );
+  }
+
+  bool get isRunning =>
+      phase == 'latency' || phase == 'download' || phase == 'upload';
+
+  bool get isDone => phase == 'done';
+
+  bool get isFailed => phase == 'failed';
+
+  /// 界面上该显示哪个数字：下载阶段看下行，上传阶段看上行。
+  double get headlineMbps => phase == 'upload' ? upMbps : downMbps;
+}
+
 abstract mixin class AppMessageListener {
   void onLog(Log log) {}
 
@@ -15,6 +65,9 @@ abstract mixin class AppMessageListener {
   void onRequest(TrackerInfo connection) {}
 
   void onLoaded(String providerName) {}
+
+  /// 测速进度帧。每 200ms 一帧，界面据此更新仪表和曲线。
+  void onSpeedTest(SpeedTestProgress progress) {}
 }
 
 // abstract mixin class ServiceMessageListener {

@@ -1,0 +1,418 @@
+package main
+
+import (
+	"context"
+	"crypto/tls"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net"
+	"net/http"
+	"sort"
+	"sync"
+	"sync/atomic"
+	"time"
+)
+
+// 测速跑在内核里，走 mihomo 的 dialer——这样测出来的数字是**经过代理**的真实
+// 速度。放在 Dart 侧做单连接下载的话，高延迟线路上会严重偏低，用户会以为代理
+// 有问题。
+const (
+	speedTestDownURL   = "https://speed.cloudflare.com/__down?bytes=%d"
+	speedTestUpURL     = "https://speed.cloudflare.com/__up"
+	speedTestStreams   = 8
+	speedTestLatencyN  = 10
+	speedTestDownBytes = 20_000_000
+	speedTestUpBytes   = 10_000_000
+	speedTestSampleMs  = 200
+	// 爬坡窗口：这段时间内的增量不计入最终速度。
+	speedTestRampWindow  = 2 * time.Second
+	speedTestPhaseIdle   = "idle"
+	speedTestPhaseLat    = "latency"
+	speedTestPhaseDown   = "download"
+	speedTestPhaseUp     = "upload"
+	speedTestPhaseDone   = "done"
+	speedTestPhaseFailed = "failed"
+)
+
+type SpeedTestParams struct {
+	// 留空表示走内核当前选中的出站（也就是用户的代理链路）。
+	Outbound string `json:"outbound"`
+}
+
+// 推给 Dart 的进度帧。字段保持扁平，Dart 侧直接按名字取。
+type SpeedTestProgress struct {
+	Phase      string  `json:"phase"`
+	LatencyMs  int     `json:"latencyMs"`
+	JitterMs   int     `json:"jitterMs"`
+	DownMbps   float64 `json:"downMbps"`
+	UpMbps     float64 `json:"upMbps"`
+	Percent    int     `json:"percent"`
+	Error      string  `json:"error,omitempty"`
+	ProxyUsed  bool    `json:"proxyUsed"`
+	ServerName string  `json:"serverName"`
+}
+
+type speedCounter struct {
+	total int64
+	// 计时过半时记一次总量，用来把爬坡期排除掉。
+	halfwayBytes int64
+	halfwaySet   int32
+}
+
+func newSpeedClient() *http.Client {
+	// 内核自己的 dialer 已经处理了出站选择，这里只需要一个够快的 transport。
+	return &http.Client{
+		Transport: &http.Transport{
+			DialContext: (&net.Dialer{
+				Timeout:   10 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).DialContext,
+			TLSClientConfig:     &tls.Config{InsecureSkipVerify: false},
+			MaxIdleConns:        speedTestStreams * 2,
+			MaxIdleConnsPerHost: speedTestStreams * 2,
+			ForceAttemptHTTP2:   true,
+		},
+	}
+}
+
+var (
+	speedTestMu    sync.Mutex
+	speedTestState = SpeedTestProgress{Phase: speedTestPhaseIdle}
+)
+
+// 供 Dart 轮询：返回最近一帧进度。
+func handleSpeedTestStatus(_ *Action, result ActionResult) {
+	speedTestMu.Lock()
+	current := speedTestState
+	speedTestMu.Unlock()
+	payload, err := json.Marshal(current)
+	if err != nil {
+		result.success("{}")
+		return
+	}
+	result.success(string(payload))
+}
+
+func handleSpeedTest(action *Action, result ActionResult) {
+	// 先回一个 ack：Dart 的 invokeAction 在收到第一条消息后才 complete 并关闭
+	// 端口。进度走消息通道，这里如果不回一条，那个 Future 会永远挂着、端口也
+	// 不释放。
+	result.success("started")
+	params := SpeedTestParams{}
+	if raw, ok := action.Data.(string); ok && raw != "" {
+		_ = json.Unmarshal([]byte(raw), &params)
+	}
+
+	go func() {
+		report := func(p SpeedTestProgress) {
+			// 不走消息通道：messagePort 没挂上时 sendMessage 会静默丢弃，
+			// 界面上就只剩一个 0。改成写全局状态，Dart 轮询来取。
+			speedTestMu.Lock()
+			speedTestState = p
+			speedTestMu.Unlock()
+		}
+
+		client := newSpeedClient()
+		ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
+		defer cancel()
+
+		// 1. 延迟：取中位数，不被单次抖动拉偏。
+		report(SpeedTestProgress{Phase: speedTestPhaseLat, ServerName: "Cloudflare"})
+		latencies, err := measureLatency(ctx, client, speedTestLatencyN)
+		if err != nil {
+			report(SpeedTestProgress{Phase: speedTestPhaseFailed, Error: err.Error()})
+			return
+		}
+		report(SpeedTestProgress{
+			Phase:     speedTestPhaseLat,
+			LatencyMs: median(latencies),
+			JitterMs:  jitter(latencies),
+			Percent:   10,
+		})
+
+		// 2. 下载
+		down, err := measureDownload(ctx, client, report)
+		if err != nil {
+			report(SpeedTestProgress{Phase: speedTestPhaseFailed, Error: err.Error()})
+			return
+		}
+
+		// 3. 上传
+		// 上传单独给一个上限：__up 有时候会吊着连接不返回，卡住就永远没有
+		// done 帧，界面上会一直停在"上传中"。
+		uctx, ucancel := context.WithTimeout(ctx, 20*time.Second)
+		up, err := measureUpload(uctx, client, report, median(latencies), down)
+		ucancel()
+		if err != nil && up == 0 {
+			// 上传失败不该把整轮结果作废：延迟和下载已经测到了，照样给结论。
+			report(SpeedTestProgress{
+				Phase:      speedTestPhaseDone,
+				LatencyMs:  median(latencies),
+				JitterMs:   jitter(latencies),
+				DownMbps:   down,
+				UpMbps:     0,
+				Percent:    100,
+				ProxyUsed:  true,
+				ServerName: "Cloudflare",
+			})
+			return
+		}
+
+		report(SpeedTestProgress{
+			Phase:      speedTestPhaseDone,
+			LatencyMs:  median(latencies),
+			JitterMs:   jitter(latencies),
+			DownMbps:   down,
+			UpMbps:     up,
+			Percent:    100,
+			ProxyUsed:  true,
+			ServerName: "Cloudflare",
+		})
+	}()
+}
+
+func measureLatency(ctx context.Context, client *http.Client, n int) ([]int, error) {
+	out := make([]int, 0, n)
+	for i := 0; i < n; i++ {
+		start := time.Now()
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet,
+			fmt.Sprintf(speedTestDownURL, 0), nil)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := client.Do(req)
+		if err != nil {
+			return nil, err
+		}
+		// 只算到响应头：把 body 下载时间算进延迟会把读数抬高一倍。
+		elapsed := int(time.Since(start).Milliseconds())
+		_, _ = io.Copy(io.Discard, resp.Body)
+		resp.Body.Close()
+		out = append(out, elapsed)
+	}
+	return out, nil
+}
+
+func measureDownload(ctx context.Context, client *http.Client, report func(SpeedTestProgress)) (float64, error) {
+	counter := &speedCounter{}
+	start := time.Now()
+	var wg sync.WaitGroup
+	errs := make(chan error, speedTestStreams)
+
+	stopSampling := make(chan struct{})
+	go func() {
+		ticker := time.NewTicker(speedTestSampleMs * time.Millisecond)
+		defer ticker.Stop()
+		var last int64
+		for {
+			select {
+			case <-stopSampling:
+				return
+			case <-ticker.C:
+				cur := atomic.LoadInt64(&counter.total)
+				if atomic.LoadInt32(&counter.halfwaySet) == 0 &&
+					time.Since(start) > speedTestRampWindow {
+					atomic.StoreInt64(&counter.halfwayBytes, cur)
+					atomic.StoreInt32(&counter.halfwaySet, 1)
+				}
+				delta := cur - last
+				last = cur
+				elapsed := time.Since(start).Seconds()
+				// 前 30% 是爬坡期，速度还没稳定，报上去只会让人误判。
+				percent := 10
+				if elapsed > 0 {
+					percent = 10 + int(40*float64(cur)/float64(speedTestDownBytes))
+					if percent > 50 {
+						percent = 50
+					}
+				}
+				report(SpeedTestProgress{
+					Phase:    speedTestPhaseDown,
+					DownMbps: mbps(delta, speedTestSampleMs),
+					Percent:  percent,
+				})
+			}
+		}
+	}()
+
+	for i := 0; i < speedTestStreams; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet,
+				fmt.Sprintf(speedTestDownURL, speedTestDownBytes/speedTestStreams), nil)
+			if err != nil {
+				errs <- err
+				return
+			}
+			resp, err := client.Do(req)
+			if err != nil {
+				errs <- err
+				return
+			}
+			defer resp.Body.Close()
+			buf := make([]byte, 64*1024)
+			for {
+				n, err := resp.Body.Read(buf)
+				if n > 0 {
+					atomic.AddInt64(&counter.total, int64(n))
+				}
+				if err != nil {
+					if err != io.EOF {
+						errs <- err
+					}
+					return
+				}
+			}
+		}()
+	}
+	wg.Wait()
+	close(stopSampling)
+	close(errs)
+
+	if err := <-errs; err != nil && atomic.LoadInt64(&counter.total) == 0 {
+		return 0, err
+	}
+	elapsed := time.Since(start).Seconds()
+	if elapsed <= 0 {
+		return 0, nil
+	}
+	// 前一半时间是爬坡（TCP 慢启动、并发流建立），只取后半段的增量算速度。
+	// 之前虽然注释这么写，实现却是全程平均，所以读数偏保守。
+	half := int64(atomic.LoadInt64(&counter.halfwayBytes))
+	tail := atomic.LoadInt64(&counter.total) - half
+	if half > 0 && tail > 0 {
+		return mbps(tail, int(elapsed*500)), nil
+	}
+	return mbps(atomic.LoadInt64(&counter.total), int(elapsed*1000)), nil
+}
+
+func measureUpload(ctx context.Context, client *http.Client, report func(SpeedTestProgress), latency int, down float64) (float64, error) {
+	// 多流上传：单条 TCP 在高延迟链路上跑不满带宽，10MB 单流测出来的数会明显
+	// 偏低（实测 14 Mbps 就是被这个限制的）。
+	const streams = 4
+	chunk := make([]byte, speedTestUpBytes/streams)
+	for i := range chunk {
+		chunk[i] = byte(i)
+	}
+
+	var sent int64
+	var wg sync.WaitGroup
+	errs := make(chan error, streams)
+	start := time.Now()
+
+	stop := make(chan struct{})
+	go func() {
+		ticker := time.NewTicker(speedTestSampleMs * time.Millisecond)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-stop:
+				return
+			case <-ticker.C:
+				done := atomic.LoadInt64(&sent)
+				percent := 50
+				if done > 0 {
+					percent = 50 + int(50*float64(done)/float64(speedTestUpBytes))
+					if percent > 99 {
+						percent = 99
+					}
+				}
+				report(SpeedTestProgress{
+					Phase:     speedTestPhaseUp,
+					UpMbps:    mbps(done, int(time.Since(start).Milliseconds())),
+					Percent:   percent,
+					LatencyMs: latency,
+					DownMbps:  down,
+				})
+			}
+		}
+	}()
+
+	for i := 0; i < streams; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			req, err := http.NewRequestWithContext(ctx, http.MethodPost, speedTestUpURL,
+				&countReader{data: chunk, onRead: func(n int) {
+					atomic.AddInt64(&sent, int64(n))
+				}})
+			if err != nil {
+				errs <- err
+				return
+			}
+			req.Header.Set("Content-Type", "application/octet-stream")
+			resp, err := client.Do(req)
+			if err != nil {
+				errs <- err
+				return
+			}
+			defer resp.Body.Close()
+			_, _ = io.Copy(io.Discard, resp.Body)
+		}()
+	}
+	wg.Wait()
+	close(stop)
+	close(errs)
+
+	total := atomic.LoadInt64(&sent)
+	if err := <-errs; err != nil && total == 0 {
+		return 0, err
+	}
+	elapsed := time.Since(start).Seconds()
+	if elapsed <= 0 {
+		return 0, nil
+	}
+	return mbps(total, int(elapsed*1000)), nil
+}
+
+// 边读边报进度，用来统计上传过程中实际发出去多少字节。
+type countReader struct {
+	data   []byte
+	off    int
+	onRead func(int)
+}
+
+func (r *countReader) Read(p []byte) (int, error) {
+	if r.off >= len(r.data) {
+		return 0, io.EOF
+	}
+	n := copy(p, r.data[r.off:])
+	r.off += n
+	if r.onRead != nil {
+		r.onRead(n)
+	}
+	return n, nil
+}
+
+func mbps(bytes int64, windowMs int) float64 {
+	if windowMs <= 0 {
+		return 0
+	}
+	return float64(bytes) * 8 / 1_000_000 / (float64(windowMs) / 1000)
+}
+
+func median(values []int) int {
+	if len(values) == 0 {
+		return 0
+	}
+	sorted := append([]int(nil), values...)
+	sort.Ints(sorted)
+	return sorted[len(sorted)/2]
+}
+
+func jitter(values []int) int {
+	if len(values) < 2 {
+		return 0
+	}
+	var sum int
+	for i := 1; i < len(values); i++ {
+		d := values[i] - values[i-1]
+		if d < 0 {
+			d = -d
+		}
+		sum += d
+	}
+	return sum / (len(values) - 1)
+}

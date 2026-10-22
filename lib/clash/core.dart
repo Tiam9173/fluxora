@@ -454,6 +454,56 @@ class ClashCore {
     clashCoreForget(clashInterface.clearLogs(), 'clearLogs');
   }
 
+  /// 触发内核测速。进度通过消息通道回来，不走返回值。
+  ///
+  /// 只有 libclash 这条路径能发通用 action；桌面走 HTTP 服务的实现没有这个
+  /// 入口，所以这里显式判断，而不是假设一定有。
+  /// 拉一次测速进度。内核把最近一帧存在内存里，这里取回来解析。
+  Future<SpeedTestProgress> speedTestStatus() async {
+    final raw = await speedTestStatusRaw();
+    try {
+      // invokeAction 的返回是 ActionResult 信封：
+      //   {"id":..,"method":"speedTestStatus","data":"{\"phase\":..}"}
+      // 真正的进度是里面那层字符串，要再解一次。之前直接拿外层当进度解析，
+      // 字段全对不上，于是永远显示 0。
+      dynamic decoded = jsonDecode(raw);
+      if (decoded is Map && decoded['data'] is String) {
+        decoded = jsonDecode(decoded['data'] as String);
+      }
+      return SpeedTestProgress.fromJson(decoded);
+    } catch (_) {
+      return const SpeedTestProgress();
+    }
+  }
+
+  /// 原始返回串。排查"到底是没分发到、还是解析错了"时，原样显示它最快。
+  Future<String> speedTestStatusRaw() async {
+    // clashInterface 的实际类型是 ClashLib，不是 ClashLibHandler——后者只是
+    // 另一层 FFI 包装。之前按 ClashLibHandler 判断，永远为假，整个调用被跳过。
+    if (clashInterface is! ClashLib) {
+      return 'not-lib-handler';
+    }
+    return ClashLibHandler().invokeAction(
+      jsonEncode({
+        'id': DateTime.now().microsecondsSinceEpoch.toString(),
+        'method': 'speedTestStatus',
+        'data': '',
+      }),
+    );
+  }
+
+  Future<void> speedTest() async {
+    if (clashInterface is ClashLib) {
+      await ClashLibHandler().invokeAction(
+        jsonEncode({
+          'id': DateTime.now().microsecondsSinceEpoch.toString(),
+          'method': 'speedTest',
+          'data': '',
+        }),
+      );
+    }
+  }
+
   Future<void> requestGc({bool forceFreeOSMemory = false}) async {
     await clashInterface.forceGc(forceFreeOSMemory: forceFreeOSMemory);
   }

@@ -58,6 +58,12 @@ func handleAction(action *Action, result ActionResult) {
 		handleForceGc(forceFreeOSMemory)
 		result.success(true)
 		return
+	case speedTestMethod:
+		handleSpeedTest(action, result)
+		return
+	case speedTestStatusMethod:
+		handleSpeedTestStatus(action, result)
+		return
 	case shutdownMethod:
 		result.success(handleShutdown())
 		return

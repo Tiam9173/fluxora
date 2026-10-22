@@ -6,6 +6,8 @@ import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'speed_test_card.dart';
+
 class NetworkSpeed extends ConsumerWidget {
   const NetworkSpeed({super.key});
 
@@ -43,7 +45,10 @@ class NetworkSpeed extends ConsumerWidget {
       height: getWidgetHeight(2),
       child: FluxoraCard(
         onTap: () {
-          globalState.openUrl('https://ptclspeed.speedtestcustom.com');
+          showDialog(
+            context: context,
+            builder: (_) => const SpeedTestCard(),
+          );
         },
         info: Info(
           label: appLocalizations.networkSpeed,
