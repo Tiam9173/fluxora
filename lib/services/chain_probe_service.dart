@@ -27,7 +27,11 @@ enum ChainHealthStatus {
   degraded('部分受限'),
   failed('异常'),
   unavailable('不可用'),
-  cancelled('已取消');
+  cancelled('已取消'),
+
+  /// 没有配置这一跳。和 failed 严格区分：链路是完整的，只是没接上这一环，
+  /// 标红会让人以为节点坏了，实际是缺配置。
+  unconfigured('未配置');
 
   final String label;
   const ChainHealthStatus(this.label);
@@ -65,13 +69,17 @@ enum HopProbeStatus {
   timeout('超时'),
   degraded('部分受限'),
   unavailable('不可用'),
-  cancelled('已取消');
+  cancelled('已取消'),
+
+  /// 没配置这一跳。和 failed 严格区分：链路是完整的，只是缺配置。
+  unconfigured('未配置');
 
   final String label;
   const HopProbeStatus(this.label);
 
   ChainHealthStatus toHealthStatus() {
     return switch (this) {
+      HopProbeStatus.unconfigured => ChainHealthStatus.unknown,
       HopProbeStatus.unknown => ChainHealthStatus.unknown,
       HopProbeStatus.checking => ChainHealthStatus.checking,
       HopProbeStatus.healthy => ChainHealthStatus.healthy,
@@ -574,6 +582,7 @@ class ChainProbeService implements IChainProbeService {
         ? <String>[hop1, hop2]
         : config.effectiveFrontHops;
     final String exitNode = legacyThreeHop ? hop3 : hop2;
+
     final hops = <HopProbeState>[
       for (var i = 0; i < frontChain.length; i++)
         HopProbeState(
@@ -783,6 +792,30 @@ class ChainProbeService implements IChainProbeService {
 
     if (cancelToken?.isCancelled == true) {
       return ChainProbeReport.cancelled(mode: mode, timestamp: DateTime.now());
+    }
+
+    // 没配出口不是"探测失败"。以前这里继续往下探，探不通就把结果记成
+    // 中转/出口失败，界面上中转明明是好的却标红。
+    if (exitNode.trim().isEmpty) {
+      hops[exitIndex] = hops[exitIndex].copyWith(
+        status: HopProbeStatus.unconfigured,
+        healthStatus: ChainHealthStatus.failed,
+        diagnosticTip: '未配置落地出口节点，链路到中转为止是通的',
+        errorMessage: null,
+        testedAt: DateTime.now(),
+      );
+      final unconfiguredReport = ChainProbeReport(
+        mode: mode,
+        isOverallHealthy: false,
+        healthStatus: ChainHealthStatus.failed,
+        hops: List.unmodifiable(hops),
+        finalExit: null,
+        errorCode: ChainProbeErrorCodes.none,
+        rootCauseAnalysis: '未配置落地出口节点',
+        timestamp: DateTime.now(),
+      );
+      onProgress?.call(unconfiguredReport);
+      return unconfiguredReport;
     }
 
     final hop2Delay = await _testDelay(

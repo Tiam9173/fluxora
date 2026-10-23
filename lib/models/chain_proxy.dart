@@ -994,6 +994,26 @@ class ChainProxyConfig {
       }
       proxiesList.add(clone);
       chainTerminal = shadowName;
+
+      // 每一跳都可以单独当出口：链式出口不只有"最后一跳"，任意一跳都能收口。
+      // 这样三跳以上也成立，不是只有固定的第二跳才有出口变体。
+      final hopExitName = exitShadowName(hopName);
+      final hopExitExists =
+          proxyConfigMap.containsKey(hopExitName) ||
+          proxiesList.any((p) => p is Map && p['name'] == hopExitName);
+      if (!hopExitExists) {
+        final hopExit = Map<String, dynamic>.from(base);
+        hopExit['name'] = hopExitName;
+        hopExit['dialer-proxy'] = chainTerminal == shadowName
+            ? (frontChain[i - 1] == 'DIRECT'
+                  ? null
+                  : frontChain[i - 1])
+            : chainTerminal;
+        if (hopExit['dialer-proxy'] == null) {
+          hopExit.remove('dialer-proxy');
+        }
+        proxiesList.add(hopExit);
+      }
     }
 
     void ensureDedicatedHopGroup() {
@@ -1083,6 +1103,24 @@ class ChainProxyConfig {
           shadowTransit.remove('dialer-proxy');
         }
         proxiesList.add(shadowTransit);
+
+        // 中转自己也能当出口：只经入口拨号，不再往下接落地。
+        // 这样"中转"和"住宅 IP"就是同一层概念——都是链式出口，只是跳数不同。
+        final transitAsExitName = exitShadowName(h2Name);
+        if (!proxyConfigMap.containsKey(transitAsExitName) &&
+            !proxiesList.any(
+              (p) => p is Map && p['name'] == transitAsExitName,
+            )) {
+          final transitExit = Map<String, dynamic>.from(h2Config);
+          transitExit['name'] = transitAsExitName;
+          if (chainTerminal != 'DIRECT') {
+            transitExit['dialer-proxy'] = chainTerminal;
+          } else {
+            transitExit.remove('dialer-proxy');
+          }
+          proxiesList.add(transitExit);
+          injectedProxyNames.add(transitAsExitName);
+        }
 
         // Shadow Exit Node (Hop 3)
         final shadowExitName = exitShadowName(h3Name);
@@ -1307,6 +1345,62 @@ class ChainProxyConfig {
       }
       dns['fake-ip-filter'] = fifList;
     }
+
+    // 把链式节点搬进独立的 provider。
+    //
+    // 以前这些节点直接塞进订阅的 proxies 列表，关闭时要靠名字前缀一个个删掉，
+    // 漏一个就留在用户的节点列表里。挂成 provider 之后，订阅节点完全不被改动，
+    // 关闭时只要不注入这个 provider，就天然干净。
+    final chainNodes = <dynamic>[];
+    if (rawProxies is List) {
+      chainNodes.addAll(
+        rawProxies.where(
+          (p) => p is Map && _isChainNodeName(p['name']?.toString()),
+        ),
+      );
+      rawProxies.removeWhere(
+        (p) => p is Map && _isChainNodeName(p['name']?.toString()),
+      );
+    }
+    if (chainNodes.isNotEmpty) {
+      final existing = rawConfig['proxy-providers'];
+      final providerMap = existing is Map
+          ? Map<String, dynamic>.from(existing)
+          : <String, dynamic>{};
+      providerMap['fluxora_chain'] = {
+        'type': 'inline',
+        'payload': chainNodes,
+      };
+      rawConfig['proxy-providers'] = providerMap;
+
+      final movedNames = chainNodes
+          .map((p) => (p as Map)['name']?.toString() ?? '')
+          .where((n) => n.isNotEmpty)
+          .toSet();
+      if (rawConfig['proxy-groups'] is List) {
+        for (final g in rawConfig['proxy-groups'] as List) {
+          if (g is! Map) continue;
+          final list = g['proxies'];
+          if (list is! List) continue;
+          final hit = list.any((e) => movedNames.contains(e?.toString()));
+          if (!hit) continue;
+          list.removeWhere((e) => movedNames.contains(e?.toString()));
+          final use = g['use'] is List
+              ? List<dynamic>.from(g['use'] as List)
+              : <dynamic>[];
+          if (!use.contains('fluxora_chain')) use.add('fluxora_chain');
+          g['use'] = use;
+        }
+      }
+    }
+  }
+
+  /// 链式生成的节点名：中转、出口，以及多跳时克隆出来的中间跳。
+  static bool _isChainNodeName(String? name) {
+    if (name == null || name.isEmpty) return false;
+    return name.startsWith('🔗中转·') ||
+        name.startsWith('🔗出口·') ||
+        name.startsWith('🔗第');
   }
 }
 

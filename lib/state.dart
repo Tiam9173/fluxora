@@ -1181,8 +1181,12 @@ class GlobalState {
     // Apply Cloudflare WARP on Proxy configuration if enabled (including Google anti-redirect & AI unlock rules)
     warpManager.applyToClashConfig(rawConfig);
 
-    // Apply profile pre-proxy and landing-proxy chain configuration if enabled (v2rayN-style chaining)
-    profileChainManager.applyToClashConfig(rawConfig, targetProfile.id);
+    // 旧的两槽位链路（profile_chain_dialog）仍然保留，但它会把**所有**节点的
+    // dialer-proxy 改成 preProxy。新链路系统已经写好了 dialer-proxy，这里再跑
+    // 一遍会把结果整个覆盖掉——两套都开时，以新系统为准。
+    if (!chainProxyManager.config.enable) {
+      profileChainManager.applyToClashConfig(rawConfig, targetProfile.id);
+    }
 
     return rawConfig;
   }

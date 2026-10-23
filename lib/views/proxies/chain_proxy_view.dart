@@ -1287,7 +1287,6 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
     // node is `ChainProxyConfig.effectiveExitNode` — hop3Node in three-hop mode,
     // hop2Node / the active landing proxy in two-hop mode. That is the node the
     // probe actually measured, so label and probed status agree.
-    final isThreeHop = config.hopMode == ChainHopMode.threeHop;
     final exitName = config.effectiveExitNode.trim();
     final exitLabel = exitName.isEmpty
         ? appLocalizations.chainHopNotSelected
@@ -1301,6 +1300,31 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
     TopologySegmentState probedState(String name, int hopIndex) {
       if (!config.enable) return TopologySegmentState.notProbed;
       if (name.trim().isEmpty) return TopologySegmentState.notProbed;
+      // 优先按**位置**取，而不是按名字匹配。
+      //
+      // hops 的顺序和 frontHops 一致（入口 → 各中转 → 落地），按位置取永远对得上；
+      // 按名字匹配只要配置里的字符串和探测结果里的差一个空格，就会匹配不上，
+      // 进而落到"无证据"分支，出现明明探到了却显示未知/红色的情况。
+      final hops = probeReport?.hops ?? const <HopProbeState>[];
+      final i = hopIndex - 1;
+      if (i >= 0 && i < hops.length) {
+        final hop = hops[i];
+        if (hop.status == HopProbeStatus.failed ||
+            hop.status == HopProbeStatus.timeout ||
+            hop.status == HopProbeStatus.unavailable) {
+          return TopologySegmentState.failed;
+        }
+        if (hop.status == HopProbeStatus.checking) {
+          return TopologySegmentState.checking;
+        }
+        if (hop.healthStatus == ChainHealthStatus.healthy ||
+            hop.healthStatus == ChainHealthStatus.degraded) {
+          return TopologySegmentState.healthy;
+        }
+        if (hop.status == HopProbeStatus.unconfigured) {
+          return TopologySegmentState.notProbed;
+        }
+      }
       return resolveTopologySegmentState(
         nodeName: name,
         hopIndex: hopIndex,
@@ -1313,9 +1337,14 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
       1,
     );
 
+    // 落地是 hops 里的**最后一跳**，索引 = 前置跳数 + 1。
+    //
+    // 这里以前写死 `isThreeHop ? 3 : 2`，但中转现在存在 frontHops 里、hopMode
+    // 未必是 threeHop —— 于是落地被算到"第二跳"，取到的是中转的探测结果，
+    // 拓扑图上落地就跟着中转一起变绿，和明细里"落地握手失败"对不上。
     final TopologySegmentState exitState = probedState(
       exitName,
-      isThreeHop ? 3 : 2,
+      config.effectiveFrontHops.length + 1,
     );
     // item 2 — the two edge nodes used to be pinned to `notProbed`, so the
     // client→hop and landing→target segments never reacted to a probe at all.
@@ -1360,12 +1389,29 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
       ),
     ];
 
+    // 横幅必须和下方明细同源。
+    //
+    // 明细渲染的是 `probeReport.hops`，而这里以前扫的是 `probedSegments`——
+    // 两套索引一旦错位，就会把"落地握手失败"报成"中转探测失败"，界面上中转
+    // 明明是绿的却被标红。现在统一从 hops 推导。
     ({String label, String name, TopologySegmentState state})? failedSegment;
-    for (final segment in probedSegments) {
-      if (segment.state == TopologySegmentState.failed) {
-        failedSegment = segment;
-        break;
-      }
+    final reportHops = probeReport?.hops ?? const <HopProbeState>[];
+    for (var i = 0; i < reportHops.length; i++) {
+      final hop = reportHops[i];
+      final broken = hop.status == HopProbeStatus.failed ||
+          hop.status == HopProbeStatus.timeout ||
+          hop.status == HopProbeStatus.unavailable;
+      if (!broken) continue;
+      failedSegment = (
+        label: i == 0
+            ? appLocalizations.topologyHop
+            : (i == reportHops.length - 1
+                  ? appLocalizations.topologyLanding
+                  : appLocalizations.chainRelayIndex('$i')),
+        name: hop.nodeName,
+        state: TopologySegmentState.failed,
+      );
+      break;
     }
     final bool anyChecking = probedSegments.any(
       (s) => s.state == TopologySegmentState.checking,
