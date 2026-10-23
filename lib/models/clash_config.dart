@@ -429,7 +429,9 @@ abstract class Dns with _$Dns {
     @JsonKey(name: 'fake-ip-filter-mode')
     FilterMode fakeIpFilterMode,
     @Default([
-      '*',
+      // 这里**不能**放 `*`：配合 `fake-ip-filter-mode: blacklist`，它会把
+      // 所有域名排除在 fake-ip 之外，等于把 fake-ip 整个关掉——每个域名都要
+      // 先做一次真实 DNS 才建连。访问境外站点时这一步既慢又容易被污染。
       'geosite:private',
       'geosite:category-ntp',
       'geosite:geolocation-cn',
