@@ -971,6 +971,12 @@ class AppController {
 
   Future<void> _applyProfile() async {
     _invalidateCoreReads();
+    // 先留一份旧延迟：以前这里直接清空，等于用户改个设置、切个跳板，代理页
+    // 上所有节点的延迟数字就全没了，得重新测一遍。清空本身是必要的（apply
+    // 期间不该读到旧数据），但 apply 完成后要把「节点还在」的那些放回去。
+    final previousDelays = Map<String, Map<String, int?>>.from(
+      _ref.read(delayDataSourceProvider),
+    );
     _ref.read(delayDataSourceProvider.notifier).value = {};
     unawaited(clashCore.requestGc());
     final configured = await _setupCoreConfig();
@@ -978,7 +984,31 @@ class AppController {
     final providers = await clashCore.getExternalProviders();
     _ref.read(providersProvider.notifier).value = providers;
     await updateGroups(preloadedProviders: providers);
+    _restoreKnownDelays(previousDelays);
     scheduleIdleGc();
+  }
+
+  /// 把 apply 之前测到的延迟放回去，只保留仍然存在的节点。
+  ///
+  /// 判断依据是加载后的分组里出现过的节点名——名字变了、节点被删了，那条
+  /// 延迟自然就不该留着。
+  void _restoreKnownDelays(Map<String, Map<String, int?>> previous) {
+    if (previous.isEmpty) return;
+    final names = <String>{
+      for (final group in _ref.read(groupsProvider))
+        for (final proxy in group.all) proxy.name,
+    };
+    if (names.isEmpty) return;
+    final kept = <String, Map<String, int?>>{
+      for (final entry in previous.entries)
+        if (names.contains(entry.key)) entry.key: entry.value,
+    };
+    if (kept.isEmpty) return;
+    // 以新写入的为准：apply 期间可能已经有节点测过速。
+    _ref.read(delayDataSourceProvider.notifier).value = {
+      ...kept,
+      ..._ref.read(delayDataSourceProvider),
+    };
   }
 
   Future<void> applyProfile({bool silence = false}) {
