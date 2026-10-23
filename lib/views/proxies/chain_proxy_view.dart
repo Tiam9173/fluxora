@@ -1,7 +1,6 @@
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/manager/chain_proxy_manager.dart';
-import 'package:fluxora/models/chain_failover.dart';
 import 'package:fluxora/models/chain_proxy.dart';
 import 'package:fluxora/providers/chain_proxy.dart';
 import 'package:fluxora/state.dart';
@@ -9,7 +8,6 @@ import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:fluxora/models/chain_fallback_pool.dart';
 import 'package:fluxora/models/latency_freshness.dart';
 import 'package:fluxora/services/chain_probe_service.dart';
 import 'package:fluxora/services/residential_ip_check_service.dart';
@@ -447,14 +445,6 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
           ),
           const SizedBox(height: 12),
 
-          // 1b. 故障转移卡片：功能尚未完成验证，先从界面隐藏。
-          // 逻辑（`_buildFailoverCard` / ChainFailoverService）保持完整，改
-          // 这里的开关就能恢复。
-          if (_showFailoverCard) ...[
-            _buildFailoverCard(context, config),
-            const SizedBox(height: 12),
-          ],
-
           // 1c. 住宅 IP 体检
           _buildResidentialIpCheckCard(context, config),
           const SizedBox(height: 12),
@@ -749,151 +739,8 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
     );
   }
 
-  /// 故障转移入口暂时隐藏（功能未验证完成）。改 true 即恢复显示。
-  static const bool _showFailoverCard = false;
 
-  /// P1.1-F — manual failover entry point.
-  ///
-  /// There is deliberately **no automatic trigger** here: the health-check
-  /// timer owns that (P1.1-F2). The button is enabled only when the chain is
-  /// enabled, at least one usable fallback candidate exists, and no session is
-  /// already running. While a session runs it is disabled and shows the live
-  /// `progress.message`; the outcome is surfaced through `result.rootCause`.
-  Widget _buildFailoverCard(BuildContext context, ChainProxyConfig config) {
-    final ChainFailoverProgress? progress = ref.watch(
-      chainFailoverProgressProvider,
-    );
-    final isFailingOver = ref.watch(isFailingOverProvider);
-    final pool = ref.watch(chainProxyConfigProvider).fallbackPool;
 
-    final hasCandidate = <ChainFallbackCandidate>[
-      ...pool.entryCandidates,
-      ...pool.relayCandidates,
-      ...pool.exitCandidates,
-    ].any((c) => c.enabled);
-
-    final canTrigger = config.enable && hasCandidate && !isFailingOver;
-
-    final String subtitle;
-    if (isFailingOver && progress != null) {
-      subtitle = progress.message;
-    } else if (!config.enable) {
-      subtitle = appLocalizations.failoverEnableFirst;
-    } else if (!hasCandidate) {
-      subtitle = appLocalizations.failoverNoCandidates;
-    } else {
-      subtitle = appLocalizations.failoverManualHint;
-    }
-
-    // P1.3-B: the pool is the failover input, so it is managed here. Only the
-    // roles the current hop mode actually uses are offered.
-    // RC.10-A: three-hop is no longer offered, so only the two-hop roles remain.
-    final roles = const [
-      FallbackCandidateRole.entry,
-      FallbackCandidateRole.exit,
-    ];
-
-    return CommonCard(
-      type: CommonCardType.filled,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          ListItem(
-            leading: const Icon(Icons.swap_horiz_rounded, size: 28),
-            title: Text(
-              appLocalizations.failover,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: Text(subtitle),
-          ),
-          const SizedBox(height: 8),
-          // P0: the automatic failover loop previously had no user-facing
-          // control, so the feature could never be turned on at all. This switch
-          // is the only writer of `config.autoFailover`; toggling it persists the
-          // flag and starts / stops the health-check loop (see
-          // `ChainProxyManager.setAutoFailover`).
-          ListItem(
-            leading: Icon(
-              config.autoFailover
-                  ? Icons.autorenew
-                  : Icons.pause_circle_outline,
-            ),
-            title: Text(appLocalizations.autoFailover),
-            subtitle: Text(
-              config.autoFailover
-                  ? appLocalizations.autoFailoverOnDesc
-                  : appLocalizations.autoFailoverOffDesc,
-            ),
-            trailing: Switch(
-              value: config.autoFailover,
-              onChanged: (val) => chainProxyManager.setAutoFailover(val),
-            ),
-          ),
-          const Divider(height: 1, indent: 16, endIndent: 16),
-          const SizedBox(height: 8),
-          // Without candidates the chain probe has no pool candidate to credit
-          // and failover has nothing to switch to, so the pool is editable here.
-          for (final role in roles)
-            _buildPoolRoleRow(context, role, pool.getCandidatesByRole(role)),
-          // RC.8: with an empty pool the button below can only fail, so say what
-          // to do about it. The advice points at the `+` controls directly above
-          // — the real UI — rather than inventing a navigation entry.
-          if (config.enable && !hasCandidate)
-            Padding(
-              padding: const EdgeInsets.only(top: 4, bottom: 4),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.info_outline_rounded,
-                    size: 16,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      appLocalizations.failoverNoCandidatesAdvice,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          const SizedBox(height: 8),
-          FilledButton.icon(
-            onPressed: canTrigger ? _triggerFailover : null,
-            icon: isFailingOver
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.play_arrow_rounded),
-            label: Text(
-              isFailingOver
-                  ? appLocalizations.failoverInProgress
-                  : appLocalizations.failoverTrigger,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Localized label of a fallback-pool role.
-  ///
-  /// `FallbackCandidateRole.label` is a hard-coded Chinese string baked into the
-  /// enum, so the view maps the role to an l10n key instead of showing it
-  /// verbatim. The enum itself is left untouched.
-  String _roleLabel(FallbackCandidateRole role) {
-    return switch (role) {
-      FallbackCandidateRole.entry => appLocalizations.roleEntry,
-      FallbackCandidateRole.relay => appLocalizations.roleRelay,
-      FallbackCandidateRole.exit => appLocalizations.roleExit,
-    };
-  }
 
   /// 探针的诊断信息。
   ///
@@ -1209,73 +1056,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
     );
   }
 
-  /// One editable role bucket of the fallback pool. Adding reuses the existing
-  /// node picker; the manager keeps it idempotent and persists it.
-  Widget _buildPoolRoleRow(
-    BuildContext context,
-    FallbackCandidateRole role,
-    List<ChainFallbackCandidate> candidates,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 64,
-            child: Text(
-              _roleLabel(role),
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ),
-          Expanded(
-            child: Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                for (final c in candidates)
-                  InputChip(
-                    label: Text(c.nodeName),
-                    onDeleted: () => chainProxyManager.removeFallbackCandidate(
-                      nodeName: c.nodeName,
-                      role: role,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline),
-            tooltip: appLocalizations.addRoleCandidate(_roleLabel(role)),
-            onPressed: () => showChainHopPicker(
-              context: context,
-              title: appLocalizations.addRoleFallbackCandidate(_roleLabel(role)),
-              excludeNames: candidates.map((c) => c.nodeName).toSet(),
-              onSelect: (name) => chainProxyManager.addFallbackCandidate(
-                nodeName: name,
-                role: role,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
-  Future<void> _triggerFailover() async {
-    final manager = ref.read(chainProxyConfigProvider);
-    final result = await manager.triggerAutoFailover(
-      triggerReason: appLocalizations.failoverTriggerReason,
-      bypassDampening: true,
-    );
-    if (!mounted) return;
-    // The message is built from the REAL result — never from an assumed one.
-    // `rootCause` is kept verbatim so a failure still says what actually
-    // happened instead of a generic apology.
-    final message = result.isSuccess
-        ? appLocalizations.failoverSuccess(result.switchedNodeName ?? '')
-        : appLocalizations.failoverFailed(result.rootCause ?? '');
-    context.showSnackBar(message);
-  }
 
   Widget _buildTopologyCard(
     BuildContext context,
