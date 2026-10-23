@@ -1274,6 +1274,25 @@ class ChainProxyManager extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 把单跳结果并入当前报告并推给 UI。
+  ///
+  /// 探测是串行的，逐跳上报能把「等待第一行结果」的时间从整轮十几秒压到
+  /// 单跳的 2–5 秒。只在 `_lastProbeReport` 存在时合并——它由 `onProgress`
+  /// 在探测开始时写入，那时每一跳都还是 pending 状态。
+  void _publishHopProgress(HopProbeState hop) {
+    final current = _lastProbeReport;
+    if (current == null || current.isCancelled) return;
+    final hops = List<HopProbeState>.from(current.hops);
+    final index = hops.indexWhere((h) => h.hopIndex == hop.hopIndex);
+    if (index == -1) {
+      hops.add(hop);
+    } else {
+      hops[index] = hop;
+    }
+    _lastProbeReport = current.copyWith(hops: hops);
+    notifyListeners();
+  }
+
   Future<ChainProbeReport> probeCurrentChain({
     String? testUrl,
     Duration? timeout,
@@ -1308,6 +1327,18 @@ class ChainProxyManager extends ChangeNotifier {
               config: _config,
               testUrl: effectiveTestUrl,
               cancelToken: token,
+              // 三跳是串行探测、单跳超时 4–5 秒。不把逐跳结果实时推给 UI，
+              // 用户就得盯着转圈十几秒才看到第一行。服务层本来就在每跳测完
+              // 后回调，这里接上即可，探测语义不变。
+              onProgress: (interim) {
+                if (generation != _probeGeneration) return;
+                _lastProbeReport = interim;
+                notifyListeners();
+              },
+              onHopUpdate: (hop) {
+                if (generation != _probeGeneration) return;
+                _publishHopProgress(hop);
+              },
             );
       // RC.10-C.1 — only the owning probe may publish. A superseded probe's
       // report is stale evidence: it must not overwrite the newer report, write
