@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/models/models.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:yaml/yaml.dart';
 
@@ -1096,16 +1097,11 @@ class ManualProxyHelper {
       final content = await file.readAsString();
       if (content.trim().isEmpty) return [];
 
-      final yaml = loadYaml(content);
-      if (yaml is Map && yaml['proxies'] is List) {
-        final proxies = <Map<String, dynamic>>[];
-        for (final p in yaml['proxies']) {
-          if (p is Map) {
-            proxies.add(Map<String, dynamic>.from(p));
-          }
-        }
-        return proxies;
-      }
+      // 订阅 YAML 可能几百 KB 到几 MB，`loadYaml` 是同步 CPU 活；放在主
+      // isolate 上解析会让「打开节点管理」掉帧。丢到后台 isolate，只把
+      // 纯 Map/List 传回来。
+      final proxies = await compute(_parseProxiesYaml, content);
+      if (proxies.isNotEmpty) return proxies;
     } catch (e) {
       commonPrint.log('ManualProxyHelper.getProfileProxies error: $e');
     }
@@ -1315,4 +1311,36 @@ class ManualProxyHelper {
     }
     return value;
   }
+}
+
+/// 在后台 isolate 里解析订阅 YAML，只返回纯 Map/List。
+///
+/// `compute` 只接受顶层或静态函数，且入参出参必须能跨 isolate 传递——
+/// `YamlMap` / `YamlList` 不行，所以这里递归转成普通容器再返回。
+List<Map<String, dynamic>> _parseProxiesYaml(String content) {
+  final yaml = loadYaml(content);
+  if (yaml is! Map) return const <Map<String, dynamic>>[];
+  final raw = yaml['proxies'];
+  if (raw is! List) return const <Map<String, dynamic>>[];
+  final proxies = <Map<String, dynamic>>[];
+  for (final entry in raw) {
+    if (entry is Map) {
+      proxies.add(_toPlainMap(entry));
+    }
+  }
+  return proxies;
+}
+
+Map<String, dynamic> _toPlainMap(Map source) {
+  final result = <String, dynamic>{};
+  source.forEach((key, value) {
+    result[key.toString()] = _toPlainValue(value);
+  });
+  return result;
+}
+
+dynamic _toPlainValue(dynamic value) {
+  if (value is Map) return _toPlainMap(value);
+  if (value is List) return value.map(_toPlainValue).toList();
+  return value;
 }

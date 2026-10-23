@@ -37,24 +37,50 @@ class _SpeedTestCardState extends State<SpeedTestCard> {
   @override
   void initState() {
     super.initState();
+    // 只在真的有测速在跑时才轮询。以前这里无条件起了一个 300ms 定时器，
+    // 等于仪表盘开着的时候每秒向内核桥接问 3 次「测完了吗」——空转的唤醒
+    // 对续航是纯损耗，而空闲时那些返回值也不会变。
+    _syncOnce();
+  }
+
+  /// 进页面时读一次状态：可能上一次测速还在跑（比如从别的页切回来），
+  /// 这时才需要继续轮询。
+  Future<void> _syncOnce() async {
+    if (!mounted) return;
+    final p = await clashCore.speedTestStatus();
+    if (!mounted) return;
+    _applyProgress(p);
+    if (p.isRunning) _startPolling();
+  }
+
+  void _startPolling() {
+    _poll?.cancel();
     _poll = Timer.periodic(const Duration(milliseconds: 300), (_) async {
       if (!mounted) return;
       final p = await clashCore.speedTestStatus();
       if (!mounted) return;
-      if (p.phase != 'idle') {
-        _gotFrame = true;
-        _watchdog?.cancel();
+      _applyProgress(p);
+      if (p.isDone || p.isFailed || !p.isRunning) {
+        _poll?.cancel();
+        _poll = null;
       }
-      setState(() {
-        _progress = p;
-        if (p.headlineMbps > _peak) _peak = p.headlineMbps;
-        _scale = _scaleFor(_peak);
-        if (p.isRunning && p.headlineMbps > 0) {
-          _history.add(Point(_history.length.toDouble(), p.headlineMbps));
-          if (_history.length > _historyLimit) _history.removeAt(0);
-        }
-        if (p.isDone || p.isFailed) _running = false;
-      });
+    });
+  }
+
+  void _applyProgress(SpeedTestProgress p) {
+    if (p.phase != 'idle') {
+      _gotFrame = true;
+      _watchdog?.cancel();
+    }
+    setState(() {
+      _progress = p;
+      if (p.headlineMbps > _peak) _peak = p.headlineMbps;
+      _scale = _scaleFor(_peak);
+      if (p.isRunning && p.headlineMbps > 0) {
+        _history.add(Point(_history.length.toDouble(), p.headlineMbps));
+        if (_history.length > _historyLimit) _history.removeAt(0);
+      }
+      if (p.isDone || p.isFailed) _running = false;
     });
   }
 
@@ -86,10 +112,14 @@ class _SpeedTestCardState extends State<SpeedTestCard> {
         );
       });
     });
+    // 测速一开始才起轮询，结束就停——空闲时不该有定时器在跑。
+    _startPolling();
     try {
       await globalState.appController.speedTest();
     } catch (e) {
       if (!mounted) return;
+      _poll?.cancel();
+      _poll = null;
       setState(() {
         _running = false;
         _progress = SpeedTestProgress(phase: 'failed', error: '$e');
