@@ -448,6 +448,11 @@ class AppController {
       return;
     }
 
+    // 窗口隐藏/最小化、或不在前台时，没有人在看这个计时器。以前这里每秒
+    // 都写一次 provider，等于让 UI 层白白醒一遍——`updateTraffic` 早就用
+    // 同一个判定挡掉了，这里一直漏着。
+    if (!await _shouldUpdateDashboardTick()) return;
+
     final startTimeStamp = startTime.millisecondsSinceEpoch;
     final nowTimeStamp = DateTime.now().millisecondsSinceEpoch;
     final elapsed = nowTimeStamp - startTimeStamp;
@@ -460,21 +465,38 @@ class AppController {
     _ref.read(runTimeProvider.notifier).value = elapsed;
   }
 
+  /// 上一次判定的结果，按 500ms 分桶缓存。
+  ///
+  /// 同一个 tick 里 `updateRunTime` 和 `updateTraffic` 会各问一次，而桌面端
+  /// 每次都要走平台通道问窗口可见性——两次问的是同一件事。按时间桶记住结果，
+  /// 一次 tick 只问一次。
+  int? _tickAllowedBucket;
+  bool _tickAllowed = true;
+
   Future<bool> _shouldUpdateDashboardTick() async {
-    if (system.isDesktop) {
-      final isPinned = _ref.read(
-        windowSettingProvider.select((s) => s.isPinned),
-      );
-      if (isPinned) return true;
-      if (await window?.isVisible == false) return false;
-      if (await window?.isMinimized == true) return false;
-      return true;
+    if (!system.isDesktop) {
+      final lifecycleState = WidgetsBinding.instance.lifecycleState;
+      return lifecycleState == null || lifecycleState == AppLifecycleState.resumed;
     }
 
-    final lifecycleState = WidgetsBinding.instance.lifecycleState;
-    if (lifecycleState != AppLifecycleState.resumed) return false;
+    final bucket = DateTime.now().millisecondsSinceEpoch ~/ 500;
+    if (_tickAllowedBucket == bucket) return _tickAllowed;
 
-    return true;
+    final isPinned = _ref.read(
+      windowSettingProvider.select((s) => s.isPinned),
+    );
+    var allowed = true;
+    if (!isPinned) {
+      if (await window?.isVisible == false) {
+        allowed = false;
+      } else if (await window?.isMinimized == true) {
+        allowed = false;
+      }
+    }
+
+    _tickAllowedBucket = bucket;
+    _tickAllowed = allowed;
+    return allowed;
   }
 
   Future<void> updateTraffic() async {
