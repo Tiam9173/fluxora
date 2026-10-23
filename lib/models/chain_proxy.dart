@@ -689,6 +689,18 @@ class ChainProxyConfig {
   static String frontHopShadowName(int index, String nodeName) =>
       '🔗第${index + 1}跳·$nodeName';
   static String exitShadowName(String nodeName) => '🔗出口·$nodeName';
+
+  /// 出口变体用的短标签。
+  ///
+  /// 订阅节点名常带 `|` 和空格（如 `🇺🇸美国05 |公益|1倍`）。出口变体沿用完整
+  /// 名字时，测延迟拿不到结果；去掉竖线、压掉多余空格后就能正常测。
+  static String _chainExitLabel(String nodeName) {
+    final cleaned = nodeName
+        .replaceAll('|', '')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+    return cleaned.isEmpty ? nodeName : cleaned;
+  }
   static bool isShadowNodeName(String name) =>
       name.startsWith('🔗中转·') || name.startsWith('🔗出口·');
 
@@ -997,7 +1009,7 @@ class ChainProxyConfig {
 
       // 每一跳都可以单独当出口：链式出口不只有"最后一跳"，任意一跳都能收口。
       // 这样三跳以上也成立，不是只有固定的第二跳才有出口变体。
-      final hopExitName = exitShadowName(hopName);
+      final hopExitName = exitShadowName(_chainExitLabel(hopName));
       final hopExitExists =
           proxyConfigMap.containsKey(hopExitName) ||
           proxiesList.any((p) => p is Map && p['name'] == hopExitName);
@@ -1106,7 +1118,7 @@ class ChainProxyConfig {
 
         // 中转自己也能当出口：只经入口拨号，不再往下接落地。
         // 这样"中转"和"住宅 IP"就是同一层概念——都是链式出口，只是跳数不同。
-        final transitAsExitName = exitShadowName(h2Name);
+        final transitAsExitName = exitShadowName(_chainExitLabel(h2Name));
         if (!proxyConfigMap.containsKey(transitAsExitName) &&
             !proxiesList.any(
               (p) => p is Map && p['name'] == transitAsExitName,
@@ -1200,6 +1212,22 @@ class ChainProxyConfig {
       final effectiveDedicatedGroupName = dedicatedGroupName.isNotEmpty
           ? dedicatedGroupName
           : '🔗 链式代理';
+
+      // 把运行时生成、但还没登记进 injectedProxyNames 的链式节点补上。
+      //
+      // 出口变体是在 frontChain 循环里直接塞进 proxiesList 的，那时
+      // injectedProxyNames 还没声明，加不进去。结果它们成了"有代理、没组"
+      // 的孤儿：代理页按组渲染，这些节点既不显示也测不了延迟。
+      for (final proxy in proxiesList) {
+        if (proxy is! Map) continue;
+        final name = proxy['name']?.toString() ?? '';
+        if (name.isEmpty) continue;
+        if (name.startsWith('🔗中转·') || name.startsWith('🔗出口·')) {
+          if (!injectedProxyNames.contains(name)) {
+            injectedProxyNames.add(name);
+          }
+        }
+      }
 
       if (createDedicatedGroup) {
         final existingIndex = groupList.indexWhere(
