@@ -2,7 +2,7 @@ import 'package:fluxora/models/chain_fallback_pool.dart';
 import 'package:fluxora/models/chain_flap_dampening.dart';
 import 'package:fluxora/models/chain_proxy.dart';
 import 'package:fluxora/services/chain_probe_service.dart';
-import 'package:fluxora/services/chain_retry_service.dart';
+import 'chain_retry.dart';
 import 'package:fluxora/services/chain_fallback_service.dart';
 
 /// 链式代理自动故障转移状态机状态

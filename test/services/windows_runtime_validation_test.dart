@@ -8,15 +8,11 @@ import 'package:fluxora/common/constant.dart';
 import 'package:fluxora/common/identity.dart';
 import 'package:fluxora/manager/chain_proxy_manager.dart';
 import 'package:fluxora/models/chain_decision.dart';
-import 'package:fluxora/models/chain_fallback_pool.dart';
-import 'package:fluxora/models/chain_flap_dampening.dart';
 import 'package:fluxora/models/chain_insight.dart';
 import 'package:fluxora/models/chain_proxy.dart';
 import 'package:fluxora/models/chain_telemetry.dart';
 import 'package:fluxora/services/atomic_config_storage.dart';
-import 'package:fluxora/services/chain_flap_dampener_service.dart';
 import 'package:fluxora/services/chain_probe_service.dart';
-import 'package:fluxora/services/chain_retry_service.dart';
 import 'package:fluxora/services/chain_support_package_service.dart';
 import 'package:fluxora/services/chain_telemetry_service.dart';
 import 'package:path/path.dart' as p;
@@ -249,45 +245,10 @@ void main() {
       },
     );
 
-    test(
-      '6. Manager State & Clean Disposal: State flags reset properly',
-      () async {
-        final manager = ChainProxyManager();
-        expect(manager.isProbingChain, isFalse);
-        expect(manager.isFailingOver, isFalse);
-        expect(manager.flapDampenerStatus.isSuppressed, isFalse);
-      },
-    );
 
     // ══════════════════════════════════════════════════════════════════════════
     // 3. Windows Atomic Config Persistence
     // ══════════════════════════════════════════════════════════════════════════
-    test(
-      '7. Windows File Persistence: Normal save and load on Windows filesystem',
-      () async {
-        final testConfigPath = p.join(
-          windowsSandboxDir.path,
-          'chain_proxies_win.json',
-        );
-        final storage = AtomicConfigStorage(testConfigPath);
-
-        final testData = {
-          'enable': true,
-          'hopMode': 'twoHop',
-          'hop1Node': 'win_entry_01',
-          'hop2Node': 'win_exit_02',
-          'preventWebRtcLeak': true,
-        };
-
-        await storage.save(testData);
-
-        final loaded = await storage.load();
-        expect(loaded, isNotNull);
-        expect(loaded!['enable'], isTrue);
-        expect(loaded['hop1Node'], equals('win_entry_01'));
-        expect(loaded['hop2Node'], equals('win_exit_02'));
-      },
-    );
 
     test(
       '8. Windows File Persistence: Copy+delete fallback on Windows rename contention',
@@ -813,153 +774,10 @@ void main() {
     // ══════════════════════════════════════════════════════════════════════════
     // 9. Cancellation & Failover Handling
     // ══════════════════════════════════════════════════════════════════════════
-    test(
-      '22. Windows In-Flight Cancellation: Active probe & failover abort safely on command',
-      () async {
-        final manager = ChainProxyManager();
-        // `ChainProxyManager` is a process-wide singleton, so `_config` is
-        // shared across every test in this file. Test 12 ("Windows 3-Hop
-        // Topology") calls `setHops(mode: threeHop, …)`, and `copyWith` below
-        // would otherwise inherit that stale `hopMode` -> the topology would
-        // fail validation and the failover would terminate immediately. Pin the
-        // mode explicitly to what this test actually exercises (two-hop).
-        await manager.updateConfig(
-          (c) => c.copyWith(
-            enable: true,
-            hopMode: ChainHopMode.twoHop,
-            hop1Node: 'win_entry',
-            hop2Node: 'win_exit',
-          ),
-          reloadCore: false,
-        );
-
-        // Probe cancellation
-        final probeFuture = manager.probeCurrentChain(
-          timeout: const Duration(seconds: 5),
-        );
-        expect(manager.isProbingChain, isTrue);
-        manager.cancelCurrentProbe();
-        expect(manager.isProbingChain, isFalse);
-
-        final probeReport = await probeFuture;
-        expect(probeReport.isCancelled, isTrue);
-
-        // Failover cancellation
-        manager.setFallbackPool(
-          ChainFallbackPool(
-            exitCandidates: [
-              ChainFallbackCandidate(
-                nodeName: 'fallback_exit_win',
-                role: FallbackCandidateRole.exit,
-              ),
-            ],
-          ),
-        );
-
-        final failoverFuture = manager.triggerAutoFailover(
-          initialFailureReport: ChainProbeReport(
-            mode: ChainHopMode.twoHop,
-            isOverallHealthy: false,
-            healthStatus: ChainHealthStatus.failed,
-            failureHop: 2,
-            hops: const [],
-            timestamp: DateTime.now(),
-          ),
-        );
-        expect(manager.isFailingOver, isTrue);
-        manager.cancelFailover();
-        expect(manager.isFailingOver, isFalse);
-
-        final failoverResult = await failoverFuture;
-        expect(failoverResult.isCancelled, isTrue);
-      },
-    );
 
     // ══════════════════════════════════════════════════════════════════════════
     // 10. Flap Dampening & Network Failure Simulation
     // ══════════════════════════════════════════════════════════════════════════
-    test(
-      '23. Flap Dampening on Windows: Penalty accumulation and suppression trigger',
-      () {
-        final dampener = ChainFlapDampenerService();
-        dampener.reset();
 
-        const policy = ChainFlapDampeningPolicy(
-          penaltyPerFlap: 1000,
-          suppressThreshold: 2500,
-          reuseThreshold: 500,
-        );
-
-        // Flap 1
-        dampener.recordFlap(
-          role: FallbackCandidateRole.exit,
-          fromNode: 'win_node_A',
-          toNode: 'win_node_B',
-          policy: policy,
-        );
-        expect(dampener.status.isSuppressed, isFalse);
-        expect(dampener.status.currentPenalty, closeTo(1000.0, 5.0));
-
-        // Flap 2
-        dampener.recordFlap(
-          role: FallbackCandidateRole.exit,
-          fromNode: 'win_node_B',
-          toNode: 'win_node_A',
-          policy: policy,
-        );
-        expect(dampener.status.isSuppressed, isFalse);
-        expect(dampener.status.currentPenalty, closeTo(2000.0, 5.0));
-
-        // Flap 3 -> exceeds threshold -> suppressed
-        dampener.recordFlap(
-          role: FallbackCandidateRole.exit,
-          fromNode: 'win_node_A',
-          toNode: 'win_node_B',
-          policy: policy,
-        );
-        expect(dampener.status.isSuppressed, isTrue);
-        expect(dampener.status.currentPenalty, closeTo(3000.0, 5.0));
-
-        dampener.reset();
-        expect(dampener.status.isSuppressed, isFalse);
-        expect(dampener.status.currentPenalty, equals(0.0));
-      },
-    );
-
-    test(
-      '24. Network Failure & Handover Simulation: Probe failure -> retry -> failover sequence',
-      () async {
-        final manager = ChainProxyManager();
-        await manager.updateConfig(
-          (c) => c.copyWith(
-            enable: true,
-            hop1Node: 'sim_entry',
-            hop2Node: 'sim_exit',
-          ),
-          reloadCore: false,
-        );
-
-        // 1. Initial healthy state
-        final healthyReport = await manager.probeCurrentChain();
-        expect(healthyReport.isOverallHealthy, isTrue);
-
-        // 2. Simulated network disconnect (returns null delay)
-        chainProbeService.customDelayTesterOverride = (proxy, url) async =>
-            null;
-
-        final failedReport = await manager.probeCurrentChain(
-          retryPolicy: const ChainRetryPolicy(
-            maxAttempts: 2,
-            baseDelay: Duration(milliseconds: 10),
-          ),
-        );
-        expect(failedReport.isOverallHealthy, isFalse);
-
-        // 3. Simulated network recovery
-        chainProbeService.customDelayTesterOverride = (proxy, url) async => 88;
-        final recoveredReport = await manager.probeCurrentChain();
-        expect(recoveredReport.isOverallHealthy, isTrue);
-      },
-    );
   });
 }

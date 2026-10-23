@@ -31,23 +31,6 @@ final isProbingChainProvider = Provider<bool>((ref) {
   return manager.isProbingChain;
 });
 
-final chainFailoverProgressProvider = Provider<ChainFailoverProgress?>((ref) {
-  final manager = ref.watch(chainProxyConfigProvider);
-  return manager.failoverProgress;
-});
-
-final isFailingOverProvider = Provider<bool>((ref) {
-  final manager = ref.watch(chainProxyConfigProvider);
-  return manager.isFailingOver;
-});
-
-final chainFlapDampenerStatusProvider = Provider<ChainFlapDampenerStatus>((
-  ref,
-) {
-  final manager = ref.watch(chainProxyConfigProvider);
-  return manager.flapDampenerStatus;
-});
-
 final chainTelemetryProvider = Provider<ChainTelemetrySnapshot>((ref) {
   final manager = ref.watch(chainProxyConfigProvider);
   return manager.telemetrySnapshot;

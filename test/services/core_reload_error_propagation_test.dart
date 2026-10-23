@@ -2,9 +2,6 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluxora/manager/chain_proxy_manager.dart';
-import 'package:fluxora/models/chain_fallback_pool.dart';
-import 'package:fluxora/models/chain_proxy.dart';
-import 'package:fluxora/services/chain_probe_service.dart';
 import 'package:path/path.dart' as p;
 
 import '../support/temp_dir_cleanup.dart';
@@ -140,93 +137,6 @@ void main() {
   });
 
   // ── F. failover apply failure must not commit ────────────────────────────
-  test('F. failover apply failure propagates and never commits', () async {
-    await manager.updateConfig(
-      (c) => c.copyWith(enable: true, hop1Node: 'F-1', hop2Node: 'F-2'),
-      reloadCore: false,
-    );
-    await manager.updateFallbackPool(
-      (_) => const ChainFallbackPool(
-        exitCandidates: [
-          ChainFallbackCandidate(
-            nodeName: 'F-EXIT',
-            role: FallbackCandidateRole.exit,
-          ),
-        ],
-      ),
-    );
-    final beforeFailover = await readConfigFile();
-
-    // The runtime apply/rollback now fails.
-    var applyAttempts = 0;
-    ChainProxyManager.coreConfigReloadOverride = () async {
-      applyAttempts++;
-      throw StateError('apply failed');
-    };
-
-    final result = await manager.triggerAutoFailover(
-      bypassDampening: true,
-      initialFailureReport: ChainProbeReport(
-        mode: ChainHopMode.twoHop,
-        isOverallHealthy: false,
-        healthStatus: ChainHealthStatus.failed,
-        failureHop: 2,
-        hops: const [],
-        timestamp: DateTime.now(),
-      ),
-    );
-
-    expect(
-      applyAttempts,
-      greaterThan(0),
-      reason: 'the failover must really have attempted a runtime apply',
-    );
-    expect(
-      result.isSuccess,
-      isFalse,
-      reason: 'a candidate that never applied must not be reported as success',
-    );
-    expect(
-      await readConfigFile(),
-      beforeFailover,
-      reason: 'a failed apply must never reach commit (no persistence)',
-    );
-  });
 
   // ── G. rollback failure is not swallowed ────────────────────────────────
-  test('G. a rollback failure is reported, never a silent success', () async {
-    await manager.updateConfig(
-      (c) => c.copyWith(enable: true, hop1Node: 'G-1', hop2Node: 'G-2'),
-      reloadCore: false,
-    );
-    await manager.updateFallbackPool(
-      (_) => const ChainFallbackPool(
-        exitCandidates: [
-          ChainFallbackCandidate(
-            nodeName: 'G-EXIT',
-            role: FallbackCandidateRole.exit,
-          ),
-        ],
-      ),
-    );
-
-    // Both apply and rollback fail.
-    ChainProxyManager.coreConfigReloadOverride = () async =>
-        throw StateError('apply+rollback failed');
-
-    final result = await manager.triggerAutoFailover(
-      bypassDampening: true,
-      initialFailureReport: ChainProbeReport(
-        mode: ChainHopMode.twoHop,
-        isOverallHealthy: false,
-        healthStatus: ChainHealthStatus.failed,
-        failureHop: 2,
-        hops: const [],
-        timestamp: DateTime.now(),
-      ),
-    );
-
-    expect(result.isSuccess, isFalse);
-    expect(result.isCancelled, isFalse);
-  });
 }

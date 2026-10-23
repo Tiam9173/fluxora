@@ -3,8 +3,7 @@ import 'package:fluxora/models/chain_fallback_pool.dart';
 import 'dart:io';
 import 'dart:math';
 import 'package:dio/dio.dart';
-import 'package:fluxora/models/chain_failover.dart';
-import 'package:fluxora/models/chain_flap_dampening.dart';
+import 'package:fluxora/models/chain_retry.dart';
 import 'package:fluxora/models/chain_recovery.dart';
 import 'package:fluxora/models/chain_support_package.dart';
 import 'package:fluxora/models/chain_telemetry.dart';
@@ -46,7 +45,6 @@ class ChainProxyManager extends ChangeNotifier {
   @visibleForTesting
   static Future<ChainProbeReport> Function(ChainProxyConfig)? chainProbeOverride;
   @visibleForTesting
-  static IChainFailoverExecutor Function(IChainFailoverExecutor)? failoverExecutorWrapper;
 
   /// Test-only seam overriding the runtime config reload performed by
   /// [_reloadRuntimeConfig] (the failover executor's apply / rollback path).
@@ -204,7 +202,6 @@ class ChainProxyManager extends ChangeNotifier {
   }
 
   void _telemetryListener() => notifyListeners();
-  void _flapListener() => notifyListeners();
 
   @override
   void dispose() {
@@ -228,7 +225,6 @@ class ChainProxyManager extends ChangeNotifier {
     _freshnessTickTimer?.cancel();
     _freshnessTickTimer = null;
     chainTelemetryService.removeListener(_telemetryListener);
-    chainFlapDampenerService.removeListener(_flapListener);
     // RC.11-A (F-AR4): drop the transport hook together with the rest of the
     // teardown, so a disposed manager is never notified.
     networkFingerprintProvider.onChanged = null;
@@ -241,7 +237,6 @@ class ChainProxyManager extends ChangeNotifier {
 
     // Phase 5.x integration: register listeners unconditionally once per instance.
     chainTelemetryService.addListener(_telemetryListener);
-    chainFlapDampenerService.addListener(_flapListener);
     // RC.11-A (F-AR4): a transport change must invalidate the ranking cache.
     // `NetworkFingerprintProvider` has no notifier of its own and the ranking
     // provider reads the fingerprint imperatively, so without this a
@@ -908,10 +903,8 @@ class ChainProxyManager extends ChangeNotifier {
 
   // ─── Phase 5.x Runtime State ─────────────────────────────────────────────
 
-  ChainRetryProgress? _retryProgress;
   ChainProbeReport? _lastProbeReport;
   bool _isProbingChain = false;
-  ChainFailoverProgress? _failoverProgress;
   CancelToken? _probeCancelToken;
   CancelToken? _failoverCancelToken;
 
@@ -1105,21 +1098,10 @@ class ChainProxyManager extends ChangeNotifier {
 
   // ─── Phase 5.x Getters ────────────────────────────────────────────────────
 
-  ChainRetryProgress? get retryProgress => _retryProgress;
   ChainProbeReport? get lastProbeReport => _lastProbeReport;
   bool get isProbingChain => _isProbingChain;
-  ChainFailoverProgress? get failoverProgress => _failoverProgress;
 
   ChainFallbackPool get fallbackPool => _fallbackPool;
-
-  bool get isFailingOver =>
-      failoverProgress != null &&
-      !failoverProgress!.state.isIdle &&
-      !failoverProgress!.state.isTerminal;
-
-  /// Delegates to the real ChainFlapDampenerService singleton.
-  ChainFlapDampenerStatus get flapDampenerStatus =>
-      chainFlapDampenerService.getStatus();
 
   /// Delegates to the real ChainTelemetryService singleton.
   ChainTelemetrySnapshot get telemetrySnapshot =>
@@ -1277,143 +1259,10 @@ class ChainProxyManager extends ChangeNotifier {
 
   // ─── Phase 5.x Failover Lifecycle ────────────────────────────────────────
 
-  /// Applies [cfg] to the running core **without persisting it**.
-  ///
-  /// This is the failover executor's `onApply` / `onRollback` path: a candidate
-  /// is only committed to disk (see [_commitConfig]) once it has been proven
-  /// healthy.
-  Future<void> _applyConfigRuntime(ChainProxyConfig cfg) async {
-    _config = cfg;
-    notifyListeners();
-    // A runtime reload failure must be observed here, otherwise a candidate
-    // that never actually applied would be treated as applied (and could then
-    // be committed).
-    await _reloadRuntimeConfig();
-    notifyListeners();
-  }
 
-  /// Commits [cfg]: updates memory **and** persists it to `chain_proxies.json`.
-  Future<void> _commitConfig(ChainProxyConfig cfg) async {
-    _config = cfg;
-    notifyListeners();
-    await _saveConfig();
-  }
 
-  /// Builds the real production executor (the existing
-  /// [DelegateChainFailoverExecutor], wired to this manager's runtime
-  /// apply / probe / rollback / commit paths).
-  IChainFailoverExecutor _buildFailoverExecutor(ChainFailoverPolicy policy) {
-    final real = DelegateChainFailoverExecutor(
-      onApply: (cfg, _) => _applyConfigRuntime(cfg),
-      onProbe: (cfg, token) => chainProbeService.probeChain(
-        config: cfg,
-        timeout: policy.probeTimeout,
-        cancelToken: token,
-      ),
-      onRollback: (cfg, _) => _applyConfigRuntime(cfg),
-      onCommit: (cfg) => _commitConfig(cfg),
-    );
-    final wrapper = failoverExecutorWrapper;
-    return wrapper != null ? wrapper(real) : real;
-  }
 
-  /// Triggers auto-failover. Full implementation delegates to ChainFailoverService.
-  /// This thin coordinator updates progress state and notifies listeners.
-  Future<ChainFailoverResult> triggerAutoFailover({
-    String? triggerReason,
-    ChainProbeReport? initialFailureReport,
-    Duration? timeout,
-    dynamic retryPolicy,
-    bool bypassDampening = false,
-  }) async {
-    // P1.1-F single-flight: while a failover session is already active, a
-    // second trigger is rejected outright — it must NOT cancel, take over, or
-    // supersede the running session. The rejection reason is carried in the
-    // returned result's `rootCause`.
-    if (isFailingOver) {
-      return ChainFailoverResult.cancelled(
-        originalConfig: _config,
-        reason: '已有故障转移正在执行，已拒绝重复触发',
-      );
-    }
 
-    _failoverCancelToken = CancelToken();
-    _failoverProgress = ChainFailoverProgress(
-      state: ChainFailoverState.selectingCandidate,
-      message: triggerReason ?? 'Initializing failover',
-      timestamp: DateTime.now(),
-    );
-    notifyListeners();
-
-    try {
-      final policy = ChainFailoverPolicy(
-        bypassDampening: bypassDampening,
-      );
-      
-      final result = await chainFailoverService.executeFailover(
-        currentConfig: _config,
-        fallbackPool: _fallbackPool,
-        targetRole: null,
-        policy: policy,
-        availableProxyNames: _availableProxyNames(),
-        availableProxyProfiles: _capabilityProfiles.isEmpty
-            ? null
-            : Map<String, ProtocolCapabilityProfile>.of(_capabilityProfiles),
-        cancelToken: _failoverCancelToken,
-        executor: _buildFailoverExecutor(policy),
-        flapDampener: chainFlapDampenerService,
-        // Forward the report the health check already produced: without it,
-        // `executeFailover` would fall back to a real network retry/probe.
-        initialFailureReport: initialFailureReport,
-        onProgress: (progress) {
-          _failoverProgress = progress;
-          notifyListeners();
-        },
-        onPoolUpdated: (pool) {
-          _fallbackPool = pool;
-          notifyListeners();
-          // Failover records reliability samples too — persist (debounced).
-          _scheduleReliabilityPersist();
-          // RC.11-C1: the failover writer is the ONLY producer of
-          // `nodeLatency`, so this is where a fresh observation actually
-          // appears — re-arm the freshness transition from the new pool.
-          _scheduleFreshnessTick();
-        },
-      );
-
-      if (result.isSuccess) {
-        await updateConfig((_) => result.finalConfig);
-      }
-      return result;
-    } finally {
-      if (_failoverProgress != null && !_failoverProgress!.state.isTerminal) {
-        _failoverProgress = ChainFailoverProgress(
-          state: _failoverCancelToken?.isCancelled == true 
-                 ? ChainFailoverState.cancelled 
-                 : ChainFailoverState.idle,
-          candidateNodeName: _failoverProgress!.candidateNodeName,
-          message: 'Finished',
-          timestamp: DateTime.now(),
-        );
-      }
-      _failoverCancelToken = null;
-      notifyListeners();
-    }
-  }
-
-  void cancelFailover() {
-    _failoverCancelToken?.cancel();
-    _failoverCancelToken = null;
-    if (_failoverProgress != null) {
-      _failoverProgress = ChainFailoverProgress(
-        state: ChainFailoverState.cancelled,
-        candidateNodeName: _failoverProgress!.candidateNodeName,
-        message: 'Cancelled by user',
-        timestamp: DateTime.now(),
-      );
-    }
-    notifyListeners();
-  }
 
   // ─── Phase 5.x Probe Lifecycle ─────────────────────────────────────────────
   void cancelCurrentProbe() {
@@ -1488,9 +1337,6 @@ class ChainProxyManager extends ChangeNotifier {
 
   // ─── Phase 5.x Flap Dampening ────────────────────────────────────────────
 
-  void resetFlapDampener() {
-    chainFlapDampenerService.reset();
-  }
 
   // ─── Phase 5.x Telemetry ──────────────────────────────────────────────────
 
@@ -1682,7 +1528,7 @@ class ChainProxyManager extends ChangeNotifier {
   Future<void> runChainHealthCheck() async {
     // P0 hardening: a tick that fired just before `dispose()` must do no work.
     if (_disposed) return;
-    if (!_config.autoFailover || !_config.enable || _isProbingChain || isFailingOver) return;
+    if (!_config.autoFailover || !_config.enable || _isProbingChain) return;
 
     final bool coreRunning = await _isCoreReady();
     if (!coreRunning) return;
@@ -1694,7 +1540,7 @@ class ChainProxyManager extends ChangeNotifier {
     // F-B2: teardown may also have run during the await. A probe started now
     // would take a fresh, un-cancelled token and write back into a disposed
     // manager, so `_disposed` must be part of the re-check too.
-    if (_disposed || _isProbingChain || isFailingOver) return;
+    if (_disposed || _isProbingChain) return;
 
     await probeCurrentChain();
   }

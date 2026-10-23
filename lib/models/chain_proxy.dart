@@ -1222,7 +1222,10 @@ class ChainProxyConfig {
         if (proxy is! Map) continue;
         final name = proxy['name']?.toString() ?? '';
         if (name.isEmpty) continue;
-        if (name.startsWith('🔗中转·') || name.startsWith('🔗出口·')) {
+        // 只把**出口**放进组里。中转是链路中间跳，直接选它等于跳过落地，
+        // 语义上和「出口」混在一起会让人分不清；中转作为出口的情形已经由
+        // `🔗出口·X` 覆盖了。
+        if (name.startsWith('🔗出口·')) {
           if (!injectedProxyNames.contains(name)) {
             injectedProxyNames.add(name);
           }

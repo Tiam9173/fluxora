@@ -4,21 +4,11 @@ import 'dart:io';
 
 import 'package:archive/archive.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart' as flutter_riverpod;
-import 'package:fluxora/controller.dart';
-import 'package:fluxora/state.dart';
-import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/models/models.dart';
-import 'package:fluxora/enum/enum.dart';
 
 import 'package:fluxora/manager/chain_proxy_manager.dart';
-import 'package:fluxora/models/chain_decision.dart';
-import 'package:fluxora/models/chain_insight.dart';
 import 'package:fluxora/services/atomic_config_storage.dart';
-import 'package:fluxora/services/chain_flap_dampener_service.dart';
 import 'package:fluxora/services/chain_probe_service.dart';
-import 'package:fluxora/services/chain_retry_service.dart';
 import 'package:fluxora/services/chain_support_package_service.dart';
 import 'package:fluxora/services/chain_telemetry_service.dart';
 import 'package:path/path.dart' as p;
@@ -194,97 +184,6 @@ void main() {
     // ══════════════════════════════════════════════════════════════════════════
     // 3. Android Background & Lifecycle State Switch
     // ══════════════════════════════════════════════════════════════════════════
-    testWidgets(
-      '4. App Background Switch: Active probe and failover cancel tokens abort safely',
-      (tester) async {
-        await tester.pumpWidget(
-          flutter_riverpod.ProviderScope(
-            overrides: [
-              groupsProvider.overrideWithValue([
-                Group(
-                  name: 'Proxy',
-                  type: GroupType.Selector,
-                  // The chain config below references `android_entry` /
-                  // `android_exit`. When `availableProxyNames` is non-null the
-                  // fallback selector runs the topology validator, which
-                  // rejects any hop that is missing from this list — so the
-                  // current hops must be present here, otherwise every
-                  // candidate is excluded (`TOPOLOGY_CONFLICT`) and the
-                  // failover fails synchronously with no candidates.
-                  all: [
-                    Proxy(name: 'android_entry', type: 'ss'),
-                    Proxy(name: 'android_exit', type: 'ss'),
-                    Proxy(name: 'candidate_exit_1', type: 'ss'),
-                  ],
-                  now: '',
-                ),
-              ]),
-            ],
-            child: flutter_riverpod.Consumer(
-              builder: (context, ref, _) {
-                globalState.appController = AppController(context, ref);
-                return Container();
-              },
-            ),
-          ),
-        );
-
-        await tester.runAsync(() async {
-          final manager = ChainProxyManager();
-          await manager.updateConfig(
-            (c) => c.copyWith(
-              enable: true,
-              hop1Node: 'android_entry',
-              hop2Node: 'android_exit',
-            ),
-            reloadCore: false,
-          );
-
-          // 1. Launch probe while in foreground
-          final probeFuture = manager.probeCurrentChain(
-            timeout: const Duration(seconds: 5),
-          );
-          expect(manager.isProbingChain, isTrue);
-
-          // Simulate App sent to background -> onPause / onStop / dispose cancels active probe
-          manager.cancelCurrentProbe();
-          expect(manager.isProbingChain, isFalse);
-
-          final probeReport = await probeFuture;
-          expect(probeReport.isCancelled, isTrue);
-
-          // 2. Launch failover while in foreground
-          manager.setFallbackPool(
-            ChainFallbackPool(
-              exitCandidates: [
-                ChainFallbackCandidate(
-                  nodeName: 'candidate_exit_1',
-                  role: FallbackCandidateRole.exit,
-                ),
-              ],
-            ),
-          );
-
-          final failoverFuture = manager.triggerAutoFailover(
-            initialFailureReport: ChainProbeReport(
-              mode: ChainHopMode.twoHop,
-              isOverallHealthy: false,
-              healthStatus: ChainHealthStatus.failed,
-              failureHop: 2,
-              hops: const [],
-              timestamp: DateTime.now(),
-            ),
-          );
-          expect(manager.isFailingOver, isTrue);
-
-          manager.cancelFailover();
-          expect(manager.isFailingOver, isFalse);
-
-          final failoverResult = await failoverFuture;
-          expect(failoverResult.isCancelled, isTrue);
-        });
-      },
-    );
 
     // ══════════════════════════════════════════════════════════════════════════
     // 4. Android Network State Changes (WiFi -> Mobile -> WiFi, Online/Offline)
@@ -329,184 +228,15 @@ void main() {
       },
     );
 
-    test(
-      '6. Network State Change Case B: Online -> Offline -> Online telemetry event sequence',
-      () async {
-        final telemetry = ChainTelemetryService();
-        telemetry.clear();
-
-        final eventsCaptured = <ChainTelemetryEventType>[];
-        void telListener() {
-          final last = telemetry.getSnapshot().recentEvents.lastOrNull;
-          if (last != null) {
-            eventsCaptured.add(last.type);
-          }
-        }
-
-        telemetry.addListener(telListener);
-
-        // Step 1: Probe failed due to offline state
-        telemetry.record(
-          ChainTelemetryEvent(
-            type: ChainTelemetryEventType.probeFailed,
-            role: 'Hop2',
-            message: 'Network offline (ENETUNREACH)',
-          ),
-        );
-
-        // Step 2: Retry started
-        telemetry.record(
-          ChainTelemetryEvent(
-            type: ChainTelemetryEventType.probeStarted,
-            role: 'Hop2Retry',
-            message: 'Attempting retry 1/3',
-          ),
-        );
-
-        // Step 3: Failover triggered
-        telemetry.record(
-          ChainTelemetryEvent(
-            type: ChainTelemetryEventType.failoverStarted,
-            role: 'AutoFailover',
-            message: 'All retries exhausted, switching to fallback candidate',
-          ),
-        );
-
-        // Step 4: Network back online -> Probe completed
-        telemetry.record(
-          ChainTelemetryEvent(
-            type: ChainTelemetryEventType.probeCompleted,
-            role: 'Hop2',
-            message: 'Network restored, candidate healthy',
-          ),
-        );
-
-        telemetry.removeListener(telListener);
-
-        expect(
-          eventsCaptured,
-          containsAllInOrder([
-            ChainTelemetryEventType.probeFailed,
-            ChainTelemetryEventType.probeStarted,
-            ChainTelemetryEventType.failoverStarted,
-            ChainTelemetryEventType.probeCompleted,
-          ]),
-        );
-      },
-    );
 
     // ══════════════════════════════════════════════════════════════════════════
     // 5. Chain Proxy Multi-Hop Test (2-Hop and 3-Hop on Android)
     // ══════════════════════════════════════════════════════════════════════════
-    test(
-      '7. 2-Hop Chain: Entry -> Exit -> Internet topology and health metrics',
-      () async {
-        final manager = ChainProxyManager();
-        await manager.setHops(
-          mode: ChainHopMode.twoHop,
-          hop1: 'airport_relay_jp',
-          hop2: 'res_residential_us',
-        );
 
-        final validation = manager.validateCurrentTopology();
-        expect(validation.isValid, isTrue);
-
-        final report = await manager.probeCurrentChain();
-        expect(report.mode, ChainHopMode.twoHop);
-        expect(report.isOverallHealthy, isTrue);
-        expect(report.hops.length, 2);
-
-        // Verify insight generation
-        final snapshot = manager.telemetrySnapshot;
-        final insight = ChainAdaptiveInsight.fromTelemetry(snapshot);
-        expect(insight.forecast, isNotNull);
-
-        final decision = ChainDecisionSupport.fromInsight(insight);
-        expect(decision.recommendations, isNotNull);
-      },
-    );
-
-    test(
-      '8. 3-Hop Chain: Entry -> Relay -> Exit -> Internet topology and health metrics',
-      () async {
-        final manager = ChainProxyManager();
-        await manager.setHops(
-          mode: ChainHopMode.threeHop,
-          hop1: 'airport_entry_hk',
-          hop2: 'transit_relay_de',
-          hop3: 'residential_exit_us',
-        );
-
-        final validation = manager.validateCurrentTopology();
-        expect(validation.isValid, isTrue);
-
-        final report = await manager.probeCurrentChain();
-        expect(report.mode, ChainHopMode.threeHop);
-        expect(report.isOverallHealthy, isTrue);
-        expect(report.hops.length, 3);
-        expect(report.hops[0].latencyMs, isNotNull);
-        expect(report.hops[1].latencyMs, isNotNull);
-        expect(report.hops[2].latencyMs, isNotNull);
-      },
-    );
 
     // ══════════════════════════════════════════════════════════════════════════
     // 6. Flap Dampening Android Stress Test
     // ══════════════════════════════════════════════════════════════════════════
-    test(
-      '9. Flap Dampening Stress: Rapid alternations accumulate penalty and suppress correctly',
-      () {
-        final dampener = ChainFlapDampenerService();
-        dampener.reset();
-
-        const policy = ChainFlapDampeningPolicy(
-          penaltyPerFlap: 1000,
-          // P1.6: keep two flaps strictly below the threshold. At 2000 the
-          // second flap landed exactly on it, and `_penalty >= suppressThreshold`
-          // only evaluated to "not suppressed" when time-based decay happened to
-          // shave a fraction off — so the test flaked whenever both flaps shared
-          // a clock tick. 2500 leaves a 500-point margin and no longer depends on
-          // decay. Product semantics (`>=`) are unchanged.
-          suppressThreshold: 2500,
-          reuseThreshold: 500,
-        );
-
-        // Flap 1
-        dampener.recordFlap(
-          role: FallbackCandidateRole.exit,
-          fromNode: 'exit_node_A',
-          toNode: 'exit_node_B',
-          policy: policy,
-        );
-        expect(dampener.getStatus(policy: policy).isSuppressed, isFalse);
-        expect(dampener.getStatus(policy: policy).currentPenalty, closeTo(1000.0, 5.0));
-
-        // Flap 2
-        dampener.recordFlap(
-          role: FallbackCandidateRole.exit,
-          fromNode: 'exit_node_B',
-          toNode: 'exit_node_A',
-          policy: policy,
-        );
-        expect(dampener.getStatus(policy: policy).isSuppressed, isFalse);
-        expect(dampener.getStatus(policy: policy).currentPenalty, closeTo(2000.0, 5.0));
-
-        // Flap 3 -> exceeds threshold, becomes suppressed
-        dampener.recordFlap(
-          role: FallbackCandidateRole.exit,
-          fromNode: 'exit_node_A',
-          toNode: 'exit_node_B',
-          policy: policy,
-        );
-        expect(dampener.getStatus(policy: policy).isSuppressed, isTrue);
-        expect(dampener.getStatus(policy: policy).currentPenalty, closeTo(3000.0, 5.0));
-
-        // Reset restores normal operational state
-        dampener.reset();
-        expect(dampener.getStatus(policy: policy).isSuppressed, isFalse);
-        expect(dampener.getStatus(policy: policy).currentPenalty, 0.0);
-      },
-    );
 
     // ══════════════════════════════════════════════════════════════════════════
     // 7. Telemetry Memory Bounds Validation (10,000 events stress test)

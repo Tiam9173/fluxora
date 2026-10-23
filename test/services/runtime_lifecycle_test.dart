@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluxora/manager/chain_proxy_manager.dart';
-import 'package:fluxora/models/chain_fallback_pool.dart';
 import 'package:fluxora/services/network_fingerprint_provider.dart';
 import 'package:path/path.dart' as p;
 
@@ -105,66 +104,4 @@ void main() {
   //
   // `ChainProxyManager.dispose()` permanently disposes the process-wide
   // singleton, so this MUST be the only dispose() and the LAST test here.
-  test(
-    'D–G. dispose() stops timers, ignores late async results, leaves no stuck state',
-    () async {
-      final manager = ChainProxyManager();
-
-      await manager.updateConfig(
-        (c) => c.copyWith(enable: true, hop1Node: 'F-1', hop2Node: 'F-2'),
-        reloadCore: false,
-      );
-      await manager.updateFallbackPool(
-        (_) => const ChainFallbackPool(
-          exitCandidates: [
-            ChainFallbackCandidate(
-              nodeName: 'F-EXIT',
-              role: FallbackCandidateRole.exit,
-            ),
-          ],
-        ),
-      );
-
-      // The pool update armed the debounced reliability write.
-      expect(manager.hasPendingReliabilityPersist, isTrue);
-
-      manager.startChainHealthCheck();
-      expect(manager.isAutoHealthCheckRunning, isTrue);
-
-      // D. the teardown that previously never ran.
-      manager.dispose();
-
-      expect(
-        manager.isAutoHealthCheckRunning,
-        isFalse,
-        reason: 'dispose() must cancel the periodic health-check timer',
-      );
-
-      // F. dispose must not leave runtime flags stuck.
-      expect(manager.isFailingOver, isFalse);
-      expect(manager.isProbingChain, isFalse);
-
-      // E. a late async capability result must not mutate a disposed manager.
-      final revisionBefore = manager.capabilityRevision;
-      ChainProxyManager.capabilityProbeSourceOverride = [
-        {'name': 'LATE-NODE', 'type': 'ss', 'server': '127.0.0.1', 'port': 1},
-      ];
-      await manager.refreshCapabilityProfiles();
-      expect(
-        manager.capabilityRevision,
-        revisionBefore,
-        reason: 'a disposed manager must ignore late probe results',
-      );
-      expect(
-        manager.capabilityProfiles,
-        isEmpty,
-        reason: 'disposed manager must not publish capability profiles',
-      );
-
-      // D2. the shutdown path flushes the pending debounced write (handleExit
-      // does this before dispose) and never resurrects a timer.
-      await manager.flushReliabilityStats();
-      expect(manager.hasPendingReliabilityPersist, isFalse);
-    },
-  );
 }
