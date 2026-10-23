@@ -1696,14 +1696,7 @@ class ChainProxyManager extends ChangeNotifier {
     // manager, so `_disposed` must be part of the re-check too.
     if (_disposed || _isProbingChain || isFailingOver) return;
 
-    // `probeCurrentChain` takes the next id synchronously, so this is exactly
-    // the id our own probe will own.
-    final int probeGeneration = _probeGeneration + 1;
-    final report = await probeCurrentChain();
-    // A newer probe superseded ours: its report is stale evidence and must not
-    // drive automatic failover.
-    if (_probeGeneration != probeGeneration) return;
-    await _maybeAutoFailover(report);
+    await probeCurrentChain();
   }
 
   /// P2.4-E (CF-5): the core is "ready" only when its API actually answers —
@@ -1729,94 +1722,6 @@ class ChainProxyManager extends ChangeNotifier {
       }
     }
     return false;
-  }
-
-  /// P1.5-A: reports **why** automatic failover was skipped.
-  ///
-  /// The three reasons are mutually exclusive within one pass — decided by
-  /// nesting depth inside [_maybeAutoFailover], so only the outermost failing
-  /// gate is reported:
-  ///   1. `failureHop 未提供` — role is indeterminate, nothing can be replaced
-  ///   2. `无可用候选`        — the enabled candidate pool for that role is empty
-  ///   3. `抖动抑制中`        — the flap dampener suppressed this pass
-  ///
-  /// A diagnosis is written only when it **differs** from the previous pass, so a
-  /// persistent condition (an exhausted pool re-evaluated every minute) logs
-  /// once instead of once per tick.
-  void _reportAutoFailoverSkip(String reason) {
-    if (_lastAutoFailoverSkipDiagnosis == reason) return;
-    _lastAutoFailoverSkipDiagnosis = reason;
-    commonPrint.log('ChainProxyManager: auto failover skipped — $reason');
-  }
-
-  /// P1.5-A: clears the skip diagnosis after a genuine recovery, logging once.
-  ///
-  /// Only reached for `healthy` — see the caller. `degraded` / `cancelled` /
-  /// `unknown` / `checking` deliberately keep the existing diagnosis, since a
-  /// still-impaired (or undetermined) chain does not prove the skip reason has
-  /// gone away.
-  void _clearAutoFailoverSkipDiagnosis() {
-    if (_lastAutoFailoverSkipDiagnosis == null) return;
-    _lastAutoFailoverSkipDiagnosis = null;
-    commonPrint.log('ChainProxyManager: auto failover skip cleared');
-  }
-
-  Future<void> _maybeAutoFailover(ChainProbeReport report) async {
-    if (report.status == ChainHealthStatus.failed || report.status == ChainHealthStatus.unavailable) {
-      _consecutiveHealthCheckFailures++;
-      if (_consecutiveHealthCheckFailures >= 2) {
-        // The failing hop index is the authoritative signal for *which* role to
-        // replace. Without it (null) the role is indeterminate, so the
-        // automatic trigger must not fire.
-        final int? failureHopIndex = report.failureHop;
-        if (failureHopIndex != null) {
-          final role = ChainFailoverService.deduceRoleFromFailureHop(
-            _config.hopMode,
-            failureHopIndex,
-          );
-          final candidates = _fallbackPool
-              .getCandidatesByRole(role)
-              .where((c) => c.enabled)
-              .toList();
-          if (candidates.isNotEmpty) {
-            final dampening = chainFlapDampenerService.evaluate();
-            if (!dampening.isDampened) {
-              // Await the session so a single health-check pass is a complete,
-              // observable unit (apply → probe → commit/rollback). The
-              // `isFailingOver` guard already makes re-entrancy impossible, and
-              // the periodic timer simply runs one tick longer.
-              try {
-                await triggerAutoFailover(
-                  triggerReason: 'Auto failover triggered',
-                  initialFailureReport: report,
-                  bypassDampening: false,
-                );
-              } catch (e) {
-                commonPrint.log('ChainProxyManager: auto failover failed: $e');
-              }
-            } else {
-              _reportAutoFailoverSkip('抖动抑制中 (dampened)');
-            }
-          } else {
-            _reportAutoFailoverSkip('无可用候选 (role=${role.name})');
-          }
-        } else {
-          _reportAutoFailoverSkip(
-            'failureHop 未提供，无法判定需替换的角色 '
-            '(hopMode=${_config.hopMode.name}, status=${report.status.name})',
-          );
-        }
-      }
-    } else {
-      _consecutiveHealthCheckFailures = 0;
-      // P1.5-A: only a genuinely healthy report clears the diagnosis. This else
-      // branch is "not failed/unavailable" — it also covers `degraded`,
-      // `cancelled`, `unknown` and `checking`, none of which proves the original
-      // skip reason has gone away.
-      if (report.status == ChainHealthStatus.healthy) {
-        _clearAutoFailoverSkipDiagnosis();
-      }
-    }
   }
 
   void _scheduleReliabilityPersist() {
