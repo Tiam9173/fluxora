@@ -1307,5 +1307,6 @@
   "stCopy": "複製結果",
   "stCopied": "已複製",
   "stLatency": "延遲",
-  "stJitter": "抖動"
+  "stJitter": "抖動",
+  "chainProbeResult": "探測結果"
 }

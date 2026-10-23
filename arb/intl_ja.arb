@@ -1309,5 +1309,6 @@
   "stCopy": "コピー",
   "stCopied": "コピーしました",
   "stLatency": "遅延",
-  "stJitter": "ジッター"
+  "stJitter": "ジッター",
+  "chainProbeResult": "測定結果"
 }

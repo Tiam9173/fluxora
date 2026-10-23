@@ -1313,5 +1313,6 @@
   "stCopy": "Копировать",
   "stCopied": "Скопировано",
   "stLatency": "Задержка",
-  "stJitter": "Джиттер"
+  "stJitter": "Джиттер",
+  "chainProbeResult": "Результаты"
 }

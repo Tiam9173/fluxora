@@ -1756,5 +1756,6 @@
   "stCopy": "Copy",
   "stCopied": "Copied",
   "stLatency": "Latency",
-  "stJitter": "jitter"
+  "stJitter": "jitter",
+  "chainProbeResult": "Probe results"
 }

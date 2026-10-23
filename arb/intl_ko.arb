@@ -1309,5 +1309,6 @@
   "stCopy": "복사",
   "stCopied": "복사됨",
   "stLatency": "지연",
-  "stJitter": "지터"
+  "stJitter": "지터",
+  "chainProbeResult": "측정 결과"
 }
