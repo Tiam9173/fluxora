@@ -1300,5 +1300,14 @@
   "coreAutoRestartFailed": "코어가 반복 종료되어 자동 재시작을 중단했습니다",
   "autoSetSystemDnsUnsupported": "DNS 자동 설정에는 systemd-resolved(resolvectl)가 필요하지만 이 시스템에는 없습니다.",
   "viaProxy": "프록시 경유",
-  "viaDirect": "직접 연결"
+  "viaDirect": "직접 연결",
+  "stPhaseLatency": "지연 측정 중...",
+  "stPhaseDownload": "다운로드 측정 중...",
+  "stPhaseUpload": "업로드 측정 중...",
+  "stPhaseDone": "측정 완료",
+  "stPhaseFailed": "측정 실패",
+  "stCopy": "복사",
+  "stCopied": "복사됨",
+  "stLatency": "지연",
+  "stJitter": "지터"
 }

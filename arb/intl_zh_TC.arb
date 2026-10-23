@@ -1298,5 +1298,14 @@
   "coreAutoRestartFailed": "內核反覆退出，已停止自動重啟",
   "autoSetSystemDnsUnsupported": "自動設定 DNS 需要 systemd-resolved（resolvectl），目前系統沒有。",
   "viaProxy": "經代理",
-  "viaDirect": "直連"
+  "viaDirect": "直連",
+  "stPhaseLatency": "測量延遲...",
+  "stPhaseDownload": "測試下行...",
+  "stPhaseUpload": "測試上行...",
+  "stPhaseDone": "測試完成",
+  "stPhaseFailed": "測試失敗",
+  "stCopy": "複製結果",
+  "stCopied": "已複製",
+  "stLatency": "延遲",
+  "stJitter": "抖動"
 }

@@ -1304,5 +1304,14 @@
   "coreAutoRestartFailed": "Ядро завершается постоянно. Автоперезапуск остановлен.",
   "autoSetSystemDnsUnsupported": "Для автоматической настройки DNS нужен systemd-resolved (resolvectl), которого в системе нет.",
   "viaProxy": "через прокси",
-  "viaDirect": "напрямую"
+  "viaDirect": "напрямую",
+  "stPhaseLatency": "Измерение задержки...",
+  "stPhaseDownload": "Измерение загрузки...",
+  "stPhaseUpload": "Измерение отдачи...",
+  "stPhaseDone": "Готово",
+  "stPhaseFailed": "Ошибка",
+  "stCopy": "Копировать",
+  "stCopied": "Скопировано",
+  "stLatency": "Задержка",
+  "stJitter": "Джиттер"
 }

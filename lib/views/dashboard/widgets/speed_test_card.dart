@@ -4,8 +4,10 @@ import 'dart:math' as math;
 import 'package:fluxora/clash/clash.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/models/models.dart';
+import 'package:fluxora/widgets/widgets.dart';
 import 'package:fluxora/state.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// 从首页「网络速度」卡片点开的测速卡片。
 ///
@@ -25,14 +27,16 @@ class _SpeedTestCardState extends State<SpeedTestCard> {
   bool _running = false;
   bool _gotFrame = false;
 
-  /// 动态量程：按本轮见过的峰值往上取档，只增不减，避免测速途中弧线来回跳。
+  /// 曲线只画最近这些帧：300ms 一帧，40 帧约 12 秒，正好覆盖一轮测速。
+  static const _historyLimit = 40;
+  final List<Point> _history = [];
+
   double _scale = 100;
   double _peak = 0;
 
   @override
   void initState() {
     super.initState();
-    // 300ms 一次：测速是秒级过程，这个间隔看不出延迟，也不会给 FFI 添负担。
     _poll = Timer.periodic(const Duration(milliseconds: 300), (_) async {
       if (!mounted) return;
       final p = await clashCore.speedTestStatus();
@@ -45,6 +49,10 @@ class _SpeedTestCardState extends State<SpeedTestCard> {
         _progress = p;
         if (p.headlineMbps > _peak) _peak = p.headlineMbps;
         _scale = _scaleFor(_peak);
+        if (p.isRunning && p.headlineMbps > 0) {
+          _history.add(Point(_history.length.toDouble(), p.headlineMbps));
+          if (_history.length > _historyLimit) _history.removeAt(0);
+        }
         if (p.isDone || p.isFailed) _running = false;
       });
     });
@@ -61,14 +69,13 @@ class _SpeedTestCardState extends State<SpeedTestCard> {
     setState(() {
       _running = true;
       _gotFrame = false;
+      _history.clear();
       _peak = 0;
       _scale = 100;
       _progress = const SpeedTestProgress(phase: 'latency');
     });
-    // 3 秒没有任何一帧，说明内核那边没动，比一直显示 0 更容易定位。
+    // 12 秒：选源要查出口位置、拉服务器列表、探节点、拉 32KB 验证，3 秒会误报。
     _watchdog?.cancel();
-    // 12 秒：选源本身就要花时间（查出口位置 + 拉服务器列表 + 探 6 台 + 拉
-    // 32KB 验证），3 秒会在一帧都没出来时就误报"内核没有响应"。
     _watchdog = Timer(const Duration(seconds: 12), () {
       if (!mounted || _gotFrame) return;
       setState(() {
@@ -90,8 +97,7 @@ class _SpeedTestCardState extends State<SpeedTestCard> {
     }
   }
 
-  /// 量程只在这几个档位之间跳：100M / 500M / 1G / 2.5G / 5G。
-  /// 用固定档位而不是"当前值 ×1.2"，是为了让弧线在整轮测速里刻度稳定。
+  /// 量程只在几个档位之间跳，避免测速途中刻度来回变。
   static double _scaleFor(double peak) {
     const buckets = [100.0, 500.0, 1000.0, 2500.0, 5000.0];
     for (final b in buckets) {
@@ -108,10 +114,61 @@ class _SpeedTestCardState extends State<SpeedTestCard> {
     return '${scale.toInt()}M';
   }
 
-  String _fmt(double mbps) {
+  /// 低于 1 Mbps 用 Kbps，避免出现 "0.35 Mbps" 这种读数。
+  static String _fmt(double mbps) {
+    if (mbps > 0 && mbps < 1) return (mbps * 1000).toStringAsFixed(0);
+    if (mbps >= 1000) return (mbps / 1000).toStringAsFixed(2);
     if (mbps >= 100) return mbps.toStringAsFixed(0);
     if (mbps >= 10) return mbps.toStringAsFixed(1);
     return mbps.toStringAsFixed(2);
+  }
+
+  static String _unitFor(double mbps) {
+    if (mbps > 0 && mbps < 1) return 'Kbps';
+    if (mbps >= 1000) return 'Gbps';
+    return 'Mbps';
+  }
+
+  String get _phaseText {
+    switch (_progress.phase) {
+      case 'latency':
+        return appLocalizations.stPhaseLatency;
+      case 'download':
+        return appLocalizations.stPhaseDownload;
+      case 'upload':
+        return appLocalizations.stPhaseUpload;
+      case 'done':
+        return appLocalizations.stPhaseDone;
+      case 'failed':
+        return appLocalizations.stPhaseFailed;
+      default:
+        return '';
+    }
+  }
+
+  Future<void> _copy() async {
+    final p = _progress;
+    final where = globalState.isStart
+        ? appLocalizations.viaProxy
+        : appLocalizations.viaDirect;
+    final text = [
+      'Fluxora',
+      '${appLocalizations.stLatency} ${p.latencyMs}ms · '
+          '${appLocalizations.stJitter} ${p.jitterMs}ms',
+      '${appLocalizations.download} ${_fmt(p.downMbps)} ${_unitFor(p.downMbps)}',
+      '${appLocalizations.upload} ${_fmt(p.upMbps)} ${_unitFor(p.upMbps)}',
+      if (p.serverName.isNotEmpty) '${p.serverName} · $where',
+    ].join('\n');
+    await Clipboard.setData(ClipboardData(text: text));
+    if (!mounted) return;
+    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+      // 默认贴底会被底部导航栏挡住，改成浮起并抬高。
+      SnackBar(
+        content: Text(appLocalizations.stCopied),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 96),
+      ),
+    );
   }
 
   @override
@@ -119,6 +176,8 @@ class _SpeedTestCardState extends State<SpeedTestCard> {
     final scheme = context.colorScheme;
     final p = _progress;
     final target = p.headlineMbps;
+    // 系统开了「减少动画」时补间必须归零（项目规范 §10.5）。
+    final reduceMotion = MediaQuery.of(context).disableAnimations;
 
     return Dialog(
       backgroundColor: scheme.surface,
@@ -144,10 +203,11 @@ class _SpeedTestCardState extends State<SpeedTestCard> {
               ],
             ),
             const SizedBox(height: 4),
-            // 数字和弧线一起用同一个补间，跳变会变成"爬上去"，读数更顺。
             TweenAnimationBuilder<double>(
               tween: Tween<double>(end: target),
-              duration: const Duration(milliseconds: 320),
+              duration: reduceMotion
+                  ? Duration.zero
+                  : const Duration(milliseconds: 320),
               curve: Curves.easeOutCubic,
               builder: (context, value, _) {
                 return SizedBox(
@@ -179,12 +239,9 @@ class _SpeedTestCardState extends State<SpeedTestCard> {
                               ],
                             ),
                           ),
-                          Text('Mbps', style: context.textTheme.bodySmall),
                           Text(
-                            '/ ${_scaleLabel(_scale)}',
-                            style: context.textTheme.labelSmall?.copyWith(
-                              color: scheme.onSurfaceVariant,
-                            ),
+                            '${_unitFor(value)} / ${_scaleLabel(_scale)}',
+                            style: context.textTheme.bodySmall,
                           ),
                         ],
                       ),
@@ -193,33 +250,68 @@ class _SpeedTestCardState extends State<SpeedTestCard> {
                 );
               },
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             _PhaseDots(phase: p.phase),
-            if (p.serverName.isNotEmpty)
+            if (_phaseText.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.only(top: 6),
+                padding: const EdgeInsets.only(top: 4),
                 child: Text(
-                  // 内核没在跑就是直连，不能一律标"经代理"。
-                  '${p.serverName} · ${globalState.isStart ? appLocalizations.viaProxy : appLocalizations.viaDirect}',
+                  _phaseText,
                   style: context.textTheme.labelSmall?.copyWith(
                     color: scheme.onSurfaceVariant,
                   ),
                 ),
               ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
+            // 测速过程的形状：能看出稳不稳、有没有掉速。
+            SizedBox(
+              height: 56,
+              child: RepaintBoundary(
+                child: _history.length < 2
+                    ? const SizedBox.shrink()
+                    : LineChart(
+                        points: _history,
+                        color: scheme.primary,
+                        gradient: true,
+                      ),
+              ),
+            ),
+            const SizedBox(height: 10),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _stat(context, Icons.speed, '${p.latencyMs}', 'ms'),
+                _stat(
+                  context,
+                  Icons.speed,
+                  '${p.latencyMs}',
+                  'ms',
+                  sub: p.jitterMs > 0 ? '±${p.jitterMs}ms' : null,
+                ),
                 _stat(
                   context,
                   Icons.arrow_downward,
                   _fmt(p.downMbps),
-                  'Mbps',
+                  _unitFor(p.downMbps),
                 ),
-                _stat(context, Icons.arrow_upward, _fmt(p.upMbps), 'Mbps'),
+                _stat(
+                  context,
+                  Icons.arrow_upward,
+                  _fmt(p.upMbps),
+                  _unitFor(p.upMbps),
+                ),
               ],
             ),
+            if (p.serverName.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  '${p.serverName} · '
+                  '${globalState.isStart ? appLocalizations.viaProxy : appLocalizations.viaDirect}',
+                  style: context.textTheme.labelSmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
             if (p.isFailed && p.error != null)
               Padding(
                 padding: const EdgeInsets.only(top: 10),
@@ -232,16 +324,25 @@ class _SpeedTestCardState extends State<SpeedTestCard> {
                 ),
               ),
             const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: _running ? null : _start,
-                child: Text(
-                  p.isDone || p.isFailed
-                      ? appLocalizations.retry
-                      : appLocalizations.start,
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton(
+                    onPressed: _running ? null : _start,
+                    child: Text(
+                      p.isDone || p.isFailed
+                          ? appLocalizations.retry
+                          : appLocalizations.start,
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 8),
+                TextButton.icon(
+                  onPressed: p.isDone ? _copy : null,
+                  icon: const Icon(Icons.copy, size: 18),
+                  label: Text(appLocalizations.stCopy),
+                ),
+              ],
             ),
           ],
         ),
@@ -249,7 +350,13 @@ class _SpeedTestCardState extends State<SpeedTestCard> {
     );
   }
 
-  Widget _stat(BuildContext context, IconData icon, String value, String unit) {
+  Widget _stat(
+    BuildContext context,
+    IconData icon,
+    String value,
+    String unit, {
+    String? sub,
+  }) {
     final scheme = context.colorScheme;
     return Column(
       children: [
@@ -262,6 +369,13 @@ class _SpeedTestCardState extends State<SpeedTestCard> {
           ),
         ),
         Text(unit, style: context.textTheme.labelSmall),
+        if (sub != null)
+          Text(
+            sub,
+            style: context.textTheme.labelSmall?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
       ],
     );
   }

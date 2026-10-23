@@ -11209,6 +11209,76 @@ class AppLocalizations {
   String get viaDirect {
     return Intl.message('direct', name: 'viaDirect', desc: '', args: []);
   }
+
+  /// `Measuring latency...`
+  String get stPhaseLatency {
+    return Intl.message(
+      'Measuring latency...',
+      name: 'stPhaseLatency',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Testing download...`
+  String get stPhaseDownload {
+    return Intl.message(
+      'Testing download...',
+      name: 'stPhaseDownload',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Testing upload...`
+  String get stPhaseUpload {
+    return Intl.message(
+      'Testing upload...',
+      name: 'stPhaseUpload',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Test complete`
+  String get stPhaseDone {
+    return Intl.message(
+      'Test complete',
+      name: 'stPhaseDone',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Test failed`
+  String get stPhaseFailed {
+    return Intl.message(
+      'Test failed',
+      name: 'stPhaseFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Copy`
+  String get stCopy {
+    return Intl.message('Copy', name: 'stCopy', desc: '', args: []);
+  }
+
+  /// `Copied`
+  String get stCopied {
+    return Intl.message('Copied', name: 'stCopied', desc: '', args: []);
+  }
+
+  /// `Latency`
+  String get stLatency {
+    return Intl.message('Latency', name: 'stLatency', desc: '', args: []);
+  }
+
+  /// `jitter`
+  String get stJitter {
+    return Intl.message('jitter', name: 'stJitter', desc: '', args: []);
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {

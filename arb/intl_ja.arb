@@ -1300,5 +1300,14 @@
   "coreAutoRestartFailed": "コアが繰り返し終了するため、自動再起動を停止しました",
   "autoSetSystemDnsUnsupported": "DNS の自動設定には systemd-resolved（resolvectl）が必要ですが、このシステムにはありません。",
   "viaProxy": "プロキシ経由",
-  "viaDirect": "直接接続"
+  "viaDirect": "直接接続",
+  "stPhaseLatency": "遅延を測定中...",
+  "stPhaseDownload": "下りを測定中...",
+  "stPhaseUpload": "上りを測定中...",
+  "stPhaseDone": "測定完了",
+  "stPhaseFailed": "測定失敗",
+  "stCopy": "コピー",
+  "stCopied": "コピーしました",
+  "stLatency": "遅延",
+  "stJitter": "ジッター"
 }

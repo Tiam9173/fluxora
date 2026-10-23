@@ -109,7 +109,7 @@ func probeUsable(ctx context.Context, client *http.Client, url string) bool {
 	if resp.StatusCode != http.StatusOK {
 		return false
 	}
-	buf := make([]byte, 32*1024)
+	buf := make([]byte, 256*1024)
 	_, err = io.ReadFull(resp.Body, buf)
 	return err == nil
 }
@@ -177,15 +177,8 @@ func resolveTarget(ctx context.Context, client *http.Client) (string, string, st
 			best = c
 		}
 	}
-	// 国内 CDN：只测下载（上传仍走 Cloudflare），但下载这个数最准。
-	for _, cdn := range []struct{ name, url string }{
-		{"Aliyun CDN", aliyunCDNURL},
-		{"Tencent CDN", tencentCDNURL},
-	} {
-		if probeUsable(ctx, client, cdn.url) {
-			return cdn.name, cdn.url, cloudflareUpURL
-		}
-	}
+	// 国内 CDN 试过阿里云/腾讯云：探测能过，正式下载一律吊死到超时。
+	// 这类镜像对跨境流量不友好，留着只会让每轮测速多等十几秒，索性去掉。
 	if best.name == "Apple" {
 		if large, up, ok := appleTarget(ctx, client); ok && probeUsable(ctx, client, large) {
 			return "Apple", large, up
@@ -397,7 +390,7 @@ func handleSpeedTest(action *Action, result ActionResult) {
 		})
 
 		// 2. 下载
-		dctx, dcancel := context.WithTimeout(ctx, 25*time.Second)
+		dctx, dcancel := context.WithTimeout(ctx, 12*time.Second)
 		down, err := measureDownload(dctx, client, report)
 		dcancel()
 		if err != nil {

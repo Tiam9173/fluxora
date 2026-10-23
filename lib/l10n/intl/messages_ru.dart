@@ -2030,6 +2030,21 @@ class MessageLookup extends MessageLookupByLibrary {
       "Указать отдельный переход",
     ),
     "spinningLines": MessageLookupByLibrary.simpleMessage("Вращающиеся линии"),
+    "stCopied": MessageLookupByLibrary.simpleMessage("Скопировано"),
+    "stCopy": MessageLookupByLibrary.simpleMessage("Копировать"),
+    "stJitter": MessageLookupByLibrary.simpleMessage("Джиттер"),
+    "stLatency": MessageLookupByLibrary.simpleMessage("Задержка"),
+    "stPhaseDone": MessageLookupByLibrary.simpleMessage("Готово"),
+    "stPhaseDownload": MessageLookupByLibrary.simpleMessage(
+      "Измерение загрузки...",
+    ),
+    "stPhaseFailed": MessageLookupByLibrary.simpleMessage("Ошибка"),
+    "stPhaseLatency": MessageLookupByLibrary.simpleMessage(
+      "Измерение задержки...",
+    ),
+    "stPhaseUpload": MessageLookupByLibrary.simpleMessage(
+      "Измерение отдачи...",
+    ),
     "stackMode": MessageLookupByLibrary.simpleMessage("Режим стека"),
     "standard": MessageLookupByLibrary.simpleMessage("Стандарт"),
     "start": MessageLookupByLibrary.simpleMessage("Запуск"),

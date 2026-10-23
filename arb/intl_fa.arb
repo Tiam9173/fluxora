@@ -1300,5 +1300,14 @@
   "coreAutoRestartFailed": "هسته مدام متوقف می‌شود. راه‌اندازی خودکار متوقف شد.",
   "autoSetSystemDnsUnsupported": "تنظیم خودکار DNS به systemd-resolved (resolvectl) نیاز دارد که در این سیستم موجود نیست.",
   "viaProxy": "از طریق پروکسی",
-  "viaDirect": "مستقیم"
+  "viaDirect": "مستقیم",
+  "stPhaseLatency": "اندازه گیری تاخیر...",
+  "stPhaseDownload": "آزمایش دانلود...",
+  "stPhaseUpload": "آزمایش آپلود...",
+  "stPhaseDone": "پایان یافت",
+  "stPhaseFailed": "ناموفق",
+  "stCopy": "کپی",
+  "stCopied": "کپی شد",
+  "stLatency": "تاخیر",
+  "stJitter": "جیتر"
 }
