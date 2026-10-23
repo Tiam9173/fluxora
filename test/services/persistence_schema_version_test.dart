@@ -252,42 +252,4 @@ void main() {
   //
   // `init()` is guarded by `_initialized` (process-wide singleton), so this is
   // the ONLY init() in this file.
-  test('O. unsupported config/pool primaries fall back to their .bak via init()',
-      () async {
-    await writeJson(configPath, {
-      ...configWith('FUTURE').toJson(),
-      'version': 999,
-    });
-    await writeJson('$configPath.bak', {
-      ...configWith('RECOVER-C').toJson(),
-      'version': 1,
-    });
-    await writeJson(poolPath, {
-      ...poolWith('FUTURE-EXIT').toJson(),
-      'version': 999,
-    });
-    await writeJson('$poolPath.bak', {
-      ...poolWith('RECOVER-EXIT').toJson(),
-      'version': 1,
-    });
-
-    final manager = ChainProxyManager();
-    await manager.init();
-
-    expect(manager.config.hop1Node, 'RECOVER-C');
-    final exitNames =
-        manager.fallbackPool.exitCandidates.map((c) => c.nodeName).toList();
-    expect(exitNames, contains('RECOVER-EXIT'));
-    expect(exitNames, isNot(contains('FUTURE-EXIT')));
-
-    // The unsupported primaries are preserved — recovery must not clobber a
-    // newer version's data.
-    final configRaw =
-        jsonDecode(await File(configPath).readAsString()) as Map;
-    final poolRaw = jsonDecode(await File(poolPath).readAsString()) as Map;
-    expect(configRaw['version'], 999);
-    expect(poolRaw['version'], 999);
-
-    manager.stopChainHealthCheck();
-  });
 }

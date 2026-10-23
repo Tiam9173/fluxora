@@ -522,7 +522,6 @@ class ChainProxyConfig {
   final String hop2Node;
   final String hop3Node;
 
-  final bool autoFailover;
   const ChainProxyConfig({
     this.enable = false,
     this.defaultDialerProxy = '',
@@ -537,7 +536,6 @@ class ChainProxyConfig {
     this.frontHops = const [],
     this.hop2Node = '',
     this.hop3Node = '',
-    this.autoFailover = false,
   });
 
   /// The front-hop chain, first entry = entry node.
@@ -607,7 +605,6 @@ class ChainProxyConfig {
     List<String>? frontHops,
     String? hop2Node,
     String? hop3Node,
-    bool? autoFailover,
   }) {
     return ChainProxyConfig(
       enable: enable ?? this.enable,
@@ -623,7 +620,6 @@ class ChainProxyConfig {
       frontHops: frontHops ?? this.frontHops,
       hop2Node: hop2Node ?? this.hop2Node,
       hop3Node: hop3Node ?? this.hop3Node,
-      autoFailover: autoFailover ?? this.autoFailover,
     );
   }
 
@@ -642,7 +638,6 @@ class ChainProxyConfig {
       'frontHops': frontHops,
       'hop2Node': hop2Node,
       'hop3Node': hop3Node,
-      'autoFailover': autoFailover,
     };
   }
 
@@ -678,7 +673,6 @@ class ChainProxyConfig {
           : const [],
       hop2Node: json['hop2Node']?.toString() ?? '',
       hop3Node: json['hop3Node']?.toString() ?? '',
-      autoFailover: json['autoFailover'] == true,
     );
   }
 

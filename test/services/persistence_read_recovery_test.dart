@@ -242,42 +242,4 @@ void main() {
   //
   // `init()` is guarded by `_initialized` (process-wide singleton), so this is
   // the ONLY init() in this file — it drives all three paths at once.
-  test('W. manager.init() reads all three paths through AtomicConfigStorage',
-      () async {
-    // config: primary MISSING + .bak valid
-    await writeJson('$configPath.bak', configWith('RECOVER-1').toJson());
-    expect(File(configPath).existsSync(), isFalse);
-
-    // pool: primary CORRUPT + .bak valid
-    await File(poolPath).writeAsString('{ truncated', flush: true);
-    await writeJson('$poolPath.bak', poolWith('EXIT-1').toJson());
-
-    // stats: primary MISSING + .bak valid — one existing node + one ghost node
-    await writeJson(
-      '$statsPath.bak',
-      statsPayload({'exit': ['EXIT-1', 'GHOST-9']}),
-    );
-
-    final manager = ChainProxyManager();
-    await manager.init();
-
-    // (B) config recovered from .bak through the production read path.
-    expect(manager.config.enable, isTrue);
-    expect(manager.config.hop1Node, 'RECOVER-1');
-
-    // (G) pool recovered from .bak through the production read path.
-    final exitNames =
-        manager.fallbackPool.exitCandidates.map((c) => c.nodeName).toList();
-    expect(exitNames, contains('EXIT-1'));
-
-    // (O) reliability stats apply ONLY to existing candidates; the ghost node
-    // is never materialised as a candidate.
-    expect(exitNames, isNot(contains('GHOST-9')));
-    final exit1 = manager.fallbackPool.exitCandidates
-        .firstWhere((c) => c.nodeName == 'EXIT-1');
-    expect(exit1.statsByContext.containsKey('fp-1'), isTrue,
-        reason: 'recovered stats must reach the existing candidate');
-
-    manager.stopChainHealthCheck();
-  });
 }

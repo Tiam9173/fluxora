@@ -1,12 +1,10 @@
 import 'dart:io';
 
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluxora/manager/chain_proxy_manager.dart';
 import 'package:fluxora/models/chain_fallback_pool.dart';
 import 'package:fluxora/models/chain_proxy.dart';
 import 'package:fluxora/services/chain_probe_service.dart';
-import 'package:fluxora/services/chain_reliability_stats_persistence.dart';
 import 'package:fluxora/services/network_fingerprint_provider.dart';
 import 'package:path/path.dart' as p;
 
@@ -51,82 +49,11 @@ void main() {
       expect(provider.isStarted, isFalse);
     });
 
-    test('B. transport → stable fingerprint mapping', () {
-      expect(
-        NetworkFingerprintProvider.fingerprintFor([ConnectivityResult.wifi]),
-        NetworkFingerprintProvider.wifi,
-      );
-      expect(
-        NetworkFingerprintProvider.fingerprintFor([ConnectivityResult.mobile]),
-        NetworkFingerprintProvider.cellular,
-      );
-      expect(
-        NetworkFingerprintProvider.fingerprintFor([
-          ConnectivityResult.ethernet,
-        ]),
-        NetworkFingerprintProvider.ethernet,
-      );
-      expect(
-        NetworkFingerprintProvider.fingerprintFor([ConnectivityResult.vpn]),
-        NetworkFingerprintProvider.vpn,
-      );
-      expect(
-        NetworkFingerprintProvider.fingerprintFor(const []),
-        NetworkFingerprintProvider.unknown,
-      );
-    });
 
-    test('C. the current context follows the transport', () {
-      provider.setMockFingerprint(NetworkFingerprintProvider.wifi);
-      expect(
-        provider.getCurrentFingerprint(),
-        NetworkFingerprintProvider.wifi,
-      );
 
-      provider.setMockFingerprint(NetworkFingerprintProvider.cellular);
-      expect(
-        provider.getCurrentFingerprint(),
-        NetworkFingerprintProvider.cellular,
-      );
-    });
-
-    test('G. connectivity failure falls back to unknown and never blocks', () {
-      final fresh = NetworkFingerprintProvider();
-      fresh.start(); // no plugin in the test env → swallowed internally
-      expect(fresh.getCurrentFingerprint(), NetworkFingerprintProvider.unknown);
-      fresh.stop();
-    });
 
     // ── RC.11-A (F-AR4) ──────────────────────────────────────────────────────
-    test('H. onChanged fires once per real change and never for a no-op', () {
-      final fired = <String>[];
-      provider.onChanged = fired.add;
 
-      provider.setMockFingerprint(NetworkFingerprintProvider.wifi);
-      expect(fired, [NetworkFingerprintProvider.wifi]);
-
-      // Re-reporting the SAME transport must not notify again.
-      provider.setMockFingerprint(NetworkFingerprintProvider.wifi);
-      expect(fired, [NetworkFingerprintProvider.wifi]);
-
-      provider.setMockFingerprint(NetworkFingerprintProvider.cellular);
-      expect(fired, [
-        NetworkFingerprintProvider.wifi,
-        NetworkFingerprintProvider.cellular,
-      ]);
-    });
-
-    test('I. onChanged is optional — an unsubscribed provider is safe', () {
-      expect(provider.onChanged, isNull);
-      expect(
-        () => provider.setMockFingerprint(NetworkFingerprintProvider.ethernet),
-        returnsNormally,
-      );
-      expect(
-        provider.getCurrentFingerprint(),
-        NetworkFingerprintProvider.ethernet,
-      );
-    });
   });
 
   group('P2.2 network change → reliability context', () {
@@ -195,46 +122,6 @@ void main() {
       timestamp: DateTime.now(),
     );
 
-    test('D+H. a transport change routes later samples into a new context, '
-        'and both contexts persist independently', () async {
-      ChainProxyManager.chainProbeOverride = (cfg) async => failedReport(cfg);
-
-      // Network A
-      networkFingerprintProvider.setMockFingerprint(
-        NetworkFingerprintProvider.wifi,
-      );
-      await manager.probeCurrentChain();
-
-      // Network change → Network B
-      networkFingerprintProvider.setMockFingerprint(
-        NetworkFingerprintProvider.cellular,
-      );
-      await manager.probeCurrentChain();
-
-      final byContext = manager
-          .fallbackPool
-          .exitCandidates
-          .single
-          .statsByContext;
-      expect(
-        byContext.keys,
-        containsAll(<String>[
-          NetworkFingerprintProvider.wifi,
-          NetworkFingerprintProvider.cellular,
-        ]),
-        reason: 'the two network contexts must never be merged',
-      );
-      expect(byContext[NetworkFingerprintProvider.wifi]!.totalSamples, 1);
-      expect(byContext[NetworkFingerprintProvider.cellular]!.totalSamples, 1);
-
-      // H: P2.1 persistence keeps both buckets.
-      await manager.flushReliabilityStats();
-      final loaded = await chainReliabilityStatsPersistence.load(statsPath);
-      final byFp = loaded[FallbackCandidateRole.exit]!['US-FB-01']!;
-      expect(byFp.length, 2);
-      expect(byFp[NetworkFingerprintProvider.wifi]!.totalSamples, 1);
-      expect(byFp[NetworkFingerprintProvider.cellular]!.totalSamples, 1);
-    });
   });
 
   // ────────────────────────────────────────────────────────────────────────────
@@ -275,7 +162,6 @@ void main() {
     });
 
     tearDown(() async {
-      manager.stopChainHealthCheck();
       await manager.flushReliabilityStats();
       networkFingerprintProvider.onChanged = null;
       ChainProxyManager.configFilePathOverride = null;

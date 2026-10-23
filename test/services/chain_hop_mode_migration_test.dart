@@ -33,7 +33,6 @@ void main() {
   });
 
   tearDown(() {
-    ChainProxyManager().stopChainHealthCheck();
     ChainProxyManager.configFilePathOverride = null;
     ChainProxyManager.fallbackPoolFilePathOverride = null;
     ChainProxyManager.coreRunningOverride = null;
@@ -45,7 +44,6 @@ void main() {
   Future<ChainProxyManager> arrange(ChainProxyConfig config) async {
     final manager = ChainProxyManager();
     await manager.updateConfig((_) => config);
-    manager.stopChainHealthCheck();
     return manager;
   }
 

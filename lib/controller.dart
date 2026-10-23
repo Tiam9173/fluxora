@@ -1495,7 +1495,6 @@ class AppController {
       // Ordering note: this runs *before* `flushReliabilityStats()` so no new
       // sample can be produced while the flush is in progress, but the flush
       // still happens while its producer (`ChainProxyManager`) is alive.
-      chainProxyManager.stopChainHealthCheck();
       networkFingerprintProvider.stop();
       await globalState.handleBackground();
       if (system.isDesktop) {

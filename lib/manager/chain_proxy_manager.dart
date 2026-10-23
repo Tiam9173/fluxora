@@ -22,7 +22,6 @@ import 'package:flutter/foundation.dart';
 
 import 'package:fluxora/services/chain_reliability_stats_persistence.dart';
 import 'package:fluxora/services/network_fingerprint_provider.dart';
-import 'package:fluxora/services/core_health_service.dart';
 import 'package:fluxora/services/atomic_config_storage.dart';
 import 'package:fluxora/services/persistence_schema.dart';
 import 'package:fluxora/models/chain_reliability_stats.dart';
@@ -64,7 +63,6 @@ class ChainProxyManager extends ChangeNotifier {
   /// [_reportAutoFailoverSkip]. Read-only: tests assert the state here, while
   /// `debugPrint` counting proves how often it was actually emitted.
   @visibleForTesting
-  String? get autoFailoverSkipDiagnosis => _lastAutoFailoverSkipDiagnosis;
 
   
   static ChainProxyManager? _instance;
@@ -217,7 +215,6 @@ class ChainProxyManager extends ChangeNotifier {
     _probeGeneration++;
     _probeCancelToken?.cancel();
     _failoverCancelToken?.cancel();
-    stopChainHealthCheck();
     _consecutiveHealthCheckFailures = 0;
     _reliabilityPersistTimer?.cancel();
     _reliabilityPersistTimer = null;
@@ -375,7 +372,6 @@ class ChainProxyManager extends ChangeNotifier {
     // P0: a persisted `autoFailover: true` must actually resume the loop after a
     // restart. Before this, nothing in production ever started the loop, so the
     // automatic failover path was unreachable even though the flag was stored.
-    _syncChainHealthCheck();
   }
 
   Future<void> _saveConfig() async {
@@ -450,7 +446,6 @@ class ChainProxyManager extends ChangeNotifier {
     }
     // P0: `enable` is one of the two inputs that decide whether the automatic
     // failover loop runs, so every toggle must reconcile the loop.
-    _syncChainHealthCheck();
   }
 
   Future<void> _autoSelectChainGroup() async {
@@ -924,7 +919,6 @@ class ChainProxyManager extends ChangeNotifier {
   /// P1.5-A: the last auto-failover skip diagnosis written to the log, so a
   /// persistent condition (e.g. an exhausted candidate pool) is reported **once**
   /// rather than on every 1-minute health-check tick.
-  String? _lastAutoFailoverSkipDiagnosis;
   Timer? _chainHealthTimer;
   Timer? _reliabilityPersistTimer;
 
@@ -1391,14 +1385,6 @@ class ChainProxyManager extends ChangeNotifier {
   /// config. Empty until [refreshCapabilityProfiles] succeeds.
   Map<String, ProtocolCapabilityProfile> get capabilityProfiles =>
       Map.unmodifiable(_capabilityProfiles);
-  void stopChainHealthCheck() {
-    _chainHealthTimer?.cancel();
-    _chainHealthTimer = null;
-    _consecutiveHealthCheckFailures = 0;
-    // P1.5-A: a stopped loop has no skip state to report — reset silently (no
-    // log line; this is a lifecycle reset, not a diagnosis transition).
-    _lastAutoFailoverSkipDiagnosis = null;
-  }
   
   /// Test seam: redirects `chain_proxies.json` away from the real
   /// application data directory. `null` in production.
@@ -1487,88 +1473,10 @@ class ChainProxyManager extends ChangeNotifier {
   /// [stopChainHealthCheck] to end the loop; a later start resets the counter as
   /// expected.
   @visibleForTesting
-  void startChainHealthCheck() {
-    if (isAutoHealthCheckRunning) return;
-    _chainHealthTimer?.cancel();
-    _consecutiveHealthCheckFailures = 0;
-    _chainHealthTimer = Timer.periodic(autoHealthCheckInterval, (_) {
-      runChainHealthCheck();
-    });
-  }
-
-  /// P0: the single reconciliation point for the automatic failover loop.
-  ///
-  /// The periodic health check is the **only** production driver of automatic
-  /// failover ([runChainHealthCheck] → [_maybeAutoFailover] →
-  /// [triggerAutoFailover]). It must therefore be (re)started from every
-  /// lifecycle entry that can turn it on:
-  ///
-  ///   * [init]              — restoring a persisted `autoFailover: true`
-  ///   * [setEnable]         — enabling/disabling the chain itself
-  ///   * [setAutoFailover]   — the explicit user toggle
-  ///
-  /// It is deliberately **not** called from [updateConfig]: that runs on every
-  /// config write (hop edits, failover commits) and restarting the timer there
-  /// would reset `_consecutiveHealthCheckFailures`, delaying detection.
-  ///
-  /// An already-running loop is left untouched, so repeated calls are
-  /// idempotent and never reset the consecutive-failure counter.
-  void _syncChainHealthCheck() {
-    final bool shouldRun = _config.autoFailover && _config.enable;
-    if (shouldRun) {
-      if (!isAutoHealthCheckRunning) {
-        startChainHealthCheck();
-      }
-    } else if (isAutoHealthCheckRunning) {
-      stopChainHealthCheck();
-    }
-  }
 
 
-  Future<void> runChainHealthCheck() async {
-    // P0 hardening: a tick that fired just before `dispose()` must do no work.
-    if (_disposed) return;
-    if (!_config.autoFailover || !_config.enable || _isProbingChain) return;
 
-    final bool coreRunning = await _isCoreReady();
-    if (!coreRunning) return;
 
-    // RC.10-C.1 — `_isCoreReady()` awaits a real core-API call, so the guard
-    // above is stale once we resume: a manual probe (or another tick) may have
-    // started in the meantime. Re-check before starting our own probe.
-    //
-    // F-B2: teardown may also have run during the await. A probe started now
-    // would take a fresh, un-cancelled token and write back into a disposed
-    // manager, so `_disposed` must be part of the re-check too.
-    if (_disposed || _isProbingChain) return;
-
-    await probeCurrentChain();
-  }
-
-  /// P2.4-E (CF-5): the core is "ready" only when its API actually answers —
-  /// `appState.runTime != null` is *local* bookkeeping and cannot tell a healthy
-  /// core from a killed one.
-  ///
-  /// * an explicit `coreRunningOverride` (test seam) wins outright;
-  /// * `running` → ready; `stopped` / `starting` / `unreachable` → not ready;
-  /// * `unknown` (a platform with no desktop core service, e.g. Android) →
-  ///   falls back to the local start flag and **never** optimistically assumes
-  ///   ready.
-  Future<bool> _isCoreReady() async {
-    final override = coreRunningOverride;
-    if (override != null) return override;
-
-    final result = await CoreHealthService.instance.check();
-    if (result.state == CoreHealthState.running) return true;
-    if (result.state == CoreHealthState.unknown) {
-      try {
-        return globalState.isStart;
-      } catch (_) {
-        return false;
-      }
-    }
-    return false;
-  }
 
   void _scheduleReliabilityPersist() {
     _reliabilityPersistDirty = true;
@@ -1794,14 +1702,6 @@ class ChainProxyManager extends ChangeNotifier {
       );
     });
     return updated;
-  }
-
-  Future<void> setAutoFailover(bool enable) async {
-    await updateConfig((c) => c.copyWith(autoFailover: enable));
-    // P0: route through the single reconciliation point instead of starting the
-    // timer unconditionally. The loop only makes sense while the chain itself is
-    // enabled, and `setEnable(true)` will start it as soon as that happens.
-    _syncChainHealthCheck();
   }
 
 

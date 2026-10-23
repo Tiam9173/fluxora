@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -46,53 +45,6 @@ void main() {
     await deleteTempDirWithRetry(tmp);
   });
 
-  test('F-B2: a tick resuming after dispose does not start a probe', () async {
-    final coreGate = Completer<bool>();
-    final probeCalls = <Completer<ChainProbeReport>>[];
-
-    // Route `_isCoreReady()` through a gate so the tick parks mid-await.
-    ChainProxyManager.coreRunningOverride = null;
-    CoreHealthService.desktopOverride = true;
-    CoreHealthService.coreProbeOverride = (_) => coreGate.future;
-    ChainProxyManager.chainProbeOverride = (cfg) {
-      final gate = Completer<ChainProbeReport>();
-      probeCalls.add(gate);
-      return gate.future;
-    };
-
-    final manager = ChainProxyManager();
-    manager.stopChainHealthCheck();
-    await manager.updateConfig(
-      (c) => c.copyWith(
-        enable: true,
-        autoFailover: true,
-        hop1Node: 'node1',
-        hop2Node: 'node2',
-      ),
-      reloadCore: false,
-    );
-
-    // The tick passes its entry guard and parks inside `_isCoreReady()`.
-    final tick = manager.runChainHealthCheck();
-
-    manager.dispose();
-    coreGate.complete(true);
-
-    // Let the resumed tick run. If it (incorrectly) starts a probe it parks on
-    // the chain gate, so release any probe it started and let the tick finish —
-    // the assertion below then fails fast instead of hitting the test timeout.
-    await Future<void>.delayed(const Duration(milliseconds: 50));
-    for (final gate in probeCalls) {
-      if (!gate.isCompleted) gate.complete(_report('post-dispose'));
-    }
-    await tick;
-
-    expect(
-      probeCalls,
-      isEmpty,
-      reason: 'a tick that resumes after dispose() must not start a probe',
-    );
-  });
 }
 
 ChainProbeReport _report(String tag) => ChainProbeReport(

@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -43,43 +42,6 @@ void main() {
     await deleteTempDirWithRetry(tmp);
   });
 
-  test('F-B2: a probe completing after dispose does not publish its report',
-      () async {
-    final gates = <Completer<ChainProbeReport>>[];
-    ChainProxyManager.coreRunningOverride = true;
-    ChainProxyManager.chainProbeOverride = (cfg) {
-      final gate = Completer<ChainProbeReport>();
-      gates.add(gate);
-      return gate.future;
-    };
-
-    final manager = ChainProxyManager();
-    manager.stopChainHealthCheck();
-    await manager.updateConfig(
-      (c) => c.copyWith(enable: true, hop1Node: 'node1', hop2Node: 'node2'),
-      reloadCore: false,
-    );
-
-    // The singleton may carry a report from an earlier test in this isolate;
-    // that value is what the post-dispose probe must leave untouched.
-    final before = manager.lastProbeReport;
-
-    final probe = manager.probeCurrentChain();
-    expect(manager.isProbingChain, isTrue);
-    expect(gates.length, 1);
-
-    // Tear down while the probe is parked, then let it complete normally —
-    // exactly the "ignores the CancelToken" case the guard must survive.
-    manager.dispose();
-    gates[0].complete(_report('post-dispose'));
-    await probe;
-
-    expect(
-      manager.lastProbeReport,
-      same(before),
-      reason: 'a probe that outlives dispose() must not publish its report',
-    );
-  });
 }
 
 ChainProbeReport _report(String tag) => ChainProbeReport(

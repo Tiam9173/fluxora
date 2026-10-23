@@ -137,7 +137,6 @@ void main() {
   tearDownAll(() async {
     rankingSub.close();
     await manager.flushReliabilityStats();
-    manager.stopChainHealthCheck();
     container.dispose();
     networkFingerprintProvider.onChanged = null;
     ChainProxyManager.configFilePathOverride = null;

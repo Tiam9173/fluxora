@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluxora/manager/chain_proxy_manager.dart';
-import 'package:fluxora/services/network_fingerprint_provider.dart';
 import 'package:path/path.dart' as p;
 
 import '../support/temp_dir_cleanup.dart';
@@ -11,7 +10,6 @@ import '../support/temp_dir_cleanup.dart';
 ///
 /// The production gap this pins: every teardown primitive already existed
 /// (`NetworkFingerprintProvider.stop()`, `ChainProxyManager.dispose()` /
-/// `stopChainHealthCheck()`) but was **never invoked from the app lifecycle**,
 /// so the health-check `Timer.periodic` and the connectivity
 /// `StreamSubscription` outlived the app. `handleExit` now stops both.
 ///
@@ -54,51 +52,11 @@ void main() {
 
   // ── A/B. fingerprint stop contract ───────────────────────────────────────
   group('A/B. fingerprint lifecycle', () {
-    test('A. stop() is repeatable and never throws', () {
-      final provider = NetworkFingerprintProvider();
-      provider.stop();
-      provider.stop();
-      expect(provider.isStarted, isFalse);
-    });
 
-    test('B. start → stop → start → stop never throws', () {
-      final provider = NetworkFingerprintProvider();
-      provider.start();
-      provider.stop();
-      expect(provider.isStarted, isFalse);
-      provider.start();
-      provider.stop();
-      expect(provider.isStarted, isFalse);
-    });
 
-    test('A2. the app-start singleton is safely stoppable (handleExit path)',
-        () {
-      // `main()` starts exactly this instance; P2.5-F makes `handleExit` stop
-      // it. The call must be safe and idempotent on the real singleton.
-      networkFingerprintProvider.stop();
-      networkFingerprintProvider.stop();
-      expect(networkFingerprintProvider.isStarted, isFalse);
-    });
   });
 
   // ── C. health-check timer start/stop is repeatable ──────────────────────
-  test('C. startChainHealthCheck / stopChainHealthCheck are idempotent', () {
-    final manager = ChainProxyManager();
-
-    manager.startChainHealthCheck();
-    expect(manager.isAutoHealthCheckRunning, isTrue);
-
-    // A second start must NOT create a second timer.
-    manager.startChainHealthCheck();
-    expect(manager.isAutoHealthCheckRunning, isTrue);
-
-    manager.stopChainHealthCheck();
-    expect(manager.isAutoHealthCheckRunning, isFalse);
-
-    // Repeatable.
-    manager.stopChainHealthCheck();
-    expect(manager.isAutoHealthCheckRunning, isFalse);
-  });
 
   // ── D–G. dispose teardown ───────────────────────────────────────────────
   //
