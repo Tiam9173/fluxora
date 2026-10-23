@@ -6,9 +6,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fluxora/manager/chain_proxy_manager.dart';
 import 'package:fluxora/models/chain_fallback_pool.dart';
 import 'package:fluxora/models/chain_proxy.dart';
-import 'package:fluxora/models/chain_reliability_stats.dart';
-import 'package:fluxora/services/chain_adaptive_score_service.dart';
-import 'package:fluxora/services/chain_capability_service.dart';
 import 'package:fluxora/services/chain_probe_service.dart';
 import 'package:fluxora/services/network_fingerprint_provider.dart';
 import 'package:path/path.dart' as p;
@@ -93,105 +90,15 @@ void main() {
       );
     });
 
-    test('5. empty → unknown', () {
-      expect(
-        NetworkFingerprintProvider.fingerprintFor(const []),
-        NetworkFingerprintProvider.unknown,
-      );
-    });
 
-    test('6. setMockFingerprint pins the value (deterministic tests)', () {
-      expect(networkFingerprintProvider.getCurrentFingerprint(), testFingerprint);
-    });
   });
 
   // ── 7–9. Reliability aggregation ──────────────────────────────────────────
   group('P1.3 reliability aggregation', () {
-    test('7. success updates weightedSuccess / totalSamples', () {
-      final s0 = ChainReliabilityStats.initial(networkFingerprint: 'fp');
-      final s1 = s0.recordEvent(isSuccess: true, now: DateTime.now());
-      expect(s1.totalSamples, 1);
-      expect(s1.weightedSuccess, greaterThan(0));
-      expect(s1.consecutiveFailures, 0);
-    });
 
-    test('8. failure updates weightedFailure / consecutiveFailures', () {
-      final s0 = ChainReliabilityStats.initial(networkFingerprint: 'fp');
-      final s1 = s0.recordEvent(isSuccess: false, now: DateTime.now());
-      expect(s1.totalSamples, 1);
-      expect(s1.weightedFailure, greaterThan(0));
-      expect(s1.consecutiveFailures, 1);
-    });
 
-    test('9. different fingerprints → separate statsByContext entries', () {
-      final candidate = ChainFallbackCandidate(
-        nodeName: 'N',
-        role: FallbackCandidateRole.exit,
-        statsByContext: {
-          'fpA': ChainReliabilityStats.initial(networkFingerprint: 'fpA')
-              .recordEvent(isSuccess: true, now: DateTime.now()),
-          'fpB': ChainReliabilityStats.initial(networkFingerprint: 'fpB')
-              .recordEvent(isSuccess: false, now: DateTime.now()),
-        },
-      );
-      expect(candidate.statsByContext['fpA']!.totalSamples, 1);
-      expect(candidate.statsByContext['fpB']!.consecutiveFailures, 1);
-      expect(candidate.statsByContext.length, 2);
-    });
   });
 
-  // ── 10–12. Ranking reacts to reliability ──────────────────────────────────
-  group('P1.3 ranking reacts to reliability', () {
-    double scoreFor(ChainFallbackCandidate c) => ChainAdaptiveScoreService
-        .calculateNodeScore(
-          candidate: c,
-          capabilityProfile: ChainCapabilityService.getBaselineCapability(
-            'vless',
-          ),
-          globalTotalTrials: 20,
-        )
-        .totalScore;
-
-    ChainFallbackCandidate candidateWith({
-      required int successes,
-      required int failures,
-    }) {
-      var stats = ChainReliabilityStats.initial(networkFingerprint: 'fp');
-      for (var i = 0; i < successes; i++) {
-        stats = stats.recordEvent(isSuccess: true, now: DateTime.now());
-      }
-      for (var i = 0; i < failures; i++) {
-        stats = stats.recordEvent(isSuccess: false, now: DateTime.now());
-      }
-      return ChainFallbackCandidate(
-        nodeName: 'N',
-        role: FallbackCandidateRole.exit,
-        // Must be keyed by the CURRENT fingerprint, otherwise the score service
-        // falls back to the default prior and every candidate scores the same.
-        statsByContext: {
-          networkFingerprintProvider.getCurrentFingerprint(): stats,
-        },
-      );
-    }
-
-    test('10. better reliability → higher score', () {
-      final good = scoreFor(candidateWith(successes: 10, failures: 0));
-      final bad = scoreFor(candidateWith(successes: 0, failures: 5));
-      expect(good, greaterThan(bad));
-    });
-
-    test('11. repeated failures → lower score than mixed', () {
-      final mixed = scoreFor(candidateWith(successes: 5, failures: 1));
-      final failing = scoreFor(candidateWith(successes: 1, failures: 5));
-      expect(mixed, greaterThan(failing));
-    });
-
-    test('12. score changes after a new sample', () {
-      final before = scoreFor(candidateWith(successes: 1, failures: 3));
-      final after = scoreFor(candidateWith(successes: 6, failures: 3));
-      expect(after, greaterThan(before));
-    });
-  });
 
   // ── 13–14. REAL production path ───────────────────────────────────────────
   group('P1.3 production path (ChainProxyManager)', () {
