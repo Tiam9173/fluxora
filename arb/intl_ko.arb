@@ -1310,5 +1310,11 @@
   "stCopied": "복사됨",
   "stLatency": "지연",
   "stJitter": "지터",
-  "chainProbeResult": "측정 결과"
+  "chainProbeResult": "측정 결과",
+  "chainProtocolWarning": "프로토콜 제한: reality / shadowtls / hy2 / tuic 은 중계 시 연결이 안 되거나 지연을 측정할 수 없습니다. 중계 출구에는 ss / vmess / socks5 를 권장합니다.",
+  "nodeExport": "노드 내보내기",
+  "nodeSelectAll": "전체 선택",
+  "nodeExportEmpty": "선택된 노드 없음",
+  "nodeExportDone": "클립보드에 복사됨",
+  "nodeExportTitle": "내보낸 링크"
 }

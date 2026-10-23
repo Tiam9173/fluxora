@@ -1314,5 +1314,11 @@
   "stCopied": "Скопировано",
   "stLatency": "Задержка",
   "stJitter": "Джиттер",
-  "chainProbeResult": "Результаты"
+  "chainProbeResult": "Результаты",
+  "chainProtocolWarning": "Ограничение протокола: reality / shadowtls / hy2 / tuic часто не работают через ретранслятор, задержку измерить нельзя. Для выхода используйте ss / vmess / socks5.",
+  "nodeExport": "Экспорт узлов",
+  "nodeSelectAll": "Выбрать все",
+  "nodeExportEmpty": "Ничего не выбрано",
+  "nodeExportDone": "Скопировано",
+  "nodeExportTitle": "Экспортированные ссылки"
 }

@@ -1310,5 +1310,11 @@
   "stCopied": "کپی شد",
   "stLatency": "تاخیر",
   "stJitter": "جیتر",
-  "chainProbeResult": "نتایج"
+  "chainProbeResult": "نتایج",
+  "chainProtocolWarning": "محدودیت پروتکل: reality / shadowtls / hy2 / tuic اغلب از طریق رله کار نمی‌کنند و تأخیر قابل اندازه‌گیری نیست. برای خروجی از ss / vmess / socks5 استفاده کنید.",
+  "nodeExport": "خروجی گره‌ها",
+  "nodeSelectAll": "انتخاب همه",
+  "nodeExportEmpty": "چیزی انتخاب نشده",
+  "nodeExportDone": "کپی شد",
+  "nodeExportTitle": "پیوندهای خروجی"
 }

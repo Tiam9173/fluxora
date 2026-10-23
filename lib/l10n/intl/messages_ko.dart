@@ -407,6 +407,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "chainProbeResult": MessageLookupByLibrary.simpleMessage("측정 결과"),
     "chainProbing": MessageLookupByLibrary.simpleMessage("체인 확인 중…"),
+    "chainProtocolWarning": MessageLookupByLibrary.simpleMessage(
+      "프로토콜 제한: reality / shadowtls / hy2 / tuic 은 중계 시 연결이 안 되거나 지연을 측정할 수 없습니다. 중계 출구에는 ss / vmess / socks5 를 권장합니다.",
+    ),
     "chainProxy": MessageLookupByLibrary.simpleMessage("체인 프록시"),
     "chainProxyDesc": MessageLookupByLibrary.simpleMessage(
       "前置跳板과 정적 주거용 IP 랜딩 프록시를 설정합니다",
@@ -1137,11 +1140,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "nodeExclusionPlaceholder": MessageLookupByLibrary.simpleMessage(
       "HK|홍콩|🇭🇰",
     ),
+    "nodeExport": MessageLookupByLibrary.simpleMessage("노드 내보내기"),
+    "nodeExportDone": MessageLookupByLibrary.simpleMessage("클립보드에 복사됨"),
+    "nodeExportEmpty": MessageLookupByLibrary.simpleMessage("선택된 노드 없음"),
+    "nodeExportTitle": MessageLookupByLibrary.simpleMessage("내보낸 링크"),
     "nodeManagement": m27,
     "nodeName": MessageLookupByLibrary.simpleMessage("노드 이름"),
     "nodeNameHint": m28,
     "nodeNameLabel": MessageLookupByLibrary.simpleMessage("노드 이름"),
     "nodeProtocol": MessageLookupByLibrary.simpleMessage("노드 프로토콜"),
+    "nodeSelectAll": MessageLookupByLibrary.simpleMessage("전체 선택"),
     "none": MessageLookupByLibrary.simpleMessage("없음"),
     "notRecommended": MessageLookupByLibrary.simpleMessage("권장하지 않음"),
     "notSelectedTip": MessageLookupByLibrary.simpleMessage(

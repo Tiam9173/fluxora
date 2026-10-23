@@ -11289,6 +11289,61 @@ class AppLocalizations {
       args: [],
     );
   }
+
+  /// `Protocol limit: reality / shadowtls / hy2 / tuic often cannot be relayed, and their latency cannot be measured. Use ss / vmess / socks5 for relay exits.`
+  String get chainProtocolWarning {
+    return Intl.message(
+      'Protocol limit: reality / shadowtls / hy2 / tuic often cannot be relayed, and their latency cannot be measured. Use ss / vmess / socks5 for relay exits.',
+      name: 'chainProtocolWarning',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Export nodes`
+  String get nodeExport {
+    return Intl.message('Export nodes', name: 'nodeExport', desc: '', args: []);
+  }
+
+  /// `Select all`
+  String get nodeSelectAll {
+    return Intl.message(
+      'Select all',
+      name: 'nodeSelectAll',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Nothing selected`
+  String get nodeExportEmpty {
+    return Intl.message(
+      'Nothing selected',
+      name: 'nodeExportEmpty',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Copied to clipboard`
+  String get nodeExportDone {
+    return Intl.message(
+      'Copied to clipboard',
+      name: 'nodeExportDone',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Exported links`
+  String get nodeExportTitle {
+    return Intl.message(
+      'Exported links',
+      name: 'nodeExportTitle',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {

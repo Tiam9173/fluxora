@@ -497,6 +497,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "chainProbeResult": MessageLookupByLibrary.simpleMessage("Probe results"),
     "chainProbing": MessageLookupByLibrary.simpleMessage("Probing the chain…"),
+    "chainProtocolWarning": MessageLookupByLibrary.simpleMessage(
+      "Protocol limit: reality / shadowtls / hy2 / tuic often cannot be relayed, and their latency cannot be measured. Use ss / vmess / socks5 for relay exits.",
+    ),
     "chainProxy": MessageLookupByLibrary.simpleMessage("Chain Proxy"),
     "chainProxyDesc": MessageLookupByLibrary.simpleMessage(
       "Configure an entry hop and a static residential landing IP",
@@ -1393,11 +1396,18 @@ class MessageLookup extends MessageLookupByLibrary {
     "nodeExclusionPlaceholder": MessageLookupByLibrary.simpleMessage(
       "HK|Hong Kong|🇭🇰",
     ),
+    "nodeExport": MessageLookupByLibrary.simpleMessage("Export nodes"),
+    "nodeExportDone": MessageLookupByLibrary.simpleMessage(
+      "Copied to clipboard",
+    ),
+    "nodeExportEmpty": MessageLookupByLibrary.simpleMessage("Nothing selected"),
+    "nodeExportTitle": MessageLookupByLibrary.simpleMessage("Exported links"),
     "nodeManagement": m27,
     "nodeName": MessageLookupByLibrary.simpleMessage("Node Name"),
     "nodeNameHint": m28,
     "nodeNameLabel": MessageLookupByLibrary.simpleMessage("Node name"),
     "nodeProtocol": MessageLookupByLibrary.simpleMessage("Node protocol"),
+    "nodeSelectAll": MessageLookupByLibrary.simpleMessage("Select all"),
     "none": MessageLookupByLibrary.simpleMessage("None"),
     "notRecommended": MessageLookupByLibrary.simpleMessage("Not Recommended"),
     "notSelectedTip": MessageLookupByLibrary.simpleMessage(

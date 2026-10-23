@@ -1731,6 +1731,15 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                         ),
                         SizedBox(height: 4),
                         Text(
+                          appLocalizations.chainProtocolWarning,
+                          style: TextStyle(
+                            fontSize: 11,
+                            height: 1.4,
+                            color: context.colorScheme.error,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
                           '• 落地节点 (Landing)：经由跳板中继后发起网络连接的出口节点，向目标端呈现该出口节点网络特征。',
                           style: TextStyle(fontSize: 11, height: 1.4),
                         ),

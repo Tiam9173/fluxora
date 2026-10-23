@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/models/models.dart';
@@ -1116,6 +1117,7 @@ class ManualProxyHelper {
     Profile profile,
     List<Map<String, dynamic>> newProxies,
   ) async {
+    await _rememberManual(profile, newProxies);
     final file = await profile.getFile();
     String content = await file.exists() ? await file.readAsString() : '';
 
@@ -1188,10 +1190,79 @@ class ManualProxyHelper {
   }
 
   /// Deletes a proxy from a Profile's YAML file by name.
+  // ── 手动节点的独立存储 ──────────────────────────────────────────────
+  //
+  // 手动添加的节点以前直接写进订阅文件，而更新订阅是用下载内容**整体覆盖**
+  // 那个文件，于是手动节点会静默消失。这里把它们另存一份，更新后再合并回去。
+
+  static Future<String> _manualStorePath(Profile profile) async {
+    final home = await appPath.homeDirPath;
+    return '$home/manual_proxies_${profile.id}.json';
+  }
+
+  static Future<List<Map<String, dynamic>>> _readManualStore(
+    Profile profile,
+  ) async {
+    try {
+      final path = await _manualStorePath(profile);
+      final file = File(path);
+      if (!await file.exists()) return <Map<String, dynamic>>[];
+      final raw = jsonDecode(await file.readAsString());
+      if (raw is! List) return <Map<String, dynamic>>[];
+      return raw
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+    } catch (_) {
+      return <Map<String, dynamic>>[];
+    }
+  }
+
+  static Future<void> _writeManualStore(
+    Profile profile,
+    List<Map<String, dynamic>> proxies,
+  ) async {
+    try {
+      final path = await _manualStorePath(profile);
+      await File(path).writeAsString(jsonEncode(proxies));
+    } catch (_) {
+      // 存不下来不该影响主流程：节点这次已经写进配置了。
+    }
+  }
+
+  static Future<void> _rememberManual(
+    Profile profile,
+    List<Map<String, dynamic>> proxies,
+  ) async {
+    final store = await _readManualStore(profile);
+    for (final proxy in proxies) {
+      final name = proxy['name']?.toString() ?? '';
+      if (name.isEmpty) continue;
+      store.removeWhere((e) => e['name']?.toString() == name);
+      store.add(proxy);
+    }
+    await _writeManualStore(profile, store);
+  }
+
+  static Future<void> _forgetManual(Profile profile, String name) async {
+    final store = await _readManualStore(profile);
+    final before = store.length;
+    store.removeWhere((e) => e['name']?.toString() == name);
+    if (store.length != before) await _writeManualStore(profile, store);
+  }
+
+  /// 订阅更新后把手动节点补回去。没有手动节点时是空操作。
+  static Future<Profile> restoreManualProxies(Profile profile) async {
+    final store = await _readManualStore(profile);
+    if (store.isEmpty) return profile;
+    return addOrUpdateProxiesToProfile(profile, store);
+  }
+
   static Future<Profile> deleteProxyFromProfile(
     Profile profile,
     String proxyName,
   ) async {
+    await _forgetManual(profile, proxyName);
     final file = await profile.getFile();
     String content = await file.exists() ? await file.readAsString() : '';
     if (content.trim().isEmpty) return profile;

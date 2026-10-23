@@ -375,6 +375,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "chainProbeResult": MessageLookupByLibrary.simpleMessage("探測結果"),
     "chainProbing": MessageLookupByLibrary.simpleMessage("鏈路探測中…"),
+    "chainProtocolWarning": MessageLookupByLibrary.simpleMessage(
+      "協議限制：reality / shadowtls / hy2 / tuic 這類協議經中轉時可能連不通，也測不出延遲；中轉出口建議用 ss / vmess / socks5。",
+    ),
     "chainProxy": MessageLookupByLibrary.simpleMessage("鏈式代理"),
     "chainProxyDesc": MessageLookupByLibrary.simpleMessage(
       "設定前置跳板與落地靜態住宅 IP 代理",
@@ -1033,11 +1036,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "nodeExclusionPlaceholder": MessageLookupByLibrary.simpleMessage(
       "HK|香港|🇭🇰",
     ),
+    "nodeExport": MessageLookupByLibrary.simpleMessage("匯出節點"),
+    "nodeExportDone": MessageLookupByLibrary.simpleMessage("已複製到剪貼簿"),
+    "nodeExportEmpty": MessageLookupByLibrary.simpleMessage("未選擇節點"),
+    "nodeExportTitle": MessageLookupByLibrary.simpleMessage("匯出的連結"),
     "nodeManagement": m27,
     "nodeName": MessageLookupByLibrary.simpleMessage("節點名稱"),
     "nodeNameHint": m28,
     "nodeNameLabel": MessageLookupByLibrary.simpleMessage("節點名稱"),
     "nodeProtocol": MessageLookupByLibrary.simpleMessage("節點協定"),
+    "nodeSelectAll": MessageLookupByLibrary.simpleMessage("全選"),
     "none": MessageLookupByLibrary.simpleMessage("無"),
     "notRecommended": MessageLookupByLibrary.simpleMessage("不推薦"),
     "notSelectedTip": MessageLookupByLibrary.simpleMessage("目前的代理群組無法選取"),

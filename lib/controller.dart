@@ -625,7 +625,9 @@ class AppController {
     }
     _updatingProfileIds.add(profile.id);
     try {
-      final newProfile = await profile.update(validate: validate);
+      var newProfile = await profile.update(validate: validate);
+      // 更新是整体覆盖订阅文件，手动添加的节点会跟着消失；把它们补回去。
+      newProfile = await ManualProxyHelper.restoreManualProxies(newProfile);
       _ref
           .read(profilesProvider.notifier)
           .setProfile(newProfile.copyWith(isUpdating: false));

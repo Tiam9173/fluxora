@@ -505,6 +505,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainProbing": MessageLookupByLibrary.simpleMessage(
       "در حال بررسی زنجیره…",
     ),
+    "chainProtocolWarning": MessageLookupByLibrary.simpleMessage(
+      "محدودیت پروتکل: reality / shadowtls / hy2 / tuic اغلب از طریق رله کار نمی‌کنند و تأخیر قابل اندازه‌گیری نیست. برای خروجی از ss / vmess / socks5 استفاده کنید.",
+    ),
     "chainProxy": MessageLookupByLibrary.simpleMessage("پروکسی زنجیره‌ای"),
     "chainProxyDesc": MessageLookupByLibrary.simpleMessage(
       "پیکربندی پرش ورودی و پروکسی فرود IP مسکونی ثابت",
@@ -1413,11 +1416,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "nodeExclusionPlaceholder": MessageLookupByLibrary.simpleMessage(
       "HK|ایران|🇮🇷",
     ),
+    "nodeExport": MessageLookupByLibrary.simpleMessage("خروجی گره‌ها"),
+    "nodeExportDone": MessageLookupByLibrary.simpleMessage("کپی شد"),
+    "nodeExportEmpty": MessageLookupByLibrary.simpleMessage("چیزی انتخاب نشده"),
+    "nodeExportTitle": MessageLookupByLibrary.simpleMessage("پیوندهای خروجی"),
     "nodeManagement": m27,
     "nodeName": MessageLookupByLibrary.simpleMessage("نام گره"),
     "nodeNameHint": m28,
     "nodeNameLabel": MessageLookupByLibrary.simpleMessage("نام گره"),
     "nodeProtocol": MessageLookupByLibrary.simpleMessage("پروتکل گره"),
+    "nodeSelectAll": MessageLookupByLibrary.simpleMessage("انتخاب همه"),
     "none": MessageLookupByLibrary.simpleMessage("هیچکدام"),
     "notRecommended": MessageLookupByLibrary.simpleMessage("توصیه نمی‌شود"),
     "notSelectedTip": MessageLookupByLibrary.simpleMessage(

@@ -1,5 +1,6 @@
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/models/models.dart';
+import 'package:fluxora/models/node_share_link.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
@@ -19,6 +20,10 @@ class ProfileNodesView extends StatefulWidget {
 class _ProfileNodesViewState extends State<ProfileNodesView> {
   late Profile _profile;
   List<Map<String, dynamic>> _proxies = [];
+
+  /// 批量导出：进入选择模式后按节点名记录勾选项。
+  bool _exportMode = false;
+  final Set<String> _selected = {};
   bool _isLoading = true;
 
   @override
@@ -231,6 +236,38 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
     }
   }
 
+  void _toggleSelected(String name) {
+    setState(() {
+      if (!_selected.remove(name)) _selected.add(name);
+    });
+  }
+
+  /// 把勾选的节点转成分享链接并放进剪贴板。
+  ///
+  /// 复制而不是只展示：这些链接的用途就是粘到导入框里，剪贴板是最近的一步。
+  Future<void> _exportSelected() async {
+    final chosen = _proxies
+        .where((p) => _selected.contains(p['name']?.toString() ?? ''))
+        .toList();
+    if (chosen.isEmpty) {
+      context.showSnackBar(appLocalizations.nodeExportEmpty);
+      return;
+    }
+    final text = NodeShareLink.exportAll(chosen);
+    if (text.isEmpty) {
+      // 选中的全是导出不了的协议（wireguard 之类），要说清楚而不是静默复制空串。
+      context.showSnackBar(appLocalizations.nodeExportEmpty);
+      return;
+    }
+    await Clipboard.setData(ClipboardData(text: text));
+    if (!mounted) return;
+    setState(() {
+      _exportMode = false;
+      _selected.clear();
+    });
+    context.showSnackBar(appLocalizations.nodeExportDone);
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = context.colorScheme;
@@ -247,6 +284,37 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
           tooltip: appLocalizations.refresh,
           onPressed: _loadProxies,
         ),
+        if (_exportMode) ...[
+          IconButton(
+            icon: const Icon(Icons.select_all_rounded),
+            tooltip: appLocalizations.nodeSelectAll,
+            onPressed: () {
+              setState(() {
+                _selected
+                  ..clear()
+                  ..addAll(_proxies.map((p) => p['name']?.toString() ?? ''));
+              });
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.check_rounded),
+            tooltip: appLocalizations.nodeExport,
+            onPressed: _exportSelected,
+          ),
+          IconButton(
+            icon: const Icon(Icons.close_rounded),
+            tooltip: appLocalizations.cancel,
+            onPressed: () => setState(() {
+              _exportMode = false;
+              _selected.clear();
+            }),
+          ),
+        ] else
+          IconButton(
+            icon: const Icon(Icons.ios_share_rounded),
+            tooltip: appLocalizations.nodeExport,
+            onPressed: () => setState(() => _exportMode = true),
+          ),
       ],
       floatingActionButton: FloatingActionButton.extended(
         heroTag: null,
@@ -330,12 +398,19 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
                       horizontal: 16,
                       vertical: 6,
                     ),
-                    // 长按看完整配置，和代理页的行为保持一致。
-                    onLongPress: () => showNodeDetailsDialog(
-                      context,
-                      proxyName: name,
-                      profileId: _profile.id,
-                    ),
+                    // 导出模式下点按即勾选；平时长按看完整配置（和代理页一致）。
+                    onTap: _exportMode ? () => _toggleSelected(name) : null,
+                    onLongPress: () {
+                      if (_exportMode) {
+                        _toggleSelected(name);
+                        return;
+                      }
+                      showNodeDetailsDialog(
+                        context,
+                        proxyName: name,
+                        profileId: _profile.id,
+                      );
+                    },
                     leading: Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
@@ -372,14 +447,19 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
                         fontSize: 13,
                       ),
                     ),
-                    trailing: IconButton(
-                      icon: const Icon(
-                        Icons.delete_outline_rounded,
-                        color: Colors.redAccent,
-                      ),
-                      tooltip: appLocalizations.deleteNode,
-                      onPressed: () => _handleDeleteProxy(name),
-                    ),
+                    trailing: _exportMode
+                        ? Checkbox(
+                            value: _selected.contains(name),
+                            onChanged: (_) => _toggleSelected(name),
+                          )
+                        : IconButton(
+                            icon: const Icon(
+                              Icons.delete_outline_rounded,
+                              color: Colors.redAccent,
+                            ),
+                            tooltip: appLocalizations.deleteNode,
+                            onPressed: () => _handleDeleteProxy(name),
+                          ),
                   ),
                 );
               },

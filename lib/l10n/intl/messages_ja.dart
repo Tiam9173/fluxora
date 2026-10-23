@@ -404,6 +404,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "chainProbeResult": MessageLookupByLibrary.simpleMessage("測定結果"),
     "chainProbing": MessageLookupByLibrary.simpleMessage("チェーンを確認中…"),
+    "chainProtocolWarning": MessageLookupByLibrary.simpleMessage(
+      "プロトコル制限：reality / shadowtls / hy2 / tuic は中継で通らないことがあり、遅延も測れません。中継出口には ss / vmess / socks5 を推奨します。",
+    ),
     "chainProxy": MessageLookupByLibrary.simpleMessage("チェーンプロキシ"),
     "chainProxyDesc": MessageLookupByLibrary.simpleMessage(
       "前置跳板と静的住宅IPランディングプロキシを設定します",
@@ -1136,11 +1139,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "nodeExclusionPlaceholder": MessageLookupByLibrary.simpleMessage(
       "HK|香港|🇭🇰",
     ),
+    "nodeExport": MessageLookupByLibrary.simpleMessage("ノードを書き出す"),
+    "nodeExportDone": MessageLookupByLibrary.simpleMessage("クリップボードにコピーしました"),
+    "nodeExportEmpty": MessageLookupByLibrary.simpleMessage("選択されていません"),
+    "nodeExportTitle": MessageLookupByLibrary.simpleMessage("書き出したリンク"),
     "nodeManagement": m27,
     "nodeName": MessageLookupByLibrary.simpleMessage("ノード名"),
     "nodeNameHint": m28,
     "nodeNameLabel": MessageLookupByLibrary.simpleMessage("ノード名"),
     "nodeProtocol": MessageLookupByLibrary.simpleMessage("ノードプロトコル"),
+    "nodeSelectAll": MessageLookupByLibrary.simpleMessage("すべて選択"),
     "none": MessageLookupByLibrary.simpleMessage("なし"),
     "notRecommended": MessageLookupByLibrary.simpleMessage("非推奨"),
     "notSelectedTip": MessageLookupByLibrary.simpleMessage("選択できないプロキシグループです"),

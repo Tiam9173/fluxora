@@ -1757,5 +1757,11 @@
   "stCopied": "Copied",
   "stLatency": "Latency",
   "stJitter": "jitter",
-  "chainProbeResult": "Probe results"
+  "chainProbeResult": "Probe results",
+  "chainProtocolWarning": "Protocol limit: reality / shadowtls / hy2 / tuic often cannot be relayed, and their latency cannot be measured. Use ss / vmess / socks5 for relay exits.",
+  "nodeExport": "Export nodes",
+  "nodeSelectAll": "Select all",
+  "nodeExportEmpty": "Nothing selected",
+  "nodeExportDone": "Copied to clipboard",
+  "nodeExportTitle": "Exported links"
 }

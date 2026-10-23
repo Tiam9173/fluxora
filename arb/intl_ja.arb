@@ -1310,5 +1310,11 @@
   "stCopied": "コピーしました",
   "stLatency": "遅延",
   "stJitter": "ジッター",
-  "chainProbeResult": "測定結果"
+  "chainProbeResult": "測定結果",
+  "chainProtocolWarning": "プロトコル制限：reality / shadowtls / hy2 / tuic は中継で通らないことがあり、遅延も測れません。中継出口には ss / vmess / socks5 を推奨します。",
+  "nodeExport": "ノードを書き出す",
+  "nodeSelectAll": "すべて選択",
+  "nodeExportEmpty": "選択されていません",
+  "nodeExportDone": "クリップボードにコピーしました",
+  "nodeExportTitle": "書き出したリンク"
 }

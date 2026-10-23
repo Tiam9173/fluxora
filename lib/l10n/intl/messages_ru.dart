@@ -521,6 +521,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "chainProbeResult": MessageLookupByLibrary.simpleMessage("Результаты"),
     "chainProbing": MessageLookupByLibrary.simpleMessage("Проверка цепочки…"),
+    "chainProtocolWarning": MessageLookupByLibrary.simpleMessage(
+      "Ограничение протокола: reality / shadowtls / hy2 / tuic часто не работают через ретранслятор, задержку измерить нельзя. Для выхода используйте ss / vmess / socks5.",
+    ),
     "chainProxy": MessageLookupByLibrary.simpleMessage("Цепочка прокси"),
     "chainProxyDesc": MessageLookupByLibrary.simpleMessage(
       "Настройте входной переход и статический резидентный IP-выход",
@@ -1463,11 +1466,20 @@ class MessageLookup extends MessageLookupByLibrary {
     "nodeExclusionPlaceholder": MessageLookupByLibrary.simpleMessage(
       "HK|Гонконг|🇭🇰",
     ),
+    "nodeExport": MessageLookupByLibrary.simpleMessage("Экспорт узлов"),
+    "nodeExportDone": MessageLookupByLibrary.simpleMessage("Скопировано"),
+    "nodeExportEmpty": MessageLookupByLibrary.simpleMessage(
+      "Ничего не выбрано",
+    ),
+    "nodeExportTitle": MessageLookupByLibrary.simpleMessage(
+      "Экспортированные ссылки",
+    ),
     "nodeManagement": m27,
     "nodeName": MessageLookupByLibrary.simpleMessage("Имя узла"),
     "nodeNameHint": m28,
     "nodeNameLabel": MessageLookupByLibrary.simpleMessage("Имя узла"),
     "nodeProtocol": MessageLookupByLibrary.simpleMessage("Протокол узла"),
+    "nodeSelectAll": MessageLookupByLibrary.simpleMessage("Выбрать все"),
     "none": MessageLookupByLibrary.simpleMessage("Нет"),
     "notRecommended": MessageLookupByLibrary.simpleMessage("Не рекомендуется"),
     "notSelectedTip": MessageLookupByLibrary.simpleMessage(

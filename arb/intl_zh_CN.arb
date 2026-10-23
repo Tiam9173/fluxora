@@ -1310,5 +1310,11 @@
   "stCopied": "已复制",
   "stLatency": "延迟",
   "stJitter": "抖动",
-  "chainProbeResult": "探测结果"
+  "chainProbeResult": "探测结果",
+  "chainProtocolWarning": "协议限制：reality / shadowtls / hy2 / tuic 这类协议经中转时可能连不通，也测不出延迟；中转出口建议用 ss / vmess / socks5。",
+  "nodeExport": "导出节点",
+  "nodeSelectAll": "全选",
+  "nodeExportEmpty": "未选择节点",
+  "nodeExportDone": "已复制到剪贴板",
+  "nodeExportTitle": "导出的链接"
 }
