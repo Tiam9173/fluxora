@@ -32,7 +32,7 @@ class Preferences {
     if (clashConfigString == null) return null;
     try {
       final clashConfigMap = json.decode(clashConfigString);
-      return _withFakeIpEnabled(ClashConfig.fromJson(clashConfigMap));
+      return _normalizeLegacyDefaults(ClashConfig.fromJson(clashConfigMap));
     } catch (e, stackTrace) {
       commonPrint.log('Failed to parse clash config from preferences: $e\n$stackTrace');
       return null;
@@ -47,18 +47,47 @@ class Preferences {
   ///
   /// 读取时摘掉它，其余例外（局域网、国内站点、NTP）保持原样——那几条是
   /// fake-ip 真正会出问题的地方，必须留着。
-  ClashConfig _withFakeIpEnabled(ClashConfig config) {
-    final dns = config.dns;
-    if (dns.fakeIpFilterMode != FilterMode.blacklist) return config;
-    if (!dns.fakeIpFilter.contains('*')) return config;
-    return config.copyWith(
-      dns: dns.copyWith(
-        fakeIpFilter: dns.fakeIpFilter.where((e) => e != '*').toList(),
-      ),
-    );
+  /// 修正老版本的默认值。
+  ///
+  /// 两处都是"配了就等于没配"的坑：
+  ///
+  /// 1. `fake-ip-filter` 首项曾是 `*`。配合 `blacklist` 模式，它把**所有**域名
+  ///    排除在 fake-ip 之外，fake-ip 等于没开——每个域名都要先做一次真实 DNS
+  ///    才建连，访问境外站点时既慢又容易被污染。
+  /// 2. `nameserver` 曾是 `1.1.1.1`（明文 UDP）。国内访问它常被绕远或污染，
+  ///    一次解析可能 200ms 以上。换成国内解析，通常 20–50ms。
+  ///
+  /// 只改"正好等于旧默认值"的配置，用户自己改过的一律不动。
+  ClashConfig _normalizeLegacyDefaults(ClashConfig config) {
+    var result = config;
+    final dns = result.dns;
+
+    if (dns.fakeIpFilterMode == FilterMode.blacklist &&
+        dns.fakeIpFilter.contains('*')) {
+      result = result.copyWith(
+        dns: result.dns.copyWith(
+          fakeIpFilter:
+              result.dns.fakeIpFilter.where((e) => e != '*').toList(),
+        ),
+      );
+    }
+
+    final isLegacyNameserver =
+        result.dns.nameserver.length == 1 &&
+        result.dns.nameserver.first == '1.1.1.1';
+    if (isLegacyNameserver) {
+      result = result.copyWith(
+        dns: result.dns.copyWith(
+          nameserver: const ['223.5.5.5', '119.29.29.29'],
+        ),
+      );
+    }
+
+    return result;
   }
 
-  Future<Config?> getConfig() async {    final preferences = await sharedPreferencesCompleter.future;
+  Future<Config?> getConfig() async {
+    final preferences = await sharedPreferencesCompleter.future;
     final configString = preferences?.getString(configKey);
     if (configString == null) return null;
     try {
