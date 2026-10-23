@@ -1826,6 +1826,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "usernameOptional": MessageLookupByLibrary.simpleMessage("사용자 이름 (선택 사항)"),
     "value": MessageLookupByLibrary.simpleMessage("값"),
+    "viaDirect": MessageLookupByLibrary.simpleMessage("직접 연결"),
     "viaProxy": MessageLookupByLibrary.simpleMessage("프록시 경유"),
     "vibrantScheme": MessageLookupByLibrary.simpleMessage("바이브런트"),
     "view": MessageLookupByLibrary.simpleMessage("보기"),

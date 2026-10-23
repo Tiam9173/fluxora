@@ -67,7 +67,9 @@ class _SpeedTestCardState extends State<SpeedTestCard> {
     });
     // 3 秒没有任何一帧，说明内核那边没动，比一直显示 0 更容易定位。
     _watchdog?.cancel();
-    _watchdog = Timer(const Duration(seconds: 3), () {
+    // 12 秒：选源本身就要花时间（查出口位置 + 拉服务器列表 + 探 6 台 + 拉
+    // 32KB 验证），3 秒会在一帧都没出来时就误报"内核没有响应"。
+    _watchdog = Timer(const Duration(seconds: 12), () {
       if (!mounted || _gotFrame) return;
       setState(() {
         _running = false;
@@ -197,7 +199,8 @@ class _SpeedTestCardState extends State<SpeedTestCard> {
               Padding(
                 padding: const EdgeInsets.only(top: 6),
                 child: Text(
-                  '${p.serverName} · ${appLocalizations.viaProxy}',
+                  // 内核没在跑就是直连，不能一律标"经代理"。
+                  '${p.serverName} · ${globalState.isStart ? appLocalizations.viaProxy : appLocalizations.viaDirect}',
                   style: context.textTheme.labelSmall?.copyWith(
                     color: scheme.onSurfaceVariant,
                   ),

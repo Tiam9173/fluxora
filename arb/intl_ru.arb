@@ -1303,5 +1303,6 @@
   "coreAutoRestart": "Ядро неожиданно завершилось. Перезапускаем.",
   "coreAutoRestartFailed": "Ядро завершается постоянно. Автоперезапуск остановлен.",
   "autoSetSystemDnsUnsupported": "Для автоматической настройки DNS нужен systemd-resolved (resolvectl), которого в системе нет.",
-  "viaProxy": "через прокси"
+  "viaProxy": "через прокси",
+  "viaDirect": "напрямую"
 }

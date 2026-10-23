@@ -8,7 +8,10 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"sort"
+	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -20,7 +23,7 @@ import (
 const (
 	speedTestStreams   = 8
 	speedTestLatencyN  = 10
-	speedTestDownBytes = 20_000_000
+	speedTestDownBytes = 10_000_000
 	speedTestUpBytes   = 10_000_000
 	speedTestSampleMs  = 200
 	// 爬坡窗口：这段时间内的增量不计入最终速度。
@@ -55,6 +58,15 @@ const (
 	cloudflareDownURL = "https://speed.cloudflare.com/__down?bytes=%d"
 	cloudflareUpURL   = "https://speed.cloudflare.com/__up"
 	appleConfigURL    = "https://mensura.cdn-apple.com/api/v1/gm/config"
+	// speedtest.net 的公开 JS 接口，列表里包含国内三大运营商的节点。
+	speedtestServersURL = "https://www.speedtest.net/api/js/servers?engine=js&limit=20&https_functional=true"
+	// Cloudflare 的元信息接口，返回当前出口的国家/城市。用它来按**出口位置**
+	// 选节点——测速流量是从代理出口发出去的，按本机位置选会挑到绕远的节点。
+	cfMetaURL = "https://speed.cloudflare.com/meta"
+	// 国内 CDN 镜像的大文件。这类服务器常年高负载运行，比个人测速节点可靠；
+	// ls-lR.gz 是 Ubuntu 镜像的目录索引，路径稳定、体积够大。
+	aliyunCDNURL  = "https://mirrors.aliyun.com/ubuntu/ls-lR.gz"
+	tencentCDNURL = "https://mirrors.cloud.tencent.com/ubuntu/ls-lR.gz"
 )
 
 // 本轮实际使用的测速源。auto 时按延迟择优。
@@ -143,7 +155,6 @@ func resolveTarget(ctx context.Context, client *http.Client) (string, string, st
 	}
 	cands := []candidate{
 		{"Cloudflare", "https://speed.cloudflare.com/__down?bytes=0", cloudflareDownURL, cloudflareUpURL},
-		{"Apple", appleConfigURL, cloudflareDownURL, cloudflareUpURL},
 	}
 
 	best := cands[0]
@@ -166,6 +177,15 @@ func resolveTarget(ctx context.Context, client *http.Client) (string, string, st
 			best = c
 		}
 	}
+	// 国内 CDN：只测下载（上传仍走 Cloudflare），但下载这个数最准。
+	for _, cdn := range []struct{ name, url string }{
+		{"Aliyun CDN", aliyunCDNURL},
+		{"Tencent CDN", tencentCDNURL},
+	} {
+		if probeUsable(ctx, client, cdn.url) {
+			return cdn.name, cdn.url, cloudflareUpURL
+		}
+	}
 	if best.name == "Apple" {
 		if large, up, ok := appleTarget(ctx, client); ok && probeUsable(ctx, client, large) {
 			return "Apple", large, up
@@ -175,6 +195,107 @@ func resolveTarget(ctx context.Context, client *http.Client) (string, string, st
 		return "Cloudflare", cloudflareDownURL, cloudflareUpURL
 	}
 	return best.name, best.downURL, best.upURL
+}
+
+// 从 speedtest.net 的服务器列表里挑一台最快的。
+//
+// 这是"国内也能测"的关键：列表里就有中国电信/联通/移动的节点，不需要自建
+// 测速服务器。逐个打 /latency.txt 太慢，只探前几台。
+// 当前出口在哪。拿不到就返回空，退回按列表顺序选。
+func exitLocation(ctx context.Context, client *http.Client) string {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, cfMetaURL, nil)
+	if err != nil {
+		return ""
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return ""
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return ""
+	}
+	var meta struct {
+		City    string `json:"city"`
+		Country string `json:"country"`
+	}
+	if json.NewDecoder(io.LimitReader(resp.Body, 64*1024)).Decode(&meta) != nil {
+		return ""
+	}
+	if meta.City != "" {
+		return meta.City
+	}
+	return meta.Country
+}
+
+func speedtestTarget(ctx context.Context, client *http.Client) (string, string, string, string, bool) {
+	listURL := speedtestServersURL
+	if loc := exitLocation(ctx, client); loc != "" {
+		// 按出口城市搜：这样挑出来的是"离出口近"的节点，而不是离本机近。
+		listURL += "&search=" + url.QueryEscape(loc)
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, listURL, nil)
+	if err != nil {
+		return "", "", "", "", false
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", "", "", "", false
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return "", "", "", "", false
+	}
+	var servers []struct {
+		Host    string `json:"host"`
+		Name    string `json:"name"`
+		Sponsor string `json:"sponsor"`
+	}
+	if json.NewDecoder(io.LimitReader(resp.Body, 256*1024)).Decode(&servers) != nil {
+		return "", "", "", "", false
+	}
+
+	bestHost, bestName, bestMs := "", "", 1<<30
+	for i, s := range servers {
+		if i >= 6 {
+			break // 只探前 6 台，再多就太慢
+		}
+		if s.Host == "" {
+			continue
+		}
+		start := time.Now()
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet,
+			"https://"+s.Host+"/latency.txt", nil)
+		if err != nil {
+			continue
+		}
+		resp, err := client.Do(req)
+		if err != nil {
+			continue
+		}
+		ms := int(time.Since(start).Milliseconds())
+		_, _ = io.Copy(io.Discard, resp.Body)
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			continue
+		}
+		if ms < bestMs {
+			bestMs = ms
+			bestHost = s.Host
+			bestName = strings.TrimSpace(s.Sponsor + " " + s.Name)
+		}
+	}
+	if bestHost == "" {
+		return "", "", "", "", false
+	}
+	// speedtest.net 的节点大多在 8080 上跑 http，用 https 连 8080 会直接超时。
+	scheme := "https"
+	if strings.Contains(bestHost, ":8080") {
+		scheme = "http"
+	}
+	base := scheme + "://" + bestHost
+	down := base + "/download?size=" + strconv.Itoa(speedTestDownBytes)
+	return bestName, down, base + "/upload", down, true
 }
 
 type speedCounter struct {
@@ -252,11 +373,13 @@ func handleSpeedTest(action *Action, result ActionResult) {
 
 		name, downURL, upURL := resolveTarget(ctx, client)
 		speedTestName, speedTestUpURL = name, upURL
-		if name == "Apple" {
-			speedTestDownFixed = downURL
-		} else {
+		// 只有带 %d 的模板才交给 Sprintf 填大小；已经拼好的完整 URL 直接存下来，
+		// 否则会被塞进一个多余的参数，变成 ...size=20000000%!(EXTRA int=0)。
+		if strings.Contains(downURL, "%d") {
 			speedTestDownFixed = ""
 			speedTestDownURL = downURL
+		} else {
+			speedTestDownFixed = downURL
 		}
 
 		// 1. 延迟：取中位数，不被单次抖动拉偏。
@@ -274,7 +397,22 @@ func handleSpeedTest(action *Action, result ActionResult) {
 		})
 
 		// 2. 下载
-		down, err := measureDownload(ctx, client, report)
+		dctx, dcancel := context.WithTimeout(ctx, 25*time.Second)
+		down, err := measureDownload(dctx, client, report)
+		dcancel()
+		if err != nil {
+			// 小流量探测能过、正式下载却被掐的情况真实存在（Apple 就是这样）。
+			// 这时别直接报错，退回 Cloudflare 再跑一次。
+			if speedTestName != "Cloudflare" {
+				speedTestName = "Cloudflare"
+				speedTestDownFixed = ""
+				speedTestDownURL = cloudflareDownURL
+				speedTestUpURL = cloudflareUpURL
+				rctx, rcancel := context.WithTimeout(context.Background(), 25*time.Second)
+				down, err = measureDownload(rctx, client, report)
+				rcancel()
+			}
+		}
 		if err != nil {
 			report(SpeedTestProgress{Phase: speedTestPhaseFailed, Error: err.Error()})
 			return
@@ -283,7 +421,7 @@ func handleSpeedTest(action *Action, result ActionResult) {
 		// 3. 上传
 		// 上传单独给一个上限：__up 有时候会吊着连接不返回，卡住就永远没有
 		// done 帧，界面上会一直停在"上传中"。
-		uctx, ucancel := context.WithTimeout(ctx, 20*time.Second)
+		uctx, ucancel := context.WithTimeout(ctx, 8*time.Second)
 		up, err := measureUpload(uctx, client, report, median(latencies), down)
 		ucancel()
 		if err != nil && up == 0 {

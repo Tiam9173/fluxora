@@ -1746,5 +1746,6 @@
   "coreAutoRestart": "The core stopped unexpectedly. Restarting it.",
   "coreAutoRestartFailed": "The core keeps stopping. Automatic restart has given up.",
   "autoSetSystemDnsUnsupported": "Automatic DNS needs systemd-resolved (resolvectl), which this system does not provide.",
-  "viaProxy": "via proxy"
+  "viaProxy": "via proxy",
+  "viaDirect": "direct"
 }

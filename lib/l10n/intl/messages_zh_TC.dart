@@ -1628,6 +1628,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "usernameOptional": MessageLookupByLibrary.simpleMessage("使用者名稱 (可選)"),
     "value": MessageLookupByLibrary.simpleMessage("值"),
+    "viaDirect": MessageLookupByLibrary.simpleMessage("直連"),
     "viaProxy": MessageLookupByLibrary.simpleMessage("經代理"),
     "vibrantScheme": MessageLookupByLibrary.simpleMessage("活力"),
     "view": MessageLookupByLibrary.simpleMessage("查看"),

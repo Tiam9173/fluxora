@@ -1299,5 +1299,6 @@
   "coreAutoRestart": "コアが予期せず終了しました。自動で再起動します",
   "coreAutoRestartFailed": "コアが繰り返し終了するため、自動再起動を停止しました",
   "autoSetSystemDnsUnsupported": "DNS の自動設定には systemd-resolved（resolvectl）が必要ですが、このシステムにはありません。",
-  "viaProxy": "プロキシ経由"
+  "viaProxy": "プロキシ経由",
+  "viaDirect": "直接接続"
 }

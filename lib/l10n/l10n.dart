@@ -11204,6 +11204,11 @@ class AppLocalizations {
   String get viaProxy {
     return Intl.message('via proxy', name: 'viaProxy', desc: '', args: []);
   }
+
+  /// `direct`
+  String get viaDirect {
+    return Intl.message('direct', name: 'viaDirect', desc: '', args: []);
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {

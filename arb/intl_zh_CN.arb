@@ -1299,5 +1299,6 @@
   "coreAutoRestart": "内核意外退出，正在自动重启",
   "coreAutoRestartFailed": "内核反复退出，已停止自动重启",
   "autoSetSystemDnsUnsupported": "自动设置 DNS 需要 systemd-resolved（resolvectl），当前系统没有。",
-  "viaProxy": "经代理"
+  "viaProxy": "经代理",
+  "viaDirect": "直连"
 }

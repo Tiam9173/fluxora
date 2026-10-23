@@ -2246,6 +2246,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Username (optional)",
     ),
     "value": MessageLookupByLibrary.simpleMessage("Value"),
+    "viaDirect": MessageLookupByLibrary.simpleMessage("direct"),
     "viaProxy": MessageLookupByLibrary.simpleMessage("via proxy"),
     "vibrantScheme": MessageLookupByLibrary.simpleMessage("Vibrant"),
     "view": MessageLookupByLibrary.simpleMessage("View"),
