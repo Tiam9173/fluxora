@@ -371,6 +371,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainProbePassed": MessageLookupByLibrary.simpleMessage(
       "逐跳探测通过；端到端出口可用性请以实际访问为准",
     ),
+    "chainProbeResult": MessageLookupByLibrary.simpleMessage("探测结果"),
     "chainProbing": MessageLookupByLibrary.simpleMessage("链路探测中…"),
     "chainProxy": MessageLookupByLibrary.simpleMessage("链式代理"),
     "chainProxyDesc": MessageLookupByLibrary.simpleMessage("配置前置跳板与落地静态住宅IP代理"),

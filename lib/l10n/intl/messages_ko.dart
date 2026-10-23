@@ -405,6 +405,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainProbePassed": MessageLookupByLibrary.simpleMessage(
       "각 홉 확인 통과. 실제 도달 여부는 직접 접속으로 확인하세요",
     ),
+    "chainProbeResult": MessageLookupByLibrary.simpleMessage("측정 결과"),
     "chainProbing": MessageLookupByLibrary.simpleMessage("체인 확인 중…"),
     "chainProxy": MessageLookupByLibrary.simpleMessage("체인 프록시"),
     "chainProxyDesc": MessageLookupByLibrary.simpleMessage(

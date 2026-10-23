@@ -402,6 +402,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainProbePassed": MessageLookupByLibrary.simpleMessage(
       "各ホップの確認は通過。実際の到達性は実アクセスでご確認ください",
     ),
+    "chainProbeResult": MessageLookupByLibrary.simpleMessage("測定結果"),
     "chainProbing": MessageLookupByLibrary.simpleMessage("チェーンを確認中…"),
     "chainProxy": MessageLookupByLibrary.simpleMessage("チェーンプロキシ"),
     "chainProxyDesc": MessageLookupByLibrary.simpleMessage(

@@ -1634,9 +1634,31 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
             if (config.enable &&
                 probeReport != null &&
                 probeReport.hops.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              for (final hop in probeReport.hops)
-                _buildHopDetailRow(context, hop),
+              const SizedBox(height: 6),
+              // 明细默认收起：拓扑图已经给出结论，逐跳数字按需展开。
+              Theme(
+                data: Theme.of(
+                  context,
+                ).copyWith(dividerColor: Colors.transparent),
+                child: ExpansionTile(
+                  initiallyExpanded: false,
+                  tilePadding: EdgeInsets.zero,
+                  dense: true,
+                  visualDensity: VisualDensity.compact,
+                  leading: const Icon(Icons.fact_check_outlined, size: 16),
+                  title: Text(
+                    appLocalizations.chainProbeResult,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  children: [
+                    for (final hop in probeReport.hops)
+                      _buildHopDetailRow(context, hop),
+                  ],
+                ),
+              ),
             ],
             // B3: an incomplete three-hop chain generates no shadow nodes at
             // all, so say so here rather than letting the card read as ready.

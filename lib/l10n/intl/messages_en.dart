@@ -495,6 +495,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainProbePassed": MessageLookupByLibrary.simpleMessage(
       "Every hop probed cleanly; end-to-end reachability depends on the real request",
     ),
+    "chainProbeResult": MessageLookupByLibrary.simpleMessage("Probe results"),
     "chainProbing": MessageLookupByLibrary.simpleMessage("Probing the chain…"),
     "chainProxy": MessageLookupByLibrary.simpleMessage("Chain Proxy"),
     "chainProxyDesc": MessageLookupByLibrary.simpleMessage(

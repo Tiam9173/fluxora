@@ -373,6 +373,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainProbePassed": MessageLookupByLibrary.simpleMessage(
       "逐跳探測通過；端到端出口可用性請以實際存取為準",
     ),
+    "chainProbeResult": MessageLookupByLibrary.simpleMessage("探測結果"),
     "chainProbing": MessageLookupByLibrary.simpleMessage("鏈路探測中…"),
     "chainProxy": MessageLookupByLibrary.simpleMessage("鏈式代理"),
     "chainProxyDesc": MessageLookupByLibrary.simpleMessage(

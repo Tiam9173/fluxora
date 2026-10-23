@@ -11279,6 +11279,16 @@ class AppLocalizations {
   String get stJitter {
     return Intl.message('jitter', name: 'stJitter', desc: '', args: []);
   }
+
+  /// `Probe results`
+  String get chainProbeResult {
+    return Intl.message(
+      'Probe results',
+      name: 'chainProbeResult',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {

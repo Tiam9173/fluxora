@@ -519,6 +519,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainProbePassed": MessageLookupByLibrary.simpleMessage(
       "Все участки проверены; реальную доступность проверяйте запросом",
     ),
+    "chainProbeResult": MessageLookupByLibrary.simpleMessage("Результаты"),
     "chainProbing": MessageLookupByLibrary.simpleMessage("Проверка цепочки…"),
     "chainProxy": MessageLookupByLibrary.simpleMessage("Цепочка прокси"),
     "chainProxyDesc": MessageLookupByLibrary.simpleMessage(

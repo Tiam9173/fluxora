@@ -501,6 +501,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainProbePassed": MessageLookupByLibrary.simpleMessage(
       "همه مراحل بررسی شد؛ دسترسی واقعی را با درخواست بسنجید",
     ),
+    "chainProbeResult": MessageLookupByLibrary.simpleMessage("نتایج"),
     "chainProbing": MessageLookupByLibrary.simpleMessage(
       "در حال بررسی زنجیره…",
     ),
