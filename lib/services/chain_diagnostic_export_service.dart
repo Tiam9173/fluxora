@@ -27,9 +27,21 @@ class ChainDiagnosticExportService implements IChainDiagnosticExportService {
       successfulRecoveries: 0,
     );
 
-    final topologyStr = manager.config.enable
-        ? 'Entry: ${manager.config.hop1Node}\nRelay: ${manager.config.hop2Node}\nExit: ${manager.config.hop3Node}'
-        : 'Disabled';
+    // 按实际跳链逐跳列出，而不是固定读 hop1/hop2/hop3 三个槽位。
+    // 中转现在存在 frontHops 里、跳数也不固定，固定槽位会让报告漏掉用户
+    // 真正配置的中间节点——出问题时最该看的就是这一行。
+    String topologyStr;
+    if (manager.config.enable) {
+      final hops = manager.config.effectiveFrontHops;
+      final parts = <String>[];
+      for (var i = 0; i < hops.length; i++) {
+        parts.add('${i == 0 ? 'Entry' : 'Relay $i'}: ${hops[i]}');
+      }
+      parts.add('Exit: ${manager.config.effectiveExitNode}');
+      topologyStr = parts.join('\n');
+    } else {
+      topologyStr = 'Disabled';
+    }
 
     return ChainDiagnosticReport(
       reportId: 'DIAG-${DateTime.now().millisecondsSinceEpoch}',
