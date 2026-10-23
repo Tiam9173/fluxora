@@ -2,8 +2,6 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluxora/manager/chain_proxy_manager.dart';
-import 'package:fluxora/models/chain_proxy.dart';
-import 'package:fluxora/services/chain_probe_service.dart';
 import 'package:path/path.dart' as p;
 
 import '../support/temp_dir_cleanup.dart';
@@ -44,18 +42,3 @@ void main() {
 
 }
 
-ChainProbeReport _report(String tag) => ChainProbeReport(
-  mode: ChainHopMode.twoHop,
-  isOverallHealthy: true,
-  hops: [
-    HopProbeState(
-      hopIndex: 1,
-      role: HopRole.hop1Entry,
-      nodeName: 'node1',
-      nodeAddress: '127.0.0.1',
-      status: HopProbeStatus.healthy,
-    ),
-  ],
-  rootCauseAnalysis: tag,
-  timestamp: DateTime.now(),
-);

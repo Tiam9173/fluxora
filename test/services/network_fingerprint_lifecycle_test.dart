@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fluxora/manager/chain_proxy_manager.dart';
 import 'package:fluxora/models/chain_fallback_pool.dart';
 import 'package:fluxora/models/chain_proxy.dart';
-import 'package:fluxora/services/chain_probe_service.dart';
 import 'package:fluxora/services/network_fingerprint_provider.dart';
 import 'package:path/path.dart' as p;
 
@@ -104,23 +103,6 @@ void main() {
       if (tmp.existsSync()) tmp.deleteSync(recursive: true);
     });
 
-    ChainProbeReport failedReport(ChainProxyConfig cfg) => ChainProbeReport(
-      mode: cfg.hopMode,
-      isOverallHealthy: false,
-      healthStatus: ChainHealthStatus.failed,
-      failureHop: 2,
-      hops: [
-        HopProbeState(
-          hopIndex: 2,
-          role: HopRole.hop2Exit,
-          nodeName: 'US-FB-01',
-          nodeAddress: '127.0.0.1',
-          status: HopProbeStatus.timeout,
-          healthStatus: ChainHealthStatus.failed,
-        ),
-      ],
-      timestamp: DateTime.now(),
-    );
 
   });
 

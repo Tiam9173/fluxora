@@ -193,35 +193,7 @@ void main() {
     late ChainProxyManager manager;
     final List<Completer<ChainProbeReport>> gates = [];
 
-    /// A minimal, identifiable report. `rootCauseAnalysis` carries the tag, so a
-    /// test can tell exactly which probe's report ended up in the manager.
-    ChainProbeReport taggedReport(
-      String tag, {
-      HopProbeStatus status = HopProbeStatus.healthy,
-    }) => ChainProbeReport(
-      mode: ChainHopMode.twoHop,
-      isOverallHealthy: status == HopProbeStatus.healthy,
-      hops: [
-        HopProbeState(
-          hopIndex: 1,
-          role: HopRole.hop1Entry,
-          nodeName: 'node1',
-          nodeAddress: '127.0.0.1',
-          status: status,
-        ),
-      ],
-      rootCauseAnalysis: tag,
-      timestamp: DateTime.now(),
-    );
 
-    /// Blocks every probe until the test releases its gate, in call order.
-    void installGatedProbe() {
-      ChainProxyManager.chainProbeOverride = (cfg) {
-        final gate = Completer<ChainProbeReport>();
-        gates.add(gate);
-        return gate.future;
-      };
-    }
 
     setUp(() async {
       gates.clear();

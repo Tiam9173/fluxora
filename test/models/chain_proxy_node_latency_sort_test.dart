@@ -1,6 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fluxora/models/chain_proxy_node_view_model.dart';
-import 'package:fluxora/models/common.dart';
 
 /// P1.3-C4-Step5 — the 「延迟」 sort rule (`ChainProxyNodeViewModel.compareByLatency`).
 ///
@@ -17,18 +15,7 @@ import 'package:fluxora/models/common.dart';
 /// a silent switch to the Smart order), and the sort mode must be part of the
 /// cache identity so one mode can never serve another mode's cached list.
 void main() {
-  ChainProxyNodeViewModel node(String name, int? latencyMs) {
-    return ChainProxyNodeViewModel(
-      proxy: Proxy(name: name, type: 'SS'),
-      nodeName: name,
-      latencyMs: latencyMs,
-    );
-  }
 
-  List<String> sortedNames(List<ChainProxyNodeViewModel> nodes) {
-    final list = [...nodes]..sort(ChainProxyNodeViewModel.compareByLatency);
-    return list.map((n) => n.nodeName).toList();
-  }
 
   group('ChainProxyNodeViewModel.compareByLatency — Step5 latency sort', () {
 

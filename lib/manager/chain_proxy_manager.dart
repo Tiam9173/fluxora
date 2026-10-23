@@ -62,7 +62,6 @@ class ChainProxyManager extends ChangeNotifier {
   /// diagnosis is re-logged only when it **changes** — see
   /// [_reportAutoFailoverSkip]. Read-only: tests assert the state here, while
   /// `debugPrint` counting proves how often it was actually emitted.
-  @visibleForTesting
 
   
   static ChainProxyManager? _instance;
@@ -1472,7 +1471,6 @@ class ChainProxyManager extends ChangeNotifier {
   /// automatic-failover detection by up to one full failure window. Use
   /// [stopChainHealthCheck] to end the loop; a later start resets the counter as
   /// expected.
-  @visibleForTesting
 
 
 

@@ -45,7 +45,6 @@ void main() {
     await deleteTempDirWithRetry(tmp);
   });
 
-  Future<String> readConfigFile() => File(configPath).readAsString();
 
   // ── A. success path is unchanged ─────────────────────────────────────────
   test('A. a successful reload completes normally and updates state', () async {

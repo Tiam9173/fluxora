@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluxora/manager/chain_proxy_manager.dart';
 import 'package:fluxora/models/chain_fallback_pool.dart';
-import 'package:fluxora/models/chain_proxy.dart';
 import 'package:fluxora/services/chain_reliability_stats_persistence.dart';
 import 'package:fluxora/services/persistence_schema.dart';
 import 'package:path/path.dart' as p;
@@ -58,17 +57,7 @@ void main() {
     },
   };
 
-  ChainFallbackPool poolWith(String node) => ChainFallbackPool(
-    exitCandidates: [
-      ChainFallbackCandidate(
-        nodeName: node,
-        role: FallbackCandidateRole.exit,
-      ),
-    ],
-  );
 
-  ChainProxyConfig configWith(String hop1) =>
-      const ChainProxyConfig().copyWith(enable: true, hop1Node: hop1);
 
   // ── A–F: the pure contract ───────────────────────────────────────────────
   group('A–F: PersistenceSchema contract', () {
