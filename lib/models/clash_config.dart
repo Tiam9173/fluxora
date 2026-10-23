@@ -82,6 +82,28 @@ const defaultBypassPrivateRouteAddress = [
   '2000::/3',
 ];
 
+/// 计算「绕过私网」时下发给系统的路由表。
+///
+/// Android 16 起，Tethering 判断「热点该走哪条上游」时会用**零地址**去路由表
+/// 里做最长前缀匹配。默认私网绕过列表从 `1.0.0.0/8` 起算，`0.0.0.0` 没有任何
+/// 匹配项，于是 upstream 解析成 null，热点设备直接断网（上游 issue #574）。
+///
+/// 补一条 `0.0.0.0/32` 就够：它只匹配零地址，普通 IPv4 目的地的分流行为不变。
+///
+/// 只在「Android + 用户没自定义路由」时补，自定义列表说明用户清楚自己要什么。
+List<String> resolveBypassRouteAddress({
+  required bool isAndroid,
+  List<String>? custom,
+}) {
+  final routes = List<String>.from(
+    custom ?? defaultBypassPrivateRouteAddress,
+  );
+  if (isAndroid && custom == null) {
+    routes.add('0.0.0.0/32');
+  }
+  return routes;
+}
+
 const defaultDesktopBypassPrivateRouteAddress = [
   '127.0.0.0/8',
   '::1/128',
@@ -357,8 +379,9 @@ extension TunExt on Tun {
     if (bypassPrivateRoute) {
       return copyWith(
         autoRoute: true,
-        routeAddress: List<String>.from(
-          bypassPrivateRouteAddress ?? defaultBypassPrivateRouteAddress,
+        routeAddress: resolveBypassRouteAddress(
+          isAndroid: system.isAndroid,
+          custom: bypassPrivateRouteAddress,
         ),
       );
     }
