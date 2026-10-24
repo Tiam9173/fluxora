@@ -101,60 +101,68 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m36(name) => "Node added: ${name}";
 
-  static String m37(name) => "Node deleted: ${name}";
+  static String m37(count) => "Delete ${count} nodes that failed the last test";
 
-  static String m38(name) => "Edit ${name}";
+  static String m38(name) => "Node deleted: ${name}";
 
-  static String m39(name) => "Node management · ${name}";
+  static String m39(count) => "${count} nodes deleted";
 
-  static String m40(proto) => "e.g. Hong Kong 01 - ${proto}";
+  static String m40(name) => "Edit ${name}";
 
-  static String m41(done, total) => "Testing ${done}/${total}";
+  static String m41(count) => "Delete ${count} duplicate nodes";
 
-  static String m42(label) => "No ${label}";
+  static String m42(count) => "${count} duplicate groups found";
 
-  static String m43(label) => "${label} must be a number";
+  static String m43(name) => "Node management · ${name}";
 
-  static String m44(from, to) =>
+  static String m44(proto) => "e.g. Hong Kong 01 - ${proto}";
+
+  static String m45(done, total) => "Testing ${done}/${total}";
+
+  static String m46(label) => "No ${label}";
+
+  static String m47(label) => "${label} must be a number";
+
+  static String m48(from, to) =>
       "Port ${from} is in use; using ${to} for this session";
 
-  static String m45(label) =>
+  static String m49(label) =>
       "${label} must be between 1024 and 49151, 0 to disable";
 
-  static String m46(name) => "Pre-proxy & Landing Proxy · ${name}";
+  static String m50(name) => "Pre-proxy & Landing Proxy · ${name}";
 
-  static String m47(statusCode) =>
+  static String m51(statusCode) =>
       "Failed to import profile. Please check your network status or try resetting the subscription link ( HTTP error code: ${statusCode} )";
 
-  static String m48(count) => "${count} items selected";
+  static String m52(count) => "${count} items selected";
 
-  static String m49(error) => "Check failed: ${error}";
+  static String m53(error) => "Check failed: ${error}";
 
-  static String m50(name) => "Still using: ${name}";
+  static String m54(name) => "Still using: ${name}";
 
-  static String m51(label) => "${label} must be a URL";
+  static String m55(label) => "${label} must be a URL";
 
-  static String m52(label) => "Copied ${label}";
+  static String m56(label) => "Copied ${label}";
 
-  static String m53(colo, ip) =>
+  static String m57(colo, ip) =>
       "🎉 Diagnostics passed. WARP is active (colo: ${colo}, exit: ${ip})";
 
-  static String m54(name) => "Dialer set to ${name}";
+  static String m58(name) => "Dialer set to ${name}";
 
-  static String m55(code) => "Edge node ${code}";
+  static String m59(code) => "Edge node ${code}";
 
-  static String m56(ip) => "Using the fastest node: ${ip}";
+  static String m60(ip) => "Using the fastest node: ${ip}";
 
-  static String m57(ip) => "Using ${ip}";
+  static String m61(ip) => "Using ${ip}";
 
-  static String m58(ip) =>
+  static String m62(ip) =>
       "Note: connected to exit ${ip} but no WARP signature was found - check the dialer";
 
-  static String m59(loc) => "Region: ${loc}";
+  static String m63(loc) => "Region: ${loc}";
 
-  static String m60(label) => "Switched to ${label}";
+  static String m64(label) => "Switched to ${label}";
 
-  static String m61(count) =>
+  static String m65(count) =>
       "${Intl.plural(count, one: 'year', other: 'years')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
@@ -1549,16 +1557,27 @@ class MessageLookup extends MessageLookupByLibrary {
     "noUsageData": MessageLookupByLibrary.simpleMessage("No usage data"),
     "nodeAdded": m36,
     "nodeAllProtocols": MessageLookupByLibrary.simpleMessage("All protocols"),
+    "nodeCleanUnavailable": MessageLookupByLibrary.simpleMessage(
+      "Clean unavailable configs",
+    ),
+    "nodeCleanUnavailableConfirm": m37,
+    "nodeCleanUnavailableNone": MessageLookupByLibrary.simpleMessage(
+      "No failed nodes to clean",
+    ),
     "nodeClearResults": MessageLookupByLibrary.simpleMessage(
       "Clear test results",
     ),
-    "nodeDeleted": m37,
+    "nodeDeleteDuplicates": MessageLookupByLibrary.simpleMessage(
+      "Delete duplicate servers",
+    ),
+    "nodeDeleted": m38,
+    "nodeDeletedCount": m39,
     "nodeDetailCancel": MessageLookupByLibrary.simpleMessage("Cancel"),
     "nodeDetailClose": MessageLookupByLibrary.simpleMessage("Close"),
     "nodeDetailCopied": MessageLookupByLibrary.simpleMessage("Copied"),
     "nodeDetailCopyConfig": MessageLookupByLibrary.simpleMessage("Copy config"),
     "nodeDetailEdit": MessageLookupByLibrary.simpleMessage("Edit"),
-    "nodeDetailEditTitle": m38,
+    "nodeDetailEditTitle": m40,
     "nodeDetailMissing": MessageLookupByLibrary.simpleMessage(
       "No original config for this node - it may come from a group or have been replaced by a subscription update",
     ),
@@ -1573,6 +1592,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "nodeDetailSaved": MessageLookupByLibrary.simpleMessage(
       "Saved; restart the core to apply",
     ),
+    "nodeDuplicatesDelete": m41,
+    "nodeDuplicatesFound": m42,
+    "nodeDuplicatesNone": MessageLookupByLibrary.simpleMessage(
+      "No duplicate servers",
+    ),
     "nodeExclusion": MessageLookupByLibrary.simpleMessage("Node Exclusion"),
     "nodeExclusionDesc": MessageLookupByLibrary.simpleMessage(
       "Exclude all matched nodes",
@@ -1586,10 +1610,11 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "nodeExportEmpty": MessageLookupByLibrary.simpleMessage("Nothing selected"),
     "nodeExportTitle": MessageLookupByLibrary.simpleMessage("Exported links"),
-    "nodeManagement": m39,
+    "nodeManagement": m43,
     "nodeName": MessageLookupByLibrary.simpleMessage("Node Name"),
-    "nodeNameHint": m40,
+    "nodeNameHint": m44,
     "nodeNameLabel": MessageLookupByLibrary.simpleMessage("Node name"),
+    "nodeNoMatches": MessageLookupByLibrary.simpleMessage("No matching nodes"),
     "nodeOnlyFailed": MessageLookupByLibrary.simpleMessage("Failed only"),
     "nodeProtocol": MessageLookupByLibrary.simpleMessage("Node protocol"),
     "nodeSearchHint": MessageLookupByLibrary.simpleMessage(
@@ -1605,7 +1630,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "nodeTestUnavailable": MessageLookupByLibrary.simpleMessage(
       "Apply this profile before running URL tests",
     ),
-    "nodeTestingProgress": m41,
+    "nodeTestingProgress": m45,
+    "nodeUpdateSubscription": MessageLookupByLibrary.simpleMessage(
+      "Update current subscription",
+    ),
     "none": MessageLookupByLibrary.simpleMessage("None"),
     "notRecommended": MessageLookupByLibrary.simpleMessage("Not Recommended"),
     "notSelectedTip": MessageLookupByLibrary.simpleMessage(
@@ -1633,8 +1661,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "nullProfileDesc": MessageLookupByLibrary.simpleMessage(
       "No profile. Please add one.",
     ),
-    "nullTip": m42,
-    "numberTip": m43,
+    "nullTip": m46,
+    "numberTip": m47,
     "obfsModeLabel": MessageLookupByLibrary.simpleMessage("Obfs mode"),
     "obfsNoneOff": MessageLookupByLibrary.simpleMessage("None (off)"),
     "officialCommunity": MessageLookupByLibrary.simpleMessage(
@@ -1770,9 +1798,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "portFallbackDesc": MessageLookupByLibrary.simpleMessage(
       "Use another port when the configured one is already taken",
     ),
-    "portFallbackNotice": m44,
+    "portFallbackNotice": m48,
     "portLabel": MessageLookupByLibrary.simpleMessage("Port"),
-    "portTip": m45,
+    "portTip": m49,
     "powerSwitch": MessageLookupByLibrary.simpleMessage("Power"),
     "preProxyOptionCustom": MessageLookupByLibrary.simpleMessage(
       "✏️ Manually enter pre-proxy node name...",
@@ -1811,7 +1839,7 @@ class MessageLookup extends MessageLookupByLibrary {
         MessageLookupByLibrary.simpleMessage("Please enter a valid interval"),
     "profileAutoUpdateIntervalNullValidationDesc":
         MessageLookupByLibrary.simpleMessage("Please enter update interval"),
-    "profileChainDialogTitle": m46,
+    "profileChainDialogTitle": m50,
     "profileChainProxies": MessageLookupByLibrary.simpleMessage(
       "Pre and landing proxies",
     ),
@@ -1824,7 +1852,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "profileHasUpdate": MessageLookupByLibrary.simpleMessage(
       "Profile modified. Disable auto-update?",
     ),
-    "profileImportFailed": m47,
+    "profileImportFailed": m51,
     "profileManageNodes": MessageLookupByLibrary.simpleMessage(
       "Manage / add nodes",
     ),
@@ -2043,7 +2071,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Select Backup Version",
     ),
     "selected": MessageLookupByLibrary.simpleMessage("Selected"),
-    "selectedCountTitle": m48,
+    "selectedCountTitle": m52,
     "serverAddress": MessageLookupByLibrary.simpleMessage("Server Address"),
     "serverAddressHint": MessageLookupByLibrary.simpleMessage("IP or domain"),
     "serverAddressLabel": MessageLookupByLibrary.simpleMessage(
@@ -2098,7 +2126,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "smartAutoStopServiceRunning": MessageLookupByLibrary.simpleMessage(
       "Smart Auto-Stop running",
     ),
-    "smartCheckFailed": m49,
+    "smartCheckFailed": m53,
     "smartCheckNow": MessageLookupByLibrary.simpleMessage("Check now"),
     "smartChecking": MessageLookupByLibrary.simpleMessage("Checking…"),
     "smartDelayLaunch": MessageLookupByLibrary.simpleMessage("Smart Delay"),
@@ -2174,7 +2202,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "statusDesc": MessageLookupByLibrary.simpleMessage(
       "Uses system DNS when disabled",
     ),
-    "stillUsingProfile": m50,
+    "stillUsingProfile": m54,
     "stop": MessageLookupByLibrary.simpleMessage("Stop"),
     "stopVpn": MessageLookupByLibrary.simpleMessage("Stopping..."),
     "storeFix": MessageLookupByLibrary.simpleMessage("Store Fix"),
@@ -2497,7 +2525,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "upload": MessageLookupByLibrary.simpleMessage("Upload"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage("Get profile via URL"),
-    "urlTip": m51,
+    "urlTip": m55,
     "useGlobalScriptOverride": MessageLookupByLibrary.simpleMessage(
       "Use Global Script Override",
     ),
@@ -2536,12 +2564,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "wakelockDescription": MessageLookupByLibrary.simpleMessage(
       "Keeps the screen on and app active in the background without requiring special CPU wakelock permissions.",
     ),
-    "warpCopied": m52,
-    "warpDiagOk": m53,
-    "warpDialerSet": m54,
-    "warpEdgeNode": m55,
-    "warpFastestChosen": m56,
-    "warpIpChosen": m57,
+    "warpCopied": m56,
+    "warpDiagOk": m57,
+    "warpDialerSet": m58,
+    "warpEdgeNode": m59,
+    "warpFastestChosen": m60,
+    "warpIpChosen": m61,
     "warpModeAll": MessageLookupByLibrary.simpleMessage(
       "Route everything through WARP",
     ),
@@ -2561,8 +2589,8 @@ class MessageLookup extends MessageLookupByLibrary {
       "Routes Google, OpenAI, Claude and Gemini through WARP; everything else keeps the provider\'s native speed",
     ),
     "warpModeTitle": MessageLookupByLibrary.simpleMessage("Routing mode"),
-    "warpNoSignature": m58,
-    "warpRegion": m59,
+    "warpNoSignature": m62,
+    "warpRegion": m63,
     "warpRouteProxyOverWarp": MessageLookupByLibrary.simpleMessage(
       "Route the proxy through WARP",
     ),
@@ -2793,7 +2821,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpStr99": MessageLookupByLibrary.simpleMessage(
       "Choose the WireGuard MTU",
     ),
-    "warpSwitchedTo": m60,
+    "warpSwitchedTo": m64,
     "warpUnknownColo": MessageLookupByLibrary.simpleMessage(
       "Unknown edge node",
     ),
@@ -2810,6 +2838,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "wrongBackupPassword": MessageLookupByLibrary.simpleMessage(
       "Wrong password or the backup was tampered with",
     ),
-    "years": m61,
+    "years": m65,
   };
 }

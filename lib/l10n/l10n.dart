@@ -7770,6 +7770,106 @@ class AppLocalizations {
     );
   }
 
+  /// `Delete duplicate servers`
+  String get nodeDeleteDuplicates {
+    return Intl.message(
+      'Delete duplicate servers',
+      name: 'nodeDeleteDuplicates',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{count} duplicate groups found`
+  String nodeDuplicatesFound(Object count) {
+    return Intl.message(
+      '$count duplicate groups found',
+      name: 'nodeDuplicatesFound',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `Delete {count} duplicate nodes`
+  String nodeDuplicatesDelete(Object count) {
+    return Intl.message(
+      'Delete $count duplicate nodes',
+      name: 'nodeDuplicatesDelete',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `No duplicate servers`
+  String get nodeDuplicatesNone {
+    return Intl.message(
+      'No duplicate servers',
+      name: 'nodeDuplicatesNone',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Clean unavailable configs`
+  String get nodeCleanUnavailable {
+    return Intl.message(
+      'Clean unavailable configs',
+      name: 'nodeCleanUnavailable',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Delete {count} nodes that failed the last test`
+  String nodeCleanUnavailableConfirm(Object count) {
+    return Intl.message(
+      'Delete $count nodes that failed the last test',
+      name: 'nodeCleanUnavailableConfirm',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `No failed nodes to clean`
+  String get nodeCleanUnavailableNone {
+    return Intl.message(
+      'No failed nodes to clean',
+      name: 'nodeCleanUnavailableNone',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Update current subscription`
+  String get nodeUpdateSubscription {
+    return Intl.message(
+      'Update current subscription',
+      name: 'nodeUpdateSubscription',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No matching nodes`
+  String get nodeNoMatches {
+    return Intl.message(
+      'No matching nodes',
+      name: 'nodeNoMatches',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{count} nodes deleted`
+  String nodeDeletedCount(Object count) {
+    return Intl.message(
+      '$count nodes deleted',
+      name: 'nodeDeletedCount',
+      desc: '',
+      args: [count],
+    );
+  }
+
   /// `Search name or server`
   String get nodeSearchHint {
     return Intl.message(

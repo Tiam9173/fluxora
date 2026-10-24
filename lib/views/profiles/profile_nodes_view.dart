@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:fluxora/clash/clash.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/models/models.dart';
@@ -425,6 +427,137 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
     setState(_delays.clear);
   }
 
+  String _fingerprint(Map<String, dynamic> proxy) {
+    const keys = [
+      'type',
+      'server',
+      'port',
+      'uuid',
+      'password',
+      'cipher',
+      'network',
+      'servername',
+      'sni',
+      'flow',
+      'auth',
+      'username',
+      'ws-opts',
+      'grpc-opts',
+      'reality-opts',
+    ];
+    return keys
+        .map((key) => '$key=${jsonEncode(proxy[key])}')
+        .join('|');
+  }
+
+  List<List<Map<String, dynamic>>> get _duplicateGroups {
+    final groups = <String, List<Map<String, dynamic>>>{};
+    for (final proxy in _proxies) {
+      groups.putIfAbsent(_fingerprint(proxy), () => []).add(proxy);
+    }
+    return groups.values.where((group) => group.length > 1).toList();
+  }
+
+  Future<void> _deleteNames(Set<String> names) async {
+    if (names.isEmpty) return;
+    final updated = await ManualProxyHelper.deleteProxiesFromProfile(
+      _profile,
+      names,
+    );
+    if (!mounted) return;
+    setState(() {
+      _profile = updated;
+      _delays.removeWhere((name, _) => names.contains(name));
+      _selected.removeWhere(names.contains);
+    });
+    await _loadProxies();
+    if (globalState.config.currentProfileId == _profile.id) {
+      globalState.appController.applyProfileDebounce(silence: true);
+    }
+    if (mounted) {
+      context.showNotifier(appLocalizations.nodeDeletedCount(names.length));
+    }
+  }
+
+  Future<void> _deleteDuplicates() async {
+    final groups = _duplicateGroups;
+    if (groups.isEmpty) {
+      context.showSnackBar(appLocalizations.nodeDuplicatesNone);
+      return;
+    }
+    final names = <String>{
+      for (final group in groups)
+        for (final proxy in group.skip(1))
+          if (proxy['name'] is String) proxy['name'] as String,
+    };
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(appLocalizations.nodeDeleteDuplicates),
+        content: Text(
+          '${appLocalizations.nodeDuplicatesFound(groups.length)}\n'
+          '${appLocalizations.nodeDuplicatesDelete(names.length)}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(appLocalizations.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(appLocalizations.delete),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) await _deleteNames(names);
+  }
+
+  Future<void> _cleanUnavailable() async {
+    final names = <String>{
+      for (final proxy in _proxies)
+        if ((_delays[proxy['name']?.toString() ?? ''] ?? 0) < 0)
+          proxy['name']?.toString() ?? '',
+    }..removeWhere((name) => name.isEmpty);
+    if (names.isEmpty) {
+      context.showSnackBar(appLocalizations.nodeCleanUnavailableNone);
+      return;
+    }
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(appLocalizations.nodeCleanUnavailable),
+        content: Text(
+          appLocalizations.nodeCleanUnavailableConfirm(names.length),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(appLocalizations.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(appLocalizations.delete),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) await _deleteNames(names);
+  }
+
+  Future<void> _updateSubscription() async {
+    if (_profile.url.isEmpty) return;
+    await globalState.appController.updateProfile(_profile);
+    if (!mounted) return;
+    final refreshed = globalState.config.profiles
+        .where((profile) => profile.id == _profile.id)
+        .firstOrNull;
+    if (refreshed != null) {
+      setState(() => _profile = refreshed);
+    }
+    await _loadProxies();
+  }
+
   Widget _filterBar(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
@@ -692,9 +825,29 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
               _testAll();
             } else if (value == 'clear') {
               _clearResults();
+            } else if (value == 'update') {
+              _updateSubscription();
+            } else if (value == 'duplicates') {
+              _deleteDuplicates();
+            } else if (value == 'clean') {
+              _cleanUnavailable();
             }
           },
           itemBuilder: (_) => [
+            PopupMenuItem(
+              value: 'update',
+              enabled: _profile.url.isNotEmpty,
+              child: Text(appLocalizations.nodeUpdateSubscription),
+            ),
+            PopupMenuItem(
+              value: 'duplicates',
+              child: Text(appLocalizations.nodeDeleteDuplicates),
+            ),
+            PopupMenuItem(
+              value: 'clean',
+              child: Text(appLocalizations.nodeCleanUnavailable),
+            ),
+            const PopupMenuDivider(),
             PopupMenuItem(
               value: 'test',
               child: Text(
@@ -781,6 +934,11 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
                 ? _emptyState(context)
                 : LayoutBuilder(
                     builder: (ctx, constraints) {
+                      if (visibleProxies.isEmpty) {
+                        return Center(
+                          child: Text(appLocalizations.nodeNoMatches),
+                        );
+                      }
                       if (constraints.maxWidth < 700) {
                         return ListView.builder(
                           padding: const EdgeInsets.symmetric(

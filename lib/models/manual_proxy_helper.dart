@@ -1257,8 +1257,18 @@ class ManualProxyHelper {
   static Future<Profile> deleteProxyFromProfile(
     Profile profile,
     String proxyName,
+  ) {
+    return deleteProxiesFromProfile(profile, {proxyName});
+  }
+
+  static Future<Profile> deleteProxiesFromProfile(
+    Profile profile,
+    Set<String> proxyNames,
   ) async {
-    await _forgetManual(profile, proxyName);
+    if (proxyNames.isEmpty) return profile;
+    for (final name in proxyNames) {
+      await _forgetManual(profile, name);
+    }
     final file = await profile.getFile();
     String content = await file.exists() ? await file.readAsString() : '';
     if (content.trim().isEmpty) return profile;
@@ -1275,7 +1285,10 @@ class ManualProxyHelper {
 
     if (configMap['proxies'] is List) {
       final list = List<dynamic>.from(configMap['proxies'] as List);
-      list.removeWhere((item) => item is Map && item['name'] == proxyName);
+      list.removeWhere(
+        (item) =>
+            item is Map && proxyNames.contains(item['name']?.toString()),
+      );
       configMap['proxies'] = list;
     }
 
@@ -1283,7 +1296,9 @@ class ManualProxyHelper {
       for (final g in configMap['proxy-groups']) {
         if (g is Map && g['proxies'] is List) {
           final pList = List<dynamic>.from(g['proxies'] as List);
-          pList.remove(proxyName);
+          pList.removeWhere(
+            (name) => proxyNames.contains(name?.toString()),
+          );
           g['proxies'] = pList;
         }
       }

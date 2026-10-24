@@ -100,60 +100,69 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m36(name) => "Узел добавлен: ${name}";
 
-  static String m37(name) => "Узел удалён: ${name}";
+  static String m37(count) =>
+      "Будет удалено узлов, не прошедших последнюю проверку: ${count}";
 
-  static String m38(name) => "Изменить ${name}";
+  static String m38(name) => "Узел удалён: ${name}";
 
-  static String m39(name) => "Управление узлами · ${name}";
+  static String m39(count) => "Удалено узлов: ${count}";
 
-  static String m40(proto) => "напр. Гонконг 01 - ${proto}";
+  static String m40(name) => "Изменить ${name}";
 
-  static String m41(done, total) => "Проверка ${done}/${total}";
+  static String m41(count) => "Удалить дубликаты узлов: ${count}";
 
-  static String m42(label) => "${label} отсутствует";
+  static String m42(count) => "Найдено групп дубликатов: ${count}";
 
-  static String m43(label) => "${label} должен быть числом";
+  static String m43(name) => "Управление узлами · ${name}";
 
-  static String m44(from, to) =>
+  static String m44(proto) => "напр. Гонконг 01 - ${proto}";
+
+  static String m45(done, total) => "Проверка ${done}/${total}";
+
+  static String m46(label) => "${label} отсутствует";
+
+  static String m47(label) => "${label} должен быть числом";
+
+  static String m48(from, to) =>
       "Порт ${from} занят; в этом сеансе используется ${to}";
 
-  static String m45(label) =>
+  static String m49(label) =>
       "${label} должен быть от 1024 до 49151, 0 для отключения";
 
-  static String m46(name) => "Предпрокси и прокси-выход · ${name}";
+  static String m50(name) => "Предпрокси и прокси-выход · ${name}";
 
-  static String m47(statusCode) =>
+  static String m51(statusCode) =>
       "Не удалось импортировать профиль. Проверьте состояние сети или попробуйте сбросить ссылку подписки ( код ошибки HTTP: ${statusCode} )";
 
-  static String m48(count) => "Выбрано: ${count}";
+  static String m52(count) => "Выбрано: ${count}";
 
-  static String m49(error) => "Проверка не удалась: ${error}";
+  static String m53(error) => "Проверка не удалась: ${error}";
 
-  static String m50(name) => "Используется: ${name}";
+  static String m54(name) => "Используется: ${name}";
 
-  static String m51(label) => "${label} должен быть URL";
+  static String m55(label) => "${label} должен быть URL";
 
-  static String m52(label) => "Скопировано: ${label}";
+  static String m56(label) => "Скопировано: ${label}";
 
-  static String m53(colo, ip) =>
+  static String m57(colo, ip) =>
       "🎉 Диагностика пройдена. WARP работает (узел: ${colo}, выход: ${ip})";
 
-  static String m54(name) => "Диалер: ${name}";
+  static String m58(name) => "Диалер: ${name}";
 
-  static String m55(code) => "Пограничный узел ${code}";
+  static String m59(code) => "Пограничный узел ${code}";
 
-  static String m56(ip) => "Используется самый быстрый узел: ${ip}";
+  static String m60(ip) => "Используется самый быстрый узел: ${ip}";
 
-  static String m57(ip) => "Используется ${ip}";
+  static String m61(ip) => "Используется ${ip}";
 
-  static String m58(ip) =>
+  static String m62(ip) =>
       "Примечание: подключено к выходу ${ip}, но подпись WARP не найдена — проверьте диалер";
 
-  static String m59(loc) => "Регион: ${loc}";
+  static String m63(loc) => "Регион: ${loc}";
 
-  static String m60(label) => "Переключено на ${label}";
+  static String m64(label) => "Переключено на ${label}";
 
-  static String m61(count) =>
+  static String m65(count) =>
       "${Intl.plural(count, one: 'год', few: 'года', many: 'лет', other: 'лет')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
@@ -1620,10 +1629,21 @@ class MessageLookup extends MessageLookupByLibrary {
     "noUsageData": MessageLookupByLibrary.simpleMessage("Нет статистики"),
     "nodeAdded": m36,
     "nodeAllProtocols": MessageLookupByLibrary.simpleMessage("Все протоколы"),
+    "nodeCleanUnavailable": MessageLookupByLibrary.simpleMessage(
+      "Очистить недоступные конфигурации",
+    ),
+    "nodeCleanUnavailableConfirm": m37,
+    "nodeCleanUnavailableNone": MessageLookupByLibrary.simpleMessage(
+      "Нет неудачных узлов для очистки",
+    ),
     "nodeClearResults": MessageLookupByLibrary.simpleMessage(
       "Очистить результаты",
     ),
-    "nodeDeleted": m37,
+    "nodeDeleteDuplicates": MessageLookupByLibrary.simpleMessage(
+      "Удалить дубликаты серверов",
+    ),
+    "nodeDeleted": m38,
+    "nodeDeletedCount": m39,
     "nodeDetailCancel": MessageLookupByLibrary.simpleMessage("Отмена"),
     "nodeDetailClose": MessageLookupByLibrary.simpleMessage("Закрыть"),
     "nodeDetailCopied": MessageLookupByLibrary.simpleMessage("Скопировано"),
@@ -1631,7 +1651,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Копировать конфиг",
     ),
     "nodeDetailEdit": MessageLookupByLibrary.simpleMessage("Изменить"),
-    "nodeDetailEditTitle": m38,
+    "nodeDetailEditTitle": m40,
     "nodeDetailMissing": MessageLookupByLibrary.simpleMessage(
       "Исходный конфиг узла не найден — возможно, он из группы или заменён обновлением",
     ),
@@ -1645,6 +1665,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "nodeDetailSave": MessageLookupByLibrary.simpleMessage("Сохранить"),
     "nodeDetailSaved": MessageLookupByLibrary.simpleMessage(
       "Сохранено; перезапустите ядро",
+    ),
+    "nodeDuplicatesDelete": m41,
+    "nodeDuplicatesFound": m42,
+    "nodeDuplicatesNone": MessageLookupByLibrary.simpleMessage(
+      "Дубликатов серверов нет",
     ),
     "nodeExclusion": MessageLookupByLibrary.simpleMessage("Исключение узлов"),
     "nodeExclusionDesc": MessageLookupByLibrary.simpleMessage(
@@ -1661,10 +1686,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "nodeExportTitle": MessageLookupByLibrary.simpleMessage(
       "Экспортированные ссылки",
     ),
-    "nodeManagement": m39,
+    "nodeManagement": m43,
     "nodeName": MessageLookupByLibrary.simpleMessage("Имя узла"),
-    "nodeNameHint": m40,
+    "nodeNameHint": m44,
     "nodeNameLabel": MessageLookupByLibrary.simpleMessage("Имя узла"),
+    "nodeNoMatches": MessageLookupByLibrary.simpleMessage(
+      "Нет подходящих узлов",
+    ),
     "nodeOnlyFailed": MessageLookupByLibrary.simpleMessage("Только ошибки"),
     "nodeProtocol": MessageLookupByLibrary.simpleMessage("Протокол узла"),
     "nodeSearchHint": MessageLookupByLibrary.simpleMessage(
@@ -1680,7 +1708,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "nodeTestUnavailable": MessageLookupByLibrary.simpleMessage(
       "Сначала примените эту подписку для URL-теста",
     ),
-    "nodeTestingProgress": m41,
+    "nodeTestingProgress": m45,
+    "nodeUpdateSubscription": MessageLookupByLibrary.simpleMessage(
+      "Обновить текущую подписку",
+    ),
     "none": MessageLookupByLibrary.simpleMessage("Нет"),
     "notRecommended": MessageLookupByLibrary.simpleMessage("Не рекомендуется"),
     "notSelectedTip": MessageLookupByLibrary.simpleMessage(
@@ -1710,8 +1741,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "nullProfileDesc": MessageLookupByLibrary.simpleMessage(
       "Нет профиля, добавьте его",
     ),
-    "nullTip": m42,
-    "numberTip": m43,
+    "nullTip": m46,
+    "numberTip": m47,
     "obfsModeLabel": MessageLookupByLibrary.simpleMessage("Режим обфускации"),
     "obfsNoneOff": MessageLookupByLibrary.simpleMessage("Нет (выкл.)"),
     "officialCommunity": MessageLookupByLibrary.simpleMessage(
@@ -1853,9 +1884,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "portFallbackDesc": MessageLookupByLibrary.simpleMessage(
       "Использовать другой порт, если заданный уже занят",
     ),
-    "portFallbackNotice": m44,
+    "portFallbackNotice": m48,
     "portLabel": MessageLookupByLibrary.simpleMessage("Порт"),
-    "portTip": m45,
+    "portTip": m49,
     "powerSwitch": MessageLookupByLibrary.simpleMessage("Запуск"),
     "preProxyOptionCustom": MessageLookupByLibrary.simpleMessage(
       "✏️ Ввести имя узла предпрокси вручную...",
@@ -1900,7 +1931,7 @@ class MessageLookup extends MessageLookupByLibrary {
         ),
     "profileAutoUpdateIntervalNullValidationDesc":
         MessageLookupByLibrary.simpleMessage("Введите интервал автообновления"),
-    "profileChainDialogTitle": m46,
+    "profileChainDialogTitle": m50,
     "profileChainProxies": MessageLookupByLibrary.simpleMessage(
       "Прокси входа и выхода",
     ),
@@ -1913,7 +1944,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "profileHasUpdate": MessageLookupByLibrary.simpleMessage(
       "Конфигурация изменена. Отключить автообновление?",
     ),
-    "profileImportFailed": m47,
+    "profileImportFailed": m51,
     "profileManageNodes": MessageLookupByLibrary.simpleMessage(
       "Узлы: управление и добавление",
     ),
@@ -2142,7 +2173,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Выберите версию резервной копии",
     ),
     "selected": MessageLookupByLibrary.simpleMessage("Выбрано"),
-    "selectedCountTitle": m48,
+    "selectedCountTitle": m52,
     "serverAddress": MessageLookupByLibrary.simpleMessage("Адрес сервера"),
     "serverAddressHint": MessageLookupByLibrary.simpleMessage("IP или домен"),
     "serverAddressLabel": MessageLookupByLibrary.simpleMessage("Адрес сервера"),
@@ -2197,7 +2228,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "smartAutoStopServiceRunning": MessageLookupByLibrary.simpleMessage(
       "Служба умной остановки работает",
     ),
-    "smartCheckFailed": m49,
+    "smartCheckFailed": m53,
     "smartCheckNow": MessageLookupByLibrary.simpleMessage("Проверить"),
     "smartChecking": MessageLookupByLibrary.simpleMessage("Проверка…"),
     "smartDelayLaunch": MessageLookupByLibrary.simpleMessage("Умная задержка"),
@@ -2275,7 +2306,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "statusDesc": MessageLookupByLibrary.simpleMessage(
       "Использовать системный DNS при выключении",
     ),
-    "stillUsingProfile": m50,
+    "stillUsingProfile": m54,
     "stop": MessageLookupByLibrary.simpleMessage("Остановка"),
     "stopVpn": MessageLookupByLibrary.simpleMessage("Остановка VPN"),
     "storeFix": MessageLookupByLibrary.simpleMessage("Исправление Google Play"),
@@ -2620,7 +2651,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "upload": MessageLookupByLibrary.simpleMessage("Отправка"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage("Получить профиль по URL"),
-    "urlTip": m51,
+    "urlTip": m55,
     "useGlobalScriptOverride": MessageLookupByLibrary.simpleMessage(
       "Глобальное переопределение",
     ),
@@ -2663,12 +2694,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "wakelockDescription": MessageLookupByLibrary.simpleMessage(
       "Эта функция не требует специальных разрешений, так как использует только блокировку пробуждения экрана, а не CPU. Приложение остаётся активным в фоне, экран не гаснет автоматически, что полезно в некоторых сценариях.",
     ),
-    "warpCopied": m52,
-    "warpDiagOk": m53,
-    "warpDialerSet": m54,
-    "warpEdgeNode": m55,
-    "warpFastestChosen": m56,
-    "warpIpChosen": m57,
+    "warpCopied": m56,
+    "warpDiagOk": m57,
+    "warpDialerSet": m58,
+    "warpEdgeNode": m59,
+    "warpFastestChosen": m60,
+    "warpIpChosen": m61,
     "warpModeAll": MessageLookupByLibrary.simpleMessage(
       "Весь трафик через WARP",
     ),
@@ -2690,8 +2721,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpModeTitle": MessageLookupByLibrary.simpleMessage(
       "Режим маршрутизации",
     ),
-    "warpNoSignature": m58,
-    "warpRegion": m59,
+    "warpNoSignature": m62,
+    "warpRegion": m63,
     "warpRouteProxyOverWarp": MessageLookupByLibrary.simpleMessage(
       "Прокси через WARP",
     ),
@@ -2944,7 +2975,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "warpStr98": MessageLookupByLibrary.simpleMessage("Выберите WARP-диалер"),
     "warpStr99": MessageLookupByLibrary.simpleMessage("Выберите MTU WireGuard"),
-    "warpSwitchedTo": m60,
+    "warpSwitchedTo": m64,
     "warpUnknownColo": MessageLookupByLibrary.simpleMessage("Неизвестный узел"),
     "wave": MessageLookupByLibrary.simpleMessage("Волна"),
     "webDAVConfiguration": MessageLookupByLibrary.simpleMessage(
@@ -2961,6 +2992,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "wrongBackupPassword": MessageLookupByLibrary.simpleMessage(
       "Неверный пароль или резервная копия изменена",
     ),
-    "years": m61,
+    "years": m65,
   };
 }
