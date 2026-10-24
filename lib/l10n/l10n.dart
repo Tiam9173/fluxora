@@ -7770,6 +7770,46 @@ class AppLocalizations {
     );
   }
 
+  /// `Search name or server`
+  String get nodeSearchHint {
+    return Intl.message(
+      'Search name or server',
+      name: 'nodeSearchHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Failed only`
+  String get nodeOnlyFailed {
+    return Intl.message(
+      'Failed only',
+      name: 'nodeOnlyFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Clear test results`
+  String get nodeClearResults {
+    return Intl.message(
+      'Clear test results',
+      name: 'nodeClearResults',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `All protocols`
+  String get nodeAllProtocols {
+    return Intl.message(
+      'All protocols',
+      name: 'nodeAllProtocols',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Test all`
   String get nodeTestAll {
     return Intl.message('Test all', name: 'nodeTestAll', desc: '', args: []);

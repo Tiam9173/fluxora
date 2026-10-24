@@ -1548,6 +1548,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "noStatusAvailable": MessageLookupByLibrary.simpleMessage("No Status"),
     "noUsageData": MessageLookupByLibrary.simpleMessage("No usage data"),
     "nodeAdded": m36,
+    "nodeAllProtocols": MessageLookupByLibrary.simpleMessage("All protocols"),
+    "nodeClearResults": MessageLookupByLibrary.simpleMessage(
+      "Clear test results",
+    ),
     "nodeDeleted": m37,
     "nodeDetailCancel": MessageLookupByLibrary.simpleMessage("Cancel"),
     "nodeDetailClose": MessageLookupByLibrary.simpleMessage("Close"),
@@ -1586,7 +1590,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "nodeName": MessageLookupByLibrary.simpleMessage("Node Name"),
     "nodeNameHint": m40,
     "nodeNameLabel": MessageLookupByLibrary.simpleMessage("Node name"),
+    "nodeOnlyFailed": MessageLookupByLibrary.simpleMessage("Failed only"),
     "nodeProtocol": MessageLookupByLibrary.simpleMessage("Node protocol"),
+    "nodeSearchHint": MessageLookupByLibrary.simpleMessage(
+      "Search name or server",
+    ),
     "nodeSelectAll": MessageLookupByLibrary.simpleMessage("Select all"),
     "nodeSortDefault": MessageLookupByLibrary.simpleMessage("Default order"),
     "nodeSortDelay": MessageLookupByLibrary.simpleMessage("By latency"),

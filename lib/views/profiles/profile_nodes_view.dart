@@ -34,6 +34,16 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
   bool _cancelBatch = false;
   int _batchDone = 0;
   int _batchTotal = 0;
+  final TextEditingController _searchController = TextEditingController();
+  String _query = '';
+  String? _protocolFilter;
+  bool _onlyFailed = false;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -318,7 +328,24 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
   }
 
   List<Map<String, dynamic>> get _sortedProxies {
-    final list = List<Map<String, dynamic>>.from(_proxies);
+    final query = _query.trim().toLowerCase();
+    final list = _proxies.where((proxy) {
+      final name = (proxy['name']?.toString() ?? '').toLowerCase();
+      final server = (proxy['server']?.toString() ?? '').toLowerCase();
+      final type = (proxy['type']?.toString() ?? '').toLowerCase();
+      if (query.isNotEmpty &&
+          !name.contains(query) &&
+          !server.contains(query) &&
+          !type.contains(query)) {
+        return false;
+      }
+      if (_protocolFilter != null && type != _protocolFilter) return false;
+      if (_onlyFailed) {
+        final delay = _delays[proxy['name']?.toString() ?? ''];
+        if (delay == null || delay >= 0) return false;
+      }
+      return true;
+    }).toList();
     switch (_sortMode) {
       case _NodeSortMode.original:
         return list;
@@ -385,9 +412,257 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
     context.showSnackBar(appLocalizations.nodeExportDone);
   }
 
+  List<String> get _protocols {
+    final values = {
+      for (final proxy in _proxies)
+        if (proxy['type'] is String)
+          (proxy['type'] as String).toUpperCase(),
+    }.toList()..sort();
+    return values;
+  }
+
+  void _clearResults() {
+    setState(_delays.clear);
+  }
+
+  Widget _filterBar(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: Column(
+        children: [
+          TextField(
+            controller: _searchController,
+            onChanged: (value) => setState(() => _query = value),
+            decoration: InputDecoration(
+              isDense: true,
+              border: const OutlineInputBorder(),
+              prefixIcon: const Icon(Icons.search),
+              hintText: appLocalizations.nodeSearchHint,
+              suffixIcon: _query.isEmpty
+                  ? null
+                  : IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() => _query = '');
+                      },
+                    ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                FilterChip(
+                  label: Text(appLocalizations.nodeAllProtocols),
+                  selected: _protocolFilter == null,
+                  onSelected: (_) =>
+                      setState(() => _protocolFilter = null),
+                ),
+                for (final protocol in _protocols) ...[
+                  const SizedBox(width: 6),
+                  FilterChip(
+                    label: Text(protocol),
+                    selected: _protocolFilter == protocol.toLowerCase(),
+                    onSelected: (_) => setState(
+                      () => _protocolFilter = protocol.toLowerCase(),
+                    ),
+                  ),
+                ],
+                const SizedBox(width: 6),
+                FilterChip(
+                  label: Text(appLocalizations.nodeOnlyFailed),
+                  selected: _onlyFailed,
+                  onSelected: (value) => setState(() => _onlyFailed = value),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _nodeCard(
+    BuildContext context,
+    Map<String, dynamic> proxy, {
+    bool grid = false,
+  }) {
+    final colorScheme = context.colorScheme;
+    final name = proxy['name']?.toString() ?? appLocalizations.unnamedNode;
+    final type = proxy['type']?.toString().toUpperCase() ?? 'PROXY';
+    final server = proxy['server']?.toString() ?? '';
+    final port = proxy['port']?.toString() ?? '';
+    final protoColor = _getProtocolColor(type);
+    final selected = _selected.contains(name);
+
+    return Card(
+      margin: grid
+          ? EdgeInsets.zero
+          : const EdgeInsets.only(bottom: 10),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(
+          color: selected
+              ? colorScheme.primary
+              : colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: _exportMode ? () => _toggleSelected(name) : null,
+        onLongPress: () {
+          if (_exportMode) {
+            _toggleSelected(name);
+            return;
+          }
+          showNodeDetailsDialog(
+            context,
+            proxyName: name,
+            profileId: _profile.id,
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: protoColor.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: protoColor.withValues(alpha: 0.4),
+                      ),
+                    ),
+                    child: Text(
+                      type,
+                      style: TextStyle(
+                        color: protoColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  if (!_exportMode)
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(
+                        Icons.delete_outline_rounded,
+                        color: Colors.redAccent,
+                        size: 20,
+                      ),
+                      tooltip: appLocalizations.deleteNode,
+                      onPressed: () => _handleDeleteProxy(name),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                server.isNotEmpty
+                    ? '$server:$port'
+                    : appLocalizations.customConfigNode,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: colorScheme.outline,
+                  fontSize: 12,
+                  fontFamily: 'monospace',
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  if (!_exportMode)
+                    FluxoraLatencyBadge(
+                      delay: _delays[name],
+                      dense: true,
+                      timeoutLabel: appLocalizations.timeoutLabel,
+                      onTap: () => _testProxy(name),
+                    ),
+                  const Spacer(),
+                  if (_exportMode)
+                    Checkbox(
+                      value: selected,
+                      onChanged: (_) => _toggleSelected(name),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _emptyState(BuildContext context) {
+    final colorScheme = context.colorScheme;
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.dns_outlined,
+            size: 64,
+            color: colorScheme.outline.withValues(alpha: 0.5),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            appLocalizations.noNodesInGroup,
+            style: context.textTheme.titleMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            appLocalizations.noNodesInGroupHint,
+            style: context.textTheme.bodySmall?.copyWith(
+              color: colorScheme.outline,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 12,
+            runSpacing: 8,
+            children: [
+              FilledButton.tonalIcon(
+                icon: const Icon(Icons.link_rounded),
+                label: Text(appLocalizations.importShareLinks),
+                onPressed: _showBatchImportDialog,
+              ),
+              FilledButton.icon(
+                icon: const Icon(Icons.edit_rounded),
+                label: Text(appLocalizations.manualEntry),
+                onPressed: _showAddManualNodeDialog,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final colorScheme = context.colorScheme;
     final visibleProxies = _sortedProxies;
     return CommonScaffold(
       titleWidget: SingleChildScrollView(
@@ -407,38 +682,53 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
           tooltip: appLocalizations.refresh,
           onPressed: _loadProxies,
         ),
-        IconButton(
-          icon: Icon(
-            _batchTesting
-                ? Icons.stop_circle_outlined
-                : Icons.speed_rounded,
-          ),
-          tooltip: _batchTesting
-              ? appLocalizations.nodeTestCancel
-              : appLocalizations.nodeTestAll,
-          onPressed: _testAll,
-        ),
-        PopupMenuButton<_NodeSortMode>(
-          icon: const Icon(Icons.sort_rounded),
-          tooltip: appLocalizations.sort,
-          initialValue: _sortMode,
-          onSelected: (value) => setState(() => _sortMode = value),
+        PopupMenuButton<Object>(
+          icon: const Icon(Icons.more_vert),
+          tooltip: appLocalizations.more,
+          onSelected: (value) {
+            if (value is _NodeSortMode) {
+              setState(() => _sortMode = value);
+            } else if (value == 'test') {
+              _testAll();
+            } else if (value == 'clear') {
+              _clearResults();
+            }
+          },
           itemBuilder: (_) => [
             PopupMenuItem(
+              value: 'test',
+              child: Text(
+                _batchTesting
+                    ? appLocalizations.nodeTestCancel
+                    : appLocalizations.nodeTestAll,
+              ),
+            ),
+            const PopupMenuDivider(),
+            CheckedPopupMenuItem(
               value: _NodeSortMode.original,
+              checked: _sortMode == _NodeSortMode.original,
               child: Text(appLocalizations.nodeSortDefault),
             ),
-            PopupMenuItem(
+            CheckedPopupMenuItem(
               value: _NodeSortMode.name,
+              checked: _sortMode == _NodeSortMode.name,
               child: Text(appLocalizations.nodeSortName),
             ),
-            PopupMenuItem(
+            CheckedPopupMenuItem(
               value: _NodeSortMode.protocol,
+              checked: _sortMode == _NodeSortMode.protocol,
               child: Text(appLocalizations.nodeSortProtocol),
             ),
-            PopupMenuItem(
+            CheckedPopupMenuItem(
               value: _NodeSortMode.delay,
+              checked: _sortMode == _NodeSortMode.delay,
               child: Text(appLocalizations.nodeSortDelay),
+            ),
+            const PopupMenuDivider(),
+            PopupMenuItem(
+              value: 'clear',
+              enabled: _delays.isNotEmpty,
+              child: Text(appLocalizations.nodeClearResults),
             ),
           ],
         ),
@@ -480,167 +770,50 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
         icon: const Icon(Icons.add_rounded),
         label: Text(appLocalizations.manualAddNode),
       ),
-      body: Stack(
+      body: Column(
         children: [
-          _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _proxies.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.dns_outlined,
-                    size: 64,
-                    color: colorScheme.outline.withValues(alpha: 0.5),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    appLocalizations.noNodesInGroup,
-                    style: context.textTheme.titleMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    appLocalizations.noNodesInGroupHint,
-                    style: context.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.outline,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  // item 4 — the two actions must be allowed to wrap: side by
-                  // side they overflow by 1.8 px at 320 dp and 42 px at 280 dp
-                  // under the app's maximum 1.4x text scale.
-                  Wrap(
-                    alignment: WrapAlignment.center,
-                    spacing: 12,
-                    runSpacing: 8,
-                    children: [
-                      FilledButton.tonalIcon(
-                        icon: const Icon(Icons.link_rounded),
-                        label: Text(appLocalizations.importShareLinks),
-                        onPressed: _showBatchImportDialog,
-                      ),
-                      FilledButton.icon(
-                        icon: const Icon(Icons.edit_rounded),
-                        label: Text(appLocalizations.manualEntry),
-                        onPressed: _showAddManualNodeDialog,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              itemCount: visibleProxies.length,
-              itemBuilder: (ctx, index) {
-                final p = visibleProxies[index];
-                final name =
-                    p['name']?.toString() ?? appLocalizations.unnamedNode;
-                final type = p['type']?.toString().toUpperCase() ?? 'PROXY';
-                final server = p['server']?.toString() ?? '';
-                final port = p['port']?.toString() ?? '';
-                final protoColor = _getProtocolColor(type);
-
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(
-                      color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-                    ),
-                  ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 6,
-                    ),
-                    // 导出模式下点按即勾选；平时长按看完整配置（和代理页一致）。
-                    onTap: _exportMode ? () => _toggleSelected(name) : null,
-                    onLongPress: () {
-                      if (_exportMode) {
-                        _toggleSelected(name);
-                        return;
+          _filterBar(context),
+          if (_batchTesting) _batchBanner(context),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _proxies.isEmpty
+                ? _emptyState(context)
+                : LayoutBuilder(
+                    builder: (ctx, constraints) {
+                      if (constraints.maxWidth < 700) {
+                        return ListView.builder(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          itemCount: visibleProxies.length,
+                          itemBuilder: (_, index) =>
+                              _nodeCard(context, visibleProxies[index]),
+                        );
                       }
-                      showNodeDetailsDialog(
-                        context,
-                        proxyName: name,
-                        profileId: _profile.id,
+                      return GridView.builder(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              mainAxisSpacing: 10,
+                              crossAxisSpacing: 10,
+                              mainAxisExtent: 132,
+                            ),
+                        itemCount: visibleProxies.length,
+                        itemBuilder: (_, index) => _nodeCard(
+                          context,
+                          visibleProxies[index],
+                          grid: true,
+                        ),
                       );
                     },
-                    leading: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: protoColor.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(
-                          color: protoColor.withValues(alpha: 0.4),
-                        ),
-                      ),
-                      child: Text(
-                        type,
-                        style: TextStyle(
-                          color: protoColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                    title: Text(
-                      name,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    subtitle: Text(
-                      server.isNotEmpty
-                          ? '$server:$port'
-                          : appLocalizations.customConfigNode,
-                      style: TextStyle(
-                        color: colorScheme.outline,
-                        fontSize: 13,
-                      ),
-                    ),
-                    trailing: _exportMode
-                        ? Checkbox(
-                            value: _selected.contains(name),
-                            onChanged: (_) => _toggleSelected(name),
-                          )
-                        : Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              FluxoraLatencyBadge(
-                                delay: _delays[name],
-                                timeoutLabel: appLocalizations.timeoutLabel,
-                                onTap: () => _testProxy(name),
-                              ),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.delete_outline_rounded,
-                                  color: Colors.redAccent,
-                                ),
-                                tooltip: appLocalizations.deleteNode,
-                                onPressed: () => _handleDeleteProxy(name),
-                              ),
-                            ],
-                          ),
                   ),
-                );
-              },
-            ),
-          if (_batchTesting)
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: _batchBanner(context),
-            ),
+          ),
         ],
       ),
     );

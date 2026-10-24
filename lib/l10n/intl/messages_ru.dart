@@ -1619,6 +1619,10 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "noUsageData": MessageLookupByLibrary.simpleMessage("Нет статистики"),
     "nodeAdded": m36,
+    "nodeAllProtocols": MessageLookupByLibrary.simpleMessage("Все протоколы"),
+    "nodeClearResults": MessageLookupByLibrary.simpleMessage(
+      "Очистить результаты",
+    ),
     "nodeDeleted": m37,
     "nodeDetailCancel": MessageLookupByLibrary.simpleMessage("Отмена"),
     "nodeDetailClose": MessageLookupByLibrary.simpleMessage("Закрыть"),
@@ -1661,7 +1665,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "nodeName": MessageLookupByLibrary.simpleMessage("Имя узла"),
     "nodeNameHint": m40,
     "nodeNameLabel": MessageLookupByLibrary.simpleMessage("Имя узла"),
+    "nodeOnlyFailed": MessageLookupByLibrary.simpleMessage("Только ошибки"),
     "nodeProtocol": MessageLookupByLibrary.simpleMessage("Протокол узла"),
+    "nodeSearchHint": MessageLookupByLibrary.simpleMessage(
+      "Поиск по имени или серверу",
+    ),
     "nodeSelectAll": MessageLookupByLibrary.simpleMessage("Выбрать все"),
     "nodeSortDefault": MessageLookupByLibrary.simpleMessage("По умолчанию"),
     "nodeSortDelay": MessageLookupByLibrary.simpleMessage("По задержке"),

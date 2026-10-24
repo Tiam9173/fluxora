@@ -1561,6 +1561,10 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "noUsageData": MessageLookupByLibrary.simpleMessage("بدون آمار مصرف"),
     "nodeAdded": m36,
+    "nodeAllProtocols": MessageLookupByLibrary.simpleMessage("همه پروتکل‌ها"),
+    "nodeClearResults": MessageLookupByLibrary.simpleMessage(
+      "پاک کردن نتایج تست",
+    ),
     "nodeDeleted": m37,
     "nodeDetailCancel": MessageLookupByLibrary.simpleMessage("لغو"),
     "nodeDetailClose": MessageLookupByLibrary.simpleMessage("بستن"),
@@ -1597,7 +1601,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "nodeName": MessageLookupByLibrary.simpleMessage("نام گره"),
     "nodeNameHint": m40,
     "nodeNameLabel": MessageLookupByLibrary.simpleMessage("نام گره"),
+    "nodeOnlyFailed": MessageLookupByLibrary.simpleMessage("فقط ناموفق"),
     "nodeProtocol": MessageLookupByLibrary.simpleMessage("پروتکل گره"),
+    "nodeSearchHint": MessageLookupByLibrary.simpleMessage(
+      "جستجوی نام یا سرور",
+    ),
     "nodeSelectAll": MessageLookupByLibrary.simpleMessage("انتخاب همه"),
     "nodeSortDefault": MessageLookupByLibrary.simpleMessage("ترتیب پیش‌فرض"),
     "nodeSortDelay": MessageLookupByLibrary.simpleMessage("بر اساس تأخیر"),
