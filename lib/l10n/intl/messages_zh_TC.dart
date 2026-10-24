@@ -103,46 +103,48 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m40(proto) => "如: 香港 01 - ${proto}";
 
-  static String m41(label) => "暫無 ${label}";
+  static String m41(done, total) => "測速中 ${done}/${total}";
 
-  static String m42(label) => "${label}必須為數字";
+  static String m42(label) => "暫無 ${label}";
 
-  static String m43(from, to) => "連接埠 ${from} 已被佔用，本次工作階段改用 ${to}";
+  static String m43(label) => "${label}必須為數字";
 
-  static String m44(label) => "${label} 必須在 1024 到 49151 之間，0 為關閉";
+  static String m44(from, to) => "連接埠 ${from} 已被佔用，本次工作階段改用 ${to}";
 
-  static String m45(name) => "前置與落地代理 · ${name}";
+  static String m45(label) => "${label} 必須在 1024 到 49151 之間，0 為關閉";
 
-  static String m46(statusCode) =>
+  static String m46(name) => "前置與落地代理 · ${name}";
+
+  static String m47(statusCode) =>
       "配置導入失敗，請檢查網路狀況或嘗試重置訂閱連結( HTTP錯誤代碼: ${statusCode} )";
 
-  static String m47(count) => "已選擇 ${count} 項";
+  static String m48(count) => "已選擇 ${count} 項";
 
-  static String m48(error) => "體檢失敗：${error}";
+  static String m49(error) => "體檢失敗：${error}";
 
-  static String m49(name) => "當前仍在使用：${name}";
+  static String m50(name) => "當前仍在使用：${name}";
 
-  static String m50(label) => "${label}必須為 URL";
+  static String m51(label) => "${label}必須為 URL";
 
-  static String m51(label) => "已複製 ${label}";
+  static String m52(label) => "已複製 ${label}";
 
-  static String m52(colo, ip) => "🎉 診斷成功！WARP 已生效 (機房: ${colo}, 出口: ${ip})";
+  static String m53(colo, ip) => "🎉 診斷成功！WARP 已生效 (機房: ${colo}, 出口: ${ip})";
 
-  static String m53(name) => "已指定前置跳板為 ${name}";
+  static String m54(name) => "已指定前置跳板為 ${name}";
 
-  static String m54(code) => "邊緣節點 ${code}";
+  static String m55(code) => "邊緣節點 ${code}";
 
-  static String m55(ip) => "已選用最快節點 ${ip}";
+  static String m56(ip) => "已選用最快節點 ${ip}";
 
-  static String m56(ip) => "已選用 ${ip}";
+  static String m57(ip) => "已選用 ${ip}";
 
-  static String m57(ip) => "提示：已連線出口 ${ip}，但未偵測到 WARP 簽名，請確認跳板設定";
+  static String m58(ip) => "提示：已連線出口 ${ip}，但未偵測到 WARP 簽名，請確認跳板設定";
 
-  static String m58(loc) => "歸屬地: ${loc}";
+  static String m59(loc) => "歸屬地: ${loc}";
 
-  static String m59(label) => "已切換為 ${label}";
+  static String m60(label) => "已切換為 ${label}";
 
-  static String m60(count) => "${Intl.plural(count, other: '年')}";
+  static String m61(count) => "${Intl.plural(count, other: '年')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -1167,6 +1169,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "nodeNameLabel": MessageLookupByLibrary.simpleMessage("節點名稱"),
     "nodeProtocol": MessageLookupByLibrary.simpleMessage("節點協定"),
     "nodeSelectAll": MessageLookupByLibrary.simpleMessage("全選"),
+    "nodeSortDefault": MessageLookupByLibrary.simpleMessage("預設順序"),
+    "nodeSortDelay": MessageLookupByLibrary.simpleMessage("依延遲"),
+    "nodeSortName": MessageLookupByLibrary.simpleMessage("依名稱"),
+    "nodeSortProtocol": MessageLookupByLibrary.simpleMessage("依協定"),
+    "nodeTestAll": MessageLookupByLibrary.simpleMessage("全部測速"),
+    "nodeTestCancel": MessageLookupByLibrary.simpleMessage("取消測速"),
+    "nodeTestUnavailable": MessageLookupByLibrary.simpleMessage(
+      "請先套用該訂閱再進行 URL 測速",
+    ),
+    "nodeTestingProgress": m41,
     "none": MessageLookupByLibrary.simpleMessage("無"),
     "notRecommended": MessageLookupByLibrary.simpleMessage("不推薦"),
     "notSelectedTip": MessageLookupByLibrary.simpleMessage("目前的代理群組無法選取"),
@@ -1186,8 +1198,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "ntpStatus": MessageLookupByLibrary.simpleMessage("狀態"),
     "ntpStatusDesc": MessageLookupByLibrary.simpleMessage("開啟 NTP 時間服務"),
     "nullProfileDesc": MessageLookupByLibrary.simpleMessage("沒有設定檔，請先新增設定檔"),
-    "nullTip": m41,
-    "numberTip": m42,
+    "nullTip": m42,
+    "numberTip": m43,
     "obfsModeLabel": MessageLookupByLibrary.simpleMessage("混淆模式"),
     "obfsNoneOff": MessageLookupByLibrary.simpleMessage("無 (關閉)"),
     "officialCommunity": MessageLookupByLibrary.simpleMessage("官方社群"),
@@ -1287,9 +1299,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "portFallbackDesc": MessageLookupByLibrary.simpleMessage(
       "設定的連接埠被佔用時，暫時使用其他連接埠",
     ),
-    "portFallbackNotice": m43,
+    "portFallbackNotice": m44,
     "portLabel": MessageLookupByLibrary.simpleMessage("連接埠"),
-    "portTip": m44,
+    "portTip": m45,
     "powerSwitch": MessageLookupByLibrary.simpleMessage("啟動開關"),
     "preProxyOptionCustom": MessageLookupByLibrary.simpleMessage(
       "✏️ 手動輸入前置節點名稱...",
@@ -1316,14 +1328,14 @@ class MessageLookup extends MessageLookupByLibrary {
         MessageLookupByLibrary.simpleMessage("請輸入有效間隔時間格式"),
     "profileAutoUpdateIntervalNullValidationDesc":
         MessageLookupByLibrary.simpleMessage("請輸入自動更新間隔時間"),
-    "profileChainDialogTitle": m45,
+    "profileChainDialogTitle": m46,
     "profileChainProxies": MessageLookupByLibrary.simpleMessage("前置與落地代理"),
     "profileChainSaved": MessageLookupByLibrary.simpleMessage("已儲存前置與落地代理設定"),
     "profileFallbackFailed": MessageLookupByLibrary.simpleMessage("舊配置也無法恢復"),
     "profileHasUpdate": MessageLookupByLibrary.simpleMessage(
       "設定檔已經修改，是否關閉自動更新？",
     ),
-    "profileImportFailed": m46,
+    "profileImportFailed": m47,
     "profileManageNodes": MessageLookupByLibrary.simpleMessage("節點管理 / 新增節點"),
     "profileNameNullValidationDesc": MessageLookupByLibrary.simpleMessage(
       "請輸入配置名稱",
@@ -1476,7 +1488,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "selectAll": MessageLookupByLibrary.simpleMessage("全選"),
     "selectBackupVersion": MessageLookupByLibrary.simpleMessage("選擇備份版本"),
     "selected": MessageLookupByLibrary.simpleMessage("已選擇"),
-    "selectedCountTitle": m47,
+    "selectedCountTitle": m48,
     "serverAddress": MessageLookupByLibrary.simpleMessage("伺服器位址"),
     "serverAddressHint": MessageLookupByLibrary.simpleMessage("IP 或網域"),
     "serverAddressLabel": MessageLookupByLibrary.simpleMessage("伺服器位址"),
@@ -1509,7 +1521,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "smartAutoStopServiceRunning": MessageLookupByLibrary.simpleMessage(
       "智慧啟停服務執行中",
     ),
-    "smartCheckFailed": m48,
+    "smartCheckFailed": m49,
     "smartCheckNow": MessageLookupByLibrary.simpleMessage("立即體檢"),
     "smartChecking": MessageLookupByLibrary.simpleMessage("體檢中…"),
     "smartDelayLaunch": MessageLookupByLibrary.simpleMessage("智慧延遲"),
@@ -1561,7 +1573,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "startVpn": MessageLookupByLibrary.simpleMessage("正在啟動"),
     "status": MessageLookupByLibrary.simpleMessage("狀態"),
     "statusDesc": MessageLookupByLibrary.simpleMessage("關閉後將使用系統 DNS"),
-    "stillUsingProfile": m49,
+    "stillUsingProfile": m50,
     "stop": MessageLookupByLibrary.simpleMessage("停止"),
     "stopVpn": MessageLookupByLibrary.simpleMessage("正在停止"),
     "storeFix": MessageLookupByLibrary.simpleMessage("商店修復"),
@@ -1792,7 +1804,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "upload": MessageLookupByLibrary.simpleMessage("上傳"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage("透過 URL 獲取設定檔"),
-    "urlTip": m50,
+    "urlTip": m51,
     "useGlobalScriptOverride": MessageLookupByLibrary.simpleMessage("使用全域腳本覆寫"),
     "useHosts": MessageLookupByLibrary.simpleMessage("使用 Hosts"),
     "useSystemHosts": MessageLookupByLibrary.simpleMessage("使用系統 Hosts"),
@@ -1823,12 +1835,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "wakelockDescription": MessageLookupByLibrary.simpleMessage(
       "本功能不需要任何特殊權限，因為它僅啟用螢幕喚醒鎖，而不是任何 CPU 喚醒鎖，應用會在後台保持必要的活躍，且螢幕不會自動熄滅，這在一些場景下會很有用",
     ),
-    "warpCopied": m51,
-    "warpDiagOk": m52,
-    "warpDialerSet": m53,
-    "warpEdgeNode": m54,
-    "warpFastestChosen": m55,
-    "warpIpChosen": m56,
+    "warpCopied": m52,
+    "warpDiagOk": m53,
+    "warpDialerSet": m54,
+    "warpEdgeNode": m55,
+    "warpFastestChosen": m56,
+    "warpIpChosen": m57,
     "warpModeAll": MessageLookupByLibrary.simpleMessage("全域接管模式"),
     "warpModeAllDesc": MessageLookupByLibrary.simpleMessage(
       "所有代理出站流量全部經過 WARP 進行二次封裝，隱藏真實機場落地 IP",
@@ -1844,8 +1856,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpModeTitle": MessageLookupByLibrary.simpleMessage(
       "分流工作模式 (Routing Mode)",
     ),
-    "warpNoSignature": m57,
-    "warpRegion": m58,
+    "warpNoSignature": m58,
+    "warpRegion": m59,
     "warpRouteProxyOverWarp": MessageLookupByLibrary.simpleMessage(
       "透過 WARP 路由代理",
     ),
@@ -1994,7 +2006,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpStr97": MessageLookupByLibrary.simpleMessage("連接未完成或檢測超時"),
     "warpStr98": MessageLookupByLibrary.simpleMessage("選擇 WARP 前置跳板"),
     "warpStr99": MessageLookupByLibrary.simpleMessage("選擇 WireGuard MTU"),
-    "warpSwitchedTo": m59,
+    "warpSwitchedTo": m60,
     "warpUnknownColo": MessageLookupByLibrary.simpleMessage("未知邊緣節點"),
     "wave": MessageLookupByLibrary.simpleMessage("波浪起伏"),
     "webDAVConfiguration": MessageLookupByLibrary.simpleMessage("WebDAV 設定"),
@@ -2003,6 +2015,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystem": MessageLookupByLibrary.simpleMessage("寫入系統"),
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage("需要管理員權限"),
     "wrongBackupPassword": MessageLookupByLibrary.simpleMessage("密碼錯誤或備份已被竄改"),
-    "years": m60,
+    "years": m61,
   };
 }

@@ -1,3 +1,4 @@
+import 'package:fluxora/clash/clash.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/models/models.dart';
 import 'package:fluxora/models/node_share_link.dart';
@@ -17,6 +18,8 @@ class ProfileNodesView extends StatefulWidget {
   State<ProfileNodesView> createState() => _ProfileNodesViewState();
 }
 
+enum _NodeSortMode { original, name, protocol, delay }
+
 class _ProfileNodesViewState extends State<ProfileNodesView> {
   late Profile _profile;
   List<Map<String, dynamic>> _proxies = [];
@@ -25,6 +28,12 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
   bool _exportMode = false;
   final Set<String> _selected = {};
   bool _isLoading = true;
+  final Map<String, int?> _delays = {};
+  _NodeSortMode _sortMode = _NodeSortMode.original;
+  bool _batchTesting = false;
+  bool _cancelBatch = false;
+  int _batchDone = 0;
+  int _batchTotal = 0;
 
   @override
   void initState() {
@@ -37,8 +46,13 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
     setState(() => _isLoading = true);
     final list = await ManualProxyHelper.getProfileProxies(_profile);
     if (mounted) {
+      final names = {
+        for (final proxy in list)
+          if (proxy['name'] is String) proxy['name'] as String,
+      };
       setState(() {
         _proxies = list;
+        _delays.removeWhere((name, _) => !names.contains(name));
         _isLoading = false;
       });
     }
@@ -236,6 +250,109 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
     }
   }
 
+  bool get _isActiveProfile =>
+      globalState.config.currentProfileId == _profile.id;
+
+  String get _testUrl {
+    final configured = globalState.config.appSetting.testUrl.trim();
+    return configured.isEmpty ? defaultTestUrl : configured;
+  }
+
+  Future<void> _testProxy(String name) async {
+    if (_delays[name] == 0) return;
+    if (!_isActiveProfile) {
+      if (mounted) {
+        context.showSnackBar(appLocalizations.nodeTestUnavailable);
+      }
+      return;
+    }
+    setState(() => _delays[name] = 0);
+    try {
+      final result = await clashCore.getDelay(_testUrl, name);
+      final value = result.value;
+      if (!mounted) return;
+      setState(() {
+        _delays[name] = value == null || value <= 0 ? -1 : value;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _delays[name] = -1);
+    }
+  }
+
+  Future<void> _testAll() async {
+    if (_batchTesting) {
+      setState(() => _cancelBatch = true);
+      return;
+    }
+    if (!_isActiveProfile) {
+      context.showSnackBar(appLocalizations.nodeTestUnavailable);
+      return;
+    }
+    final names = _sortedProxies
+        .map((proxy) => proxy['name']?.toString())
+        .whereType<String>()
+        .toList();
+    if (names.isEmpty) return;
+    setState(() {
+      _batchTesting = true;
+      _cancelBatch = false;
+      _batchDone = 0;
+      _batchTotal = names.length;
+    });
+    var next = 0;
+    Future<void> worker() async {
+      while (true) {
+        if (_cancelBatch) return;
+        final index = next++;
+        if (index >= names.length) return;
+        await _testProxy(names[index]);
+        if (!mounted) return;
+        setState(() => _batchDone++);
+      }
+    }
+
+    await Future.wait(List.generate(4, (_) => worker()));
+    if (!mounted) return;
+    setState(() => _batchTesting = false);
+  }
+
+  List<Map<String, dynamic>> get _sortedProxies {
+    final list = List<Map<String, dynamic>>.from(_proxies);
+    switch (_sortMode) {
+      case _NodeSortMode.original:
+        return list;
+      case _NodeSortMode.name:
+        list.sort(
+          (a, b) => (a['name']?.toString() ?? '').compareTo(
+            b['name']?.toString() ?? '',
+          ),
+        );
+        break;
+      case _NodeSortMode.protocol:
+        list.sort(
+          (a, b) => (a['type']?.toString() ?? '').compareTo(
+            b['type']?.toString() ?? '',
+          ),
+        );
+        break;
+      case _NodeSortMode.delay:
+        int rank(int? value) => value == null ? 2 : (value <= 0 ? 1 : 0);
+        list.sort((a, b) {
+          final left = _delays[a['name']?.toString() ?? ''];
+          final right = _delays[b['name']?.toString() ?? ''];
+          final byRank = rank(left).compareTo(rank(right));
+          if (byRank != 0) return byRank;
+          if (left != null && right != null && left > 0 && right > 0) {
+            return left.compareTo(right);
+          }
+          return 0;
+        });
+        break;
+    }
+    return list;
+  }
+
   void _toggleSelected(String name) {
     setState(() {
       if (!_selected.remove(name)) _selected.add(name);
@@ -271,8 +388,14 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = context.colorScheme;
+    final visibleProxies = _sortedProxies;
     return CommonScaffold(
-      title: appLocalizations.nodeManagement(_profile.label ?? _profile.id),
+      titleWidget: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: EmojiText(
+          appLocalizations.nodeManagement(_profile.label ?? _profile.id),
+        ),
+      ),
       actions: [
         IconButton(
           icon: const Icon(Icons.link_rounded),
@@ -283,6 +406,41 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
           icon: const Icon(Icons.refresh_rounded),
           tooltip: appLocalizations.refresh,
           onPressed: _loadProxies,
+        ),
+        IconButton(
+          icon: Icon(
+            _batchTesting
+                ? Icons.stop_circle_outlined
+                : Icons.speed_rounded,
+          ),
+          tooltip: _batchTesting
+              ? appLocalizations.nodeTestCancel
+              : appLocalizations.nodeTestAll,
+          onPressed: _testAll,
+        ),
+        PopupMenuButton<_NodeSortMode>(
+          icon: const Icon(Icons.sort_rounded),
+          tooltip: appLocalizations.sort,
+          initialValue: _sortMode,
+          onSelected: (value) => setState(() => _sortMode = value),
+          itemBuilder: (_) => [
+            PopupMenuItem(
+              value: _NodeSortMode.original,
+              child: Text(appLocalizations.nodeSortDefault),
+            ),
+            PopupMenuItem(
+              value: _NodeSortMode.name,
+              child: Text(appLocalizations.nodeSortName),
+            ),
+            PopupMenuItem(
+              value: _NodeSortMode.protocol,
+              child: Text(appLocalizations.nodeSortProtocol),
+            ),
+            PopupMenuItem(
+              value: _NodeSortMode.delay,
+              child: Text(appLocalizations.nodeSortDelay),
+            ),
+          ],
         ),
         if (_exportMode) ...[
           IconButton(
@@ -322,7 +480,9 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
         icon: const Icon(Icons.add_rounded),
         label: Text(appLocalizations.manualAddNode),
       ),
-      body: _isLoading
+      body: Stack(
+        children: [
+          _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _proxies.isEmpty
           ? Center(
@@ -374,9 +534,9 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
             )
           : ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              itemCount: _proxies.length,
+              itemCount: visibleProxies.length,
               itemBuilder: (ctx, index) {
-                final p = _proxies[index];
+                final p = visibleProxies[index];
                 final name =
                     p['name']?.toString() ?? appLocalizations.unnamedNode;
                 final type = p['type']?.toString().toUpperCase() ?? 'PROXY';
@@ -452,18 +612,62 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
                             value: _selected.contains(name),
                             onChanged: (_) => _toggleSelected(name),
                           )
-                        : IconButton(
-                            icon: const Icon(
-                              Icons.delete_outline_rounded,
-                              color: Colors.redAccent,
-                            ),
-                            tooltip: appLocalizations.deleteNode,
-                            onPressed: () => _handleDeleteProxy(name),
+                        : Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              FluxoraLatencyBadge(
+                                delay: _delays[name],
+                                timeoutLabel: appLocalizations.timeoutLabel,
+                                onTap: () => _testProxy(name),
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.delete_outline_rounded,
+                                  color: Colors.redAccent,
+                                ),
+                                tooltip: appLocalizations.deleteNode,
+                                onPressed: () => _handleDeleteProxy(name),
+                              ),
+                            ],
                           ),
                   ),
                 );
               },
             ),
+          if (_batchTesting)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: _batchBanner(context),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _batchBanner(BuildContext context) {
+    final progress = _batchTotal == 0 ? null : _batchDone / _batchTotal;
+    return Material(
+      color: context.colorScheme.surfaceContainerHigh,
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            LinearProgressIndicator(value: progress),
+            const SizedBox(height: 4),
+            Text(
+              appLocalizations.nodeTestingProgress(
+                '$_batchDone',
+                '$_batchTotal',
+              ),
+              style: context.textTheme.labelSmall,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

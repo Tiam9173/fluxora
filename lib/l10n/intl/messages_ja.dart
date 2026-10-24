@@ -103,47 +103,49 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m40(proto) => "例: 香港 01 - ${proto}";
 
-  static String m41(label) => "${label} はありません";
+  static String m41(done, total) => "テスト中 ${done}/${total}";
 
-  static String m42(label) => "${label} は数値である必要があります";
+  static String m42(label) => "${label} はありません";
 
-  static String m43(from, to) => "ポート ${from} は使用中のため、今回は ${to} を使用します";
+  static String m43(label) => "${label} は数値である必要があります";
 
-  static String m44(label) => "${label} は1024〜49151の範囲で指定してください（0で無効）";
+  static String m44(from, to) => "ポート ${from} は使用中のため、今回は ${to} を使用します";
 
-  static String m45(name) => "プリプロキシとランディングプロキシ · ${name}";
+  static String m45(label) => "${label} は1024〜49151の範囲で指定してください（0で無効）";
 
-  static String m46(statusCode) =>
+  static String m46(name) => "プリプロキシとランディングプロキシ · ${name}";
+
+  static String m47(statusCode) =>
       "プロファイルのインポートに失敗しました。通信状態を確認するかURLをリセットしてください ( HTTPエラーコード: ${statusCode} )";
 
-  static String m47(count) => "${count} 件選択中";
+  static String m48(count) => "${count} 件選択中";
 
-  static String m48(error) => "チェック失敗：${error}";
+  static String m49(error) => "チェック失敗：${error}";
 
-  static String m49(name) => "使用中: ${name}";
+  static String m50(name) => "使用中: ${name}";
 
-  static String m50(label) => "${label} は有効なURLである必要があります";
+  static String m51(label) => "${label} は有効なURLである必要があります";
 
-  static String m51(label) => "${label} をコピーしました";
+  static String m52(label) => "${label} をコピーしました";
 
-  static String m52(colo, ip) => "🎉 診断成功！WARP は有効です (拠点: ${colo}, 出口: ${ip})";
+  static String m53(colo, ip) => "🎉 診断成功！WARP は有効です (拠点: ${colo}, 出口: ${ip})";
 
-  static String m53(name) => "ダイヤラーを ${name} に設定しました";
+  static String m54(name) => "ダイヤラーを ${name} に設定しました";
 
-  static String m54(code) => "エッジ拠点 ${code}";
+  static String m55(code) => "エッジ拠点 ${code}";
 
-  static String m55(ip) => "最速ノード ${ip} を使用します";
+  static String m56(ip) => "最速ノード ${ip} を使用します";
 
-  static String m56(ip) => "${ip} を使用します";
+  static String m57(ip) => "${ip} を使用します";
 
-  static String m57(ip) =>
+  static String m58(ip) =>
       "注意：出口 ${ip} に接続しましたが WARP 署名がありません。ダイヤラー設定を確認してください";
 
-  static String m58(loc) => "地域: ${loc}";
+  static String m59(loc) => "地域: ${loc}";
 
-  static String m59(label) => "${label} に切り替えました";
+  static String m60(label) => "${label} に切り替えました";
 
-  static String m60(count) => "${Intl.plural(count, other: '年')}";
+  static String m61(count) => "${Intl.plural(count, other: '年')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -1294,6 +1296,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "nodeNameLabel": MessageLookupByLibrary.simpleMessage("ノード名"),
     "nodeProtocol": MessageLookupByLibrary.simpleMessage("ノードプロトコル"),
     "nodeSelectAll": MessageLookupByLibrary.simpleMessage("すべて選択"),
+    "nodeSortDefault": MessageLookupByLibrary.simpleMessage("既定の順序"),
+    "nodeSortDelay": MessageLookupByLibrary.simpleMessage("遅延順"),
+    "nodeSortName": MessageLookupByLibrary.simpleMessage("名前順"),
+    "nodeSortProtocol": MessageLookupByLibrary.simpleMessage("プロトコル順"),
+    "nodeTestAll": MessageLookupByLibrary.simpleMessage("すべてテスト"),
+    "nodeTestCancel": MessageLookupByLibrary.simpleMessage("テストをキャンセル"),
+    "nodeTestUnavailable": MessageLookupByLibrary.simpleMessage(
+      "URL テストの前にこの購読を適用してください",
+    ),
+    "nodeTestingProgress": m41,
     "none": MessageLookupByLibrary.simpleMessage("なし"),
     "notRecommended": MessageLookupByLibrary.simpleMessage("非推奨"),
     "notSelectedTip": MessageLookupByLibrary.simpleMessage("選択できないプロキシグループです"),
@@ -1315,8 +1327,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "nullProfileDesc": MessageLookupByLibrary.simpleMessage(
       "プロファイルがありません。追加してください",
     ),
-    "nullTip": m41,
-    "numberTip": m42,
+    "nullTip": m42,
+    "numberTip": m43,
     "obfsModeLabel": MessageLookupByLibrary.simpleMessage("難読化モード"),
     "obfsNoneOff": MessageLookupByLibrary.simpleMessage("なし (オフ)"),
     "officialCommunity": MessageLookupByLibrary.simpleMessage("公式コミュニティ"),
@@ -1428,9 +1440,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "portFallbackDesc": MessageLookupByLibrary.simpleMessage(
       "設定したポートが使用中のとき、別のポートを一時的に使用します",
     ),
-    "portFallbackNotice": m43,
+    "portFallbackNotice": m44,
     "portLabel": MessageLookupByLibrary.simpleMessage("ポート"),
-    "portTip": m44,
+    "portTip": m45,
     "powerSwitch": MessageLookupByLibrary.simpleMessage("電源スイッチ"),
     "preProxyOptionCustom": MessageLookupByLibrary.simpleMessage(
       "✏️ プリプロキシノード名を手動入力...",
@@ -1463,7 +1475,7 @@ class MessageLookup extends MessageLookupByLibrary {
         MessageLookupByLibrary.simpleMessage("有効な時間を指定してください"),
     "profileAutoUpdateIntervalNullValidationDesc":
         MessageLookupByLibrary.simpleMessage("更新間隔を入力してください"),
-    "profileChainDialogTitle": m45,
+    "profileChainDialogTitle": m46,
     "profileChainProxies": MessageLookupByLibrary.simpleMessage("前置と着地プロキシ"),
     "profileChainSaved": MessageLookupByLibrary.simpleMessage(
       "プリプロキシとランディングプロキシの設定を保存しました",
@@ -1474,7 +1486,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "profileHasUpdate": MessageLookupByLibrary.simpleMessage(
       "プロファイルが変更されました。自動更新をオフにしますか？",
     ),
-    "profileImportFailed": m46,
+    "profileImportFailed": m47,
     "profileManageNodes": MessageLookupByLibrary.simpleMessage("ノード管理 / ノード追加"),
     "profileNameNullValidationDesc": MessageLookupByLibrary.simpleMessage(
       "設定名を入力してください",
@@ -1641,7 +1653,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "バックアップバージョンの選択",
     ),
     "selected": MessageLookupByLibrary.simpleMessage("選択済み"),
-    "selectedCountTitle": m47,
+    "selectedCountTitle": m48,
     "serverAddress": MessageLookupByLibrary.simpleMessage("サーバーアドレス"),
     "serverAddressHint": MessageLookupByLibrary.simpleMessage("IP またはドメイン"),
     "serverAddressLabel": MessageLookupByLibrary.simpleMessage("サーバーアドレス"),
@@ -1686,7 +1698,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "smartAutoStopServiceRunning": MessageLookupByLibrary.simpleMessage(
       "スマート自動停止サービス稼働中",
     ),
-    "smartCheckFailed": m48,
+    "smartCheckFailed": m49,
     "smartCheckNow": MessageLookupByLibrary.simpleMessage("今すぐチェック"),
     "smartChecking": MessageLookupByLibrary.simpleMessage("チェック中…"),
     "smartDelayLaunch": MessageLookupByLibrary.simpleMessage("遅延起動"),
@@ -1744,7 +1756,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "startVpn": MessageLookupByLibrary.simpleMessage("起動中..."),
     "status": MessageLookupByLibrary.simpleMessage("ステータス"),
     "statusDesc": MessageLookupByLibrary.simpleMessage("オフにするとシステムDNSを使用します"),
-    "stillUsingProfile": m49,
+    "stillUsingProfile": m50,
     "stop": MessageLookupByLibrary.simpleMessage("停止"),
     "stopVpn": MessageLookupByLibrary.simpleMessage("停止中..."),
     "storeFix": MessageLookupByLibrary.simpleMessage("ストア修復"),
@@ -2009,7 +2021,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "upload": MessageLookupByLibrary.simpleMessage("送信"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage("URLから設定を取得"),
-    "urlTip": m50,
+    "urlTip": m51,
     "useGlobalScriptOverride": MessageLookupByLibrary.simpleMessage(
       "グローバルスクリプトオーバーライドを使用",
     ),
@@ -2042,12 +2054,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "wakelockDescription": MessageLookupByLibrary.simpleMessage(
       "画面の自動消灯を防ぐ画面ウェイクロックを有効にします（CPUウェイクは使用しません）。バックグラウンド処理を維持したい場合に便利です。",
     ),
-    "warpCopied": m51,
-    "warpDiagOk": m52,
-    "warpDialerSet": m53,
-    "warpEdgeNode": m54,
-    "warpFastestChosen": m55,
-    "warpIpChosen": m56,
+    "warpCopied": m52,
+    "warpDiagOk": m53,
+    "warpDialerSet": m54,
+    "warpEdgeNode": m55,
+    "warpFastestChosen": m56,
+    "warpIpChosen": m57,
     "warpModeAll": MessageLookupByLibrary.simpleMessage("全トラフィックを WARP 経由"),
     "warpModeAllDesc": MessageLookupByLibrary.simpleMessage(
       "すべてのプロキシ通信を WARP で再カプセル化し、プロバイダの実出口 IP を隠します",
@@ -2063,8 +2075,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpModeTitle": MessageLookupByLibrary.simpleMessage(
       "分流モード (Routing Mode)",
     ),
-    "warpNoSignature": m57,
-    "warpRegion": m58,
+    "warpNoSignature": m58,
+    "warpRegion": m59,
     "warpRouteProxyOverWarp": MessageLookupByLibrary.simpleMessage(
       "WARP 経由でプロキシ",
     ),
@@ -2237,7 +2249,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpStr97": MessageLookupByLibrary.simpleMessage("接続未完了または確認がタイムアウト"),
     "warpStr98": MessageLookupByLibrary.simpleMessage("WARP ダイヤラーを選択"),
     "warpStr99": MessageLookupByLibrary.simpleMessage("WireGuard MTU を選択"),
-    "warpSwitchedTo": m59,
+    "warpSwitchedTo": m60,
     "warpUnknownColo": MessageLookupByLibrary.simpleMessage("不明なエッジ拠点"),
     "wave": MessageLookupByLibrary.simpleMessage("ウェーブ"),
     "webDAVConfiguration": MessageLookupByLibrary.simpleMessage("WebDAV設定"),
@@ -2248,6 +2260,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "wrongBackupPassword": MessageLookupByLibrary.simpleMessage(
       "パスワードが違うか、バックアップが改ざんされています",
     ),
-    "years": m60,
+    "years": m61,
   };
 }

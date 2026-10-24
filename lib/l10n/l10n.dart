@@ -7770,6 +7770,76 @@ class AppLocalizations {
     );
   }
 
+  /// `Test all`
+  String get nodeTestAll {
+    return Intl.message('Test all', name: 'nodeTestAll', desc: '', args: []);
+  }
+
+  /// `Cancel test`
+  String get nodeTestCancel {
+    return Intl.message(
+      'Cancel test',
+      name: 'nodeTestCancel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Testing {done}/{total}`
+  String nodeTestingProgress(Object done, Object total) {
+    return Intl.message(
+      'Testing $done/$total',
+      name: 'nodeTestingProgress',
+      desc: '',
+      args: [done, total],
+    );
+  }
+
+  /// `Default order`
+  String get nodeSortDefault {
+    return Intl.message(
+      'Default order',
+      name: 'nodeSortDefault',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `By name`
+  String get nodeSortName {
+    return Intl.message('By name', name: 'nodeSortName', desc: '', args: []);
+  }
+
+  /// `By protocol`
+  String get nodeSortProtocol {
+    return Intl.message(
+      'By protocol',
+      name: 'nodeSortProtocol',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `By latency`
+  String get nodeSortDelay {
+    return Intl.message(
+      'By latency',
+      name: 'nodeSortDelay',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Apply this profile before running URL tests`
+  String get nodeTestUnavailable {
+    return Intl.message(
+      'Apply this profile before running URL tests',
+      name: 'nodeTestUnavailable',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Batch import links`
   String get batchImportLinks {
     return Intl.message(
