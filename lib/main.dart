@@ -239,13 +239,7 @@ Future<void> _service(List<String> flags) async {
           await vpn?.stop();
           return;
         }
-        try {
-          await vpn?.start(clashLibHandler.getAndroidVpnOptions());
-        } catch (e) {
-          commonPrint.log('Quick start vpn.start failed: $e');
-          await app.tip('Quick start failed: $e');
-          rethrow;
-        }
+        await vpn?.start(clashLibHandler.getAndroidVpnOptions());
         Future.delayed(const Duration(seconds: 2), checkSmartAutoStop);
 
         if (globalState.config.vpnProps.networkSpeedNotification) {
@@ -276,6 +270,7 @@ Future<void> _service(List<String> flags) async {
         _startNotificationSpeedLoop(clashLibHandler);
       } catch (e) {
         commonPrint.log('Fatal error during service background start: $e');
+        await app.tip('Quick start failed: $e');
         await vpn?.stop();
       }
     });

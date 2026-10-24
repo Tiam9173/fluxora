@@ -32,6 +32,21 @@ import 'package:fluxora/common/node_overrides.dart';
 
 typedef UpdateTasks = List<FutureOr Function()>;
 
+/// Resolves the controller endpoint without requiring a UI-owned AppController.
+/// A headless service has no session fallback, so it uses the normal loopback
+/// default; the UI path passes its actual session endpoint and keeps port
+/// collision avoidance intact.
+String resolveExternalControllerValue({
+  required ExternalControllerStatus configured,
+  required bool forceLoopback,
+  String? sessionController,
+}) {
+  if (configured != ExternalControllerStatus.open && !forceLoopback) {
+    return configured.value;
+  }
+  return sessionController ?? ExternalControllerStatus.open.value;
+}
+
 class GlobalState {
   static GlobalState? _instance;
   Map<CacheTag, FixedMap<String, double>> computeHeightMapCache = {};
@@ -111,6 +126,11 @@ class GlobalState {
   /// `application.dart`; unit tests that never boot the app must not be forced
   /// to construct an [AppController] just to read global state.
   bool get hasAppController => _appController != null;
+
+  /// Null in the Android headless service isolate; non-null values retain the
+  /// UI session's actual controller endpoint (including fallback ports).
+  String? get sessionExternalController =>
+      _appController?.effectiveExternalController;
 
   AppController get appController => _appController!;
 
@@ -734,11 +754,11 @@ class GlobalState {
     }
     // 用会话里实际生效的地址：控制器端口被占用时会被避让到别的端口，这里
     // 若还写配置里的 9090，内核监听的和 App/通知栏卡片连的就不是同一个端口。
-    final controllerValue =
-        (realPatchConfig.externalController == ExternalControllerStatus.open ||
-                forceLoopback)
-            ? globalState.appController.effectiveExternalController
-            : realPatchConfig.externalController.value;
+    final controllerValue = resolveExternalControllerValue(
+      configured: realPatchConfig.externalController,
+      forceLoopback: forceLoopback,
+      sessionController: sessionExternalController,
+    );
     rawConfig['external-controller'] = realPatchConfig.allowLan
         ? controllerValue.replaceAll('127.0.0.1', '0.0.0.0')
         : controllerValue;
