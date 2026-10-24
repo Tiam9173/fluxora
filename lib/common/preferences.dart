@@ -6,6 +6,7 @@ import 'package:fluxora/models/models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'constant.dart';
+import 'system.dart';
 
 import 'print.dart';
 
@@ -92,10 +93,25 @@ class Preferences {
     if (configString == null) return null;
     try {
       final configMap = json.decode(configString);
-      final config = Config.compatibleFromJson(configMap);
+      var config = Config.compatibleFromJson(configMap);
 
       if (preferences?.getBool('autoLaunch') != config.appSetting.autoLaunch) {
         await preferences?.setBool('autoLaunch', config.appSetting.autoLaunch);
+      }
+
+      // 静默启动一次性迁移：这个开关在 Android 上从未生效过（旧实现只管
+      // 桌面窗口显隐），所以存量值没有任何用户意图可言。磁贴启动改成走
+      // 透明中转 Activity 后它才真正起作用，按用户要求默认打开——只做
+      // 一次，之后用户自己关掉就保持关闭。
+      if (system.isAndroid &&
+          preferences?.getBool('silentLaunchAndroidMigrated') != true) {
+        await preferences?.setBool('silentLaunchAndroidMigrated', true);
+        if (!config.appSetting.silentLaunch) {
+          config = config.copyWith(
+            appSetting: config.appSetting.copyWith(silentLaunch: true),
+          );
+          await saveConfig(config);
+        }
       }
 
       return config;

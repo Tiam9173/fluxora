@@ -222,6 +222,9 @@ Future<void> _service(List<String> flags) async {
         );
         final profileId = globalState.config.currentProfileId;
         if (profileId == null) {
+          // headless 引擎没有任何界面，静默 return 等于"磁贴按了没反应"。
+          // 至少要让用户知道为什么没起来。
+          await app.tip('Quick start failed: no profile selected');
           return;
         }
         final res = await clashLibHandler.quickStart(
@@ -232,10 +235,17 @@ Future<void> _service(List<String> flags) async {
         commonPrint.log(res);
         if (res.isNotEmpty) {
           commonPrint.log('QuickStart failed with error: $res');
+          await app.tip('Quick start failed: $res');
           await vpn?.stop();
           return;
         }
-        await vpn?.start(clashLibHandler.getAndroidVpnOptions());
+        try {
+          await vpn?.start(clashLibHandler.getAndroidVpnOptions());
+        } catch (e) {
+          commonPrint.log('Quick start vpn.start failed: $e');
+          await app.tip('Quick start failed: $e');
+          rethrow;
+        }
         Future.delayed(const Duration(seconds: 2), checkSmartAutoStop);
 
         if (globalState.config.vpnProps.networkSpeedNotification) {
