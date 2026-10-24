@@ -1,5 +1,6 @@
 package io.fluxora.app.services
 
+import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.Intent
 import android.os.Build
@@ -66,6 +67,7 @@ class FluxoraTileService : TileService() {
         super.onStopListening()
     }
 
+    @SuppressLint("StartActivityAndCollapseDeprecated")
     override fun onClick() {
         super.onClick()
         // 磁贴没有 UI 上下文：VPN 授权弹窗、以 Activity 上下文启动服务都做不了。
@@ -73,19 +75,23 @@ class FluxoraTileService : TileService() {
         // handleToggle——FlClash 同款做法，也是冷启动能成的关键。
         val intent = Intent(this, TempActivity::class.java).apply {
             action = wrapAction("CHANGE")
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_MULTIPLE_TASK)
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             val pi = PendingIntent.getActivity(
                 this,
                 0,
                 intent,
-                PendingIntent.FLAG_IMMUTABLE,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
             )
             startActivityAndCollapse(pi)
         } else if (isLocked) {
+            // unlockAndRun needs a plain startActivity after the keyguard is
+            // gone; collapsing first would discard the pending unlock action.
             unlockAndRun { startActivity(intent) }
         } else {
-            startActivity(intent)
+            @Suppress("DEPRECATION")
+            startActivityAndCollapse(intent)
         }
     }
 

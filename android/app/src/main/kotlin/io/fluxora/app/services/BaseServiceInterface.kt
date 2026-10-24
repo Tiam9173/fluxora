@@ -16,6 +16,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import io.fluxora.app.GlobalState
 import io.fluxora.app.R
+import io.fluxora.app.RunState
 import io.fluxora.app.models.VpnOptions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -124,10 +125,12 @@ fun BaseServiceInterface.handleNotificationAction(intent: Intent?): Boolean {
             if (plugin == null) {
                 android.util.Log.w(TAG, "stop: no VpnPlugin, stopping service only")
                 stop()
+                GlobalState.updateRunState(RunState.STOP)
             } else {
                 runCatching { plugin.requestNotificationStop() }.onFailure {
                     android.util.Log.e(TAG, "stop: forward failed: ${it.message}")
                     stop()
+                    GlobalState.updateRunState(RunState.STOP)
                 }
             }
             true

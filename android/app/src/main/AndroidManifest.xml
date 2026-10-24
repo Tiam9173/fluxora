@@ -144,7 +144,8 @@
 
         <activity
             android:name=".TempActivity"
-            android:exported="true"
+            android:exported="false"
+            android:excludeFromRecents="true"
             android:theme="@style/TransparentTheme">
             <intent-filter>
                 <category android:name="android.intent.category.DEFAULT" />

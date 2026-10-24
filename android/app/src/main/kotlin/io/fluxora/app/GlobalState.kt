@@ -45,10 +45,23 @@ object GlobalState {
 
     private const val TOGGLE_DEBOUNCE_MS = 1000L
     private const val PENDING_TIMEOUT_MS = 5000L
+    private const val PENDING_TIMEOUT_RETRIES = 2
     private const val STOP_LOCK_TIMEOUT_MS = 5000L
+    private const val VPN_STATE_PREFS = "vpn_state"
+    private const val WAS_RUNNING_KEY = "was_running"
 
     @Volatile
     private var lastToggleAt = 0L
+
+    /// Latest user intent. A tap during PENDING only changes this value; the
+    /// in-flight transition reconciles to it when it settles.
+    @Volatile
+    private var requestedRunning = false
+
+    @Volatile
+    private var hasDeferredIntent = false
+
+    private var pendingTimeoutRetries = 0
 
     @Volatile
     var currentRunState: RunState = RunState.STOP
@@ -95,11 +108,50 @@ object GlobalState {
         if (newState != RunState.PENDING) {
             pendingTimeoutJob?.cancel()
             pendingTimeoutJob = null
+            pendingTimeoutRetries = 0
+            persistWasRunning(newState == RunState.START)
         }
         currentRunState = newState
         _runState.value = newState
         requestTileUpdate()
+
+        if (newState != RunState.PENDING) {
+            if (!hasDeferredIntent) {
+                requestedRunning = newState == RunState.START
+            }
+            scope.launch { reconcileDeferredIntent(newState) }
+        }
     }
+
+    private fun reconcileDeferredIntent(settledState: RunState) {
+        if (!hasDeferredIntent) return
+        hasDeferredIntent = false
+        when {
+            settledState == RunState.START && !requestedRunning ->
+                beginStop(allowPending = false)
+            settledState == RunState.STOP && requestedRunning ->
+                beginStart()
+        }
+    }
+
+    private fun persistWasRunning(value: Boolean) {
+        runCatching {
+            FluxoraApplication.getAppContext()
+                .getSharedPreferences(VPN_STATE_PREFS, android.content.Context.MODE_PRIVATE)
+                .edit()
+                .putBoolean(WAS_RUNNING_KEY, value)
+                .apply()
+        }
+    }
+
+    /// Whether the tunnel was running when the previous process ended. Used by
+    /// the package-replaced receiver so an app update never starts a VPN the
+    /// user had deliberately stopped.
+    fun wasRunningBeforeRestart(): Boolean = runCatching {
+        FluxoraApplication.getAppContext()
+            .getSharedPreferences(VPN_STATE_PREFS, android.content.Context.MODE_PRIVATE)
+            .getBoolean(WAS_RUNNING_KEY, false)
+    }.getOrDefault(false)
 
     private val tileRetryRunnable = Runnable {
         FluxoraTileService.refreshActive()
@@ -131,9 +183,39 @@ object GlobalState {
         pendingTimeoutJob?.cancel()
         pendingTimeoutJob = scope.launch {
             delay(PENDING_TIMEOUT_MS)
-            if (currentRunState == RunState.PENDING) {
-                android.util.Log.w("GlobalState", "PENDING state timeout, resetting to STOP")
+            pendingTimeoutJob = null
+            if (currentRunState != RunState.PENDING) return@launch
+
+            if (!VpnPlugin.isServiceConnected()) {
+                android.util.Log.w(
+                    "GlobalState",
+                    "PENDING timed out without a connected service; resetting to STOP",
+                )
                 updateRunState(RunState.STOP)
+                return@launch
+            }
+
+            // A connected service can still be starting the core. Do not claim
+            // STOP while the tunnel may come up; force a deferred stop when the
+            // latest user intent is stop, otherwise keep waiting honestly.
+            if (hasDeferredIntent && !requestedRunning) {
+                hasDeferredIntent = false
+                beginStop(allowPending = true)
+                return@launch
+            }
+
+            if (pendingTimeoutRetries < PENDING_TIMEOUT_RETRIES) {
+                pendingTimeoutRetries++
+                android.util.Log.w(
+                    "GlobalState",
+                    "PENDING timed out with a connected service; waiting (retry $pendingTimeoutRetries)",
+                )
+                startPendingTimeout()
+            } else {
+                android.util.Log.w(
+                    "GlobalState",
+                    "PENDING still unresolved after retries; preserving PENDING state",
+                )
             }
         }
     }
@@ -176,6 +258,7 @@ object GlobalState {
     fun syncStatus() {
         if (currentRunState == RunState.PENDING) return
         val status = VpnPlugin.getStatus()
+        requestedRunning = status
         updateRunState(if (status) RunState.START else RunState.STOP)
     }
 
@@ -216,17 +299,33 @@ object GlobalState {
 
     fun handleToggle() {
         if (!acquireToggleSlot()) return
+        val targetRunning = when (currentRunState) {
+            RunState.START -> false
+            RunState.STOP -> true
+            RunState.PENDING -> !requestedRunning
+        }
+        requestedRunning = targetRunning
         when (currentRunState) {
-            RunState.START -> handleStop(skipDebounce = true)
-            RunState.STOP -> handleStart(skipDebounce = true)
-            RunState.PENDING -> Unit
+            RunState.START -> if (!targetRunning) beginStop(allowPending = false)
+            RunState.STOP -> if (targetRunning) beginStart()
+            RunState.PENDING -> hasDeferredIntent = true
         }
     }
 
     fun handleStart(skipDebounce: Boolean = false): Boolean {
         if (!skipDebounce && !acquireToggleSlot()) return false
-        if (currentRunState != RunState.STOP) return false
+        return beginStart()
+    }
 
+    fun handleStop(skipDebounce: Boolean = false) {
+        if (!skipDebounce && !acquireToggleSlot()) return
+        beginStop(allowPending = false)
+    }
+
+    private fun beginStart(): Boolean {
+        if (currentRunState != RunState.STOP) return false
+        requestedRunning = true
+        hasDeferredIntent = false
         updateRunState(RunState.PENDING)
         startPendingTimeout()
         runLock.withLock {
@@ -235,11 +334,16 @@ object GlobalState {
         return true
     }
 
-    fun handleStop(skipDebounce: Boolean = false) {
-        if (!skipDebounce && !acquireToggleSlot()) return
-        if (currentRunState != RunState.START) return
+    private fun beginStop(allowPending: Boolean) {
+        val allowed = currentRunState == RunState.START ||
+            (allowPending && currentRunState == RunState.PENDING)
+        if (!allowed) return
 
-        updateRunState(RunState.PENDING)
+        requestedRunning = false
+        hasDeferredIntent = false
+        if (currentRunState != RunState.PENDING) {
+            updateRunState(RunState.PENDING)
+        }
         startPendingTimeout()
         runLock.withLock {
             val tilePlugin = getCurrentTilePlugin()

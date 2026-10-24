@@ -635,6 +635,10 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         }
     }
 
+    /// True while the bound VPN/plain service exists, even if the run state is
+    /// still PENDING. Used to avoid resetting a slow start to STOP.
+    fun isServiceConnected(): Boolean = fluxoraService != null
+
     private fun handleStartService() {
         if (GlobalState.isCurrentlyStopping()) {
             android.util.Log.w("VpnPlugin", "VPN is in stopping state, ignore start request")
