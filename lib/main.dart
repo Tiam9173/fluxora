@@ -195,6 +195,7 @@ Future<void> _service(List<String> flags) async {
 
     if (!quickStart && !bootStart) {
       _handleMainIpc(clashLibHandler);
+      _startNotificationSpeedLoop(clashLibHandler);
       return;
     }
 
@@ -247,14 +248,6 @@ Future<void> _service(List<String> flags) async {
         await vpn?.start(clashLibHandler.getAndroidVpnOptions());
         Future.delayed(const Duration(seconds: 2), checkSmartAutoStop);
 
-        if (globalState.config.vpnProps.networkSpeedNotification) {
-          final profile = globalState.config.profiles
-              .where((e) => e.id == profileId)
-              .firstOrNull;
-          final profileName = profile?.label ?? 'Fluxora';
-          await vpn?.updateNotificationSpeed(profileName, '↑0B/s ↓0B/s');
-        }
-
         if (globalState.config.appSetting.openLogs) {
           await clashLibHandler.invokeAction(
             '{"id": "quickStartLog", "method": "startLog"}',
@@ -297,10 +290,10 @@ void _startNotificationSpeedLoop(ClashLibHandler clashLibHandler) {
   ) async {
     if (!globalState.config.vpnProps.networkSpeedNotification) return;
     try {
-      final raw = await clashLibHandler.invokeAction(
+      final raw = await clashLibHandler.invokeActionData(
         '{"id": "serviceSpeed${_notificationSpeedSeq++}", "method": "getTraffic"}',
       );
-      if (raw.isEmpty) return;
+      if (raw == null || raw.isEmpty) return;
       final traffic = Traffic.fromMap(json.decode(raw));
       var profileName = 'Fluxora';
       for (final profile in globalState.config.profiles) {

@@ -14,6 +14,29 @@ import 'package:fluxora/state.dart';
 import 'generated/clash_ffi.dart';
 import 'interface.dart';
 
+/// Extracts the payload from the `ActionResult` envelope returned by
+/// `ClashLibHandler.invokeAction`.
+///
+/// The raw FFI call returns `{id, method, data, code}`, not the action's data
+/// itself. Callers that need the payload (for example `getTraffic`) must unwrap
+/// it; parsing the envelope as if it were the payload silently turns every
+/// numeric field into zero.
+String? decodeActionResultData(String raw) {
+  if (raw.isEmpty) return null;
+  try {
+    final decoded = json.decode(raw);
+    if (decoded is! Map) return null;
+    final code = decoded['code'];
+    if (code is num && code != 0) return null;
+    final data = decoded['data'];
+    if (data is String) return data;
+    if (data is Map || data is List) return json.encode(data);
+    return null;
+  } catch (_) {
+    return null;
+  }
+}
+
 class ClashLib extends ClashHandlerInterface with AndroidClashInterface {
 
   // 内核跑在同一进程里，没有独立进程可观察；保持原有行为。
@@ -175,6 +198,13 @@ class ClashLibHandler {
     clashFFI.invokeAction(actionParamsChar, receiver.sendPort.nativePort);
     malloc.free(actionParamsChar);
     return completer.future;
+  }
+
+  /// Same as [invokeAction], but returns the action payload instead of the
+  /// enclosing `ActionResult` JSON.
+  Future<String?> invokeActionData(String actionParams) async {
+    final raw = await invokeAction(actionParams);
+    return decodeActionResultData(raw);
   }
 
   void attachMessagePort(int messagePort) {

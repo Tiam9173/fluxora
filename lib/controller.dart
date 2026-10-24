@@ -502,17 +502,10 @@ class AppController {
 
   Future<void> updateTraffic() async {
     final shouldUpdateDashboard = await _shouldUpdateDashboardTick();
-    final networkSpeedNotification =
-        system.isAndroid &&
-        _ref.read(vpnSettingProvider).networkSpeedNotification;
     final enableTraySpeed =
         system.isMacOS && _ref.read(vpnSettingProvider).enableTraySpeed;
 
-    final isScreenOn = globalState.isScreenOn;
-
-    if (!shouldUpdateDashboard &&
-        !(networkSpeedNotification && isScreenOn) &&
-        !enableTraySpeed) {
+    if (!shouldUpdateDashboard && !enableTraySpeed) {
       return;
     }
 
@@ -545,20 +538,6 @@ class AppController {
 
     if (enableTraySpeed) {
       await tray.updateSpeed(traffic);
-    }
-
-    if (networkSpeedNotification && isScreenOn) {
-      final currentProfileId = _ref.read(currentProfileIdProvider);
-      final profiles = _ref.read(profilesProvider);
-      final profile = profiles
-          .where((e) => e.id == currentProfileId)
-          .firstOrNull;
-      final profileName = profile?.label ?? 'Fluxora';
-      final speedInfo = traffic.toString();
-      await vpn_service.service?.updateNotificationSpeed(
-        profileName,
-        speedInfo,
-      );
     }
   }
 
