@@ -255,14 +255,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "autoCloseConnectionsDesc": MessageLookupByLibrary.simpleMessage(
       "Закрывать соединения при смене узла",
     ),
-    "autoFailover": MessageLookupByLibrary.simpleMessage(
-      "Автоматическое переключение",
+    "autoDelayTest": MessageLookupByLibrary.simpleMessage(
+      "Автозамер задержки при запуске",
     ),
-    "autoFailoverOffDesc": MessageLookupByLibrary.simpleMessage(
-      "Выкл.: переключение только вручную кнопкой ниже",
-    ),
-    "autoFailoverOnDesc": MessageLookupByLibrary.simpleMessage(
-      "Автоматически переключается на резервный узел при постоянных сбоях цепочки",
+    "autoDelayTestDesc": MessageLookupByLibrary.simpleMessage(
+      "После запуска службы замерить задержку текущего узла или цепочки",
     ),
     "autoInjectGroups": MessageLookupByLibrary.simpleMessage(
       "Автовставка в основную группу выбора",

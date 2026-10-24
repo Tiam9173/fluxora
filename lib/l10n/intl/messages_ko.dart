@@ -219,12 +219,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "autoCloseConnectionsDesc": MessageLookupByLibrary.simpleMessage(
       "노드 변경 시 기존 연결 자동 끊기",
     ),
-    "autoFailover": MessageLookupByLibrary.simpleMessage("자동 장애 조치"),
-    "autoFailoverOffDesc": MessageLookupByLibrary.simpleMessage(
-      "꺼짐: 아래 버튼으로만 수동 전환할 수 있습니다",
-    ),
-    "autoFailoverOnDesc": MessageLookupByLibrary.simpleMessage(
-      "체인이 계속 비정상일 때 예비 후보 노드로 자동 전환합니다",
+    "autoDelayTest": MessageLookupByLibrary.simpleMessage("시작 후 자동 지연 테스트"),
+    "autoDelayTestDesc": MessageLookupByLibrary.simpleMessage(
+      "서비스 시작 후 현재 노드 또는 체인의 지연을 한 번 측정합니다",
     ),
     "autoInjectGroups": MessageLookupByLibrary.simpleMessage("메인 선택 그룹에 자동 주입"),
     "autoInjectGroupsDesc": MessageLookupByLibrary.simpleMessage(

@@ -980,6 +980,26 @@ class AppLocalizations {
     );
   }
 
+  /// `Auto delay test on start`
+  String get autoDelayTest {
+    return Intl.message(
+      'Auto delay test on start',
+      name: 'autoDelayTest',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `After the service starts, run one delay test on the current node or chain`
+  String get autoDelayTestDesc {
+    return Intl.message(
+      'After the service starts, run one delay test on the current node or chain',
+      name: 'autoDelayTestDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Auto Run`
   String get autoRun {
     return Intl.message('Auto Run', name: 'autoRun', desc: '', args: []);
@@ -6503,36 +6523,6 @@ class AppLocalizations {
   /// `Ascending`
   String get ascending {
     return Intl.message('Ascending', name: 'ascending', desc: '', args: []);
-  }
-
-  /// `Automatic failover`
-  String get autoFailover {
-    return Intl.message(
-      'Automatic failover',
-      name: 'autoFailover',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Off: only the button below can switch manually`
-  String get autoFailoverOffDesc {
-    return Intl.message(
-      'Off: only the button below can switch manually',
-      name: 'autoFailoverOffDesc',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Switches to a backup candidate when the chain keeps failing`
-  String get autoFailoverOnDesc {
-    return Intl.message(
-      'Switches to a backup candidate when the chain keeps failing',
-      name: 'autoFailoverOnDesc',
-      desc: '',
-      args: [],
-    );
   }
 
   /// `Auto-inject into the main selector group`

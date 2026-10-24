@@ -75,6 +75,30 @@ class AutoLaunchItem extends ConsumerWidget {
   }
 }
 
+/// 启动成功后自动对当前节点（或链式链路）做一次延迟测试。默认关。
+class AutoDelayTestItem extends ConsumerWidget {
+  const AutoDelayTestItem({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final autoDelayTest = ref.watch(
+      appSettingProvider.select((state) => state.smartDelayLaunch),
+    );
+    return ListItem.switchItem(
+      title: Text(appLocalizations.autoDelayTest),
+      subtitle: Text(appLocalizations.autoDelayTestDesc),
+      delegate: SwitchDelegate(
+        value: autoDelayTest,
+        onChanged: (bool value) {
+          ref
+              .read(appSettingProvider.notifier)
+              .updateState((state) => state.copyWith(smartDelayLaunch: value));
+        },
+      ),
+    );
+  }
+}
+
 class SilentLaunchItem extends ConsumerWidget {
   const SilentLaunchItem({super.key});
 
@@ -250,6 +274,7 @@ class ApplicationSettingView extends StatelessWidget {
       AutoLaunchItem(),
       if (system.isDesktop) ...[SilentLaunchItem()],
       AutoRunItem(),
+      const AutoDelayTestItem(),
       if (system.isAndroid) ...[HiddenItem()],
       if (system.isDesktop) ...[
         if (system.isWindows || system.isLinux)

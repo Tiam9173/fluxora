@@ -203,12 +203,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "autoCloseConnectionsDesc": MessageLookupByLibrary.simpleMessage(
       "切換節點後自動關閉連線",
     ),
-    "autoFailover": MessageLookupByLibrary.simpleMessage("自動故障轉移"),
-    "autoFailoverOffDesc": MessageLookupByLibrary.simpleMessage(
-      "已關閉：僅可透過下方按鈕手動切換",
-    ),
-    "autoFailoverOnDesc": MessageLookupByLibrary.simpleMessage(
-      "鏈路連續異常時自動切換至備用候選節點",
+    "autoDelayTest": MessageLookupByLibrary.simpleMessage("啟動後自動延遲測速"),
+    "autoDelayTestDesc": MessageLookupByLibrary.simpleMessage(
+      "服務啟動成功後，自動對當前節點或鏈路做一次延遲測試",
     ),
     "autoInjectGroups": MessageLookupByLibrary.simpleMessage("自動注入主選擇組"),
     "autoInjectGroupsDesc": MessageLookupByLibrary.simpleMessage(

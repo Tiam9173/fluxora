@@ -12,6 +12,7 @@ import 'package:fluxora/plugins/app.dart';
 import 'package:fluxora/plugins/service.dart' as vpn_service;
 import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
+import 'package:fluxora/views/proxies/common.dart';
 import 'package:fluxora/widgets/dialog.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
@@ -750,6 +751,52 @@ class AppController {
 
   String? getSelectedProxyName(String groupName) {
     return _ref.read(getSelectedProxyNameProvider(groupName));
+  }
+
+  /// 启动成功后的自动延迟测速（`smartDelayLaunch`，默认关）。
+  ///
+  /// 磁贴 quick 启动和应用内启动都会走到 `globalState.handleStart`，所以两种
+  /// 场景行为一致。刚起服务就测，连接往往还没稳定，先等 2.5 秒。
+  ///
+  /// 链式开着就跑一次链式探测（逐跳上报正好给用户看进度）；普通订阅只测
+  /// **当前选中**的节点——启动瞬间对全量节点发请求是请求风暴。
+  Future<void> autoDelayTestAfterStart() async {
+    try {
+      if (!_ref.read(appSettingProvider).smartDelayLaunch) return;
+      await Future<void>.delayed(const Duration(milliseconds: 2500));
+      // 等待期间可能已经手动停了。
+      if (!globalState.isStart) return;
+
+      if (chainProxyManager.config.enable) {
+        await chainProxyManager.probeCurrentChain();
+        return;
+      }
+
+      final groupName =
+          _ref.read(currentProfileProvider)?.currentGroupName ?? '';
+      final groups = _ref.read(groupsProvider);
+      Group? group;
+      for (final g in groups) {
+        if (g.name == groupName) {
+          group = g;
+          break;
+        }
+      }
+      if (group == null) return;
+      // 卡片测试走的是「选中节点」：把组里当前选中的那个 Proxy 找出来。
+      final selectedName = getSelectedProxyName(group.name) ?? '';
+      Proxy? target;
+      for (final p in group.all) {
+        if (p.name == selectedName) {
+          target = p;
+          break;
+        }
+      }
+      if (target == null) return;
+      await proxyDelayTest(target);
+    } catch (e) {
+      commonPrint.log('Auto delay test after start failed: $e');
+    }
   }
 
   void updateCurrentGroupName(String groupName) {

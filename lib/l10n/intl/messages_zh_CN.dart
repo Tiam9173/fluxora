@@ -201,12 +201,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "autoCloseConnectionsDesc": MessageLookupByLibrary.simpleMessage(
       "切换节点后自动关闭连接",
     ),
-    "autoFailover": MessageLookupByLibrary.simpleMessage("自动故障转移"),
-    "autoFailoverOffDesc": MessageLookupByLibrary.simpleMessage(
-      "已关闭：仅可通过下方按钮手动切换",
-    ),
-    "autoFailoverOnDesc": MessageLookupByLibrary.simpleMessage(
-      "链路连续异常时自动切换至备用候选节点",
+    "autoDelayTest": MessageLookupByLibrary.simpleMessage("启动后自动延迟测速"),
+    "autoDelayTestDesc": MessageLookupByLibrary.simpleMessage(
+      "服务启动成功后，自动对当前节点或链路做一次延迟测试",
     ),
     "autoInjectGroups": MessageLookupByLibrary.simpleMessage("自动注入主选择组"),
     "autoInjectGroupsDesc": MessageLookupByLibrary.simpleMessage(

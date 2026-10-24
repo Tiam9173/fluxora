@@ -3,6 +3,7 @@ import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/manager/chain_proxy_manager.dart';
 import 'package:fluxora/models/chain_proxy.dart';
 import 'package:fluxora/providers/chain_proxy.dart';
+import 'package:fluxora/providers/config.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
@@ -385,7 +386,11 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
           const SizedBox(height: 12),
 
           // 0b. 诊断信息：探针失败时能直接看到"它到底测了什么"。
-          if (manager.lastProbeReport != null) ...[
+          // 面向开发排障，普通用户不需要；开「开发者模式」才显示。
+          if (ref.watch(
+                appSettingProvider.select((s) => s.developerMode),
+              ) &&
+              manager.lastProbeReport != null) ...[
             _buildProbeDiagnostics(context, config, manager.lastProbeReport!),
             const SizedBox(height: 12),
           ],

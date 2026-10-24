@@ -253,12 +253,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "autoCloseConnectionsDesc": MessageLookupByLibrary.simpleMessage(
       "Close connections when switching nodes",
     ),
-    "autoFailover": MessageLookupByLibrary.simpleMessage("Automatic failover"),
-    "autoFailoverOffDesc": MessageLookupByLibrary.simpleMessage(
-      "Off: only the button below can switch manually",
+    "autoDelayTest": MessageLookupByLibrary.simpleMessage(
+      "Auto delay test on start",
     ),
-    "autoFailoverOnDesc": MessageLookupByLibrary.simpleMessage(
-      "Switches to a backup candidate when the chain keeps failing",
+    "autoDelayTestDesc": MessageLookupByLibrary.simpleMessage(
+      "After the service starts, run one delay test on the current node or chain",
     ),
     "autoInjectGroups": MessageLookupByLibrary.simpleMessage(
       "Auto-inject into the main selector group",

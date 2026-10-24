@@ -214,12 +214,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "autoCloseConnectionsDesc": MessageLookupByLibrary.simpleMessage(
       "ノード切り替え時に既存接続を自動切断",
     ),
-    "autoFailover": MessageLookupByLibrary.simpleMessage("自動フェイルオーバー"),
-    "autoFailoverOffDesc": MessageLookupByLibrary.simpleMessage(
-      "オフ：下のボタンからのみ手動で切り替えられます",
-    ),
-    "autoFailoverOnDesc": MessageLookupByLibrary.simpleMessage(
-      "チェーンが継続的に異常なとき、予備候補ノードへ自動で切り替えます",
+    "autoDelayTest": MessageLookupByLibrary.simpleMessage("起動後に自動で遅延測定"),
+    "autoDelayTestDesc": MessageLookupByLibrary.simpleMessage(
+      "サービス起動後、現在のノードまたはチェーンの遅延を一度測定します",
     ),
     "autoInjectGroups": MessageLookupByLibrary.simpleMessage(
       "メインセレクタグループへ自動注入",

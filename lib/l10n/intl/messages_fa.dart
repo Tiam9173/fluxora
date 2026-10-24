@@ -247,12 +247,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "autoCloseConnectionsDesc": MessageLookupByLibrary.simpleMessage(
       "قطع خودکار اتصالات هنگام تغییر نود",
     ),
-    "autoFailover": MessageLookupByLibrary.simpleMessage("جابه‌جایی خودکار"),
-    "autoFailoverOffDesc": MessageLookupByLibrary.simpleMessage(
-      "خاموش: فقط از طریق دکمه زیر می‌توان به‌صورت دستی تغییر داد",
+    "autoDelayTest": MessageLookupByLibrary.simpleMessage(
+      "تست تأخیر خودکار پس از شروع",
     ),
-    "autoFailoverOnDesc": MessageLookupByLibrary.simpleMessage(
-      "هنگام تداوم خطا در زنجیره، به‌طور خودکار به نامزد پشتیبان تغییر می‌کند",
+    "autoDelayTestDesc": MessageLookupByLibrary.simpleMessage(
+      "پس از راه‌اندازی سرویس، یک تست تأخیر روی گره یا زنجیره فعلی انجام می‌شود",
     ),
     "autoInjectGroups": MessageLookupByLibrary.simpleMessage(
       "تزریق خودکار به گروه انتخابگر اصلی",
