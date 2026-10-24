@@ -234,13 +234,20 @@ void main() {
         },
       );
 
-      final report = await service.probeChain(config: config);
+      // Production always supplies this callback. Passing it here is what
+      // catches index errors that a null callback short-circuits.
+      final updates = <HopProbeState>[];
+      final report = await service.probeChain(
+        config: config,
+        onHopUpdate: updates.add,
+      );
 
       expect(report.failureHop, 3);
       expect(report.errorCode, ChainProbeErrorCodes.exitFailed);
       expect(report.hops[0].healthStatus, ChainHealthStatus.healthy);
       expect(report.hops[1].healthStatus, ChainHealthStatus.healthy);
       expect(report.hops[2].healthStatus, ChainHealthStatus.failed);
+      expect(updates.map((hop) => hop.hopIndex), contains(3));
     });
 
     // 10. Internet probe failure

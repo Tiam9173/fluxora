@@ -749,7 +749,10 @@ class ChainProbeService implements IChainProbeService {
     // segment. Leaving them blank made a multi-hop chain look half-broken.
     for (var i = 1; i < exitIndex; i++) {
       if (cancelToken?.isCancelled == true) {
-        return ChainProbeReport.cancelled(mode: mode, timestamp: DateTime.now());
+        return ChainProbeReport.cancelled(
+          mode: mode,
+          timestamp: DateTime.now(),
+        );
       }
       final hopDelay = await _testDelay(
         frontChain[i],
@@ -761,13 +764,90 @@ class ChainProbeService implements IChainProbeService {
       hops[i] = hops[i].copyWith(
         status: ok
             ? HopProbeStatus.healthy
-            : (hopDelay == null ? HopProbeStatus.timeout : HopProbeStatus.failed),
+            : (hopDelay == null
+                  ? HopProbeStatus.timeout
+                  : HopProbeStatus.failed),
         healthStatus: ok ? ChainHealthStatus.healthy : ChainHealthStatus.failed,
         latencyMs: ok ? hopDelay : null,
+        errorMessage: ok
+            ? null
+            : (hopDelay == null
+                  ? '中转节点 [${frontChain[i]}] 连接超时'
+                  : '中转节点 [${frontChain[i]}] 握手失败'),
+        errorCode: ok
+            ? ChainProbeErrorCodes.none
+            : (hopDelay == null
+                  ? ChainProbeErrorCodes.hop2Timeout
+                  : ChainProbeErrorCodes.hop2Failed),
         diagnosticTip: ok ? '中转节点连通顺畅' : '请检查该中转节点状态',
         testedAt: DateTime.now(),
       );
       onHopUpdate?.call(hops[i]);
+
+      // A failed front hop invalidates every hop after it. Returning here
+      // prevents a later successful exit probe from marking the chain healthy.
+      if (!ok) {
+        final int failedHop = i + 1;
+        final bool timedOut = hopDelay == null;
+        final String failureReason =
+            '第$failedHop跳中转节点 [${frontChain[i]}] '
+            '${timedOut ? '连接超时' : '握手失败'}，导致后续出口无法建立';
+
+        for (var downstream = i + 1; downstream < hops.length; downstream++) {
+          hops[downstream] = hops[downstream].copyWith(
+            status: HopProbeStatus.failed,
+            healthStatus: ChainHealthStatus.failed,
+            errorMessage: '上游第$failedHop跳中断导致此跳无法连接',
+            errorCode: ChainProbeErrorCodes.upstreamFailed,
+            diagnosticTip: '需先修复第$failedHop跳中转网络连通性',
+            testedAt: DateTime.now(),
+          );
+          onHopUpdate?.call(hops[downstream]);
+        }
+
+        final finalExit = HopProbeState(
+          hopIndex: exitIndex + 1,
+          role: HopRole.finalExit,
+          nodeName: exitNode,
+          nodeAddress: exitNode,
+          status: HopProbeStatus.failed,
+          healthStatus: ChainHealthStatus.failed,
+          errorMessage: failureReason,
+          errorCode: ChainProbeErrorCodes.upstreamFailed,
+          diagnosticTip: '上游中转跳故障，无法建立端到端连接',
+          testedAt: DateTime.now(),
+        );
+
+        final failReport = ChainProbeReport(
+          mode: mode,
+          isOverallHealthy: false,
+          healthStatus: ChainHealthStatus.failed,
+          hops: List.unmodifiable(hops),
+          finalExit: finalExit,
+          failureHop: failedHop,
+          errorCode: timedOut
+              ? ChainProbeErrorCodes.hop2Timeout
+              : ChainProbeErrorCodes.hop2Failed,
+          rootCauseAnalysis: failureReason,
+          timestamp: DateTime.now(),
+        );
+
+        chainTelemetryService.record(
+          ChainTelemetryEvent(
+            type: ChainTelemetryEventType.probeFailed,
+            nodeName: frontChain[i],
+            role: 'Relay',
+            errorCode: timedOut
+                ? ChainProbeErrorCodes.hop2Timeout
+                : ChainProbeErrorCodes.hop2Failed,
+            message: '探测失败: $failureReason',
+            metadata: {'hopMode': mode.name},
+          ),
+        );
+
+        onProgress?.call(failReport);
+        return failReport;
+      }
     }
 
     // 3. Probe the exit (Hop 1 is healthy)
@@ -872,40 +952,26 @@ class ChainProbeService implements IChainProbeService {
     if (!hop2Healthy) {
       final failureReason = mode == ChainHopMode.threeHop
           ? (hop2Timeout
-                ? '第一跳就绪，但第二跳中转节点 [$hop2] 连通失败（连接超时）'
-                : '第一跳就绪，但第二跳中转节点 [$hop2] 连通失败')
+                ? '最后一跳落地出口节点 [$exitNode] 连接超时'
+                : '最后一跳落地出口节点 [$exitNode] 握手失败')
           : (hop2Timeout
                 ? '第一跳就绪，但第二跳落地节点 [$hop2] 握手失败（连接超时）'
                 : '第一跳就绪，但第二跳落地节点 [$hop2] 握手失败');
 
-      // exitIndex 本身就是出口跳的下标（= frontChain.length）。三跳模式下
-      // 第二跳失败，受影响的是出口那一跳，不是"出口的下一跳"——写成
-      // exitIndex + 1 会越界（hops 只有 frontChain.length + 1 项）。
-      if (mode == ChainHopMode.threeHop && exitIndex < hops.length) {
-        hops[exitIndex] = hops[exitIndex].copyWith(
-          status: HopProbeStatus.failed,
-          healthStatus: ChainHealthStatus.failed,
-          errorMessage: '上游中转跳中断导致此跳无法连接',
-          errorCode: ChainProbeErrorCodes.upstreamFailed,
-          diagnosticTip: '需先修复第二跳中转网络连通性',
-          testedAt: DateTime.now(),
-        );
-        onHopUpdate?.call(hops[exitIndex + 1]);
-      }
-
       final finalExit = HopProbeState(
-        hopIndex: mode.hopCount,
+        hopIndex: exitIndex + 1,
         role: HopRole.finalExit,
-        nodeName: mode == ChainHopMode.threeHop ? hop3 : hop2,
-        nodeAddress: mode == ChainHopMode.threeHop ? hop3 : hop2,
+        nodeName: exitNode,
+        nodeAddress: exitNode,
         status: HopProbeStatus.failed,
         healthStatus: ChainHealthStatus.failed,
         errorMessage: failureReason,
-        // 同上：这次探测打的是 exitNode，两种模式下失败都属于"出口失败"。
+        // This probe targets exitNode in every topology, so the failure is
+        // always an exit failure and the failed index is the exit's own index.
         errorCode: hop2Timeout
             ? ChainProbeErrorCodes.exitTimeout
             : ChainProbeErrorCodes.exitFailed,
-        diagnosticTip: '第二跳节点连接异常，全链路建立失败',
+        diagnosticTip: '出口节点连接异常，全链路建立失败',
         testedAt: DateTime.now(),
       );
 
@@ -915,11 +981,7 @@ class ChainProbeService implements IChainProbeService {
         healthStatus: ChainHealthStatus.failed,
         hops: List.unmodifiable(hops),
         finalExit: finalExit,
-        // 这里测的其实是 exitNode：两跳模式下它就是第二跳，三跳模式下是
-        // 第三跳。failureHop 跟着模式走，别一律写 2。
-        failureHop: mode == ChainHopMode.threeHop ? 3 : 2,
-        // 这次探测打的是 exitNode：两种模式下失败都属于"出口失败"，
-        // 三跳模式也应该是 EXIT_* 而不是 HOP2_*。
+        failureHop: exitIndex + 1,
         errorCode: hop2Timeout
             ? ChainProbeErrorCodes.exitTimeout
             : ChainProbeErrorCodes.exitFailed,
@@ -930,15 +992,11 @@ class ChainProbeService implements IChainProbeService {
       chainTelemetryService.record(
         ChainTelemetryEvent(
           type: ChainTelemetryEventType.probeFailed,
-          nodeName: hop2,
-          role: mode == ChainHopMode.threeHop ? 'Relay' : 'Exit',
-          errorCode: mode == ChainHopMode.threeHop
-              ? (hop2Timeout
-                    ? ChainProbeErrorCodes.hop2Timeout
-                    : ChainProbeErrorCodes.hop2Failed)
-              : (hop2Timeout
-                    ? ChainProbeErrorCodes.exitTimeout
-                    : ChainProbeErrorCodes.exitFailed),
+          nodeName: exitNode,
+          role: 'Exit',
+          errorCode: hop2Timeout
+              ? ChainProbeErrorCodes.exitTimeout
+              : ChainProbeErrorCodes.exitFailed,
           message: '探测失败: $failureReason',
           metadata: {'hopMode': mode.name},
         ),
