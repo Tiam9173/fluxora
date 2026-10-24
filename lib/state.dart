@@ -19,6 +19,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' as flutter_riverpod;
 import 'package:material_color_utilities/palettes/core_palette.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:path/path.dart' as p;
 import 'package:synchronized/synchronized.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -31,6 +32,18 @@ import 'models/models.dart';
 import 'package:fluxora/common/node_overrides.dart';
 
 typedef UpdateTasks = List<FutureOr Function()>;
+
+class _AggregateMemberConfig {
+  final Profile profile;
+  final Map<String, dynamic> config;
+  final String alias;
+
+  const _AggregateMemberConfig({
+    required this.profile,
+    required this.config,
+    required this.alias,
+  });
+}
 
 /// Resolves the controller endpoint without requiring a UI-owned AppController.
 /// A headless service has no session fallback, so it uses the normal loopback
@@ -742,7 +755,28 @@ class GlobalState {
     }
     final profileId = targetProfile.id;
     final configMap = await getProfileConfig(profileId);
-    final rawConfig = await handleEvaluate(configMap, profile: targetProfile);
+    final scriptConfigured =
+        config.scriptProps.currentScript != null &&
+        targetProfile.useScriptOverride;
+    final postMergeScript =
+        config.aggregateMode == AggregateMode.full &&
+        config.aggregateScriptTiming == AggregateScriptTiming.after &&
+        scriptConfigured;
+    var rawConfig = postMergeScript
+        ? configMap
+        : await handleEvaluate(configMap, profile: targetProfile);
+    var aggregateProxies = const <String, Map<String, dynamic>>{};
+    if (postMergeScript) {
+      // Merge first so the script sees every aggregate node and can generate
+      // groups/rules that cover them. App-level settings are applied below and
+      // therefore still win over anything the script writes.
+      aggregateProxies = await _injectAggregateProviders(
+        rawConfig,
+        targetProfile.id,
+        applyMemberTransforms: false,
+      );
+      rawConfig = await handleEvaluate(rawConfig, profile: targetProfile);
+    }
     final originalProxyGroups = rawConfig['proxy-groups'];
 
     final realPatchConfig = patchConfig.copyWith(
@@ -1222,8 +1256,14 @@ class GlobalState {
     rawConfig['rules'] = rules;
 
     // 多订阅聚合：先注入 provider，后面的链路/组生成才能看到聚合节点。
-    final aggregateProxies =
-        await _injectAggregateProviders(rawConfig, targetProfile.id);
+    // Post-merge script mode already injected and scripted the aggregate above;
+    // doing it again here would duplicate nodes/groups.
+    if (!postMergeScript) {
+      aggregateProxies = await _injectAggregateProviders(
+        rawConfig,
+        targetProfile.id,
+      );
+    }
 
     // Apply chain proxy configuration if enabled (including WebRTC leak prevention rules)
     chainProxyManager.applyToClashConfig(
@@ -1244,6 +1284,36 @@ class GlobalState {
     return rawConfig;
   }
 
+  /// Writes the script/override-evaluated nodes of an aggregate member.
+  ///
+  /// `proxy-providers` with `type: file` loads the file directly, so pointing
+  /// it at the original subscription would silently discard script changes and
+  /// local node edits. This derived file is what the kernel actually loads.
+  Future<String> _writeAggregateProviderFile(
+    String profileId,
+    List nodes,
+    String alias,
+  ) async {
+    final proxies = nodes
+        .whereType<Map>()
+        .where((node) => node['name'] != null)
+        .map((node) {
+          final copy = Map<String, dynamic>.from(node);
+          copy['name'] = '[$alias] ${node['name']}';
+          return copy;
+        })
+        .toList();
+    if (proxies.isEmpty) {
+      throw StateError('aggregate member has no usable proxies');
+    }
+    final directoryPath = await appPath.getProvidersDirPath(profileId);
+    await Directory(directoryPath).create(recursive: true);
+    final file = File(p.join(directoryPath, 'aggregate_nodes.yaml'));
+    final content = await encodeYamlTask({'proxies': proxies});
+    await file.writeAsString(content, flush: true);
+    return file.path;
+  }
+
   /// 把其它勾选了「参与聚合」的订阅注入成 `proxy-providers`。
   ///
   /// 用 `type: file` 指向订阅已经下载好的本地缓存，而不是 `type: http` 重新
@@ -1253,8 +1323,9 @@ class GlobalState {
   /// 内核已经做好的事再做一遍，还得先算出全集冲突。
   Future<Map<String, Map<String, dynamic>>> _injectAggregateProviders(
     Map<String, dynamic> rawConfig,
-    String currentProfileId,
-  ) async {
+    String currentProfileId, {
+    bool applyMemberTransforms = true,
+  }) async {
     final others = config.profiles
         .where((p) => p.id != currentProfileId && p.joinAggregate)
         .toList();
@@ -1266,6 +1337,14 @@ class GlobalState {
     // 重启才会加载刚写进去的 provider。
     final providerProxies = <String, Map<String, dynamic>>{};
     final providerNames = <String>[];
+    final aggregateNodeNames = <String>[];
+    final memberGroups = <Map<String, dynamic>>[];
+    final mergeMembers = <_AggregateMemberConfig>[];
+    final usedAliases = <String>{};
+    final fullMerge = config.aggregateMode == AggregateMode.full;
+    final healthCheckUrl = config.appSetting.testUrl.trim().isNotEmpty
+        ? config.appSetting.testUrl.trim()
+        : 'https://www.gstatic.com/generate_204';
     for (final profile in others) {
       final path = await appPath.getProfilePath(profile.id);
       if (!await File(path).exists()) {
@@ -1273,65 +1352,149 @@ class GlobalState {
         commonPrint.log('aggregate: skip ${profile.id}, no cached config');
         continue;
       }
-      final alias = profile.aggregateAlias.isNotEmpty
-          ? profile.aggregateAlias
-          : (profile.label ?? profile.id);
-      final key = 'agg_${profile.id}';
-      providers[key] = {
-        'type': 'file',
-        'path': path,
-        'override': {'additional-prefix': '[$alias] '},
-        'health-check': {
-          'enable': true,
-          'url': 'https://www.gstatic.com/generate_204',
-          'interval': 300,
-          'lazy': true,
-        },
-        if ((profile.ageSecretKey ?? '').isNotEmpty)
-          'age-secret-key': profile.ageSecretKey,
-      };
-      providerNames.add(key);
 
-      try {
-        final nodeConfig = await getProfileConfig(profile.id);
-        final nodes = nodeConfig['proxies'];
-        if (nodes is List) {
-          for (final node in nodes) {
-            if (node is! Map || node['name'] == null) continue;
-            // 前缀必须和 override.additional-prefix 完全一致，否则选中的名字
-            // 在运行时对不上内核里的节点。
-            final prefixed = '[$alias] ${node['name']}';
-            providerProxies[prefixed] = Map<String, dynamic>.from(node);
-          }
+      // 成员的脚本覆写和节点本地编辑必须在提取节点前应用；旧实现直接读
+      // getProfileConfig，成员的脚本等于从未存在。
+      Map<String, dynamic> evaluated;
+      if (!applyMemberTransforms) {
+        // Post-merge script mode: merge raw member configs, then run the one
+        // selected script over the combined result. Running member scripts here
+        // would process nodes twice.
+        evaluated = await getProfileConfig(profile.id);
+      } else {
+        try {
+          evaluated = await handleEvaluate(
+            await getProfileConfig(profile.id),
+            profile: profile,
+          );
+          _applyAggregateMemberOverride(evaluated, profile);
+        } catch (e) {
+          commonPrint.log('aggregate: evaluate ${profile.id} failed: $e');
+          evaluated = await getProfileConfig(profile.id);
+          _applyAggregateMemberOverride(evaluated, profile);
         }
-      } catch (e) {
-        commonPrint.log('aggregate: read nodes of ${profile.id} failed: $e');
       }
-    }
-    if (providers.isEmpty) return const {};
+      final nodes = evaluated['proxies'];
+      if (nodes is! List || nodes.isEmpty) {
+        commonPrint.log('aggregate: skip ${profile.id}, no nodes after evaluate');
+        continue;
+      }
 
-    final existingProviders = rawConfig['proxy-providers'];
-    rawConfig['proxy-providers'] = <String, dynamic>{
-      if (existingProviders is Map)
-        ...Map<String, dynamic>.from(existingProviders),
-      ...providers,
-    };
+      final alias = uniqueAggregateAlias(
+        profile.aggregateAlias.isNotEmpty
+            ? profile.aggregateAlias
+            : (profile.label ?? profile.id),
+        usedAliases,
+      );
+      final prefixedNodes = <Map<String, dynamic>>[];
+      final prefixedNames = <String>[];
+      for (final node in nodes) {
+        if (node is! Map || node['name'] == null) continue;
+        final prefixed = '[$alias] ${node['name']}';
+        final copy = Map<String, dynamic>.from(node);
+        copy['name'] = prefixed;
+        prefixedNodes.add(copy);
+        prefixedNames.add(prefixed);
+        providerProxies[prefixed] = copy;
+      }
+      if (prefixedNodes.isEmpty) {
+        commonPrint.log('aggregate: skip ${profile.id}, no named nodes');
+        continue;
+      }
+
+      final key = 'agg_${profile.id}';
+      if (fullMerge) {
+        // Full merge owns the node list directly. A provider round-trip is the
+        // source of the "group references a node that the provider did not
+        // load" failure, especially when a script renames nodes.
+        final existingProxies = rawConfig['proxies'];
+        final proxiesList = existingProxies is List
+            ? existingProxies
+            : <dynamic>[];
+        rawConfig['proxies'] = proxiesList;
+        proxiesList.addAll(prefixedNodes);
+        aggregateNodeNames.addAll(prefixedNames);
+      } else {
+        // provider 必须指向脚本/覆写后的节点文件，不能继续指向原始订阅 YAML，
+        // 否则内核加载的仍是旧节点，脚本只改了内存里的预览。
+        var providerPath = path;
+        var derivedProvider = false;
+        try {
+          providerPath = await _writeAggregateProviderFile(
+            profile.id,
+            nodes,
+            alias,
+          );
+          derivedProvider = true;
+        } catch (e) {
+          commonPrint.log(
+            'aggregate: write provider for ${profile.id} failed, using source: $e',
+          );
+        }
+        providers[key] = {
+          'type': 'file',
+          'path': providerPath,
+          // The derived file already contains prefixed names. Only the fallback
+          // source file needs the kernel-side prefix override.
+          if (!derivedProvider)
+            'override': {'additional-prefix': '[$alias] '},
+          'health-check': {
+            'enable': true,
+            'url': healthCheckUrl,
+            'interval': 300,
+            'lazy': true,
+          },
+        };
+        providerNames.add(key);
+      }
+
+      memberGroups.add(<String, dynamic>{
+        'name': appLocalizations.aggregateMemberGroup(alias),
+        'type': 'select',
+        if (fullMerge) 'proxies': prefixedNames else 'use': [key],
+      });
+      memberGroups.add(<String, dynamic>{
+        'name': appLocalizations.aggregateMemberAuto(alias),
+        'type': 'url-test',
+        'url': healthCheckUrl,
+        'interval': 300,
+        if (fullMerge) 'proxies': prefixedNames else 'use': [key],
+      });
+      mergeMembers.add(
+        _AggregateMemberConfig(
+          profile: profile,
+          config: evaluated,
+          alias: alias,
+        ),
+      );
+    }
+    if (providers.isEmpty && aggregateNodeNames.isEmpty) return const {};
+
+    if (providers.isNotEmpty) {
+      final existingProviders = rawConfig['proxy-providers'];
+      rawConfig['proxy-providers'] = <String, dynamic>{
+        if (existingProviders is Map)
+          ...Map<String, dynamic>.from(existingProviders),
+        ...providers,
+      };
+    }
 
     final groups = rawConfig['proxy-groups'];
     if (groups is! List) return providerProxies;
-    const aggregateGroup = '🌐 聚合节点';
-    const aggregateAutoGroup = '♻️ 聚合自动选择';
+    groups.addAll(memberGroups);
+    final aggregateGroup = appLocalizations.aggregateGroupNodes;
+    final aggregateAutoGroup = appLocalizations.aggregateGroupAuto;
     groups.add(<String, dynamic>{
       'name': aggregateGroup,
       'type': 'select',
-      'use': providerNames,
+      if (fullMerge) 'proxies': aggregateNodeNames else 'use': providerNames,
     });
     groups.add(<String, dynamic>{
       'name': aggregateAutoGroup,
       'type': 'url-test',
-      'url': 'https://www.gstatic.com/generate_204',
+      'url': healthCheckUrl,
       'interval': 300,
-      'use': providerNames,
+      if (fullMerge) 'proxies': aggregateNodeNames else 'use': providerNames,
     });
 
     // 挂进主选择组，否则用户得先去代理页手动找这个组。
@@ -1347,7 +1510,230 @@ class GlobalState {
       }
       break;
     }
+    if (config.aggregateMode == AggregateMode.full) {
+      await _mergeAggregateMembers(rawConfig, mergeMembers);
+    }
     return providerProxies;
+  }
+
+  /// Applies a member's rule override before its config is merged. The base
+  /// profile already does this in `patchRawConfig`; aggregate members used to
+  /// skip it entirely.
+  void _applyAggregateMemberOverride(
+    Map<String, dynamic> config,
+    Profile profile,
+  ) {
+    final overrideData = profile.overrideData;
+    if (!overrideData.enable) return;
+    final scriptActive =
+        this.config.scriptProps.currentScript != null &&
+        profile.useScriptOverride;
+    if (scriptActive) return;
+    final current = config['rules'] is List
+        ? (config['rules'] as List).whereType<String>().toList()
+        : <String>[];
+    final next = overrideData.rule.type == OverrideRuleType.override
+        ? overrideData.runningRule
+        : [...overrideData.runningRule, ...current];
+    config['rules'] = next;
+  }
+
+  Future<void> _mergeAggregateMembers(
+    Map<String, dynamic> rawConfig,
+    List<_AggregateMemberConfig> members,
+  ) async {
+    if (members.isEmpty) return;
+
+    final groups = rawConfig['proxy-groups'] is List
+        ? rawConfig['proxy-groups'] as List
+        : <dynamic>[];
+    rawConfig['proxy-groups'] = groups;
+    final usedGroupNames = <String>{
+      for (final group in groups)
+        if (group is Map && group['name'] is String)
+          group['name'] as String,
+    };
+    final baseRules = rawConfig['rules'] is List
+        ? (rawConfig['rules'] as List).whereType<String>().toList()
+        : <String>[];
+    final baseHasMatch = baseRules.any(
+      (rule) => ParsedRule.parseString(rule).ruleAction == RuleAction.MATCH,
+    );
+    final mergedRules = <String>[];
+    String? fallbackMatch;
+
+    for (final member in members) {
+      final memberGroups = member.config['proxy-groups'];
+      final memberProxies = member.config['proxies'];
+      final nodeMap = <String, String>{
+        for (final node in (memberProxies is List ? memberProxies : const []))
+          if (node is Map && node['name'] is String)
+            node['name'] as String: '[${member.alias}] ${node['name']}',
+      };
+      final groupMap = <String, String>{};
+      if (memberGroups is List) {
+        for (final group in memberGroups) {
+          if (group is! Map || group['name'] is! String) continue;
+          final original = group['name'] as String;
+          if (member.profile.groupSwitches[original] == false) continue;
+          final candidate = '[${member.alias}] $original';
+          final unique = uniqueAggregateGroupName(candidate, usedGroupNames);
+          groupMap[original] = unique;
+          usedGroupNames.add(unique);
+        }
+      }
+
+      final ruleProviderMap = await _mergeAggregateRuleProviders(
+        rawConfig,
+        member,
+      );
+
+      if (memberGroups is List) {
+        for (final group in memberGroups) {
+          if (group is! Map || group['name'] is! String) continue;
+          final mappedName = groupMap[group['name'] as String];
+          if (mappedName == null) continue;
+          final copy = Map<String, dynamic>.from(group);
+          copy['name'] = mappedName;
+          final proxies = copy['proxies'];
+          if (proxies is List) {
+            final mappedProxies = proxies
+                .map<String?>((item) {
+                  if (item is! String) return null;
+                  final mapped = nodeMap[item] ?? groupMap[item];
+                  if (mapped != null) return mapped;
+                  if (isBuiltInAggregateTarget(item) ||
+                      usedGroupNames.contains(item)) {
+                    return item;
+                  }
+                  // A stale node reference must not invalidate the whole config.
+                  commonPrint.log(
+                    'aggregate: drop unknown proxy "$item" from group $mappedName',
+                  );
+                  return null;
+                })
+                .whereType<String>()
+                .toList();
+            copy['proxies'] = mappedProxies.isEmpty &&
+                    (copy['use'] is! List || (copy['use'] as List).isEmpty)
+                ? ['DIRECT']
+                : mappedProxies;
+          }
+          final use = copy['use'];
+          if (use is List && use.isNotEmpty) {
+            // Full merge has no member provider to point at. Expand the group
+            // to the member's direct nodes instead of leaving a dangling
+            // provider reference.
+            copy.remove('use');
+            final existing = copy['proxies'];
+            if (existing is! List || existing.isEmpty) {
+              copy['proxies'] = nodeMap.values.toList();
+            }
+          }
+          groups.add(copy);
+        }
+      }
+
+      final memberRules = member.config['rules'];
+      if (memberRules is! List) continue;
+      final baseGroupNames = {
+        for (final group in groups)
+          if (group is Map && group['name'] is String) group['name'] as String,
+      };
+      for (final rule in memberRules) {
+        if (rule is! String || rule.isEmpty) continue;
+        final parsed = ParsedRule.parseString(rule);
+        if (parsed.ruleAction == RuleAction.MATCH) {
+          // The base profile owns the catch-all rule. If it has none, keep one
+          // member fallback at the very end so later member rules stay reachable.
+          if (baseHasMatch) continue;
+          var target = parsed.ruleTarget;
+          if (target != null) {
+            target = groupMap[target] ?? target;
+          }
+          fallbackMatch ??= parsed.copyWith(ruleTarget: target).value;
+          continue;
+        }
+        var target = parsed.ruleTarget;
+        if (target != null) {
+          final mapped = mapAggregateRuleTarget(
+            target,
+            nodeNames: nodeMap,
+            groupNames: groupMap,
+            baseGroups: baseGroupNames,
+          );
+          if (mapped == null) {
+            commonPrint.log(
+              'aggregate: skip rule with unknown target "$target" from ${member.profile.id}',
+            );
+            continue;
+          }
+          target = mapped;
+        }
+        var provider = parsed.ruleProvider;
+        if (provider != null) {
+          final mapped = ruleProviderMap[provider];
+          if (mapped == null) {
+            commonPrint.log(
+              'aggregate: skip rule with unmerged provider "$provider" from ${member.profile.id}',
+            );
+            continue;
+          }
+          provider = mapped;
+        }
+        final next = parsed.copyWith(
+          ruleTarget: target,
+          ruleProvider: provider,
+        );
+        if (!baseRules.contains(next.value) && !mergedRules.contains(next.value)) {
+          mergedRules.add(next.value);
+        }
+      }
+    }
+
+    if (fallbackMatch != null && !baseHasMatch) {
+      mergedRules.add(fallbackMatch);
+    }
+    if (mergedRules.isEmpty) return;
+    final matchIndex = baseRules.indexWhere(
+      (rule) => ParsedRule.parseString(rule).ruleAction == RuleAction.MATCH,
+    );
+    final nextRules = List<String>.from(baseRules);
+    if (matchIndex == -1) {
+      nextRules.addAll(mergedRules);
+    } else {
+      nextRules.insertAll(matchIndex, mergedRules);
+    }
+    rawConfig['rules'] = nextRules;
+  }
+
+  Future<Map<String, String>> _mergeAggregateRuleProviders(
+    Map<String, dynamic> rawConfig,
+    _AggregateMemberConfig member,
+  ) async {
+    final source = member.config['rule-providers'];
+    if (source is! Map) return const {};
+    final target = rawConfig['rule-providers'] is Map
+        ? Map<String, dynamic>.from(rawConfig['rule-providers'] as Map)
+        : <String, dynamic>{};
+    final mapping = <String, String>{};
+    for (final entry in source.entries) {
+      final key = 'agg_${member.profile.id}_${entry.key}';
+      final value = entry.value;
+      if (value is! Map) continue;
+      final copy = Map<String, dynamic>.from(value);
+      if (copy['type'] == 'http' && copy['url'] is String) {
+        copy['path'] = await appPath.getProvidersFilePath(
+          member.profile.id,
+          'rules',
+          copy['url'] as String,
+        );
+      }
+      target[key] = copy;
+      mapping[entry.key.toString()] = key;
+    }
+    if (target.isNotEmpty) rawConfig['rule-providers'] = target;
+    return mapping;
   }
 
   /// 供原生卡片读取：内核地址 + 密钥。

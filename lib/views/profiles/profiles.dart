@@ -16,6 +16,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 import 'add_profile.dart';
+import 'aggregate_view.dart';
 import 'profile_nodes_view.dart';
 import 'profile_chain_dialog.dart';
 
@@ -151,6 +152,19 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
         tooltip: '',
         icon: const Icon(Icons.more_vert, size: 26),
         onSelected: (value) async {
+          if (value == 'aggregate') {
+            showExtend(
+              context,
+              builder: (_, type) {
+                return AdaptiveSheetScaffold(
+                  type: type,
+                  body: const AggregateView(),
+                  title: appLocalizations.aggregateTitle,
+                );
+              },
+            );
+            return;
+          }
           if (value != 'clearRulesScripts') return;
           final res = await globalState.showMessage(
             title: appLocalizations.tip,
@@ -162,6 +176,10 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
           await globalState.appController.clearAllRulesAndScripts();
         },
         itemBuilder: (_) => [
+          PopupMenuItem(
+            value: 'aggregate',
+            child: Text(appLocalizations.aggregateManage),
+          ),
           PopupMenuItem(
             value: 'clearRulesScripts',
             child: Text(appLocalizations.clearAllRulesAndScripts),

@@ -542,6 +542,10 @@ extension ScriptPropsExt on ScriptProps {
   }
 }
 
+enum AggregateMode { nodePool, full }
+
+enum AggregateScriptTiming { before, after }
+
 @freezed
 abstract class Config with _$Config {
   const factory Config({
@@ -550,6 +554,8 @@ abstract class Config with _$Config {
     AppSettingProps appSetting,
     @Default([]) List<Profile> profiles,
     @Default([]) List<HotKeyAction> hotKeyActions,
+    @Default(AggregateMode.nodePool) AggregateMode aggregateMode,
+    @Default(AggregateScriptTiming.after) AggregateScriptTiming aggregateScriptTiming,
     String? currentProfileId,
     @Default(false) bool overrideDns,
     @Default(false) bool overrideNtp,

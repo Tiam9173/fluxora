@@ -32,7 +32,7 @@ _AppSettingProps _$AppSettingPropsFromJson(
   mediaUnlockColorfulIcons: json['mediaUnlockColorfulIcons'] as bool? ?? true,
   onlyStatisticsProxy: json['onlyStatisticsProxy'] as bool? ?? true,
   autoLaunch: json['autoLaunch'] as bool? ?? false,
-  silentLaunch: json['silentLaunch'] as bool? ?? false,
+  silentLaunch: json['silentLaunch'] as bool? ?? true,
   smartDelayLaunch: json['smartDelayLaunch'] as bool? ?? false,
   autoRun: json['autoRun'] as bool? ?? false,
   openLogs: json['openLogs'] as bool? ?? true,
@@ -564,6 +564,15 @@ _Config _$ConfigFromJson(Map<String, dynamic> json) => _Config(
           ?.map((e) => HotKeyAction.fromJson(e as Map<String, dynamic>))
           .toList() ??
       const [],
+  aggregateMode:
+      $enumDecodeNullable(_$AggregateModeEnumMap, json['aggregateMode']) ??
+      AggregateMode.nodePool,
+  aggregateScriptTiming:
+      $enumDecodeNullable(
+        _$AggregateScriptTimingEnumMap,
+        json['aggregateScriptTiming'],
+      ) ??
+      AggregateScriptTiming.after,
   currentProfileId: json['currentProfileId'] as String?,
   overrideDns: json['overrideDns'] as bool? ?? false,
   overrideNtp: json['overrideNtp'] as bool? ?? false,
@@ -605,6 +614,9 @@ Map<String, dynamic> _$ConfigToJson(_Config instance) => <String, dynamic>{
   'appSetting': instance.appSetting,
   'profiles': instance.profiles,
   'hotKeyActions': instance.hotKeyActions,
+  'aggregateMode': _$AggregateModeEnumMap[instance.aggregateMode]!,
+  'aggregateScriptTiming':
+      _$AggregateScriptTimingEnumMap[instance.aggregateScriptTiming]!,
   'currentProfileId': instance.currentProfileId,
   'overrideDns': instance.overrideDns,
   'overrideNtp': instance.overrideNtp,
@@ -622,4 +634,14 @@ Map<String, dynamic> _$ConfigToJson(_Config instance) => <String, dynamic>{
   'scriptProps': instance.scriptProps,
   'nodeExcludeFilter': instance.nodeExcludeFilter,
   'healthCheckTimeout': instance.healthCheckTimeout,
+};
+
+const _$AggregateModeEnumMap = {
+  AggregateMode.nodePool: 'nodePool',
+  AggregateMode.full: 'full',
+};
+
+const _$AggregateScriptTimingEnumMap = {
+  AggregateScriptTiming.before: 'before',
+  AggregateScriptTiming.after: 'after',
 };

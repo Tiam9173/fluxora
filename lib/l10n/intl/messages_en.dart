@@ -24,109 +24,114 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m1(role) => "Add ${role} backup candidate";
 
-  static String m2(completed, total) => "Checking (${completed}/${total})…";
+  static String m2(alias) => "${alias} auto";
 
-  static String m3(count) => "Successfully imported ${count} node(s)";
+  static String m3(alias) => "${alias} nodes";
 
-  static String m4(hop) => "🔗 Dialer: ${hop}";
+  static String m4(completed, total) => "Checking (${completed}/${total})…";
 
-  static String m5(name) => "Dialer: ${name}";
+  static String m5(count) => "Successfully imported ${count} node(s)";
 
-  static String m6(index) => "Relay ${index}";
+  static String m6(hop) => "🔗 Dialer: ${hop}";
 
-  static String m7(server, port) => "Residential ${server}:${port}";
+  static String m7(name) => "Dialer: ${name}";
 
-  static String m8(count) => "Cleared ${count} invalid nodes";
+  static String m8(index) => "Relay ${index}";
 
-  static String m9(name) => "Are you sure you want to delete node \"${name}\"?";
+  static String m9(server, port) => "Residential ${server}:${port}";
 
-  static String m10(error) => "Failed to create group: ${error}";
+  static String m10(count) => "Cleared ${count} invalid nodes";
 
   static String m11(name) =>
+      "Are you sure you want to delete node \"${name}\"?";
+
+  static String m12(error) => "Failed to create group: ${error}";
+
+  static String m13(name) =>
       "Blank group \"${name}\" created, please add nodes";
 
-  static String m12(count) =>
+  static String m14(count) =>
       "${Intl.plural(count, one: 'day', other: 'days')}";
 
-  static String m13(label) => "Delete selected ${label}?";
+  static String m15(label) => "Delete selected ${label}?";
 
-  static String m14(label) => "Delete current ${label}?";
+  static String m16(label) => "Delete current ${label}?";
 
-  static String m15(label) => "${label} cannot be empty";
+  static String m17(label) => "${label} cannot be empty";
 
-  static String m16(label) => "${label} already exists";
+  static String m18(label) => "${label} already exists";
 
-  static String m17(reason) => "Failover failed: ${reason}";
+  static String m19(reason) => "Failover failed: ${reason}";
 
-  static String m18(node) => "Failover succeeded, switched to [${node}]";
+  static String m20(node) => "Failover succeeded, switched to [${node}]";
 
-  static String m19(count) =>
+  static String m21(count) =>
       "${Intl.plural(count, one: 'hour', other: 'hours')}";
 
-  static String m20(count) => "Imported ${count} landing proxy nodes";
+  static String m22(count) => "Imported ${count} landing proxy nodes";
 
-  static String m21(count) => "${count}";
+  static String m23(count) => "${count}";
 
-  static String m22(count) =>
+  static String m24(count) =>
       "${Intl.plural(count, one: 'minute', other: 'minutes')}";
 
-  static String m23(count) =>
+  static String m25(count) =>
       "${Intl.plural(count, one: 'month', other: 'months')}";
 
-  static String m24(name) => "Node added: ${name}";
+  static String m26(name) => "Node added: ${name}";
 
-  static String m25(name) => "Node deleted: ${name}";
+  static String m27(name) => "Node deleted: ${name}";
 
-  static String m26(name) => "Edit ${name}";
+  static String m28(name) => "Edit ${name}";
 
-  static String m27(name) => "Node management · ${name}";
+  static String m29(name) => "Node management · ${name}";
 
-  static String m28(proto) => "e.g. Hong Kong 01 - ${proto}";
+  static String m30(proto) => "e.g. Hong Kong 01 - ${proto}";
 
-  static String m29(label) => "No ${label}";
+  static String m31(label) => "No ${label}";
 
-  static String m30(label) => "${label} must be a number";
+  static String m32(label) => "${label} must be a number";
 
-  static String m31(from, to) =>
+  static String m33(from, to) =>
       "Port ${from} is in use; using ${to} for this session";
 
-  static String m32(label) =>
+  static String m34(label) =>
       "${label} must be between 1024 and 49151, 0 to disable";
 
-  static String m33(name) => "Pre-proxy & Landing Proxy · ${name}";
+  static String m35(name) => "Pre-proxy & Landing Proxy · ${name}";
 
-  static String m34(statusCode) =>
+  static String m36(statusCode) =>
       "Failed to import profile. Please check your network status or try resetting the subscription link ( HTTP error code: ${statusCode} )";
 
-  static String m35(count) => "${count} items selected";
+  static String m37(count) => "${count} items selected";
 
-  static String m36(error) => "Check failed: ${error}";
+  static String m38(error) => "Check failed: ${error}";
 
-  static String m37(name) => "Still using: ${name}";
+  static String m39(name) => "Still using: ${name}";
 
-  static String m38(label) => "${label} must be a URL";
+  static String m40(label) => "${label} must be a URL";
 
-  static String m39(label) => "Copied ${label}";
+  static String m41(label) => "Copied ${label}";
 
-  static String m40(colo, ip) =>
+  static String m42(colo, ip) =>
       "🎉 Diagnostics passed. WARP is active (colo: ${colo}, exit: ${ip})";
 
-  static String m41(name) => "Dialer set to ${name}";
+  static String m43(name) => "Dialer set to ${name}";
 
-  static String m42(code) => "Edge node ${code}";
+  static String m44(code) => "Edge node ${code}";
 
-  static String m43(ip) => "Using the fastest node: ${ip}";
+  static String m45(ip) => "Using the fastest node: ${ip}";
 
-  static String m44(ip) => "Using ${ip}";
+  static String m46(ip) => "Using ${ip}";
 
-  static String m45(ip) =>
+  static String m47(ip) =>
       "Note: connected to exit ${ip} but no WARP signature was found - check the dialer";
 
-  static String m46(loc) => "Region: ${loc}";
+  static String m48(loc) => "Region: ${loc}";
 
-  static String m47(label) => "Switched to ${label}";
+  static String m49(label) => "Switched to ${label}";
 
-  static String m48(count) =>
+  static String m50(count) =>
       "${Intl.plural(count, one: 'year', other: 'years')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
@@ -198,14 +203,65 @@ class MessageLookup extends MessageLookupByLibrary {
     "ageSecretKeyOptional": MessageLookupByLibrary.simpleMessage(
       "Age Secret Key (Optional)",
     ),
+    "aggregateBaseProfile": MessageLookupByLibrary.simpleMessage(
+      "Current subscription (base)",
+    ),
+    "aggregateCurrent": MessageLookupByLibrary.simpleMessage("Current"),
+    "aggregateDesc": MessageLookupByLibrary.simpleMessage(
+      "Merge nodes from multiple subscriptions into one aggregate group",
+    ),
+    "aggregateFullMerge": MessageLookupByLibrary.simpleMessage("Full merge"),
+    "aggregateFullMergeDesc": MessageLookupByLibrary.simpleMessage(
+      "Merge nodes, groups, rules and scripts; rename conflicts with the member prefix",
+    ),
+    "aggregateGroupAuto": MessageLookupByLibrary.simpleMessage(
+      "Aggregate auto",
+    ),
+    "aggregateGroupNodes": MessageLookupByLibrary.simpleMessage(
+      "Aggregate nodes",
+    ),
     "aggregateJoin": MessageLookupByLibrary.simpleMessage(
       "Join the aggregate group",
     ),
     "aggregateJoinDesc": MessageLookupByLibrary.simpleMessage(
       "Merges this profile\'s nodes into the aggregate group",
     ),
+    "aggregateManage": MessageLookupByLibrary.simpleMessage("Manage aggregate"),
+    "aggregateMemberAuto": m2,
+    "aggregateMemberGroup": m3,
+    "aggregateMemberScriptNote": MessageLookupByLibrary.simpleMessage(
+      "Member scripts run only when that profile has script override enabled; node-pool mode does not merge member rules or groups.",
+    ),
+    "aggregateMembers": MessageLookupByLibrary.simpleMessage("Members"),
+    "aggregateMode": MessageLookupByLibrary.simpleMessage("Merge mode"),
+    "aggregateNoMembers": MessageLookupByLibrary.simpleMessage(
+      "No subscription has joined the aggregate yet",
+    ),
+    "aggregateNodePool": MessageLookupByLibrary.simpleMessage("Node pool"),
+    "aggregateNodePoolDesc": MessageLookupByLibrary.simpleMessage(
+      "Merge nodes only; keep the current rules and groups",
+    ),
+    "aggregateNotCurrent": MessageLookupByLibrary.simpleMessage("Member"),
     "aggregatePrefix": MessageLookupByLibrary.simpleMessage(
       "Aggregate prefix (empty uses the profile name)",
+    ),
+    "aggregatePreviewNote": MessageLookupByLibrary.simpleMessage(
+      "Ports, TUN and DNS always come from the current app settings.",
+    ),
+    "aggregateScriptAfter": MessageLookupByLibrary.simpleMessage(
+      "After merge (recommended)",
+    ),
+    "aggregateScriptAfterDesc": MessageLookupByLibrary.simpleMessage(
+      "Merge all nodes first, then run the override script once over the combined config",
+    ),
+    "aggregateScriptBefore": MessageLookupByLibrary.simpleMessage(
+      "Before merge",
+    ),
+    "aggregateScriptTiming": MessageLookupByLibrary.simpleMessage(
+      "Script timing",
+    ),
+    "aggregateTitle": MessageLookupByLibrary.simpleMessage(
+      "Aggregate profiles",
     ),
     "ago": MessageLookupByLibrary.simpleMessage(" ago"),
     "agree": MessageLookupByLibrary.simpleMessage("Agree"),
@@ -298,7 +354,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "basicConfigDesc": MessageLookupByLibrary.simpleMessage(
       "Global core settings",
     ),
-    "batchCheckingProgress": m2,
+    "batchCheckingProgress": m4,
     "batchImportLinks": MessageLookupByLibrary.simpleMessage(
       "Batch import links",
     ),
@@ -311,7 +367,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "batchImportShareLinks": MessageLookupByLibrary.simpleMessage(
       "Batch import share links",
     ),
-    "batchImportSuccess": m3,
+    "batchImportSuccess": m5,
     "batchImportSupportHint": MessageLookupByLibrary.simpleMessage(
       "Supports single/multi-line links or YAML/JSON node snippets:",
     ),
@@ -353,7 +409,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "cardFollowMain": MessageLookupByLibrary.simpleMessage(
       "Follow main selector",
     ),
-    "cardHopValue": m4,
+    "cardHopValue": m6,
     "cardNodeSelect": MessageLookupByLibrary.simpleMessage("Choose a node"),
     "cardSelect": MessageLookupByLibrary.simpleMessage("Select"),
     "categoryAi": MessageLookupByLibrary.simpleMessage("AI"),
@@ -392,7 +448,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainDiagnosticsOk": MessageLookupByLibrary.simpleMessage(
       "A probe ran; open for the topology it used.",
     ),
-    "chainDialerValue": m5,
+    "chainDialerValue": m7,
     "chainDisabled": MessageLookupByLibrary.simpleMessage("Off"),
     "chainEdit": MessageLookupByLibrary.simpleMessage("Edit"),
     "chainEditLanding": MessageLookupByLibrary.simpleMessage(
@@ -504,12 +560,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "Configure an entry hop and a static residential landing IP",
     ),
     "chainReady": MessageLookupByLibrary.simpleMessage("Ready"),
-    "chainRelayIndex": m6,
+    "chainRelayIndex": m8,
     "chainResetFilter": MessageLookupByLibrary.simpleMessage("Reset filter"),
     "chainResidentialExample": MessageLookupByLibrary.simpleMessage(
       "e.g. US residential 01",
     ),
-    "chainResidentialIp": m7,
+    "chainResidentialIp": m9,
     "chainSearchNode": MessageLookupByLibrary.simpleMessage("Search nodes"),
     "chainShareLabel": MessageLookupByLibrary.simpleMessage("Share"),
     "chainSpeedTest": MessageLookupByLibrary.simpleMessage("Test"),
@@ -572,7 +628,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "clearInvalidProxies": MessageLookupByLibrary.simpleMessage(
       "Remove unavailable nodes",
     ),
-    "clearedInvalidCount": m8,
+    "clearedInvalidCount": m10,
     "clipboard": MessageLookupByLibrary.simpleMessage("Clipboard"),
     "clipboardDesc": MessageLookupByLibrary.simpleMessage(
       "Get profile link from clipboard",
@@ -603,7 +659,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Remove every residential IP that failed the check?",
     ),
     "confirmDelete": MessageLookupByLibrary.simpleMessage("Confirm deletion"),
-    "confirmDeleteNodeMsg": m9,
+    "confirmDeleteNodeMsg": m11,
     "confirmImport": MessageLookupByLibrary.simpleMessage("Confirm import"),
     "confirmPassword": MessageLookupByLibrary.simpleMessage("Confirm password"),
     "connection": MessageLookupByLibrary.simpleMessage("Active"),
@@ -663,8 +719,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "createEmptyGroupHint": MessageLookupByLibrary.simpleMessage(
       "After creating a blank group, you can manually add nodes for each protocol or import share links in bulk with one click.",
     ),
-    "createGroupFailed": m10,
-    "createGroupSuccess": m11,
+    "createGroupFailed": m12,
+    "createGroupSuccess": m13,
     "creationTime": MessageLookupByLibrary.simpleMessage("Creation Time"),
     "custom": MessageLookupByLibrary.simpleMessage("Custom"),
     "customConfigHintText": MessageLookupByLibrary.simpleMessage(
@@ -699,7 +755,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Manually switch dark app icon",
     ),
     "dashboard": MessageLookupByLibrary.simpleMessage("Home"),
-    "days": m12,
+    "days": m14,
     "dedicatedGroup": MessageLookupByLibrary.simpleMessage(
       "Create a dedicated chain proxy group",
     ),
@@ -728,9 +784,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "delaySort": MessageLookupByLibrary.simpleMessage("Sort by Delay"),
     "delete": MessageLookupByLibrary.simpleMessage("Delete"),
-    "deleteMultipTip": m13,
+    "deleteMultipTip": m15,
     "deleteNode": MessageLookupByLibrary.simpleMessage("Delete node"),
-    "deleteTip": m14,
+    "deleteTip": m16,
     "deleteTunnel": MessageLookupByLibrary.simpleMessage("Delete Forwarding"),
     "desc": MessageLookupByLibrary.simpleMessage(
       "Fluxora is based on the powerful and flexible Mihomo (Clash.Meta) proxy kernel, dedicated to a superior user experience. Our vision: Clear routes, calm control",
@@ -809,7 +865,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "emptyLandingTip": MessageLookupByLibrary.simpleMessage(
       "No residential landing nodes yet. Paste in the common formats used by major residential IP providers (IPRoyal, LunaProxy, Oxylabs and others) to import them in one click.",
     ),
-    "emptyTip": m15,
+    "emptyTip": m17,
     "enableChainProxy": MessageLookupByLibrary.simpleMessage(
       "Enable Chain Proxy",
     ),
@@ -858,7 +914,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "excludeDesc": MessageLookupByLibrary.simpleMessage(
       "Hide app from recent tasks list",
     ),
-    "existsTip": m16,
+    "existsTip": m18,
     "exit": MessageLookupByLibrary.simpleMessage("Exit"),
     "expand": MessageLookupByLibrary.simpleMessage("Standard"),
     "experimental": MessageLookupByLibrary.simpleMessage("Experimental"),
@@ -888,7 +944,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "failoverEnableFirst": MessageLookupByLibrary.simpleMessage(
       "Enable chain proxy first",
     ),
-    "failoverFailed": m17,
+    "failoverFailed": m19,
     "failoverInProgress": MessageLookupByLibrary.simpleMessage("Failing over…"),
     "failoverManualHint": MessageLookupByLibrary.simpleMessage(
       "Switch to a backup candidate manually when the chain fails",
@@ -899,7 +955,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "failoverNoCandidatesAdvice": MessageLookupByLibrary.simpleMessage(
       "Add a backup candidate for at least one role above, then try again",
     ),
-    "failoverSuccess": m18,
+    "failoverSuccess": m20,
     "failoverTrigger": MessageLookupByLibrary.simpleMessage("Fail over now"),
     "failoverTriggerReason": MessageLookupByLibrary.simpleMessage(
       "User triggered failover manually",
@@ -1063,7 +1119,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "hotkeyManagementDesc": MessageLookupByLibrary.simpleMessage(
       "Control app via keyboard",
     ),
-    "hours": m19,
+    "hours": m21,
     "httpPortSniffer": MessageLookupByLibrary.simpleMessage(
       "HTTP Port Sniffing",
     ),
@@ -1084,7 +1140,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "importShareLinks": MessageLookupByLibrary.simpleMessage(
       "Import share links",
     ),
-    "importSuccessCount": m20,
+    "importSuccessCount": m22,
     "importUrl": MessageLookupByLibrary.simpleMessage("Import from URL"),
     "infiniteTime": MessageLookupByLibrary.simpleMessage("Never Expires"),
     "inheritDefaultDialer": MessageLookupByLibrary.simpleMessage(
@@ -1164,7 +1220,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Allow IPv6 inbound",
     ),
     "isp": MessageLookupByLibrary.simpleMessage("ISP"),
-    "itemsCount": m21,
+    "itemsCount": m23,
     "jcLabel": MessageLookupByLibrary.simpleMessage("Jc (junk packet count)"),
     "juicityPassword": MessageLookupByLibrary.simpleMessage(
       "Juicity password (fill UUID above)",
@@ -1279,11 +1335,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "minimizeOnExitDesc": MessageLookupByLibrary.simpleMessage(
       "Override default exit behavior",
     ),
-    "minutes": m22,
+    "minutes": m24,
     "mixedPort": MessageLookupByLibrary.simpleMessage("Mixed Port"),
     "mode": MessageLookupByLibrary.simpleMessage("Mode"),
     "monochromeScheme": MessageLookupByLibrary.simpleMessage("Monochrome"),
-    "months": m23,
+    "months": m25,
     "more": MessageLookupByLibrary.simpleMessage("More"),
     "moreIpInfo": MessageLookupByLibrary.simpleMessage("More IP Information"),
     "name": MessageLookupByLibrary.simpleMessage("Name"),
@@ -1366,14 +1422,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "noResolve": MessageLookupByLibrary.simpleMessage("No Resolve"),
     "noStatusAvailable": MessageLookupByLibrary.simpleMessage("No Status"),
     "noUsageData": MessageLookupByLibrary.simpleMessage("No usage data"),
-    "nodeAdded": m24,
-    "nodeDeleted": m25,
+    "nodeAdded": m26,
+    "nodeDeleted": m27,
     "nodeDetailCancel": MessageLookupByLibrary.simpleMessage("Cancel"),
     "nodeDetailClose": MessageLookupByLibrary.simpleMessage("Close"),
     "nodeDetailCopied": MessageLookupByLibrary.simpleMessage("Copied"),
     "nodeDetailCopyConfig": MessageLookupByLibrary.simpleMessage("Copy config"),
     "nodeDetailEdit": MessageLookupByLibrary.simpleMessage("Edit"),
-    "nodeDetailEditTitle": m26,
+    "nodeDetailEditTitle": m28,
     "nodeDetailMissing": MessageLookupByLibrary.simpleMessage(
       "No original config for this node - it may come from a group or have been replaced by a subscription update",
     ),
@@ -1401,9 +1457,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "nodeExportEmpty": MessageLookupByLibrary.simpleMessage("Nothing selected"),
     "nodeExportTitle": MessageLookupByLibrary.simpleMessage("Exported links"),
-    "nodeManagement": m27,
+    "nodeManagement": m29,
     "nodeName": MessageLookupByLibrary.simpleMessage("Node Name"),
-    "nodeNameHint": m28,
+    "nodeNameHint": m30,
     "nodeNameLabel": MessageLookupByLibrary.simpleMessage("Node name"),
     "nodeProtocol": MessageLookupByLibrary.simpleMessage("Node protocol"),
     "nodeSelectAll": MessageLookupByLibrary.simpleMessage("Select all"),
@@ -1434,8 +1490,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "nullProfileDesc": MessageLookupByLibrary.simpleMessage(
       "No profile. Please add one.",
     ),
-    "nullTip": m29,
-    "numberTip": m30,
+    "nullTip": m31,
+    "numberTip": m32,
     "obfsModeLabel": MessageLookupByLibrary.simpleMessage("Obfs mode"),
     "obfsNoneOff": MessageLookupByLibrary.simpleMessage("None (off)"),
     "officialCommunity": MessageLookupByLibrary.simpleMessage(
@@ -1571,9 +1627,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "portFallbackDesc": MessageLookupByLibrary.simpleMessage(
       "Use another port when the configured one is already taken",
     ),
-    "portFallbackNotice": m31,
+    "portFallbackNotice": m33,
     "portLabel": MessageLookupByLibrary.simpleMessage("Port"),
-    "portTip": m32,
+    "portTip": m34,
     "powerSwitch": MessageLookupByLibrary.simpleMessage("Power"),
     "preProxyOptionCustom": MessageLookupByLibrary.simpleMessage(
       "✏️ Manually enter pre-proxy node name...",
@@ -1612,7 +1668,7 @@ class MessageLookup extends MessageLookupByLibrary {
         MessageLookupByLibrary.simpleMessage("Please enter a valid interval"),
     "profileAutoUpdateIntervalNullValidationDesc":
         MessageLookupByLibrary.simpleMessage("Please enter update interval"),
-    "profileChainDialogTitle": m33,
+    "profileChainDialogTitle": m35,
     "profileChainProxies": MessageLookupByLibrary.simpleMessage(
       "Pre and landing proxies",
     ),
@@ -1625,7 +1681,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "profileHasUpdate": MessageLookupByLibrary.simpleMessage(
       "Profile modified. Disable auto-update?",
     ),
-    "profileImportFailed": m34,
+    "profileImportFailed": m36,
     "profileManageNodes": MessageLookupByLibrary.simpleMessage(
       "Manage / add nodes",
     ),
@@ -1844,7 +1900,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Select Backup Version",
     ),
     "selected": MessageLookupByLibrary.simpleMessage("Selected"),
-    "selectedCountTitle": m35,
+    "selectedCountTitle": m37,
     "serverAddress": MessageLookupByLibrary.simpleMessage("Server Address"),
     "serverAddressHint": MessageLookupByLibrary.simpleMessage("IP or domain"),
     "serverAddressLabel": MessageLookupByLibrary.simpleMessage(
@@ -1899,7 +1955,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "smartAutoStopServiceRunning": MessageLookupByLibrary.simpleMessage(
       "Smart Auto-Stop running",
     ),
-    "smartCheckFailed": m36,
+    "smartCheckFailed": m38,
     "smartCheckNow": MessageLookupByLibrary.simpleMessage("Check now"),
     "smartChecking": MessageLookupByLibrary.simpleMessage("Checking…"),
     "smartDelayLaunch": MessageLookupByLibrary.simpleMessage("Smart Delay"),
@@ -1975,7 +2031,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "statusDesc": MessageLookupByLibrary.simpleMessage(
       "Uses system DNS when disabled",
     ),
-    "stillUsingProfile": m37,
+    "stillUsingProfile": m39,
     "stop": MessageLookupByLibrary.simpleMessage("Stop"),
     "stopVpn": MessageLookupByLibrary.simpleMessage("Stopping..."),
     "storeFix": MessageLookupByLibrary.simpleMessage("Store Fix"),
@@ -2298,7 +2354,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "upload": MessageLookupByLibrary.simpleMessage("Upload"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage("Get profile via URL"),
-    "urlTip": m38,
+    "urlTip": m40,
     "useGlobalScriptOverride": MessageLookupByLibrary.simpleMessage(
       "Use Global Script Override",
     ),
@@ -2337,12 +2393,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "wakelockDescription": MessageLookupByLibrary.simpleMessage(
       "Keeps the screen on and app active in the background without requiring special CPU wakelock permissions.",
     ),
-    "warpCopied": m39,
-    "warpDiagOk": m40,
-    "warpDialerSet": m41,
-    "warpEdgeNode": m42,
-    "warpFastestChosen": m43,
-    "warpIpChosen": m44,
+    "warpCopied": m41,
+    "warpDiagOk": m42,
+    "warpDialerSet": m43,
+    "warpEdgeNode": m44,
+    "warpFastestChosen": m45,
+    "warpIpChosen": m46,
     "warpModeAll": MessageLookupByLibrary.simpleMessage(
       "Route everything through WARP",
     ),
@@ -2362,8 +2418,8 @@ class MessageLookup extends MessageLookupByLibrary {
       "Routes Google, OpenAI, Claude and Gemini through WARP; everything else keeps the provider\'s native speed",
     ),
     "warpModeTitle": MessageLookupByLibrary.simpleMessage("Routing mode"),
-    "warpNoSignature": m45,
-    "warpRegion": m46,
+    "warpNoSignature": m47,
+    "warpRegion": m48,
     "warpRouteProxyOverWarp": MessageLookupByLibrary.simpleMessage(
       "Route the proxy through WARP",
     ),
@@ -2594,7 +2650,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpStr99": MessageLookupByLibrary.simpleMessage(
       "Choose the WireGuard MTU",
     ),
-    "warpSwitchedTo": m47,
+    "warpSwitchedTo": m49,
     "warpUnknownColo": MessageLookupByLibrary.simpleMessage(
       "Unknown edge node",
     ),
@@ -2611,6 +2667,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "wrongBackupPassword": MessageLookupByLibrary.simpleMessage(
       "Wrong password or the backup was tampered with",
     ),
-    "years": m48,
+    "years": m50,
   };
 }

@@ -11489,6 +11489,236 @@ class AppLocalizations {
   String get open {
     return Intl.message('Open', name: 'open', desc: '', args: []);
   }
+
+  /// `Aggregate profiles`
+  String get aggregateTitle {
+    return Intl.message(
+      'Aggregate profiles',
+      name: 'aggregateTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Merge nodes from multiple subscriptions into one aggregate group`
+  String get aggregateDesc {
+    return Intl.message(
+      'Merge nodes from multiple subscriptions into one aggregate group',
+      name: 'aggregateDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Current subscription (base)`
+  String get aggregateBaseProfile {
+    return Intl.message(
+      'Current subscription (base)',
+      name: 'aggregateBaseProfile',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Node pool`
+  String get aggregateNodePool {
+    return Intl.message(
+      'Node pool',
+      name: 'aggregateNodePool',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Merge nodes only; keep the current rules and groups`
+  String get aggregateNodePoolDesc {
+    return Intl.message(
+      'Merge nodes only; keep the current rules and groups',
+      name: 'aggregateNodePoolDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Merge mode`
+  String get aggregateMode {
+    return Intl.message(
+      'Merge mode',
+      name: 'aggregateMode',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Full merge`
+  String get aggregateFullMerge {
+    return Intl.message(
+      'Full merge',
+      name: 'aggregateFullMerge',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Merge nodes, groups, rules and scripts; rename conflicts with the member prefix`
+  String get aggregateFullMergeDesc {
+    return Intl.message(
+      'Merge nodes, groups, rules and scripts; rename conflicts with the member prefix',
+      name: 'aggregateFullMergeDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Script timing`
+  String get aggregateScriptTiming {
+    return Intl.message(
+      'Script timing',
+      name: 'aggregateScriptTiming',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Before merge`
+  String get aggregateScriptBefore {
+    return Intl.message(
+      'Before merge',
+      name: 'aggregateScriptBefore',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `After merge (recommended)`
+  String get aggregateScriptAfter {
+    return Intl.message(
+      'After merge (recommended)',
+      name: 'aggregateScriptAfter',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Merge all nodes first, then run the override script once over the combined config`
+  String get aggregateScriptAfterDesc {
+    return Intl.message(
+      'Merge all nodes first, then run the override script once over the combined config',
+      name: 'aggregateScriptAfterDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Members`
+  String get aggregateMembers {
+    return Intl.message(
+      'Members',
+      name: 'aggregateMembers',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No subscription has joined the aggregate yet`
+  String get aggregateNoMembers {
+    return Intl.message(
+      'No subscription has joined the aggregate yet',
+      name: 'aggregateNoMembers',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{alias} nodes`
+  String aggregateMemberGroup(Object alias) {
+    return Intl.message(
+      '$alias nodes',
+      name: 'aggregateMemberGroup',
+      desc: '',
+      args: [alias],
+    );
+  }
+
+  /// `{alias} auto`
+  String aggregateMemberAuto(Object alias) {
+    return Intl.message(
+      '$alias auto',
+      name: 'aggregateMemberAuto',
+      desc: '',
+      args: [alias],
+    );
+  }
+
+  /// `Aggregate nodes`
+  String get aggregateGroupNodes {
+    return Intl.message(
+      'Aggregate nodes',
+      name: 'aggregateGroupNodes',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Aggregate auto`
+  String get aggregateGroupAuto {
+    return Intl.message(
+      'Aggregate auto',
+      name: 'aggregateGroupAuto',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Ports, TUN and DNS always come from the current app settings.`
+  String get aggregatePreviewNote {
+    return Intl.message(
+      'Ports, TUN and DNS always come from the current app settings.',
+      name: 'aggregatePreviewNote',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Current`
+  String get aggregateCurrent {
+    return Intl.message(
+      'Current',
+      name: 'aggregateCurrent',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Member`
+  String get aggregateNotCurrent {
+    return Intl.message(
+      'Member',
+      name: 'aggregateNotCurrent',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Manage aggregate`
+  String get aggregateManage {
+    return Intl.message(
+      'Manage aggregate',
+      name: 'aggregateManage',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Member scripts run only when that profile has script override enabled; node-pool mode does not merge member rules or groups.`
+  String get aggregateMemberScriptNote {
+    return Intl.message(
+      'Member scripts run only when that profile has script override enabled; node-pool mode does not merge member rules or groups.',
+      name: 'aggregateMemberScriptNote',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {
