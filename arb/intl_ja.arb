@@ -1315,5 +1315,21 @@
   "nodeSelectAll": "すべて選択",
   "nodeExportEmpty": "選択されていません",
   "nodeExportDone": "クリップボードにコピーしました",
-  "nodeExportTitle": "書き出したリンク"
+  "nodeExportTitle": "書き出したリンク",
+  "subscriptionWebsite": "サブスクリプションサイト",
+  "openSubscriptionWebsite": "サブスクリプションサイトを開く",
+  "setSubscriptionWebsite": "クイックリンクを設定",
+  "subscriptionWebsiteUrl": "クイックリンク",
+  "subscriptionWebsiteLabel": "表示名（任意）",
+  "subscriptionWebsiteLabelHint": "公式サイト / 更新",
+  "subscriptionWebsiteHelp": "システムのブラウザで開きます。Fluxora はページの内容を読み取りません。",
+  "subscriptionWebsiteInvalid": "有効な http/https URL を入力してください",
+  "subscriptionWebsiteFromSubscription": "サブスクリプションから",
+  "subscriptionWebsiteManual": "手動設定",
+  "subscriptionWebsiteSuggested": "サブスクリプションのドメインを使用",
+  "subscriptionWebsiteTrustTitle": "サブスクリプションサイトを開きますか？",
+  "subscriptionWebsiteTrustDesc": "このリンクはサブスクリプションから提供されています。ドメインを確認してから開いてください。",
+  "subscriptionWebsiteTrustRemember": "このサイトでは今後確認しない",
+  "subscriptionWebsiteOpenFailed": "ブラウザを開けませんでした",
+  "open": "開く"
 }

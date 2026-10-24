@@ -1315,5 +1315,21 @@
   "nodeSelectAll": "انتخاب همه",
   "nodeExportEmpty": "چیزی انتخاب نشده",
   "nodeExportDone": "کپی شد",
-  "nodeExportTitle": "پیوندهای خروجی"
+  "nodeExportTitle": "پیوندهای خروجی",
+  "subscriptionWebsite": "وب‌سایت اشتراک",
+  "openSubscriptionWebsite": "باز کردن وب‌سایت اشتراک",
+  "setSubscriptionWebsite": "تنظیم پیوند سریع",
+  "subscriptionWebsiteUrl": "پیوند سریع",
+  "subscriptionWebsiteLabel": "نام نمایشی (اختیاری)",
+  "subscriptionWebsiteLabelHint": "وب‌سایت / تمدید",
+  "subscriptionWebsiteHelp": "در مرورگر سیستم باز می‌شود. Fluxora محتوای صفحه را نمی‌خواند.",
+  "subscriptionWebsiteInvalid": "یک URL معتبر http/https وارد کنید",
+  "subscriptionWebsiteFromSubscription": "از اشتراک",
+  "subscriptionWebsiteManual": "تنظیم دستی",
+  "subscriptionWebsiteSuggested": "استفاده از دامنه اشتراک",
+  "subscriptionWebsiteTrustTitle": "وب‌سایت اشتراک باز شود؟",
+  "subscriptionWebsiteTrustDesc": "این پیوند از اشتراک ارائه شده است. پیش از باز کردن، دامنه را تأیید کنید.",
+  "subscriptionWebsiteTrustRemember": "دیگر برای این سایت نپرس",
+  "subscriptionWebsiteOpenFailed": "مرورگر باز نشد",
+  "open": "باز کردن"
 }

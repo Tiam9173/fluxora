@@ -1319,5 +1319,21 @@
   "nodeSelectAll": "Выбрать все",
   "nodeExportEmpty": "Ничего не выбрано",
   "nodeExportDone": "Скопировано",
-  "nodeExportTitle": "Экспортированные ссылки"
+  "nodeExportTitle": "Экспортированные ссылки",
+  "subscriptionWebsite": "Сайт подписки",
+  "openSubscriptionWebsite": "Открыть сайт подписки",
+  "setSubscriptionWebsite": "Настроить быструю ссылку",
+  "subscriptionWebsiteUrl": "Быстрая ссылка",
+  "subscriptionWebsiteLabel": "Отображаемое имя (необязательно)",
+  "subscriptionWebsiteLabelHint": "Сайт / Продление",
+  "subscriptionWebsiteHelp": "Откроется в системном браузере. Fluxora не читает содержимое страницы.",
+  "subscriptionWebsiteInvalid": "Введите корректный URL http/https",
+  "subscriptionWebsiteFromSubscription": "Из подписки",
+  "subscriptionWebsiteManual": "Вручную",
+  "subscriptionWebsiteSuggested": "Использовать домен подписки",
+  "subscriptionWebsiteTrustTitle": "Открыть сайт подписки?",
+  "subscriptionWebsiteTrustDesc": "Эта ссылка предоставлена подпиской. Проверьте домен перед открытием.",
+  "subscriptionWebsiteTrustRemember": "Больше не спрашивать для этого сайта",
+  "subscriptionWebsiteOpenFailed": "Не удалось открыть браузер",
+  "open": "Открыть"
 }

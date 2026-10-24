@@ -27,6 +27,11 @@ _Profile _$ProfileFromJson(Map<String, dynamic> json) => _Profile(
   label: json['label'] as String?,
   currentGroupName: json['currentGroupName'] as String?,
   url: json['url'] as String? ?? '',
+  portalUrl: json['portalUrl'] as String? ?? '',
+  portalLabel: json['portalLabel'] as String? ?? '',
+  portalSource:
+      $enumDecodeNullable(_$ProfilePortalSourceEnumMap, json['portalSource']) ??
+      ProfilePortalSource.unset,
   lastUpdateDate: json['lastUpdateDate'] == null
       ? null
       : DateTime.parse(json['lastUpdateDate'] as String),
@@ -66,6 +71,9 @@ Map<String, dynamic> _$ProfileToJson(_Profile instance) => <String, dynamic>{
   'label': instance.label,
   'currentGroupName': instance.currentGroupName,
   'url': instance.url,
+  'portalUrl': instance.portalUrl,
+  'portalLabel': instance.portalLabel,
+  'portalSource': _$ProfilePortalSourceEnumMap[instance.portalSource]!,
   'lastUpdateDate': instance.lastUpdateDate?.toIso8601String(),
   'autoUpdateDuration': instance.autoUpdateDuration.inMicroseconds,
   'subscriptionInfo': instance.subscriptionInfo,
@@ -78,6 +86,12 @@ Map<String, dynamic> _$ProfileToJson(_Profile instance) => <String, dynamic>{
   'group-switches': instance.groupSwitches,
   'joinAggregate': instance.joinAggregate,
   'aggregateAlias': instance.aggregateAlias,
+};
+
+const _$ProfilePortalSourceEnumMap = {
+  ProfilePortalSource.unset: 'unset',
+  ProfilePortalSource.subscription: 'subscription',
+  ProfilePortalSource.manual: 'manual',
 };
 
 _OverrideData _$OverrideDataFromJson(Map<String, dynamic> json) =>

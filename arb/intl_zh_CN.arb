@@ -1315,5 +1315,21 @@
   "nodeSelectAll": "全选",
   "nodeExportEmpty": "未选择节点",
   "nodeExportDone": "已复制到剪贴板",
-  "nodeExportTitle": "导出的链接"
+  "nodeExportTitle": "导出的链接",
+  "subscriptionWebsite": "订阅网站",
+  "openSubscriptionWebsite": "打开订阅网站",
+  "setSubscriptionWebsite": "设置快捷链接",
+  "subscriptionWebsiteUrl": "快捷链接",
+  "subscriptionWebsiteLabel": "显示名称（可选）",
+  "subscriptionWebsiteLabelHint": "官网 / 续费",
+  "subscriptionWebsiteHelp": "将在系统浏览器打开，Fluxora 不会读取网页内容。",
+  "subscriptionWebsiteInvalid": "请输入有效的 http/https 链接",
+  "subscriptionWebsiteFromSubscription": "来自订阅",
+  "subscriptionWebsiteManual": "手动设置",
+  "subscriptionWebsiteSuggested": "使用订阅域名",
+  "subscriptionWebsiteTrustTitle": "打开订阅网站？",
+  "subscriptionWebsiteTrustDesc": "此链接由订阅提供，请确认域名后再打开。",
+  "subscriptionWebsiteTrustRemember": "不再询问此网站",
+  "subscriptionWebsiteOpenFailed": "无法打开浏览器",
+  "open": "打开"
 }

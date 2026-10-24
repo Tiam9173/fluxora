@@ -131,6 +131,33 @@ class Preferences {
         false;
   }
 
+  static const trustedPortalHostsKey = 'trustedPortalHosts';
+
+  Future<bool> isPortalHostTrusted(String host) async {
+    final normalized = host.trim().toLowerCase();
+    if (normalized.isEmpty) return false;
+    final preferences = await sharedPreferencesCompleter.future;
+    return preferences?.getStringList(trustedPortalHostsKey)?.contains(normalized) ??
+        false;
+  }
+
+  Future<void> trustPortalHost(String host) async {
+    final normalized = host.trim().toLowerCase();
+    if (normalized.isEmpty) return;
+    final preferences = await sharedPreferencesCompleter.future;
+    if (preferences == null) return;
+    final hosts = List<String>.from(
+      preferences.getStringList(trustedPortalHostsKey) ?? const [],
+    );
+    if (!hosts.contains(normalized)) {
+      hosts.add(normalized);
+      if (hosts.length > 50) {
+        hosts.removeRange(0, hosts.length - 50);
+      }
+      await preferences.setStringList(trustedPortalHostsKey, hosts);
+    }
+  }
+
   @visibleForTesting
   static const pendingAutoDelayTestAtKey = 'pendingAutoDelayTestAt';
 

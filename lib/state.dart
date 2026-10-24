@@ -644,6 +644,23 @@ class GlobalState {
     );
   }
 
+  /// Opens a validated web link in the system browser.
+  ///
+  /// Returns false instead of throwing when the URL is unsafe or no browser can
+  /// handle it; callers can offer a copy fallback.
+  Future<bool> openSafeWebUrl(String url) async {
+    if (!url.isSafeWebUrl) return false;
+    try {
+      return await launchUrl(
+        Uri.parse(url.trim()),
+        mode: LaunchMode.externalApplication,
+      );
+    } catch (e) {
+      commonPrint.log('openSafeWebUrl failed: $e');
+      return false;
+    }
+  }
+
   Future<void> openUrl(String url, {bool needConfirm = false}) async {
     if (needConfirm) {
       final res = await showMessage(

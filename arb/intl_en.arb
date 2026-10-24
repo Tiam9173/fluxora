@@ -1762,5 +1762,21 @@
   "nodeSelectAll": "Select all",
   "nodeExportEmpty": "Nothing selected",
   "nodeExportDone": "Copied to clipboard",
-  "nodeExportTitle": "Exported links"
+  "nodeExportTitle": "Exported links",
+  "subscriptionWebsite": "Subscription website",
+  "openSubscriptionWebsite": "Open subscription website",
+  "setSubscriptionWebsite": "Set quick link",
+  "subscriptionWebsiteUrl": "Quick link",
+  "subscriptionWebsiteLabel": "Display name (optional)",
+  "subscriptionWebsiteLabelHint": "Website / Renew",
+  "subscriptionWebsiteHelp": "Opens in your system browser. Fluxora does not read the page.",
+  "subscriptionWebsiteInvalid": "Enter a valid http/https URL",
+  "subscriptionWebsiteFromSubscription": "From subscription",
+  "subscriptionWebsiteManual": "Manual",
+  "subscriptionWebsiteSuggested": "Use subscription domain",
+  "subscriptionWebsiteTrustTitle": "Open subscription website?",
+  "subscriptionWebsiteTrustDesc": "This link comes from your subscription. Confirm the domain before opening.",
+  "subscriptionWebsiteTrustRemember": "Don't ask again for this site",
+  "subscriptionWebsiteOpenFailed": "Could not open browser",
+  "open": "Open"
 }

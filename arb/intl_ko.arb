@@ -1315,5 +1315,21 @@
   "nodeSelectAll": "전체 선택",
   "nodeExportEmpty": "선택된 노드 없음",
   "nodeExportDone": "클립보드에 복사됨",
-  "nodeExportTitle": "내보낸 링크"
+  "nodeExportTitle": "내보낸 링크",
+  "subscriptionWebsite": "구독 웹사이트",
+  "openSubscriptionWebsite": "구독 웹사이트 열기",
+  "setSubscriptionWebsite": "빠른 링크 설정",
+  "subscriptionWebsiteUrl": "빠른 링크",
+  "subscriptionWebsiteLabel": "표시 이름(선택)",
+  "subscriptionWebsiteLabelHint": "웹사이트 / 갱신",
+  "subscriptionWebsiteHelp": "시스템 브라우저에서 열립니다. Fluxora는 페이지 내용을 읽지 않습니다.",
+  "subscriptionWebsiteInvalid": "유효한 http/https URL을 입력하세요",
+  "subscriptionWebsiteFromSubscription": "구독에서 제공",
+  "subscriptionWebsiteManual": "수동 설정",
+  "subscriptionWebsiteSuggested": "구독 도메인 사용",
+  "subscriptionWebsiteTrustTitle": "구독 웹사이트를 열까요?",
+  "subscriptionWebsiteTrustDesc": "이 링크는 구독에서 제공됩니다. 도메인을 확인한 후 여세요.",
+  "subscriptionWebsiteTrustRemember": "이 사이트는 다시 묻지 않기",
+  "subscriptionWebsiteOpenFailed": "브라우저를 열 수 없습니다",
+  "open": "열기"
 }

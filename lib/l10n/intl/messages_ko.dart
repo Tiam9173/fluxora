@@ -1183,9 +1183,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "onlyStatisticsProxyDesc": MessageLookupByLibrary.simpleMessage(
       "프록시를 통과하는 트래픽만 계산",
     ),
+    "open": MessageLookupByLibrary.simpleMessage("열기"),
     "openDashboard": MessageLookupByLibrary.simpleMessage("Zashboard 열기"),
     "openGateway": MessageLookupByLibrary.simpleMessage("게이트웨이 열기"),
     "openSettings": MessageLookupByLibrary.simpleMessage("설정 열기"),
+    "openSubscriptionWebsite": MessageLookupByLibrary.simpleMessage(
+      "구독 웹사이트 열기",
+    ),
     "operatorOrAsn": MessageLookupByLibrary.simpleMessage("소속 / ASN"),
     "options": MessageLookupByLibrary.simpleMessage("옵션"),
     "other": MessageLookupByLibrary.simpleMessage("기타"),
@@ -1497,6 +1501,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "serviceReady": MessageLookupByLibrary.simpleMessage("서비스 준비 완료"),
     "serviceRunning": MessageLookupByLibrary.simpleMessage("서비스 실행 중"),
+    "setSubscriptionWebsite": MessageLookupByLibrary.simpleMessage("빠른 링크 설정"),
     "settings": MessageLookupByLibrary.simpleMessage("설정"),
     "show": MessageLookupByLibrary.simpleMessage("표시"),
     "showHiddenItems": MessageLookupByLibrary.simpleMessage("숨겨진 항목 표시"),
@@ -1600,6 +1605,39 @@ class MessageLookup extends MessageLookupByLibrary {
     "style": MessageLookupByLibrary.simpleMessage("스타일"),
     "subRule": MessageLookupByLibrary.simpleMessage("하위 규칙"),
     "submit": MessageLookupByLibrary.simpleMessage("제출"),
+    "subscriptionWebsite": MessageLookupByLibrary.simpleMessage("구독 웹사이트"),
+    "subscriptionWebsiteFromSubscription": MessageLookupByLibrary.simpleMessage(
+      "구독에서 제공",
+    ),
+    "subscriptionWebsiteHelp": MessageLookupByLibrary.simpleMessage(
+      "시스템 브라우저에서 열립니다. Fluxora는 페이지 내용을 읽지 않습니다.",
+    ),
+    "subscriptionWebsiteInvalid": MessageLookupByLibrary.simpleMessage(
+      "유효한 http/https URL을 입력하세요",
+    ),
+    "subscriptionWebsiteLabel": MessageLookupByLibrary.simpleMessage(
+      "표시 이름(선택)",
+    ),
+    "subscriptionWebsiteLabelHint": MessageLookupByLibrary.simpleMessage(
+      "웹사이트 / 갱신",
+    ),
+    "subscriptionWebsiteManual": MessageLookupByLibrary.simpleMessage("수동 설정"),
+    "subscriptionWebsiteOpenFailed": MessageLookupByLibrary.simpleMessage(
+      "브라우저를 열 수 없습니다",
+    ),
+    "subscriptionWebsiteSuggested": MessageLookupByLibrary.simpleMessage(
+      "구독 도메인 사용",
+    ),
+    "subscriptionWebsiteTrustDesc": MessageLookupByLibrary.simpleMessage(
+      "이 링크는 구독에서 제공됩니다. 도메인을 확인한 후 여세요.",
+    ),
+    "subscriptionWebsiteTrustRemember": MessageLookupByLibrary.simpleMessage(
+      "이 사이트는 다시 묻지 않기",
+    ),
+    "subscriptionWebsiteTrustTitle": MessageLookupByLibrary.simpleMessage(
+      "구독 웹사이트를 열까요?",
+    ),
+    "subscriptionWebsiteUrl": MessageLookupByLibrary.simpleMessage("빠른 링크"),
     "success": MessageLookupByLibrary.simpleMessage("성공"),
     "switchLabel": MessageLookupByLibrary.simpleMessage("스위치"),
     "switchProfileFailed": MessageLookupByLibrary.simpleMessage("구독 전환 실패"),

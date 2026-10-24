@@ -1075,9 +1075,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "onlyStatisticsProxyDesc": MessageLookupByLibrary.simpleMessage(
       "開啟後將只統計代理流量",
     ),
+    "open": MessageLookupByLibrary.simpleMessage("開啟"),
     "openDashboard": MessageLookupByLibrary.simpleMessage("打開 Zashboard"),
     "openGateway": MessageLookupByLibrary.simpleMessage("開啟閘道"),
     "openSettings": MessageLookupByLibrary.simpleMessage("打開設定"),
+    "openSubscriptionWebsite": MessageLookupByLibrary.simpleMessage("開啟訂閱網站"),
     "operatorOrAsn": MessageLookupByLibrary.simpleMessage("歸屬 / ASN"),
     "options": MessageLookupByLibrary.simpleMessage("選項"),
     "other": MessageLookupByLibrary.simpleMessage("其他"),
@@ -1357,6 +1359,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "serverAddressRequired": MessageLookupByLibrary.simpleMessage("請填寫伺服器位址"),
     "serviceReady": MessageLookupByLibrary.simpleMessage("服務已就緒"),
     "serviceRunning": MessageLookupByLibrary.simpleMessage("服務正在執行中"),
+    "setSubscriptionWebsite": MessageLookupByLibrary.simpleMessage("設定快捷連結"),
     "settings": MessageLookupByLibrary.simpleMessage("設定"),
     "show": MessageLookupByLibrary.simpleMessage("顯示"),
     "showHiddenItems": MessageLookupByLibrary.simpleMessage("顯示隱藏項"),
@@ -1446,6 +1449,39 @@ class MessageLookup extends MessageLookupByLibrary {
     "style": MessageLookupByLibrary.simpleMessage("風格"),
     "subRule": MessageLookupByLibrary.simpleMessage("子規則"),
     "submit": MessageLookupByLibrary.simpleMessage("提交"),
+    "subscriptionWebsite": MessageLookupByLibrary.simpleMessage("訂閱網站"),
+    "subscriptionWebsiteFromSubscription": MessageLookupByLibrary.simpleMessage(
+      "來自訂閱",
+    ),
+    "subscriptionWebsiteHelp": MessageLookupByLibrary.simpleMessage(
+      "將在系統瀏覽器開啟，Fluxora 不會讀取網頁內容。",
+    ),
+    "subscriptionWebsiteInvalid": MessageLookupByLibrary.simpleMessage(
+      "請輸入有效的 http/https 連結",
+    ),
+    "subscriptionWebsiteLabel": MessageLookupByLibrary.simpleMessage(
+      "顯示名稱（選填）",
+    ),
+    "subscriptionWebsiteLabelHint": MessageLookupByLibrary.simpleMessage(
+      "官網 / 續費",
+    ),
+    "subscriptionWebsiteManual": MessageLookupByLibrary.simpleMessage("手動設定"),
+    "subscriptionWebsiteOpenFailed": MessageLookupByLibrary.simpleMessage(
+      "無法開啟瀏覽器",
+    ),
+    "subscriptionWebsiteSuggested": MessageLookupByLibrary.simpleMessage(
+      "使用訂閱網域",
+    ),
+    "subscriptionWebsiteTrustDesc": MessageLookupByLibrary.simpleMessage(
+      "此連結由訂閱提供，請確認網域後再開啟。",
+    ),
+    "subscriptionWebsiteTrustRemember": MessageLookupByLibrary.simpleMessage(
+      "不再詢問此網站",
+    ),
+    "subscriptionWebsiteTrustTitle": MessageLookupByLibrary.simpleMessage(
+      "開啟訂閱網站？",
+    ),
+    "subscriptionWebsiteUrl": MessageLookupByLibrary.simpleMessage("快捷連結"),
     "success": MessageLookupByLibrary.simpleMessage("Success"),
     "switchLabel": MessageLookupByLibrary.simpleMessage("開關"),
     "switchProfileFailed": MessageLookupByLibrary.simpleMessage("切換訂閱失敗"),

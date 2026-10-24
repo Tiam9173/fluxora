@@ -11,6 +11,30 @@ extension StringExtension on String {
     return RegExp(r'^(http|https|ftp)://').hasMatch(this);
   }
 
+  /// A user-facing web link: http/https only, no embedded credentials, and
+  /// bounded so a pasted blob cannot reach the launcher.
+  bool get isSafeWebUrl {
+    final value = trim();
+    if (value.isEmpty || value.length > 2048 || value.contains(RegExp(r'\s'))) {
+      return false;
+    }
+    final uri = Uri.tryParse(value);
+    if (uri == null || uri.host.isEmpty || uri.userInfo.isNotEmpty) {
+      return false;
+    }
+    return uri.scheme == 'http' || uri.scheme == 'https';
+  }
+
+  String? get webUrlHost {
+    if (!isSafeWebUrl) return null;
+    return Uri.tryParse(trim())?.host.toLowerCase();
+  }
+
+  String? get webUrlOrigin {
+    if (!isSafeWebUrl) return null;
+    return Uri.tryParse(trim())?.origin;
+  }
+
   dynamic get splitByMultipleSeparators {
     final parts = split(
       RegExp(r'[, ;]+'),

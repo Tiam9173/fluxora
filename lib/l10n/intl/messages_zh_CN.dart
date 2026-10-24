@@ -1061,9 +1061,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "onlyStatisticsProxyDesc": MessageLookupByLibrary.simpleMessage(
       "开启后将只统计代理流量",
     ),
+    "open": MessageLookupByLibrary.simpleMessage("打开"),
     "openDashboard": MessageLookupByLibrary.simpleMessage("打开 Zashboard"),
     "openGateway": MessageLookupByLibrary.simpleMessage("打开网关"),
     "openSettings": MessageLookupByLibrary.simpleMessage("打开设置"),
+    "openSubscriptionWebsite": MessageLookupByLibrary.simpleMessage("打开订阅网站"),
     "operatorOrAsn": MessageLookupByLibrary.simpleMessage("归属 / ASN"),
     "options": MessageLookupByLibrary.simpleMessage("选项"),
     "other": MessageLookupByLibrary.simpleMessage("其他"),
@@ -1345,6 +1347,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "serverAddressRequired": MessageLookupByLibrary.simpleMessage("请填写服务器地址"),
     "serviceReady": MessageLookupByLibrary.simpleMessage("服务已就绪"),
     "serviceRunning": MessageLookupByLibrary.simpleMessage("服务正在运行中"),
+    "setSubscriptionWebsite": MessageLookupByLibrary.simpleMessage("设置快捷链接"),
     "settings": MessageLookupByLibrary.simpleMessage("设置"),
     "show": MessageLookupByLibrary.simpleMessage("显示"),
     "showHiddenItems": MessageLookupByLibrary.simpleMessage("显示隐藏项"),
@@ -1434,6 +1437,39 @@ class MessageLookup extends MessageLookupByLibrary {
     "style": MessageLookupByLibrary.simpleMessage("风格"),
     "subRule": MessageLookupByLibrary.simpleMessage("子规则"),
     "submit": MessageLookupByLibrary.simpleMessage("提交"),
+    "subscriptionWebsite": MessageLookupByLibrary.simpleMessage("订阅网站"),
+    "subscriptionWebsiteFromSubscription": MessageLookupByLibrary.simpleMessage(
+      "来自订阅",
+    ),
+    "subscriptionWebsiteHelp": MessageLookupByLibrary.simpleMessage(
+      "将在系统浏览器打开，Fluxora 不会读取网页内容。",
+    ),
+    "subscriptionWebsiteInvalid": MessageLookupByLibrary.simpleMessage(
+      "请输入有效的 http/https 链接",
+    ),
+    "subscriptionWebsiteLabel": MessageLookupByLibrary.simpleMessage(
+      "显示名称（可选）",
+    ),
+    "subscriptionWebsiteLabelHint": MessageLookupByLibrary.simpleMessage(
+      "官网 / 续费",
+    ),
+    "subscriptionWebsiteManual": MessageLookupByLibrary.simpleMessage("手动设置"),
+    "subscriptionWebsiteOpenFailed": MessageLookupByLibrary.simpleMessage(
+      "无法打开浏览器",
+    ),
+    "subscriptionWebsiteSuggested": MessageLookupByLibrary.simpleMessage(
+      "使用订阅域名",
+    ),
+    "subscriptionWebsiteTrustDesc": MessageLookupByLibrary.simpleMessage(
+      "此链接由订阅提供，请确认域名后再打开。",
+    ),
+    "subscriptionWebsiteTrustRemember": MessageLookupByLibrary.simpleMessage(
+      "不再询问此网站",
+    ),
+    "subscriptionWebsiteTrustTitle": MessageLookupByLibrary.simpleMessage(
+      "打开订阅网站？",
+    ),
+    "subscriptionWebsiteUrl": MessageLookupByLibrary.simpleMessage("快捷链接"),
     "success": MessageLookupByLibrary.simpleMessage("Success"),
     "switchLabel": MessageLookupByLibrary.simpleMessage("开关"),
     "switchProfileFailed": MessageLookupByLibrary.simpleMessage("切换订阅失败"),

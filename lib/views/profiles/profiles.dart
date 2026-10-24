@@ -11,6 +11,7 @@ import 'package:fluxora/views/profiles/override_profile.dart';
 import 'package:fluxora/views/profiles/scripts.dart';
 import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
@@ -369,7 +370,10 @@ class ProfileItem extends StatelessWidget {
     }
   }
 
-  void _handleShowEditExtendPage(BuildContext context) {
+  void _handleShowEditExtendPage(
+    BuildContext context, {
+    bool focusPortal = false,
+  }) {
     final editKey = GlobalKey<EditProfileViewState>();
     showExtend(
       context,
@@ -389,10 +393,110 @@ class ProfileItem extends StatelessWidget {
             key: editKey,
             profile: profile,
             context: context,
+            focusPortal: focusPortal,
           ),
           title: appLocalizations.edit,
         );
       },
+    );
+  }
+
+  String get _portalActionLabel {
+    final label = profile.portalLabel.trim();
+    return label.isEmpty
+        ? appLocalizations.openSubscriptionWebsite
+        : '${appLocalizations.openSubscriptionWebsite} · $label';
+  }
+
+  Future<void> _handleOpenPortal(BuildContext context) async {
+    final url = profile.portalUrl.trim();
+    final host = url.webUrlHost;
+    if (host == null) {
+      _showPortalOpenFailure(context, url);
+      return;
+    }
+
+    if (profile.portalSource == ProfilePortalSource.subscription &&
+        !await preferences.isPortalHostTrusted(host)) {
+      if (!context.mounted) return;
+      var rememberHost = false;
+      final confirmed = await globalState.showCommonDialog<bool>(
+        child: StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            return CommonDialog(
+              title: appLocalizations.subscriptionWebsiteTrustTitle,
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(false),
+                  child: Text(appLocalizations.cancel),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(true),
+                  child: Text(appLocalizations.open),
+                ),
+              ],
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    host,
+                    style: dialogContext.textTheme.titleMedium?.copyWith(
+                      color: dialogContext.colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    appLocalizations.subscriptionWebsiteTrustDesc,
+                    style: dialogContext.textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    controlAffinity: ListTileControlAffinity.leading,
+                    value: rememberHost,
+                    onChanged: (value) {
+                      setDialogState(() => rememberHost = value == true);
+                    },
+                    title: Text(
+                      appLocalizations.subscriptionWebsiteTrustRemember,
+                      style: dialogContext.textTheme.bodyMedium,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      );
+      if (confirmed != true) return;
+      if (rememberHost) {
+        await preferences.trustPortalHost(host);
+      }
+    }
+
+    if (!context.mounted) return;
+    final opened = await globalState.openSafeWebUrl(url);
+    if (!opened && context.mounted) {
+      _showPortalOpenFailure(context, url);
+    }
+  }
+
+  void _showPortalOpenFailure(BuildContext context, String url) {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) return;
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(appLocalizations.subscriptionWebsiteOpenFailed),
+        action: SnackBarAction(
+          label: appLocalizations.copyLink,
+          onPressed: () {
+            if (url.isNotEmpty) {
+              Clipboard.setData(ClipboardData(text: url));
+            }
+          },
+        ),
+      ),
     );
   }
 
@@ -568,6 +672,7 @@ class ProfileItem extends StatelessWidget {
   }
 
   List<PopupMenuItemData> _buildMenuItems(BuildContext context) {
+    final hasPortal = profile.portalUrl.isSafeWebUrl;
     return [
       PopupMenuItemData(
         icon: Icons.dns_outlined,
@@ -590,6 +695,22 @@ class ProfileItem extends StatelessWidget {
           _handleShowEditExtendPage(context);
         },
       ),
+      if (hasPortal)
+        PopupMenuItemData(
+          icon: Icons.language_rounded,
+          label: _portalActionLabel,
+          onPressed: () {
+            _handleOpenPortal(context);
+          },
+        )
+      else if (profile.type == ProfileType.url)
+        PopupMenuItemData(
+          icon: Icons.link_rounded,
+          label: appLocalizations.setSubscriptionWebsite,
+          onPressed: () {
+            _handleShowEditExtendPage(context, focusPortal: true);
+          },
+        ),
       if (profile.type == ProfileType.url) ...[
         PopupMenuItemData(
           icon: Icons.sync_alt_sharp,
@@ -647,32 +768,49 @@ class ProfileItem extends StatelessWidget {
   }
 
   Widget _buildNormalLayout(BuildContext context) {
-    final trailingWidget = SizedBox(
-      height: 36,
-      width: 36,
-      child: FadeThroughBox(
-        child: profile.isUpdating
-            ? Padding(
-                padding: const EdgeInsets.all(6),
-                child: SpinKitFadingCircle(
-                  color: context.colorScheme.primary,
-                  size: 24,
-                ),
-              )
-            : CommonPopupBox(
-                popup: CommonPopupMenu(items: _buildMenuItems(context)),
-                targetBuilder: (open) {
-                  return IconButton(
-                    padding: EdgeInsets.zero,
-                    onPressed: () {
-                      open();
-                    },
-                    tooltip: appLocalizations.more,
-                    icon: const Icon(Icons.more_vert, size: 20),
-                  );
-                },
+    final hasPortal = profile.portalUrl.isSafeWebUrl;
+    final trailingWidget = FadeThroughBox(
+      child: profile.isUpdating
+          ? Padding(
+              padding: const EdgeInsets.all(6),
+              child: SpinKitFadingCircle(
+                color: context.colorScheme.primary,
+                size: 24,
               ),
-      ),
+            )
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (hasPortal)
+                  IconButton(
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints.tightFor(
+                      width: 40,
+                      height: 40,
+                    ),
+                    onPressed: () => _handleOpenPortal(context),
+                    tooltip: _portalActionLabel,
+                    icon: const Icon(Icons.language_rounded, size: 20),
+                  ),
+                CommonPopupBox(
+                  popup: CommonPopupMenu(items: _buildMenuItems(context)),
+                  targetBuilder: (open) {
+                    return IconButton(
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints.tightFor(
+                        width: 40,
+                        height: 40,
+                      ),
+                      onPressed: () {
+                        open();
+                      },
+                      tooltip: appLocalizations.more,
+                      icon: const Icon(Icons.more_vert, size: 20),
+                    );
+                  },
+                ),
+              ],
+            ),
     );
     return Stack(
       children: [
@@ -683,14 +821,14 @@ class ProfileItem extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Padding(
-                padding: const EdgeInsets.only(right: 36),
+                padding: EdgeInsets.only(right: hasPortal ? 80 : 40),
                 child: _buildTitleRow(context),
               ),
               _buildContentInfo(context),
             ],
           ),
         ),
-        Positioned(top: 6, right: 6, child: trailingWidget),
+        Positioned(top: 4, right: 4, child: trailingWidget),
       ],
     );
   }

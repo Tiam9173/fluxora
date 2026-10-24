@@ -1471,9 +1471,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "onlyStatisticsProxyDesc": MessageLookupByLibrary.simpleMessage(
       "محاسبه ترافیک فقط برای پروکسی‌ها",
     ),
+    "open": MessageLookupByLibrary.simpleMessage("باز کردن"),
     "openDashboard": MessageLookupByLibrary.simpleMessage("باز کردن Zashboard"),
     "openGateway": MessageLookupByLibrary.simpleMessage("باز کردن دروازه"),
     "openSettings": MessageLookupByLibrary.simpleMessage("باز کردن تنظیمات"),
+    "openSubscriptionWebsite": MessageLookupByLibrary.simpleMessage(
+      "باز کردن وب‌سایت اشتراک",
+    ),
     "operatorOrAsn": MessageLookupByLibrary.simpleMessage("سازمان / ASN"),
     "options": MessageLookupByLibrary.simpleMessage("گزینه‌ها"),
     "other": MessageLookupByLibrary.simpleMessage("سایر"),
@@ -1899,6 +1903,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "serviceRunning": MessageLookupByLibrary.simpleMessage(
       "سرویس در حال اجرا است",
     ),
+    "setSubscriptionWebsite": MessageLookupByLibrary.simpleMessage(
+      "تنظیم پیوند سریع",
+    ),
     "settings": MessageLookupByLibrary.simpleMessage("تنظیمات"),
     "show": MessageLookupByLibrary.simpleMessage("نمایش"),
     "showHiddenItems": MessageLookupByLibrary.simpleMessage(
@@ -2026,6 +2033,45 @@ class MessageLookup extends MessageLookupByLibrary {
     "style": MessageLookupByLibrary.simpleMessage("سبک"),
     "subRule": MessageLookupByLibrary.simpleMessage("زیرقانون"),
     "submit": MessageLookupByLibrary.simpleMessage("ارسال"),
+    "subscriptionWebsite": MessageLookupByLibrary.simpleMessage(
+      "وب‌سایت اشتراک",
+    ),
+    "subscriptionWebsiteFromSubscription": MessageLookupByLibrary.simpleMessage(
+      "از اشتراک",
+    ),
+    "subscriptionWebsiteHelp": MessageLookupByLibrary.simpleMessage(
+      "در مرورگر سیستم باز می‌شود. Fluxora محتوای صفحه را نمی‌خواند.",
+    ),
+    "subscriptionWebsiteInvalid": MessageLookupByLibrary.simpleMessage(
+      "یک URL معتبر http/https وارد کنید",
+    ),
+    "subscriptionWebsiteLabel": MessageLookupByLibrary.simpleMessage(
+      "نام نمایشی (اختیاری)",
+    ),
+    "subscriptionWebsiteLabelHint": MessageLookupByLibrary.simpleMessage(
+      "وب‌سایت / تمدید",
+    ),
+    "subscriptionWebsiteManual": MessageLookupByLibrary.simpleMessage(
+      "تنظیم دستی",
+    ),
+    "subscriptionWebsiteOpenFailed": MessageLookupByLibrary.simpleMessage(
+      "مرورگر باز نشد",
+    ),
+    "subscriptionWebsiteSuggested": MessageLookupByLibrary.simpleMessage(
+      "استفاده از دامنه اشتراک",
+    ),
+    "subscriptionWebsiteTrustDesc": MessageLookupByLibrary.simpleMessage(
+      "این پیوند از اشتراک ارائه شده است. پیش از باز کردن، دامنه را تأیید کنید.",
+    ),
+    "subscriptionWebsiteTrustRemember": MessageLookupByLibrary.simpleMessage(
+      "دیگر برای این سایت نپرس",
+    ),
+    "subscriptionWebsiteTrustTitle": MessageLookupByLibrary.simpleMessage(
+      "وب‌سایت اشتراک باز شود؟",
+    ),
+    "subscriptionWebsiteUrl": MessageLookupByLibrary.simpleMessage(
+      "پیوند سریع",
+    ),
     "success": MessageLookupByLibrary.simpleMessage("موفقیت‌آمیز"),
     "switchLabel": MessageLookupByLibrary.simpleMessage("کلید"),
     "switchProfileFailed": MessageLookupByLibrary.simpleMessage(

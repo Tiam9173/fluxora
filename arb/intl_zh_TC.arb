@@ -1313,5 +1313,21 @@
   "nodeSelectAll": "全選",
   "nodeExportEmpty": "未選擇節點",
   "nodeExportDone": "已複製到剪貼簿",
-  "nodeExportTitle": "匯出的連結"
+  "nodeExportTitle": "匯出的連結",
+  "subscriptionWebsite": "訂閱網站",
+  "openSubscriptionWebsite": "開啟訂閱網站",
+  "setSubscriptionWebsite": "設定快捷連結",
+  "subscriptionWebsiteUrl": "快捷連結",
+  "subscriptionWebsiteLabel": "顯示名稱（選填）",
+  "subscriptionWebsiteLabelHint": "官網 / 續費",
+  "subscriptionWebsiteHelp": "將在系統瀏覽器開啟，Fluxora 不會讀取網頁內容。",
+  "subscriptionWebsiteInvalid": "請輸入有效的 http/https 連結",
+  "subscriptionWebsiteFromSubscription": "來自訂閱",
+  "subscriptionWebsiteManual": "手動設定",
+  "subscriptionWebsiteSuggested": "使用訂閱網域",
+  "subscriptionWebsiteTrustTitle": "開啟訂閱網站？",
+  "subscriptionWebsiteTrustDesc": "此連結由訂閱提供，請確認網域後再開啟。",
+  "subscriptionWebsiteTrustRemember": "不再詢問此網站",
+  "subscriptionWebsiteOpenFailed": "無法開啟瀏覽器",
+  "open": "開啟"
 }

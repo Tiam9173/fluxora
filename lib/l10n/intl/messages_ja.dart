@@ -1180,9 +1180,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "onlyStatisticsProxyDesc": MessageLookupByLibrary.simpleMessage(
       "プロキシ経由の通信量のみカウント",
     ),
+    "open": MessageLookupByLibrary.simpleMessage("開く"),
     "openDashboard": MessageLookupByLibrary.simpleMessage("Zashboardを開く"),
     "openGateway": MessageLookupByLibrary.simpleMessage("ゲートウェイを開く"),
     "openSettings": MessageLookupByLibrary.simpleMessage("設定を開く"),
+    "openSubscriptionWebsite": MessageLookupByLibrary.simpleMessage(
+      "サブスクリプションサイトを開く",
+    ),
     "operatorOrAsn": MessageLookupByLibrary.simpleMessage("組織 / ASN"),
     "options": MessageLookupByLibrary.simpleMessage("オプション"),
     "other": MessageLookupByLibrary.simpleMessage("その他"),
@@ -1498,6 +1502,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "serviceReady": MessageLookupByLibrary.simpleMessage("サービス準備完了"),
     "serviceRunning": MessageLookupByLibrary.simpleMessage("サービス稼働中"),
+    "setSubscriptionWebsite": MessageLookupByLibrary.simpleMessage(
+      "クイックリンクを設定",
+    ),
     "settings": MessageLookupByLibrary.simpleMessage("設定"),
     "show": MessageLookupByLibrary.simpleMessage("表示"),
     "showHiddenItems": MessageLookupByLibrary.simpleMessage("非表示項目を表示"),
@@ -1603,6 +1610,37 @@ class MessageLookup extends MessageLookupByLibrary {
     "style": MessageLookupByLibrary.simpleMessage("スタイル"),
     "subRule": MessageLookupByLibrary.simpleMessage("サブルーール"),
     "submit": MessageLookupByLibrary.simpleMessage("送信"),
+    "subscriptionWebsite": MessageLookupByLibrary.simpleMessage("サブスクリプションサイト"),
+    "subscriptionWebsiteFromSubscription": MessageLookupByLibrary.simpleMessage(
+      "サブスクリプションから",
+    ),
+    "subscriptionWebsiteHelp": MessageLookupByLibrary.simpleMessage(
+      "システムのブラウザで開きます。Fluxora はページの内容を読み取りません。",
+    ),
+    "subscriptionWebsiteInvalid": MessageLookupByLibrary.simpleMessage(
+      "有効な http/https URL を入力してください",
+    ),
+    "subscriptionWebsiteLabel": MessageLookupByLibrary.simpleMessage("表示名（任意）"),
+    "subscriptionWebsiteLabelHint": MessageLookupByLibrary.simpleMessage(
+      "公式サイト / 更新",
+    ),
+    "subscriptionWebsiteManual": MessageLookupByLibrary.simpleMessage("手動設定"),
+    "subscriptionWebsiteOpenFailed": MessageLookupByLibrary.simpleMessage(
+      "ブラウザを開けませんでした",
+    ),
+    "subscriptionWebsiteSuggested": MessageLookupByLibrary.simpleMessage(
+      "サブスクリプションのドメインを使用",
+    ),
+    "subscriptionWebsiteTrustDesc": MessageLookupByLibrary.simpleMessage(
+      "このリンクはサブスクリプションから提供されています。ドメインを確認してから開いてください。",
+    ),
+    "subscriptionWebsiteTrustRemember": MessageLookupByLibrary.simpleMessage(
+      "このサイトでは今後確認しない",
+    ),
+    "subscriptionWebsiteTrustTitle": MessageLookupByLibrary.simpleMessage(
+      "サブスクリプションサイトを開きますか？",
+    ),
+    "subscriptionWebsiteUrl": MessageLookupByLibrary.simpleMessage("クイックリンク"),
     "success": MessageLookupByLibrary.simpleMessage("成功"),
     "switchLabel": MessageLookupByLibrary.simpleMessage("スイッチ"),
     "switchProfileFailed": MessageLookupByLibrary.simpleMessage(

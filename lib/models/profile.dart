@@ -59,6 +59,8 @@ extension SubscriptionInfoExtension on SubscriptionInfo {
   }
 }
 
+enum ProfilePortalSource { unset, subscription, manual }
+
 @freezed
 abstract class Profile with _$Profile {
   const factory Profile({
@@ -66,6 +68,9 @@ abstract class Profile with _$Profile {
     String? label,
     String? currentGroupName,
     @Default('') String url,
+    @Default('') String portalUrl,
+    @Default('') String portalLabel,
+    @Default(ProfilePortalSource.unset) ProfilePortalSource portalSource,
     DateTime? lastUpdateDate,
     required Duration autoUpdateDuration,
     SubscriptionInfo? subscriptionInfo,
@@ -163,6 +168,22 @@ extension ProfileExtension on Profile {
 
   bool get realAutoUpdate => url.isEmpty == true ? false : autoUpdate;
 
+  /// Applies an optional `profile-web-page-url` response header.
+  ///
+  /// A manual value (including an explicitly cleared one) always wins; an
+  /// invalid header never erases an existing subscription link.
+  Profile withSubscriptionPortalHeader(String? header) {
+    final normalized = header?.trim() ?? '';
+    final adopt =
+        portalSource != ProfilePortalSource.manual &&
+        normalized.isSafeWebUrl;
+    if (!adopt) return this;
+    return copyWith(
+      portalUrl: normalized,
+      portalSource: ProfilePortalSource.subscription,
+    );
+  }
+
   Future<void> checkAndUpdate() async {
     final isExists = await check();
     if (!isExists) {
@@ -196,10 +217,15 @@ extension ProfileExtension on Profile {
     final response = await request.getFileResponseForUrl(url);
     final disposition = response.headers['content-disposition']?.firstOrNull;
     final userinfo = response.headers['subscription-userinfo']?.firstOrNull;
-    return await copyWith(
-      label: label ?? utils.getFileNameForDisposition(disposition) ?? id,
-      subscriptionInfo: SubscriptionInfo.formHString(userinfo),
-    ).saveFile(response.data, validate: validate);
+    final portalHeader = response.headers['profile-web-page-url']
+        ?.firstOrNull
+        ?.trim();
+    return await withSubscriptionPortalHeader(portalHeader)
+        .copyWith(
+          label: label ?? utils.getFileNameForDisposition(disposition) ?? id,
+          subscriptionInfo: SubscriptionInfo.formHString(userinfo),
+        )
+        .saveFile(response.data, validate: validate);
   }
 
   Future<Profile> saveFile(Uint8List bytes, {bool validate = true}) async {

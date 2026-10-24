@@ -11334,6 +11334,161 @@ class AppLocalizations {
       args: [],
     );
   }
+
+  /// `Subscription website`
+  String get subscriptionWebsite {
+    return Intl.message(
+      'Subscription website',
+      name: 'subscriptionWebsite',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Open subscription website`
+  String get openSubscriptionWebsite {
+    return Intl.message(
+      'Open subscription website',
+      name: 'openSubscriptionWebsite',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Set quick link`
+  String get setSubscriptionWebsite {
+    return Intl.message(
+      'Set quick link',
+      name: 'setSubscriptionWebsite',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Quick link`
+  String get subscriptionWebsiteUrl {
+    return Intl.message(
+      'Quick link',
+      name: 'subscriptionWebsiteUrl',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Display name (optional)`
+  String get subscriptionWebsiteLabel {
+    return Intl.message(
+      'Display name (optional)',
+      name: 'subscriptionWebsiteLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Website / Renew`
+  String get subscriptionWebsiteLabelHint {
+    return Intl.message(
+      'Website / Renew',
+      name: 'subscriptionWebsiteLabelHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Opens in your system browser. Fluxora does not read the page.`
+  String get subscriptionWebsiteHelp {
+    return Intl.message(
+      'Opens in your system browser. Fluxora does not read the page.',
+      name: 'subscriptionWebsiteHelp',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Enter a valid http/https URL`
+  String get subscriptionWebsiteInvalid {
+    return Intl.message(
+      'Enter a valid http/https URL',
+      name: 'subscriptionWebsiteInvalid',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `From subscription`
+  String get subscriptionWebsiteFromSubscription {
+    return Intl.message(
+      'From subscription',
+      name: 'subscriptionWebsiteFromSubscription',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Manual`
+  String get subscriptionWebsiteManual {
+    return Intl.message(
+      'Manual',
+      name: 'subscriptionWebsiteManual',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Use subscription domain`
+  String get subscriptionWebsiteSuggested {
+    return Intl.message(
+      'Use subscription domain',
+      name: 'subscriptionWebsiteSuggested',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Open subscription website?`
+  String get subscriptionWebsiteTrustTitle {
+    return Intl.message(
+      'Open subscription website?',
+      name: 'subscriptionWebsiteTrustTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `This link comes from your subscription. Confirm the domain before opening.`
+  String get subscriptionWebsiteTrustDesc {
+    return Intl.message(
+      'This link comes from your subscription. Confirm the domain before opening.',
+      name: 'subscriptionWebsiteTrustDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Don't ask again for this site`
+  String get subscriptionWebsiteTrustRemember {
+    return Intl.message(
+      'Don\'t ask again for this site',
+      name: 'subscriptionWebsiteTrustRemember',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Could not open browser`
+  String get subscriptionWebsiteOpenFailed {
+    return Intl.message(
+      'Could not open browser',
+      name: 'subscriptionWebsiteOpenFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Open`
+  String get open {
+    return Intl.message('Open', name: 'open', desc: '', args: []);
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {

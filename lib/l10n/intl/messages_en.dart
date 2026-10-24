@@ -1453,9 +1453,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "onlyStatisticsProxyDesc": MessageLookupByLibrary.simpleMessage(
       "Only record proxy traffic",
     ),
+    "open": MessageLookupByLibrary.simpleMessage("Open"),
     "openDashboard": MessageLookupByLibrary.simpleMessage("Open Zashboard"),
     "openGateway": MessageLookupByLibrary.simpleMessage("Open Gateway"),
     "openSettings": MessageLookupByLibrary.simpleMessage("Open Settings"),
+    "openSubscriptionWebsite": MessageLookupByLibrary.simpleMessage(
+      "Open subscription website",
+    ),
     "operatorOrAsn": MessageLookupByLibrary.simpleMessage("Organization / ASN"),
     "options": MessageLookupByLibrary.simpleMessage("Options"),
     "other": MessageLookupByLibrary.simpleMessage("Other"),
@@ -1851,6 +1855,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "serviceReady": MessageLookupByLibrary.simpleMessage("Service Ready"),
     "serviceRunning": MessageLookupByLibrary.simpleMessage("Service Running"),
+    "setSubscriptionWebsite": MessageLookupByLibrary.simpleMessage(
+      "Set quick link",
+    ),
     "settings": MessageLookupByLibrary.simpleMessage("Settings"),
     "show": MessageLookupByLibrary.simpleMessage("Show"),
     "showHiddenItems": MessageLookupByLibrary.simpleMessage(
@@ -1982,6 +1989,43 @@ class MessageLookup extends MessageLookupByLibrary {
     "style": MessageLookupByLibrary.simpleMessage("Style"),
     "subRule": MessageLookupByLibrary.simpleMessage("Sub Rule"),
     "submit": MessageLookupByLibrary.simpleMessage("Submit"),
+    "subscriptionWebsite": MessageLookupByLibrary.simpleMessage(
+      "Subscription website",
+    ),
+    "subscriptionWebsiteFromSubscription": MessageLookupByLibrary.simpleMessage(
+      "From subscription",
+    ),
+    "subscriptionWebsiteHelp": MessageLookupByLibrary.simpleMessage(
+      "Opens in your system browser. Fluxora does not read the page.",
+    ),
+    "subscriptionWebsiteInvalid": MessageLookupByLibrary.simpleMessage(
+      "Enter a valid http/https URL",
+    ),
+    "subscriptionWebsiteLabel": MessageLookupByLibrary.simpleMessage(
+      "Display name (optional)",
+    ),
+    "subscriptionWebsiteLabelHint": MessageLookupByLibrary.simpleMessage(
+      "Website / Renew",
+    ),
+    "subscriptionWebsiteManual": MessageLookupByLibrary.simpleMessage("Manual"),
+    "subscriptionWebsiteOpenFailed": MessageLookupByLibrary.simpleMessage(
+      "Could not open browser",
+    ),
+    "subscriptionWebsiteSuggested": MessageLookupByLibrary.simpleMessage(
+      "Use subscription domain",
+    ),
+    "subscriptionWebsiteTrustDesc": MessageLookupByLibrary.simpleMessage(
+      "This link comes from your subscription. Confirm the domain before opening.",
+    ),
+    "subscriptionWebsiteTrustRemember": MessageLookupByLibrary.simpleMessage(
+      "Don\'t ask again for this site",
+    ),
+    "subscriptionWebsiteTrustTitle": MessageLookupByLibrary.simpleMessage(
+      "Open subscription website?",
+    ),
+    "subscriptionWebsiteUrl": MessageLookupByLibrary.simpleMessage(
+      "Quick link",
+    ),
     "success": MessageLookupByLibrary.simpleMessage("Success"),
     "switchLabel": MessageLookupByLibrary.simpleMessage("Switch"),
     "switchProfileFailed": MessageLookupByLibrary.simpleMessage(

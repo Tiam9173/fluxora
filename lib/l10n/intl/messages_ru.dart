@@ -1523,9 +1523,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "onlyStatisticsProxyDesc": MessageLookupByLibrary.simpleMessage(
       "Считать только трафик через прокси",
     ),
+    "open": MessageLookupByLibrary.simpleMessage("Открыть"),
     "openDashboard": MessageLookupByLibrary.simpleMessage("Открыть Zashboard"),
     "openGateway": MessageLookupByLibrary.simpleMessage("Открыть шлюз"),
     "openSettings": MessageLookupByLibrary.simpleMessage("Открыть настройки"),
+    "openSubscriptionWebsite": MessageLookupByLibrary.simpleMessage(
+      "Открыть сайт подписки",
+    ),
     "operatorOrAsn": MessageLookupByLibrary.simpleMessage("Организация / ASN"),
     "options": MessageLookupByLibrary.simpleMessage("Опции"),
     "other": MessageLookupByLibrary.simpleMessage("Другое"),
@@ -1943,6 +1947,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "serviceReady": MessageLookupByLibrary.simpleMessage("Служба готова"),
     "serviceRunning": MessageLookupByLibrary.simpleMessage("Служба запущена"),
+    "setSubscriptionWebsite": MessageLookupByLibrary.simpleMessage(
+      "Настроить быструю ссылку",
+    ),
     "settings": MessageLookupByLibrary.simpleMessage("Настройки"),
     "show": MessageLookupByLibrary.simpleMessage("Показать"),
     "showHiddenItems": MessageLookupByLibrary.simpleMessage("Показать скрытые"),
@@ -2080,6 +2087,45 @@ class MessageLookup extends MessageLookupByLibrary {
     "style": MessageLookupByLibrary.simpleMessage("Стиль"),
     "subRule": MessageLookupByLibrary.simpleMessage("Подправило"),
     "submit": MessageLookupByLibrary.simpleMessage("Отправить"),
+    "subscriptionWebsite": MessageLookupByLibrary.simpleMessage(
+      "Сайт подписки",
+    ),
+    "subscriptionWebsiteFromSubscription": MessageLookupByLibrary.simpleMessage(
+      "Из подписки",
+    ),
+    "subscriptionWebsiteHelp": MessageLookupByLibrary.simpleMessage(
+      "Откроется в системном браузере. Fluxora не читает содержимое страницы.",
+    ),
+    "subscriptionWebsiteInvalid": MessageLookupByLibrary.simpleMessage(
+      "Введите корректный URL http/https",
+    ),
+    "subscriptionWebsiteLabel": MessageLookupByLibrary.simpleMessage(
+      "Отображаемое имя (необязательно)",
+    ),
+    "subscriptionWebsiteLabelHint": MessageLookupByLibrary.simpleMessage(
+      "Сайт / Продление",
+    ),
+    "subscriptionWebsiteManual": MessageLookupByLibrary.simpleMessage(
+      "Вручную",
+    ),
+    "subscriptionWebsiteOpenFailed": MessageLookupByLibrary.simpleMessage(
+      "Не удалось открыть браузер",
+    ),
+    "subscriptionWebsiteSuggested": MessageLookupByLibrary.simpleMessage(
+      "Использовать домен подписки",
+    ),
+    "subscriptionWebsiteTrustDesc": MessageLookupByLibrary.simpleMessage(
+      "Эта ссылка предоставлена подпиской. Проверьте домен перед открытием.",
+    ),
+    "subscriptionWebsiteTrustRemember": MessageLookupByLibrary.simpleMessage(
+      "Больше не спрашивать для этого сайта",
+    ),
+    "subscriptionWebsiteTrustTitle": MessageLookupByLibrary.simpleMessage(
+      "Открыть сайт подписки?",
+    ),
+    "subscriptionWebsiteUrl": MessageLookupByLibrary.simpleMessage(
+      "Быстрая ссылка",
+    ),
     "success": MessageLookupByLibrary.simpleMessage("Успех"),
     "switchLabel": MessageLookupByLibrary.simpleMessage("Переключатель"),
     "switchProfileFailed": MessageLookupByLibrary.simpleMessage(

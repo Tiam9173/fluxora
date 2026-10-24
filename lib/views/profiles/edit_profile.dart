@@ -16,12 +16,14 @@ class EditProfileView extends StatefulWidget {
   final Profile profile;
   final BuildContext context;
   final bool isNew;
+  final bool focusPortal;
 
   const EditProfileView({
     super.key,
     required this.context,
     required this.profile,
     this.isNew = false,
+    this.focusPortal = false,
   });
 
   @override
@@ -31,12 +33,16 @@ class EditProfileView extends StatefulWidget {
 class EditProfileViewState extends State<EditProfileView> {
   late TextEditingController labelController;
   late TextEditingController urlController;
+  late TextEditingController portalUrlController;
+  late TextEditingController portalLabelController;
   late TextEditingController autoUpdateDurationController;
   late bool autoUpdate;
   late TextEditingController ageSecretKeyController;
   late TextEditingController aggregateAliasController;
   late bool _joinAggregate;
+  late ProfilePortalSource _portalSource;
   FocusNode? urlFocusNode;
+  FocusNode? portalFocusNode;
   bool _obscureAgeSecretKey = true;
   String? rawText;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
@@ -50,6 +56,14 @@ class EditProfileViewState extends State<EditProfileView> {
     super.initState();
     labelController = TextEditingController(text: widget.profile.label);
     urlController = TextEditingController(text: widget.profile.url);
+    portalUrlController = TextEditingController(
+      text: widget.profile.portalUrl,
+    );
+    portalLabelController = TextEditingController(
+      text: widget.profile.portalLabel,
+    );
+    _portalSource = widget.profile.portalSource;
+    urlController.addListener(_handleSubscriptionUrlChanged);
     autoUpdate = widget.isNew ? false : widget.profile.autoUpdate;
     autoUpdateDurationController = TextEditingController(
       text: widget.profile.autoUpdateDuration.inMinutes.toString(),
@@ -71,6 +85,16 @@ class EditProfileViewState extends State<EditProfileView> {
         });
       });
     }
+    if (widget.focusPortal) {
+      portalFocusNode = FocusNode();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            portalFocusNode?.requestFocus();
+          }
+        });
+      });
+    }
     appPath.getProfilePath(widget.profile.id).then((path) async {
       fileInfoNotifier.value = await _getFileInfo(path);
     });
@@ -78,23 +102,53 @@ class EditProfileViewState extends State<EditProfileView> {
 
   @override
   void dispose() {
+    urlController.removeListener(_handleSubscriptionUrlChanged);
     labelController.dispose();
     urlController.dispose();
+    portalUrlController.dispose();
+    portalLabelController.dispose();
     autoUpdateDurationController.dispose();
     ageSecretKeyController.dispose();
     aggregateAliasController.dispose();
     urlFocusNode?.dispose();
+    portalFocusNode?.dispose();
     super.dispose();
+  }
+
+  void _handleSubscriptionUrlChanged() {
+    if (mounted) setState(() {});
+  }
+
+  void _handlePortalUrlChanged(String value) {
+    if (_portalSource != ProfilePortalSource.manual) {
+      setState(() => _portalSource = ProfilePortalSource.manual);
+    }
+  }
+
+  String? get _suggestedPortalUrl {
+    if (_portalSource == ProfilePortalSource.manual) return null;
+    if (portalUrlController.text.trim().isNotEmpty) return null;
+    return urlController.text.trim().webUrlOrigin;
   }
 
   Future<void> _handleConfirm() async {
     if (!_formKey.currentState!.validate()) return;
     final appController = globalState.appController;
+    final portalUrl = portalUrlController.text.trim();
+    final portalLabel = portalLabelController.text.trim();
+    final portalChanged =
+        portalUrl != this.profile.portalUrl ||
+        portalLabel != this.profile.portalLabel;
     Profile profile = this.profile.copyWith(
       url: urlController.text,
       label: labelController.text.trim().isEmpty
           ? null
           : labelController.text.trim(),
+      portalUrl: portalUrl,
+      portalLabel: portalLabel,
+      portalSource: portalChanged
+          ? ProfilePortalSource.manual
+          : this.profile.portalSource,
       ageSecretKey: ageSecretKeyController.text.trim().isEmpty
           ? null
           : ageSecretKeyController.text.trim(),
@@ -297,6 +351,102 @@ class EditProfileViewState extends State<EditProfileView> {
     globalState.showCommonDialog(child: const _AgeKeyGeneratorDialog());
   }
 
+  Widget _buildPortalItem(BuildContext context) {
+    final suggested = _suggestedPortalUrl;
+    final showSource =
+        _portalSource == ProfilePortalSource.subscription &&
+        portalUrlController.text.trim().isNotEmpty;
+    return ListItem(
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.language_rounded, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                appLocalizations.subscriptionWebsite,
+                style: context.textTheme.titleSmall,
+              ),
+              if (showSource) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: context.colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                  child: Text(
+                    appLocalizations.subscriptionWebsiteFromSubscription,
+                    style: context.textTheme.labelSmall?.copyWith(
+                      color: context.colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 10),
+          TextFormField(
+            focusNode: portalFocusNode,
+            controller: portalUrlController,
+            keyboardType: TextInputType.url,
+            textInputAction: TextInputAction.next,
+            onChanged: _handlePortalUrlChanged,
+            decoration: InputDecoration(
+              border: const OutlineInputBorder(),
+              labelText: appLocalizations.subscriptionWebsiteUrl,
+              hintText: 'https://example.com',
+              helperText: appLocalizations.subscriptionWebsiteHelp,
+              helperMaxLines: 2,
+              prefixIcon: const Icon(Icons.public, size: 18),
+            ),
+            validator: (value) {
+              final text = value?.trim() ?? '';
+              if (text.isEmpty) return null;
+              if (!text.isSafeWebUrl) {
+                return appLocalizations.subscriptionWebsiteInvalid;
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 10),
+          TextFormField(
+            controller: portalLabelController,
+            textInputAction: TextInputAction.next,
+            maxLength: 16,
+            decoration: InputDecoration(
+              border: const OutlineInputBorder(),
+              labelText: appLocalizations.subscriptionWebsiteLabel,
+              hintText: appLocalizations.subscriptionWebsiteLabelHint,
+              counterText: '',
+            ),
+            onChanged: (_) {
+              if (_portalSource != ProfilePortalSource.manual) {
+                setState(() => _portalSource = ProfilePortalSource.manual);
+              }
+            },
+          ),
+          if (suggested != null)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: () {
+                  portalUrlController.text = suggested;
+                  setState(() => _portalSource = ProfilePortalSource.manual);
+                },
+                icon: const Icon(Icons.auto_fix_high_outlined, size: 16),
+                label: Text(appLocalizations.subscriptionWebsiteSuggested),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final items = [
@@ -343,6 +493,7 @@ class EditProfileViewState extends State<EditProfileView> {
             },
           ),
         ),
+        _buildPortalItem(context),
         ListItem(
           title: TextFormField(
             textInputAction: TextInputAction.next,
