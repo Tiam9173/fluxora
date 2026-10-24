@@ -148,6 +148,7 @@ class ApplicationState extends ConsumerState<Application>
       // A notification button can bring the app back from the background; the
       // request is stored natively and only Dart can act on it.
       Vpn().consumePendingNotificationAction();
+      unawaited(globalState.appController.consumePendingAutoDelayTest());
       if (system.isAndroid &&
           globalState.config.appSetting.enableHighRefreshRate) {
         _restoreHighRefreshRate();

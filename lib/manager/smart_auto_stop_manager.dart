@@ -25,6 +25,7 @@ class SmartAutoStopManager extends ConsumerStatefulWidget {
 
 class _SmartAutoStopManagerState extends ConsumerState<SmartAutoStopManager> {
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+  ProviderSubscription? _vpnSettingSubscription;
 
   final _checkLock = Lock();
 
@@ -35,6 +36,15 @@ class _SmartAutoStopManagerState extends ConsumerState<SmartAutoStopManager> {
   @override
   void initState() {
     super.initState();
+    _vpnSettingSubscription = ref.listenManual(vpnSettingProvider, (
+      prev,
+      next,
+    ) {
+      if (prev?.smartAutoStop != next.smartAutoStop ||
+          prev?.smartAutoStopNetworks != next.smartAutoStopNetworks) {
+        _onSettingsChanged();
+      }
+    });
     _initConnectivityListener();
     _initNativeNetworkListener();
     _syncSmartStopped();
@@ -82,17 +92,6 @@ class _SmartAutoStopManagerState extends ConsumerState<SmartAutoStopManager> {
     final vpnProps = ref.read(vpnSettingProvider);
     if (!vpnProps.smartAutoStop) return;
     _debouncedCheckCurrentNetwork();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    ref.listenManual(vpnSettingProvider, (prev, next) {
-      if (prev?.smartAutoStop != next.smartAutoStop ||
-          prev?.smartAutoStopNetworks != next.smartAutoStopNetworks) {
-        _onSettingsChanged();
-      }
-    });
   }
 
   void _initConnectivityListener() {
@@ -297,6 +296,8 @@ class _SmartAutoStopManagerState extends ConsumerState<SmartAutoStopManager> {
     // `_checkCurrentNetwork()` against a disposed `ref`/State. (The callback's
     // own `mounted` check covers the remaining window.)
     _checkSequence++;
+    _vpnSettingSubscription?.close();
+    _vpnSettingSubscription = null;
     // An EventChannel cancel can complete with an error when the plugin is
     // unavailable; swallow it so teardown never produces an unhandled async
     // error (same guard as `NetworkFingerprintProvider.stop()`).

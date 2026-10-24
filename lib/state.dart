@@ -425,10 +425,20 @@ class GlobalState {
     }
     await startUpdateTasks(tasks);
 
-    // 启动后自动延迟测速（smartDelayLaunch，默认关）。磁贴 quick 启动和应用内
-    // 启动都会走到这里，所以两种场景行为一致。
+    // 启动后自动延迟测速（smartDelayLaunch，默认关）。先写一次性标记：
+    // UI 进程立刻消费并执行；headless service 没有可展示结果的控制器，
+    // 留给 UI 下次可见时消费。两条路径共用同一份去重标记，避免 UI 重新
+    // 附着到已运行服务时测两次。
     if (config.appSetting.smartDelayLaunch) {
-      unawaited(appController.autoDelayTestAfterStart());
+      if (hasAppController) {
+        unawaited(
+          preferences.markPendingAutoDelayTest().then((_) {
+            unawaited(appController.consumePendingAutoDelayTest());
+          }),
+        );
+      } else if (isService) {
+        unawaited(preferences.markPendingAutoDelayTest());
+      }
     }
   }
 

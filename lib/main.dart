@@ -207,6 +207,11 @@ Future<void> _service(List<String> flags) async {
     }
 
     commonPrint.log('Executing ${bootStart ? "boot" : "quick"} start sequence');
+    // Arm before the asynchronous start so an early UI launch cannot race the
+    // marker. Consumption still requires the service to actually be running.
+    if (globalState.config.appSetting.smartDelayLaunch) {
+      unawaited(preferences.markPendingAutoDelayTest());
+    }
     await ClashCore.initGeo();
     app.tip(appLocalizations.startVpn);
     final homeDirPath = await appPath.homeDirPath;

@@ -34,6 +34,7 @@ class _ConnectionsViewState extends ConsumerState<ConnectionsView>
   late final ScrollController _scrollController;
   Timer? _timer;
   ProviderSubscription? _pageLabelSubscription;
+  final _connectionUpdateGate = SerialTaskGate();
 
   bool get _isForeground {
     final lifecycleState = WidgetsBinding.instance.lifecycleState;
@@ -116,6 +117,14 @@ class _ConnectionsViewState extends ConsumerState<ConnectionsView>
   }
 
   Future<void> _updateConnections() async {
+    try {
+      await _connectionUpdateGate.run(_refreshConnectionsOnce);
+    } catch (e) {
+      commonPrint.log('Connections refresh failed: $e');
+    }
+  }
+
+  Future<void> _refreshConnectionsOnce() async {
     if (!mounted || !await _shouldRunTimer()) {
       _timer?.cancel();
       _timer = null;

@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/models/models.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'constant.dart';
@@ -128,6 +129,41 @@ class Preferences {
     
     return await preferences?.setString(configKey, json.encode(config)) ??
         false;
+  }
+
+  @visibleForTesting
+  static const pendingAutoDelayTestAtKey = 'pendingAutoDelayTestAt';
+
+  /// Arms the auto-delay test for a headless service start. The UI isolate
+  /// consumes it when it next becomes visible, where the result is observable.
+  Future<void> markPendingAutoDelayTest() async {
+    final preferences = await sharedPreferencesCompleter.future;
+    await preferences?.setInt(
+      pendingAutoDelayTestAtKey,
+      DateTime.now().millisecondsSinceEpoch,
+    );
+  }
+
+  Future<bool> hasPendingAutoDelayTest() async {
+    final preferences = await sharedPreferencesCompleter.future;
+    return preferences?.getInt(pendingAutoDelayTestAtKey) != null;
+  }
+
+  /// Consumes the pending marker exactly once. A stale marker is discarded so
+  /// opening the app long after a tile start does not trigger a surprise test.
+  Future<bool> consumePendingAutoDelayTest({
+    Duration maxAge = const Duration(minutes: 10),
+    DateTime? now,
+  }) async {
+    final preferences = await sharedPreferencesCompleter.future;
+    final at = preferences?.getInt(pendingAutoDelayTestAtKey);
+    await preferences?.remove(pendingAutoDelayTestAtKey);
+    if (at == null) return false;
+
+    final age = (now ?? DateTime.now()).difference(
+      DateTime.fromMillisecondsSinceEpoch(at),
+    );
+    return !age.isNegative && age <= maxAge;
   }
 
   Future<void> clearClashConfig() async {

@@ -28,6 +28,31 @@ class Debouncer {
   }
 }
 
+/// Serializes async work and coalesces requests that arrive while it runs.
+///
+/// A second caller never starts a parallel task; it requests one follow-up run
+/// so the newest state is still fetched after the in-flight call completes.
+class SerialTaskGate {
+  bool _running = false;
+  bool _queued = false;
+
+  Future<void> run(Future<void> Function() task) async {
+    if (_running) {
+      _queued = true;
+      return;
+    }
+    _running = true;
+    try {
+      do {
+        _queued = false;
+        await task();
+      } while (_queued);
+    } finally {
+      _running = false;
+    }
+  }
+}
+
 class Throttler {
   final Map<FunctionTag, Timer?> _operations = {};
 

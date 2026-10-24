@@ -753,10 +753,32 @@ class AppController {
     return _ref.read(getSelectedProxyNameProvider(groupName));
   }
 
+  /// Consumes a headless start's pending auto-delay request. Called when the UI
+  /// becomes available, where the result is visible; a marker older than the
+  /// Preferences max-age is discarded without probing.
+  Future<void> consumePendingAutoDelayTest() async {
+    if (!system.isAndroid) return;
+    if (!_ref.read(appSettingProvider).smartDelayLaunch) {
+      await preferences.consumePendingAutoDelayTest();
+      return;
+    }
+    if (!await preferences.hasPendingAutoDelayTest()) return;
+
+    // A cold quick start can still be bringing the service up when the UI
+    // appears. Keep the marker until the tunnel is actually running.
+    if (!globalState.isStart) {
+      await Future<void>.delayed(const Duration(seconds: 3));
+      if (!globalState.isStart) return;
+    }
+    if (!await preferences.consumePendingAutoDelayTest()) return;
+    await autoDelayTestAfterStart();
+  }
+
   /// 启动成功后的自动延迟测速（`smartDelayLaunch`，默认关）。
   ///
-  /// 磁贴 quick 启动和应用内启动都会走到 `globalState.handleStart`，所以两种
-  /// 场景行为一致。刚起服务就测，连接往往还没稳定，先等 2.5 秒。
+  /// UI 内启动会直接调用这里；headless quick 启动只写待处理标记，等 UI
+  /// 可见时由 [consumePendingAutoDelayTest] 触发。刚起服务就测，连接往往
+  /// 还没稳定，先等 2.5 秒。
   ///
   /// 链式开着就跑一次链式探测（逐跳上报正好给用户看进度）；普通订阅只测
   /// **当前选中**的节点——启动瞬间对全量节点发请求是请求风暴。
@@ -1978,6 +2000,7 @@ class AppController {
     }
 
     await updateGroups();
+    unawaited(consumePendingAutoDelayTest());
 
     autoLaunch?.updateStatus(_ref.read(appSettingProvider).autoLaunch);
     autoUpdateProfiles();
