@@ -1,3 +1,5 @@
+export 'aggregate_diff.dart';
+export 'aggregate_merge.dart';
 export 'aggregate_plan.dart';
 export 'android.dart';
 export 'app_localizations.dart';

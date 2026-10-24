@@ -11570,6 +11570,336 @@ class AppLocalizations {
     );
   }
 
+  /// `Custom merge`
+  String get aggregateCustom {
+    return Intl.message(
+      'Custom merge',
+      name: 'aggregateCustom',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Always merge nodes; choose whether to merge groups, rules and rule providers`
+  String get aggregateCustomDesc {
+    return Intl.message(
+      'Always merge nodes; choose whether to merge groups, rules and rule providers',
+      name: 'aggregateCustomDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Single aggregate group (including current subscription)`
+  String get aggregateMergeNodes {
+    return Intl.message(
+      'Single aggregate group (including current subscription)',
+      name: 'aggregateMergeNodes',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Merge member groups`
+  String get aggregateMergeGroups {
+    return Intl.message(
+      'Merge member groups',
+      name: 'aggregateMergeGroups',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Merge member rules`
+  String get aggregateMergeRules {
+    return Intl.message(
+      'Merge member rules',
+      name: 'aggregateMergeRules',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Merge member rule providers`
+  String get aggregateMergeRuleProviders {
+    return Intl.message(
+      'Merge member rule providers',
+      name: 'aggregateMergeRuleProviders',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Apply member scripts`
+  String get aggregateMergeMemberScripts {
+    return Intl.message(
+      'Apply member scripts',
+      name: 'aggregateMergeMemberScripts',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Apply member node edits`
+  String get aggregateApplyNodeOverrides {
+    return Intl.message(
+      'Apply member node edits',
+      name: 'aggregateApplyNodeOverrides',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Member script`
+  String get aggregateMemberScript {
+    return Intl.message(
+      'Member script',
+      name: 'aggregateMemberScript',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Follow global script`
+  String get aggregateFollowGlobalScript {
+    return Intl.message(
+      'Follow global script',
+      name: 'aggregateFollowGlobalScript',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Off uses the full-merge style: aggregate nodes + aggregate auto-select groups`
+  String get aggregateNodesOffHint {
+    return Intl.message(
+      'Off uses the full-merge style: aggregate nodes + aggregate auto-select groups',
+      name: 'aggregateNodesOffHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Aggregate override`
+  String get aggregateOverride {
+    return Intl.message(
+      'Aggregate override',
+      name: 'aggregateOverride',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Applied after merge and script`
+  String get aggregateOverrideHint {
+    return Intl.message(
+      'Applied after merge and script',
+      name: 'aggregateOverrideHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Merge conflicts`
+  String get aggregateConflicts {
+    return Intl.message(
+      'Merge conflicts',
+      name: 'aggregateConflicts',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No conflicts`
+  String get aggregateNoConflicts {
+    return Intl.message(
+      'No conflicts',
+      name: 'aggregateNoConflicts',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{from} → {to}`
+  String aggregateGroupRenamed(Object from, Object to) {
+    return Intl.message(
+      '$from → $to',
+      name: 'aggregateGroupRenamed',
+      desc: '',
+      args: [from, to],
+    );
+  }
+
+  /// `{count} rules dropped`
+  String aggregateDroppedRules(Object count) {
+    return Intl.message(
+      '$count rules dropped',
+      name: 'aggregateDroppedRules',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `{count} group references dropped`
+  String aggregateDroppedProxies(Object count) {
+    return Intl.message(
+      '$count group references dropped',
+      name: 'aggregateDroppedProxies',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `{count} rule providers skipped`
+  String aggregateSkippedProviders(Object count) {
+    return Intl.message(
+      '$count rule providers skipped',
+      name: 'aggregateSkippedProviders',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `Changes since last apply`
+  String get aggregateDiff {
+    return Intl.message(
+      'Changes since last apply',
+      name: 'aggregateDiff',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No changes`
+  String get aggregateNoDiff {
+    return Intl.message(
+      'No changes',
+      name: 'aggregateNoDiff',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Nodes +{added} / -{removed}`
+  String aggregateDiffNodes(Object added, Object removed) {
+    return Intl.message(
+      'Nodes +$added / -$removed',
+      name: 'aggregateDiffNodes',
+      desc: '',
+      args: [added, removed],
+    );
+  }
+
+  /// `Groups +{added} / -{removed}`
+  String aggregateDiffGroups(Object added, Object removed) {
+    return Intl.message(
+      'Groups +$added / -$removed',
+      name: 'aggregateDiffGroups',
+      desc: '',
+      args: [added, removed],
+    );
+  }
+
+  /// `Rules +{added} / -{removed}`
+  String aggregateDiffRules(Object added, Object removed) {
+    return Intl.message(
+      'Rules +$added / -$removed',
+      name: 'aggregateDiffRules',
+      desc: '',
+      args: [added, removed],
+    );
+  }
+
+  /// `Fix duplicate aliases`
+  String get aggregateFixAliases {
+    return Intl.message(
+      'Fix duplicate aliases',
+      name: 'aggregateFixAliases',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Aliases updated`
+  String get aggregateFixAliasesDone {
+    return Intl.message(
+      'Aliases updated',
+      name: 'aggregateFixAliasesDone',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Default aggregate`
+  String get aggregateDefault {
+    return Intl.message(
+      'Default aggregate',
+      name: 'aggregateDefault',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Aggregates`
+  String get aggregateProfiles {
+    return Intl.message(
+      'Aggregates',
+      name: 'aggregateProfiles',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `New aggregate`
+  String get aggregateNew {
+    return Intl.message(
+      'New aggregate',
+      name: 'aggregateNew',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Rename aggregate`
+  String get aggregateRename {
+    return Intl.message(
+      'Rename aggregate',
+      name: 'aggregateRename',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Delete aggregate`
+  String get aggregateDelete {
+    return Intl.message(
+      'Delete aggregate',
+      name: 'aggregateDelete',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Aggregate name`
+  String get aggregateName {
+    return Intl.message(
+      'Aggregate name',
+      name: 'aggregateName',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Aggregates currently share the same merge settings`
+  String get aggregateSharedSettings {
+    return Intl.message(
+      'Aggregates currently share the same merge settings',
+      name: 'aggregateSharedSettings',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Script timing`
   String get aggregateScriptTiming {
     return Intl.message(
@@ -11607,6 +11937,156 @@ class AppLocalizations {
       name: 'aggregateScriptAfterDesc',
       desc: '',
       args: [],
+    );
+  }
+
+  /// `{nodes} nodes · {groups} groups · {rules} rules`
+  String aggregateStats(Object nodes, Object groups, Object rules) {
+    return Intl.message(
+      '$nodes nodes · $groups groups · $rules rules',
+      name: 'aggregateStats',
+      desc: '',
+      args: [nodes, groups, rules],
+    );
+  }
+
+  /// `Could not read this profile`
+  String get aggregateStatsFailed {
+    return Intl.message(
+      'Could not read this profile',
+      name: 'aggregateStatsFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The override script will see {count} nodes`
+  String aggregateScriptSees(Object count) {
+    return Intl.message(
+      'The override script will see $count nodes',
+      name: 'aggregateScriptSees',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `The override script is not enabled`
+  String get aggregateScriptOff {
+    return Intl.message(
+      'The override script is not enabled',
+      name: 'aggregateScriptOff',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Effective preview`
+  String get aggregatePreviewTitle {
+    return Intl.message(
+      'Effective preview',
+      name: 'aggregatePreviewTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Overview`
+  String get aggregatePreviewOverview {
+    return Intl.message(
+      'Overview',
+      name: 'aggregatePreviewOverview',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Nodes`
+  String get aggregatePreviewNodes {
+    return Intl.message(
+      'Nodes',
+      name: 'aggregatePreviewNodes',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Groups`
+  String get aggregatePreviewGroups {
+    return Intl.message(
+      'Groups',
+      name: 'aggregatePreviewGroups',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Rules`
+  String get aggregatePreviewRules {
+    return Intl.message(
+      'Rules',
+      name: 'aggregatePreviewRules',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `YAML`
+  String get aggregatePreviewYaml {
+    return Intl.message(
+      'YAML',
+      name: 'aggregatePreviewYaml',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Source YAML`
+  String get aggregatePreviewSourceYaml {
+    return Intl.message(
+      'Source YAML',
+      name: 'aggregatePreviewSourceYaml',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Could not build the effective config`
+  String get aggregatePreviewFailed {
+    return Intl.message(
+      'Could not build the effective config',
+      name: 'aggregatePreviewFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `This is the final config handed to the kernel`
+  String get aggregatePreviewHint {
+    return Intl.message(
+      'This is the final config handed to the kernel',
+      name: 'aggregatePreviewHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `This YAML contains passwords and keys. Be careful when copying or sharing.`
+  String get aggregatePreviewSensitive {
+    return Intl.message(
+      'This YAML contains passwords and keys. Be careful when copying or sharing.',
+      name: 'aggregatePreviewSensitive',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Updated {date}`
+  String aggregateLastUpdated(Object date) {
+    return Intl.message(
+      'Updated $date',
+      name: 'aggregateLastUpdated',
+      desc: '',
+      args: [date],
     );
   }
 

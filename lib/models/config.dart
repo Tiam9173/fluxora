@@ -542,9 +542,30 @@ extension ScriptPropsExt on ScriptProps {
   }
 }
 
-enum AggregateMode { nodePool, full }
+enum AggregateMode { nodePool, full, custom }
 
 enum AggregateScriptTiming { before, after }
+
+@freezed
+abstract class AggregateProfile with _$AggregateProfile {
+  const factory AggregateProfile({
+    required String id,
+    required String name,
+    @Default([]) List<String> memberIds,
+    AggregateMode? mode,
+    AggregateScriptTiming? scriptTiming,
+    bool? mergeNodes,
+    bool? mergeGroups,
+    bool? mergeRules,
+    bool? mergeRuleProviders,
+    bool? mergeMemberScripts,
+    bool? applyNodeOverrides,
+    OverrideData? overrideData,
+  }) = _AggregateProfile;
+
+  factory AggregateProfile.fromJson(Map<String, Object?> json) =>
+      _$AggregateProfileFromJson(json);
+}
 
 @freezed
 abstract class Config with _$Config {
@@ -556,6 +577,15 @@ abstract class Config with _$Config {
     @Default([]) List<HotKeyAction> hotKeyActions,
     @Default(AggregateMode.nodePool) AggregateMode aggregateMode,
     @Default(AggregateScriptTiming.after) AggregateScriptTiming aggregateScriptTiming,
+    @Default(true) bool aggregateMergeNodes,
+    @Default(true) bool aggregateMergeGroups,
+    @Default(true) bool aggregateMergeRules,
+    @Default(true) bool aggregateMergeRuleProviders,
+    @Default(true) bool aggregateMergeMemberScripts,
+    @Default(true) bool aggregateApplyNodeOverrides,
+    @Default(OverrideData()) OverrideData aggregateOverrideData,
+    @Default([]) List<AggregateProfile> aggregates,
+    String? currentAggregateId,
     String? currentProfileId,
     @Default(false) bool overrideDns,
     @Default(false) bool overrideNtp,
@@ -642,4 +672,40 @@ extension ConfigExt on Config {
   Profile? get currentProfile {
     return profiles.getProfile(currentProfileId);
   }
+
+  AggregateProfile? get currentAggregate {
+    final id = currentAggregateId;
+    if (id == null || id.isEmpty) return null;
+    for (final aggregate in aggregates) {
+      if (aggregate.id == id) return aggregate;
+    }
+    return null;
+  }
+
+  AggregateMode get effectiveAggregateMode =>
+      currentAggregate?.mode ?? aggregateMode;
+
+  AggregateScriptTiming get effectiveScriptTiming =>
+      currentAggregate?.scriptTiming ?? aggregateScriptTiming;
+
+  bool get effectiveMergeNodes =>
+      currentAggregate?.mergeNodes ?? aggregateMergeNodes;
+
+  bool get effectiveMergeGroups =>
+      currentAggregate?.mergeGroups ?? aggregateMergeGroups;
+
+  bool get effectiveMergeRules =>
+      currentAggregate?.mergeRules ?? aggregateMergeRules;
+
+  bool get effectiveMergeRuleProviders =>
+      currentAggregate?.mergeRuleProviders ?? aggregateMergeRuleProviders;
+
+  bool get effectiveMergeMemberScripts =>
+      currentAggregate?.mergeMemberScripts ?? aggregateMergeMemberScripts;
+
+  bool get effectiveApplyNodeOverrides =>
+      currentAggregate?.applyNodeOverrides ?? aggregateApplyNodeOverrides;
+
+  OverrideData get effectiveAggregateOverride =>
+      currentAggregate?.overrideData ?? aggregateOverrideData;
 }

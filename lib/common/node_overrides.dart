@@ -31,6 +31,9 @@ class NodeOverrideStore {
 
   bool _loaded = false;
 
+  /// Bumped on every in-memory mutation so caches can invalidate node edits.
+  int revision = 0;
+
   Future<void> ensureLoaded() async {
     if (_loaded) return;
     _loaded = true;
@@ -70,6 +73,7 @@ class NodeOverrideStore {
   }
 
   Future<void> _save() async {
+    revision++;
     try {
       final prefs = await Preferences().sharedPreferencesCompleter.future;
       await prefs?.setString(

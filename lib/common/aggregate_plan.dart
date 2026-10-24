@@ -34,6 +34,56 @@ bool isBuiltInAggregateTarget(String target) {
       target == 'COMPATIBLE';
 }
 
+/// Remaps aggregate group/node selection entries when a member alias changes.
+///
+/// Selected entries use `[alias] name` for aggregate nodes and groups. Without
+/// this, renaming the alias makes every previous selection point at a name that
+/// no longer exists.
+Map<String, String> remapAggregateSelection(
+  Map<String, String> selected, {
+  required String oldAlias,
+  required String newAlias,
+}) {
+  if (oldAlias == newAlias) return selected;
+  String remap(String value) {
+    final prefix = '[$oldAlias] ';
+    if (!value.startsWith(prefix)) return value;
+    return '[$newAlias] ${value.substring(prefix.length)}';
+  }
+
+  return {
+    for (final entry in selected.entries) remap(entry.key): remap(entry.value),
+  };
+}
+
+/// Best-effort remap of aggregate selections after a script renames nodes.
+///
+/// Scripts often add a region flag or another prefix (`[A] HK` ->
+/// `[A] 🇭🇰 HK`). When the old name is gone, a unique suffix match preserves
+/// the selection instead of silently falling back to the first node.
+Map<String, String> remapAggregateNodeSelections(
+  Map<String, String> selected,
+  Iterable<String> finalNames,
+) {
+  final names = finalNames.toSet();
+  String? remap(String value) {
+    if (!value.startsWith('[') || names.contains(value)) return value;
+    final close = value.indexOf('] ');
+    if (close == -1) return value;
+    final original = value.substring(close + 2);
+    if (original.isEmpty) return value;
+    final matches = names
+        .where((name) => name.endsWith(original) && name != value)
+        .toList();
+    return matches.length == 1 ? matches.single : value;
+  }
+
+  return {
+    for (final entry in selected.entries)
+      entry.key: remap(entry.value) ?? entry.value,
+  };
+}
+
 /// Maps a member rule target to the merged namespace.
 ///
 /// Returns null when the target belongs to a member group/node that was not

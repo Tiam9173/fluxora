@@ -33,18 +33,6 @@ import 'package:fluxora/common/node_overrides.dart';
 
 typedef UpdateTasks = List<FutureOr Function()>;
 
-class _AggregateMemberConfig {
-  final Profile profile;
-  final Map<String, dynamic> config;
-  final String alias;
-
-  const _AggregateMemberConfig({
-    required this.profile,
-    required this.config,
-    required this.alias,
-  });
-}
-
 /// Resolves the controller endpoint without requiring a UI-owned AppController.
 /// A headless service has no session fallback, so it uses the normal loopback
 /// default; the UI path passes its actual session endpoint and keeps port
@@ -63,6 +51,10 @@ String resolveExternalControllerValue({
 class GlobalState {
   static GlobalState? _instance;
   Map<CacheTag, FixedMap<String, double>> computeHeightMapCache = {};
+  AggregateMergeReport? lastAggregateMergeReport;
+  AggregateConfigSummary? lastAggregateConfigSummary;
+  AggregateConfigDiff? lastAggregateConfigDiff;
+  final Map<String, Map<String, dynamic>> _aggregateMemberCache = {};
   bool isService = false;
   bool isExiting = false;
   bool isScreenOn = true;
@@ -754,13 +746,15 @@ class GlobalState {
       return <String, dynamic>{};
     }
     final profileId = targetProfile.id;
+    lastAggregateMergeReport = null;
     final configMap = await getProfileConfig(profileId);
     final scriptConfigured =
         config.scriptProps.currentScript != null &&
         targetProfile.useScriptOverride;
     final postMergeScript =
-        config.aggregateMode == AggregateMode.full &&
-        config.aggregateScriptTiming == AggregateScriptTiming.after &&
+        (config.effectiveAggregateMode == AggregateMode.full ||
+            config.effectiveAggregateMode == AggregateMode.custom) &&
+        config.effectiveScriptTiming == AggregateScriptTiming.after &&
         scriptConfigured;
     var rawConfig = postMergeScript
         ? configMap
@@ -775,7 +769,23 @@ class GlobalState {
         targetProfile.id,
         applyMemberTransforms: false,
       );
+      final beforeProxies = rawConfig['proxies'];
+      final beforeGroups = rawConfig['proxy-groups'];
+      final beforeRules = rawConfig['rules'];
+      commonPrint.log(
+        'aggregate script input: nodes=${beforeProxies is List ? beforeProxies.length : 0}, '
+        'groups=${beforeGroups is List ? beforeGroups.length : 0}, '
+        'rules=${beforeRules is List ? beforeRules.length : 0}',
+      );
       rawConfig = await handleEvaluate(rawConfig, profile: targetProfile);
+      final afterProxies = rawConfig['proxies'];
+      final afterGroups = rawConfig['proxy-groups'];
+      final afterRules = rawConfig['rules'];
+      commonPrint.log(
+        'aggregate script output: nodes=${afterProxies is List ? afterProxies.length : 0}, '
+        'groups=${afterGroups is List ? afterGroups.length : 0}, '
+        'rules=${afterRules is List ? afterRules.length : 0}',
+      );
     }
     final originalProxyGroups = rawConfig['proxy-groups'];
 
@@ -1265,6 +1275,19 @@ class GlobalState {
       );
     }
 
+    // Aggregate-level override runs after merge and after the optional
+    // post-merge script, so it is the final say on rules.
+    final aggregateOverride = config.effectiveAggregateOverride;
+    if (aggregateOverride.enable) {
+      final currentRules = rawConfig['rules'] is List
+          ? (rawConfig['rules'] as List).whereType<String>().toList()
+          : <String>[];
+      rawConfig['rules'] = aggregateOverride.rule.type ==
+              OverrideRuleType.override
+          ? aggregateOverride.runningRule
+          : [...aggregateOverride.runningRule, ...currentRules];
+    }
+
     // Apply chain proxy configuration if enabled (including WebRTC leak prevention rules)
     chainProxyManager.applyToClashConfig(
       rawConfig,
@@ -1281,6 +1304,45 @@ class GlobalState {
       profileChainManager.applyToClashConfig(rawConfig, targetProfile.id);
     }
 
+    // Scripts may rename aggregate nodes (for example, adding a region flag).
+    // Keep a best-effort selection mapping so the user does not have to pick the
+    // same node again after a config apply.
+    final finalProxies = rawConfig['proxies'];
+    final finalNames = finalProxies is List
+        ? finalProxies
+              .whereType<Map>()
+              .map((proxy) => proxy['name'])
+              .whereType<String>()
+              .toList()
+        : <String>[];
+    final remappedSelection = remapAggregateNodeSelections(
+      targetProfile.selectedMap,
+      finalNames,
+    );
+    var selectionChanged = false;
+    for (final entry in remappedSelection.entries) {
+      if (targetProfile.selectedMap[entry.key] != entry.value) {
+        selectionChanged = true;
+        break;
+      }
+    }
+    if (selectionChanged) {
+      final remappedProfile = targetProfile.copyWith(
+        selectedMap: remappedSelection,
+      );
+      Future.microtask(() {
+        if (globalState.config.currentProfileId == targetProfile.id) {
+          globalState.appController.setProfile(remappedProfile);
+        }
+      });
+    }
+
+    final summary = AggregateConfigSummary.fromConfig(rawConfig);
+    lastAggregateConfigDiff = lastAggregateConfigSummary == null
+        ? null
+        : AggregateConfigDiff.between(lastAggregateConfigSummary!, summary);
+    lastAggregateConfigSummary = summary;
+
     return rawConfig;
   }
 
@@ -1294,15 +1356,29 @@ class GlobalState {
     List nodes,
     String alias,
   ) async {
-    final proxies = nodes
-        .whereType<Map>()
-        .where((node) => node['name'] != null)
-        .map((node) {
-          final copy = Map<String, dynamic>.from(node);
-          copy['name'] = '[$alias] ${node['name']}';
-          return copy;
-        })
-        .toList();
+    final nodeNames = {
+      for (final node in nodes)
+        if (node is Map && node['name'] is String) node['name'] as String,
+    };
+    final seenNames = <String>{};
+    final proxies = <Map<String, dynamic>>[];
+    for (final node in nodes.whereType<Map>()) {
+      if (node['name'] == null) continue;
+      final name = node['name'] as String;
+      if (!seenNames.add(name)) {
+        commonPrint.log(
+          'aggregate: drop duplicate node "$name" from $profileId',
+        );
+        continue;
+      }
+      final copy = Map<String, dynamic>.from(node);
+      copy['name'] = '[$alias] $name';
+      final dialer = copy['dialer-proxy'];
+      if (dialer is String && nodeNames.contains(dialer)) {
+        copy['dialer-proxy'] = '[$alias] $dialer';
+      }
+      proxies.add(copy);
+    }
     if (proxies.isEmpty) {
       throw StateError('aggregate member has no usable proxies');
     }
@@ -1326,9 +1402,19 @@ class GlobalState {
     String currentProfileId, {
     bool applyMemberTransforms = true,
   }) async {
+    final activeAggregate = config.currentAggregate;
+    final memberIds = activeAggregate == null
+        ? config.profiles
+              .where((p) => p.joinAggregate)
+              .map((p) => p.id)
+              .toSet()
+        : activeAggregate.memberIds.toSet();
     final others = config.profiles
-        .where((p) => p.id != currentProfileId && p.joinAggregate)
+        .where((p) => p.id != currentProfileId && memberIds.contains(p.id))
         .toList();
+    final customNodeMode =
+        config.effectiveAggregateMode == AggregateMode.custom &&
+        config.effectiveMergeNodes;
     if (others.isEmpty) return const {};
 
     final providers = <String, dynamic>{};
@@ -1339,12 +1425,22 @@ class GlobalState {
     final providerNames = <String>[];
     final aggregateNodeNames = <String>[];
     final memberGroups = <Map<String, dynamic>>[];
-    final mergeMembers = <_AggregateMemberConfig>[];
+    final mergeMembers = <AggregateMemberConfig>[];
     final usedAliases = <String>{};
-    final fullMerge = config.aggregateMode == AggregateMode.full;
+    final fullMerge =
+        config.effectiveAggregateMode == AggregateMode.full ||
+        config.effectiveAggregateMode == AggregateMode.custom;
     final healthCheckUrl = config.appSetting.testUrl.trim().isNotEmpty
         ? config.appSetting.testUrl.trim()
         : 'https://www.gstatic.com/generate_204';
+    final baseProxies = rawConfig['proxies'];
+    final baseProxyNames = baseProxies is List
+        ? baseProxies
+              .whereType<Map>()
+              .map((node) => node['name'])
+              .whereType<String>()
+              .toList()
+        : <String>[];
     for (final profile in others) {
       final path = await appPath.getProfilePath(profile.id);
       if (!await File(path).exists()) {
@@ -1355,24 +1451,66 @@ class GlobalState {
 
       // 成员的脚本覆写和节点本地编辑必须在提取节点前应用；旧实现直接读
       // getProfileConfig，成员的脚本等于从未存在。
-      Map<String, dynamic> evaluated;
-      if (!applyMemberTransforms) {
-        // Post-merge script mode: merge raw member configs, then run the one
-        // selected script over the combined result. Running member scripts here
-        // would process nodes twice.
-        evaluated = await getProfileConfig(profile.id);
-      } else {
-        try {
-          evaluated = await handleEvaluate(
-            await getProfileConfig(profile.id),
-            profile: profile,
-          );
-          _applyAggregateMemberOverride(evaluated, profile);
-        } catch (e) {
-          commonPrint.log('aggregate: evaluate ${profile.id} failed: $e');
-          evaluated = await getProfileConfig(profile.id);
-          _applyAggregateMemberOverride(evaluated, profile);
+      final stat = await File(path).stat();
+      final applyMemberScripts =
+          applyMemberTransforms &&
+          (config.effectiveAggregateMode != AggregateMode.custom ||
+              config.effectiveMergeMemberScripts);
+      Script? memberScript;
+      if (applyMemberScripts && profile.scriptId != null) {
+        for (final script in config.scriptProps.scripts) {
+          if (script.id == profile.scriptId) {
+            memberScript = script;
+            break;
+          }
         }
+      }
+      final cacheKey = [
+        profile.id,
+        stat.modified.millisecondsSinceEpoch,
+        stat.size,
+        applyMemberTransforms,
+        applyMemberScripts,
+        config.effectiveApplyNodeOverrides,
+        NodeOverrideStore.instance.revision,
+        memberScript?.digest ??
+            config.scriptProps.currentScript?.digest ??
+            '',
+        profile.overrideData.hashCode,
+      ].join('|');
+      Map<String, dynamic> evaluated;
+      final cached = _aggregateMemberCache[cacheKey];
+      if (cached != null) {
+        evaluated = Map<String, dynamic>.from(cached);
+      } else {
+        Future<Map<String, dynamic>> readMember() => getProfileConfig(
+          profile.id,
+          applyNodeOverrides: config.effectiveApplyNodeOverrides,
+        );
+        if (!applyMemberScripts) {
+          // Post-merge script mode, or custom mode with member scripts disabled.
+          evaluated = await readMember();
+          if (applyMemberTransforms) {
+            _applyAggregateMemberOverride(evaluated, profile);
+          }
+        } else {
+          try {
+            evaluated = await handleEvaluate(
+              await readMember(),
+              profile: profile,
+              script: memberScript,
+            );
+            _applyAggregateMemberOverride(evaluated, profile);
+          } catch (e) {
+            commonPrint.log('aggregate: evaluate ${profile.id} failed: $e');
+            evaluated = await readMember();
+            _applyAggregateMemberOverride(evaluated, profile);
+          }
+        }
+        if (_aggregateMemberCache.length > 16) {
+          _aggregateMemberCache.clear();
+        }
+        _aggregateMemberCache[cacheKey] = evaluated;
       }
       final nodes = evaluated['proxies'];
       if (nodes is! List || nodes.isEmpty) {
@@ -1386,13 +1524,29 @@ class GlobalState {
             : (profile.label ?? profile.id),
         usedAliases,
       );
+      final memberNodeNames = {
+        for (final node in nodes)
+          if (node is Map && node['name'] is String) node['name'] as String,
+      };
       final prefixedNodes = <Map<String, dynamic>>[];
       final prefixedNames = <String>[];
+      final seenNodeNames = <String>{};
       for (final node in nodes) {
         if (node is! Map || node['name'] == null) continue;
-        final prefixed = '[$alias] ${node['name']}';
+        final name = node['name'] as String;
+        if (!seenNodeNames.add(name)) {
+          commonPrint.log(
+            'aggregate: drop duplicate node "$name" from ${profile.id}',
+          );
+          continue;
+        }
+        final prefixed = '[$alias] $name';
         final copy = Map<String, dynamic>.from(node);
         copy['name'] = prefixed;
+        final dialer = copy['dialer-proxy'];
+        if (dialer is String && memberNodeNames.contains(dialer)) {
+          copy['dialer-proxy'] = '[$alias] $dialer';
+        }
         prefixedNodes.add(copy);
         prefixedNames.add(prefixed);
         providerProxies[prefixed] = copy;
@@ -1448,20 +1602,22 @@ class GlobalState {
         providerNames.add(key);
       }
 
-      memberGroups.add(<String, dynamic>{
-        'name': appLocalizations.aggregateMemberGroup(alias),
-        'type': 'select',
-        if (fullMerge) 'proxies': prefixedNames else 'use': [key],
-      });
-      memberGroups.add(<String, dynamic>{
-        'name': appLocalizations.aggregateMemberAuto(alias),
-        'type': 'url-test',
-        'url': healthCheckUrl,
-        'interval': 300,
-        if (fullMerge) 'proxies': prefixedNames else 'use': [key],
-      });
+      if (!customNodeMode) {
+        memberGroups.add(<String, dynamic>{
+          'name': appLocalizations.aggregateMemberGroup(alias),
+          'type': 'select',
+          if (fullMerge) 'proxies': prefixedNames else 'use': [key],
+        });
+        memberGroups.add(<String, dynamic>{
+          'name': appLocalizations.aggregateMemberAuto(alias),
+          'type': 'url-test',
+          'url': healthCheckUrl,
+          'interval': 300,
+          if (fullMerge) 'proxies': prefixedNames else 'use': [key],
+        });
+      }
       mergeMembers.add(
-        _AggregateMemberConfig(
+        AggregateMemberConfig(
           profile: profile,
           config: evaluated,
           alias: alias,
@@ -1484,21 +1640,34 @@ class GlobalState {
     groups.addAll(memberGroups);
     final aggregateGroup = appLocalizations.aggregateGroupNodes;
     final aggregateAutoGroup = appLocalizations.aggregateGroupAuto;
+    final aggregateGroupProxies = customNodeMode
+        ? <String>{
+            ...baseProxyNames,
+            ...aggregateNodeNames,
+          }.toList()
+        : aggregateNodeNames;
     groups.add(<String, dynamic>{
       'name': aggregateGroup,
       'type': 'select',
-      if (fullMerge) 'proxies': aggregateNodeNames else 'use': providerNames,
+      if (fullMerge)
+        'proxies': aggregateGroupProxies
+      else
+        'use': providerNames,
     });
-    groups.add(<String, dynamic>{
-      'name': aggregateAutoGroup,
-      'type': 'url-test',
-      'url': healthCheckUrl,
-      'interval': 300,
-      if (fullMerge) 'proxies': aggregateNodeNames else 'use': providerNames,
-    });
+    if (!customNodeMode) {
+      groups.add(<String, dynamic>{
+        'name': aggregateAutoGroup,
+        'type': 'url-test',
+        'url': healthCheckUrl,
+        'interval': 300,
+        if (fullMerge) 'proxies': aggregateNodeNames else 'use': providerNames,
+      });
+    }
 
     // 挂进主选择组，否则用户得先去代理页手动找这个组。
-    // 约定第一个 select 组就是主选择组。
+    // 约定第一个 select 组就是主选择组；没有 select 时退到第一个有 proxies
+    // 的组，避免聚合组完全不出现在主视图里。
+    var mounted = false;
     for (final group in groups) {
       if (group is! Map) continue;
       if (group['type'] != 'select') continue;
@@ -1508,10 +1677,37 @@ class GlobalState {
       if (!proxies.contains(aggregateGroup)) {
         proxies.insert(0, aggregateGroup);
       }
+      mounted = true;
       break;
     }
-    if (config.aggregateMode == AggregateMode.full) {
-      await _mergeAggregateMembers(rawConfig, mergeMembers);
+    if (!mounted) {
+      for (final group in groups) {
+        if (group is! Map || group['name'] == aggregateGroup) continue;
+        final proxies = group['proxies'];
+        if (proxies is! List) continue;
+        if (!proxies.contains(aggregateGroup)) {
+          proxies.insert(0, aggregateGroup);
+        }
+        mounted = true;
+        break;
+      }
+      if (!mounted) {
+        commonPrint.log(
+          'aggregate: no group available to mount "$aggregateGroup"',
+        );
+      }
+    }
+    if (config.effectiveAggregateMode == AggregateMode.full ||
+        config.effectiveAggregateMode == AggregateMode.custom) {
+      lastAggregateMergeReport = await mergeAggregateMembers(
+        rawConfig,
+        mergeMembers,
+        resolveRuleProviderPath: _resolveAggregateRuleProviderPath,
+        mergeGroups: config.effectiveMergeGroups,
+        mergeRules: config.effectiveMergeRules,
+        mergeRuleProviders: config.effectiveMergeRuleProviders,
+        log: commonPrint.log,
+      );
     }
     return providerProxies;
   }
@@ -1538,202 +1734,33 @@ class GlobalState {
     config['rules'] = next;
   }
 
-  Future<void> _mergeAggregateMembers(
-    Map<String, dynamic> rawConfig,
-    List<_AggregateMemberConfig> members,
+  Future<String?> _resolveAggregateRuleProviderPath(
+    String profileId,
+    Map<String, dynamic> provider,
   ) async {
-    if (members.isEmpty) return;
-
-    final groups = rawConfig['proxy-groups'] is List
-        ? rawConfig['proxy-groups'] as List
-        : <dynamic>[];
-    rawConfig['proxy-groups'] = groups;
-    final usedGroupNames = <String>{
-      for (final group in groups)
-        if (group is Map && group['name'] is String)
-          group['name'] as String,
-    };
-    final baseRules = rawConfig['rules'] is List
-        ? (rawConfig['rules'] as List).whereType<String>().toList()
-        : <String>[];
-    final baseHasMatch = baseRules.any(
-      (rule) => ParsedRule.parseString(rule).ruleAction == RuleAction.MATCH,
-    );
-    final mergedRules = <String>[];
-    String? fallbackMatch;
-
-    for (final member in members) {
-      final memberGroups = member.config['proxy-groups'];
-      final memberProxies = member.config['proxies'];
-      final nodeMap = <String, String>{
-        for (final node in (memberProxies is List ? memberProxies : const []))
-          if (node is Map && node['name'] is String)
-            node['name'] as String: '[${member.alias}] ${node['name']}',
-      };
-      final groupMap = <String, String>{};
-      if (memberGroups is List) {
-        for (final group in memberGroups) {
-          if (group is! Map || group['name'] is! String) continue;
-          final original = group['name'] as String;
-          if (member.profile.groupSwitches[original] == false) continue;
-          final candidate = '[${member.alias}] $original';
-          final unique = uniqueAggregateGroupName(candidate, usedGroupNames);
-          groupMap[original] = unique;
-          usedGroupNames.add(unique);
-        }
-      }
-
-      final ruleProviderMap = await _mergeAggregateRuleProviders(
-        rawConfig,
-        member,
+    final type = provider['type'];
+    if (type == 'http' && provider['url'] is String) {
+      return appPath.getProvidersFilePath(
+        profileId,
+        'rules',
+        provider['url'] as String,
       );
-
-      if (memberGroups is List) {
-        for (final group in memberGroups) {
-          if (group is! Map || group['name'] is! String) continue;
-          final mappedName = groupMap[group['name'] as String];
-          if (mappedName == null) continue;
-          final copy = Map<String, dynamic>.from(group);
-          copy['name'] = mappedName;
-          final proxies = copy['proxies'];
-          if (proxies is List) {
-            final mappedProxies = proxies
-                .map<String?>((item) {
-                  if (item is! String) return null;
-                  final mapped = nodeMap[item] ?? groupMap[item];
-                  if (mapped != null) return mapped;
-                  if (isBuiltInAggregateTarget(item) ||
-                      usedGroupNames.contains(item)) {
-                    return item;
-                  }
-                  // A stale node reference must not invalidate the whole config.
-                  commonPrint.log(
-                    'aggregate: drop unknown proxy "$item" from group $mappedName',
-                  );
-                  return null;
-                })
-                .whereType<String>()
-                .toList();
-            copy['proxies'] = mappedProxies.isEmpty &&
-                    (copy['use'] is! List || (copy['use'] as List).isEmpty)
-                ? ['DIRECT']
-                : mappedProxies;
-          }
-          final use = copy['use'];
-          if (use is List && use.isNotEmpty) {
-            // Full merge has no member provider to point at. Expand the group
-            // to the member's direct nodes instead of leaving a dangling
-            // provider reference.
-            copy.remove('use');
-            final existing = copy['proxies'];
-            if (existing is! List || existing.isEmpty) {
-              copy['proxies'] = nodeMap.values.toList();
-            }
-          }
-          groups.add(copy);
-        }
-      }
-
-      final memberRules = member.config['rules'];
-      if (memberRules is! List) continue;
-      final baseGroupNames = {
-        for (final group in groups)
-          if (group is Map && group['name'] is String) group['name'] as String,
-      };
-      for (final rule in memberRules) {
-        if (rule is! String || rule.isEmpty) continue;
-        final parsed = ParsedRule.parseString(rule);
-        if (parsed.ruleAction == RuleAction.MATCH) {
-          // The base profile owns the catch-all rule. If it has none, keep one
-          // member fallback at the very end so later member rules stay reachable.
-          if (baseHasMatch) continue;
-          var target = parsed.ruleTarget;
-          if (target != null) {
-            target = groupMap[target] ?? target;
-          }
-          fallbackMatch ??= parsed.copyWith(ruleTarget: target).value;
-          continue;
-        }
-        var target = parsed.ruleTarget;
-        if (target != null) {
-          final mapped = mapAggregateRuleTarget(
-            target,
-            nodeNames: nodeMap,
-            groupNames: groupMap,
-            baseGroups: baseGroupNames,
-          );
-          if (mapped == null) {
-            commonPrint.log(
-              'aggregate: skip rule with unknown target "$target" from ${member.profile.id}',
-            );
-            continue;
-          }
-          target = mapped;
-        }
-        var provider = parsed.ruleProvider;
-        if (provider != null) {
-          final mapped = ruleProviderMap[provider];
-          if (mapped == null) {
-            commonPrint.log(
-              'aggregate: skip rule with unmerged provider "$provider" from ${member.profile.id}',
-            );
-            continue;
-          }
-          provider = mapped;
-        }
-        final next = parsed.copyWith(
-          ruleTarget: target,
-          ruleProvider: provider,
-        );
-        if (!baseRules.contains(next.value) && !mergedRules.contains(next.value)) {
-          mergedRules.add(next.value);
-        }
-      }
     }
-
-    if (fallbackMatch != null && !baseHasMatch) {
-      mergedRules.add(fallbackMatch);
+    if (type != 'file') return null;
+    final rawPath = provider['path'];
+    if (rawPath is! String || rawPath.isEmpty) return null;
+    if (p.isAbsolute(rawPath)) {
+      return await File(rawPath).exists() ? rawPath : null;
     }
-    if (mergedRules.isEmpty) return;
-    final matchIndex = baseRules.indexWhere(
-      (rule) => ParsedRule.parseString(rule).ruleAction == RuleAction.MATCH,
-    );
-    final nextRules = List<String>.from(baseRules);
-    if (matchIndex == -1) {
-      nextRules.addAll(mergedRules);
-    } else {
-      nextRules.insertAll(matchIndex, mergedRules);
+    final profilesPath = await appPath.profilesPath;
+    final dataPath = (await appPath.dataDir.future).path;
+    for (final candidate in [
+      p.join(profilesPath, rawPath),
+      p.join(dataPath, rawPath),
+    ]) {
+      if (await File(candidate).exists()) return candidate;
     }
-    rawConfig['rules'] = nextRules;
-  }
-
-  Future<Map<String, String>> _mergeAggregateRuleProviders(
-    Map<String, dynamic> rawConfig,
-    _AggregateMemberConfig member,
-  ) async {
-    final source = member.config['rule-providers'];
-    if (source is! Map) return const {};
-    final target = rawConfig['rule-providers'] is Map
-        ? Map<String, dynamic>.from(rawConfig['rule-providers'] as Map)
-        : <String, dynamic>{};
-    final mapping = <String, String>{};
-    for (final entry in source.entries) {
-      final key = 'agg_${member.profile.id}_${entry.key}';
-      final value = entry.value;
-      if (value is! Map) continue;
-      final copy = Map<String, dynamic>.from(value);
-      if (copy['type'] == 'http' && copy['url'] is String) {
-        copy['path'] = await appPath.getProvidersFilePath(
-          member.profile.id,
-          'rules',
-          copy['url'] as String,
-        );
-      }
-      target[key] = copy;
-      mapping[entry.key.toString()] = key;
-    }
-    if (target.isNotEmpty) rawConfig['rule-providers'] = target;
-    return mapping;
+    return null;
   }
 
   /// 供原生卡片读取：内核地址 + 密钥。
@@ -1759,7 +1786,10 @@ class GlobalState {
     }
   }
 
-  Future<Map<String, dynamic>> getProfileConfig(String profileId) async {
+  Future<Map<String, dynamic>> getProfileConfig(
+    String profileId, {
+    bool applyNodeOverrides = true,
+  }) async {
     final profile = config.profiles.getProfile(profileId);
     final ageSecretKey = profile?.ageSecretKey;
     final configMap = await switch (clashLibHandler != null) {
@@ -1770,17 +1800,20 @@ class GlobalState {
     configMap.remove('rule');
     // 本地覆盖在离开这个函数之前叠加：`patchRawConfig` 直接消费它的结果，
     // 所以内核、链路生成、详情面板看到的是同一份「用户改过」的配置。
-    await NodeOverrideStore.instance.ensureLoaded();
-    NodeOverrideStore.instance.apply(profileId, configMap);
+    if (applyNodeOverrides) {
+      await NodeOverrideStore.instance.ensureLoaded();
+      NodeOverrideStore.instance.apply(profileId, configMap);
+    }
     return configMap;
   }
 
   Future<Map<String, dynamic>> handleEvaluate(
     Map<String, dynamic> config, {
     Profile? profile,
+    Script? script,
   }) async {
     return _scriptEvaluateLock.synchronized(() async {
-      final currentScript = globalState.config.scriptProps.currentScript;
+      final currentScript = script ?? globalState.config.scriptProps.currentScript;
       if (currentScript == null) return config;
 
       if (profile != null && !profile.useScriptOverride) return config;

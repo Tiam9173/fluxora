@@ -2892,9 +2892,342 @@ as List<Script>,
 
 
 /// @nodoc
+mixin _$AggregateProfile {
+
+ String get id; String get name; List<String> get memberIds; AggregateMode? get mode; AggregateScriptTiming? get scriptTiming; bool? get mergeNodes; bool? get mergeGroups; bool? get mergeRules; bool? get mergeRuleProviders; bool? get mergeMemberScripts; bool? get applyNodeOverrides; OverrideData? get overrideData;
+/// Create a copy of AggregateProfile
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AggregateProfileCopyWith<AggregateProfile> get copyWith => _$AggregateProfileCopyWithImpl<AggregateProfile>(this as AggregateProfile, _$identity);
+
+  /// Serializes this AggregateProfile to a JSON map.
+  Map<String, dynamic> toJson();
+
+
+@override
+bool operator ==(Object other) {
+  final _this = this as AggregateProfile;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AggregateProfile&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.name, _this.name) || other.name == _this.name)&&const DeepCollectionEquality().equals(other.memberIds, _this.memberIds)&&(identical(other.mode, _this.mode) || other.mode == _this.mode)&&(identical(other.scriptTiming, _this.scriptTiming) || other.scriptTiming == _this.scriptTiming)&&(identical(other.mergeNodes, _this.mergeNodes) || other.mergeNodes == _this.mergeNodes)&&(identical(other.mergeGroups, _this.mergeGroups) || other.mergeGroups == _this.mergeGroups)&&(identical(other.mergeRules, _this.mergeRules) || other.mergeRules == _this.mergeRules)&&(identical(other.mergeRuleProviders, _this.mergeRuleProviders) || other.mergeRuleProviders == _this.mergeRuleProviders)&&(identical(other.mergeMemberScripts, _this.mergeMemberScripts) || other.mergeMemberScripts == _this.mergeMemberScripts)&&(identical(other.applyNodeOverrides, _this.applyNodeOverrides) || other.applyNodeOverrides == _this.applyNodeOverrides)&&(identical(other.overrideData, _this.overrideData) || other.overrideData == _this.overrideData));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+  final _this = this as AggregateProfile;
+  return Object.hash(runtimeType,_this.id,_this.name,const DeepCollectionEquality().hash(_this.memberIds),_this.mode,_this.scriptTiming,_this.mergeNodes,_this.mergeGroups,_this.mergeRules,_this.mergeRuleProviders,_this.mergeMemberScripts,_this.applyNodeOverrides,_this.overrideData);
+}
+
+@override
+String toString() {
+  final _this = this as AggregateProfile;
+  return 'AggregateProfile(id: ${_this.id}, name: ${_this.name}, memberIds: ${_this.memberIds}, mode: ${_this.mode}, scriptTiming: ${_this.scriptTiming}, mergeNodes: ${_this.mergeNodes}, mergeGroups: ${_this.mergeGroups}, mergeRules: ${_this.mergeRules}, mergeRuleProviders: ${_this.mergeRuleProviders}, mergeMemberScripts: ${_this.mergeMemberScripts}, applyNodeOverrides: ${_this.applyNodeOverrides}, overrideData: ${_this.overrideData})';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AggregateProfileCopyWith<$Res>  {
+  factory $AggregateProfileCopyWith(AggregateProfile value, $Res Function(AggregateProfile) _then) = _$AggregateProfileCopyWithImpl;
+@useResult
+$Res call({
+ String id, String name, List<String> memberIds, AggregateMode? mode, AggregateScriptTiming? scriptTiming, bool? mergeNodes, bool? mergeGroups, bool? mergeRules, bool? mergeRuleProviders, bool? mergeMemberScripts, bool? applyNodeOverrides, OverrideData? overrideData
+});
+
+
+$OverrideDataCopyWith<$Res>? get overrideData;
+
+}
+/// @nodoc
+class _$AggregateProfileCopyWithImpl<$Res>
+    implements $AggregateProfileCopyWith<$Res> {
+  _$AggregateProfileCopyWithImpl(this._self, this._then);
+
+  final AggregateProfile _self;
+  final $Res Function(AggregateProfile) _then;
+
+/// Create a copy of AggregateProfile
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? memberIds = null,Object? mode = freezed,Object? scriptTiming = freezed,Object? mergeNodes = freezed,Object? mergeGroups = freezed,Object? mergeRules = freezed,Object? mergeRuleProviders = freezed,Object? mergeMemberScripts = freezed,Object? applyNodeOverrides = freezed,Object? overrideData = freezed,}) {
+  return _then(AggregateProfile(
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
+as String,memberIds: null == memberIds ? _self.memberIds : memberIds // ignore: cast_nullable_to_non_nullable
+as List<String>,mode: freezed == mode ? _self.mode : mode // ignore: cast_nullable_to_non_nullable
+as AggregateMode?,scriptTiming: freezed == scriptTiming ? _self.scriptTiming : scriptTiming // ignore: cast_nullable_to_non_nullable
+as AggregateScriptTiming?,mergeNodes: freezed == mergeNodes ? _self.mergeNodes : mergeNodes // ignore: cast_nullable_to_non_nullable
+as bool?,mergeGroups: freezed == mergeGroups ? _self.mergeGroups : mergeGroups // ignore: cast_nullable_to_non_nullable
+as bool?,mergeRules: freezed == mergeRules ? _self.mergeRules : mergeRules // ignore: cast_nullable_to_non_nullable
+as bool?,mergeRuleProviders: freezed == mergeRuleProviders ? _self.mergeRuleProviders : mergeRuleProviders // ignore: cast_nullable_to_non_nullable
+as bool?,mergeMemberScripts: freezed == mergeMemberScripts ? _self.mergeMemberScripts : mergeMemberScripts // ignore: cast_nullable_to_non_nullable
+as bool?,applyNodeOverrides: freezed == applyNodeOverrides ? _self.applyNodeOverrides : applyNodeOverrides // ignore: cast_nullable_to_non_nullable
+as bool?,overrideData: freezed == overrideData ? _self.overrideData : overrideData // ignore: cast_nullable_to_non_nullable
+as OverrideData?,
+  ));
+}
+/// Create a copy of AggregateProfile
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$OverrideDataCopyWith<$Res>? get overrideData {
+    if (_self.overrideData == null) {
+    return null;
+  }
+
+  return $OverrideDataCopyWith<$Res>(_self.overrideData!, (value) {
+    return _then(_self.copyWith(overrideData: value));
+  });
+}
+}
+
+
+/// Adds pattern-matching-related methods to [AggregateProfile].
+extension AggregateProfilePatterns on AggregateProfile {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _AggregateProfile value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _AggregateProfile() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _AggregateProfile value)  $default,){
+final _that = this;
+switch (_that) {
+case _AggregateProfile():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _AggregateProfile value)?  $default,){
+final _that = this;
+switch (_that) {
+case _AggregateProfile() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  List<String> memberIds,  AggregateMode? mode,  AggregateScriptTiming? scriptTiming,  bool? mergeNodes,  bool? mergeGroups,  bool? mergeRules,  bool? mergeRuleProviders,  bool? mergeMemberScripts,  bool? applyNodeOverrides,  OverrideData? overrideData)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _AggregateProfile() when $default != null:
+return $default(_that.id,_that.name,_that.memberIds,_that.mode,_that.scriptTiming,_that.mergeNodes,_that.mergeGroups,_that.mergeRules,_that.mergeRuleProviders,_that.mergeMemberScripts,_that.applyNodeOverrides,_that.overrideData);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  List<String> memberIds,  AggregateMode? mode,  AggregateScriptTiming? scriptTiming,  bool? mergeNodes,  bool? mergeGroups,  bool? mergeRules,  bool? mergeRuleProviders,  bool? mergeMemberScripts,  bool? applyNodeOverrides,  OverrideData? overrideData)  $default,) {final _that = this;
+switch (_that) {
+case _AggregateProfile():
+return $default(_that.id,_that.name,_that.memberIds,_that.mode,_that.scriptTiming,_that.mergeNodes,_that.mergeGroups,_that.mergeRules,_that.mergeRuleProviders,_that.mergeMemberScripts,_that.applyNodeOverrides,_that.overrideData);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  List<String> memberIds,  AggregateMode? mode,  AggregateScriptTiming? scriptTiming,  bool? mergeNodes,  bool? mergeGroups,  bool? mergeRules,  bool? mergeRuleProviders,  bool? mergeMemberScripts,  bool? applyNodeOverrides,  OverrideData? overrideData)?  $default,) {final _that = this;
+switch (_that) {
+case _AggregateProfile() when $default != null:
+return $default(_that.id,_that.name,_that.memberIds,_that.mode,_that.scriptTiming,_that.mergeNodes,_that.mergeGroups,_that.mergeRules,_that.mergeRuleProviders,_that.mergeMemberScripts,_that.applyNodeOverrides,_that.overrideData);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class _AggregateProfile implements AggregateProfile {
+  const _AggregateProfile({required this.id, required this.name,  List<String> memberIds = const [], this.mode, this.scriptTiming, this.mergeNodes, this.mergeGroups, this.mergeRules, this.mergeRuleProviders, this.mergeMemberScripts, this.applyNodeOverrides, this.overrideData}): _memberIds = memberIds;
+  factory _AggregateProfile.fromJson(Map<String, dynamic> json) => _$AggregateProfileFromJson(json);
+
+@override final  String id;
+@override final  String name;
+ final  List<String> _memberIds;
+@override@JsonKey() List<String> get memberIds {
+  if (_memberIds is EqualUnmodifiableListView) return _memberIds;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_memberIds);
+}
+
+@override final  AggregateMode? mode;
+@override final  AggregateScriptTiming? scriptTiming;
+@override final  bool? mergeNodes;
+@override final  bool? mergeGroups;
+@override final  bool? mergeRules;
+@override final  bool? mergeRuleProviders;
+@override final  bool? mergeMemberScripts;
+@override final  bool? applyNodeOverrides;
+@override final  OverrideData? overrideData;
+
+/// Create a copy of AggregateProfile
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$AggregateProfileCopyWith<_AggregateProfile> get copyWith => __$AggregateProfileCopyWithImpl<_AggregateProfile>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$AggregateProfileToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _AggregateProfile&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&const DeepCollectionEquality().equals(other.memberIds, _memberIds)&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.scriptTiming, scriptTiming) || other.scriptTiming == scriptTiming)&&(identical(other.mergeNodes, mergeNodes) || other.mergeNodes == mergeNodes)&&(identical(other.mergeGroups, mergeGroups) || other.mergeGroups == mergeGroups)&&(identical(other.mergeRules, mergeRules) || other.mergeRules == mergeRules)&&(identical(other.mergeRuleProviders, mergeRuleProviders) || other.mergeRuleProviders == mergeRuleProviders)&&(identical(other.mergeMemberScripts, mergeMemberScripts) || other.mergeMemberScripts == mergeMemberScripts)&&(identical(other.applyNodeOverrides, applyNodeOverrides) || other.applyNodeOverrides == applyNodeOverrides)&&(identical(other.overrideData, overrideData) || other.overrideData == overrideData));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+    return Object.hash(runtimeType,id,name,const DeepCollectionEquality().hash(_memberIds),mode,scriptTiming,mergeNodes,mergeGroups,mergeRules,mergeRuleProviders,mergeMemberScripts,applyNodeOverrides,overrideData);
+}
+
+@override
+String toString() {
+    return 'AggregateProfile(id: $id, name: $name, memberIds: $memberIds, mode: $mode, scriptTiming: $scriptTiming, mergeNodes: $mergeNodes, mergeGroups: $mergeGroups, mergeRules: $mergeRules, mergeRuleProviders: $mergeRuleProviders, mergeMemberScripts: $mergeMemberScripts, applyNodeOverrides: $applyNodeOverrides, overrideData: $overrideData)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$AggregateProfileCopyWith<$Res> implements $AggregateProfileCopyWith<$Res> {
+  factory _$AggregateProfileCopyWith(_AggregateProfile value, $Res Function(_AggregateProfile) _then) = __$AggregateProfileCopyWithImpl;
+@override @useResult
+$Res call({
+ String id, String name, List<String> memberIds, AggregateMode? mode, AggregateScriptTiming? scriptTiming, bool? mergeNodes, bool? mergeGroups, bool? mergeRules, bool? mergeRuleProviders, bool? mergeMemberScripts, bool? applyNodeOverrides, OverrideData? overrideData
+});
+
+
+@override $OverrideDataCopyWith<$Res>? get overrideData;
+
+}
+/// @nodoc
+class __$AggregateProfileCopyWithImpl<$Res>
+    implements _$AggregateProfileCopyWith<$Res> {
+  __$AggregateProfileCopyWithImpl(this._self, this._then);
+
+  final _AggregateProfile _self;
+  final $Res Function(_AggregateProfile) _then;
+
+/// Create a copy of AggregateProfile
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? memberIds = null,Object? mode = freezed,Object? scriptTiming = freezed,Object? mergeNodes = freezed,Object? mergeGroups = freezed,Object? mergeRules = freezed,Object? mergeRuleProviders = freezed,Object? mergeMemberScripts = freezed,Object? applyNodeOverrides = freezed,Object? overrideData = freezed,}) {
+  return _then(_AggregateProfile(
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
+as String,memberIds: null == memberIds ? _self._memberIds : memberIds // ignore: cast_nullable_to_non_nullable
+as List<String>,mode: freezed == mode ? _self.mode : mode // ignore: cast_nullable_to_non_nullable
+as AggregateMode?,scriptTiming: freezed == scriptTiming ? _self.scriptTiming : scriptTiming // ignore: cast_nullable_to_non_nullable
+as AggregateScriptTiming?,mergeNodes: freezed == mergeNodes ? _self.mergeNodes : mergeNodes // ignore: cast_nullable_to_non_nullable
+as bool?,mergeGroups: freezed == mergeGroups ? _self.mergeGroups : mergeGroups // ignore: cast_nullable_to_non_nullable
+as bool?,mergeRules: freezed == mergeRules ? _self.mergeRules : mergeRules // ignore: cast_nullable_to_non_nullable
+as bool?,mergeRuleProviders: freezed == mergeRuleProviders ? _self.mergeRuleProviders : mergeRuleProviders // ignore: cast_nullable_to_non_nullable
+as bool?,mergeMemberScripts: freezed == mergeMemberScripts ? _self.mergeMemberScripts : mergeMemberScripts // ignore: cast_nullable_to_non_nullable
+as bool?,applyNodeOverrides: freezed == applyNodeOverrides ? _self.applyNodeOverrides : applyNodeOverrides // ignore: cast_nullable_to_non_nullable
+as bool?,overrideData: freezed == overrideData ? _self.overrideData : overrideData // ignore: cast_nullable_to_non_nullable
+as OverrideData?,
+  ));
+}
+
+/// Create a copy of AggregateProfile
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$OverrideDataCopyWith<$Res>? get overrideData {
+    if (_self.overrideData == null) {
+    return null;
+  }
+
+  return $OverrideDataCopyWith<$Res>(_self.overrideData!, (value) {
+    return _then(_self.copyWith(overrideData: value));
+  });
+}
+}
+
+
+/// @nodoc
 mixin _$Config {
 
-@JsonKey(fromJson: AppSettingProps.safeFromJson) AppSettingProps get appSetting; List<Profile> get profiles; List<HotKeyAction> get hotKeyActions; AggregateMode get aggregateMode; AggregateScriptTiming get aggregateScriptTiming; String? get currentProfileId; bool get overrideDns; bool get overrideNtp; bool get overrideSniffer; bool get overrideTunnel; bool get overrideExperimental; bool get overrideTestUrl; DAV? get dav; NetworkProps get networkProps;@JsonKey(fromJson: VpnProps.safeFromJson) VpnProps get vpnProps;@JsonKey(fromJson: ThemeProps.safeFromJson) ThemeProps get themeProps; ProxiesStyle get proxiesStyle; WindowProps get windowProps;@JsonKey(fromJson: ClashConfig.safeFormJson) ClashConfig get patchClashConfig; ScriptProps get scriptProps; String get nodeExcludeFilter; int get healthCheckTimeout;
+@JsonKey(fromJson: AppSettingProps.safeFromJson) AppSettingProps get appSetting; List<Profile> get profiles; List<HotKeyAction> get hotKeyActions; AggregateMode get aggregateMode; AggregateScriptTiming get aggregateScriptTiming; bool get aggregateMergeNodes; bool get aggregateMergeGroups; bool get aggregateMergeRules; bool get aggregateMergeRuleProviders; bool get aggregateMergeMemberScripts; bool get aggregateApplyNodeOverrides; OverrideData get aggregateOverrideData; List<AggregateProfile> get aggregates; String? get currentAggregateId; String? get currentProfileId; bool get overrideDns; bool get overrideNtp; bool get overrideSniffer; bool get overrideTunnel; bool get overrideExperimental; bool get overrideTestUrl; DAV? get dav; NetworkProps get networkProps;@JsonKey(fromJson: VpnProps.safeFromJson) VpnProps get vpnProps;@JsonKey(fromJson: ThemeProps.safeFromJson) ThemeProps get themeProps; ProxiesStyle get proxiesStyle; WindowProps get windowProps;@JsonKey(fromJson: ClashConfig.safeFormJson) ClashConfig get patchClashConfig; ScriptProps get scriptProps; String get nodeExcludeFilter; int get healthCheckTimeout;
 /// Create a copy of Config
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -2908,20 +3241,20 @@ $ConfigCopyWith<Config> get copyWith => _$ConfigCopyWithImpl<Config>(this as Con
 @override
 bool operator ==(Object other) {
   final _this = this as Config;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Config&&(identical(other.appSetting, _this.appSetting) || other.appSetting == _this.appSetting)&&const DeepCollectionEquality().equals(other.profiles, _this.profiles)&&const DeepCollectionEquality().equals(other.hotKeyActions, _this.hotKeyActions)&&(identical(other.aggregateMode, _this.aggregateMode) || other.aggregateMode == _this.aggregateMode)&&(identical(other.aggregateScriptTiming, _this.aggregateScriptTiming) || other.aggregateScriptTiming == _this.aggregateScriptTiming)&&(identical(other.currentProfileId, _this.currentProfileId) || other.currentProfileId == _this.currentProfileId)&&(identical(other.overrideDns, _this.overrideDns) || other.overrideDns == _this.overrideDns)&&(identical(other.overrideNtp, _this.overrideNtp) || other.overrideNtp == _this.overrideNtp)&&(identical(other.overrideSniffer, _this.overrideSniffer) || other.overrideSniffer == _this.overrideSniffer)&&(identical(other.overrideTunnel, _this.overrideTunnel) || other.overrideTunnel == _this.overrideTunnel)&&(identical(other.overrideExperimental, _this.overrideExperimental) || other.overrideExperimental == _this.overrideExperimental)&&(identical(other.overrideTestUrl, _this.overrideTestUrl) || other.overrideTestUrl == _this.overrideTestUrl)&&(identical(other.dav, _this.dav) || other.dav == _this.dav)&&(identical(other.networkProps, _this.networkProps) || other.networkProps == _this.networkProps)&&(identical(other.vpnProps, _this.vpnProps) || other.vpnProps == _this.vpnProps)&&(identical(other.themeProps, _this.themeProps) || other.themeProps == _this.themeProps)&&(identical(other.proxiesStyle, _this.proxiesStyle) || other.proxiesStyle == _this.proxiesStyle)&&(identical(other.windowProps, _this.windowProps) || other.windowProps == _this.windowProps)&&(identical(other.patchClashConfig, _this.patchClashConfig) || other.patchClashConfig == _this.patchClashConfig)&&(identical(other.scriptProps, _this.scriptProps) || other.scriptProps == _this.scriptProps)&&(identical(other.nodeExcludeFilter, _this.nodeExcludeFilter) || other.nodeExcludeFilter == _this.nodeExcludeFilter)&&(identical(other.healthCheckTimeout, _this.healthCheckTimeout) || other.healthCheckTimeout == _this.healthCheckTimeout));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Config&&(identical(other.appSetting, _this.appSetting) || other.appSetting == _this.appSetting)&&const DeepCollectionEquality().equals(other.profiles, _this.profiles)&&const DeepCollectionEquality().equals(other.hotKeyActions, _this.hotKeyActions)&&(identical(other.aggregateMode, _this.aggregateMode) || other.aggregateMode == _this.aggregateMode)&&(identical(other.aggregateScriptTiming, _this.aggregateScriptTiming) || other.aggregateScriptTiming == _this.aggregateScriptTiming)&&(identical(other.aggregateMergeNodes, _this.aggregateMergeNodes) || other.aggregateMergeNodes == _this.aggregateMergeNodes)&&(identical(other.aggregateMergeGroups, _this.aggregateMergeGroups) || other.aggregateMergeGroups == _this.aggregateMergeGroups)&&(identical(other.aggregateMergeRules, _this.aggregateMergeRules) || other.aggregateMergeRules == _this.aggregateMergeRules)&&(identical(other.aggregateMergeRuleProviders, _this.aggregateMergeRuleProviders) || other.aggregateMergeRuleProviders == _this.aggregateMergeRuleProviders)&&(identical(other.aggregateMergeMemberScripts, _this.aggregateMergeMemberScripts) || other.aggregateMergeMemberScripts == _this.aggregateMergeMemberScripts)&&(identical(other.aggregateApplyNodeOverrides, _this.aggregateApplyNodeOverrides) || other.aggregateApplyNodeOverrides == _this.aggregateApplyNodeOverrides)&&(identical(other.aggregateOverrideData, _this.aggregateOverrideData) || other.aggregateOverrideData == _this.aggregateOverrideData)&&const DeepCollectionEquality().equals(other.aggregates, _this.aggregates)&&(identical(other.currentAggregateId, _this.currentAggregateId) || other.currentAggregateId == _this.currentAggregateId)&&(identical(other.currentProfileId, _this.currentProfileId) || other.currentProfileId == _this.currentProfileId)&&(identical(other.overrideDns, _this.overrideDns) || other.overrideDns == _this.overrideDns)&&(identical(other.overrideNtp, _this.overrideNtp) || other.overrideNtp == _this.overrideNtp)&&(identical(other.overrideSniffer, _this.overrideSniffer) || other.overrideSniffer == _this.overrideSniffer)&&(identical(other.overrideTunnel, _this.overrideTunnel) || other.overrideTunnel == _this.overrideTunnel)&&(identical(other.overrideExperimental, _this.overrideExperimental) || other.overrideExperimental == _this.overrideExperimental)&&(identical(other.overrideTestUrl, _this.overrideTestUrl) || other.overrideTestUrl == _this.overrideTestUrl)&&(identical(other.dav, _this.dav) || other.dav == _this.dav)&&(identical(other.networkProps, _this.networkProps) || other.networkProps == _this.networkProps)&&(identical(other.vpnProps, _this.vpnProps) || other.vpnProps == _this.vpnProps)&&(identical(other.themeProps, _this.themeProps) || other.themeProps == _this.themeProps)&&(identical(other.proxiesStyle, _this.proxiesStyle) || other.proxiesStyle == _this.proxiesStyle)&&(identical(other.windowProps, _this.windowProps) || other.windowProps == _this.windowProps)&&(identical(other.patchClashConfig, _this.patchClashConfig) || other.patchClashConfig == _this.patchClashConfig)&&(identical(other.scriptProps, _this.scriptProps) || other.scriptProps == _this.scriptProps)&&(identical(other.nodeExcludeFilter, _this.nodeExcludeFilter) || other.nodeExcludeFilter == _this.nodeExcludeFilter)&&(identical(other.healthCheckTimeout, _this.healthCheckTimeout) || other.healthCheckTimeout == _this.healthCheckTimeout));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as Config;
-  return Object.hashAll([runtimeType,_this.appSetting,const DeepCollectionEquality().hash(_this.profiles),const DeepCollectionEquality().hash(_this.hotKeyActions),_this.aggregateMode,_this.aggregateScriptTiming,_this.currentProfileId,_this.overrideDns,_this.overrideNtp,_this.overrideSniffer,_this.overrideTunnel,_this.overrideExperimental,_this.overrideTestUrl,_this.dav,_this.networkProps,_this.vpnProps,_this.themeProps,_this.proxiesStyle,_this.windowProps,_this.patchClashConfig,_this.scriptProps,_this.nodeExcludeFilter,_this.healthCheckTimeout]);
+  return Object.hashAll([runtimeType,_this.appSetting,const DeepCollectionEquality().hash(_this.profiles),const DeepCollectionEquality().hash(_this.hotKeyActions),_this.aggregateMode,_this.aggregateScriptTiming,_this.aggregateMergeNodes,_this.aggregateMergeGroups,_this.aggregateMergeRules,_this.aggregateMergeRuleProviders,_this.aggregateMergeMemberScripts,_this.aggregateApplyNodeOverrides,_this.aggregateOverrideData,const DeepCollectionEquality().hash(_this.aggregates),_this.currentAggregateId,_this.currentProfileId,_this.overrideDns,_this.overrideNtp,_this.overrideSniffer,_this.overrideTunnel,_this.overrideExperimental,_this.overrideTestUrl,_this.dav,_this.networkProps,_this.vpnProps,_this.themeProps,_this.proxiesStyle,_this.windowProps,_this.patchClashConfig,_this.scriptProps,_this.nodeExcludeFilter,_this.healthCheckTimeout]);
 }
 
 @override
 String toString() {
   final _this = this as Config;
-  return 'Config(appSetting: ${_this.appSetting}, profiles: ${_this.profiles}, hotKeyActions: ${_this.hotKeyActions}, aggregateMode: ${_this.aggregateMode}, aggregateScriptTiming: ${_this.aggregateScriptTiming}, currentProfileId: ${_this.currentProfileId}, overrideDns: ${_this.overrideDns}, overrideNtp: ${_this.overrideNtp}, overrideSniffer: ${_this.overrideSniffer}, overrideTunnel: ${_this.overrideTunnel}, overrideExperimental: ${_this.overrideExperimental}, overrideTestUrl: ${_this.overrideTestUrl}, dav: ${_this.dav}, networkProps: ${_this.networkProps}, vpnProps: ${_this.vpnProps}, themeProps: ${_this.themeProps}, proxiesStyle: ${_this.proxiesStyle}, windowProps: ${_this.windowProps}, patchClashConfig: ${_this.patchClashConfig}, scriptProps: ${_this.scriptProps}, nodeExcludeFilter: ${_this.nodeExcludeFilter}, healthCheckTimeout: ${_this.healthCheckTimeout})';
+  return 'Config(appSetting: ${_this.appSetting}, profiles: ${_this.profiles}, hotKeyActions: ${_this.hotKeyActions}, aggregateMode: ${_this.aggregateMode}, aggregateScriptTiming: ${_this.aggregateScriptTiming}, aggregateMergeNodes: ${_this.aggregateMergeNodes}, aggregateMergeGroups: ${_this.aggregateMergeGroups}, aggregateMergeRules: ${_this.aggregateMergeRules}, aggregateMergeRuleProviders: ${_this.aggregateMergeRuleProviders}, aggregateMergeMemberScripts: ${_this.aggregateMergeMemberScripts}, aggregateApplyNodeOverrides: ${_this.aggregateApplyNodeOverrides}, aggregateOverrideData: ${_this.aggregateOverrideData}, aggregates: ${_this.aggregates}, currentAggregateId: ${_this.currentAggregateId}, currentProfileId: ${_this.currentProfileId}, overrideDns: ${_this.overrideDns}, overrideNtp: ${_this.overrideNtp}, overrideSniffer: ${_this.overrideSniffer}, overrideTunnel: ${_this.overrideTunnel}, overrideExperimental: ${_this.overrideExperimental}, overrideTestUrl: ${_this.overrideTestUrl}, dav: ${_this.dav}, networkProps: ${_this.networkProps}, vpnProps: ${_this.vpnProps}, themeProps: ${_this.themeProps}, proxiesStyle: ${_this.proxiesStyle}, windowProps: ${_this.windowProps}, patchClashConfig: ${_this.patchClashConfig}, scriptProps: ${_this.scriptProps}, nodeExcludeFilter: ${_this.nodeExcludeFilter}, healthCheckTimeout: ${_this.healthCheckTimeout})';
 }
 
 
@@ -2932,11 +3265,11 @@ abstract mixin class $ConfigCopyWith<$Res>  {
   factory $ConfigCopyWith(Config value, $Res Function(Config) _then) = _$ConfigCopyWithImpl;
 @useResult
 $Res call({
-@JsonKey(fromJson: AppSettingProps.safeFromJson) AppSettingProps appSetting, List<Profile> profiles, List<HotKeyAction> hotKeyActions, AggregateMode aggregateMode, AggregateScriptTiming aggregateScriptTiming, String? currentProfileId, bool overrideDns, bool overrideNtp, bool overrideSniffer, bool overrideTunnel, bool overrideExperimental, bool overrideTestUrl, DAV? dav, NetworkProps networkProps,@JsonKey(fromJson: VpnProps.safeFromJson) VpnProps vpnProps,@JsonKey(fromJson: ThemeProps.safeFromJson) ThemeProps themeProps, ProxiesStyle proxiesStyle, WindowProps windowProps,@JsonKey(fromJson: ClashConfig.safeFormJson) ClashConfig patchClashConfig, ScriptProps scriptProps, String nodeExcludeFilter, int healthCheckTimeout
+@JsonKey(fromJson: AppSettingProps.safeFromJson) AppSettingProps appSetting, List<Profile> profiles, List<HotKeyAction> hotKeyActions, AggregateMode aggregateMode, AggregateScriptTiming aggregateScriptTiming, bool aggregateMergeNodes, bool aggregateMergeGroups, bool aggregateMergeRules, bool aggregateMergeRuleProviders, bool aggregateMergeMemberScripts, bool aggregateApplyNodeOverrides, OverrideData aggregateOverrideData, List<AggregateProfile> aggregates, String? currentAggregateId, String? currentProfileId, bool overrideDns, bool overrideNtp, bool overrideSniffer, bool overrideTunnel, bool overrideExperimental, bool overrideTestUrl, DAV? dav, NetworkProps networkProps,@JsonKey(fromJson: VpnProps.safeFromJson) VpnProps vpnProps,@JsonKey(fromJson: ThemeProps.safeFromJson) ThemeProps themeProps, ProxiesStyle proxiesStyle, WindowProps windowProps,@JsonKey(fromJson: ClashConfig.safeFormJson) ClashConfig patchClashConfig, ScriptProps scriptProps, String nodeExcludeFilter, int healthCheckTimeout
 });
 
 
-$AppSettingPropsCopyWith<$Res> get appSetting;$DAVCopyWith<$Res>? get dav;$NetworkPropsCopyWith<$Res> get networkProps;$VpnPropsCopyWith<$Res> get vpnProps;$ThemePropsCopyWith<$Res> get themeProps;$ProxiesStyleCopyWith<$Res> get proxiesStyle;$WindowPropsCopyWith<$Res> get windowProps;$ClashConfigCopyWith<$Res> get patchClashConfig;$ScriptPropsCopyWith<$Res> get scriptProps;
+$AppSettingPropsCopyWith<$Res> get appSetting;$OverrideDataCopyWith<$Res> get aggregateOverrideData;$DAVCopyWith<$Res>? get dav;$NetworkPropsCopyWith<$Res> get networkProps;$VpnPropsCopyWith<$Res> get vpnProps;$ThemePropsCopyWith<$Res> get themeProps;$ProxiesStyleCopyWith<$Res> get proxiesStyle;$WindowPropsCopyWith<$Res> get windowProps;$ClashConfigCopyWith<$Res> get patchClashConfig;$ScriptPropsCopyWith<$Res> get scriptProps;
 
 }
 /// @nodoc
@@ -2949,14 +3282,23 @@ class _$ConfigCopyWithImpl<$Res>
 
 /// Create a copy of Config
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? appSetting = null,Object? profiles = null,Object? hotKeyActions = null,Object? aggregateMode = null,Object? aggregateScriptTiming = null,Object? currentProfileId = freezed,Object? overrideDns = null,Object? overrideNtp = null,Object? overrideSniffer = null,Object? overrideTunnel = null,Object? overrideExperimental = null,Object? overrideTestUrl = null,Object? dav = freezed,Object? networkProps = null,Object? vpnProps = null,Object? themeProps = null,Object? proxiesStyle = null,Object? windowProps = null,Object? patchClashConfig = null,Object? scriptProps = null,Object? nodeExcludeFilter = null,Object? healthCheckTimeout = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? appSetting = null,Object? profiles = null,Object? hotKeyActions = null,Object? aggregateMode = null,Object? aggregateScriptTiming = null,Object? aggregateMergeNodes = null,Object? aggregateMergeGroups = null,Object? aggregateMergeRules = null,Object? aggregateMergeRuleProviders = null,Object? aggregateMergeMemberScripts = null,Object? aggregateApplyNodeOverrides = null,Object? aggregateOverrideData = null,Object? aggregates = null,Object? currentAggregateId = freezed,Object? currentProfileId = freezed,Object? overrideDns = null,Object? overrideNtp = null,Object? overrideSniffer = null,Object? overrideTunnel = null,Object? overrideExperimental = null,Object? overrideTestUrl = null,Object? dav = freezed,Object? networkProps = null,Object? vpnProps = null,Object? themeProps = null,Object? proxiesStyle = null,Object? windowProps = null,Object? patchClashConfig = null,Object? scriptProps = null,Object? nodeExcludeFilter = null,Object? healthCheckTimeout = null,}) {
   return _then(Config(
 appSetting: null == appSetting ? _self.appSetting : appSetting // ignore: cast_nullable_to_non_nullable
 as AppSettingProps,profiles: null == profiles ? _self.profiles : profiles // ignore: cast_nullable_to_non_nullable
 as List<Profile>,hotKeyActions: null == hotKeyActions ? _self.hotKeyActions : hotKeyActions // ignore: cast_nullable_to_non_nullable
 as List<HotKeyAction>,aggregateMode: null == aggregateMode ? _self.aggregateMode : aggregateMode // ignore: cast_nullable_to_non_nullable
 as AggregateMode,aggregateScriptTiming: null == aggregateScriptTiming ? _self.aggregateScriptTiming : aggregateScriptTiming // ignore: cast_nullable_to_non_nullable
-as AggregateScriptTiming,currentProfileId: freezed == currentProfileId ? _self.currentProfileId : currentProfileId // ignore: cast_nullable_to_non_nullable
+as AggregateScriptTiming,aggregateMergeNodes: null == aggregateMergeNodes ? _self.aggregateMergeNodes : aggregateMergeNodes // ignore: cast_nullable_to_non_nullable
+as bool,aggregateMergeGroups: null == aggregateMergeGroups ? _self.aggregateMergeGroups : aggregateMergeGroups // ignore: cast_nullable_to_non_nullable
+as bool,aggregateMergeRules: null == aggregateMergeRules ? _self.aggregateMergeRules : aggregateMergeRules // ignore: cast_nullable_to_non_nullable
+as bool,aggregateMergeRuleProviders: null == aggregateMergeRuleProviders ? _self.aggregateMergeRuleProviders : aggregateMergeRuleProviders // ignore: cast_nullable_to_non_nullable
+as bool,aggregateMergeMemberScripts: null == aggregateMergeMemberScripts ? _self.aggregateMergeMemberScripts : aggregateMergeMemberScripts // ignore: cast_nullable_to_non_nullable
+as bool,aggregateApplyNodeOverrides: null == aggregateApplyNodeOverrides ? _self.aggregateApplyNodeOverrides : aggregateApplyNodeOverrides // ignore: cast_nullable_to_non_nullable
+as bool,aggregateOverrideData: null == aggregateOverrideData ? _self.aggregateOverrideData : aggregateOverrideData // ignore: cast_nullable_to_non_nullable
+as OverrideData,aggregates: null == aggregates ? _self.aggregates : aggregates // ignore: cast_nullable_to_non_nullable
+as List<AggregateProfile>,currentAggregateId: freezed == currentAggregateId ? _self.currentAggregateId : currentAggregateId // ignore: cast_nullable_to_non_nullable
+as String?,currentProfileId: freezed == currentProfileId ? _self.currentProfileId : currentProfileId // ignore: cast_nullable_to_non_nullable
 as String?,overrideDns: null == overrideDns ? _self.overrideDns : overrideDns // ignore: cast_nullable_to_non_nullable
 as bool,overrideNtp: null == overrideNtp ? _self.overrideNtp : overrideNtp // ignore: cast_nullable_to_non_nullable
 as bool,overrideSniffer: null == overrideSniffer ? _self.overrideSniffer : overrideSniffer // ignore: cast_nullable_to_non_nullable
@@ -2984,6 +3326,15 @@ $AppSettingPropsCopyWith<$Res> get appSetting {
   
   return $AppSettingPropsCopyWith<$Res>(_self.appSetting, (value) {
     return _then(_self.copyWith(appSetting: value));
+  });
+}/// Create a copy of Config
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$OverrideDataCopyWith<$Res> get aggregateOverrideData {
+  
+  return $OverrideDataCopyWith<$Res>(_self.aggregateOverrideData, (value) {
+    return _then(_self.copyWith(aggregateOverrideData: value));
   });
 }/// Create a copy of Config
 /// with the given fields replaced by the non-null parameter values.
@@ -3142,10 +3493,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(fromJson: AppSettingProps.safeFromJson)  AppSettingProps appSetting,  List<Profile> profiles,  List<HotKeyAction> hotKeyActions,  AggregateMode aggregateMode,  AggregateScriptTiming aggregateScriptTiming,  String? currentProfileId,  bool overrideDns,  bool overrideNtp,  bool overrideSniffer,  bool overrideTunnel,  bool overrideExperimental,  bool overrideTestUrl,  DAV? dav,  NetworkProps networkProps, @JsonKey(fromJson: VpnProps.safeFromJson)  VpnProps vpnProps, @JsonKey(fromJson: ThemeProps.safeFromJson)  ThemeProps themeProps,  ProxiesStyle proxiesStyle,  WindowProps windowProps, @JsonKey(fromJson: ClashConfig.safeFormJson)  ClashConfig patchClashConfig,  ScriptProps scriptProps,  String nodeExcludeFilter,  int healthCheckTimeout)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(fromJson: AppSettingProps.safeFromJson)  AppSettingProps appSetting,  List<Profile> profiles,  List<HotKeyAction> hotKeyActions,  AggregateMode aggregateMode,  AggregateScriptTiming aggregateScriptTiming,  bool aggregateMergeNodes,  bool aggregateMergeGroups,  bool aggregateMergeRules,  bool aggregateMergeRuleProviders,  bool aggregateMergeMemberScripts,  bool aggregateApplyNodeOverrides,  OverrideData aggregateOverrideData,  List<AggregateProfile> aggregates,  String? currentAggregateId,  String? currentProfileId,  bool overrideDns,  bool overrideNtp,  bool overrideSniffer,  bool overrideTunnel,  bool overrideExperimental,  bool overrideTestUrl,  DAV? dav,  NetworkProps networkProps, @JsonKey(fromJson: VpnProps.safeFromJson)  VpnProps vpnProps, @JsonKey(fromJson: ThemeProps.safeFromJson)  ThemeProps themeProps,  ProxiesStyle proxiesStyle,  WindowProps windowProps, @JsonKey(fromJson: ClashConfig.safeFormJson)  ClashConfig patchClashConfig,  ScriptProps scriptProps,  String nodeExcludeFilter,  int healthCheckTimeout)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Config() when $default != null:
-return $default(_that.appSetting,_that.profiles,_that.hotKeyActions,_that.aggregateMode,_that.aggregateScriptTiming,_that.currentProfileId,_that.overrideDns,_that.overrideNtp,_that.overrideSniffer,_that.overrideTunnel,_that.overrideExperimental,_that.overrideTestUrl,_that.dav,_that.networkProps,_that.vpnProps,_that.themeProps,_that.proxiesStyle,_that.windowProps,_that.patchClashConfig,_that.scriptProps,_that.nodeExcludeFilter,_that.healthCheckTimeout);case _:
+return $default(_that.appSetting,_that.profiles,_that.hotKeyActions,_that.aggregateMode,_that.aggregateScriptTiming,_that.aggregateMergeNodes,_that.aggregateMergeGroups,_that.aggregateMergeRules,_that.aggregateMergeRuleProviders,_that.aggregateMergeMemberScripts,_that.aggregateApplyNodeOverrides,_that.aggregateOverrideData,_that.aggregates,_that.currentAggregateId,_that.currentProfileId,_that.overrideDns,_that.overrideNtp,_that.overrideSniffer,_that.overrideTunnel,_that.overrideExperimental,_that.overrideTestUrl,_that.dav,_that.networkProps,_that.vpnProps,_that.themeProps,_that.proxiesStyle,_that.windowProps,_that.patchClashConfig,_that.scriptProps,_that.nodeExcludeFilter,_that.healthCheckTimeout);case _:
   return orElse();
 
 }
@@ -3163,10 +3514,10 @@ return $default(_that.appSetting,_that.profiles,_that.hotKeyActions,_that.aggreg
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(fromJson: AppSettingProps.safeFromJson)  AppSettingProps appSetting,  List<Profile> profiles,  List<HotKeyAction> hotKeyActions,  AggregateMode aggregateMode,  AggregateScriptTiming aggregateScriptTiming,  String? currentProfileId,  bool overrideDns,  bool overrideNtp,  bool overrideSniffer,  bool overrideTunnel,  bool overrideExperimental,  bool overrideTestUrl,  DAV? dav,  NetworkProps networkProps, @JsonKey(fromJson: VpnProps.safeFromJson)  VpnProps vpnProps, @JsonKey(fromJson: ThemeProps.safeFromJson)  ThemeProps themeProps,  ProxiesStyle proxiesStyle,  WindowProps windowProps, @JsonKey(fromJson: ClashConfig.safeFormJson)  ClashConfig patchClashConfig,  ScriptProps scriptProps,  String nodeExcludeFilter,  int healthCheckTimeout)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(fromJson: AppSettingProps.safeFromJson)  AppSettingProps appSetting,  List<Profile> profiles,  List<HotKeyAction> hotKeyActions,  AggregateMode aggregateMode,  AggregateScriptTiming aggregateScriptTiming,  bool aggregateMergeNodes,  bool aggregateMergeGroups,  bool aggregateMergeRules,  bool aggregateMergeRuleProviders,  bool aggregateMergeMemberScripts,  bool aggregateApplyNodeOverrides,  OverrideData aggregateOverrideData,  List<AggregateProfile> aggregates,  String? currentAggregateId,  String? currentProfileId,  bool overrideDns,  bool overrideNtp,  bool overrideSniffer,  bool overrideTunnel,  bool overrideExperimental,  bool overrideTestUrl,  DAV? dav,  NetworkProps networkProps, @JsonKey(fromJson: VpnProps.safeFromJson)  VpnProps vpnProps, @JsonKey(fromJson: ThemeProps.safeFromJson)  ThemeProps themeProps,  ProxiesStyle proxiesStyle,  WindowProps windowProps, @JsonKey(fromJson: ClashConfig.safeFormJson)  ClashConfig patchClashConfig,  ScriptProps scriptProps,  String nodeExcludeFilter,  int healthCheckTimeout)  $default,) {final _that = this;
 switch (_that) {
 case _Config():
-return $default(_that.appSetting,_that.profiles,_that.hotKeyActions,_that.aggregateMode,_that.aggregateScriptTiming,_that.currentProfileId,_that.overrideDns,_that.overrideNtp,_that.overrideSniffer,_that.overrideTunnel,_that.overrideExperimental,_that.overrideTestUrl,_that.dav,_that.networkProps,_that.vpnProps,_that.themeProps,_that.proxiesStyle,_that.windowProps,_that.patchClashConfig,_that.scriptProps,_that.nodeExcludeFilter,_that.healthCheckTimeout);case _:
+return $default(_that.appSetting,_that.profiles,_that.hotKeyActions,_that.aggregateMode,_that.aggregateScriptTiming,_that.aggregateMergeNodes,_that.aggregateMergeGroups,_that.aggregateMergeRules,_that.aggregateMergeRuleProviders,_that.aggregateMergeMemberScripts,_that.aggregateApplyNodeOverrides,_that.aggregateOverrideData,_that.aggregates,_that.currentAggregateId,_that.currentProfileId,_that.overrideDns,_that.overrideNtp,_that.overrideSniffer,_that.overrideTunnel,_that.overrideExperimental,_that.overrideTestUrl,_that.dav,_that.networkProps,_that.vpnProps,_that.themeProps,_that.proxiesStyle,_that.windowProps,_that.patchClashConfig,_that.scriptProps,_that.nodeExcludeFilter,_that.healthCheckTimeout);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -3183,10 +3534,10 @@ return $default(_that.appSetting,_that.profiles,_that.hotKeyActions,_that.aggreg
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(fromJson: AppSettingProps.safeFromJson)  AppSettingProps appSetting,  List<Profile> profiles,  List<HotKeyAction> hotKeyActions,  AggregateMode aggregateMode,  AggregateScriptTiming aggregateScriptTiming,  String? currentProfileId,  bool overrideDns,  bool overrideNtp,  bool overrideSniffer,  bool overrideTunnel,  bool overrideExperimental,  bool overrideTestUrl,  DAV? dav,  NetworkProps networkProps, @JsonKey(fromJson: VpnProps.safeFromJson)  VpnProps vpnProps, @JsonKey(fromJson: ThemeProps.safeFromJson)  ThemeProps themeProps,  ProxiesStyle proxiesStyle,  WindowProps windowProps, @JsonKey(fromJson: ClashConfig.safeFormJson)  ClashConfig patchClashConfig,  ScriptProps scriptProps,  String nodeExcludeFilter,  int healthCheckTimeout)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(fromJson: AppSettingProps.safeFromJson)  AppSettingProps appSetting,  List<Profile> profiles,  List<HotKeyAction> hotKeyActions,  AggregateMode aggregateMode,  AggregateScriptTiming aggregateScriptTiming,  bool aggregateMergeNodes,  bool aggregateMergeGroups,  bool aggregateMergeRules,  bool aggregateMergeRuleProviders,  bool aggregateMergeMemberScripts,  bool aggregateApplyNodeOverrides,  OverrideData aggregateOverrideData,  List<AggregateProfile> aggregates,  String? currentAggregateId,  String? currentProfileId,  bool overrideDns,  bool overrideNtp,  bool overrideSniffer,  bool overrideTunnel,  bool overrideExperimental,  bool overrideTestUrl,  DAV? dav,  NetworkProps networkProps, @JsonKey(fromJson: VpnProps.safeFromJson)  VpnProps vpnProps, @JsonKey(fromJson: ThemeProps.safeFromJson)  ThemeProps themeProps,  ProxiesStyle proxiesStyle,  WindowProps windowProps, @JsonKey(fromJson: ClashConfig.safeFormJson)  ClashConfig patchClashConfig,  ScriptProps scriptProps,  String nodeExcludeFilter,  int healthCheckTimeout)?  $default,) {final _that = this;
 switch (_that) {
 case _Config() when $default != null:
-return $default(_that.appSetting,_that.profiles,_that.hotKeyActions,_that.aggregateMode,_that.aggregateScriptTiming,_that.currentProfileId,_that.overrideDns,_that.overrideNtp,_that.overrideSniffer,_that.overrideTunnel,_that.overrideExperimental,_that.overrideTestUrl,_that.dav,_that.networkProps,_that.vpnProps,_that.themeProps,_that.proxiesStyle,_that.windowProps,_that.patchClashConfig,_that.scriptProps,_that.nodeExcludeFilter,_that.healthCheckTimeout);case _:
+return $default(_that.appSetting,_that.profiles,_that.hotKeyActions,_that.aggregateMode,_that.aggregateScriptTiming,_that.aggregateMergeNodes,_that.aggregateMergeGroups,_that.aggregateMergeRules,_that.aggregateMergeRuleProviders,_that.aggregateMergeMemberScripts,_that.aggregateApplyNodeOverrides,_that.aggregateOverrideData,_that.aggregates,_that.currentAggregateId,_that.currentProfileId,_that.overrideDns,_that.overrideNtp,_that.overrideSniffer,_that.overrideTunnel,_that.overrideExperimental,_that.overrideTestUrl,_that.dav,_that.networkProps,_that.vpnProps,_that.themeProps,_that.proxiesStyle,_that.windowProps,_that.patchClashConfig,_that.scriptProps,_that.nodeExcludeFilter,_that.healthCheckTimeout);case _:
   return null;
 
 }
@@ -3198,7 +3549,7 @@ return $default(_that.appSetting,_that.profiles,_that.hotKeyActions,_that.aggreg
 @JsonSerializable()
 
 class _Config implements Config {
-  const _Config({@JsonKey(fromJson: AppSettingProps.safeFromJson) this.appSetting = defaultAppSettingProps,  List<Profile> profiles = const [],  List<HotKeyAction> hotKeyActions = const [], this.aggregateMode = AggregateMode.nodePool, this.aggregateScriptTiming = AggregateScriptTiming.after, this.currentProfileId, this.overrideDns = false, this.overrideNtp = false, this.overrideSniffer = false, this.overrideTunnel = false, this.overrideExperimental = false, this.overrideTestUrl = true, this.dav, this.networkProps = defaultNetworkProps, @JsonKey(fromJson: VpnProps.safeFromJson) this.vpnProps = defaultVpnProps, @JsonKey(fromJson: ThemeProps.safeFromJson) required this.themeProps, this.proxiesStyle = defaultProxiesStyle, this.windowProps = defaultWindowProps, @JsonKey(fromJson: ClashConfig.safeFormJson) this.patchClashConfig = defaultClashConfig, this.scriptProps = const ScriptProps(), this.nodeExcludeFilter = '', this.healthCheckTimeout = 5000}): _profiles = profiles,_hotKeyActions = hotKeyActions;
+  const _Config({@JsonKey(fromJson: AppSettingProps.safeFromJson) this.appSetting = defaultAppSettingProps,  List<Profile> profiles = const [],  List<HotKeyAction> hotKeyActions = const [], this.aggregateMode = AggregateMode.nodePool, this.aggregateScriptTiming = AggregateScriptTiming.after, this.aggregateMergeNodes = true, this.aggregateMergeGroups = true, this.aggregateMergeRules = true, this.aggregateMergeRuleProviders = true, this.aggregateMergeMemberScripts = true, this.aggregateApplyNodeOverrides = true, this.aggregateOverrideData = const OverrideData(),  List<AggregateProfile> aggregates = const [], this.currentAggregateId, this.currentProfileId, this.overrideDns = false, this.overrideNtp = false, this.overrideSniffer = false, this.overrideTunnel = false, this.overrideExperimental = false, this.overrideTestUrl = true, this.dav, this.networkProps = defaultNetworkProps, @JsonKey(fromJson: VpnProps.safeFromJson) this.vpnProps = defaultVpnProps, @JsonKey(fromJson: ThemeProps.safeFromJson) required this.themeProps, this.proxiesStyle = defaultProxiesStyle, this.windowProps = defaultWindowProps, @JsonKey(fromJson: ClashConfig.safeFormJson) this.patchClashConfig = defaultClashConfig, this.scriptProps = const ScriptProps(), this.nodeExcludeFilter = '', this.healthCheckTimeout = 5000}): _profiles = profiles,_hotKeyActions = hotKeyActions,_aggregates = aggregates;
   factory _Config.fromJson(Map<String, dynamic> json) => _$ConfigFromJson(json);
 
 @override@JsonKey(fromJson: AppSettingProps.safeFromJson) final  AppSettingProps appSetting;
@@ -3218,6 +3569,21 @@ class _Config implements Config {
 
 @override@JsonKey() final  AggregateMode aggregateMode;
 @override@JsonKey() final  AggregateScriptTiming aggregateScriptTiming;
+@override@JsonKey() final  bool aggregateMergeNodes;
+@override@JsonKey() final  bool aggregateMergeGroups;
+@override@JsonKey() final  bool aggregateMergeRules;
+@override@JsonKey() final  bool aggregateMergeRuleProviders;
+@override@JsonKey() final  bool aggregateMergeMemberScripts;
+@override@JsonKey() final  bool aggregateApplyNodeOverrides;
+@override@JsonKey() final  OverrideData aggregateOverrideData;
+ final  List<AggregateProfile> _aggregates;
+@override@JsonKey() List<AggregateProfile> get aggregates {
+  if (_aggregates is EqualUnmodifiableListView) return _aggregates;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_aggregates);
+}
+
+@override final  String? currentAggregateId;
 @override final  String? currentProfileId;
 @override@JsonKey() final  bool overrideDns;
 @override@JsonKey() final  bool overrideNtp;
@@ -3249,18 +3615,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Config&&(identical(other.appSetting, appSetting) || other.appSetting == appSetting)&&const DeepCollectionEquality().equals(other.profiles, _profiles)&&const DeepCollectionEquality().equals(other.hotKeyActions, _hotKeyActions)&&(identical(other.aggregateMode, aggregateMode) || other.aggregateMode == aggregateMode)&&(identical(other.aggregateScriptTiming, aggregateScriptTiming) || other.aggregateScriptTiming == aggregateScriptTiming)&&(identical(other.currentProfileId, currentProfileId) || other.currentProfileId == currentProfileId)&&(identical(other.overrideDns, overrideDns) || other.overrideDns == overrideDns)&&(identical(other.overrideNtp, overrideNtp) || other.overrideNtp == overrideNtp)&&(identical(other.overrideSniffer, overrideSniffer) || other.overrideSniffer == overrideSniffer)&&(identical(other.overrideTunnel, overrideTunnel) || other.overrideTunnel == overrideTunnel)&&(identical(other.overrideExperimental, overrideExperimental) || other.overrideExperimental == overrideExperimental)&&(identical(other.overrideTestUrl, overrideTestUrl) || other.overrideTestUrl == overrideTestUrl)&&(identical(other.dav, dav) || other.dav == dav)&&(identical(other.networkProps, networkProps) || other.networkProps == networkProps)&&(identical(other.vpnProps, vpnProps) || other.vpnProps == vpnProps)&&(identical(other.themeProps, themeProps) || other.themeProps == themeProps)&&(identical(other.proxiesStyle, proxiesStyle) || other.proxiesStyle == proxiesStyle)&&(identical(other.windowProps, windowProps) || other.windowProps == windowProps)&&(identical(other.patchClashConfig, patchClashConfig) || other.patchClashConfig == patchClashConfig)&&(identical(other.scriptProps, scriptProps) || other.scriptProps == scriptProps)&&(identical(other.nodeExcludeFilter, nodeExcludeFilter) || other.nodeExcludeFilter == nodeExcludeFilter)&&(identical(other.healthCheckTimeout, healthCheckTimeout) || other.healthCheckTimeout == healthCheckTimeout));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Config&&(identical(other.appSetting, appSetting) || other.appSetting == appSetting)&&const DeepCollectionEquality().equals(other.profiles, _profiles)&&const DeepCollectionEquality().equals(other.hotKeyActions, _hotKeyActions)&&(identical(other.aggregateMode, aggregateMode) || other.aggregateMode == aggregateMode)&&(identical(other.aggregateScriptTiming, aggregateScriptTiming) || other.aggregateScriptTiming == aggregateScriptTiming)&&(identical(other.aggregateMergeNodes, aggregateMergeNodes) || other.aggregateMergeNodes == aggregateMergeNodes)&&(identical(other.aggregateMergeGroups, aggregateMergeGroups) || other.aggregateMergeGroups == aggregateMergeGroups)&&(identical(other.aggregateMergeRules, aggregateMergeRules) || other.aggregateMergeRules == aggregateMergeRules)&&(identical(other.aggregateMergeRuleProviders, aggregateMergeRuleProviders) || other.aggregateMergeRuleProviders == aggregateMergeRuleProviders)&&(identical(other.aggregateMergeMemberScripts, aggregateMergeMemberScripts) || other.aggregateMergeMemberScripts == aggregateMergeMemberScripts)&&(identical(other.aggregateApplyNodeOverrides, aggregateApplyNodeOverrides) || other.aggregateApplyNodeOverrides == aggregateApplyNodeOverrides)&&(identical(other.aggregateOverrideData, aggregateOverrideData) || other.aggregateOverrideData == aggregateOverrideData)&&const DeepCollectionEquality().equals(other.aggregates, _aggregates)&&(identical(other.currentAggregateId, currentAggregateId) || other.currentAggregateId == currentAggregateId)&&(identical(other.currentProfileId, currentProfileId) || other.currentProfileId == currentProfileId)&&(identical(other.overrideDns, overrideDns) || other.overrideDns == overrideDns)&&(identical(other.overrideNtp, overrideNtp) || other.overrideNtp == overrideNtp)&&(identical(other.overrideSniffer, overrideSniffer) || other.overrideSniffer == overrideSniffer)&&(identical(other.overrideTunnel, overrideTunnel) || other.overrideTunnel == overrideTunnel)&&(identical(other.overrideExperimental, overrideExperimental) || other.overrideExperimental == overrideExperimental)&&(identical(other.overrideTestUrl, overrideTestUrl) || other.overrideTestUrl == overrideTestUrl)&&(identical(other.dav, dav) || other.dav == dav)&&(identical(other.networkProps, networkProps) || other.networkProps == networkProps)&&(identical(other.vpnProps, vpnProps) || other.vpnProps == vpnProps)&&(identical(other.themeProps, themeProps) || other.themeProps == themeProps)&&(identical(other.proxiesStyle, proxiesStyle) || other.proxiesStyle == proxiesStyle)&&(identical(other.windowProps, windowProps) || other.windowProps == windowProps)&&(identical(other.patchClashConfig, patchClashConfig) || other.patchClashConfig == patchClashConfig)&&(identical(other.scriptProps, scriptProps) || other.scriptProps == scriptProps)&&(identical(other.nodeExcludeFilter, nodeExcludeFilter) || other.nodeExcludeFilter == nodeExcludeFilter)&&(identical(other.healthCheckTimeout, healthCheckTimeout) || other.healthCheckTimeout == healthCheckTimeout));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hashAll([runtimeType,appSetting,const DeepCollectionEquality().hash(_profiles),const DeepCollectionEquality().hash(_hotKeyActions),aggregateMode,aggregateScriptTiming,currentProfileId,overrideDns,overrideNtp,overrideSniffer,overrideTunnel,overrideExperimental,overrideTestUrl,dav,networkProps,vpnProps,themeProps,proxiesStyle,windowProps,patchClashConfig,scriptProps,nodeExcludeFilter,healthCheckTimeout]);
+    return Object.hashAll([runtimeType,appSetting,const DeepCollectionEquality().hash(_profiles),const DeepCollectionEquality().hash(_hotKeyActions),aggregateMode,aggregateScriptTiming,aggregateMergeNodes,aggregateMergeGroups,aggregateMergeRules,aggregateMergeRuleProviders,aggregateMergeMemberScripts,aggregateApplyNodeOverrides,aggregateOverrideData,const DeepCollectionEquality().hash(_aggregates),currentAggregateId,currentProfileId,overrideDns,overrideNtp,overrideSniffer,overrideTunnel,overrideExperimental,overrideTestUrl,dav,networkProps,vpnProps,themeProps,proxiesStyle,windowProps,patchClashConfig,scriptProps,nodeExcludeFilter,healthCheckTimeout]);
 }
 
 @override
 String toString() {
-    return 'Config(appSetting: $appSetting, profiles: $profiles, hotKeyActions: $hotKeyActions, aggregateMode: $aggregateMode, aggregateScriptTiming: $aggregateScriptTiming, currentProfileId: $currentProfileId, overrideDns: $overrideDns, overrideNtp: $overrideNtp, overrideSniffer: $overrideSniffer, overrideTunnel: $overrideTunnel, overrideExperimental: $overrideExperimental, overrideTestUrl: $overrideTestUrl, dav: $dav, networkProps: $networkProps, vpnProps: $vpnProps, themeProps: $themeProps, proxiesStyle: $proxiesStyle, windowProps: $windowProps, patchClashConfig: $patchClashConfig, scriptProps: $scriptProps, nodeExcludeFilter: $nodeExcludeFilter, healthCheckTimeout: $healthCheckTimeout)';
+    return 'Config(appSetting: $appSetting, profiles: $profiles, hotKeyActions: $hotKeyActions, aggregateMode: $aggregateMode, aggregateScriptTiming: $aggregateScriptTiming, aggregateMergeNodes: $aggregateMergeNodes, aggregateMergeGroups: $aggregateMergeGroups, aggregateMergeRules: $aggregateMergeRules, aggregateMergeRuleProviders: $aggregateMergeRuleProviders, aggregateMergeMemberScripts: $aggregateMergeMemberScripts, aggregateApplyNodeOverrides: $aggregateApplyNodeOverrides, aggregateOverrideData: $aggregateOverrideData, aggregates: $aggregates, currentAggregateId: $currentAggregateId, currentProfileId: $currentProfileId, overrideDns: $overrideDns, overrideNtp: $overrideNtp, overrideSniffer: $overrideSniffer, overrideTunnel: $overrideTunnel, overrideExperimental: $overrideExperimental, overrideTestUrl: $overrideTestUrl, dav: $dav, networkProps: $networkProps, vpnProps: $vpnProps, themeProps: $themeProps, proxiesStyle: $proxiesStyle, windowProps: $windowProps, patchClashConfig: $patchClashConfig, scriptProps: $scriptProps, nodeExcludeFilter: $nodeExcludeFilter, healthCheckTimeout: $healthCheckTimeout)';
 }
 
 
@@ -3271,11 +3637,11 @@ abstract mixin class _$ConfigCopyWith<$Res> implements $ConfigCopyWith<$Res> {
   factory _$ConfigCopyWith(_Config value, $Res Function(_Config) _then) = __$ConfigCopyWithImpl;
 @override @useResult
 $Res call({
-@JsonKey(fromJson: AppSettingProps.safeFromJson) AppSettingProps appSetting, List<Profile> profiles, List<HotKeyAction> hotKeyActions, AggregateMode aggregateMode, AggregateScriptTiming aggregateScriptTiming, String? currentProfileId, bool overrideDns, bool overrideNtp, bool overrideSniffer, bool overrideTunnel, bool overrideExperimental, bool overrideTestUrl, DAV? dav, NetworkProps networkProps,@JsonKey(fromJson: VpnProps.safeFromJson) VpnProps vpnProps,@JsonKey(fromJson: ThemeProps.safeFromJson) ThemeProps themeProps, ProxiesStyle proxiesStyle, WindowProps windowProps,@JsonKey(fromJson: ClashConfig.safeFormJson) ClashConfig patchClashConfig, ScriptProps scriptProps, String nodeExcludeFilter, int healthCheckTimeout
+@JsonKey(fromJson: AppSettingProps.safeFromJson) AppSettingProps appSetting, List<Profile> profiles, List<HotKeyAction> hotKeyActions, AggregateMode aggregateMode, AggregateScriptTiming aggregateScriptTiming, bool aggregateMergeNodes, bool aggregateMergeGroups, bool aggregateMergeRules, bool aggregateMergeRuleProviders, bool aggregateMergeMemberScripts, bool aggregateApplyNodeOverrides, OverrideData aggregateOverrideData, List<AggregateProfile> aggregates, String? currentAggregateId, String? currentProfileId, bool overrideDns, bool overrideNtp, bool overrideSniffer, bool overrideTunnel, bool overrideExperimental, bool overrideTestUrl, DAV? dav, NetworkProps networkProps,@JsonKey(fromJson: VpnProps.safeFromJson) VpnProps vpnProps,@JsonKey(fromJson: ThemeProps.safeFromJson) ThemeProps themeProps, ProxiesStyle proxiesStyle, WindowProps windowProps,@JsonKey(fromJson: ClashConfig.safeFormJson) ClashConfig patchClashConfig, ScriptProps scriptProps, String nodeExcludeFilter, int healthCheckTimeout
 });
 
 
-@override $AppSettingPropsCopyWith<$Res> get appSetting;@override $DAVCopyWith<$Res>? get dav;@override $NetworkPropsCopyWith<$Res> get networkProps;@override $VpnPropsCopyWith<$Res> get vpnProps;@override $ThemePropsCopyWith<$Res> get themeProps;@override $ProxiesStyleCopyWith<$Res> get proxiesStyle;@override $WindowPropsCopyWith<$Res> get windowProps;@override $ClashConfigCopyWith<$Res> get patchClashConfig;@override $ScriptPropsCopyWith<$Res> get scriptProps;
+@override $AppSettingPropsCopyWith<$Res> get appSetting;@override $OverrideDataCopyWith<$Res> get aggregateOverrideData;@override $DAVCopyWith<$Res>? get dav;@override $NetworkPropsCopyWith<$Res> get networkProps;@override $VpnPropsCopyWith<$Res> get vpnProps;@override $ThemePropsCopyWith<$Res> get themeProps;@override $ProxiesStyleCopyWith<$Res> get proxiesStyle;@override $WindowPropsCopyWith<$Res> get windowProps;@override $ClashConfigCopyWith<$Res> get patchClashConfig;@override $ScriptPropsCopyWith<$Res> get scriptProps;
 
 }
 /// @nodoc
@@ -3288,14 +3654,23 @@ class __$ConfigCopyWithImpl<$Res>
 
 /// Create a copy of Config
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? appSetting = null,Object? profiles = null,Object? hotKeyActions = null,Object? aggregateMode = null,Object? aggregateScriptTiming = null,Object? currentProfileId = freezed,Object? overrideDns = null,Object? overrideNtp = null,Object? overrideSniffer = null,Object? overrideTunnel = null,Object? overrideExperimental = null,Object? overrideTestUrl = null,Object? dav = freezed,Object? networkProps = null,Object? vpnProps = null,Object? themeProps = null,Object? proxiesStyle = null,Object? windowProps = null,Object? patchClashConfig = null,Object? scriptProps = null,Object? nodeExcludeFilter = null,Object? healthCheckTimeout = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? appSetting = null,Object? profiles = null,Object? hotKeyActions = null,Object? aggregateMode = null,Object? aggregateScriptTiming = null,Object? aggregateMergeNodes = null,Object? aggregateMergeGroups = null,Object? aggregateMergeRules = null,Object? aggregateMergeRuleProviders = null,Object? aggregateMergeMemberScripts = null,Object? aggregateApplyNodeOverrides = null,Object? aggregateOverrideData = null,Object? aggregates = null,Object? currentAggregateId = freezed,Object? currentProfileId = freezed,Object? overrideDns = null,Object? overrideNtp = null,Object? overrideSniffer = null,Object? overrideTunnel = null,Object? overrideExperimental = null,Object? overrideTestUrl = null,Object? dav = freezed,Object? networkProps = null,Object? vpnProps = null,Object? themeProps = null,Object? proxiesStyle = null,Object? windowProps = null,Object? patchClashConfig = null,Object? scriptProps = null,Object? nodeExcludeFilter = null,Object? healthCheckTimeout = null,}) {
   return _then(_Config(
 appSetting: null == appSetting ? _self.appSetting : appSetting // ignore: cast_nullable_to_non_nullable
 as AppSettingProps,profiles: null == profiles ? _self._profiles : profiles // ignore: cast_nullable_to_non_nullable
 as List<Profile>,hotKeyActions: null == hotKeyActions ? _self._hotKeyActions : hotKeyActions // ignore: cast_nullable_to_non_nullable
 as List<HotKeyAction>,aggregateMode: null == aggregateMode ? _self.aggregateMode : aggregateMode // ignore: cast_nullable_to_non_nullable
 as AggregateMode,aggregateScriptTiming: null == aggregateScriptTiming ? _self.aggregateScriptTiming : aggregateScriptTiming // ignore: cast_nullable_to_non_nullable
-as AggregateScriptTiming,currentProfileId: freezed == currentProfileId ? _self.currentProfileId : currentProfileId // ignore: cast_nullable_to_non_nullable
+as AggregateScriptTiming,aggregateMergeNodes: null == aggregateMergeNodes ? _self.aggregateMergeNodes : aggregateMergeNodes // ignore: cast_nullable_to_non_nullable
+as bool,aggregateMergeGroups: null == aggregateMergeGroups ? _self.aggregateMergeGroups : aggregateMergeGroups // ignore: cast_nullable_to_non_nullable
+as bool,aggregateMergeRules: null == aggregateMergeRules ? _self.aggregateMergeRules : aggregateMergeRules // ignore: cast_nullable_to_non_nullable
+as bool,aggregateMergeRuleProviders: null == aggregateMergeRuleProviders ? _self.aggregateMergeRuleProviders : aggregateMergeRuleProviders // ignore: cast_nullable_to_non_nullable
+as bool,aggregateMergeMemberScripts: null == aggregateMergeMemberScripts ? _self.aggregateMergeMemberScripts : aggregateMergeMemberScripts // ignore: cast_nullable_to_non_nullable
+as bool,aggregateApplyNodeOverrides: null == aggregateApplyNodeOverrides ? _self.aggregateApplyNodeOverrides : aggregateApplyNodeOverrides // ignore: cast_nullable_to_non_nullable
+as bool,aggregateOverrideData: null == aggregateOverrideData ? _self.aggregateOverrideData : aggregateOverrideData // ignore: cast_nullable_to_non_nullable
+as OverrideData,aggregates: null == aggregates ? _self._aggregates : aggregates // ignore: cast_nullable_to_non_nullable
+as List<AggregateProfile>,currentAggregateId: freezed == currentAggregateId ? _self.currentAggregateId : currentAggregateId // ignore: cast_nullable_to_non_nullable
+as String?,currentProfileId: freezed == currentProfileId ? _self.currentProfileId : currentProfileId // ignore: cast_nullable_to_non_nullable
 as String?,overrideDns: null == overrideDns ? _self.overrideDns : overrideDns // ignore: cast_nullable_to_non_nullable
 as bool,overrideNtp: null == overrideNtp ? _self.overrideNtp : overrideNtp // ignore: cast_nullable_to_non_nullable
 as bool,overrideSniffer: null == overrideSniffer ? _self.overrideSniffer : overrideSniffer // ignore: cast_nullable_to_non_nullable
@@ -3324,6 +3699,15 @@ $AppSettingPropsCopyWith<$Res> get appSetting {
   
   return $AppSettingPropsCopyWith<$Res>(_self.appSetting, (value) {
     return _then(_self.copyWith(appSetting: value));
+  });
+}/// Create a copy of Config
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$OverrideDataCopyWith<$Res> get aggregateOverrideData {
+  
+  return $OverrideDataCopyWith<$Res>(_self.aggregateOverrideData, (value) {
+    return _then(_self.copyWith(aggregateOverrideData: value));
   });
 }/// Create a copy of Config
 /// with the given fields replaced by the non-null parameter values.

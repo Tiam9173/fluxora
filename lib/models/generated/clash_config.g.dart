@@ -266,7 +266,6 @@ _Dns _$DnsFromJson(Map<String, dynamic> json) => _Dns(
           ?.map((e) => e as String)
           .toList() ??
       const [
-        '*',
         'geosite:private',
         'geosite:category-ntp',
         'geosite:geolocation-cn',
@@ -287,7 +286,7 @@ _Dns _$DnsFromJson(Map<String, dynamic> json) => _Dns(
       (json['nameserver'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList() ??
-      const ['1.1.1.1'],
+      const ['223.5.5.5', '119.29.29.29'],
   fallback:
       (json['fallback'] as List<dynamic>?)?.map((e) => e as String).toList() ??
       const [],

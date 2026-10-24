@@ -548,6 +548,58 @@ Map<String, dynamic> _$ScriptPropsToJson(_ScriptProps instance) =>
       'scripts': instance.scripts,
     };
 
+_AggregateProfile _$AggregateProfileFromJson(Map<String, dynamic> json) =>
+    _AggregateProfile(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      memberIds:
+          (json['memberIds'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
+      mode: $enumDecodeNullable(_$AggregateModeEnumMap, json['mode']),
+      scriptTiming: $enumDecodeNullable(
+        _$AggregateScriptTimingEnumMap,
+        json['scriptTiming'],
+      ),
+      mergeNodes: json['mergeNodes'] as bool?,
+      mergeGroups: json['mergeGroups'] as bool?,
+      mergeRules: json['mergeRules'] as bool?,
+      mergeRuleProviders: json['mergeRuleProviders'] as bool?,
+      mergeMemberScripts: json['mergeMemberScripts'] as bool?,
+      applyNodeOverrides: json['applyNodeOverrides'] as bool?,
+      overrideData: json['overrideData'] == null
+          ? null
+          : OverrideData.fromJson(json['overrideData'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$AggregateProfileToJson(_AggregateProfile instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'name': instance.name,
+      'memberIds': instance.memberIds,
+      'mode': _$AggregateModeEnumMap[instance.mode],
+      'scriptTiming': _$AggregateScriptTimingEnumMap[instance.scriptTiming],
+      'mergeNodes': instance.mergeNodes,
+      'mergeGroups': instance.mergeGroups,
+      'mergeRules': instance.mergeRules,
+      'mergeRuleProviders': instance.mergeRuleProviders,
+      'mergeMemberScripts': instance.mergeMemberScripts,
+      'applyNodeOverrides': instance.applyNodeOverrides,
+      'overrideData': instance.overrideData,
+    };
+
+const _$AggregateModeEnumMap = {
+  AggregateMode.nodePool: 'nodePool',
+  AggregateMode.full: 'full',
+  AggregateMode.custom: 'custom',
+};
+
+const _$AggregateScriptTimingEnumMap = {
+  AggregateScriptTiming.before: 'before',
+  AggregateScriptTiming.after: 'after',
+};
+
 _Config _$ConfigFromJson(Map<String, dynamic> json) => _Config(
   appSetting: json['appSetting'] == null
       ? defaultAppSettingProps
@@ -573,6 +625,26 @@ _Config _$ConfigFromJson(Map<String, dynamic> json) => _Config(
         json['aggregateScriptTiming'],
       ) ??
       AggregateScriptTiming.after,
+  aggregateMergeNodes: json['aggregateMergeNodes'] as bool? ?? true,
+  aggregateMergeGroups: json['aggregateMergeGroups'] as bool? ?? true,
+  aggregateMergeRules: json['aggregateMergeRules'] as bool? ?? true,
+  aggregateMergeRuleProviders:
+      json['aggregateMergeRuleProviders'] as bool? ?? true,
+  aggregateMergeMemberScripts:
+      json['aggregateMergeMemberScripts'] as bool? ?? true,
+  aggregateApplyNodeOverrides:
+      json['aggregateApplyNodeOverrides'] as bool? ?? true,
+  aggregateOverrideData: json['aggregateOverrideData'] == null
+      ? const OverrideData()
+      : OverrideData.fromJson(
+          json['aggregateOverrideData'] as Map<String, dynamic>,
+        ),
+  aggregates:
+      (json['aggregates'] as List<dynamic>?)
+          ?.map((e) => AggregateProfile.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      const [],
+  currentAggregateId: json['currentAggregateId'] as String?,
   currentProfileId: json['currentProfileId'] as String?,
   overrideDns: json['overrideDns'] as bool? ?? false,
   overrideNtp: json['overrideNtp'] as bool? ?? false,
@@ -617,6 +689,15 @@ Map<String, dynamic> _$ConfigToJson(_Config instance) => <String, dynamic>{
   'aggregateMode': _$AggregateModeEnumMap[instance.aggregateMode]!,
   'aggregateScriptTiming':
       _$AggregateScriptTimingEnumMap[instance.aggregateScriptTiming]!,
+  'aggregateMergeNodes': instance.aggregateMergeNodes,
+  'aggregateMergeGroups': instance.aggregateMergeGroups,
+  'aggregateMergeRules': instance.aggregateMergeRules,
+  'aggregateMergeRuleProviders': instance.aggregateMergeRuleProviders,
+  'aggregateMergeMemberScripts': instance.aggregateMergeMemberScripts,
+  'aggregateApplyNodeOverrides': instance.aggregateApplyNodeOverrides,
+  'aggregateOverrideData': instance.aggregateOverrideData,
+  'aggregates': instance.aggregates,
+  'currentAggregateId': instance.currentAggregateId,
   'currentProfileId': instance.currentProfileId,
   'overrideDns': instance.overrideDns,
   'overrideNtp': instance.overrideNtp,
@@ -634,14 +715,4 @@ Map<String, dynamic> _$ConfigToJson(_Config instance) => <String, dynamic>{
   'scriptProps': instance.scriptProps,
   'nodeExcludeFilter': instance.nodeExcludeFilter,
   'healthCheckTimeout': instance.healthCheckTimeout,
-};
-
-const _$AggregateModeEnumMap = {
-  AggregateMode.nodePool: 'nodePool',
-  AggregateMode.full: 'full',
-};
-
-const _$AggregateScriptTimingEnumMap = {
-  AggregateScriptTiming.before: 'before',
-  AggregateScriptTiming.after: 'after',
 };

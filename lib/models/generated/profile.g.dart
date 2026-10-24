@@ -56,6 +56,7 @@ _Profile _$ProfileFromJson(Map<String, dynamic> json) => _Profile(
       ? const OverrideData()
       : OverrideData.fromJson(json['overrideData'] as Map<String, dynamic>),
   useScriptOverride: json['useScriptOverride'] as bool? ?? true,
+  scriptId: json['scriptId'] as String?,
   ageSecretKey: json['ageSecretKey'] as String?,
   groupSwitches:
       (json['group-switches'] as Map<String, dynamic>?)?.map(
@@ -82,6 +83,7 @@ Map<String, dynamic> _$ProfileToJson(_Profile instance) => <String, dynamic>{
   'unfoldSet': instance.unfoldSet.toList(),
   'overrideData': instance.overrideData,
   'useScriptOverride': instance.useScriptOverride,
+  'scriptId': instance.scriptId,
   'ageSecretKey': instance.ageSecretKey,
   'group-switches': instance.groupSwitches,
   'joinAggregate': instance.joinAggregate,
