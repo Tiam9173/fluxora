@@ -299,6 +299,22 @@ class FluxoraVpnService : VpnService(), BaseServiceInterface {
         this.startForeground(notification, useSpecialType = !isSuspended)
     }
 
+    /// Applies a profile rename/switch to the live notification without
+    /// waiting for the next speed tick. The speed loop reads the profile name
+    /// from native GlobalState, so this also keeps it from being overwritten
+    /// by the service isolate's stale Config snapshot.
+    internal suspend fun updateNotificationProfile(profileName: String) {
+        pendingSpeedProfile = profileName
+        if (GlobalState.isSmartStopped ||
+            !GlobalState.isSpeedNotificationEnabled
+        ) {
+            return
+        }
+        val speed = pendingSpeedInfo ?: return
+        lastNotificationText = null
+        updateNotificationSpeed(profileName, speed)
+    }
+
     @SuppressLint("ForegroundServiceType")
     internal suspend fun updateNotificationSpeed(profileName: String, speedInfo: String) {
         pendingSpeedProfile = profileName

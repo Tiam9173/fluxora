@@ -5,6 +5,7 @@ import 'package:fluxora/common/common.dart';
 import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/manager/window_manager.dart';
 import 'package:fluxora/plugins/app.dart';
+import 'package:fluxora/plugins/vpn.dart';
 import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
 import 'package:flutter/foundation.dart';
@@ -28,6 +29,27 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
   Timer? _missedUpdateCheckTimer;
   DateTime? _lastMissedUpdateCheck;
   late final VoidCallback _dashboardTickListener;
+  String? _lastNotificationProfile;
+
+  /// Keeps the native notification/tile title on the same profile as the UI.
+  ///
+  /// The VPN service runs in a separate isolate with its own Config snapshot;
+  /// changing `currentProfileId` here never reaches it. Pushing the label into
+  /// native GlobalState is what makes the next speed tick use the new name.
+  void _syncNotificationProfile() {
+    if (!system.isAndroid) return;
+    final config = globalState.config;
+    var name = 'Fluxora';
+    for (final profile in config.profiles) {
+      if (profile.id == config.currentProfileId) {
+        name = profile.label ?? profile.id;
+        break;
+      }
+    }
+    if (name == _lastNotificationProfile) return;
+    _lastNotificationProfile = name;
+    Vpn().setNotificationProfile(name);
+  }
 
   static const _missedUpdateCheckDelay = Duration(seconds: 5);
   static const _missedUpdateCheckThrottle = Duration(seconds: 60);
@@ -63,9 +85,11 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
     ref.listenManual(configStateProvider, (prev, next) {
       if (prev != next) {
         globalState.appController.savePreferencesDebounce();
+        _syncNotificationProfile();
       }
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _syncNotificationProfile();
       _updateDashboardRefreshState();
       detectionState.tryStartCheck();
       mediaUnlockState.tryStartCheck();

@@ -295,11 +295,18 @@ void _startNotificationSpeedLoop(ClashLibHandler clashLibHandler) {
       );
       if (raw == null || raw.isEmpty) return;
       final traffic = Traffic.fromMap(json.decode(raw));
-      var profileName = 'Fluxora';
-      for (final profile in globalState.config.profiles) {
-        if (profile.id == globalState.config.currentProfileId) {
-          profileName = profile.label ?? profileName;
-          break;
+      // The service isolate's Config is a snapshot from service start; after
+      // the user switches subscriptions it still points at the old profile.
+      // Native GlobalState is updated by the UI isolate on every switch, so
+      // prefer it and only fall back to the snapshot for cold service starts.
+      var profileName = await vpn?.getNotificationProfileName() ?? '';
+      if (profileName.isEmpty) {
+        profileName = 'Fluxora';
+        for (final profile in globalState.config.profiles) {
+          if (profile.id == globalState.config.currentProfileId) {
+            profileName = profile.label ?? profileName;
+            break;
+          }
         }
       }
       await vpn?.updateNotificationSpeed(profileName, traffic.toSpeedText());

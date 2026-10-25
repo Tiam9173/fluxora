@@ -226,6 +226,17 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 result.success(true)
             }
 
+            "setNotificationProfile" -> {
+                handleSetNotificationProfile(
+                    call.argument<String>("profileName") ?: ""
+                )
+                result.success(true)
+            }
+
+            "getNotificationProfileName" -> {
+                result.success(GlobalState.currentProfileName)
+            }
+
             "flashNotification" -> {
                 val service = fluxoraService as? FluxoraVpnService
                 scope.launch { service?.flashNotification() }
@@ -594,6 +605,22 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 fluxoraService?.startForeground()
             }.onFailure {
                 android.util.Log.e("VpnPlugin", "updateNotificationIcon error: ${it.message}")
+            }
+        }
+    }
+
+    fun handleSetNotificationProfile(profileName: String) {
+        if (profileName.isEmpty()) return
+        GlobalState.currentProfileName = profileName
+        scope.launch {
+            runCatching {
+                (fluxoraService as? FluxoraVpnService)
+                    ?.updateNotificationProfile(profileName)
+            }.onFailure {
+                android.util.Log.e(
+                    "VpnPlugin",
+                    "setNotificationProfile error: ${it.message}"
+                )
             }
         }
     }

@@ -264,6 +264,31 @@ class Vpn {
     });
   }
 
+  /// Keeps the native notification title in sync with the profile the user is
+  /// actually using. The service isolate has its own Config snapshot, so
+  /// without this the notification keeps showing the profile it was started
+  /// with after a subscription switch.
+  Future<void> setNotificationProfile(String profileName) async {
+    try {
+      await methodChannel.invokeMethod<void>('setNotificationProfile', {
+        'profileName': profileName,
+      });
+    } catch (e) {
+      commonPrint.log('setNotificationProfile failed: $e');
+    }
+  }
+
+  Future<String?> getNotificationProfileName() async {
+    try {
+      return await methodChannel.invokeMethod<String>(
+        'getNotificationProfileName',
+      );
+    } catch (e) {
+      commonPrint.log('getNotificationProfileName failed: $e');
+      return null;
+    }
+  }
+
   void addListener(VpnListener listener) => _listeners.add(listener);
 
   void removeListener(VpnListener listener) => _listeners.remove(listener);
