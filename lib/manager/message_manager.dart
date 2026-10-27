@@ -95,7 +95,7 @@ class MessageManagerState extends State<MessageManager> {
                         return Card(
                           shape: const RoundedRectangleBorder(
                             borderRadius: BorderRadius.all(
-                              Radius.circular(12.0),
+                              Radius.circular(FluxoraRadius.md),
                             ),
                           ),
                           elevation: 10,

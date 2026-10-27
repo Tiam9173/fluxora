@@ -266,7 +266,7 @@ class _TvQrImportDialogState extends State<TvQrImportDialog> {
 
     return Dialog(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(FluxoraRadius.dialog),
       ),
       backgroundColor: context.colorScheme.surfaceContainerHigh,
       insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
@@ -379,7 +379,7 @@ class _TvQrImportDialogState extends State<TvQrImportDialog> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(FluxoraRadius.card),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.08),
@@ -457,7 +457,7 @@ class _TvQrImportDialogState extends State<TvQrImportDialog> {
                 ),
                 decoration: BoxDecoration(
                   color: context.colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(FluxoraRadius.sm),
                   border: Border.all(
                     color: context.colorScheme.outlineVariant.withValues(
                       alpha: 0.3,

@@ -1,3 +1,4 @@
+import 'package:fluxora/common/tokens/tokens.dart';
 import 'package:flutter/material.dart';
 
 const monochromeColorFilter = ColorFilter.matrix(<double>[
@@ -7,8 +8,8 @@ const monochromeColorFilter = ColorFilter.matrix(<double>[
   0,      0,      0,      1, 0,
 ]);
 
-const mediaUnlockGreen = Color(0xFF10B981);
-const mediaUnlockOrange = Color(0xFFF59E0B);
+const mediaUnlockGreen = FluxoraColors.success;
+const mediaUnlockOrange = FluxoraColors.warning;
 
 enum MediaCategory {
   ai,

@@ -431,10 +431,10 @@ class _DelayChip extends StatelessWidget {
       color = colorScheme.error;
       text = appLocalizations.timeoutLabel;
     } else if (value <= 200) {
-      color = const Color(0xFF2E9E5B);
+      color = FluxoraColors.success;
       text = '$value ms';
     } else if (value <= 500) {
-      color = const Color(0xFFE0A030);
+      color = FluxoraColors.warning;
       text = '$value ms';
     } else {
       color = colorScheme.error;

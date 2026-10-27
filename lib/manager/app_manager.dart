@@ -408,7 +408,7 @@ class AppSidebarContainer extends ConsumerWidget {
                                         indicatorShape:
                                             const RoundedRectangleBorder(
                                               borderRadius: BorderRadius.all(
-                                                Radius.circular(16),
+                                                Radius.circular(FluxoraRadius.lg),
                                               ),
                                             ),
                                         selectedIconTheme: IconThemeData(

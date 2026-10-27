@@ -945,7 +945,7 @@ class _AddRuleDialogState extends State<AddRuleDialog> {
                       spacing: 8,
                       children: [
                         CommonCard(
-                          radius: 8,
+                          radius: FluxoraRadius.sm,
                           isSelected: _src,
                           child: Padding(
                             padding: EdgeInsets.symmetric(
@@ -964,7 +964,7 @@ class _AddRuleDialogState extends State<AddRuleDialog> {
                           },
                         ),
                         CommonCard(
-                          radius: 8,
+                          radius: FluxoraRadius.sm,
                           isSelected: _noResolve,
                           child: Padding(
                             padding: EdgeInsets.symmetric(

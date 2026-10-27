@@ -163,7 +163,7 @@ class _LogsViewState extends ConsumerState<LogsView> {
           child: InkWell(
             onTap: _handleExport,
             onLongPress: _handleClearLogs,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(FluxoraRadius.full),
             child: const Padding(
               padding: EdgeInsets.all(12),
               child: Icon(Icons.save_as_outlined, size: 24),

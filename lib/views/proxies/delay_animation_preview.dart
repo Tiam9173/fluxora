@@ -42,7 +42,7 @@ class _DelayAnimationPreviewBody extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
             color: colorScheme.primaryContainer.withValues(alpha: 0.28),
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(FluxoraRadius.md),
           ),
           child: Row(
             children: [
@@ -145,13 +145,13 @@ class _AnimationTile extends StatelessWidget {
       color: selected
           ? colorScheme.primary.withValues(alpha: 0.10)
           : colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(FluxoraRadius.md),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(FluxoraRadius.md),
         child: Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(FluxoraRadius.md),
             border: Border.all(
               color: selected
                   ? colorScheme.primary

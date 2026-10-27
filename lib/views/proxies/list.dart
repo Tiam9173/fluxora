@@ -558,7 +558,7 @@ class _GroupHeader extends ConsumerWidget {
         alignment: Alignment.center,
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(FluxoraRadius.md),
           color: context.colorScheme.secondaryContainer,
         ),
         clipBehavior: Clip.antiAlias,

@@ -142,7 +142,7 @@ class AdaptiveSheetScaffold extends StatelessWidget {
             color: backgroundColor,
             clipBehavior: Clip.antiAlias,
             borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(28.0),
+              top: Radius.circular(FluxoraRadius.sheet),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,

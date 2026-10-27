@@ -226,7 +226,7 @@ class _HomePageState extends State<HomePage> {
                     final isFocused = focusNode.hasFocus;
                     return InkWell(
                       focusNode: focusNode,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(FluxoraRadius.lg),
                       onTap: () {
                         globalState.appController.toPage(item.label);
                       },
@@ -246,7 +246,7 @@ class _HomePageState extends State<HomePage> {
                                           : 0.26,
                                 )
                               : Colors.transparent,
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(FluxoraRadius.lg),
                           border: isFocused
                               ? Border.all(
                                   color: context.colorScheme.primary,

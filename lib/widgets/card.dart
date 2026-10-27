@@ -176,7 +176,10 @@ class CommonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final actualRadius = radius ?? 20.0;
+    // Align the default with the design-system card radius (D4.6: card = lg = 16)
+    // instead of the legacy 20, so CommonCard and FluxoraCard share one corner
+    // language. Call sites that pass an explicit radius keep their own value.
+    final actualRadius = radius ?? FluxoraRadius.card;
     var childWidget = child;
 
     if (info != null) {

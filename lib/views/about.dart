@@ -65,13 +65,13 @@ class AboutView extends StatelessWidget {
               _LinkGridTile(
                 title: appLocalizations.telegramChannel,
                 icon: Icons.campaign_outlined,
-                iconColor: const Color(0xFF2CA5E0),
+                iconColor: colorScheme.secondary,
                 onTap: () => globalState.openUrl(telegramChannelUrl),
               ),
               _LinkGridTile(
                 title: appLocalizations.telegramGroup,
                 icon: Icons.forum_outlined,
-                iconColor: const Color(0xFF2CA5E0),
+                iconColor: colorScheme.secondary,
                 onTap: () => globalState.openUrl(telegramGroupUrl),
               ),
             ],

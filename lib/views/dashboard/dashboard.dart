@@ -465,11 +465,11 @@ class _DashboardTitleDialog extends StatefulWidget {
 class _DashboardTitleDialogState extends State<_DashboardTitleDialog> {
   /// Palette for the title. The first swatch is "follow the theme" (null),
   /// which is why the list is `int?` rather than a list of colours.
-  static const List<int?> _palette = [
+  static final List<int?> _palette = [
     null,
-    0xFF29D6C7,
-    0xFF4C8DFF,
-    0xFF7C75FF,
+    FluxoraColors.fluxCyan.toARGB32(),
+    FluxoraColors.auroraBlue.toARGB32(),
+    FluxoraColors.flowViolet.toARGB32(),
     0xFFFF6B9D,
     0xFFFFB020,
     0xFFFF5252,
@@ -576,7 +576,7 @@ class _DashboardTitleDialogState extends State<_DashboardTitleDialog> {
     final fill = value == null ? colorScheme.surfaceContainerHighest : Color(value);
     return InkWell(
       onTap: () => setState(() => _color = value),
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(FluxoraRadius.full),
       child: Container(
         width: 30,
         height: 30,

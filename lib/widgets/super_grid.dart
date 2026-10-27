@@ -768,7 +768,7 @@ class _DeletableContainerState extends State<_DeletableContainer>
     Widget content = widget.child;
     if (globalState.isAndroidTV) {
       content = InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(FluxoraRadius.lg),
         onTap: _handleDel,
         onFocusChange: (focused) {
           setState(() {
@@ -777,7 +777,7 @@ class _DeletableContainerState extends State<_DeletableContainer>
         },
         child: Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(FluxoraRadius.lg),
             border: _isFocused
                 ? Border.all(
                     color: context.colorScheme.error,

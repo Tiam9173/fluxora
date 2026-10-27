@@ -28,7 +28,7 @@ class CommonScrollBar extends StatelessWidget {
       thumbVisibility: hasController ? thumbVisibility : false,
       trackVisibility: hasController ? trackVisibility : false,
       thickness: 8,
-      radius: const Radius.circular(8),
+      radius: const Radius.circular(FluxoraRadius.sm),
       interactive: hasController,
       child: child,
     );

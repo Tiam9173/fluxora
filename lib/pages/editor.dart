@@ -795,7 +795,7 @@ class FindPanel extends StatelessWidget implements PreferredSizeWidget {
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
         decoration: BoxDecoration(
           color: colorScheme.surfaceContainerHighest.withAlpha(220),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(FluxoraRadius.md),
           border: Border.all(
             color: colorScheme.outlineVariant.withAlpha(120),
             width: 1,
@@ -839,7 +839,7 @@ class FindPanel extends StatelessWidget implements PreferredSizeWidget {
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(FluxoraRadius.sm),
               border: Border.all(
                 color: colorScheme.outlineVariant.withAlpha(80),
               ),
@@ -1064,19 +1064,19 @@ class FindPanel extends StatelessWidget implements PreferredSizeWidget {
             minHeight: 36,
           ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(FluxoraRadius.inputCompact),
             borderSide: BorderSide(
               color: colorScheme.outlineVariant.withAlpha(100),
             ),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(FluxoraRadius.inputCompact),
             borderSide: BorderSide(
               color: colorScheme.outlineVariant.withAlpha(100),
             ),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(FluxoraRadius.inputCompact),
             borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
           ),
           contentPadding: const EdgeInsets.symmetric(

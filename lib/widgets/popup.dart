@@ -249,7 +249,7 @@ class CommonPopupMenu extends StatelessWidget {
           color: context.colorScheme.surfaceContainer,
           clipBehavior: Clip.antiAlias,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(FluxoraRadius.md),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,

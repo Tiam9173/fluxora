@@ -110,7 +110,7 @@ Future<void> showNodeDetailsDialog(
                       ),
                       decoration: BoxDecoration(
                         color: colors.tertiaryContainer,
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius: BorderRadius.circular(FluxoraRadius.badge),
                       ),
                       child: Text(
                         appLocalizations.nodeDetailModified,

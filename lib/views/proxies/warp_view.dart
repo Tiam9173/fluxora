@@ -112,7 +112,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
           type: type,
           title: appLocalizations.warpStr98,
           body: ListView(
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            padding: const EdgeInsets.symmetric(vertical: FluxoraSpacing.sm),
             children: [
               // 和链式跳板用同一套视觉：圆角卡片 + 带底色的图标块 + 右侧对勾。
               _hopOption(
@@ -213,9 +213,9 @@ class _WarpViewState extends ConsumerState<WarpView> {
     required VoidCallback onTap,
   }) {
     final scheme = Theme.of(context).colorScheme;
-    final radius = BorderRadius.circular(14);
+    final radius = BorderRadius.circular(FluxoraRadius.md);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: FluxoraSpacing.md, vertical: FluxoraSpacing.xs),
       child: Material(
         color: selected
             ? scheme.primary.withValues(alpha: 0.10)
@@ -233,11 +233,11 @@ class _WarpViewState extends ConsumerState<WarpView> {
                   height: 34,
                   decoration: BoxDecoration(
                     color: color.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(FluxoraRadius.icon),
                   ),
                   child: Icon(icon, size: 18, color: color),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: FluxoraSpacing.md),
                 Expanded(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -253,7 +253,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
                         ),
                       ),
                       if (subtitle != null && subtitle.isNotEmpty) ...[
-                        const SizedBox(height: 2),
+                        const SizedBox(height: FluxoraSpacing.xxs),
                         Text(
                           subtitle,
                           maxLines: 2,
@@ -269,7 +269,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
                 ),
                 if (selected)
                   Padding(
-                    padding: const EdgeInsets.only(left: 8),
+                    padding: const EdgeInsets.only(left: FluxoraSpacing.sm),
                     child: Icon(
                       Icons.check_circle,
                       size: 18,
@@ -512,7 +512,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
                 appLocalizations.warpStr34,
                 style: TextStyle(fontSize: 11, color: Colors.grey),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: FluxoraSpacing.md),
               TextField(
                 controller: ctrl,
                 decoration: InputDecoration(
@@ -522,10 +522,10 @@ class _WarpViewState extends ConsumerState<WarpView> {
                   prefixIcon: Icon(Icons.auto_awesome),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: FluxoraSpacing.md),
               Wrap(
-                spacing: 8,
-                runSpacing: 8,
+                spacing: FluxoraSpacing.sm,
+                runSpacing: FluxoraSpacing.sm,
                 children: [
                   ActionChip(
                     label: Text(appLocalizations.warpStr16),
@@ -599,7 +599,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
                 appLocalizations.warpStr93,
                 style: TextStyle(fontSize: 13),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: FluxoraSpacing.md),
               TextField(
                 controller: ctrl,
                 keyboardType: TextInputType.number,
@@ -610,10 +610,10 @@ class _WarpViewState extends ConsumerState<WarpView> {
                   prefixIcon: Icon(Icons.device_hub),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: FluxoraSpacing.md),
               Wrap(
-                spacing: 8,
-                runSpacing: 8,
+                spacing: FluxoraSpacing.sm,
+                runSpacing: FluxoraSpacing.sm,
                 children: [
                   ActionChip(
                     label: Text(appLocalizations.warpStr0),
@@ -681,7 +681,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
               '输入您的 24 位 WARP+ License 密钥（例如通过 1.1.1.1 机器人、促销或购买获得）：',
               style: TextStyle(fontSize: 13),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: FluxoraSpacing.md),
             TextField(
               controller: ctrl,
               decoration: const InputDecoration(
@@ -742,15 +742,15 @@ class _WarpViewState extends ConsumerState<WarpView> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildKeyField(appLocalizations.warpStr45, config.privateKey),
-              const SizedBox(height: 12),
+              const SizedBox(height: FluxoraSpacing.md),
               _buildKeyField(appLocalizations.warpStr44, config.publicKey),
-              const SizedBox(height: 12),
+              const SizedBox(height: FluxoraSpacing.md),
               _buildKeyField(appLocalizations.warpStr5, config.peerPublicKey),
-              const SizedBox(height: 12),
+              const SizedBox(height: FluxoraSpacing.md),
               _buildKeyField(appLocalizations.warpStr46, config.reserved.toString()),
-              const SizedBox(height: 12),
+              const SizedBox(height: FluxoraSpacing.md),
               _buildKeyField(appLocalizations.warpStr88, config.ip),
-              const SizedBox(height: 12),
+              const SizedBox(height: FluxoraSpacing.md),
               _buildKeyField(appLocalizations.warpStr89, config.ipv6),
             ],
           ),
@@ -785,12 +785,12 @@ class _WarpViewState extends ConsumerState<WarpView> {
           label,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: FluxoraSpacing.xs),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           decoration: BoxDecoration(
             color: Colors.grey.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(FluxoraRadius.sm),
           ),
           child: Row(
             children: [
@@ -859,7 +859,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
     ];
 
     final body = ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: FluxoraSpacing.lg, vertical: FluxoraSpacing.md),
       children: [
         // 1. Usage Guide Card (Collapsible)
         if (_isGuideExpanded) _buildGuideCard(colorScheme),
@@ -867,28 +867,28 @@ class _WarpViewState extends ConsumerState<WarpView> {
         // 2. Visual Diagnostic Card (Hero Card)
         _buildDiagnosticHeroCard(report, config, isTesting, colorScheme),
 
-        const SizedBox(height: 16),
+        const SizedBox(height: FluxoraSpacing.lg),
 
         // 3. Main Settings List
         _buildSettingsCard(config, isRegistering, colorScheme),
 
-        const SizedBox(height: 16),
+        const SizedBox(height: FluxoraSpacing.lg),
 
         // 4. Contextual Routing Configuration Card
         if (config.routingMode == WarpRoutingMode.warpOverProxy) ...[
           _buildHopSelectorCard(config, colorScheme),
-          const SizedBox(height: 16),
+          const SizedBox(height: FluxoraSpacing.lg),
           _buildModeSelectorCard(config, colorScheme),
-          const SizedBox(height: 16),
+          const SizedBox(height: FluxoraSpacing.lg),
         ] else ...[
           _buildProxyOverWarpNoticeCard(colorScheme),
-          const SizedBox(height: 16),
+          const SizedBox(height: FluxoraSpacing.lg),
         ],
 
         // 5. Account, Keys & Advanced Card
         _buildAccountCard(config, isRegistering, colorScheme),
 
-        const SizedBox(height: 32),
+        const SizedBox(height: FluxoraSpacing.xxl),
       ],
     );
 
@@ -906,15 +906,15 @@ class _WarpViewState extends ConsumerState<WarpView> {
 
   Widget _buildGuideCard(ColorScheme colorScheme) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: FluxoraSpacing.lg),
       elevation: 0,
       color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(FluxoraRadius.card),
         side: BorderSide(color: colorScheme.primary.withValues(alpha: 0.2)),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(FluxoraSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -925,7 +925,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
                   color: colorScheme.primary,
                   size: 20,
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: FluxoraSpacing.sm),
                 Text(
                   appLocalizations.warpStr108,
                   style: TextStyle(
@@ -936,7 +936,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: FluxoraSpacing.sm),
             const Text(
               '• 通过代理路由 WARP (推荐)：流量经机场节点中转后再接入 Cloudflare WireGuard 网络，隐藏机场落地机房 IP，获得干净 Anycast 出口，彻底规避 Google Captcha 人机验证并解锁 ChatGPT、Claude 及流媒体。\n'
               '• 通过 WARP 路由代理：流量先通过 WARP 隧道穿透，再连向机场代理节点。当机场节点服务器 IP 在国内被封锁阻断时，WARP 作为前置穿透通道拯救被封节点！\n'
@@ -971,12 +971,12 @@ class _WarpViewState extends ConsumerState<WarpView> {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(FluxoraRadius.card),
         side: BorderSide(color: badgeColor.withValues(alpha: 0.6), width: 1.5),
       ),
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(FluxoraRadius.card),
           gradient: LinearGradient(
             colors: [badgeColor.withValues(alpha: 0.12), colorScheme.surface],
             begin: Alignment.topLeft,
@@ -1027,7 +1027,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
                     ),
                     decoration: BoxDecoration(
                       color: Colors.green.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(FluxoraRadius.md),
                     ),
                     child: Text(
                       '${report!.latencyMs} ms',
@@ -1057,7 +1057,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
                     onCopy: report?.ip.isNotEmpty == true ? report!.ip : null,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: FluxoraSpacing.md),
                 Expanded(
                   child: _buildMetricTile(
                     title: appLocalizations.warpStr96,
@@ -1075,7 +1075,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
               ],
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: FluxoraSpacing.md),
 
             Row(
               children: [
@@ -1092,7 +1092,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
                         : null,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: FluxoraSpacing.md),
                 Expanded(
                   child: _buildMetricTile(
                     title: appLocalizations.warpStr4,
@@ -1105,7 +1105,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
               ],
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: FluxoraSpacing.lg),
 
             // Action Buttons
             Row(
@@ -1114,7 +1114,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
                   child: FilledButton.icon(
                     style: FilledButton.styleFrom(
                       backgroundColor: colorScheme.primary,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: const EdgeInsets.symmetric(vertical: FluxoraSpacing.md),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -1170,7 +1170,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: Colors.grey.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(FluxoraRadius.md),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1178,7 +1178,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
           Row(
             children: [
               Icon(icon, size: 14, color: Colors.grey),
-              const SizedBox(width: 4),
+              const SizedBox(width: FluxoraSpacing.xs),
               Expanded(
                 child: Text(
                   title,
@@ -1196,7 +1196,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
                 ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: FluxoraSpacing.xs),
           Text(
             value,
             style: TextStyle(
@@ -1227,7 +1227,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(FluxoraRadius.card),
         side: BorderSide(color: colorScheme.outlineVariant),
       ),
       child: Column(
@@ -1368,16 +1368,16 @@ class _WarpViewState extends ConsumerState<WarpView> {
       elevation: 0,
       color: Colors.blue.withValues(alpha: 0.08),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(FluxoraRadius.card),
         side: BorderSide(color: Colors.blue.withValues(alpha: 0.3)),
       ),
       child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: EdgeInsets.all(FluxoraSpacing.lg),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Icon(Icons.info_outline, color: Colors.blue, size: 22),
-            SizedBox(width: 12),
+            SizedBox(width: FluxoraSpacing.md),
             Expanded(
               child: Text(
                 appLocalizations.warpStr57,
@@ -1394,18 +1394,18 @@ class _WarpViewState extends ConsumerState<WarpView> {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(FluxoraRadius.card),
         side: BorderSide(color: colorScheme.outlineVariant),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(FluxoraSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Icon(Icons.tune, color: colorScheme.primary, size: 20),
-                const SizedBox(width: 8),
+                const SizedBox(width: FluxoraSpacing.sm),
                 Text(
                   appLocalizations.warpModeTitle,
                   style: const TextStyle(
@@ -1415,7 +1415,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: FluxoraSpacing.md),
             RadioGroup<WarpMode>(
               groupValue: config.mode,
               onChanged: (val) {
@@ -1497,7 +1497,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
                   'DOMAIN-SUFFIX,openai.com,$group',
                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: FluxoraSpacing.md),
                 TextField(
                   controller: ctrl,
                   minLines: 5,
@@ -1544,11 +1544,11 @@ class _WarpViewState extends ConsumerState<WarpView> {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(FluxoraRadius.card),
         side: BorderSide(color: colorScheme.outlineVariant),
       ),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        contentPadding: const EdgeInsets.symmetric(horizontal: FluxoraSpacing.lg, vertical: FluxoraSpacing.xs),
         leading: Icon(Icons.flight_takeoff, color: colorScheme.primary),
         title: Text(
           appLocalizations.warpStr41,
@@ -1587,11 +1587,11 @@ class _WarpViewState extends ConsumerState<WarpView> {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(FluxoraRadius.card),
         side: BorderSide(color: colorScheme.outlineVariant),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(FluxoraSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1605,7 +1605,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
                       color: colorScheme.primary,
                       size: 20,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: FluxoraSpacing.sm),
                     Text(
                       appLocalizations.warpStr11,
                       style: TextStyle(
@@ -1622,7 +1622,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
                   ),
                   decoration: BoxDecoration(
                     color: colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(FluxoraRadius.sm),
                   ),
                   child: Text(
                     accountText,
@@ -1635,15 +1635,15 @@ class _WarpViewState extends ConsumerState<WarpView> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: FluxoraSpacing.sm),
             Text(
               '端点: ${config.effectiveServer}:${config.effectivePort} | MTU: ${config.mtu} | Reserved: ${config.reserved}',
               style: const TextStyle(fontSize: 12, color: Colors.grey),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: FluxoraSpacing.md),
             Wrap(
-              spacing: 8,
-              runSpacing: 8,
+              spacing: FluxoraSpacing.sm,
+              runSpacing: FluxoraSpacing.sm,
               children: [
                 OutlinedButton.icon(
                   icon: const Icon(Icons.vpn_key_outlined, size: 16),

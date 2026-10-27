@@ -715,7 +715,7 @@ class PackageListItem extends ConsumerWidget {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(FluxoraRadius.sm),
       ),
       child: Icon(
         Icons.apps,

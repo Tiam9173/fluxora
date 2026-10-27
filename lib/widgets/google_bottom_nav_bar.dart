@@ -61,7 +61,7 @@ class GoogleBottomNavBar extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8),
             decoration: BoxDecoration(
               color: context.colorScheme.surfaceContainer,
-              borderRadius: BorderRadius.circular(36),
+              borderRadius: BorderRadius.circular(FluxoraRadius.xxl),
               border: Border.all(
                 color: context.colorScheme.outlineVariant.withValues(
                   alpha: context.colorScheme.brightness == Brightness.light

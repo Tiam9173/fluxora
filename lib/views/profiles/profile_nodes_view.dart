@@ -103,7 +103,7 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
           title: Row(
             children: [
               const Icon(Icons.link_rounded, color: Colors.blueAccent),
-              const SizedBox(width: 8),
+              const SizedBox(width: FluxoraSpacing.sm),
               // item 4 — unwrapped this dialog title overflowed by 32 px at
               // 320 dp and 72 px at 280 dp under the 1.4x text scale.
               Flexible(
@@ -133,7 +133,7 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
                     'wireguard://, snell://, anytls://, ssh://, shadow-tls://, socks5://, http://, direct://',
                     style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: FluxoraSpacing.md),
                   TextField(
                     controller: controller,
                     maxLines: 8,
@@ -142,7 +142,7 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
                       border: const OutlineInputBorder(),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: FluxoraSpacing.sm),
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton.icon(
@@ -582,7 +582,7 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
                     ),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: FluxoraSpacing.sm),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -636,7 +636,7 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
           : const EdgeInsets.only(bottom: 10),
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(FluxoraRadius.card),
         side: BorderSide(
           color: selected
               ? colorScheme.primary
@@ -644,7 +644,7 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
         ),
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(FluxoraRadius.card),
         onTap: _exportMode ? () => _toggleSelected(name) : null,
         onLongPress: () {
           if (_exportMode) {
@@ -658,7 +658,7 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
           );
         },
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(FluxoraSpacing.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -686,7 +686,7 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: FluxoraSpacing.sm),
                   Expanded(
                     child: Text(
                       name,
@@ -708,7 +708,7 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
                     ),
                 ],
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: FluxoraSpacing.xs),
               Text(
                 server.isNotEmpty
                     ? '$server:$port'
@@ -721,7 +721,7 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
                   fontFamily: 'monospace',
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: FluxoraSpacing.sm),
               Row(
                 children: [
                   if (!_exportMode)
@@ -757,14 +757,14 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
             size: 64,
             color: colorScheme.outline.withValues(alpha: 0.5),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: FluxoraSpacing.lg),
           Text(
             appLocalizations.noNodesInGroup,
             style: context.textTheme.titleMedium?.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: FluxoraSpacing.sm),
           Text(
             appLocalizations.noNodesInGroupHint,
             style: context.textTheme.bodySmall?.copyWith(
@@ -774,8 +774,8 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
           const SizedBox(height: 20),
           Wrap(
             alignment: WrapAlignment.center,
-            spacing: 12,
-            runSpacing: 8,
+            spacing: FluxoraSpacing.md,
+            runSpacing: FluxoraSpacing.sm,
             children: [
               FilledButton.tonalIcon(
                 icon: const Icon(Icons.link_rounded),
@@ -942,8 +942,8 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
                       if (constraints.maxWidth < 700) {
                         return ListView.builder(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
+                            horizontal: FluxoraSpacing.lg,
+                            vertical: FluxoraSpacing.sm,
                           ),
                           itemCount: visibleProxies.length,
                           itemBuilder: (_, index) =>
@@ -952,8 +952,8 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
                       }
                       return GridView.builder(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
+                          horizontal: FluxoraSpacing.lg,
+                          vertical: FluxoraSpacing.sm,
                         ),
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
@@ -988,7 +988,7 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             LinearProgressIndicator(value: progress),
-            const SizedBox(height: 4),
+            const SizedBox(height: FluxoraSpacing.xs),
             Text(
               appLocalizations.nodeTestingProgress(
                 '$_batchDone',
@@ -1430,7 +1430,7 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
       title: Row(
         children: [
           const Icon(Icons.edit_note_rounded, color: Colors.blueAccent),
-          const SizedBox(width: 8),
+          const SizedBox(width: FluxoraSpacing.sm),
           // item 4 — unwrapped this dialog title overflowed by 24 px at 280 dp
           // under the 1.4x text scale.
           Flexible(
@@ -1463,8 +1463,8 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                   labelText: appLocalizations.nodeProtocol,
                   border: const OutlineInputBorder(),
                   contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
+                    horizontal: FluxoraSpacing.md,
+                    vertical: FluxoraSpacing.sm,
                   ),
                 ),
                 items: ManualProtocol.values
@@ -1483,7 +1483,7 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                             shape: BoxShape.circle,
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: FluxoraSpacing.sm),
                         // item 4 — long protocol names overflowed the dropdown
                         // by 2.8 px at 280 dp under the 1.4x text scale.
                         Flexible(
@@ -1500,14 +1500,14 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                   if (val != null) _onProtocolChanged(val);
                 },
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: FluxoraSpacing.md),
 
               if (_protocol == ManualProtocol.custom) ...[
                 Text(
                   appLocalizations.customConfigHintText,
                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: FluxoraSpacing.sm),
                 TextField(
                   controller: _customConfigCtrl,
                   maxLines: 10,
@@ -1539,7 +1539,7 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                     border: const OutlineInputBorder(),
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: FluxoraSpacing.md),
 
                 // Server & Port
                 Row(
@@ -1555,7 +1555,7 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: FluxoraSpacing.sm),
                     Expanded(
                       flex: 1,
                       child: TextField(
@@ -1569,7 +1569,7 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: FluxoraSpacing.md),
 
                 // Secret (UUID / Password / PrivateKey)
                 if (_protocol != ManualProtocol.direct) ...[
@@ -1586,7 +1586,7 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                       border: const OutlineInputBorder(),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: FluxoraSpacing.md),
                 ],
 
                 // SSH or Juicity or Naive Username / Password
@@ -1606,7 +1606,7 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                       border: const OutlineInputBorder(),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: FluxoraSpacing.md),
                 ],
 
                 // Protocol-specific fields
@@ -1644,7 +1644,7 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                               setState(() => _network = val ?? 'tcp'),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: FluxoraSpacing.sm),
                       Expanded(
                         child: DropdownButtonFormField<String>(
                           key: ValueKey('sec_$_security'),
@@ -1678,7 +1678,7 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: FluxoraSpacing.md),
                 ],
 
                 // Snell obfs
@@ -1708,7 +1708,7 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                               setState(() => _security = val ?? 'none'),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: FluxoraSpacing.sm),
                       Expanded(
                         child: TextField(
                           controller: _flowCtrl,
@@ -1721,7 +1721,7 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: FluxoraSpacing.md),
                 ],
 
                 // REALITY fields
@@ -1734,7 +1734,7 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                       border: const OutlineInputBorder(),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: FluxoraSpacing.sm),
                   Row(
                     children: [
                       Expanded(
@@ -1746,7 +1746,7 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: FluxoraSpacing.sm),
                       Expanded(
                         child: TextField(
                           controller: _flowCtrl,
@@ -1759,7 +1759,7 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: FluxoraSpacing.md),
                 ],
 
                 // SNI field for TLS / REALITY / Trojan / Hysteria / Juicity / ShadowTLS / Naive
@@ -1784,7 +1784,7 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                       border: const OutlineInputBorder(),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: FluxoraSpacing.md),
                 ],
 
                 // WebSocket Path / Host
@@ -1803,7 +1803,7 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: FluxoraSpacing.sm),
                       Expanded(
                         child: TextField(
                           controller: _hostCtrl,
@@ -1815,7 +1815,7 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: FluxoraSpacing.md),
                 ],
 
                 // SS / SSR Cipher
@@ -1829,7 +1829,7 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                       border: const OutlineInputBorder(),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: FluxoraSpacing.md),
                 ],
 
                 // Hysteria 1 rates
@@ -1846,7 +1846,7 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: FluxoraSpacing.sm),
                       Expanded(
                         child: TextField(
                           controller: _cipherCtrl,
@@ -1859,7 +1859,7 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: FluxoraSpacing.md),
                 ],
 
                 // WireGuard & AmneziaWG fields
@@ -1872,7 +1872,7 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                       border: const OutlineInputBorder(),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: FluxoraSpacing.sm),
                   TextField(
                     controller: _pathCtrl,
                     decoration: InputDecoration(
@@ -1881,7 +1881,7 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                       border: const OutlineInputBorder(),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: FluxoraSpacing.md),
                 ],
 
                 // AmneziaWG 2/3 Obfuscation Parameters
@@ -1893,7 +1893,7 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                       fontSize: 13,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: FluxoraSpacing.sm),
                   Row(
                     children: [
                       Expanded(
@@ -1906,7 +1906,7 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: FluxoraSpacing.sm),
                       Expanded(
                         child: TextField(
                           controller: _jminCtrl,
@@ -1917,7 +1917,7 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: FluxoraSpacing.sm),
                       Expanded(
                         child: TextField(
                           controller: _jmaxCtrl,
@@ -1930,7 +1930,7 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: FluxoraSpacing.sm),
                   Row(
                     children: [
                       Expanded(
@@ -1943,7 +1943,7 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: FluxoraSpacing.sm),
                       Expanded(
                         child: TextField(
                           controller: _s2Ctrl,
@@ -1956,7 +1956,7 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: FluxoraSpacing.sm),
                   Row(
                     children: [
                       Expanded(
@@ -2004,7 +2004,7 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: FluxoraSpacing.md),
                 ],
 
                 // Options

@@ -42,13 +42,13 @@ class OutboundMode extends StatelessWidget {
                             builder: (context) {
                               final isFocused = Focus.of(context).hasFocus;
                               return InkWell(
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(FluxoraRadius.sm),
                                 onTap: () {
                                   globalState.appController.changeMode(item);
                                 },
                                 child: Container(
                                   decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10),
+                                    borderRadius: BorderRadius.circular(FluxoraRadius.sm),
                                     color: isFocused && globalState.isAndroidTV
                                         ? context.colorScheme.primary
                                             .withValues(alpha: 0.15)
@@ -151,7 +151,7 @@ class OutboundModeV2 extends StatelessWidget {
                                 final isFocused = Focus.of(context).hasFocus;
                                 final isSelected = item == mode;
                                 return InkWell(
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(FluxoraRadius.md),
                                   onTap: () {
                                     globalState.appController.changeMode(item);
                                   },
@@ -165,7 +165,7 @@ class OutboundModeV2 extends StatelessWidget {
                                               ? context.colorScheme.primary
                                                   .withValues(alpha: 0.12)
                                               : Colors.transparent),
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(FluxoraRadius.md),
                                       border: isFocused
                                           ? Border.all(
                                               color:
@@ -233,7 +233,7 @@ class OutboundModeV2 extends StatelessWidget {
                   horizontal: 10,
                   vertical: 9,
                 ),
-                thumbRadius: const Radius.circular(12),
+                thumbRadius: const Radius.circular(FluxoraRadius.md),
                 groupValue: mode,
                 onValueChanged: (value) {
                   if (value == null) {

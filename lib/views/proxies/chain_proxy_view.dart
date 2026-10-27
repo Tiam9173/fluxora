@@ -377,13 +377,18 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
           r.status == HealthStatus.untested;
     }).length;
 
+    // The two filter chips carry a state icon (healthy / error), so they read
+    // the brightness-aware semantic roles rather than `Colors.green` /
+    // `Colors.redAccent`, which measure only 2.6–3.0:1 on the light page.
+    final statusColors = FluxoraColorSet.of(Theme.of(context).brightness);
+
     return Scaffold(
       body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: FluxoraSpacing.lg, vertical: FluxoraSpacing.md),
         children: [
           // 0. Dynamic Topology Visualization Card
           _buildTopologyCard(context, config, landingProxies),
-          const SizedBox(height: 12),
+          const SizedBox(height: FluxoraSpacing.md),
 
           // 0b. 诊断信息：探针失败时能直接看到"它到底测了什么"。
           // 面向开发排障，普通用户不需要；开「开发者模式」才显示。
@@ -392,7 +397,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
               ) &&
               manager.lastProbeReport != null) ...[
             _buildProbeDiagnostics(context, config, manager.lastProbeReport!),
-            const SizedBox(height: 12),
+            const SizedBox(height: FluxoraSpacing.md),
           ],
 
           // 1. Master enable card
@@ -448,11 +453,11 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: FluxoraSpacing.md),
 
           // 1c. 住宅 IP 体检
           _buildResidentialIpCheckCard(context, config),
-          const SizedBox(height: 12),
+          const SizedBox(height: FluxoraSpacing.md),
 
           // 2. Default Hop & Integration settings
           CommonCard(
@@ -564,9 +569,9 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: FluxoraSpacing.md),
           _buildFingerprintGuideCard(context),
-          const SizedBox(height: 16),
+          const SizedBox(height: FluxoraSpacing.lg),
 
           // 3. Section Header for Landing Proxies with Actions
           Row(
@@ -584,7 +589,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: FluxoraSpacing.sm),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -628,7 +633,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
 
           // Batch Checking Progress Banner
           if (manager.isBatchHealthChecking) ...[
-            const SizedBox(height: 4),
+            const SizedBox(height: FluxoraSpacing.xs),
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
@@ -637,7 +642,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                     : null,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: FluxoraSpacing.xs),
             Text(
               appLocalizations.batchCheckingProgress(
                 manager.batchCheckCompleted,
@@ -649,7 +654,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
 
           // Filter Segmented Chips (All / Healthy / Error)
           if (landingProxies.isNotEmpty) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: FluxoraSpacing.sm),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
@@ -659,16 +664,16 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                     selected: _selectedFilter == 0,
                     onSelected: (_) => setState(() => _selectedFilter = 0),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: FluxoraSpacing.sm),
                   FilterChip(
-                    avatar: const Icon(Icons.check_circle, size: 14, color: Colors.green),
+                    avatar: Icon(Icons.check_circle, size: 14, color: statusColors.success),
                     label: Text('${appLocalizations.filterHealthy} ($healthyCount)'),
                     selected: _selectedFilter == 1,
                     onSelected: (_) => setState(() => _selectedFilter = 1),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: FluxoraSpacing.sm),
                   FilterChip(
-                    avatar: const Icon(Icons.error_outline, size: 14, color: Colors.redAccent),
+                    avatar: Icon(Icons.error_outline, size: 14, color: statusColors.error),
                     label: Text('${appLocalizations.filterError} ($errorCount)'),
                     selected: _selectedFilter == 2,
                     onSelected: (_) => setState(() => _selectedFilter = 2),
@@ -677,7 +682,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
               ),
             ),
           ],
-          const SizedBox(height: 8),
+          const SizedBox(height: FluxoraSpacing.sm),
 
           // 4. Landing Proxies List or Empty State
           if (landingProxies.isEmpty)
@@ -688,8 +693,8 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                 title: appLocalizations.chainNoResidential,
                 description: appLocalizations.emptyLandingTip,
                 action: Wrap(
-                  spacing: 12,
-                  runSpacing: 8,
+                  spacing: FluxoraSpacing.md,
+                  runSpacing: FluxoraSpacing.sm,
                   alignment: WrapAlignment.center,
                   children: [
                     FilledButton.icon(
@@ -723,7 +728,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
           else
             for (final proxy in filteredProxies)
               Padding(
-                padding: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.only(bottom: FluxoraSpacing.sm),
                 child: _LandingProxyCard(
                   proxy: proxy,
                   defaultHop: config.defaultDialerProxy,
@@ -880,7 +885,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
             )
           else ...[
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: FluxoraSpacing.lg),
               child: Text(
                 '${landing.name} · ${landing.server}:${landing.port}',
                 style: context.textTheme.bodySmall?.copyWith(
@@ -900,7 +905,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                       size: 18,
                       color: result.isUsable ? scheme.primary : scheme.error,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: FluxoraSpacing.sm),
                     Expanded(
                       child: Text(
                         [
@@ -928,7 +933,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                       child: Text(appLocalizations.residentialIpCheckDirect),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: FluxoraSpacing.sm),
                   Expanded(
                     child: FilledButton.icon(
                       onPressed: _ipChecking
@@ -1069,6 +1074,8 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
     List<LandingProxy> landingProxies,
   ) {
     final isReady = config.enable && landingProxies.any((p) => p.enable);
+    final statusColors = FluxoraColorSet.of(Theme.of(context).brightness);
+    final neutral = context.colorScheme.onSurfaceVariant;
     // B3: three hops insert a relay between the dialer and the exit. The exit
     // node is `ChainProxyConfig.effectiveExitNode` — hop3Node in three-hop mode,
     // hop2Node / the active landing proxy in two-hop mode. That is the node the
@@ -1238,7 +1245,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
     return CommonCard(
       type: CommonCardType.filled,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(FluxoraSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1255,7 +1262,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                         size: 20,
                         color: context.colorScheme.primary,
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: FluxoraSpacing.sm),
                       Flexible(
                         child: Text(
                           appLocalizations.chainTopology,
@@ -1270,19 +1277,19 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: FluxoraSpacing.sm),
                 _buildChainProbeButton(context),
-                const SizedBox(width: 8),
+                const SizedBox(width: FluxoraSpacing.sm),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                     color: isReady
-                        ? Colors.green.withValues(alpha: 0.15)
+                        ? statusColors.success.withValues(alpha: 0.15)
                         : context.colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(FluxoraRadius.md),
                     border: Border.all(
                       color: isReady
-                          ? Colors.green.withValues(alpha: 0.5)
+                          ? statusColors.success.withValues(alpha: 0.5)
                           : context.colorScheme.outlineVariant,
                     ),
                   ),
@@ -1294,7 +1301,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                         height: 7,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: isReady ? Colors.green : Colors.grey,
+                          color: isReady ? statusColors.success : neutral,
                         ),
                       ),
                       const SizedBox(width: 5),
@@ -1303,7 +1310,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
-                          color: isReady ? Colors.green : Colors.grey,
+                          color: isReady ? statusColors.success : neutral,
                         ),
                       ),
                     ],
@@ -1316,7 +1323,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
               decoration: BoxDecoration(
                 color: context.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(FluxoraRadius.md),
                 border: Border.all(
                   color: context.colorScheme.outlineVariant.withValues(alpha: 0.4),
                 ),
@@ -1334,7 +1341,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                     ),
                     for (var i = 0; i < config.effectiveFrontHops.length; i++) ...[
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: FluxoraSpacing.xs),
                         child: FluxoraFlowIndicator(
                           state: topologySegmentFlow(
                             i == 0 ? clientState : hopStateAt(i - 1),
@@ -1356,7 +1363,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                       ),
                     ],
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: FluxoraSpacing.xs),
                       child: FluxoraFlowIndicator(
                         state: topologySegmentFlow(
                           hopStateAt(config.effectiveFrontHops.length - 1),
@@ -1373,7 +1380,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                       state: exitState,
                     ),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: FluxoraSpacing.xs),
                       child: FluxoraFlowIndicator(
                         state: topologySegmentFlow(exitState, targetState),
                         width: 36,
@@ -1394,7 +1401,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
             // above carry the same information, but a legend keeps "probed
             // healthy" from being read as "the whole chain is proven usable".
             if (probeNoticeText != null) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: FluxoraSpacing.sm),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1449,7 +1456,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
             // B3: an incomplete three-hop chain generates no shadow nodes at
             // all, so say so here rather than letting the card read as ready.
             if (isThreeHopIncomplete(config)) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: FluxoraSpacing.sm),
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(
@@ -1457,10 +1464,12 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: context.colorScheme.errorContainer.withValues(
-                    alpha: 0.4,
-                  ),
-                  borderRadius: BorderRadius.circular(8),
+                  // Tinted from `error`, not `errorContainer`: the container is
+                  // a dark tone in dark mode, so at 30–40% it darkens the card
+                  // instead of tinting it (≈1.03:1 — invisible). See the status
+                  // note in `fluxora_colors.dart`.
+                  color: context.colorScheme.error.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(FluxoraRadius.sm),
                   border: Border.all(
                     color: context.colorScheme.error.withValues(alpha: 0.4),
                   ),
@@ -1478,7 +1487,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                         appLocalizations.chainHopIncomplete,
                         style: TextStyle(
                           fontSize: 11,
-                          color: context.colorScheme.onErrorContainer,
+                          color: context.colorScheme.error,
                         ),
                       ),
                     ),
@@ -1503,10 +1512,10 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(10),
-                    margin: EdgeInsets.only(top: 4),
+                    margin: EdgeInsets.only(top: FluxoraSpacing.xs),
                     decoration: BoxDecoration(
                       color: context.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(FluxoraRadius.sm),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1515,7 +1524,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                           appLocalizations.chainHelpHop,
                           style: TextStyle(fontSize: 11, height: 1.4),
                         ),
-                        SizedBox(height: 4),
+                        SizedBox(height: FluxoraSpacing.xs),
                         Text(
                           appLocalizations.chainProtocolWarning,
                           style: TextStyle(
@@ -1524,12 +1533,12 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                             color: context.colorScheme.error,
                           ),
                         ),
-                        SizedBox(height: 4),
+                        SizedBox(height: FluxoraSpacing.xs),
                         Text(
                           '• 落地节点 (Landing)：经由跳板中继后发起网络连接的出口节点，向目标端呈现该出口节点网络特征。',
                           style: TextStyle(fontSize: 11, height: 1.4),
                         ),
-                        SizedBox(height: 4),
+                        SizedBox(height: FluxoraSpacing.xs),
                         Text(
                           appLocalizations.chainHelpMultiHop,
                           style: TextStyle(fontSize: 11, height: 1.4),
@@ -1655,6 +1664,10 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
     final offsetStr = 'UTC${offsetHours >= 0 ? '+$offsetHours' : '$offsetHours'}'
         '${offsetMinutes > 0 ? ':${offsetMinutes.toString().padLeft(2, '0')}' : ''}';
     final tzName = now.timeZoneName.isNotEmpty ? ' (${now.timeZoneName})' : '';
+    final statusColors = FluxoraColorSet.of(Theme.of(context).brightness);
+    // The timezone row reports a fact, not a state, so it reads as ordinary body
+    // text rather than borrowing a status colour.
+    final onSurface = Theme.of(context).colorScheme.onSurface;
 
     return CommonCard(
       type: CommonCardType.filled,
@@ -1667,7 +1680,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
               _isGuideExpanded = expanded;
             });
           },
-          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          tilePadding: const EdgeInsets.symmetric(horizontal: FluxoraSpacing.lg, vertical: FluxoraSpacing.xs),
           leading: const Icon(
             Icons.fingerprint,
             color: Colors.teal,
@@ -1691,10 +1704,10 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(FluxoraSpacing.md),
                     decoration: BoxDecoration(
                       color: context.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(FluxoraRadius.sm),
                       border: Border.all(
                         color: context.colorScheme.outlineVariant.withValues(alpha: 0.5),
                       ),
@@ -1703,8 +1716,8 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.schedule, size: 16, color: Colors.blueAccent),
-                            const SizedBox(width: 8),
+                            Icon(Icons.schedule, size: 16, color: onSurface),
+                            const SizedBox(width: FluxoraSpacing.sm),
                             Text(
                               appLocalizations.chainTz,
                               style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
@@ -1712,10 +1725,10 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                             Expanded(
                               child: Text(
                                 '$offsetStr$tzName',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.blueAccent,
+                                  color: onSurface,
                                 ),
                               ),
                             ),
@@ -1724,8 +1737,8 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                         const SizedBox(height: 6),
                         Row(
                           children: [
-                            const Icon(Icons.shield_outlined, size: 16, color: Colors.green),
-                            const SizedBox(width: 8),
+                            Icon(Icons.shield_outlined, size: 16, color: statusColors.success),
+                            const SizedBox(width: FluxoraSpacing.sm),
                             Text(
                               appLocalizations.chainWebrtcProtect,
                               style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
@@ -1736,7 +1749,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.green,
+                                  color: statusColors.success,
                                 ),
                               ),
                             ),
@@ -1745,13 +1758,13 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: FluxoraSpacing.md),
                   Text(
                     appLocalizations.chainTzWhy,
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: Colors.deepOrange,
+                      color: statusColors.warning,
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -1804,11 +1817,14 @@ class _LandingProxyCard extends ConsumerWidget {
     final effectiveHop = (proxy.dialerProxy != null && proxy.dialerProxy!.isNotEmpty)
         ? proxy.dialerProxy!
         : (defaultHop.isEmpty ? appLocalizations.chainFollowMain : defaultHop);
+    // All four service tags report the same thing — `isTargetAvailable` — so they
+    // share one semantic role instead of four ad-hoc hues.
+    final statusColors = FluxoraColorSet.of(Theme.of(context).brightness);
 
     return CommonCard(
       type: CommonCardType.filled,
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(FluxoraSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1819,7 +1835,7 @@ class _LandingProxyCard extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                     color: context.colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(FluxoraRadius.badge),
                   ),
                   child: Text(
                     proxy.protocol.displayName,
@@ -1830,7 +1846,7 @@ class _LandingProxyCard extends ConsumerWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: FluxoraSpacing.sm),
                 // Proxy Name
                 Expanded(
                   child: Text(
@@ -1843,10 +1859,10 @@ class _LandingProxyCard extends ConsumerWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const SizedBox(width: 4),
+                const SizedBox(width: FluxoraSpacing.xs),
                 // Health status badge
                 _buildHealthStatusBadge(context, report, delay),
-                const SizedBox(width: 4),
+                const SizedBox(width: FluxoraSpacing.xs),
                 // Enable Switch
                 Transform.scale(
                   scale: 0.85,
@@ -1867,7 +1883,7 @@ class _LandingProxyCard extends ConsumerWidget {
                   size: 14,
                   color: context.colorScheme.outline,
                 ),
-                const SizedBox(width: 4),
+                const SizedBox(width: FluxoraSpacing.xs),
                 Flexible(
                   child: Text(
                     proxy.username.isNotEmpty
@@ -1886,22 +1902,22 @@ class _LandingProxyCard extends ConsumerWidget {
                         report.status == HealthStatus.warning)) ...[
                   const SizedBox(width: 6),
                   Wrap(
-                    spacing: 4,
+                    spacing: FluxoraSpacing.xs,
                     children: [
                       if (report.isTargetAvailable(TargetService.openai))
-                        _buildServiceMiniTag('ChatGPT', Colors.green),
+                        _buildServiceMiniTag('ChatGPT', statusColors.success),
                       if (report.isTargetAvailable(TargetService.tiktok))
-                        _buildServiceMiniTag('TikTok', Colors.green),
+                        _buildServiceMiniTag('TikTok', statusColors.success),
                       if (report.isTargetAvailable(TargetService.google))
-                        _buildServiceMiniTag('Google', Colors.blue),
+                        _buildServiceMiniTag('Google', statusColors.success),
                       if (report.isTargetAvailable(TargetService.amazon))
-                        _buildServiceMiniTag('Amazon', Colors.orange),
+                        _buildServiceMiniTag('Amazon', statusColors.success),
                     ],
                   ),
                 ],
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: FluxoraSpacing.sm),
             // Hop info, Delay badge & Action buttons
             Row(
               children: [
@@ -1911,13 +1927,13 @@ class _LandingProxyCard extends ConsumerWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                     decoration: BoxDecoration(
                       color: context.colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(FluxoraRadius.badge),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         const Icon(Icons.link, size: 13, color: Colors.blue),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: FluxoraSpacing.xs),
                         Flexible(
                           child: Text(
                             appLocalizations.chainDialerValue(effectiveHop),
@@ -1932,7 +1948,7 @@ class _LandingProxyCard extends ConsumerWidget {
                 ),
                 const SizedBox(width: 6),
                 _buildDelayBadge(context, delay),
-                const SizedBox(width: 4),
+                const SizedBox(width: FluxoraSpacing.xs),
                 _buildActionButton(
                   icon: Icons.health_and_safety_outlined,
                   color: Colors.green,
@@ -1975,7 +1991,7 @@ class _LandingProxyCard extends ConsumerWidget {
       icon: Icon(icon, size: 18, color: color),
       tooltip: tooltip,
       onPressed: onPressed,
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(FluxoraSpacing.xs),
       constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
       visualDensity: VisualDensity.compact,
     );
@@ -1997,24 +2013,29 @@ class _LandingProxyCard extends ConsumerWidget {
   }
 
   Widget _buildHealthStatusBadge(BuildContext context, ProxyHealthReport? report, int? delay) {
+    // `FluxoraColorSet` is the brightness-aware semantic layer; the raw
+    // `FluxoraColors.success` statics are brightness-agnostic and measure only
+    // 2.5:1 on a light card, so they must not be used for text or icons here.
+    final statusColors = FluxoraColorSet.of(Theme.of(context).brightness);
+    final neutral = context.colorScheme.onSurfaceVariant;
     if (report == null) {
       return InkWell(
         onTap: onCheckHealth,
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(FluxoraRadius.badge),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
           decoration: BoxDecoration(
             color: context.colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(FluxoraRadius.badge),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.health_and_safety_outlined, size: 12, color: Colors.grey),
+              Icon(Icons.health_and_safety_outlined, size: 12, color: neutral),
               const SizedBox(width: 3),
               Text(
                 appLocalizations.healthCheck,
-                style: const TextStyle(fontSize: 10, color: Colors.grey),
+                style: TextStyle(fontSize: 10, color: neutral),
               ),
             ],
           ),
@@ -2026,8 +2047,8 @@ class _LandingProxyCard extends ConsumerWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(
-          color: Colors.blue.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(4),
+          color: statusColors.info.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(FluxoraRadius.badge),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -2037,10 +2058,10 @@ class _LandingProxyCard extends ConsumerWidget {
               height: 10,
               child: CircularProgressIndicator(strokeWidth: 1.5),
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: FluxoraSpacing.xs),
             Text(
               appLocalizations.testingHealth,
-              style: const TextStyle(fontSize: 10, color: Colors.blue),
+              style: TextStyle(fontSize: 10, color: statusColors.info),
             ),
           ],
         ),
@@ -2048,21 +2069,21 @@ class _LandingProxyCard extends ConsumerWidget {
     }
 
     final (color, text) = switch (report.status) {
-      HealthStatus.healthy => (Colors.green, '${appLocalizations.healthHealthy} ${report.minDelay ?? delay ?? ''}ms'.trim()),
-      HealthStatus.warning => (Colors.orange, appLocalizations.healthWarning),
-      HealthStatus.error => (Colors.red, appLocalizations.healthError),
-      HealthStatus.testing => (Colors.blue, appLocalizations.testingHealth),
-      HealthStatus.untested => (Colors.grey, appLocalizations.healthUntested),
+      HealthStatus.healthy => (statusColors.success, '${appLocalizations.healthHealthy} ${report.minDelay ?? delay ?? ''}ms'.trim()),
+      HealthStatus.warning => (statusColors.warning, appLocalizations.healthWarning),
+      HealthStatus.error => (statusColors.error, appLocalizations.healthError),
+      HealthStatus.testing => (statusColors.info, appLocalizations.testingHealth),
+      HealthStatus.untested => (neutral, appLocalizations.healthUntested),
     };
 
     return InkWell(
       onTap: onShowReport,
-      borderRadius: BorderRadius.circular(4),
+      borderRadius: BorderRadius.circular(FluxoraRadius.badge),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(FluxoraRadius.badge),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -2071,7 +2092,7 @@ class _LandingProxyCard extends ConsumerWidget {
               report.status == HealthStatus.healthy
                   ? Icons.check_circle
                   : (report.status == HealthStatus.warning
-                      ? Icons.warning_amber
+                      ? Icons.warning_amber_rounded
                       : Icons.cancel),
               size: 12,
               color: color,
@@ -2102,14 +2123,14 @@ class _LandingProxyCard extends ConsumerWidget {
     if (delay == null) {
       return InkWell(
         onTap: onTest,
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(FluxoraRadius.badge),
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(Icons.bolt, size: 14, color: Colors.grey),
-              SizedBox(width: 2),
+              SizedBox(width: FluxoraSpacing.xxs),
               Text(appLocalizations.chainSpeedTest, style: TextStyle(fontSize: 11, color: Colors.grey)),
             ],
           ),
@@ -2117,22 +2138,23 @@ class _LandingProxyCard extends ConsumerWidget {
       );
     }
 
+    final statusColors = FluxoraColorSet.of(Theme.of(context).brightness);
     final Color color = switch (delay) {
-      > 0 && < 300 => Colors.green,
-      >= 300 && < 800 => Colors.orange,
-      _ => Colors.red,
+      > 0 && < 300 => statusColors.success,
+      >= 300 && < 800 => statusColors.warning,
+      _ => statusColors.error,
     };
 
     final text = delay > 0 ? '$delay ms' : appLocalizations.chainTimeout;
 
     return InkWell(
       onTap: onTest,
-      borderRadius: BorderRadius.circular(4),
+      borderRadius: BorderRadius.circular(FluxoraRadius.badge),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(FluxoraRadius.badge),
         ),
         child: Text(
           text,
@@ -2228,7 +2250,7 @@ class _QuickImportDialogState extends State<_QuickImportDialog> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: FluxoraSpacing.sm),
             TextField(
               controller: _controller,
               maxLines: 6,
@@ -2238,7 +2260,7 @@ class _QuickImportDialogState extends State<_QuickImportDialog> {
                 hintStyle: const TextStyle(fontSize: 12),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: FluxoraSpacing.sm),
             if (_parsed.isNotEmpty)
               Text(
                 '已识别 ${_parsed.length} 个节点：${_parsed.map((e) => e.name).take(3).join(', ')}${_parsed.length > 3 ? ' 等' : ''}',
@@ -2352,6 +2374,7 @@ class _EditLandingProxyDialogState extends State<_EditLandingProxyDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final statusColors = FluxoraColorSet.of(Theme.of(context).brightness);
     return AlertDialog(
       title: Text(
         widget.proxy == null
@@ -2371,7 +2394,7 @@ class _EditLandingProxyDialogState extends State<_EditLandingProxyDialog> {
                   hintText: appLocalizations.chainResidentialExample,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: FluxoraSpacing.md),
               DropdownButtonFormField<ChainProxyProtocol>(
                 initialValue: _protocol,
                 decoration: InputDecoration(
@@ -2397,7 +2420,7 @@ class _EditLandingProxyDialogState extends State<_EditLandingProxyDialog> {
                   }
                 },
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: FluxoraSpacing.md),
               Row(
                 children: [
                   Expanded(
@@ -2410,7 +2433,7 @@ class _EditLandingProxyDialogState extends State<_EditLandingProxyDialog> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: FluxoraSpacing.sm),
                   Expanded(
                     flex: 2,
                     child: TextField(
@@ -2423,7 +2446,7 @@ class _EditLandingProxyDialogState extends State<_EditLandingProxyDialog> {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: FluxoraSpacing.md),
               TextField(
                 controller: _userController,
                 decoration: InputDecoration(
@@ -2431,7 +2454,7 @@ class _EditLandingProxyDialogState extends State<_EditLandingProxyDialog> {
                   hintText: appLocalizations.chainOptional,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: FluxoraSpacing.md),
               TextField(
                 controller: _passController,
                 obscureText: !_showPassword,
@@ -2450,7 +2473,7 @@ class _EditLandingProxyDialogState extends State<_EditLandingProxyDialog> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: FluxoraSpacing.md),
               TextField(
                 controller: _dialerController,
                 decoration: InputDecoration(
@@ -2458,7 +2481,7 @@ class _EditLandingProxyDialogState extends State<_EditLandingProxyDialog> {
                   hintText: appLocalizations.chainInheritDefault,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: FluxoraSpacing.sm),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
                 title: Text(appLocalizations.udpForwarding),
@@ -2467,7 +2490,7 @@ class _EditLandingProxyDialogState extends State<_EditLandingProxyDialog> {
                 onChanged: (val) => setState(() => _udp = val),
               ),
               if (_isTesting) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: FluxoraSpacing.md),
                 Row(
                   children: [
                     const SizedBox(
@@ -2475,24 +2498,28 @@ class _EditLandingProxyDialogState extends State<_EditLandingProxyDialog> {
                       height: 14,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: FluxoraSpacing.sm),
                     Text(appLocalizations.testing, style: const TextStyle(fontSize: 12)),
                   ],
                 ),
               ] else if (_testResult != null) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: FluxoraSpacing.md),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: BoxDecoration(
+                    // 8 % rather than 12 %: on the light dialog surface the
+                    // 12 % wash pulled the 12 px result text down to 4.36–4.39:1,
+                    // just under AA. Lowering the alpha moves the fill back
+                    // towards the surface instead of towards the text colour.
                     color: (_testResult!.isSuccess
-                            ? Colors.green
-                            : (_testResult!.isAuthError ? Colors.red : Colors.orange))
-                        .withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(6),
+                            ? statusColors.success
+                            : (_testResult!.isAuthError ? statusColors.error : statusColors.warning))
+                        .withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(FluxoraRadius.sm),
                     border: Border.all(
                       color: (_testResult!.isSuccess
-                              ? Colors.green
-                              : (_testResult!.isAuthError ? Colors.red : Colors.orange))
+                              ? statusColors.success
+                              : (_testResult!.isAuthError ? statusColors.error : statusColors.warning))
                           .withValues(alpha: 0.3),
                     ),
                   ),
@@ -2506,8 +2533,8 @@ class _EditLandingProxyDialogState extends State<_EditLandingProxyDialog> {
                                 : Icons.error_outline),
                         size: 16,
                         color: _testResult!.isSuccess
-                            ? Colors.green
-                            : (_testResult!.isAuthError ? Colors.red : Colors.orange),
+                            ? statusColors.success
+                            : (_testResult!.isAuthError ? statusColors.error : statusColors.warning),
                       ),
                       const SizedBox(width: 6),
                       Expanded(
@@ -2518,10 +2545,10 @@ class _EditLandingProxyDialogState extends State<_EditLandingProxyDialog> {
                           style: TextStyle(
                             fontSize: 12,
                             color: _testResult!.isSuccess
-                                ? Colors.green.shade800
+                                ? statusColors.success
                                 : (_testResult!.isAuthError
-                                    ? Colors.red.shade800
-                                    : Colors.orange.shade800),
+                                    ? statusColors.error
+                                    : statusColors.warning),
                           ),
                         ),
                       ),
@@ -2684,7 +2711,7 @@ class _TopologyNodeState extends State<_TopologyNode>
     final isEmphasised = isFailed || isEvidence;
 
     final background = isFailed
-        ? colorScheme.errorContainer.withValues(alpha: 0.3)
+        ? colorScheme.error.withValues(alpha: 0.12)
         : isEvidence
         ? colorScheme.primaryContainer.withValues(alpha: 0.3)
         : colorScheme.surfaceContainer;
@@ -2710,7 +2737,7 @@ class _TopologyNodeState extends State<_TopologyNode>
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(FluxoraRadius.sm),
         border: Border.all(color: borderColor),
       ),
       child: Column(
@@ -2744,7 +2771,7 @@ class _TopologyNodeState extends State<_TopologyNode>
               ],
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: FluxoraSpacing.xs),
           Text(
             widget.title,
             style: TextStyle(
@@ -2757,7 +2784,7 @@ class _TopologyNodeState extends State<_TopologyNode>
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: FluxoraSpacing.xxs),
           Text(
             widget.subtitle,
             style: TextStyle(fontSize: 9, color: colorScheme.onSurfaceVariant),
@@ -2778,7 +2805,7 @@ class _TopologyArrow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: 4),
+      padding: EdgeInsets.symmetric(horizontal: FluxoraSpacing.xs),
       child: Icon(Icons.arrow_forward, size: 14, color: Colors.grey),
     );
   }
@@ -2797,12 +2824,13 @@ class _ProxyHealthReportDialog extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final chainConfig = ref.watch(chainProxyConfigProvider).config;
     final report = chainProxyManager.getHealthReport(proxy.id);
+    final statusColors = FluxoraColorSet.of(Theme.of(context).brightness);
 
     return AlertDialog(
       title: Row(
         children: [
           const Icon(Icons.verified_user_outlined, color: Colors.blue),
-          const SizedBox(width: 8),
+          const SizedBox(width: FluxoraSpacing.sm),
           Expanded(
             child: Text(
               appLocalizations.healthReport,
@@ -2828,7 +2856,7 @@ class _ProxyHealthReportDialog extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
                 decoration: BoxDecoration(
                   color: context.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(FluxoraRadius.sm),
                 ),
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
@@ -2885,11 +2913,11 @@ class _ProxyHealthReportDialog extends ConsumerWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: FluxoraSpacing.md),
 
               // 2. Health status card
               _buildOverallStatusCard(context, report),
-              const SizedBox(height: 12),
+              const SizedBox(height: FluxoraSpacing.md),
 
               // 3. Targets test results
               Text(
@@ -2903,7 +2931,7 @@ class _ProxyHealthReportDialog extends ConsumerWidget {
               const SizedBox(height: 6),
               if (report == null || report.targets.isEmpty)
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(FluxoraSpacing.lg),
                   alignment: Alignment.center,
                   child: Text(
                     '点击下方「${appLocalizations.retest}」开始体检',
@@ -2915,19 +2943,19 @@ class _ProxyHealthReportDialog extends ConsumerWidget {
 
               // 4. Diagnostic advice
               if (report != null && report.diagnosticTips.isNotEmpty) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: FluxoraSpacing.md),
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: (report.status == HealthStatus.error
-                            ? Colors.red
-                            : (report.status == HealthStatus.warning ? Colors.orange : Colors.blue))
+                            ? statusColors.error
+                            : (report.status == HealthStatus.warning ? statusColors.warning : statusColors.info))
                         .withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(FluxoraRadius.sm),
                     border: Border.all(
                       color: (report.status == HealthStatus.error
-                              ? Colors.red
-                              : (report.status == HealthStatus.warning ? Colors.orange : Colors.blue))
+                              ? statusColors.error
+                              : (report.status == HealthStatus.warning ? statusColors.warning : statusColors.info))
                           .withValues(alpha: 0.3),
                     ),
                   ),
@@ -2938,8 +2966,8 @@ class _ProxyHealthReportDialog extends ConsumerWidget {
                         Icons.lightbulb_outline,
                         size: 16,
                         color: report.status == HealthStatus.error
-                            ? Colors.red
-                            : (report.status == HealthStatus.warning ? Colors.orange : Colors.blue),
+                            ? statusColors.error
+                            : (report.status == HealthStatus.warning ? statusColors.warning : statusColors.info),
                       ),
                       const SizedBox(width: 6),
                       Expanded(
@@ -2988,7 +3016,7 @@ class _ProxyHealthReportDialog extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: 18, color: color ?? context.colorScheme.primary),
-        const SizedBox(height: 2),
+        const SizedBox(height: FluxoraSpacing.xxs),
         Text(
           text,
           textAlign: TextAlign.center,
@@ -3003,15 +3031,15 @@ class _ProxyHealthReportDialog extends ConsumerWidget {
   Widget _buildOverallStatusCard(BuildContext context, ProxyHealthReport? report) {
     if (report == null) {
       return Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(FluxoraSpacing.md),
         decoration: BoxDecoration(
           color: context.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(FluxoraRadius.sm),
         ),
         child: Row(
           children: [
-            const Icon(Icons.help_outline, color: Colors.grey),
-            const SizedBox(width: 8),
+            Icon(Icons.help_outline, color: context.colorScheme.onSurfaceVariant),
+            const SizedBox(width: FluxoraSpacing.sm),
             // P1: Expanded so a long localized label ellipsises rather than
             // overflowing this full-width status container.
             Expanded(
@@ -3026,19 +3054,20 @@ class _ProxyHealthReportDialog extends ConsumerWidget {
       );
     }
 
+    final statusColors = FluxoraColorSet.of(Theme.of(context).brightness);
     final (color, icon, title) = switch (report.status) {
-      HealthStatus.healthy => (Colors.green, Icons.check_circle_outline, appLocalizations.healthHealthy),
-      HealthStatus.warning => (Colors.orange, Icons.warning_amber_outlined, appLocalizations.healthWarning),
-      HealthStatus.error => (Colors.red, Icons.error_outline, appLocalizations.healthError),
-      HealthStatus.testing => (Colors.blue, Icons.sync, appLocalizations.testingHealth),
-      HealthStatus.untested => (Colors.grey, Icons.help_outline, appLocalizations.healthUntested),
+      HealthStatus.healthy => (statusColors.success, Icons.check_circle_outline, appLocalizations.healthHealthy),
+      HealthStatus.warning => (statusColors.warning, Icons.warning_amber_rounded, appLocalizations.healthWarning),
+      HealthStatus.error => (statusColors.error, Icons.error_outline, appLocalizations.healthError),
+      HealthStatus.testing => (statusColors.info, Icons.sync, appLocalizations.testingHealth),
+      HealthStatus.untested => (context.colorScheme.onSurfaceVariant, Icons.help_outline, appLocalizations.healthUntested),
     };
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(FluxoraSpacing.md),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(FluxoraRadius.sm),
       ),
       child: Row(
         children: [
@@ -3071,14 +3100,15 @@ class _ProxyHealthReportDialog extends ConsumerWidget {
 
   Widget _buildTargetRow(BuildContext context, TargetHealthResult target) {
     final isOk = target.isSuccess;
-    final color = isOk ? Colors.green : Colors.red;
+    final statusColors = FluxoraColorSet.of(Theme.of(context).brightness);
+    final color = isOk ? statusColors.success : statusColors.error;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: context.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(FluxoraRadius.sm),
       ),
       child: Row(
         children: [
@@ -3087,7 +3117,7 @@ class _ProxyHealthReportDialog extends ConsumerWidget {
             color: color,
             size: 16,
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: FluxoraSpacing.sm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -3107,7 +3137,7 @@ class _ProxyHealthReportDialog extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(FluxoraRadius.badge),
             ),
             child: Text(
               isOk ? '${target.delay} ms' : (target.error ?? appLocalizations.chainFailed),

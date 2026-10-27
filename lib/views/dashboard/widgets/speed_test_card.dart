@@ -211,7 +211,7 @@ class _SpeedTestCardState extends State<SpeedTestCard> {
 
     return Dialog(
       backgroundColor: scheme.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(FluxoraRadius.xl)),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
         child: Column(

@@ -303,7 +303,7 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       decoration: BoxDecoration(
                         color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(FluxoraRadius.md),
                         border: Border.all(
                           color: colorScheme.outlineVariant.withValues(alpha: 0.5),
                         ),
@@ -558,7 +558,7 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(FluxoraRadius.badge),
             border: Border.all(color: color.withValues(alpha: 0.3)),
           ),
           child: Text(

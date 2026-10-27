@@ -196,7 +196,7 @@ class _CoreStatusDialogState extends State<CoreStatusDialog> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
         color: context.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(FluxoraRadius.lg),
       ),
       child: Row(
         children: [
@@ -303,7 +303,7 @@ class _CoreStatusDialogState extends State<CoreStatusDialog> {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: context.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(FluxoraRadius.md),
       ),
       child: Row(
         children: [
@@ -351,7 +351,7 @@ class _CoreStatusDialogState extends State<CoreStatusDialog> {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: context.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(FluxoraRadius.md),
       ),
       child: Row(
         children: [
@@ -454,7 +454,7 @@ class _CoreStatusDialogState extends State<CoreStatusDialog> {
             color: context.colorScheme.surfaceContainerHighest.withValues(
               alpha: 0.5,
             ),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(FluxoraRadius.md),
             border: Border.all(
               color: context.colorScheme.outlineVariant.withValues(alpha: 0.5),
             ),
@@ -479,7 +479,7 @@ class _CoreStatusDialogState extends State<CoreStatusDialog> {
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
               color: context.colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(FluxoraRadius.md),
             ),
             child: Text(
               part,
@@ -498,7 +498,7 @@ class _CoreStatusDialogState extends State<CoreStatusDialog> {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: context.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(FluxoraRadius.md),
       ),
       child: Row(
         children: [

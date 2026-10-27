@@ -520,7 +520,7 @@ class _AggregateViewState extends State<AggregateView> {
     return Container(
       decoration: BoxDecoration(
         color: context.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(FluxoraRadius.md),
         border: Border.all(
           color: context.colorScheme.outlineVariant.withValues(alpha: 0.5),
         ),
@@ -691,14 +691,14 @@ class _AggregateViewState extends State<AggregateView> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: InkWell(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(FluxoraRadius.sm),
         onTap: () => _setMode(mode),
         child: Container(
           decoration: BoxDecoration(
             color: selected
                 ? context.colorScheme.primaryContainer.withValues(alpha: 0.45)
                 : context.colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(FluxoraRadius.sm),
             border: Border.all(
               color: selected
                   ? context.colorScheme.primary

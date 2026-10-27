@@ -292,7 +292,7 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
                     indicator: globalState.isAndroidTV
                         ? BoxDecoration(
                             color: context.colorScheme.primaryContainer,
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(FluxoraRadius.sm),
                           )
                         : null,
                     indicatorColor: globalState.isAndroidTV

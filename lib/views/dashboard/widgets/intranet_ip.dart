@@ -188,7 +188,7 @@ class _LanSettingsBodyState extends ConsumerState<_LanSettingsBody> {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: colorScheme.primaryContainer.withValues(alpha: 0.32),
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(FluxoraRadius.md),
           ),
           child: Row(
             children: [
@@ -220,7 +220,7 @@ class _LanSettingsBodyState extends ConsumerState<_LanSettingsBody> {
                   ),
                   decoration: BoxDecoration(
                     color: colorScheme.primary.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(FluxoraRadius.full),
                   ),
                   child: Text(
                     appLocalizations.coreConnected,

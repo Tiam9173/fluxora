@@ -66,7 +66,7 @@ class _MediaUnlockPageState extends ConsumerState<MediaUnlockPage> {
             side: BorderSide.none,
             padding: const EdgeInsets.symmetric(horizontal: 4),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(FluxoraRadius.sm),
             ),
             onSelected: (_) {
               setState(() {
@@ -386,7 +386,7 @@ class _MediaUnlockPageState extends ConsumerState<MediaUnlockPage> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: context.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(FluxoraRadius.card),
         border: Border.all(
           color: context.colorScheme.outlineVariant.withValues(alpha: 0.3),
         ),
@@ -419,7 +419,7 @@ class _MediaUnlockPageState extends ConsumerState<MediaUnlockPage> {
                 ? appLocalizations.mediaUnlocked
                 : appLocalizations.unlocked,
             '$unlocked',
-            const Color(0xFF4CAF50),
+            mediaUnlockGreen,
           ),
         ],
       ),
@@ -502,7 +502,7 @@ class _MediaUnlockPageState extends ConsumerState<MediaUnlockPage> {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: context.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(FluxoraRadius.md),
       ),
       child: Row(
         children: [
@@ -562,7 +562,7 @@ class _MediaUnlockPageState extends ConsumerState<MediaUnlockPage> {
                           ),
                           decoration: BoxDecoration(
                             color: context.colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(4),
+                            borderRadius: BorderRadius.circular(FluxoraRadius.badge),
                           ),
                           child: Text(
                             showColo,
@@ -581,7 +581,7 @@ class _MediaUnlockPageState extends ConsumerState<MediaUnlockPage> {
                           ),
                           decoration: BoxDecoration(
                             color: Colors.orange.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(4),
+                            borderRadius: BorderRadius.circular(FluxoraRadius.badge),
                           ),
                           child: Text(
                             'WARP',
@@ -619,7 +619,7 @@ class _MediaUnlockPageState extends ConsumerState<MediaUnlockPage> {
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(FluxoraRadius.sm),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,

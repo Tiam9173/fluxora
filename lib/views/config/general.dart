@@ -723,14 +723,14 @@ class RuleProviderWarningNotice extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
       decoration: BoxDecoration(
         color: scheme.errorContainer,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(FluxoraRadius.md),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.warning_amber_outlined, size: 18, color: onColor),
+              Icon(Icons.warning_amber_rounded, size: 18, color: onColor),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
