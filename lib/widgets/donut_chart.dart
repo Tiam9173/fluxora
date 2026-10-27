@@ -52,6 +52,9 @@ class DonutChartState extends State<DonutChart> with TickerProviderStateMixin {
   late CurvedAnimation _entryAnimation;
   late List<DonutChartData> _oldData;
 
+  /// The entrance is resolved once; only [replayEntryAnimation] re-arms it.
+  bool _entryResolved = false;
+
   @override
   void initState() {
     super.initState();
@@ -68,11 +71,41 @@ class DonutChartState extends State<DonutChart> with TickerProviderStateMixin {
       parent: _entryController,
       curve: Curves.easeOutCubic,
     );
-    _entryController.forward();
+  }
+
+  bool get _reduceMotion =>
+      MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+
+  /// Resolved here rather than in [initState] because `MediaQuery` is not
+  /// reachable that early. Under reduced motion the sweep jumps to its final
+  /// angle so the ring is complete on the first painted frame (§10.5); the
+  /// separate `_dataController` is untouched, so later data updates keep their
+  /// tween.
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_entryResolved) {
+      // A mid-session toggle must take effect too: finish an in-flight entrance
+      // instantly instead of leaving it running.
+      if (_reduceMotion && _entryController.isAnimating) {
+        _entryController.value = 1;
+      }
+      return;
+    }
+    _entryResolved = true;
+    if (_reduceMotion) {
+      _entryController.value = 1;
+    } else {
+      _entryController.forward();
+    }
   }
 
   void replayEntryAnimation() {
     if (!mounted) return;
+    if (_reduceMotion) {
+      _entryController.value = 1;
+      return;
+    }
     _entryController.forward(from: 0);
   }
 

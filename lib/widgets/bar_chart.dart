@@ -32,6 +32,10 @@ class _BarChartState extends State<BarChart>
 
   late List<BarChartData> _oldData;
 
+  /// The entrance is resolved once; data updates re-arm the same controller from
+  /// [didUpdateWidget] and must keep working.
+  bool _entryResolved = false;
+
   @override
   void initState() {
     super.initState();
@@ -39,7 +43,28 @@ class _BarChartState extends State<BarChart>
     _animationController = AnimationController(
       vsync: this,
       duration: widget.duration,
-    )..forward(from: 0);
+    );
+  }
+
+  /// One controller drives both the entrance and later data updates, so only the
+  /// entrance is resolved here: under reduced motion the bars start at their
+  /// final geometry instead of sliding in (§10.5). The value-change tween in
+  /// [didUpdateWidget] is left alone — that one carries information, it is not
+  /// decoration.
+  ///
+  /// Resolved in this callback rather than [initState] because `MediaQuery` is
+  /// not reachable there, and it runs before the first build, so the first
+  /// painted frame is already the final one.
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_entryResolved) return;
+    _entryResolved = true;
+    if (MediaQuery.maybeOf(context)?.disableAnimations ?? false) {
+      _animationController.value = 1;
+    } else {
+      _animationController.forward(from: 0);
+    }
   }
 
   @override

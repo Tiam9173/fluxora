@@ -88,6 +88,10 @@ class SuperGridState extends State<SuperGrid> with TickerProviderStateMixin {
 
   late AnimationController _shakeController;
   late Animation<double> _shakeAnimation;
+
+  /// OS-level "reduce motion", refreshed in [didChangeDependencies] so toggling
+  /// it mid-session takes effect without restarting the app.
+  bool _reduceMotion = false;
   Rect _dragRect = Rect.zero;
   Scrollable? _scrollable;
 
@@ -191,6 +195,15 @@ class SuperGridState extends State<SuperGrid> with TickerProviderStateMixin {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+
+    // Read the accessibility preference here rather than in `build`: this is the
+    // callback Flutter runs when `MediaQuery` changes, so flipping the OS switch
+    // rebuilds the grid and stops the wobble immediately. Must stay above the
+    // early return below, which bails out when there is no enclosing scrollable.
+    _reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (_reduceMotion) {
+      _shakeController.stop();
+    }
 
     final scrollable = context.findAncestorWidgetOfExactType<Scrollable>();
     if (scrollable == null) {
@@ -446,6 +459,14 @@ class SuperGridState extends State<SuperGrid> with TickerProviderStateMixin {
   }
 
   Widget _buildShake(Widget child) {
+    // §10.5: the wobble is continuous rotation, so under reduced motion it stops
+    // entirely rather than being shortened — `.repeat()` never goes through the
+    // framework's 5 %-duration path. The card stays draggable; only the
+    // "this can be moved" hint goes away (the handle mode has its own affordance).
+    if (!FluxoraMotionSet.of(reduceMotion: _reduceMotion).loopEnabled) {
+      _shakeController.stop();
+      return child;
+    }
     final random = 0.7 + Random().nextDouble() * 0.3;
     _shakeController.stop();
     _shakeController.repeat(reverse: true);

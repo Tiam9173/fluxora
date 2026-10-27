@@ -1,7 +1,15 @@
-import 'dart:io';
-
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluxora/common/common.dart';
+import 'package:fluxora/common/theme.dart';
+import 'package:fluxora/l10n/l10n.dart';
+import 'package:fluxora/models/models.dart';
+import 'package:fluxora/providers/providers.dart';
+import 'package:fluxora/state.dart';
+import 'package:fluxora/views/dashboard/widgets/start_button.dart';
+import 'package:fluxora/widgets/fluxora/fluxora.dart';
 
 /// Two related items:
 ///
@@ -10,7 +18,102 @@ import 'package:fluxora/common/common.dart';
 /// 2. the dashboard Hero's one-shot entrance is built purely from
 ///    `FluxoraMotion` tokens and never scales its content (`D4_BRAND_PROPOSAL.md`
 ///    §10.4 / §10.5).
+///
+/// Item 2 is asserted **behaviourally**: the entrance renders an `Opacity` and a
+/// `Transform.translate` around the card, so the tests read those two widgets
+/// out of the live tree instead of scraping the source text. `_HeroEntrance` is
+/// library-private, so [StartButton] is the entry point; its four providers are
+/// overridden to keep the pumped tree small.
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() async {
+    await AppLocalizations.load(const Locale('zh', 'CN'));
+  });
+
+  setUp(() {
+    globalState.appState = AppState(
+      viewSize: const Size(400, 800),
+      brightness: Brightness.dark,
+      requests: FixedList(10),
+      version: 1,
+      logs: FixedList(10),
+      traffics: FixedList(10),
+      totalTraffic: Traffic(),
+      systemUiOverlayStyle: const SystemUiOverlayStyle(),
+    );
+  });
+
+  Widget seedGlobals(Widget child) {
+    return Builder(
+      builder: (ctx) {
+        globalState.theme = CommonTheme.of(ctx, 1.0);
+        globalState.measure = Measure.of(ctx, 1.0);
+        return child;
+      },
+    );
+  }
+
+  Future<void> pumpHero(WidgetTester tester, {required bool reduce}) async {
+    tester.binding.platformDispatcher.accessibilityFeaturesTestValue =
+        FakeAccessibilityFeatures(disableAnimations: reduce);
+    addTearDown(
+      tester.binding.platformDispatcher.clearAccessibilityFeaturesTestValue,
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        // riverpod 3.4.2 does not export `Override`, so the list has to be
+        // inlined. Only the two providers that would otherwise read live
+        // app state are pinned; `runTime` / `isSmartStopped` resolve from the
+        // seeded `globalState.appState` the way they do in production.
+        overrides: [
+          startButtonSelectorStateProvider.overrideWith(
+            (ref) => const StartButtonSelectorState(
+              isInit: true,
+              hasProfile: true,
+            ),
+          ),
+          isRestartingCoreProvider.overrideWith((ref) => false),
+        ],
+        child: MaterialApp(
+          home: Scaffold(
+            body: seedGlobals(
+              const Center(child: SizedBox(width: 320, child: StartButton())),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// The entrance's two visible outputs, read off the widgets that actually
+  /// paint them: the fade opacity and the vertical lift in logical pixels.
+  ({double opacity, double dy, double scaleX, double scaleY}) heroEntrance(
+    WidgetTester tester,
+  ) {
+    final card = find.byType(FluxoraCard);
+
+    final opacity = tester
+        .widget<Opacity>(
+          find.ancestor(of: card, matching: find.byType(Opacity)).first,
+        )
+        .opacity;
+
+    final matrix = tester
+        .widget<Transform>(
+          find.ancestor(of: card, matching: find.byType(Transform)).first,
+        )
+        .transform;
+
+    return (
+      opacity: opacity,
+      dy: matrix.storage[13],
+      scaleX: matrix.storage[0],
+      scaleY: matrix.storage[5],
+    );
+  }
+
   group('defaultShowStartSwitch', () {
     test('Android shows the switch, TV or not', () {
       System.platformOverride = 'android';
@@ -58,42 +161,45 @@ void main() {
   // continuous rotation; §10.5 requires the reduced-motion path to remove the
   // motion entirely rather than speed it up.
   group('Hero entrance honours the motion tokens', () {
-    final src = File('lib/views/dashboard/widgets/start_button.dart')
-        .readAsStringSync();
-    final region = src.substring(
-      src.indexOf('class _HeroEntrance extends StatefulWidget'),
-      src.indexOf('class StartButton extends ConsumerStatefulWidget'),
-    );
+    testWidgets('reduced motion shows the card at rest on the first frame', (
+      tester,
+    ) async {
+      await pumpHero(tester, reduce: true);
 
-    test('uses FluxoraMotion tokens rather than inlined timings', () {
-      expect(region.contains('FluxoraMotionSet.of('), isTrue);
-      expect(region.contains('motion.base'), isTrue);
-      expect(region.contains('motion.enterOffset'), isTrue);
-      // No hand-written duration or offset may creep back in.
-      expect(
-        RegExp(r'Duration\(milliseconds:').hasMatch(region),
-        isFalse,
-        reason: 'the entrance must take its duration from FluxoraMotion',
-      );
-      expect(
-        RegExp(r'Offset\(0, \d').hasMatch(region),
-        isFalse,
-        reason: 'the entrance must take its offset from FluxoraMotion',
-      );
+      final entrance = heroEntrance(tester);
+      expect(entrance.opacity, 1.0, reason: 'no fade-in may run');
+      expect(entrance.dy, 0.0, reason: 'no lift may run');
     });
 
-    test('never scales or rotates the Hero (§10.4)', () {
-      expect(region.contains('Transform.scale'), isFalse);
-      expect(region.contains('AnimatedScale'), isFalse);
-      expect(region.contains('Transform.rotate'), isFalse);
-      // Only fade + translate.
-      expect(region.contains('Opacity('), isTrue);
-      expect(region.contains('Transform.translate('), isTrue);
+    testWidgets('without reduced motion the card fades and lifts in', (
+      tester,
+    ) async {
+      await pumpHero(tester, reduce: false);
+
+      final start = heroEntrance(tester);
+      expect(start.opacity, 0.0, reason: 'the entrance starts fully transparent');
+      expect(
+        start.dy,
+        FluxoraMotion.enterOffset.dy,
+        reason: 'the entrance starts at the token offset',
+      );
+
+      await tester.pumpAndSettle();
+
+      final settled = heroEntrance(tester);
+      expect(settled.opacity, 1.0);
+      expect(settled.dy, 0.0);
     });
 
-    test('collapses to a static card under reduced motion (§10.5)', () {
-      expect(region.contains('disableAnimations'), isTrue);
-      expect(region.contains('reduceMotion ? 1.0 : _controller.value'), isTrue);
+    testWidgets('never scales the Hero (§10.4)', (tester) async {
+      await pumpHero(tester, reduce: false);
+
+      // Mid-entrance, so a scale animation would have left the identity matrix.
+      await tester.pump(const Duration(milliseconds: 80));
+
+      final entrance = heroEntrance(tester);
+      expect(entrance.scaleX, 1.0);
+      expect(entrance.scaleY, 1.0);
     });
   });
 }

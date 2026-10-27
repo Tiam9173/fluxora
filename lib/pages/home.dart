@@ -384,8 +384,16 @@ class _HomePageViewState extends ConsumerState<_HomePageView> {
   Widget build(BuildContext context) {
     if (ref.watch(isMobileViewProvider)) {
       final index = _pageIndex < 0 ? 0 : _pageIndex;
+      // §10.5: the page switch must not cross-fade when the OS "reduce motion"
+      // setting is on. `FluxoraMotion.slow` is the raw 320 ms constant and knows
+      // nothing about the preference, so resolve it through the set — `slow`
+      // collapses to `Duration.zero` under reduced motion and stays 320 ms
+      // otherwise.
+      final motion = FluxoraMotionSet.of(
+        reduceMotion: MediaQuery.maybeOf(context)?.disableAnimations ?? false,
+      );
       return AnimatedSwitcher(
-        duration: const Duration(milliseconds: 300),
+        duration: motion.slow,
         switchInCurve: Curves.easeOutCubic,
         switchOutCurve: Curves.easeInCubic,
         transitionBuilder: (child, animation) {
