@@ -469,10 +469,18 @@ class _ProxyGroupViewState extends ConsumerState<ProxyGroupView> {
     final sortedProxies = _getSortedProxies();
     proxies = sortedProxies;
     testUrl = widget.group.testUrl;
-    final baseBottom =
-        sortedProxies.isNotEmpty && sortedProxies.length % widget.columns == 0
-        ? 88.0
-        : 16.0;
+    // The delay-test FAB floats over the grid's bottom-right corner: `Scaffold`
+    // puts it 16 px above the bottom edge and it is 56 px tall, so it covers the
+    // bottom 72 px of the viewport. Reserve 88 px (72 + a 16 px gap) of scroll
+    // padding so the last row can always be scrolled clear of it.
+    //
+    // This used to be conditional on `length % columns == 0` — i.e. only when
+    // the last row happened to be full — so in every other case the final row's
+    // cards (and their delay/status line) ended up underneath the button. The
+    // FAB is hidden on Android TV, where the reserve is not needed.
+    final baseBottom = sortedProxies.isEmpty
+        ? 16.0
+        : (globalState.isAndroidTV ? 16.0 : 88.0);
     final extra = isMobileView
         ? getFloatingBottomBarReserveHeight(context)
         : 0.0;
