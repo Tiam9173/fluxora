@@ -753,7 +753,7 @@ class ProfileItem extends StatelessWidget {
         },
       ),
       PopupMenuItemData(
-        icon: Icons.delete_outlined,
+        icon: Icons.delete_outline,
         label: appLocalizations.delete,
         onPressed: () {
           _handleDeleteProfile(context);

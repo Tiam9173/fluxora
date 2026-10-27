@@ -255,7 +255,7 @@ class _OverrideProfileViewState extends State<OverrideProfileView> {
                       onPressed: () {
                         _handleDelete(ref);
                       },
-                      icon: Icon(Icons.delete),
+                      icon: Icon(Icons.delete_outline),
                     ),
                 ],
                 editState: AppBarEditState(
