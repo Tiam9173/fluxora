@@ -102,7 +102,9 @@ class GoogleBottomNavBar extends ConsumerWidget {
               activeColor: context.colorScheme.primary,
               iconSize: 24,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              duration: const Duration(milliseconds: 250),
+              // base (200 ms): the tab selection is a composite state change
+              // (background pill + label expand + icon colour), §10.1 "state change".
+              duration: FluxoraMotion.base,
               tabBackgroundColor: context.colorScheme.primary.withValues(
                 alpha:
                     context.colorScheme.brightness == Brightness.light
