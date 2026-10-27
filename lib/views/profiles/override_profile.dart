@@ -600,6 +600,15 @@ class _AddRuleDialogState extends State<AddRuleDialog> {
   List<DropdownMenuEntry<String>> _subRuleItems = [];
   final _formKey = GlobalKey<FormState>();
 
+  /// Android TV renders the three pickers (provider / sub-rule / target) as an
+  /// [OutlinedButton] instead of a [DropdownMenu]; they share one style.
+  static final ButtonStyle _tvPickerStyle = OutlinedButton.styleFrom(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(FluxoraRadius.xs),
+    ),
+  );
+
   @override
   void initState() {
     _initState();
@@ -688,8 +697,12 @@ class _AddRuleDialogState extends State<AddRuleDialog> {
       ],
       child: DropdownMenuTheme(
         data: DropdownMenuThemeData(
-          inputDecorationTheme: InputDecorationTheme(
-            border: OutlineInputBorder(),
+          // Inherit the app's input theme (18 px radius, enabled / focused /
+          // error borders) and override only the label style. This field
+          // *replaces* the global one rather than merging, so building a bare
+          // `InputDecorationTheme` here would drop the radius and the error
+          // borders.
+          inputDecorationTheme: Theme.of(context).inputDecorationTheme.copyWith(
             labelStyle: context.textTheme.bodyLarge?.copyWith(
               overflow: TextOverflow.ellipsis,
             ),
@@ -732,15 +745,7 @@ class _AddRuleDialogState extends State<AddRuleDialog> {
                           builder: (field) {
                             if (globalState.isAndroidTV) {
                               return OutlinedButton(
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 16,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                ),
+                                style: _tvPickerStyle,
                                 onPressed: () async {
                                   final selected =
                                       await globalState.showCommonDialog<String>(
@@ -820,15 +825,7 @@ class _AddRuleDialogState extends State<AddRuleDialog> {
                           builder: (filed) {
                             if (globalState.isAndroidTV) {
                               return OutlinedButton(
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 16,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                ),
+                                style: _tvPickerStyle,
                                 onPressed: () async {
                                   final selected =
                                       await globalState.showCommonDialog<String>(
@@ -869,6 +866,7 @@ class _AddRuleDialogState extends State<AddRuleDialog> {
                               controller: _subRuleController,
                               label: Text(appLocalizations.subRule),
                               menuHeight: 250,
+                              errorText: filed.errorText,
                               dropdownMenuEntries: _subRuleItems,
                             );
                           },
@@ -885,15 +883,7 @@ class _AddRuleDialogState extends State<AddRuleDialog> {
                           builder: (filed) {
                             if (globalState.isAndroidTV) {
                               return OutlinedButton(
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 16,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                ),
+                                style: _tvPickerStyle,
                                 onPressed: () async {
                                   final selected =
                                       await globalState.showCommonDialog<String>(
