@@ -281,6 +281,14 @@ class ApplicationState extends ConsumerState<Application>
             final fontFamily = themeProps.useHarmonyFont
                 ? 'HarmonyOS_Sans'
                 : null;
+            final lightColorScheme = _getAppColorScheme(
+              brightness: Brightness.light,
+              primaryColor: themeProps.primaryColor,
+            );
+            final darkColorScheme = _getAppColorScheme(
+              brightness: Brightness.dark,
+              primaryColor: themeProps.primaryColor,
+            ).toPureBlack(themeProps.pureBlack);
 
             return MaterialApp(
               debugShowCheckedModeBanner: false,
@@ -324,7 +332,7 @@ class ApplicationState extends ConsumerState<Application>
                               onTap: () {},
                               child: Material(
                                 elevation: 12,
-                                borderRadius: BorderRadius.circular(24),
+                                borderRadius: BorderRadius.circular(FluxoraRadius.xl),
                                 clipBehavior: Clip.antiAlias,
                                 color: colors.surface,
                                 child: SwitchCard(
@@ -371,10 +379,7 @@ class ApplicationState extends ConsumerState<Application>
               theme: ThemeData(
                 useMaterial3: true,
                 pageTransitionsTheme: _pageTransitionsTheme,
-                colorScheme: _getAppColorScheme(
-                  brightness: Brightness.light,
-                  primaryColor: themeProps.primaryColor,
-                ),
+                colorScheme: lightColorScheme,
                 fontFamily: fontFamily,
                 // Fluxora typography (D4.2 §9): 6 levels, 3 weights. The token
                 // styles leave `fontFamily` null, so they inherit the
@@ -389,21 +394,23 @@ class ApplicationState extends ConsumerState<Application>
                 ),
                 dialogTheme: DialogThemeData(
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(FluxoraRadius.dialog),
                   ),
                   elevation: FluxoraElevation.modal,
                 ),
                 bottomSheetTheme: const BottomSheetThemeData(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(28),
+                      top: Radius.circular(FluxoraRadius.sheet),
                     ),
                   ),
                   clipBehavior: Clip.antiAlias,
                 ),
                 popupMenuTheme: const PopupMenuThemeData(
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(20)),
+                    borderRadius: BorderRadius.all(
+                      Radius.circular(FluxoraRadius.md),
+                    ),
                   ),
                   elevation: FluxoraElevation.menu,
                 ),
@@ -446,10 +453,35 @@ class ApplicationState extends ConsumerState<Application>
                       width: 2,
                     ),
                   ),
+                  // Without these two the error state fell back to the call
+                  // site's bare `OutlineInputBorder()` — a 4 px radius in a
+                  // non-error colour — so a field visibly snapped from 18 px to
+                  // 4 px the moment validation failed. Widths mirror the normal
+                  // (1) and focused (2) states above. `disabledBorder` is left
+                  // untouched in this batch.
+                  errorBorder: OutlineInputBorder(
+                    borderRadius: const BorderRadius.all(Radius.circular(18)),
+                    borderSide: BorderSide(
+                      color: _getAppColorScheme(
+                        brightness: Brightness.light,
+                        primaryColor: themeProps.primaryColor,
+                      ).error,
+                    ),
+                  ),
+                  focusedErrorBorder: OutlineInputBorder(
+                    borderRadius: const BorderRadius.all(Radius.circular(18)),
+                    borderSide: BorderSide(
+                      color: _getAppColorScheme(
+                        brightness: Brightness.light,
+                        primaryColor: themeProps.primaryColor,
+                      ).error,
+                      width: 2,
+                    ),
+                  ),
                 ),
                 chipTheme: ChipThemeData(
                   shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(16)),
+                    borderRadius: BorderRadius.all(Radius.circular(FluxoraRadius.lg)),
                   ),
                   side: BorderSide(
                     color: _getAppColorScheme(
@@ -458,21 +490,21 @@ class ApplicationState extends ConsumerState<Application>
                     ).outline.withValues(alpha: 0.75),
                   ),
                 ),
-                tooltipTheme: const TooltipThemeData(
+                tooltipTheme: TooltipThemeData(
                   decoration: BoxDecoration(
-                    color: Colors.black87,
-                    borderRadius: BorderRadius.all(Radius.circular(10)),
+                    color: lightColorScheme.inverseSurface,
+                    borderRadius: const BorderRadius.all(Radius.circular(FluxoraRadius.sm)),
                   ),
-                  textStyle: TextStyle(color: Colors.white, fontSize: 12),
+                  textStyle: TextStyle(
+                    color: lightColorScheme.onInverseSurface,
+                    fontSize: 12,
+                  ),
                 ),
               ),
               darkTheme: ThemeData(
                 useMaterial3: true,
                 pageTransitionsTheme: _pageTransitionsTheme,
-                colorScheme: _getAppColorScheme(
-                  brightness: Brightness.dark,
-                  primaryColor: themeProps.primaryColor,
-                ).toPureBlack(themeProps.pureBlack),
+                colorScheme: darkColorScheme,
                 fontFamily: fontFamily,
                 // Same Fluxora typography scale as the light theme.
                 textTheme: FluxoraTypography.textTheme(),
@@ -485,21 +517,23 @@ class ApplicationState extends ConsumerState<Application>
                 ),
                 dialogTheme: DialogThemeData(
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(FluxoraRadius.dialog),
                   ),
                   elevation: FluxoraElevation.modal,
                 ),
                 bottomSheetTheme: const BottomSheetThemeData(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(28),
+                      top: Radius.circular(FluxoraRadius.sheet),
                     ),
                   ),
                   clipBehavior: Clip.antiAlias,
                 ),
                 popupMenuTheme: const PopupMenuThemeData(
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(20)),
+                    borderRadius: BorderRadius.all(
+                      Radius.circular(FluxoraRadius.md),
+                    ),
                   ),
                   elevation: FluxoraElevation.menu,
                 ),
@@ -550,10 +584,32 @@ class ApplicationState extends ConsumerState<Application>
                       width: 2,
                     ),
                   ),
+                  // Same reason as the light theme: keep the error state on the
+                  // 18 px outline instead of dropping to the call site's bare
+                  // `OutlineInputBorder()` (4 px, non-error colour).
+                  errorBorder: OutlineInputBorder(
+                    borderRadius: const BorderRadius.all(Radius.circular(18)),
+                    borderSide: BorderSide(
+                      color: _getAppColorScheme(
+                        brightness: Brightness.dark,
+                        primaryColor: themeProps.primaryColor,
+                      ).toPureBlack(themeProps.pureBlack).error,
+                    ),
+                  ),
+                  focusedErrorBorder: OutlineInputBorder(
+                    borderRadius: const BorderRadius.all(Radius.circular(18)),
+                    borderSide: BorderSide(
+                      color: _getAppColorScheme(
+                        brightness: Brightness.dark,
+                        primaryColor: themeProps.primaryColor,
+                      ).toPureBlack(themeProps.pureBlack).error,
+                      width: 2,
+                    ),
+                  ),
                 ),
                 chipTheme: ChipThemeData(
                   shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(16)),
+                    borderRadius: BorderRadius.all(Radius.circular(FluxoraRadius.lg)),
                   ),
                   side: BorderSide(
                     color:
@@ -566,12 +622,15 @@ class ApplicationState extends ConsumerState<Application>
                             .withValues(alpha: 0.45),
                   ),
                 ),
-                tooltipTheme: const TooltipThemeData(
+                tooltipTheme: TooltipThemeData(
                   decoration: BoxDecoration(
-                    color: Colors.black87,
-                    borderRadius: BorderRadius.all(Radius.circular(10)),
+                    color: darkColorScheme.inverseSurface,
+                    borderRadius: const BorderRadius.all(Radius.circular(FluxoraRadius.sm)),
                   ),
-                  textStyle: TextStyle(color: Colors.white, fontSize: 12),
+                  textStyle: TextStyle(
+                    color: darkColorScheme.onInverseSurface,
+                    fontSize: 12,
+                  ),
                 ),
               ),
               home: child!,

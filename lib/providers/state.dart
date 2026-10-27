@@ -847,6 +847,15 @@ ColorScheme genColorScheme(
     // Lines.
     outline: fluxora.outline,
     outlineVariant: fluxora.outlineVariant,
+    // Status. `ColorScheme.fromSeed` derives its own error tone (#BA1A1A in
+    // light) which is **not** the semantic red the rest of the app means
+    // (#B3261E), so error states driven by `colorScheme.error` and error states
+    // driven by `FluxoraColorSet.error` were two different reds. Pin both error
+    // roles to the semantic set — the same one the `fluxora/*` components read.
+    // `errorContainer` / `onErrorContainer` have no token counterpart yet, so
+    // they stay seed-derived (tracked as 01-B2 follow-up).
+    error: fluxora.error,
+    onError: fluxora.onError,
   );
 }
 
