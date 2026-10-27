@@ -1337,6 +1337,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "preProxySectionTitle": MessageLookupByLibrary.simpleMessage("1. 前置代理"),
     "preferH3Desc": MessageLookupByLibrary.simpleMessage("優先使用 DoH 的 HTTP/3"),
     "pressKeyboard": MessageLookupByLibrary.simpleMessage("請按下按鍵"),
+    "preventDnsLeak": MessageLookupByLibrary.simpleMessage("防止 DNS 洩漏"),
+    "preventDnsLeakDesc": MessageLookupByLibrary.simpleMessage(
+      "讓 DNS 全程在隧道內解析，並把路由器/電信業者解析器替換為公共 DoH，避免解析請求被本地網路看到。",
+    ),
     "preventWebRtcLeak": MessageLookupByLibrary.simpleMessage(
       "防 WebRTC 真實 IP 洩漏",
     ),
