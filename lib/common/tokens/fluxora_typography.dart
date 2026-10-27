@@ -114,7 +114,14 @@ abstract final class FluxoraTypography {
   static TextStyle mono(TextStyle base) =>
       base.copyWith(fontFamily: monoFontFamily);
 
-  /// `title` on the monospaced family — the common read-out size.
+  /// `title`'s size (18 px) on the monospaced family, at the **numeric weight**
+  /// [medium] rather than `title`'s [semibold].
+  ///
+  /// The lighter weight is deliberate for live read-outs: latency, speed and
+  /// traffic values update continuously, and w600 at 18 px reads heavier than
+  /// the surrounding chrome. This is therefore *not* `mono(title)` — see
+  /// [numericBody] and [numericLabel], which are exact mono recasts of their
+  /// levels.
   static const numericTitle = TextStyle(
     fontSize: 18,
     height: 1.33,

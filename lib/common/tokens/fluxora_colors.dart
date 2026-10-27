@@ -175,6 +175,20 @@ class FluxoraColorSet {
   final Color outlineVariant;
 
   // Status
+  //
+  // There are no status *container* roles here on purpose — only `x` / `onX`.
+  // Two usages, two rules:
+  //
+  //  • Block banner — a full-opacity surface with text on it. Use Material's
+  //    `colorScheme.errorContainer` + `onErrorContainer` (see
+  //    `config/general.dart`).
+  //  • Tint / wash — a translucent hint behind a status label. Use the status
+  //    colour itself: fill at 12%, border at 40%, text at 100%.
+  //
+  // Never tint with `errorContainer`: it is a *dark* tone in dark mode, so at
+  // 30–40% it darkens the surface instead of tinting it (≈1.03:1 against
+  // `surfaceContainer` — visually gone), while in light mode it reads as pale
+  // pink. Tinting with `error` stays visible in both (≈1.65:1 / 2.04:1).
   final Color success;
   final Color onSuccess;
   final Color warning;

@@ -40,24 +40,45 @@ abstract final class FluxoraRadius {
   /// Cards, panels, containers.
   ///
   /// Set to [lg] (16) by the D4.6 decision — the earlier [md] (12) was too tight
-  /// against the existing 20/18 radii used by `CommonCard` /
-  /// `generateSectionV2`.
+  /// against the existing 20/18 radii used by `CommonCard` and the call sites
+  /// that still pass an explicit radius.
   static const card = lg;
 
-  /// Buttons, inputs, icon buttons.
-  static const button = sm;
+  /// Buttons. Material 3 buttons default to `StadiumBorder` (a pill) and no
+  /// button theme overrides that shape, so [full] is the honest alias for the
+  /// default. Reach for an explicit radius only where a component deliberately
+  /// needs a rounded rectangle — e.g. the 12 px action button in
+  /// `warp_view.dart`.
+  static const button = full;
 
-  /// Chips, badges, tags.
-  static const chip = full;
+  /// Chips, badges and tags. `ChipThemeData.shape` is [lg] (16) in both
+  /// brightnesses and `CommonChip` inherits it, so chips here are rounded
+  /// rectangles rather than pills. A component may override this when a
+  /// different radius is intentional.
+  static const chip = lg;
 
-  /// Dialogs.
-  static const dialog = lg;
+  /// Dialogs. The dialog theme uses [xl] (24) in both brightnesses —
+  /// deliberately tighter than the Material 3 default of 28, matching the
+  /// app's denser surfaces.
+  static const dialog = xl;
 
-  /// Bottom sheets and side sheets.
-  static const sheet = lg;
+  /// Bottom sheets. 28 is the design value both themes set explicitly on the
+  /// sheet surface (and it is also Flutter's Material 3 bottom-sheet default),
+  /// so it sits off the 4-based scale on purpose — do not round it to [xl] (24).
+  /// The legacy `28 → [xl]` mapping in the header applies to ad-hoc call sites,
+  /// never to the sheet surface itself. Side sheets are square by design and do
+  /// not use this token.
+  static const sheet = 28.0;
 
-  /// Text fields and search bars.
-  static const input = sm;
+  /// Compact input fields — the editor's find / replace bar only.
+  ///
+  /// Not the standard field radius. Those fields are 36 px tall
+  /// (`SizedBox(height: 36)`) with `isDense: true` and 10/8 content padding, so
+  /// they take a proportionally smaller corner than a form field. The standard
+  /// radius lives in the global `inputDecorationTheme` (18 px,
+  /// `application.dart`) and is deliberately not aliased here: 18 px on a 36 px
+  /// box would clamp to a pill.
+  static const inputCompact = sm;
 
   /// Rounded-square icons and thumbnails.
   static const icon = sm;
@@ -79,9 +100,9 @@ abstract final class FluxoraRadius {
   static const fullAll = BorderRadius.all(Radius.circular(full));
 
   static const cardAll = lgAll;
-  static const buttonAll = smAll;
-  static const dialogAll = lgAll;
-  static const sheetAll = lgAll;
+  static const buttonAll = fullAll;
+  static const dialogAll = xlAll;
+  static const sheetAll = BorderRadius.all(Radius.circular(sheet));
 
   /// Top-only rounding, used by sheets and anchored panels.
   static const sheetTop = BorderRadius.vertical(
