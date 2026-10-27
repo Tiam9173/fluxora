@@ -175,7 +175,9 @@ class _LogsViewState extends ConsumerState<LogsView> {
       searchState: AppBarSearchState(onSearch: _onSearch),
       title: appLocalizations.logs,
       body: !hasLogs
-          ? NullStatus(label: appLocalizations.nullTip(appLocalizations.logs))
+          ? FluxoraEmptyState(
+              title: appLocalizations.nullTip(appLocalizations.logs),
+            )
           : ScrollToEndBox(
               onCancelToEnd: _cancelAutoScroll,
               controller: _scrollController,

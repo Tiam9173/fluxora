@@ -92,8 +92,8 @@ class _RequestsViewState extends ConsumerState<RequestsView> {
       searchState: AppBarSearchState(onSearch: _onSearch),
       onKeywordsUpdate: _onKeywordsUpdate,
       body: !hasRequests
-          ? NullStatus(
-              label: appLocalizations.nullTip(appLocalizations.requests),
+          ? FluxoraEmptyState(
+              title: appLocalizations.nullTip(appLocalizations.requests),
             )
           : CommonScrollBar(
               trackVisibility: false,

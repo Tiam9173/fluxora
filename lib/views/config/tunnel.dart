@@ -220,7 +220,7 @@ class TunnelListView extends ConsumerWidget {
 
     return Scaffold(
       body: tunnels.isEmpty
-          ? Center(child: NullStatus(label: appLocalizations.noData))
+          ? Center(child: FluxoraEmptyState(title: appLocalizations.noData))
           : ListView(
               padding: const EdgeInsets.only(top: 16),
               children: [const TunnelListWidget()],

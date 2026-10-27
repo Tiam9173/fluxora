@@ -255,8 +255,8 @@ class _ConnectionsViewState extends ConsumerState<ConnectionsView>
           final hasConnections = connections.isNotEmpty;
 
           if (!hasConnections) {
-            return NullStatus(
-              label: appLocalizations.nullTip(appLocalizations.connections),
+            return FluxoraEmptyState(
+              title: appLocalizations.nullTip(appLocalizations.connections),
             );
           }
 

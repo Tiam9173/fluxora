@@ -9,10 +9,10 @@ import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/widgets/card.dart';
 import 'package:fluxora/widgets/dialog.dart';
+import 'package:fluxora/widgets/fluxora/fluxora.dart';
 import 'package:fluxora/widgets/icon.dart';
 import 'package:fluxora/widgets/input.dart';
 import 'package:fluxora/widgets/list.dart';
-import 'package:fluxora/widgets/null_status.dart';
 import 'package:fluxora/widgets/pop_scope.dart';
 import 'package:fluxora/widgets/popup.dart';
 import 'package:fluxora/widgets/scaffold.dart';
@@ -197,8 +197,8 @@ class _ScriptsViewState extends ConsumerState<ScriptsView> {
         final currentId = vm2.a;
         final scripts = vm2.b;
         if (scripts.isEmpty) {
-          return NullStatus(
-            label: appLocalizations.nullTip(appLocalizations.script),
+          return FluxoraEmptyState(
+            title: appLocalizations.nullTip(appLocalizations.script),
           );
         }
         return CommonScrollBar(
@@ -509,7 +509,7 @@ class _ScriptSettingsSheet extends ConsumerWidget {
     return AdaptiveSheetScaffold(
       type: type,
       body: profiles.isEmpty
-          ? NullStatus(label: appLocalizations.nullProfileDesc)
+          ? FluxoraEmptyState(title: appLocalizations.nullProfileDesc)
           : ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
               itemCount: profiles.length,
@@ -713,7 +713,10 @@ class __ScriptCustomOptionsSheetState
                 ),
               Expanded(
                 child: keys.isEmpty
-                    ? NullStatus(label: appLocalizations.noStatusAvailable)
+                    ? FluxoraEmptyState(
+                        title: appLocalizations.noStatusAvailable,
+                        compact: true,
+                      )
                     : RepaintBoundary(
                         child: ListView.builder(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
@@ -1003,7 +1006,10 @@ class _GroupSwitchOptionsSheetState
                 ),
               Expanded(
                 child: keys.isEmpty
-                    ? NullStatus(label: appLocalizations.noStatusAvailable)
+                    ? FluxoraEmptyState(
+                        title: appLocalizations.noStatusAvailable,
+                        compact: true,
+                      )
                     : RepaintBoundary(
                         child: ListView.builder(
                           padding: const EdgeInsets.symmetric(

@@ -227,8 +227,8 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
     final delayDescending = ref.watch(delaySortDescendingProvider);
 
     if (groups.isEmpty) {
-      return NullStatus(
-        label: appLocalizations.nullTip(appLocalizations.proxies),
+      return FluxoraEmptyState(
+        title: appLocalizations.nullTip(appLocalizations.proxies),
       );
     }
     // Safety check: ensure controller matches groups count

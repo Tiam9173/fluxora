@@ -20,10 +20,9 @@ import 'package:flutter/material.dart';
 /// );
 /// ```
 ///
-/// Note: this generalises the existing `NullStatus` widget (which only renders a
-/// centred label). `NullStatus` is intentionally left untouched in D4.5 so no
-/// existing call site changes behaviour; migrating those call sites here is a
-/// later stage.
+/// Note: this generalises the former `NullStatus` widget (which only rendered a
+/// centred label). All `NullStatus` call sites have been migrated here and the
+/// old widget has been removed.
 class FluxoraEmptyState extends StatelessWidget {
   const FluxoraEmptyState({
     super.key,

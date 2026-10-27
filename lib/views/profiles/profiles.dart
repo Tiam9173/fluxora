@@ -226,7 +226,7 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
           );
           final isMobileView = ref.watch(isMobileViewProvider);
           if (profilesSelectorState.profiles.isEmpty) {
-            return NullStatus(label: appLocalizations.nullProfileDesc);
+            return FluxoraEmptyState(title: appLocalizations.nullProfileDesc);
           }
           final columns = system.isAndroid
               ? 1

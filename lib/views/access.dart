@@ -574,7 +574,7 @@ class _AccessViewState extends ConsumerState<AccessView>
                         return _buildPackageListPermissionDeniedView();
                       }
                       return packages.isEmpty
-                          ? NullStatus(label: appLocalizations.noData)
+                          ? FluxoraEmptyState(title: appLocalizations.noData)
                           : CommonScrollBar(
                               controller: _controller,
                               child: ListView.separated(

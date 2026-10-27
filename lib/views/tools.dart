@@ -1364,7 +1364,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
     }).toList();
 
     if (filtered.isEmpty) {
-      return [Center(child: NullStatus(label: appLocalizations.noData))];
+      return [Center(child: FluxoraEmptyState(title: appLocalizations.noData))];
     }
 
     final groups = <String, List<_SearchItem>>{};

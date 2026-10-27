@@ -2,7 +2,7 @@ import 'package:fluxora/common/common.dart';
 import 'package:fluxora/models/common.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/widgets/dialog.dart';
-import 'package:fluxora/widgets/null_status.dart';
+import 'package:fluxora/widgets/fluxora/fluxora.dart';
 import 'package:fluxora/widgets/text.dart';
 import 'package:flutter/material.dart';
 
@@ -327,7 +327,7 @@ class ListInputPage extends StatelessWidget {
         ),
       ),
       child: items.isEmpty
-          ? NullStatus(label: appLocalizations.noData)
+          ? FluxoraEmptyState(title: appLocalizations.noData)
           : ReorderableListView.builder(
               padding: const EdgeInsets.only(bottom: 16 + 64),
               buildDefaultDragHandles: false,
@@ -470,7 +470,7 @@ class MapInputPage extends StatelessWidget {
         ),
       ),
       child: items.isEmpty
-          ? NullStatus(label: appLocalizations.noData)
+          ? FluxoraEmptyState(title: appLocalizations.noData)
           : ReorderableListView.builder(
               padding: const EdgeInsets.only(bottom: 16 + 64),
               proxyDecorator: proxyDecorator,
