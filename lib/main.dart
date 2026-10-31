@@ -32,6 +32,16 @@ Future<void> main(List<String> args) async {
   globalState.isService = false;
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Portable builds must not write the plugin's default settings file
+  // (`%APPDATA%\Fluxora\Fluxora\shared_preferences.json`): the Windows store
+  // resolves that through the Known Folder API, which neither the `.portable`
+  // marker nor the `APPDATA` variable can redirect. Swapping the store is the
+  // only seam, and it has to happen before the first read of preferences —
+  // `SharedPreferences` caches the store's contents on first access.
+  //
+  // On a normal install this returns immediately without touching anything.
+  await installPortablePrefsStore();
+
   // P2.2: start the network-context fingerprint before any reliability sample
   // can be recorded, so the first real event already lands in the correct
   // `statsByContext` bucket. Best-effort — a connectivity failure falls back to

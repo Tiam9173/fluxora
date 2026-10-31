@@ -37,45 +37,105 @@ class AppPath {
   Completer<Directory> tempDir = Completer();
   late String appDirPath;
 
+  /// Whether this run resolved its data directory from a portable marker.
+  ///
+  /// Synchronous on purpose: `PortablePrefsStore` has to be installed before
+  /// the first `SharedPreferences.getInstance()`, and that point is reached
+  /// long before [dataDir] completes on a non-portable run (it awaits
+  /// `path_provider`). Deciding from the marker alone makes the decision
+  /// available immediately.
+  late final bool isPortable;
+
   AppPath._internal() {
     appDirPath = join(dirname(Platform.resolvedExecutable));
-    getApplicationSupportDirectory().then((value) {
-      if (system.isWindows) {
-        // Portable mode: check if .portable file or userData directory exists alongside executable
-        final portableMarker = File(join(appDirPath, '.portable'));
-        final portableUserData = Directory(join(appDirPath, 'userData'));
-        if (portableMarker.existsSync() || portableUserData.existsSync()) {
-          try {
-            if (!portableUserData.existsSync()) {
-              portableUserData.createSync(recursive: true);
-            }
-            dataDir.complete(portableUserData);
-            return;
-          } catch (_) {
-            // If local directory is not writable, fall back to APPDATA
-          }
-        }
+    final portable = _resolvePortableDir();
+    isPortable = portable != null;
 
-        final roamingAppData = Platform.environment['APPDATA'];
-        if (roamingAppData != null && roamingAppData.isNotEmpty) {
-          dataDir.complete(
-            Directory(join(roamingAppData, AppIdentity.dataDirName)),
-          );
+    final testDataDir = _testDataDir();
+    if (testDataDir != null) {
+      // `flutter test`: never resolve against the developer's real profile.
+      dataDir.complete(testDataDir);
+    } else if (portable != null) {
+      dataDir.complete(portable);
+    } else {
+      getApplicationSupportDirectory().then((value) {
+        if (system.isWindows) {
+          final roamingAppData = Platform.environment['APPDATA'];
+          if (roamingAppData != null && roamingAppData.isNotEmpty) {
+            dataDir.complete(
+              Directory(join(roamingAppData, AppIdentity.dataDirName)),
+            );
+          } else {
+            dataDir.complete(
+              Directory(join(value.parent.parent.path, AppIdentity.dataDirName)),
+            );
+          }
         } else {
-          dataDir.complete(
-            Directory(join(value.parent.parent.path, AppIdentity.dataDirName)),
-          );
+          dataDir.complete(value);
         }
-      } else {
-        dataDir.complete(value);
-      }
-    });
+      });
+    }
     getTemporaryDirectory().then((value) {
       tempDir.complete(value);
     });
     getDownloadsDirectory().then((value) {
       downloadDir.complete(value);
     });
+  }
+
+  /// `<exeDir>/userData` when this is a portable build, else `null`.
+  ///
+  /// Same rules as before, just extracted so [isPortable] can answer without
+  /// waiting on `path_provider`: a `.portable` marker or an existing `userData`
+  /// directory next to the executable wins; a directory that cannot be created
+  /// falls through to the roaming profile.
+  Directory? _resolvePortableDir() {
+    if (!system.isWindows) return null;
+    final portableMarker = File(join(appDirPath, '.portable'));
+    final portableUserData = Directory(join(appDirPath, 'userData'));
+    if (!portableMarker.existsSync() && !portableUserData.existsSync()) {
+      return null;
+    }
+    try {
+      if (!portableUserData.existsSync()) {
+        portableUserData.createSync(recursive: true);
+      }
+      return portableUserData;
+    } catch (_) {
+      // If local directory is not writable, fall back to APPDATA
+      return null;
+    }
+  }
+
+  /// A per-process sandbox for `flutter test`, or `null` when not under test.
+  ///
+  /// [AppPath] is the app's single source of user-writable paths: `config.yaml`,
+  /// `chain_proxies.json` (+ `.bak`), the fallback pool, the reliability stats,
+  /// `profiles/`, `scripts/`, and the control socket. Under `flutter test` there
+  /// is no user to own that data, and the Windows branch above deliberately
+  /// reads `Platform.environment['APPDATA']` — the *developer's* real profile,
+  /// which no `PathProviderPlatform` fake can redirect.
+  ///
+  /// That combination was not theoretical: before this guard,
+  /// `test/services/android_runtime_validation_test.dart` called
+  /// `ChainProxyManager.updateConfig()` without setting
+  /// `ChainProxyManager.configFilePathOverride`, so every full `flutter test`
+  /// rewrote the real `%APPDATA%\Fluxora\chain_proxies.json`.
+  /// `test/services/runtime_lifecycle_hardening_test.dart` documents the same
+  /// hazard for the other three persistence files.
+  ///
+  /// Guarding here — instead of asking each test to opt in — means tests written
+  /// later are sandboxed by construction. The `pid` suffix keeps concurrently
+  /// running test isolates from sharing one directory.
+  static Directory? _testDataDir() {
+    if (Platform.environment['FLUTTER_TEST'] != 'true') return null;
+    final dir = Directory(
+      join(Directory.systemTemp.path, 'fluxora_test_data_$pid'),
+    );
+    if (!dir.existsSync()) {
+      dir.createSync(recursive: true);
+    }
+    return dir;
   }
 
   factory AppPath() {
