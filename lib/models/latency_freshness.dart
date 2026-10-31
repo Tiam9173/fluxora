@@ -94,12 +94,14 @@ enum LatencyFreshness {
     return freshness == LatencyFreshness.unknown ? null : state!.latencyMs;
   }
 
-  /// The **unchanged** legacy formula (previously inlined in
-  /// `chain_adaptive_score_service.dart`), extracted so the β compat path and the
-  /// gated path provably share one implementation.
+  /// The **unchanged** legacy formula, previously inlined in
+  /// `chain_adaptive_score_service.dart` (that file was deleted in `7916804c`).
+  /// It was extracted so the β compat path and the gated path shared one
+  /// implementation; both of those callers are gone, so today it is exercised
+  /// only by tests.
   ///
-  /// Callers must reject negative values before calling this — see the guard in
-  /// `ChainAdaptiveScoreService.calculateNodeScore`.
+  /// Callers must still reject negative values — the guard that used to enforce
+  /// this in `ChainAdaptiveScoreService.calculateNodeScore` no longer exists.
   static double rawScore(int latencyMs) =>
       (100.0 - (latencyMs / 10.0)).clamp(0.0, 100.0);
 

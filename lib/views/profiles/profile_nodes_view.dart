@@ -16,6 +16,29 @@ class ProfileNodesView extends StatefulWidget {
 
   const ProfileNodesView({super.key, required this.profile});
 
+  /// Test-only override for the per-node latency map that [_sortedProxies]
+  /// reads.
+  ///
+  /// `null` keeps the real behaviour (the private `_delays`, filled only by
+  /// `_testProxy`). An **empty map is a valid override** meaning "no node has
+  /// been measured" — it must not be read as "not enabled".
+  ///
+  /// It exists because `_delays` is written only from `clashCore.getDelay`,
+  /// which cannot answer without a live core, so a positive latency could
+  /// otherwise never be exercised by a widget test. Production never sets it.
+  @visibleForTesting
+  static Map<String, int?>? delaysOverrideForTest;
+
+  /// Test-only override for the proxy list that `_loadProxies` would otherwise
+  /// read from the profile YAML.
+  ///
+  /// `_loadProxies` parses that YAML through `compute` (a background isolate),
+  /// which never completes inside a widget test's fake-async zone — so without
+  /// this the page would stay empty and its sort could not be exercised at all.
+  /// Production never sets it.
+  @visibleForTesting
+  static List<Map<String, dynamic>>? proxiesOverrideForTest;
+
   @override
   State<ProfileNodesView> createState() => _ProfileNodesViewState();
 }
@@ -56,7 +79,8 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
 
   Future<void> _loadProxies() async {
     setState(() => _isLoading = true);
-    final list = await ManualProxyHelper.getProfileProxies(_profile);
+    final list = ProfileNodesView.proxiesOverrideForTest ??
+        await ManualProxyHelper.getProfileProxies(_profile);
     if (mounted) {
       final names = {
         for (final proxy in list)
@@ -330,6 +354,7 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
   }
 
   List<Map<String, dynamic>> get _sortedProxies {
+    final delays = ProfileNodesView.delaysOverrideForTest ?? _delays;
     final query = _query.trim().toLowerCase();
     final list = _proxies.where((proxy) {
       final name = (proxy['name']?.toString() ?? '').toLowerCase();
@@ -343,7 +368,7 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
       }
       if (_protocolFilter != null && type != _protocolFilter) return false;
       if (_onlyFailed) {
-        final delay = _delays[proxy['name']?.toString() ?? ''];
+        final delay = delays[proxy['name']?.toString() ?? ''];
         if (delay == null || delay >= 0) return false;
       }
       return true;
@@ -368,8 +393,8 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
       case _NodeSortMode.delay:
         int rank(int? value) => value == null ? 2 : (value <= 0 ? 1 : 0);
         list.sort((a, b) {
-          final left = _delays[a['name']?.toString() ?? ''];
-          final right = _delays[b['name']?.toString() ?? ''];
+          final left = delays[a['name']?.toString() ?? ''];
+          final right = delays[b['name']?.toString() ?? ''];
           final byRank = rank(left).compareTo(rank(right));
           if (byRank != 0) return byRank;
           if (left != null && right != null && left > 0 && right > 0) {
