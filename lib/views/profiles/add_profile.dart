@@ -218,7 +218,10 @@ class AddProfileView extends StatelessWidget {
             children: [
               Text(
                 appLocalizations.createEmptyGroupHint,
-                style: const TextStyle(fontSize: 13, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: FluxoraFontSize.compact,
+                  color: context.colorScheme.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: 16),
               TextField(

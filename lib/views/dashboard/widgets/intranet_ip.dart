@@ -206,7 +206,7 @@ class _LanSettingsBodyState extends ConsumerState<_LanSettingsBody> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: FluxoraFontSize.compact,
                     fontWeight: FontWeight.w600,
                     color: colorScheme.onSurface,
                   ),
@@ -387,7 +387,7 @@ class _LanSettingsBodyState extends ConsumerState<_LanSettingsBody> {
           Expanded(
             child: Text(
               appLocalizations.allowLan,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+              style: const TextStyle(fontSize: FluxoraFontSize.compact, fontWeight: FontWeight.w500),
             ),
           ),
           Switch(
@@ -446,7 +446,7 @@ class _LanSettingsBodyState extends ConsumerState<_LanSettingsBody> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 13,
+                    fontSize: FluxoraFontSize.compact,
                     fontWeight: FontWeight.w500,
                   ),
                 ),

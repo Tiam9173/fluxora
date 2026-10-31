@@ -16,10 +16,19 @@ class BarChart extends StatefulWidget {
   final List<BarChartData> data;
   final Duration duration;
 
+  /// Bar fill. Defaults to the theme's `primary`.
+  ///
+  /// The bars used to be a hardcoded `Colors.blue` inside the painter, which
+  /// made the one chart on the dashboard the only surface in the app painting a
+  /// non-brand hue. Charts are data, not chrome, so they follow the brand colour
+  /// unless a caller has a reason to override it.
+  final Color? color;
+
   const BarChart({
     super.key,
     required this.data,
     this.duration = commonDuration,
+    this.color,
   });
 
   @override
@@ -94,6 +103,7 @@ class _BarChartState extends State<BarChart>
                 _oldData,
                 widget.data,
                 _animationController.value,
+                widget.color ?? Theme.of(context).colorScheme.primary,
               ),
               size: Size(container.maxWidth, container.maxHeight),
             );
@@ -108,8 +118,9 @@ class BarChartPainter extends CustomPainter {
   final List<BarChartData> oldData;
   final List<BarChartData> newData;
   final double progress;
+  final Color color;
 
-  BarChartPainter(this.oldData, this.newData, this.progress);
+  BarChartPainter(this.oldData, this.newData, this.progress, this.color);
 
   Map<String, Rect> getRectMap(List<BarChartData> dataList, Size size) {
     final spacing = size.width * 0.05;
@@ -146,7 +157,7 @@ class BarChartPainter extends CustomPainter {
     final newRectMap = getRectMap(newData, size);
 
     final paint = Paint()
-      ..color = Colors.blue
+      ..color = color
       ..style = PaintingStyle.fill;
     final newRectEntries = newRectMap.entries.toList();
     for (int i = 0; i < newRectEntries.length; i++) {
@@ -171,6 +182,7 @@ class BarChartPainter extends CustomPainter {
   bool shouldRepaint(BarChartPainter oldDelegate) {
     return oldDelegate.progress != progress ||
         oldDelegate.oldData != oldData ||
-        oldDelegate.newData != newData;
+        oldDelegate.newData != newData ||
+        oldDelegate.color != color;
   }
 }

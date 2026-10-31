@@ -376,7 +376,7 @@ class _TvQrImportDialogState extends State<TvQrImportDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(FluxoraSpacing.md),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(FluxoraRadius.card),

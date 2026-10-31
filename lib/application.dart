@@ -5,6 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:fluxora/clash/clash.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/common/external_control.dart';
+import 'package:fluxora/common/theme.dart';
 import 'package:fluxora/l10n/l10n.dart';
 import 'package:fluxora/manager/hotkey_manager.dart';
 import 'package:fluxora/manager/manager.dart';
@@ -327,7 +328,7 @@ class ApplicationState extends ConsumerState<Application>
                           child: Padding(
                             // 和 App 内弹窗一样贴边：多加的内边距会让卡片比
                             // App 内窄一圈，看起来"周围都是空白"。
-                            padding: const EdgeInsets.all(8),
+                            padding: const EdgeInsets.all(FluxoraSpacing.sm),
                             child: GestureDetector(
                               onTap: () {},
                               child: Material(
@@ -387,7 +388,7 @@ class ApplicationState extends ConsumerState<Application>
                 textTheme: FluxoraTypography.textTheme(),
                 floatingActionButtonTheme: const FloatingActionButtonThemeData(
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(20)),
+                    borderRadius: FluxoraRadius.fabAll,
                   ),
                   elevation: FluxoraElevation.raised,
                   hoverElevation: FluxoraElevation.menu,
@@ -397,6 +398,21 @@ class ApplicationState extends ConsumerState<Application>
                     borderRadius: BorderRadius.circular(FluxoraRadius.dialog),
                   ),
                   elevation: FluxoraElevation.modal,
+                  // One scrim role for every modal surface (Phase 04.4). This is
+                  // the value the framework already used by default, so dialogs
+                  // do not change — it is now explicit and shared with the side
+                  // sheet, which used to dim the page half as much.
+                  barrierColor: FluxoraColors.scrim,
+                ),
+                // Raw `Card` widgets (10 call sites) fell back to Material's
+                // 12 px shape while `CommonCard` renders at
+                // `FluxoraRadius.card` (16). Only the shape is pinned here:
+                // colour and elevation stay on the Material defaults until the
+                // flat-vs-tinted card decision is made.
+                cardTheme: const CardThemeData(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: FluxoraRadius.cardAll,
+                  ),
                 ),
                 bottomSheetTheme: const BottomSheetThemeData(
                   shape: RoundedRectangleBorder(
@@ -405,6 +421,7 @@ class ApplicationState extends ConsumerState<Application>
                     ),
                   ),
                   clipBehavior: Clip.antiAlias,
+                  modalBarrierColor: FluxoraColors.scrim,
                 ),
                 popupMenuTheme: const PopupMenuThemeData(
                   shape: RoundedRectangleBorder(
@@ -432,19 +449,24 @@ class ApplicationState extends ConsumerState<Application>
                   labelStyle: const TextStyle(fontSize: 12),
                   hintStyle: const TextStyle(fontSize: 12),
                   border: const OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(18)),
+                    borderRadius: FluxoraRadius.fieldAll,
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: const BorderRadius.all(Radius.circular(18)),
+                    borderRadius: FluxoraRadius.fieldAll,
                     borderSide: BorderSide(
-                      color: _getAppColorScheme(
-                        brightness: Brightness.light,
-                        primaryColor: themeProps.primaryColor,
-                      ).outline.withValues(alpha: 0.75),
+                      // A field edge is a necessary component boundary (WCAG
+                      // 1.4.11, 3:1). The Lines roles are 1.4–1.8:1 here, and at
+                      // 45–75 % alpha the border was 1.1–1.3:1 — invisible.
+                      color: fluxoraFieldBorder(
+                        _getAppColorScheme(
+                          brightness: Brightness.light,
+                          primaryColor: themeProps.primaryColor,
+                        ),
+                      ),
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: const BorderRadius.all(Radius.circular(18)),
+                    borderRadius: FluxoraRadius.fieldAll,
                     borderSide: BorderSide(
                       color: _getAppColorScheme(
                         brightness: Brightness.light,
@@ -460,7 +482,7 @@ class ApplicationState extends ConsumerState<Application>
                   // (1) and focused (2) states above. `disabledBorder` is left
                   // untouched in this batch.
                   errorBorder: OutlineInputBorder(
-                    borderRadius: const BorderRadius.all(Radius.circular(18)),
+                    borderRadius: FluxoraRadius.fieldAll,
                     borderSide: BorderSide(
                       color: _getAppColorScheme(
                         brightness: Brightness.light,
@@ -469,7 +491,7 @@ class ApplicationState extends ConsumerState<Application>
                     ),
                   ),
                   focusedErrorBorder: OutlineInputBorder(
-                    borderRadius: const BorderRadius.all(Radius.circular(18)),
+                    borderRadius: FluxoraRadius.fieldAll,
                     borderSide: BorderSide(
                       color: _getAppColorScheme(
                         brightness: Brightness.light,
@@ -510,7 +532,7 @@ class ApplicationState extends ConsumerState<Application>
                 textTheme: FluxoraTypography.textTheme(),
                 floatingActionButtonTheme: const FloatingActionButtonThemeData(
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(20)),
+                    borderRadius: FluxoraRadius.fabAll,
                   ),
                   elevation: FluxoraElevation.raised,
                   hoverElevation: FluxoraElevation.menu,
@@ -520,6 +542,21 @@ class ApplicationState extends ConsumerState<Application>
                     borderRadius: BorderRadius.circular(FluxoraRadius.dialog),
                   ),
                   elevation: FluxoraElevation.modal,
+                  // One scrim role for every modal surface (Phase 04.4). This is
+                  // the value the framework already used by default, so dialogs
+                  // do not change — it is now explicit and shared with the side
+                  // sheet, which used to dim the page half as much.
+                  barrierColor: FluxoraColors.scrim,
+                ),
+                // Raw `Card` widgets (10 call sites) fell back to Material's
+                // 12 px shape while `CommonCard` renders at
+                // `FluxoraRadius.card` (16). Only the shape is pinned here:
+                // colour and elevation stay on the Material defaults until the
+                // flat-vs-tinted card decision is made.
+                cardTheme: const CardThemeData(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: FluxoraRadius.cardAll,
+                  ),
                 ),
                 bottomSheetTheme: const BottomSheetThemeData(
                   shape: RoundedRectangleBorder(
@@ -528,6 +565,7 @@ class ApplicationState extends ConsumerState<Application>
                     ),
                   ),
                   clipBehavior: Clip.antiAlias,
+                  modalBarrierColor: FluxoraColors.scrim,
                 ),
                 popupMenuTheme: const PopupMenuThemeData(
                   shape: RoundedRectangleBorder(
@@ -559,23 +597,21 @@ class ApplicationState extends ConsumerState<Application>
                   labelStyle: const TextStyle(fontSize: 12),
                   hintStyle: const TextStyle(fontSize: 12),
                   border: const OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(18)),
+                    borderRadius: FluxoraRadius.fieldAll,
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: const BorderRadius.all(Radius.circular(18)),
+                    borderRadius: FluxoraRadius.fieldAll,
                     borderSide: BorderSide(
-                      color:
-                          _getAppColorScheme(
-                                brightness: Brightness.dark,
-                                primaryColor: themeProps.primaryColor,
-                              )
-                              .toPureBlack(themeProps.pureBlack)
-                              .outlineVariant
-                              .withValues(alpha: 0.45),
+                      color: fluxoraFieldBorder(
+                        _getAppColorScheme(
+                          brightness: Brightness.dark,
+                          primaryColor: themeProps.primaryColor,
+                        ).toPureBlack(themeProps.pureBlack),
+                      ),
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: const BorderRadius.all(Radius.circular(18)),
+                    borderRadius: FluxoraRadius.fieldAll,
                     borderSide: BorderSide(
                       color: _getAppColorScheme(
                         brightness: Brightness.dark,
@@ -588,7 +624,7 @@ class ApplicationState extends ConsumerState<Application>
                   // 18 px outline instead of dropping to the call site's bare
                   // `OutlineInputBorder()` (4 px, non-error colour).
                   errorBorder: OutlineInputBorder(
-                    borderRadius: const BorderRadius.all(Radius.circular(18)),
+                    borderRadius: FluxoraRadius.fieldAll,
                     borderSide: BorderSide(
                       color: _getAppColorScheme(
                         brightness: Brightness.dark,
@@ -597,7 +633,7 @@ class ApplicationState extends ConsumerState<Application>
                     ),
                   ),
                   focusedErrorBorder: OutlineInputBorder(
-                    borderRadius: const BorderRadius.all(Radius.circular(18)),
+                    borderRadius: FluxoraRadius.fieldAll,
                     borderSide: BorderSide(
                       color: _getAppColorScheme(
                         brightness: Brightness.dark,

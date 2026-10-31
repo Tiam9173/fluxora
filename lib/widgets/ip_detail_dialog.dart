@@ -248,10 +248,15 @@ class _IpDetailDialogState extends State<_IpDetailDialog> {
           ),
           ListTile(
             contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.error_outline, color: Colors.red),
+            leading: Icon(
+              Icons.error_outline,
+              color: context.colorScheme.error,
+            ),
             title: Text(
               _errorMessage!,
-              style: context.textTheme.bodyMedium?.copyWith(color: Colors.red),
+              style: context.textTheme.bodyMedium?.copyWith(
+                color: context.colorScheme.error,
+              ),
             ),
           ),
         ],

@@ -62,7 +62,7 @@ class _AccessViewState extends ConsumerState<AccessView>
   Widget _buildPackageListPermissionDeniedView() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(FluxoraSpacing.xl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

@@ -6,8 +6,8 @@ import 'package:fluxora/common/common.dart';
 ///
 /// These are **change detectors, not design opinions**. Every expected value
 /// below is copied from the token sources (`fluxora_spacing.dart`,
-/// `fluxora_typography.dart`), so a failure means "someone changed the token
-/// layer" — and with it the spacing / type rhythm of every screen that already
+/// `fluxora_typography.dart`, `fluxora_radius.dart`), so a failure means
+/// "someone changed the token layer" — and with it the spacing / type rhythm of every screen that already
 /// uses it.
 ///
 /// Before this file there was **no** such guard: editing `FluxoraSpacing.md`
@@ -235,6 +235,193 @@ void main() {
       }
       expect(t.bodyMedium?.color, isNull);
       expect(t.titleLarge?.color, isNull);
+    });
+  });
+
+  group('FluxoraRadius — ladder and semantic aliases', () {
+    test('4-based ladder values', () {
+      expect(FluxoraRadius.none, 0.0);
+      expect(FluxoraRadius.xs, 4.0);
+      expect(FluxoraRadius.sm, 8.0);
+      expect(FluxoraRadius.md, 12.0);
+      expect(FluxoraRadius.lg, 16.0);
+      expect(FluxoraRadius.xl, 24.0);
+      expect(FluxoraRadius.xxl, 36.0);
+      expect(FluxoraRadius.full, 999.0);
+    });
+
+    test('semantic aliases point at the documented rung', () {
+      expect(FluxoraRadius.card, FluxoraRadius.lg);
+      expect(FluxoraRadius.button, FluxoraRadius.full);
+      expect(FluxoraRadius.chip, FluxoraRadius.lg);
+      expect(FluxoraRadius.dialog, FluxoraRadius.xl);
+      expect(FluxoraRadius.inputCompact, FluxoraRadius.sm);
+      expect(FluxoraRadius.icon, FluxoraRadius.sm);
+      expect(FluxoraRadius.badge, FluxoraRadius.xs);
+      expect(FluxoraRadius.avatar, FluxoraRadius.full);
+    });
+
+    test('off-ladder design values are deliberate, not drift', () {
+      // Each of these is set explicitly by the theme layer in both brightnesses.
+      // Rounding them onto the 4-based ladder would visibly change surfaces the
+      // whole app shares, so they stay off it on purpose — see the token docs.
+      expect(FluxoraRadius.sheet, 28.0, reason: 'bottom sheet surface');
+      expect(FluxoraRadius.field, 18.0, reason: 'inputDecorationTheme borders');
+      expect(FluxoraRadius.fab, 20.0, reason: 'floatingActionButtonTheme shape');
+    });
+
+    test('field and inputCompact are different roles, not duplicates', () {
+      // 18 on a 36 px dense field would clamp to a pill, which is why the
+      // editor's find/replace bar uses the 8 px compact token instead.
+      expect(FluxoraRadius.field, isNot(FluxoraRadius.inputCompact));
+    });
+
+    test('*All constants mirror their scalar token', () {
+      const cases = <(double, BorderRadius)>[
+        (FluxoraRadius.xs, FluxoraRadius.xsAll),
+        (FluxoraRadius.sm, FluxoraRadius.smAll),
+        (FluxoraRadius.md, FluxoraRadius.mdAll),
+        (FluxoraRadius.lg, FluxoraRadius.lgAll),
+        (FluxoraRadius.xl, FluxoraRadius.xlAll),
+        (FluxoraRadius.full, FluxoraRadius.fullAll),
+        (FluxoraRadius.card, FluxoraRadius.cardAll),
+        (FluxoraRadius.button, FluxoraRadius.buttonAll),
+        (FluxoraRadius.dialog, FluxoraRadius.dialogAll),
+        (FluxoraRadius.sheet, FluxoraRadius.sheetAll),
+        (FluxoraRadius.field, FluxoraRadius.fieldAll),
+        (FluxoraRadius.fab, FluxoraRadius.fabAll),
+      ];
+      for (final (value, radius) in cases) {
+        expect(
+          radius,
+          BorderRadius.all(Radius.circular(value)),
+          reason: '*All must equal BorderRadius.all(circular($value))',
+        );
+      }
+    });
+
+    test('sheetTop rounds only the top edge with the sheet radius', () {
+      final r = Radius.circular(FluxoraRadius.sheet);
+      expect(FluxoraRadius.sheetTop.topLeft, r);
+      expect(FluxoraRadius.sheetTop.topRight, r);
+      expect(FluxoraRadius.sheetTop.bottomLeft, Radius.zero);
+      expect(FluxoraRadius.sheetTop.bottomRight, Radius.zero);
+    });
+  });
+
+  group('FluxoraFontSize — size-only companion', () {
+    test('values match the sizes they replace', () {
+      // These three are value-identical to the literals they were migrated from,
+      // which is the whole point: naming a size must not re-typeset the text.
+      expect(FluxoraFontSize.micro, 10.0);
+      expect(FluxoraFontSize.compact, 13.0);
+      expect(FluxoraFontSize.section, 15.0);
+    });
+
+    test('they carry no weight or tracking of their own', () {
+      // A size-only token is a double, not a TextStyle — so it can never
+      // silently change weight/spacing the way a composite level would.
+      expect(FluxoraFontSize.micro, isA<double>());
+      expect(FluxoraFontSize.compact, isA<double>());
+      expect(FluxoraFontSize.section, isA<double>());
+    });
+
+    test('section sits between body and title, which is why it exists', () {
+      expect(FluxoraFontSize.section, greaterThan(FluxoraTypography.body.fontSize!));
+      expect(FluxoraFontSize.section, lessThan(FluxoraTypography.title.fontSize!));
+    });
+
+    test('the sizes stay off the six-level ladder on purpose', () {
+      final levelSizes = FluxoraTypography.levels
+          .map((s) => s.fontSize!)
+          .toSet();
+      expect(levelSizes, isNot(contains(FluxoraFontSize.micro)));
+      expect(levelSizes, isNot(contains(FluxoraFontSize.compact)));
+      expect(levelSizes, isNot(contains(FluxoraFontSize.section)));
+    });
+  });
+
+  group('FluxoraColorSet.selectionTint — one definition for three navigations', () {
+    const primary = Color(0xFF006A62);
+
+    test('light keeps 20 % and dark keeps 26 %', () {
+      // These two numbers were duplicated across the desktop rail, the mobile
+      // bottom bar and the TV bar; if one drifts the navigations stop matching.
+      expect(
+        FluxoraColorSet.selectionTint(primary, Brightness.light).a,
+        closeTo(0.20, 0.005),
+      );
+      expect(
+        FluxoraColorSet.selectionTint(primary, Brightness.dark).a,
+        closeTo(0.26, 0.005),
+      );
+    });
+
+    test('the base colour is passed through untouched', () {
+      for (final brightness in [Brightness.light, Brightness.dark]) {
+        final tint = FluxoraColorSet.selectionTint(primary, brightness);
+        expect(tint.r, primary.r);
+        expect(tint.g, primary.g);
+        expect(tint.b, primary.b);
+      }
+    });
+
+    test('the result is translucent, not opaque', () {
+      // A regression to a plain `primary` would paint a solid block instead of
+      // a wash and would also change the label contrast underneath.
+      for (final brightness in [Brightness.light, Brightness.dark]) {
+        expect(
+          FluxoraColorSet.selectionTint(primary, brightness).a,
+          lessThan(1.0),
+        );
+      }
+    });
+  });
+  group('FluxoraElevation — the rung the navigation bars use', () {
+    test('semantic aliases point at the documented level', () {
+      expect(FluxoraElevation.menu, FluxoraElevation.level3);
+      expect(FluxoraElevation.raised, FluxoraElevation.level2);
+      expect(FluxoraElevation.overlay, FluxoraElevation.level4);
+      expect(FluxoraElevation.resting, FluxoraElevation.level0);
+    });
+
+    test('the menu rung is one soft shadow, not a stack', () {
+      // Both navigation bars take this rung (mobile in the previous batch, TV in
+      // this one). The old TV bar stacked a hand-rolled blur 20 / 15 % shadow,
+      // so pinning the shape keeps the two from diverging again.
+      expect(FluxoraElevation.light.menu, hasLength(1));
+      expect(FluxoraElevation.dark.menu, hasLength(1));
+
+      expect(FluxoraElevation.light.menu.single.blurRadius, 16);
+      expect(FluxoraElevation.dark.menu.single.blurRadius, 16);
+    });
+
+    test('dark uses a heavier alpha than light at the same rung', () {
+      // §8.2: a black shadow over a navy surface barely reads, so the dark
+      // ladder leans harder on alpha where it keeps a shadow at all.
+      final lightAlpha = FluxoraElevation.light.menu.single.color.a;
+      final darkAlpha = FluxoraElevation.dark.menu.single.color.a;
+      expect(darkAlpha, greaterThan(lightAlpha));
+    });
+
+    test('light blurs rise with the ladder', () {
+      final blurs = [
+        FluxoraElevation.light.level1,
+        FluxoraElevation.light.level2,
+        FluxoraElevation.light.level3,
+        FluxoraElevation.light.level4,
+        FluxoraElevation.light.level5,
+      ].map((shadows) => shadows.single.blurRadius).toList();
+      for (var i = 1; i < blurs.length; i++) {
+        expect(blurs[i], greaterThan(blurs[i - 1]), reason: 'rung $i');
+      }
+    });
+
+    test('the low dark rungs carry no shadow at all', () {
+      // Hierarchy in dark mode comes from surface brightness, not shadow.
+      expect(FluxoraElevation.dark.level0, isEmpty);
+      expect(FluxoraElevation.dark.level1, isEmpty);
+      expect(FluxoraElevation.dark.level2, isEmpty);
     });
   });
 }

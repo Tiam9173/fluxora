@@ -603,6 +603,423 @@ void main() {
       }
     });
   });
+
+  // ── Phase 01 — surface ladder legibility ─────────────────────────────────
+  //
+  // Text has to stay readable on every rung of the surface ladder, not just on
+  // `surface`. Nothing asserted this before: the existing groups pin status
+  // roles and their tints, but `onSurface` / `onSurfaceVariant` against
+  // `surfaceContainerHigh` / `surfaceContainerHighest` was untested in either
+  // brightness — and the light theme is where a neutral that sits too close to
+  // its surface shows up first.
+  //
+  // 4.5:1 is WCAG 2.1 AA for normal text, so these are external thresholds, not
+  // numbers invented for this codebase.
+
+  group('surface ladder legibility', () {
+    ColorScheme schemeFor(Brightness brightness) {
+      final container = ProviderContainer(
+        overrides: [
+          themeSettingProvider.overrideWith(
+            () => _MockThemeSetting(
+              ThemeProps(colorSource: ColorSource.fluxora),
+            ),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      return container.read(genColorSchemeProvider(brightness));
+    }
+
+    double contrastRatio(Color a, Color b) {
+      final la = a.computeLuminance();
+      final lb = b.computeLuminance();
+      return la > lb ? (la + 0.05) / (lb + 0.05) : (lb + 0.05) / (la + 0.05);
+    }
+
+    Map<String, Color> ladder(ColorScheme s) => {
+      'surface': s.surface,
+      'surfaceContainerLow': s.surfaceContainerLow,
+      'surfaceContainer': s.surfaceContainer,
+      'surfaceContainerHigh': s.surfaceContainerHigh,
+      'surfaceContainerHighest': s.surfaceContainerHighest,
+    };
+
+    for (final brightness in [Brightness.light, Brightness.dark]) {
+      test('primary text clears AA on every rung ($brightness)', () {
+        final s = schemeFor(brightness);
+        for (final entry in ladder(s).entries) {
+          expect(
+            contrastRatio(s.onSurface, entry.value),
+            greaterThanOrEqualTo(4.5),
+            reason: 'onSurface on ${entry.key} ($brightness)',
+          );
+        }
+      });
+
+      test('secondary text clears AA on every rung ($brightness)', () {
+        final s = schemeFor(brightness);
+        for (final entry in ladder(s).entries) {
+          expect(
+            contrastRatio(s.onSurfaceVariant, entry.value),
+            greaterThanOrEqualTo(4.5),
+            reason: 'onSurfaceVariant on ${entry.key} ($brightness)',
+          );
+        }
+      });
+
+      test('the rungs are strictly ordered by luminance ($brightness)', () {
+        // A flat or inverted ladder is the failure mode this guards: two rungs
+        // within a rounding step of each other read as one sheet, and an
+        // inverted one puts "higher" cards below their background.
+        final s = schemeFor(brightness);
+        final values = ladder(s).values.toList();
+        final rising = brightness == Brightness.dark;
+        for (var i = 1; i < values.length; i++) {
+          final prev = values[i - 1].computeLuminance();
+          final next = values[i].computeLuminance();
+          expect(
+            next,
+            isNot(equals(prev)),
+            reason: 'rung $i must differ from rung ${i - 1} ($brightness)',
+          );
+          if (rising) {
+            expect(
+              next,
+              greaterThan(prev),
+              reason:
+                  'dark ladder rises with elevation: rung $i must sit above '
+                  'rung ${i - 1}',
+            );
+          }
+        }
+      });
+    }
+  });
+
+  // ── Phase 01 — SnackBar legibility (M3 inverse roles) ────────────────────
+  //
+  // `genColorScheme` maps most roles explicitly but leaves `inverseSurface`,
+  // `onInverseSurface`, `inversePrimary`, `surfaceTint` and `scrim` to
+  // `ColorScheme.fromSeed`. A `SnackBar` reads `inverseSurface` /
+  // `onInverseSurface` for its background and text, and **none** of the 4
+  // construction paths in the app overrides either one — so those derived
+  // values are what every snackbar actually paints.
+  //
+  // Measured 2026-10-28 (fluxora seed, tonalSpot):
+  //   light: bg #2B3230 / text #ECF2F0 → 11.57:1
+  //   dark : bg #DDE4E2 / text #2B3230 → 10.16:1
+  //
+  // Both clear AA by a wide margin, so these tests **pin the current state**
+  // rather than fix a defect: a seed or variant change that drops the ratio
+  // below 4.5:1 now fails here instead of shipping.
+
+  group('snackbar legibility (M3 inverse roles)', () {
+    ColorScheme schemeFor(Brightness brightness) {
+      final container = ProviderContainer(
+        overrides: [
+          themeSettingProvider.overrideWith(
+            () => _MockThemeSetting(
+              ThemeProps(colorSource: ColorSource.fluxora),
+            ),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      return container.read(genColorSchemeProvider(brightness));
+    }
+
+    double contrastRatio(Color a, Color b) {
+      final la = a.computeLuminance();
+      final lb = b.computeLuminance();
+      return la > lb ? (la + 0.05) / (lb + 0.05) : (lb + 0.05) / (la + 0.05);
+    }
+
+    for (final brightness in [Brightness.light, Brightness.dark]) {
+      test('snackbar text clears AA on its inverse surface ($brightness)', () {
+        final s = schemeFor(brightness);
+        expect(
+          contrastRatio(s.onInverseSurface, s.inverseSurface),
+          greaterThanOrEqualTo(4.5),
+          reason:
+              'SnackBar paints onInverseSurface on inverseSurface '
+              '($brightness)',
+        );
+      });
+
+      test('the snackbar surface separates from the page ($brightness)', () {
+        // If the two collapsed, a floating snackbar would read as part of the
+        // page instead of an overlay. 3:1 is the WCAG non-text threshold.
+        final s = schemeFor(brightness);
+        expect(
+          contrastRatio(s.inverseSurface, s.surface),
+          greaterThanOrEqualTo(3.0),
+          reason: 'inverseSurface must stand off surface ($brightness)',
+        );
+      });
+    }
+  });
+
+  // ── Phase 01 — component state contrast ──────────────────────────────────
+  //
+  // Every semantic pair a component paints text with, measured on the live
+  // scheme. Values as of 2026-10-28:
+  //
+  // | pair                              | light | dark  |
+  // | --------------------------------- | ----- | ----- |
+  // | error / surface                   | 6.18  | 10.99 |
+  // | primary / surface                 | 6.13  | 10.94 |
+  // | onPrimary / primary               | 6.49  |  7.72 |
+  // | onPrimaryContainer / container    | 7.25  |  7.25 |
+  // | onSecondaryContainer / container  | 7.25  |  7.25 |
+  //
+  // Deliberately **not** asserted, with the measured value recorded here so a
+  // future reader does not mistake the gap for an oversight:
+  //
+  // * `outline` / `surface` = 1.40 (light) / 1.80 (dark). That is below the
+  //   3:1 WCAG 1.4.11 asks of a *meaningful* component boundary. Raising it
+  //   means editing the palette every border in the app shares — a global
+  //   design decision, not a local fix, so it is reported rather than changed.
+  // * `outlineVariant` / `surfaceContainerHighest` = 1.05. `outlineVariant` is
+  //   Material's decorative-divider role; low contrast is by design (N/A).
+  // * disabled text (`onSurface` @ 38 %) / `surface` = 2.34 (light) / 3.02
+  //   (dark). WCAG 1.4.3 explicitly exempts inactive controls (N/A).
+
+  group('component state contrast', () {
+    ColorScheme schemeFor(Brightness brightness) {
+      final container = ProviderContainer(
+        overrides: [
+          themeSettingProvider.overrideWith(
+            () => _MockThemeSetting(
+              ThemeProps(colorSource: ColorSource.fluxora),
+            ),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      return container.read(genColorSchemeProvider(brightness));
+    }
+
+    double contrastRatio(Color a, Color b) {
+      final la = a.computeLuminance();
+      final lb = b.computeLuminance();
+      return la > lb ? (la + 0.05) / (lb + 0.05) : (lb + 0.05) / (la + 0.05);
+    }
+
+    for (final brightness in [Brightness.light, Brightness.dark]) {
+      test('semantic text pairs clear AA ($brightness)', () {
+        final s = schemeFor(brightness);
+        final pairs = <String, (Color, Color)>{
+          'error on surface': (s.error, s.surface),
+          'primary on surface': (s.primary, s.surface),
+          'onPrimary on primary': (s.onPrimary, s.primary),
+          'onPrimaryContainer on primaryContainer': (
+            s.onPrimaryContainer,
+            s.primaryContainer,
+          ),
+          'onSecondaryContainer on secondaryContainer': (
+            s.onSecondaryContainer,
+            s.secondaryContainer,
+          ),
+        };
+        for (final entry in pairs.entries) {
+          expect(
+            contrastRatio(entry.value.$1, entry.value.$2),
+            greaterThanOrEqualTo(4.5),
+            reason: '${entry.key} ($brightness)',
+          );
+        }
+      });
+    }
+  });
+
+  // ── Phase 02 — navigation / content surface separation ───────────────────
+  //
+  // The generic surface-ladder group above walks `surface → surfaceContainer*`.
+  // This one checks the two **actual pairs the navigation paints**, read off the
+  // production widgets:
+  //
+  //   · desktop rail background  → `colorScheme.surfaceContainerHigh`
+  //     (`app_manager.dart:309`)
+  //   · mobile bottom bar        → `colorScheme.surfaceContainer`
+  //     (`aurora_bottom_nav_bar.dart`)
+  //   · page canvas              → `colorScheme.surface`
+  //
+  // Measured 2026-10-28 (fluxora seed):
+  //
+  // | pair                     | light            | dark             |
+  // | ------------------------ | ---------------- | ---------------- |
+  // | rail / page contrast     | 1.168            | 1.309            |
+  // | bar  / page contrast     | **1.055**        | 1.181            |
+  // | rail luminance           | 0.8000           | 0.0236           |
+  // | bar  luminance           | 0.8911           | 0.0164           |
+  // | page luminance           | 0.9431           | 0.0063           |
+  //
+  // The bar's 1.055 in light mode is **not** asserted against a ratio floor: a
+  // floating bar separates itself with its `menu` shadow and an
+  // `outlineVariant` border, not with fill alone, and forcing a higher fill
+  // contrast would mean editing the shared surface ladder. It is pinned by
+  // ordering instead, which is enough to catch the bar collapsing onto the page.
+  //
+  // None of this is visual acceptance: it proves the numbers, not that the rail
+  // reads as a separate plane in a real window.
+
+  group('navigation / content surface separation', () {
+    ColorScheme schemeFor(Brightness brightness) {
+      final container = ProviderContainer(
+        overrides: [
+          themeSettingProvider.overrideWith(
+            () => _MockThemeSetting(
+              ThemeProps(colorSource: ColorSource.fluxora),
+            ),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      return container.read(genColorSchemeProvider(brightness));
+    }
+
+    double contrastRatio(Color a, Color b) {
+      final la = a.computeLuminance();
+      final lb = b.computeLuminance();
+      return la > lb ? (la + 0.05) / (lb + 0.05) : (lb + 0.05) / (la + 0.05);
+    }
+
+    for (final brightness in [Brightness.light, Brightness.dark]) {
+      test('the rail stands off the page ($brightness)', () {
+        final s = schemeFor(brightness);
+        expect(
+          contrastRatio(s.surfaceContainerHigh, s.surface),
+          greaterThanOrEqualTo(1.10),
+          reason:
+              'surfaceContainerHigh vs surface must be a visible plane change '
+              '($brightness)',
+        );
+      });
+
+      test('navigation surfaces are distinct from the page ($brightness)', () {
+        final s = schemeFor(brightness);
+        expect(s.surfaceContainerHigh, isNot(equals(s.surface)));
+        expect(s.surfaceContainer, isNot(equals(s.surface)));
+      });
+
+      test('the rail steps further from the page than the bar ($brightness)', () {
+        // Elevation order, expressed in luminance: the rail is the "higher"
+        // plane in both themes, so its distance from the page must be larger.
+        final s = schemeFor(brightness);
+        final page = s.surface.computeLuminance();
+        final bar = s.surfaceContainer.computeLuminance();
+        final rail = s.surfaceContainerHigh.computeLuminance();
+
+        expect(
+          (rail - page).abs(),
+          greaterThan((bar - page).abs()),
+          reason: 'the rail must sit further from the page than the bar',
+        );
+      });
+
+      test('the ladder direction matches the brightness ($brightness)', () {
+        // Light: planes get darker as they rise. Dark: planes get lighter.
+        final s = schemeFor(brightness);
+        final page = s.surface.computeLuminance();
+        final bar = s.surfaceContainer.computeLuminance();
+        final rail = s.surfaceContainerHigh.computeLuminance();
+
+        if (brightness == Brightness.light) {
+          expect(page, greaterThan(bar));
+          expect(bar, greaterThan(rail));
+        } else {
+          expect(page, lessThan(bar));
+          expect(bar, lessThan(rail));
+        }
+      });
+    }
+  });
+
+
+  // ── Phase 02 — Aurora rail state legibility ──────────────────────────────
+  //
+  // The rail marks the current page with a low-saturation brand wash plus a
+  // 3 px accent bar, and leaves the label neutral. That split is deliberate:
+  // `primary` on the tinted pill only reaches ≈4.1:1 in the light theme, which
+  // would fail the text threshold. These assertions pin the split so a later
+  // "make it more branded" tweak has to argue with numbers, not taste.
+
+  group('Aurora rail state legibility', () {
+    ColorScheme schemeFor(Brightness brightness) {
+      final container = ProviderContainer(
+        overrides: [
+          themeSettingProvider.overrideWith(
+            () => _MockThemeSetting(
+              ThemeProps(colorSource: ColorSource.fluxora),
+            ),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      return container.read(genColorSchemeProvider(brightness));
+    }
+
+    double contrastRatio(Color a, Color b) {
+      final la = a.computeLuminance();
+      final lb = b.computeLuminance();
+      return la > lb ? (la + 0.05) / (lb + 0.05) : (lb + 0.05) / (la + 0.05);
+    }
+
+    /// The pill as it actually renders: the translucent tint over the rail.
+    Color pill(ColorScheme s) => Color.alphaBlend(
+      FluxoraColorSet.selectionTint(s.primary, s.brightness),
+      s.surfaceContainerHigh,
+    );
+
+    Color hoverWash(ColorScheme s) => Color.alphaBlend(
+      s.onSurface.withValues(
+        alpha: s.brightness == Brightness.dark ? 0.06 : 0.05,
+      ),
+      s.surfaceContainerHigh,
+    );
+
+    for (final brightness in [Brightness.light, Brightness.dark]) {
+      test('the selected label clears 4.5:1 on the pill ($brightness)', () {
+        final s = schemeFor(brightness);
+        expect(
+          contrastRatio(s.onSurface, pill(s)),
+          greaterThanOrEqualTo(4.5),
+          reason: 'the current page label is body-sized text',
+        );
+      });
+
+      test('the unselected label clears 4.5:1 on the rail ($brightness)', () {
+        final s = schemeFor(brightness);
+        expect(
+          contrastRatio(s.onSurfaceVariant, s.surfaceContainerHigh),
+          greaterThanOrEqualTo(4.5),
+        );
+      });
+
+      test('the selected icon clears the 3:1 graphic threshold ($brightness)', () {
+        final s = schemeFor(brightness);
+        expect(
+          contrastRatio(s.primary, pill(s)),
+          greaterThanOrEqualTo(3.0),
+          reason: 'the icon is a graphic, not text — 3:1 is its bar',
+        );
+      });
+
+      test('hover is visible but weaker than selection ($brightness)', () {
+        final s = schemeFor(brightness);
+        final hover = contrastRatio(hoverWash(s), s.surfaceContainerHigh);
+        final selected = contrastRatio(pill(s), s.surfaceContainerHigh);
+
+        expect(hover, greaterThan(1.0), reason: 'hover must be perceivable');
+        expect(
+          hover,
+          lessThan(selected),
+          reason: 'hover must not read as strong as the current page',
+        );
+      });
+    }
+  });
 }
 
 class _MockThemeSetting extends ThemeSetting {

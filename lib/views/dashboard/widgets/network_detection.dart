@@ -339,7 +339,9 @@ class _NetworkDetectionState extends ConsumerState<NetworkDetection> {
                                   ? Text(
                                       state.errorMessage ?? 'timeout',
                                       style: context.textTheme.bodyMedium
-                                          ?.copyWith(color: Colors.red)
+                                          ?.copyWith(
+                                            color: context.colorScheme.error,
+                                          )
                                           .adjustSize(1),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -559,7 +561,11 @@ class _IpRiskScoreCard extends StatelessWidget {
   Color? _scoreColor(BuildContext context, int purity) {
     final scheme = Theme.of(context).colorScheme;
     if (purity < 40) return scheme.error;
-    if (purity < 75) return Colors.orange;
+    if (purity < 75) {
+      // The other two rungs already come from the theme; the middle one was the
+      // last hardcoded branch, so the ladder read as three unrelated reds.
+      return FluxoraColorSet.of(Theme.of(context).brightness).warning;
+    }
     return scheme.primary;
   }
 

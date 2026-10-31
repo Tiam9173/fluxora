@@ -110,6 +110,18 @@ extension ColorExtension on Color {
       factor,
     )!;
   }
+
+  /// Black or white — whichever stays legible on this colour.
+  ///
+  /// Needed where the fill is **user-chosen** (dashboard colour swatches, the
+  /// custom-accent confirm button) and no semantic `on*` role can exist. 0.5 is
+  /// the luminance midpoint, i.e. exactly where black and white swap places as
+  /// the higher-contrast option.
+  ///
+  /// Two call sites used to inline this expression; naming it here keeps them
+  /// from drifting apart and makes the rule testable.
+  Color get readableForeground =>
+      computeLuminance() > 0.5 ? Colors.black : Colors.white;
 }
 
 extension ColorSchemeExtension on ColorScheme {

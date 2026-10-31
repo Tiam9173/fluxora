@@ -155,7 +155,12 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
                     // 是 sing-box 的东西，导入进来也加载不了。
                     'vmess://, vless://, ss://, ssr://, trojan://, hy2://, hysteria://, tuic://, '
                     'wireguard://, snell://, anytls://, ssh://, shadow-tls://, socks5://, http://, direct://',
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    style: TextStyle(
+                      fontSize: 12,
+                      // Secondary hint copy: the theme's muted foreground rather
+                      // than a fixed grey that ignores both brightnesses.
+                      color: ctx.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   const SizedBox(height: FluxoraSpacing.md),
                   TextField(
@@ -723,9 +728,12 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
                   if (!_exportMode)
                     IconButton(
                       visualDensity: VisualDensity.compact,
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.delete_outline_rounded,
-                        color: Colors.redAccent,
+                        // Destructive affordance — the theme's error role, not
+                        // Material's `redAccent`, so it matches every other
+                        // destructive surface and dark-mode contrast.
+                        color: colorScheme.error,
                         size: 20,
                       ),
                       tooltip: appLocalizations.deleteNode,
@@ -741,7 +749,7 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: colorScheme.outline,
+                  color: colorScheme.onSurfaceVariant,
                   fontSize: 12,
                   fontFamily: 'monospace',
                 ),
@@ -793,7 +801,7 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
           Text(
             appLocalizations.noNodesInGroupHint,
             style: context.textTheme.bodySmall?.copyWith(
-              color: colorScheme.outline,
+              color: colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 20),
@@ -1530,7 +1538,10 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
               if (_protocol == ManualProtocol.custom) ...[
                 Text(
                   appLocalizations.customConfigHintText,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: context.colorScheme.onSurfaceVariant,
+                  ),
                 ),
                 const SizedBox(height: FluxoraSpacing.sm),
                 TextField(
@@ -1915,7 +1926,7 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                     appLocalizations.amneziaObfsParams,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 13,
+                      fontSize: FluxoraFontSize.compact,
                     ),
                   ),
                   const SizedBox(height: FluxoraSpacing.sm),

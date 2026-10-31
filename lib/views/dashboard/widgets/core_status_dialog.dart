@@ -113,7 +113,7 @@ class _CoreStatusDialogState extends State<CoreStatusDialog> {
               Text(
                 '($percent)',
                 style: context.textTheme.labelSmall?.copyWith(
-                  color: context.colorScheme.outline,
+                  color: context.colorScheme.onSurfaceVariant,
                   fontSize: 11,
                 ),
               ),
@@ -161,7 +161,7 @@ class _CoreStatusDialogState extends State<CoreStatusDialog> {
                   Text(
                     '($percent)',
                     style: context.textTheme.labelSmall?.copyWith(
-                      color: context.colorScheme.outline,
+                      color: context.colorScheme.onSurfaceVariant,
                       fontSize: 11,
                     ),
                   ),

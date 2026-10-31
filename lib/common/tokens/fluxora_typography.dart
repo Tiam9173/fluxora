@@ -175,3 +175,38 @@ abstract final class FluxoraTypography {
     labelSmall: caption,
   );
 }
+
+/// Size-only companion to [FluxoraTypography].
+///
+/// The six levels are **composite** styles (size + weight + letter-spacing), so
+/// swapping a bare `TextStyle(fontSize: 13)` for one of them re-typesets the
+/// text: weight and tracking change too. That is why the Phase 01-C audit
+/// concluded the levels cannot be migrated mechanically, and why 39 % of the
+/// codebase's font sizes sit outside the scale.
+///
+/// This class names those sizes **without** carrying weight or tracking. A call
+/// site that says `fontSize: FluxoraFontSize.compact` renders exactly what
+/// `fontSize: 13` rendered — same double, same layout — but the number now has
+/// one definition, so a future scale change is a single edit.
+///
+/// Scope, measured on 2026-10-28:
+///
+/// | token | size | what it is used for |
+/// | --- | --- | --- |
+/// | [micro] | 10 | badges, tags, dense chain labels |
+/// | [compact] | 13 | compact body copy, setting rows, dense info values |
+/// | [section] | 15 | section titles inside cards and dialogs — sits between |
+/// |         |    | [FluxoraTypography.body] (14) and `.title` (18) |
+///
+/// Deliberately **not** included: 6, 7, 9, 9.5, 11.5, 16, 18, 20, 24, 32 — each
+/// appears once or twice and carries no shared meaning yet.
+abstract final class FluxoraFontSize {
+  /// 10 px — badges, tags, dense chain labels.
+  static const micro = 10.0;
+
+  /// 13 px — compact body copy, setting rows, dense info values.
+  static const compact = 13.0;
+
+  /// 15 px — section titles inside cards and dialogs.
+  static const section = 15.0;
+}

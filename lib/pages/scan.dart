@@ -218,7 +218,7 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
                   foregroundColor: WidgetStatePropertyAll(Colors.white),
                   backgroundColor: WidgetStatePropertyAll(Colors.grey),
                 ),
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(FluxoraSpacing.lg),
                 iconSize: 32.0,
                 onPressed: globalState.appController.addProfileFormQrCode,
                 icon: const Icon(Icons.photo_camera_back),
@@ -235,7 +235,7 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
       color: Colors.black,
       child: Center(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(FluxoraSpacing.xl),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -287,7 +287,7 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
       color: Colors.black,
       child: Center(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(FluxoraSpacing.xl),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [

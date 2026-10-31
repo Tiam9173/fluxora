@@ -244,7 +244,7 @@ class SelectIcon extends StatelessWidget {
       color: Theme.of(context).colorScheme.inversePrimary,
       shape: const CircleBorder(),
       child: Container(
-        padding: const EdgeInsets.all(4),
+        padding: const EdgeInsets.all(FluxoraSpacing.xs),
         child: const Icon(Icons.check, size: 16),
       ),
     );

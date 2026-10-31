@@ -1,11 +1,16 @@
 import 'dart:ui';
 
 import 'package:fluxora/common/color.dart';
+import 'package:fluxora/common/tokens/fluxora_colors.dart';
+import 'package:fluxora/common/tokens/fluxora_motion.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
-const Duration _bottomSheetEnterDuration = Duration(milliseconds: 300);
-const Duration _bottomSheetExitDuration = Duration(milliseconds: 200);
+// Aurora motion tokens (§10.1) rather than local milliseconds: the sheet used to
+// hardcode 300/200, which matched no token and made the enter duration the only
+// overlay value outside the scale.
+const Duration _bottomSheetEnterDuration = FluxoraMotion.slow;
+const Duration _bottomSheetExitDuration = FluxoraMotion.base;
 const Curve _modalBottomSheetCurve = Easing.standardDecelerate;
 const double _defaultScrollControlDisabledMaxHeightRatio = 9.0 / 16.0;
 
@@ -382,9 +387,12 @@ class _ModalSideSheetState<T> extends State<_ModalSideSheet<T>> {
         showDragHandle: widget.showDragHandle,
       ),
       builder: (BuildContext context, Widget? child) {
-        final double animationValue = animationCurve.transform(
-          widget.route.animation!.value,
-        );
+        // Pinned to 1.0 under reduced motion: even if the controller were
+        // mid-flight when the preference flipped, the panel is already in its
+        // final place rather than parked at a partial offset.
+        final double animationValue = widget.route.reduceMotion
+            ? 1.0
+            : animationCurve.transform(widget.route.animation!.value);
         return Semantics(
           scopesRoute: true,
           namesRoute: true,
@@ -430,6 +438,7 @@ class ModalSideSheetRoute<T> extends PopupRoute<T> {
     this.transitionAnimationController,
     this.anchorPoint,
     this.useSafeArea = false,
+    this.reduceMotion = false,
     super.filter,
   });
 
@@ -461,6 +470,14 @@ class ModalSideSheetRoute<T> extends PopupRoute<T> {
 
   final bool useSafeArea;
 
+  /// OS-level "reduce motion" at the moment the sheet was opened.
+  ///
+  /// The sheet is a route transition — a 300 ms slide plus a 200 ms slide back.
+  /// Under reduced motion both collapse to zero and [buildPage] pins the layout
+  /// to its final position, so the panel appears in place instead of travelling
+  /// across the window.
+  final bool reduceMotion;
+
   final String? barrierOnTapHint;
 
   final ValueNotifier<EdgeInsets> _clipDetailsNotifier =
@@ -481,10 +498,12 @@ class ModalSideSheetRoute<T> extends PopupRoute<T> {
   }
 
   @override
-  Duration get transitionDuration => _bottomSheetEnterDuration;
+  Duration get transitionDuration =>
+      reduceMotion ? Duration.zero : _bottomSheetEnterDuration;
 
   @override
-  Duration get reverseTransitionDuration => _bottomSheetExitDuration;
+  Duration get reverseTransitionDuration =>
+      reduceMotion ? Duration.zero : _bottomSheetExitDuration;
 
   @override
   bool get barrierDismissible => isDismissible;
@@ -493,7 +512,7 @@ class ModalSideSheetRoute<T> extends PopupRoute<T> {
   final String? barrierLabel;
 
   @override
-  Color get barrierColor => modalBarrierColor ?? Colors.black26;
+  Color get barrierColor => modalBarrierColor ?? FluxoraColors.scrim;
 
   AnimationController? _animationController;
 
@@ -505,6 +524,13 @@ class ModalSideSheetRoute<T> extends PopupRoute<T> {
       willDisposeAnimationController = false;
     } else {
       _animationController = SideSheet.createAnimationController(navigator!);
+      if (reduceMotion) {
+        // The static factory has no `BuildContext`, so the preference is applied
+        // here — the caller that does have one (`showModalSideSheet`) passes it
+        // down.
+        _animationController!.duration = Duration.zero;
+        _animationController!.reverseDuration = Duration.zero;
+      }
     }
     return _animationController!;
   }
@@ -625,6 +651,7 @@ Future<T?> showModalSideSheet<T>({
       transitionAnimationController: transitionAnimationController,
       anchorPoint: anchorPoint,
       useSafeArea: useSafeArea,
+      reduceMotion: MediaQuery.maybeOf(context)?.disableAnimations ?? false,
     ),
   );
 }

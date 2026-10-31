@@ -301,6 +301,26 @@ class CommonScaffoldState extends State<CommonScaffold> {
                   return _buildAppBarWrap(
                     AppBar(
                       centerTitle: widget.centerTitle ?? false,
+                      // Aurora paints the toolbar with a palette role, so the
+                      // surface-tint overlay has to be off.
+                      //
+                      // Material 3 defaults `AppBar.surfaceTintColor` to
+                      // `colorScheme.surfaceTint`, and `Material` then paints
+                      // `ElevationOverlay.applySurfaceTint(color, tint,
+                      // elevation)` (`material.dart:512`). When content scrolls
+                      // under the bar, `scrolledUnderElevation` becomes 3, so the
+                      // painted colour was **not** `surfaceContainer` (#18223A)
+                      // but `applySurfaceTint(#18223A, #81D5CB, 3)` = #203045 —
+                      // a seed-derived teal that no Aurora token defines. The
+                      // static palette never changed; only the painted pixels
+                      // did, which is why earlier audits that compared
+                      // `Material.color` against a screenshot could not agree.
+                      //
+                      // `Colors.transparent` makes `applySurfaceTint` a no-op,
+                      // so the bar paints exactly the role it asks for. Scoped to
+                      // the toolbar on purpose: the global `surfaceTint` question
+                      // (native `Card`, dialogs) is still an open decision.
+                      surfaceTintColor: Colors.transparent,
                       leading: _buildLeading(),
                       title: _buildTitle(state.searchState),
                       actions: _buildActions(

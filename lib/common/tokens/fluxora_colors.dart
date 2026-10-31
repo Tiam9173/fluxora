@@ -57,6 +57,19 @@ abstract final class FluxoraColors {
   static const info = Color(0xFF4C8DFF);
 
   // ─────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
+  // Overlay scrim
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /// The dimming layer behind modal surfaces.
+  ///
+  /// One value for both themes, and it is deliberately the same `Colors.black54`
+  /// the framework uses for dialogs and bottom sheets — so a dialog, a bottom
+  /// sheet and a side sheet dim the page by the same amount. The side sheet used
+  /// to pass `Colors.black26`, which left the page reading as the same layer as
+  /// the panel.
+  static const scrim = Color(0x8A000000);
+
   // Semantic sets (per brightness)
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -234,4 +247,18 @@ class FluxoraColorSet {
   /// Convenience lookup for the set matching a [Brightness].
   static FluxoraColorSet of(Brightness brightness) =>
       brightness == Brightness.dark ? FluxoraColors.dark : FluxoraColors.light;
+
+  /// The "selected destination" wash: [primary] at 20 % (light) / 26 % (dark).
+  ///
+  /// All three navigations express the same decision — the desktop rail's
+  /// `indicatorColor`, the mobile bottom bar's `tabBackgroundColor`, and the TV
+  /// bar's selected tile — and each spelled the pair out inline. Naming it here
+  /// keeps them from drifting apart and gives the value one place to change.
+  ///
+  /// Takes the primary as an argument rather than reading it off the set,
+  /// because `genColorScheme` derives `colorScheme.primary` from the seed while
+  /// [FluxoraColorSet.primary] is the declared palette value; the call sites
+  /// tint the *scheme's* primary and must keep doing so.
+  static Color selectionTint(Color primary, Brightness brightness) =>
+      primary.withValues(alpha: brightness == Brightness.light ? 0.20 : 0.26);
 }

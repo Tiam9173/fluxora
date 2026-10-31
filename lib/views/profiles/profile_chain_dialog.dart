@@ -135,9 +135,18 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
     final value = _delays[name];
     if (value == null) return const SizedBox.shrink();
     final failed = value < 0;
+    // Same 200/500 ladder as `notification_switch_card` — only the colour source
+    // changes. Material's green/orange/red sat at a different hue from the brand
+    // status roles, so the two delay read-outs disagreed on what "good" looks
+    // like. The thresholds themselves are untouched.
+    final statusColors = FluxoraColorSet.of(Theme.of(context).brightness);
     final color = failed
-        ? Colors.redAccent
-        : (value < 200 ? Colors.green : (value < 500 ? Colors.orange : Colors.red));
+        ? context.colorScheme.error
+        : (value < 200
+              ? statusColors.success
+              : (value < 500
+                    ? statusColors.warning
+                    : context.colorScheme.error));
     return Text(
       failed ? appLocalizations.chainTimeout : '${value}ms',
       style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w500),
@@ -319,7 +328,7 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                                 appLocalizations.chainTopologyPreview,
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 13,
+                                  fontSize: FluxoraFontSize.compact,
                                   color: colorScheme.primary,
                                 ),
                               ),
@@ -399,7 +408,7 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                             appLocalizations.preProxySectionTitle,
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              fontSize: 15,
+                              fontSize: FluxoraFontSize.section,
                               color: colorScheme.onSurface,
                             ),
                           ),
@@ -464,7 +473,7 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                             appLocalizations.landingProxySectionTitle,
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              fontSize: 15,
+                              fontSize: FluxoraFontSize.section,
                               color: colorScheme.onSurface,
                             ),
                           ),
@@ -564,7 +573,7 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
           child: Text(
             title,
             style: TextStyle(
-              fontSize: 10,
+              fontSize: FluxoraFontSize.micro,
               fontWeight: FontWeight.bold,
               color: color,
             ),

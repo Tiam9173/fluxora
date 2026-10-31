@@ -606,7 +606,7 @@ class GlobalState {
                 child: ScaleTransition(
                   scale: const AlwaysStoppedAnimation(1.0),
                   child: Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(FluxoraSpacing.lg),
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(28),

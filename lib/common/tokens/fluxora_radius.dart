@@ -72,13 +72,30 @@ abstract final class FluxoraRadius {
 
   /// Compact input fields — the editor's find / replace bar only.
   ///
-  /// Not the standard field radius. Those fields are 36 px tall
+  /// Not the standard field radius (see [field]). Those fields are 36 px tall
   /// (`SizedBox(height: 36)`) with `isDense: true` and 10/8 content padding, so
-  /// they take a proportionally smaller corner than a form field. The standard
-  /// radius lives in the global `inputDecorationTheme` (18 px,
-  /// `application.dart`) and is deliberately not aliased here: 18 px on a 36 px
-  /// box would clamp to a pill.
+  /// they take a proportionally smaller corner than a form field: 18 px on a
+  /// 36 px box would clamp to a pill.
   static const inputCompact = sm;
+
+  /// Standard form fields — the global `inputDecorationTheme` only.
+  ///
+  /// 18 sits off the 4-based scale on purpose, exactly like [sheet]: it is the
+  /// design value both themes set on every `OutlineInputBorder` state (base,
+  /// enabled, focused, error, focused-error), and rounding it to [lg] (16) or
+  /// [xl] (24) would visibly change every text field in the app. The legacy
+  /// `16/18 → [lg]` mapping in the header applies to ad-hoc call sites, never
+  /// to the field surface itself.
+  ///
+  /// Distinct from [inputCompact] (8), which is the editor's 36 px bar.
+  static const field = 18.0;
+
+  /// Floating action buttons — `floatingActionButtonTheme.shape`.
+  ///
+  /// 20 sits off the scale for the same reason as [sheet]: both themes set it
+  /// explicitly, and rounding it to [xl] (24) would grow the FAB corner by 4 px
+  /// on every screen that shows one.
+  static const fab = 20.0;
 
   /// Rounded-square icons and thumbnails.
   static const icon = sm;
@@ -103,6 +120,8 @@ abstract final class FluxoraRadius {
   static const buttonAll = fullAll;
   static const dialogAll = xlAll;
   static const sheetAll = BorderRadius.all(Radius.circular(sheet));
+  static const fieldAll = BorderRadius.all(Radius.circular(field));
+  static const fabAll = BorderRadius.all(Radius.circular(fab));
 
   /// Top-only rounding, used by sheets and anchored panels.
   static const sheetTop = BorderRadius.vertical(

@@ -525,7 +525,7 @@ class _AggregateViewState extends State<AggregateView> {
           color: context.colorScheme.outlineVariant.withValues(alpha: 0.5),
         ),
       ),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(FluxoraSpacing.md),
       child: child,
     );
   }
@@ -706,7 +706,7 @@ class _AggregateViewState extends State<AggregateView> {
               width: selected ? 1.2 : 0.5,
             ),
           ),
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(FluxoraSpacing.md),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

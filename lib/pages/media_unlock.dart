@@ -567,7 +567,7 @@ class _MediaUnlockPageState extends ConsumerState<MediaUnlockPage> {
                           child: Text(
                             showColo,
                             style: context.textTheme.labelSmall?.copyWith(
-                              fontSize: 10,
+                              fontSize: FluxoraFontSize.micro,
                               fontWeight: FontWeight.w600,
                               color: context.colorScheme.primary,
                             ),
@@ -586,7 +586,7 @@ class _MediaUnlockPageState extends ConsumerState<MediaUnlockPage> {
                           child: Text(
                             'WARP',
                             style: context.textTheme.labelSmall?.copyWith(
-                              fontSize: 10,
+                              fontSize: FluxoraFontSize.micro,
                               fontWeight: FontWeight.bold,
                               color: Colors.orange,
                             ),

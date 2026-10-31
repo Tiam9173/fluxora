@@ -186,7 +186,7 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 13,
+                        fontSize: FluxoraFontSize.compact,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -304,7 +304,7 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
           Flexible(
             child: currentGroup == null
                 ? Padding(
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(FluxoraSpacing.xl),
                     child: Text(
                       appLocalizations.noProxy,
                       textAlign: TextAlign.center,

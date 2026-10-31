@@ -800,13 +800,7 @@ class FindPanel extends StatelessWidget implements PreferredSizeWidget {
             color: colorScheme.outlineVariant.withAlpha(120),
             width: 1,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(20),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
-          ],
+          boxShadow: FluxoraElevation.of(colorScheme.brightness).raised,
         ),
         child: _buildFindInputView(context),
       ),

@@ -268,9 +268,17 @@ class BackupAndRecovery extends ConsumerWidget {
                                 : Container(
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
+                                      // Status dot: brand semantic roles, not
+                                      // Material's raw green/red — those sit at
+                                      // a different hue from every other status
+                                      // surface in the app.
                                       color: snapshot.data == true
-                                          ? Colors.green
-                                          : Colors.red,
+                                          ? FluxoraColorSet.of(
+                                              Theme.of(context).brightness,
+                                            ).success
+                                          : FluxoraColorSet.of(
+                                              Theme.of(context).brightness,
+                                            ).error,
                                     ),
                                     width: 12,
                                     height: 12,

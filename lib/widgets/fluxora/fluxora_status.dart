@@ -51,15 +51,34 @@ class FluxoraStatus extends StatelessWidget {
   final String? semanticLabel;
 
   /// The semantic colour for [status] at the current brightness.
+  ///
+  /// The two neutral kinds (`disconnected`, `unknown`) use
+  /// `colorScheme.onSurfaceVariant`, **not** `FluxoraColorSet.outline`. That
+  /// token is filed under "Lines" in `fluxora_colors.dart` — it is a *border*
+  /// colour, and using it for text made the label effectively invisible:
+  ///
+  /// | surface | `outline` | `onSurfaceVariant` |
+  /// | --- | --- | --- |
+  /// | `surfaceContainerLow` | 1.68 / 1.48 | 10.23 / 9.31 |
+  /// | `surfaceContainer` | 1.53 / 1.33 | 9.30 / 8.35 |
+  /// | `secondaryContainer` (selected card) | 1.10 / 1.15 | 5.53 / 7.19 |
+  ///
+  /// (dark / light, WCAG contrast). 1.1–1.7:1 fails even the 3:1 *graphic*
+  /// threshold, let alone the 4.5:1 text one — and this widget paints both the
+  /// dot and the label with it. Real impact: every unselected node row in the
+  /// proxy list shows its protocol name this way (`proxies/card.dart:329-333`),
+  /// and so does the dashboard hero's "not connected" label
+  /// (`dashboard/widgets/start_button.dart:433`).
   static Color colorOf(BuildContext context, FluxoraStatusKind status) {
-    final fluxora = FluxoraColorSet.of(Theme.of(context).brightness);
+    final scheme = Theme.of(context).colorScheme;
+    final fluxora = FluxoraColorSet.of(scheme.brightness);
     return switch (status) {
       FluxoraStatusKind.connected => fluxora.success,
       FluxoraStatusKind.connecting => fluxora.info,
-      FluxoraStatusKind.disconnected => fluxora.outline,
+      FluxoraStatusKind.disconnected => scheme.onSurfaceVariant,
       FluxoraStatusKind.error => fluxora.error,
       FluxoraStatusKind.warning => fluxora.warning,
-      FluxoraStatusKind.unknown => fluxora.outline,
+      FluxoraStatusKind.unknown => scheme.onSurfaceVariant,
     };
   }
 
@@ -81,16 +100,23 @@ class FluxoraStatus extends StatelessWidget {
         indicator,
         if (showText) ...[
           const SizedBox(width: FluxoraSpacing.sm),
-          // No `Flexible` here on purpose: this row has no flexible siblings,
-          // so a non-flex child receives the incoming max width — the ellipsis
-          // still works in a bounded parent, and an unbounded parent cannot
-          // trigger RenderFlex's "non-zero flex but unbounded constraints"
-          // assertion.
-          EmojiText(
-            text,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: FluxoraTypography.label.copyWith(color: color),
+          // `Flexible` so a long label ellipsises instead of overflowing the
+          // row. Without it a bounded parent only *passed* the constraint down:
+          // the label kept its intrinsic width and the Row overflowed to the
+          // right — measured in the proxy list at 320 px / 2.0× text with the
+          // protocol `VLESS-Reality-Vision` (340 px over).
+          //
+          // Requires a **bounded** width from the parent, which both call sites
+          // provide (`Expanded > Column` in the dashboard hero, `Flexible` in
+          // `FluxoraProxyTile`). An unbounded parent would trip RenderFlex's
+          // "non-zero flex but unbounded constraints" assertion.
+          Flexible(
+            child: EmojiText(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: FluxoraTypography.label.copyWith(color: color),
+            ),
           ),
         ],
       ],

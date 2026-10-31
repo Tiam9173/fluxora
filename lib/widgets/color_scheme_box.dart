@@ -1,3 +1,4 @@
+import 'package:fluxora/common/common.dart';
 import 'package:fluxora/providers/providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -36,7 +37,7 @@ class ColorSchemeBox extends StatelessWidget {
                     child: const SelectIcon(),
                   ),
                   child: Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(FluxoraSpacing.sm),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(36),
                       child: SizedBox(

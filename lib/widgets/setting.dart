@@ -22,7 +22,7 @@ class SettingInfoCard extends StatelessWidget {
       isSelected: isSelected,
       onPressed: onPressed,
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(FluxoraSpacing.md),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.start,
@@ -57,7 +57,7 @@ class SettingTextCard extends StatelessWidget {
       onPressed: onPressed,
       isSelected: isSelected,
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(FluxoraSpacing.md),
         child: EmojiText(text, style: context.textTheme.bodyMedium),
       ),
     );

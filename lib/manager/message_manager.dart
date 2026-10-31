@@ -215,7 +215,7 @@ class _CountdownWidgetState extends State<_CountdownWidget>
                 Text(
                   '$currentSecond',
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: FluxoraFontSize.micro,
                     fontWeight: FontWeight.bold,
                     color: primaryColor,
                   ),

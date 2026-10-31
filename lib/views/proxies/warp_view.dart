@@ -446,7 +446,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
                                   trailing: Text(
                                     '${r.latencyMs} ms',
                                     style: TextStyle(
-                                      fontSize: 13,
+                                      fontSize: FluxoraFontSize.compact,
                                       fontWeight: FontWeight.w600,
                                       color: r.latencyMs! < 100
                                           ? Colors.green
@@ -942,7 +942,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
               '• 通过 WARP 路由代理：流量先通过 WARP 隧道穿透，再连向机场代理节点。当机场节点服务器 IP 在国内被封锁阻断时，WARP 作为前置穿透通道拯救被封节点！\n'
               '• 优选 IP 支持：国内网络若直连官方 IP 缓慢，可在「优选 IP」输入低延迟 Cloudflare IP，实现流畅加速。\n'
               '• 真实诊断核验：顶部卡片直连 Cloudflare cdn-cgi/trace 深度检测，实时显示 warp=on/plus 状态、出口 IP 与 Google 防送中评定。',
-              style: TextStyle(fontSize: 13, height: 1.5),
+              style: TextStyle(fontSize: FluxoraFontSize.compact, height: 1.5),
             ),
           ],
         ),
@@ -1201,7 +1201,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
             value,
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              fontSize: 13,
+              fontSize: FluxoraFontSize.compact,
               color: valueColor,
             ),
             maxLines: 1,
@@ -1209,7 +1209,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
           ),
           Text(
             subtitle,
-            style: const TextStyle(fontSize: 10, color: Colors.grey),
+            style: const TextStyle(fontSize: FluxoraFontSize.micro, color: Colors.grey),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -1381,7 +1381,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
             Expanded(
               child: Text(
                 appLocalizations.warpStr57,
-                style: TextStyle(fontSize: 13, height: 1.4),
+                style: TextStyle(fontSize: FluxoraFontSize.compact, height: 1.4),
               ),
             ),
           ],
@@ -1410,7 +1410,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
                   appLocalizations.warpModeTitle,
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 15,
+                    fontSize: FluxoraFontSize.section,
                   ),
                 ),
               ],
@@ -1610,7 +1610,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
                       appLocalizations.warpStr11,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 15,
+                        fontSize: FluxoraFontSize.section,
                       ),
                     ),
                   ],

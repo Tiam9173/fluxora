@@ -93,6 +93,13 @@ class FluxoraLatencyBadge extends StatelessWidget {
 
   /// The semantic colour for [tier] at [brightness] — the single source of
   /// truth for latency colour, shared with `utils.getDelayColor`.
+  ///
+  /// `untested` returns `FluxoraColorSet.outline` here only as a last resort for
+  /// callers that have no `BuildContext`; that token is a *line* role (see the
+  /// "Lines" group in `fluxora_colors.dart`) and is 1.1–1.7:1 against every card
+  /// surface, so it must never reach text. [colorOf] therefore resolves the
+  /// neutral case from `ColorScheme` instead, and `getDelayColor` returns `null`
+  /// for it. Both real paths avoid this value.
   static Color colorFor(Brightness brightness, FluxoraLatencyTier tier) {
     final fluxora = FluxoraColorSet.of(brightness);
     return switch (tier) {
@@ -106,8 +113,16 @@ class FluxoraLatencyBadge extends StatelessWidget {
   }
 
   /// The semantic colour for [tier] at the current brightness.
-  static Color colorOf(BuildContext context, FluxoraLatencyTier tier) =>
-      colorFor(Theme.of(context).brightness, tier);
+  static Color colorOf(BuildContext context, FluxoraLatencyTier tier) {
+    if (tier == FluxoraLatencyTier.untested) {
+      // Same defect class as `FluxoraStatus`: the "—" placeholder was painted
+      // with `outline` (a border role) at ≈1.5:1, i.e. invisible. Every node is
+      // `untested` until its first delay test, so this is the *default* state of
+      // the proxy list, not an edge case.
+      return Theme.of(context).colorScheme.onSurfaceVariant;
+    }
+    return colorFor(Theme.of(context).brightness, tier);
+  }
 
   String get _text {
     final value = delay;

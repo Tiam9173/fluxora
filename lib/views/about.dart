@@ -172,7 +172,7 @@ class AboutView extends StatelessWidget {
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       Padding(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(FluxoraSpacing.md),
                         child: Image.asset(
                           'assets/images/icon.png',
                           width: 48,

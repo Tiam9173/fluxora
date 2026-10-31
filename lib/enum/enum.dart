@@ -3,6 +3,9 @@
 import 'dart:io';
 
 import 'package:fluxora/common/system.dart';
+// Token layer directly (not the `common/common.dart` barrel) so this file does
+// not depend on the barrel that transitively imports it.
+import 'package:fluxora/common/tokens/tokens.dart';
 import 'package:fluxora/common/app_localizations.dart';
 import 'package:fluxora/views/dashboard/widgets/widgets.dart';
 import 'package:fluxora/widgets/widgets.dart';
@@ -106,13 +109,25 @@ enum LogLevel {
 }
 
 extension LogLevelExt on LogLevel {
-  Color? get color {
+  /// The colour this level paints its payload with.
+  ///
+  /// Comes from [FluxoraColorSet] — the Aurora semantic roles — instead of the
+  /// hardcoded `Colors.grey.shade700 / Colors.redAccent / ARGB(230, 255, 166, 0)`
+  /// this used to return. Those three were fixed values: `Colors.redAccent` is
+  /// tuned for a dark surface and turns muddy on the light theme, and the amber
+  /// never matched the palette's `warning`.
+  ///
+  /// `null` means "inherit": `info` is the normal case and should read like body
+  /// text rather than carry a colour of its own.
+  Color? colorOf(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final fluxora = FluxoraColorSet.of(scheme.brightness);
     return switch (this) {
-      LogLevel.silent => Colors.grey.shade700,
-      LogLevel.debug => Colors.grey.shade400,
+      LogLevel.silent => scheme.outline,
+      LogLevel.debug => scheme.onSurfaceVariant,
       LogLevel.info => null,
-      LogLevel.warning => const Color.fromARGB(230, 255, 166, 0),
-      LogLevel.error => Colors.redAccent,
+      LogLevel.warning => fluxora.warning,
+      LogLevel.error => fluxora.error,
     };
   }
 }

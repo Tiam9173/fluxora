@@ -217,7 +217,7 @@ class KeyboardKeyBox extends StatelessWidget {
     return CommonCard(
       type: CommonCardType.filled,
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(FluxoraSpacing.md),
         child: Text(keyboardKey.label, style: const TextStyle(fontSize: 16)),
       ),
       onPressed: () {},

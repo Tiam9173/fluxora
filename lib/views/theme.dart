@@ -348,7 +348,7 @@ class _PrimaryColorItemState extends ConsumerState<_PrimaryColorItem> {
           if (_removablePrimaryColor == null && !isEquals)
             IconButton.filledTonal(
               iconSize: 20,
-              padding: EdgeInsets.all(4),
+              padding: EdgeInsets.all(FluxoraSpacing.xs),
               visualDensity: VisualDensity.compact,
               onPressed: _handleReset,
               icon: Icon(Icons.replay),
@@ -400,10 +400,10 @@ class _PrimaryColorItemState extends ConsumerState<_PrimaryColorItem> {
                               _removablePrimaryColor == color)
                             Container(
                               color: Colors.white.opacity0,
-                              padding: EdgeInsets.all(8),
+                              padding: EdgeInsets.all(FluxoraSpacing.sm),
                               child: IconButton.filledTonal(
                                 onPressed: _handleDel,
-                                padding: EdgeInsets.all(12),
+                                padding: EdgeInsets.all(FluxoraSpacing.md),
                                 iconSize: 30,
                                 icon: Icon(
                                   color: context.colorScheme.primary,
@@ -418,7 +418,7 @@ class _PrimaryColorItemState extends ConsumerState<_PrimaryColorItem> {
                     Container(
                       width: itemWidth,
                       height: itemWidth,
-                      padding: EdgeInsets.all(4),
+                      padding: EdgeInsets.all(FluxoraSpacing.xs),
                       child: IconButton.filledTonal(
                         onPressed: _handleAdd,
                         iconSize: 32,
@@ -736,9 +736,7 @@ class _PaletteDialogState extends State<_PaletteDialog> {
               return FilledButton(
                 style: FilledButton.styleFrom(
                   backgroundColor: color,
-                  foregroundColor: color.computeLuminance() > 0.5
-                      ? Colors.black
-                      : Colors.white,
+                  foregroundColor: color.readableForeground,
                 ),
                 onPressed: () async {
                   final customColorStr = await globalState

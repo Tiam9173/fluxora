@@ -115,7 +115,7 @@ Future<void> showNodeDetailsDialog(
                       child: Text(
                         appLocalizations.nodeDetailModified,
                         style: TextStyle(
-                          fontSize: 10,
+                          fontSize: FluxoraFontSize.micro,
                           color: colors.onTertiaryContainer,
                           fontWeight: FontWeight.w600,
                         ),
@@ -172,7 +172,7 @@ Future<void> showNodeDetailsDialog(
             child: raw == null
                 ? Text(
                     appLocalizations.nodeDetailMissing,
-                    style: TextStyle(fontSize: 13, color: colors.outline),
+                    style: TextStyle(fontSize: FluxoraFontSize.compact, color: colors.outline),
                   )
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

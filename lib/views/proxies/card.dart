@@ -425,9 +425,9 @@ class _ProxyComputedMarkIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       alignment: Alignment.topRight,
-      margin: const EdgeInsets.all(8),
+      margin: const EdgeInsets.all(FluxoraSpacing.sm),
       child: Container(
-        padding: const EdgeInsets.all(4),
+        padding: const EdgeInsets.all(FluxoraSpacing.xs),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: Theme.of(context).colorScheme.secondaryContainer,

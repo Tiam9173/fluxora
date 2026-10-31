@@ -68,7 +68,7 @@ class _DelayAnimationPreviewBody extends ConsumerWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: FluxoraFontSize.compact,
                         fontWeight: FontWeight.w600,
                         color: colorScheme.onSurface,
                       ),

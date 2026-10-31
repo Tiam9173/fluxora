@@ -1268,7 +1268,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                           appLocalizations.chainTopology,
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 15,
+                            fontSize: FluxoraFontSize.section,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -1853,7 +1853,7 @@ class _LandingProxyCard extends ConsumerWidget {
                     proxy.name,
                     style: const TextStyle(
                       fontWeight: FontWeight.w600,
-                      fontSize: 15,
+                      fontSize: FluxoraFontSize.section,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -1881,7 +1881,7 @@ class _LandingProxyCard extends ConsumerWidget {
                 Icon(
                   Icons.dns_outlined,
                   size: 14,
-                  color: context.colorScheme.outline,
+                  color: context.colorScheme.onSurfaceVariant,
                 ),
                 const SizedBox(width: FluxoraSpacing.xs),
                 Flexible(
@@ -1891,7 +1891,7 @@ class _LandingProxyCard extends ConsumerWidget {
                         : '${proxy.server}:${proxy.port}',
                     style: TextStyle(
                       fontSize: 12,
-                      color: context.colorScheme.outline,
+                      color: context.colorScheme.onSurfaceVariant,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -2035,7 +2035,7 @@ class _LandingProxyCard extends ConsumerWidget {
               const SizedBox(width: 3),
               Text(
                 appLocalizations.healthCheck,
-                style: TextStyle(fontSize: 10, color: neutral),
+                style: TextStyle(fontSize: FluxoraFontSize.micro, color: neutral),
               ),
             ],
           ),
@@ -2061,7 +2061,7 @@ class _LandingProxyCard extends ConsumerWidget {
             const SizedBox(width: FluxoraSpacing.xs),
             Text(
               appLocalizations.testingHealth,
-              style: TextStyle(fontSize: 10, color: statusColors.info),
+              style: TextStyle(fontSize: FluxoraFontSize.micro, color: statusColors.info),
             ),
           ],
         ),
@@ -2101,7 +2101,7 @@ class _LandingProxyCard extends ConsumerWidget {
             Text(
               text,
               style: TextStyle(
-                fontSize: 10,
+                fontSize: FluxoraFontSize.micro,
                 fontWeight: FontWeight.bold,
                 color: color,
               ),
@@ -2239,7 +2239,7 @@ class _QuickImportDialogState extends State<_QuickImportDialog> {
                     appLocalizations.quickImportDesc,
                     style: TextStyle(
                       fontSize: 12,
-                      color: context.colorScheme.outline,
+                      color: context.colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ),
@@ -2923,9 +2923,9 @@ class _ProxyHealthReportDialog extends ConsumerWidget {
               Text(
                 appLocalizations.chainMainTargets,
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: FluxoraFontSize.compact,
                   fontWeight: FontWeight.bold,
-                  color: context.colorScheme.outline,
+                  color: context.colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: 6),
@@ -2935,7 +2935,7 @@ class _ProxyHealthReportDialog extends ConsumerWidget {
                   alignment: Alignment.center,
                   child: Text(
                     '点击下方「${appLocalizations.retest}」开始体检',
-                    style: TextStyle(color: context.colorScheme.outline),
+                    style: TextStyle(color: context.colorScheme.onSurfaceVariant),
                   ),
                 )
               else
@@ -3080,7 +3080,7 @@ class _ProxyHealthReportDialog extends ConsumerWidget {
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: FluxoraFontSize.section,
                     fontWeight: FontWeight.bold,
                     color: color,
                   ),
@@ -3088,7 +3088,7 @@ class _ProxyHealthReportDialog extends ConsumerWidget {
                 if (report.minDelay != null && report.minDelay! > 0)
                   Text(
                     '响应延迟: 最优 ${report.minDelay}ms | 平均 ${report.avgDelay ?? report.minDelay}ms',
-                    style: TextStyle(fontSize: 11, color: context.colorScheme.outline),
+                    style: TextStyle(fontSize: 11, color: context.colorScheme.onSurfaceVariant),
                   ),
               ],
             ),
@@ -3124,11 +3124,11 @@ class _ProxyHealthReportDialog extends ConsumerWidget {
               children: [
                 Text(
                   target.service.label,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                  style: const TextStyle(fontSize: FluxoraFontSize.compact, fontWeight: FontWeight.w600),
                 ),
                 Text(
                   target.service.desc,
-                  style: TextStyle(fontSize: 10, color: context.colorScheme.outline),
+                  style: TextStyle(fontSize: FluxoraFontSize.micro, color: context.colorScheme.onSurfaceVariant),
                 ),
               ],
             ),

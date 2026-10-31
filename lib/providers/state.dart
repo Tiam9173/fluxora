@@ -1,5 +1,6 @@
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:fluxora/common/common.dart';
+import 'package:fluxora/common/theme.dart';
 import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/models/models.dart';
 import 'package:fluxora/state.dart';
@@ -825,37 +826,10 @@ ColorScheme genColorScheme(
     ColorSource.custom => configured,
   };
 
-  final fluxora = FluxoraColorSet.of(brightness);
-
-  return ColorScheme.fromSeed(
-    seedColor: color ?? seed,
+  return fluxoraSchemeFromSeed(
     brightness: brightness,
-    dynamicSchemeVariant: variant,
-  ).copyWith(
-    // Page canvas. The app shell paints `Material(color: colorScheme.surface)`
-    // (`lib/pages/home.dart`), and `scaffoldBackgroundColor` also defaults to
-    // `surface` — so D4.2's "Background" (#F6F9FB / #0C1222) belongs here.
-    surface: fluxora.background,
-    // Card / panel surfaces. `CommonCard` reads `surfaceContainerLow` (plain)
-    // and `surfaceContainer` (filled), so D4.2's "Surface" (#FFFFFF / #121A2B)
-    // lands on the container ladder.
-    surfaceContainerLowest: fluxora.surface,
-    surfaceContainerLow: fluxora.surface,
-    surfaceContainer: fluxora.surfaceContainer,
-    surfaceContainerHigh: fluxora.surfaceContainerHigh,
-    surfaceContainerHighest: fluxora.surfaceContainerHighest,
-    // Lines.
-    outline: fluxora.outline,
-    outlineVariant: fluxora.outlineVariant,
-    // Status. `ColorScheme.fromSeed` derives its own error tone (#BA1A1A in
-    // light) which is **not** the semantic red the rest of the app means
-    // (#B3261E), so error states driven by `colorScheme.error` and error states
-    // driven by `FluxoraColorSet.error` were two different reds. Pin both error
-    // roles to the semantic set — the same one the `fluxora/*` components read.
-    // `errorContainer` / `onErrorContainer` have no token counterpart yet, so
-    // they stay seed-derived (tracked as 01-B2 follow-up).
-    error: fluxora.error,
-    onError: fluxora.onError,
+    seed: color ?? seed,
+    variant: variant,
   );
 }
 

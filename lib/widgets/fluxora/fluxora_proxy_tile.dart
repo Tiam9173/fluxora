@@ -177,26 +177,40 @@ class FluxoraProxyTile extends StatelessWidget {
                 ],
                 if (hasSecondary) ...[
                   const SizedBox(height: FluxoraSpacing.xs),
-                  // Wrap rather than Row so long protocol names or narrow
-                  // windows degrade gracefully instead of overflowing.
-                  Wrap(
-                    spacing: FluxoraSpacing.md,
-                    runSpacing: FluxoraSpacing.xxs,
-                    crossAxisAlignment: WrapCrossAlignment.center,
+                  // One line, always. The proxy list gives this tile a fixed
+                  // height (`getItemHeight`), which budgets exactly **one**
+                  // secondary line; the old `Wrap` took a second line whenever
+                  // status + latency did not fit, and the row overflowed —
+                  // measured at 320 px, 2.0× text, protocol
+                  // `VLESS-Reality-Vision` (and again at 3.0× / in `min` cards).
+                  //
+                  // The status label is the part that yields: it is secondary
+                  // information, while the latency badge is the reason the user
+                  // is looking at the row.
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       if (showStatus)
-                        FluxoraStatus(status: status, label: protocol),
-                      if (showLatency)
+                        Flexible(
+                          child: FluxoraStatus(status: status, label: protocol),
+                        ),
+                      if (showLatency) ...[
+                        if (showStatus) const SizedBox(width: FluxoraSpacing.md),
                         latencySlot ?? FluxoraLatencyBadge(delay: delay),
-                      if (traffic != null)
-                        Text(
-                          traffic!,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: FluxoraTypography.caption.copyWith(
-                            color: colorScheme.onSurfaceVariant,
+                      ],
+                      if (traffic != null) ...[
+                        const SizedBox(width: FluxoraSpacing.md),
+                        Flexible(
+                          child: Text(
+                            traffic!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: FluxoraTypography.caption.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
                           ),
                         ),
+                      ],
                     ],
                   ),
                 ],
