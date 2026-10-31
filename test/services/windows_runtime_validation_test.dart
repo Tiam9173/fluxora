@@ -6,6 +6,7 @@ import 'package:archive/archive.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluxora/common/constant.dart';
 import 'package:fluxora/common/identity.dart';
+import 'package:fluxora/common/path.dart';
 import 'package:fluxora/manager/chain_proxy_manager.dart';
 import 'package:fluxora/models/chain_decision.dart';
 import 'package:fluxora/models/chain_insight.dart';
@@ -58,26 +59,16 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late Directory windowsSandboxDir;
-  String? originalProdConfigContent;
-  final prodConfigFile = File(
-    p.join(
-      Platform.environment['APPDATA'] ?? '',
-      AppIdentity.dataDirName,
-      'chain_proxies.json',
-    ),
-  );
 
   setUpAll(() async {
     windowsSandboxDir = await Directory.systemTemp.createTemp(
       'windows_runtime_validation_',
     );
-    // P1.1-F group isolation: ChainProxyManager.init() must never read or write
-    // the developer's real %APPDATA%\Fluxora data directory. On Windows,
-    // AppPath._internal() resolves the data dir from
-    // Platform.environment['APPDATA'] and IGNORES the faked
-    // PathProviderPlatform, so faking path_provider alone does NOT sandbox
-    // chain_proxies.json / chain_fallback_pool.json / chain_reliability_stats.json.
-    // The only reliable seam is the *FilePathOverride statics.
+    // P1.1-F group isolation. `AppPath._testDataDir()` already short-circuits
+    // the Windows `%APPDATA%` branch under `flutter test`, so nothing here can
+    // reach the developer profile. These overrides stay because they make the
+    // *intent* explicit at the call site — but they are no longer the only
+    // thing standing between this suite and the real data directory.
     ChainProxyManager.configFilePathOverride =
         p.join(windowsSandboxDir.path, 'chain_proxies.json');
     ChainProxyManager.fallbackPoolFilePathOverride =
@@ -88,12 +79,15 @@ void main() {
       windowsSandboxDir,
     );
 
-    // Safety guard: Snapshot existing user config if present to guarantee no pollution
-    if (await prodConfigFile.exists()) {
-      try {
-        originalProdConfigContent = await prodConfigFile.readAsString();
-      } catch (_) {}
-    }
+    // Prove the sandbox instead of snapshotting the real file. The old guard
+    // read `%APPDATA%\Fluxora\chain_proxies.json` at start and wrote it back at
+    // teardown — so every run touched the developer's file, and an interrupted
+    // run could restore a stale copy over newer user data.
+    expect(
+      p.isWithin(Directory.systemTemp.path, await appPath.homeDirPath),
+      isTrue,
+      reason: 'the resolved data dir must be the test sandbox, not %APPDATA%',
+    );
 
     chainProbeService.customDelayTesterOverride = (proxy, url) async {
       await Future.delayed(const Duration(milliseconds: 10));
@@ -109,16 +103,6 @@ void main() {
     ChainProxyManager.configFilePathOverride = null;
     ChainProxyManager.fallbackPoolFilePathOverride = null;
     ChainProxyManager.reliabilityStatsFilePathOverride = null;
-
-    // Safety restore: restore user config to original state
-    if (originalProdConfigContent != null && await prodConfigFile.exists()) {
-      try {
-        await prodConfigFile.writeAsString(
-          originalProdConfigContent!,
-          flush: true,
-        );
-      } catch (_) {}
-    }
 
     await deleteTempDirWithRetry(windowsSandboxDir);
   });

@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluxora/manager/chain_proxy_manager.dart';
+import 'package:fluxora/models/chain_proxy.dart';
+import 'package:fluxora/services/chain_probe_service.dart';
 import 'package:path/path.dart' as p;
 
 import '../support/temp_dir_cleanup.dart';
@@ -16,6 +19,10 @@ import '../support/temp_dir_cleanup.dart';
 ///
 /// `ChainProxyManager` is a process-wide singleton and `dispose()` is
 /// permanent, so this file holds exactly ONE test and disposes once.
+///
+/// R7-7-B restores the assertions removed in `56973a35`. Nothing here touches
+/// `autoFailover` (that field is gone); `probeCurrentChain`, `dispose` and
+/// `lastProbeReport` are all still live.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -40,5 +47,60 @@ void main() {
     await deleteTempDirWithRetry(tmp);
   });
 
+  test('F-B2: a probe completing after dispose does not publish its report',
+      () async {
+    final gates = <Completer<ChainProbeReport>>[];
+    ChainProxyManager.coreRunningOverride = true;
+    ChainProxyManager.chainProbeOverride = (cfg) {
+      final gate = Completer<ChainProbeReport>();
+      gates.add(gate);
+      return gate.future;
+    };
+
+    final manager = ChainProxyManager();
+    // `stopChainHealthCheck()` was dropped from the manager in `56973a35`
+    // together with the timer it controlled, so the original call cannot be
+    // restored — and is no longer needed: there is no periodic loop left to
+    // silence before the probe runs.
+    await manager.updateConfig(
+      (c) => c.copyWith(enable: true, hop1Node: 'node1', hop2Node: 'node2'),
+      reloadCore: false,
+    );
+
+    // The singleton may carry a report from an earlier test in this isolate;
+    // that value is what the post-dispose probe must leave untouched.
+    final before = manager.lastProbeReport;
+
+    final probe = manager.probeCurrentChain();
+    expect(manager.isProbingChain, isTrue);
+    expect(gates.length, 1);
+
+    // Tear down while the probe is parked, then let it complete normally —
+    // exactly the "ignores the CancelToken" case the guard must survive.
+    manager.dispose();
+    gates[0].complete(_report('post-dispose'));
+    await probe;
+
+    expect(
+      manager.lastProbeReport,
+      same(before),
+      reason: 'a probe that outlives dispose() must not publish its report',
+    );
+  });
 }
 
+ChainProbeReport _report(String tag) => ChainProbeReport(
+  mode: ChainHopMode.twoHop,
+  isOverallHealthy: true,
+  hops: [
+    HopProbeState(
+      hopIndex: 1,
+      role: HopRole.hop1Entry,
+      nodeName: 'node1',
+      nodeAddress: '127.0.0.1',
+      status: HopProbeStatus.healthy,
+    ),
+  ],
+  rootCauseAnalysis: tag,
+  timestamp: DateTime.now(),
+);

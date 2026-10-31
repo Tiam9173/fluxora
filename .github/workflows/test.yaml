@@ -42,6 +42,35 @@ jobs:
         with:
           fetch-depth: 1
 
+      # R7-8.2 — that experimental flag makes several test files share one OS
+      # process (and therefore one PID). The root tearDownAll in
+      # test/flutter_test_config.dart deletes %TEMP%\fluxora_test_data_<pid>,
+      # so a shared PID would let the first file delete a sandbox another file
+      # is still writing to. See PHASE_06_8_R7_8_2_U1_TEST_PROCESS_MODEL_AUDIT.
+      #
+      # The token is assembled at runtime on purpose: if this file contained the
+      # literal string, `git grep` below would match this very step and the
+      # guard would fail on every run.
+      - name: Guard — reject the experimental faster-testing flag
+        shell: bash
+        run: |
+          flag="experimental-faster""-testing"
+          if hits=$(git grep -nI -e "--$flag" -- \
+                       '.github' '*.yaml' '*.yml' '*.sh' '*.ps1' '*.bat' 'Makefile' \
+                       ':(exclude)*.md'); then
+            printf '%s\n' "$hits"
+            echo "::error::--$flag is forbidden: it makes test files share one OS process and PID."
+            exit 1
+          else
+            # git grep exits 1 for "no match" and >1 for a real failure. Only 1
+            # means clean; anything else must not be mistaken for a pass.
+            rc=$?
+            if [ "$rc" -ne 1 ]; then
+              echo "::error::git grep failed with exit code $rc"
+              exit "$rc"
+            fi
+          fi
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
