@@ -12,7 +12,6 @@ export 'chain_proxy.dart';
 export 'public_ip_info.dart';
 export 'chain_fallback_pool.dart';
 export 'chain_retry.dart';
-export 'chain_score.dart';
 export 'chain_telemetry.dart';
 export 'ip_reputation.dart';
 export 'network_info.dart';

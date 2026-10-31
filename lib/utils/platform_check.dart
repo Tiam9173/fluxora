@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:math';
 import 'package:path/path.dart' as p;
 
 enum TransportType {
@@ -46,9 +45,5 @@ class PlatformChecker {
       return TransportType.unixSocket;
     }
     return TransportType.tcp;
-  }
-
-  static int getRandomPort() {
-    return 10000 + Random().nextInt(35000);
   }
 }
