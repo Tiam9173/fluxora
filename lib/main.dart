@@ -129,6 +129,13 @@ Future<void> _runApp() async {
 Future<void> _service(List<String> flags) async {
   globalState.isService = true;
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Same reason as `main()`: this is a second entry point into the same
+  // process image, and `globalState.init()` below reads preferences. Without
+  // this, a service-mode launch in a portable directory would fall back to the
+  // plugin's `%APPDATA%` store and write the developer's real settings file.
+  await installPortablePrefsStore();
+
   await globalState.init();
 
   {
