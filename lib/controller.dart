@@ -1585,11 +1585,8 @@ class AppController {
       }
       stopWakelockAutoRecovery();
       // P2.5-F: stop runtime observers BEFORE flushing persistence or closing
-      // the core. Both of these own live resources that previously outlived the
-      // app:
-      //  * the chain health-check `Timer.periodic` would otherwise keep firing
-      //    after shutdown — probing the (already closing) core and potentially
-      //    triggering an automatic failover while the controller is exiting;
+      // the core. This observer owns a live resource that previously outlived
+      // the app:
       //  * the network-fingerprint `StreamSubscription` on connectivity was
       //    started in `main()` but never cancelled.
       // Ordering note: this runs *before* `flushReliabilityStats()` so no new

@@ -228,6 +228,18 @@ class AppPath {
     return join(directory.path, '${AppIdentity.dataDirName}.control.port');
   }
 
+  /// Sidecar file used as the cross-process ownership token for the control
+  /// channel.
+  ///
+  /// It must **never be deleted**. Unlinking a lock file lets the next process
+  /// create a fresh inode and lock *that* one, so two processes would each
+  /// believe they own the channel. One stable inode is what makes the lock mean
+  /// anything.
+  Future<String> get controlLockFilePath async {
+    final directory = await dataDir.future;
+    return join(directory.path, '${AppIdentity.dataDirName}.control.lock');
+  }
+
   Future<String> get sharedPreferencesPath async {
     final directory = await dataDir.future;
     return join(directory.path, 'shared_preferences.json');

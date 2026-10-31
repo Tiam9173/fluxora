@@ -74,7 +74,16 @@ Future<void> main(List<String> args) async {
   PaintingBinding.instance.imageCache.maximumSizeBytes = 50 * 1024 * 1024;
 
   final version = await system.version;
-  await Future.wait([globalState.initApp(version), clashCore.preload()]);
+
+  // A core that cannot bind its control socket used to leave `preload()` waiting
+  // forever, so `runApp()` below never ran and the window stayed blank. Since
+  // R7-15.1 the waiters fail fast, but an uncaught throw here would still skip
+  // `runApp()` — so the failure is captured, logged with its stack, and shown in
+  // the UI once the first frame is up.
+  final startupError = await runStartupTasks(
+    initApp: () => globalState.initApp(version),
+    preload: () => clashCore.preload(),
+  );
 
   try {
     await uiManager.initializeUI();
@@ -82,7 +91,29 @@ Future<void> main(List<String> args) async {
     commonPrint.log('Failed to initialize UI: $e');
   }
 
-  await _runApp();
+  await _runApp(startupError: startupError);
+}
+
+/// Runs the two futures that must both succeed before the UI comes up.
+///
+/// Returns `null` on success and the error on failure — it **never rethrows**,
+/// which is what lets `main()` reach `_runApp()` instead of dying before
+/// `runApp()` and leaving a blank window. The exception *and* its stack are
+/// logged here; only the exception is handed to the UI.
+///
+/// Extracted from `main()` so the failure path can be tested without launching
+/// the app.
+Future<Object?> runStartupTasks({
+  required Future<void> Function() initApp,
+  required Future<bool> Function() preload,
+}) async {
+  try {
+    await Future.wait([initApp(), preload()]);
+    return null;
+  } catch (e, st) {
+    commonPrint.log('Core startup failed: $e\n$st');
+    return e;
+  }
 }
 
 Future<void> _sendControlCommand(String command) async {
@@ -101,7 +132,7 @@ Future<void> _sendControlCommand(String command) async {
   }
 }
 
-Future<void> _runApp() async {
+Future<void> _runApp({Object? startupError}) async {
   try {
     await RustLib.init();
   } catch (e) {
@@ -123,6 +154,17 @@ Future<void> _runApp() async {
   }
   HttpOverrides.global = FluxoraHttpOverrides();
   runApp(ProviderScope(child: const Application()));
+
+  if (startupError != null) {
+    // Deferred to the first frame: `navigatorKey` has no context before it, so
+    // `showNotifier` would silently do nothing. The raw exception is appended
+    // rather than swallowed — the log in `main()` carries the stack.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      globalState.showNotifier(
+        '${appLocalizations.ipCheckCoreNotReady}: $startupError',
+      );
+    });
+  }
 }
 
 @pragma('vm:entry-point')
