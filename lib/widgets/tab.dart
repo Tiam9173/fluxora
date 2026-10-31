@@ -7,6 +7,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 
 const EdgeInsetsGeometry _kHorizontalItemPadding = EdgeInsets.symmetric(
   vertical: 2,
@@ -103,6 +104,112 @@ class _CommonTabBarState<T extends Object> extends State<CommonTabBar<T>>
     Tween<double>(begin: 1, end: _kMinThumbScale),
   );
 
+  /// OS-level "reduce motion", refreshed in [didChangeDependencies].
+  ///
+  /// Flutter already scales one-shot durations to 5 % when `disableAnimations`
+  /// is on, so an implicit animation is *nearly* instant. The gap this widget
+  /// really had is the spring **simulation** (`animateWith`), which has no
+  /// duration to scale — see [_moveThumb].
+  bool _reduceMotion = false;
+
+  /// One focus node per segment, keyed by its value.
+  ///
+  /// The bar follows the WAI-ARIA "roving tabindex" pattern: only the selected
+  /// segment is a Tab stop ([Focus.skipTraversal] on the rest), and the arrow
+  /// keys move focus inside the group. Tab therefore enters and leaves the
+  /// whole control, which is what a segmented control should do.
+  final Map<T, FocusNode> _segmentNodes = <T, FocusNode>{};
+
+  /// Which segment currently has focus — drives the ring. Kept separate from
+  /// [highlighted] so "focused" and "selected" never look the same.
+  T? _focusedKey;
+
+  void _syncSegmentNodes() {
+    for (final key in widget.children.keys) {
+      _segmentNodes.putIfAbsent(
+        key,
+        () => FocusNode(debugLabel: 'CommonTabBar[$key]'),
+      );
+    }
+    _segmentNodes.removeWhere((key, node) {
+      if (widget.children.containsKey(key)) return false;
+      node.dispose();
+      return true;
+    });
+  }
+
+  /// The value that owns the Tab stop: the selected segment, or the first one
+  /// when nothing is selected yet.
+  T? get _tabStopKey {
+    final selected = widget.groupValue;
+    if (selected != null && widget.children.containsKey(selected)) {
+      return selected;
+    }
+    return widget.children.keys.firstOrNull;
+  }
+
+  /// Moves focus by [delta] segments, skipping disabled ones.
+  ///
+  /// Does **not** change the selection: per the platform convention arrows move
+  /// focus and Enter/Space activates, so a keyboard user can look before they
+  /// commit.
+  void _moveFocus(T from, int delta) {
+    final keys = widget.children.keys.toList(growable: false);
+    final start = keys.indexOf(from);
+    if (start < 0) return;
+
+    final rtl = Directionality.of(context) == TextDirection.rtl;
+    final step = rtl ? -delta : delta;
+
+    for (var i = 1; i <= keys.length; i++) {
+      final next = (start + step * i) % keys.length;
+      final candidate = keys[(next + keys.length) % keys.length];
+      if (widget.disabledChildren.contains(candidate)) continue;
+      _segmentNodes[candidate]?.requestFocus();
+      return;
+    }
+  }
+
+  KeyEventResult _handleSegmentKey(T key, KeyEvent event) {
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+      return KeyEventResult.ignored;
+    }
+    final logical = event.logicalKey;
+    final enabled = !widget.disabledChildren.contains(key);
+
+    if (logical == LogicalKeyboardKey.arrowLeft) {
+      _moveFocus(key, -1);
+      return KeyEventResult.handled;
+    }
+    if (logical == LogicalKeyboardKey.arrowRight) {
+      _moveFocus(key, 1);
+      return KeyEventResult.handled;
+    }
+    if (logical == LogicalKeyboardKey.enter ||
+        logical == LogicalKeyboardKey.numpadEnter ||
+        logical == LogicalKeyboardKey.space) {
+      if (!enabled) return KeyEventResult.handled;
+      // Only activation runs here; the tap/drag recognisers are untouched, so a
+      // pointer gesture still goes through its own path and cannot double-fire.
+      widget.onValueChanged(key);
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    final duration = _reduceMotion ? Duration.zero : _kSpringAnimationDuration;
+    if (thumbController.duration != duration) {
+      thumbController.duration = duration;
+    }
+    if (thumbScaleController.duration != duration) {
+      thumbScaleController.duration = duration;
+    }
+  }
+
   final TapGestureRecognizer tap = TapGestureRecognizer();
   final HorizontalDragGestureRecognizer drag =
       HorizontalDragGestureRecognizer();
@@ -133,14 +240,17 @@ class _CommonTabBarState<T extends Object> extends State<CommonTabBar<T>>
   void didUpdateWidget(CommonTabBar<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!isThumbDragging && highlighted != widget.groupValue) {
-      thumbController.animateWith(_kThumbSpringAnimationSimulation);
-      thumbAnimatable = null;
+      _moveThumb();
       highlighted = widget.groupValue;
     }
   }
 
   @override
   void dispose() {
+    for (final node in _segmentNodes.values) {
+      node.dispose();
+    }
+    _segmentNodes.clear();
     thumbScaleController.dispose();
     thumbController.dispose();
 
@@ -209,8 +319,23 @@ class _CommonTabBarState<T extends Object> extends State<CommonTabBar<T>>
     setState(() {
       highlighted = newValue;
     });
-    thumbController.animateWith(_kThumbSpringAnimationSimulation);
+    _moveThumb();
+  }
+
+  /// Moves the thumb to the highlighted segment.
+  ///
+  /// `animateWith` runs a spring *simulation*, which has no duration for the
+  /// framework's 5 % scaling to shorten — this was a genuine reduced-motion gap.
+  /// Stopping the controller is enough: the render object paints the thumb
+  /// directly at the new segment whenever `thumbController.isAnimating` is
+  /// false, so the resting position is identical without the travel.
+  void _moveThumb() {
     thumbAnimatable = null;
+    if (_reduceMotion) {
+      thumbController.stop();
+      return;
+    }
+    thumbController.animateWith(_kThumbSpringAnimationSimulation);
   }
 
   void onPressedChangedByGesture(T? newValue) {
@@ -302,6 +427,8 @@ class _CommonTabBarState<T extends Object> extends State<CommonTabBar<T>>
   @override
   Widget build(BuildContext context) {
     assert(widget.children.length >= 2);
+    _syncSegmentNodes();
+    final tabStopKey = _tabStopKey;
     List<Widget> children = <Widget>[];
     bool isPreviousSegmentHighlighted = false;
 
@@ -332,27 +459,63 @@ class _CommonTabBarState<T extends Object> extends State<CommonTabBar<T>>
         TextDirection.rtl when index == 0 => _SegmentLocation.rightmost,
         TextDirection.ltr || TextDirection.rtl => _SegmentLocation.inbetween,
       };
+      final bool enabled = !widget.disabledChildren.contains(entry.key);
+      final bool isFocused = _focusedKey == entry.key;
       children.add(
-        Semantics(
-          button: true,
-          onTap: () {
-            if (widget.disabledChildren.contains(entry.key)) {
-              return;
-            }
-            widget.onValueChanged(entry.key);
+        Focus(
+          focusNode: _segmentNodes[entry.key],
+          canRequestFocus: enabled,
+          // Roving tabindex: only the selected segment is a Tab stop, so Tab
+          // enters and leaves the whole control instead of stopping on every
+          // segment.
+          skipTraversal: entry.key != tabStopKey,
+          onFocusChange: (hasFocus) {
+            if (!mounted) return;
+            setState(() {
+              if (hasFocus) {
+                _focusedKey = entry.key;
+              } else if (_focusedKey == entry.key) {
+                _focusedKey = null;
+              }
+            });
           },
-          inMutuallyExclusiveGroup: true,
-          selected: widget.groupValue == entry.key,
-          child: MouseRegion(
-            cursor: kIsWeb ? SystemMouseCursors.click : MouseCursor.defer,
-            child: _Segment<T>(
-              key: ValueKey<T>(entry.key),
-              highlighted: isHighlighted,
-              pressed: pressed == entry.key,
-              isDragging: isThumbDragging,
-              enabled: !widget.disabledChildren.contains(entry.key),
-              segmentLocation: segmentLocation,
-              child: entry.value,
+          onKeyEvent: (_, event) => _handleSegmentKey(entry.key, event),
+          child: DecoratedBox(
+            // The ring is a 2 px border, not a colour wash: it stays legible in
+            // both themes and reads as a shape, so focus is not conveyed by
+            // colour alone. It is always present (transparent when unfocused) so
+            // gaining focus never shifts the layout.
+            decoration: BoxDecoration(
+              borderRadius: const BorderRadius.all(_kCornerRadius),
+              border: Border.all(
+                color: isFocused
+                    ? Theme.of(context).colorScheme.primary
+                    : const Color(0x00000000),
+                width: 2,
+              ),
+            ),
+            child: Semantics(
+              button: true,
+              onTap: () {
+                if (!enabled) {
+                  return;
+                }
+                widget.onValueChanged(entry.key);
+              },
+              inMutuallyExclusiveGroup: true,
+              selected: widget.groupValue == entry.key,
+              child: MouseRegion(
+                cursor: kIsWeb ? SystemMouseCursors.click : MouseCursor.defer,
+                child: _Segment<T>(
+                  key: ValueKey<T>(entry.key),
+                  highlighted: isHighlighted,
+                  pressed: pressed == entry.key,
+                  isDragging: isThumbDragging,
+                  enabled: enabled,
+                  segmentLocation: segmentLocation,
+                  child: entry.value,
+                ),
+              ),
             ),
           ),
         ),
@@ -436,6 +599,21 @@ class _SegmentState<T> extends State<_Segment<T>>
   late final AnimationController highlightPressScaleController;
   late Animation<double> highlightPressScaleAnimation;
 
+  /// See [_CommonTabBarState._reduceMotion].
+  bool _reduceMotion = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    final duration = _reduceMotion
+        ? Duration.zero
+        : _kOpacityAnimationDuration;
+    if (highlightPressScaleController.duration != duration) {
+      highlightPressScaleController.duration = duration;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -462,9 +640,16 @@ class _SegmentState<T> extends State<_Segment<T>>
           end: widget.shouldScaleContent ? _kMinThumbScale : 1.0,
         ),
       );
-      highlightPressScaleController.animateWith(
-        _kThumbSpringAnimationSimulation,
-      );
+      if (_reduceMotion) {
+        // Same reason as `_CommonTabBarState._moveThumb`: a simulation cannot be
+        // shortened, so jump straight to the tween's end value.
+        highlightPressScaleController.value =
+            highlightPressScaleAnimation.value;
+      } else {
+        highlightPressScaleController.animateWith(
+          _kThumbSpringAnimationSimulation,
+        );
+      }
     }
   }
 
@@ -491,7 +676,9 @@ class _SegmentState<T> extends State<_Segment<T>>
             opacity: widget.shouldFadeoutContent
                 ? _kContentPressedMinOpacity
                 : 1,
-            duration: _kOpacityAnimationDuration,
+            duration: _reduceMotion
+                ? Duration.zero
+                : _kOpacityAnimationDuration,
             curve: Curves.ease,
             child: AnimatedDefaultTextStyle(
               style: DefaultTextStyle.of(context).style.merge(
@@ -503,7 +690,9 @@ class _SegmentState<T> extends State<_Segment<T>>
                   color: widget.enabled ? null : _kDisabledContentColor,
                 ),
               ),
-              duration: _kHighlightAnimationDuration,
+              duration: _reduceMotion
+                  ? Duration.zero
+                  : _kHighlightAnimationDuration,
               curve: Curves.ease,
               child: ScaleTransition(
                 alignment: scaleAlignment,
@@ -541,6 +730,15 @@ class _SegmentSeparatorState extends State<_SegmentSeparator>
     with TickerProviderStateMixin<_SegmentSeparator> {
   late final AnimationController separatorOpacityController;
 
+  /// See [_CommonTabBarState._reduceMotion].
+  bool _reduceMotion = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -558,8 +756,16 @@ class _SegmentSeparatorState extends State<_SegmentSeparator>
     assert(oldWidget.key == widget.key);
 
     if (oldWidget.highlighted != widget.highlighted) {
+      final target = widget.highlighted ? 0.0 : 1.0;
+      if (_reduceMotion) {
+        // `animateTo` takes an explicit duration, so the controller's own
+        // duration is irrelevant here — set the value directly instead of
+        // relying on a zero-duration simulation.
+        separatorOpacityController.value = target;
+        return;
+      }
       separatorOpacityController.animateTo(
-        widget.highlighted ? 0 : 1,
+        target,
         duration: _kSpringAnimationDuration,
         curve: Curves.ease,
       );

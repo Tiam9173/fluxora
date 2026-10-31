@@ -103,7 +103,7 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
         return AdaptiveSheetScaffold(
           type: type,
           body: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(FluxoraSpacing.lg),
             child: Consumer(
               builder: (_, ref, _) {
                 final state = ref.watch(proxiesTabControllerStateProvider);
@@ -125,6 +125,7 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
                             );
                             if (index == -1) return;
                             _tabController?.animateTo(index);
+                            _snapPageIfTheControllerCannotFollow();
                             globalState.appController.updateCurrentGroupName(
                               groupName,
                             );
@@ -186,6 +187,31 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
     });
   }
 
+  bool get _reduceMotion =>
+      MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+
+  /// The duration the strip and the page slide use for one group switch.
+  ///
+  /// Zero under reduced motion. Shortening the animation is not enough: the
+  /// framework's 5 % scaling (`animation_controller.dart:651`) only shortens how
+  /// long the animation **value** takes to reach its target, while the
+  /// simulation itself still runs for the full 300 ms and `TabController` calls
+  /// `notifyListeners()` only in `whenCompleteOrCancel`. Measured: the indicator
+  /// was on the new group at ~15 ms while `TabBarView` — which reacts to the
+  /// index change, not to the animation value — kept painting the previous group
+  /// for another ~285 ms (340 ms until the group name committed). A zero
+  /// duration takes `_changeIndex`'s immediate branch and makes `TabBarView`
+  /// `_jumpToPage`, so strip and grid change together.
+  Duration _switchDuration = kTabScrollDuration;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Cached for `_updateTabController`, which also runs from an `initState`
+    // listener where reading `MediaQuery` is not allowed.
+    _switchDuration = _reduceMotion ? Duration.zero : kTabScrollDuration;
+  }
+
   void _destroyTabController() {
     _tabController?.removeListener(_tabControllerListener);
     _tabController?.dispose();
@@ -201,10 +227,62 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
     _tabController ??= TabController(
       length: length,
       initialIndex: realIndex,
+      animationDuration: _switchDuration,
       vsync: this,
     );
     _tabControllerListener(realIndex);
     _tabController?.addListener(_tabControllerListener);
+  }
+
+  /// Rebuilds the controller resting on [index].
+  ///
+  /// This is the only public lever that makes `TabBarView` re-read the index: on
+  /// a controller swap its `didUpdateWidget` does `_currentIndex =
+  /// _controller.index` followed by `_jumpToPage`. Pages keep their state — they
+  /// are keyed by `GlobalObjectKey` inside `KeepScope`, so nothing remounts.
+  void _rebuildTabController(int index) {
+    final length = _tabController?.length ?? 0;
+    if (length == 0) return;
+    _destroyTabController();
+    _updateTabController(length, index.clamp(0, length - 1));
+  }
+
+  /// Re-syncs the page when the framework cannot follow the index on its own.
+  ///
+  /// `TabBarView` learns about an index change **only** from a tick of
+  /// `controller.animation` that happens while `indexIsChanging`
+  /// (`_handleTabControllerAnimationTick`). `AnimationController._animateToInternal`
+  /// short-circuits when `target == value`: it returns `TickerFuture.complete()`
+  /// and never ticks, and the `whenCompleteOrCancel` that clears
+  /// `indexIsChanging` runs in a microtask — so by the next frame the controller
+  /// looks settled while `TabBarView` still holds the *previous* target and the
+  /// page warp it already started lands there.
+  ///
+  /// Measured before this guard: `index == 0`, `page == 1.000`, the strip on G1
+  /// and G2's nodes on screen — permanently, because nothing re-checks later.
+  /// Reproduced by tapping G2 → G1 → G2 → G1 without letting a frame advance.
+  ///
+  /// The discriminator is `animation.value == index`, which is *exactly* the
+  /// condition under which `_animateToInternal` degenerates. Interrupts that
+  /// arrive after the slide has moved (1 / 40 / 80 / 150 / 200 ms were measured)
+  /// take a real animation, keep ticking and re-warp correctly, so they are left
+  /// alone and the normal animation is untouched.
+  ///
+  /// Reduced motion needs no guard: with `animationDuration == Duration.zero`
+  /// `_changeIndex` notifies while `indexIsChanging` is still true and
+  /// `TabBarView` jumps in the same frame, so no stale warp can survive.
+  void _snapPageIfTheControllerCannotFollow() {
+    final controller = _tabController;
+    if (controller == null) return;
+    if (_switchDuration == Duration.zero) return;
+    final value = controller.animation?.value;
+    final cannotFollow =
+        // A tap on the already selected group is a no-op, not a desync.
+        controller.index != controller.previousIndex &&
+        value != null &&
+        value == controller.index.toDouble();
+    if (!cannotFollow) return;
+    setState(() => _rebuildTabController(controller.index));
   }
 
   @override
@@ -231,10 +309,21 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
         title: appLocalizations.nullTip(appLocalizations.proxies),
       );
     }
-    // Safety check: ensure controller matches groups count
-    if (_tabController != null && _tabController!.length != groups.length) {
+    // Keep the controller in step with the group count *and* with the switch
+    // duration: `TabController` fixes its `animationDuration` at construction,
+    // so a change in the OS "reduce motion" setting has to rebuild it.
+    if (_tabController != null &&
+        (_tabController!.length != groups.length ||
+            _tabController!.animationDuration != _switchDuration)) {
+      // Read the index **before** destroying: `_destroyTabController` nulls the
+      // field, so `_tabController?.index ?? 0` always evaluated to 0 and every
+      // group-count change silently jumped the strip back to the first group.
+      final previousIndex = _tabController!.index;
       _destroyTabController();
-      _updateTabController(groups.length, _tabController?.index ?? 0);
+      _updateTabController(
+        groups.length,
+        previousIndex.clamp(0, groups.length - 1),
+      );
     }
     // Also handle case where controller is null but we have groups
     if (_tabController == null && groups.isNotEmpty) {
@@ -277,6 +366,14 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
                 children: [
                   TabBar(
                     controller: _tabController,
+                    // `TabBar` calls `animateTo` before `onTap`, so the index has
+                    // already moved by the time this runs; the guard only covers
+                    // the case where the page cannot follow — see
+                    // `_snapPageIfTheControllerCannotFollow`.
+                    onTap: (_) => _snapPageIfTheControllerCannotFollow(),
+                    // The switch duration comes from the controller
+                    // (`_switchDuration`), so reduced motion is handled there and
+                    // both the strip and the page move together.
                     padding: EdgeInsets.only(
                       left: 16,
                       right: globalState.isAndroidTV
@@ -448,15 +545,24 @@ class _ProxyGroupViewState extends ConsumerState<ProxyGroupView> {
     if (_controller.position.maxScrollExtent == 0) {
       return;
     }
+    final target = min(
+      16 +
+          getScrollToSelectedOffset(
+            groupName: widget.group.name,
+            proxies: proxies,
+          ),
+      _controller.position.maxScrollExtent,
+    );
+    // A 300 ms glide across the group strip is pure motion — under reduced
+    // motion the strip simply arrives at the selected group. The *result* is
+    // identical, so nothing is lost by jumping.
+    final reduce = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (reduce) {
+      _controller.jumpTo(target);
+      return;
+    }
     _controller.animateTo(
-      min(
-        16 +
-            getScrollToSelectedOffset(
-              groupName: widget.group.name,
-              proxies: proxies,
-            ),
-        _controller.position.maxScrollExtent,
-      ),
+      target,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeIn,
     );
@@ -572,6 +678,21 @@ class _DelayTestButtonState extends ConsumerState<DelayTestButton>
     );
     delayTestCoordinator.addListener(_handleTestingChanged);
     _handleTestingChanged();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Collapsing the duration keeps the *state* (loading vs. idle) and only
+    // removes the cross-fade, so `showLoading` still flips — the indicator
+    // remains visible, it just appears in one frame.
+    final reduce = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    final duration = reduce
+        ? Duration.zero
+        : const Duration(milliseconds: 200);
+    if (_controller.duration != duration) {
+      _controller.duration = duration;
+    }
   }
 
   @override

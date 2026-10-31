@@ -5,7 +5,6 @@ import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 typedef OnSelected = void Function(int index);
@@ -20,6 +19,35 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final Map<int, FocusNode> _navFocusNodes = {};
   int _currentNavIndex = 0;
+
+  /// Height of the floating bottom dock, measured after layout.
+  ///
+  /// On mobile the dock is painted **over** the page (`Stack` + `Positioned`),
+  /// so the page loses the bottom slice of its viewport. Nothing reserved that
+  /// space before: `generateListView` only pads by `24 + padding.bottom`, where
+  /// `padding.bottom` is the *system* inset — so on a 390×844 phone the last
+  /// row of a list sat at y 782–802 while the dock covered y 762–844, leaving
+  /// the final row invisible and untappable.
+  ///
+  /// Measured rather than hardcoded because the dock's height follows the text
+  /// scale (it contains a label under every icon).
+  final GlobalKey _dockKey = GlobalKey();
+  double _dockHeight = 0;
+
+  /// Schedules a post-frame measurement of the dock.
+  ///
+  /// Safe to call from `build`: the callback only calls `setState` when the
+  /// height actually changed, so the measure → rebuild → measure loop settles
+  /// after one extra frame.
+  void _scheduleDockMeasure() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final box = _dockKey.currentContext?.findRenderObject() as RenderBox?;
+      final height = box?.size.height ?? 0;
+      if (height <= 0 || (height - _dockHeight).abs() < 0.5) return;
+      setState(() => _dockHeight = height);
+    });
+  }
 
   FocusNode _getNavFocusNode(int index) {
     return _navFocusNodes.putIfAbsent(index, () => FocusNode());
@@ -90,7 +118,7 @@ class _HomePageState extends State<HomePage> {
                     navigationItems: navigationItems,
                     currentIndex: currentIndex,
                   )
-                : GoogleBottomNavBar(
+                : AuroraBottomNavBar(
                     navigationItems: navigationItems,
                     selectedIndex: currentIndex,
                     onTabChange: (index) {
@@ -100,13 +128,61 @@ class _HomePageState extends State<HomePage> {
                     },
                   );
             if (isMobile) {
+              // Tell the page how much of its bottom the floating dock covers.
+              //
+              // Pages that already honour `MediaQuery.padding.bottom` — every
+              // list built by `generateListView` does — then reserve the right
+              // amount instead of scrolling their last row underneath the dock.
+              //
+              // The injection has to happen *inside* `removePadding`: that
+              // widget rebuilds its data from the outer context, so wrapping it
+              // from the outside would be discarded.
+              //
+              // `max` rather than a sum: the dock's own `SafeArea` already
+              // includes the system inset, so adding it again would over-reserve
+              // by the gesture-bar height on phones.
+              _scheduleDockMeasure();
               final pageContent = MediaQuery.removePadding(
                 removeTop: false,
                 removeBottom: false,
                 removeLeft: true,
                 removeRight: true,
                 context: context,
-                child: child!,
+                child: Builder(
+                  builder: (pageCtx) {
+                    final mq = MediaQuery.of(pageCtx);
+                    // Always wrap — never conditionally.
+                    //
+                    // The measure lands in a post-frame callback, so the first
+                    // frame runs with `_dockHeight == 0` and the second with the
+                    // real height. A conditional wrapper changes the widget type
+                    // in that slot (`Consumer` → `MediaQuery`), which makes
+                    // Flutter **remount the whole page subtree**: measured on a
+                    // 400×800 mobile shell, the page's `initState` ran twice and
+                    // `dispose` once, i.e. every cold start re-ran the page's
+                    // real side effects (dashboard cards hit
+                    // `SystemProxyReadbackService` and
+                    // `ClashHandlerInterface.getMemory`). Keeping the shape
+                    // stable costs one inherited widget and removes the remount.
+                    final bottom = _dockHeight > mq.padding.bottom
+                        ? _dockHeight
+                        : mq.padding.bottom;
+                    final page = MediaQuery(
+                      data: mq.copyWith(
+                        padding: mq.padding.copyWith(bottom: bottom),
+                      ),
+                      child: child!,
+                    );
+                    // Publish the height itself as well. Pages that add their
+                    // own bottom padding through
+                    // `getFloatingBottomBarReserveHeight` must not read it back
+                    // out of `MediaQuery.padding` — they would count it twice.
+                    return FloatingDockMetrics(
+                      height: _dockHeight,
+                      child: page,
+                    );
+                  },
+                ),
               );
               final navBar = MediaQuery.removePadding(
                 removeTop: true,
@@ -119,7 +195,12 @@ class _HomePageState extends State<HomePage> {
               return Stack(
                 children: [
                   Positioned.fill(child: pageContent),
-                  Positioned(left: 0, right: 0, bottom: 0, child: navBar),
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: KeyedSubtree(key: _dockKey, child: navBar),
+                  ),
                 ],
               );
             }
@@ -165,128 +246,26 @@ class _HomePageState extends State<HomePage> {
       _requestNavFocus(currentIndex);
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        color: context.colorScheme.surfaceContainer,
-        boxShadow: [
-          BoxShadow(
-            blurRadius: 20,
-            color: Colors.black.withValues(alpha: 0.15),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Focus(
-          onKeyEvent: (node, event) {
-            if (event is! KeyDownEvent) return KeyEventResult.ignored;
-            if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-              return KeyEventResult.handled;
-            }
-            if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-              final focusedIndex = navigationItems.indexWhere(
-                (item) =>
-                    _navFocusNodes[navigationItems.indexOf(item)]?.hasFocus ==
-                    true,
-              );
-              if (focusedIndex > 0) {
-                _getNavFocusNode(focusedIndex - 1).requestFocus();
-                return KeyEventResult.handled;
-              } else if (focusedIndex == 0) {
-                return KeyEventResult.handled;
-              }
-            }
-            if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-              final focusedIndex = navigationItems.indexWhere(
-                (item) =>
-                    _navFocusNodes[navigationItems.indexOf(item)]?.hasFocus ==
-                    true,
-              );
-              if (focusedIndex >= 0 &&
-                  focusedIndex < navigationItems.length - 1) {
-                _getNavFocusNode(focusedIndex + 1).requestFocus();
-                return KeyEventResult.handled;
-              } else if (focusedIndex == navigationItems.length - 1) {
-                return KeyEventResult.handled;
-              }
-            }
-            return KeyEventResult.ignored;
-          },
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: navigationItems.asMap().entries.map((entry) {
-              final index = entry.key;
-              final item = entry.value;
-              final isSelected = index == currentIndex;
-              final focusNode = _getNavFocusNode(index);
-              return FocusTraversalOrder(
-                order: NumericFocusOrder(index.toDouble()),
-                child: AnimatedBuilder(
-                  animation: focusNode,
-                  builder: (context, child) {
-                    final isFocused = focusNode.hasFocus;
-                    return InkWell(
-                      focusNode: focusNode,
-                      borderRadius: BorderRadius.circular(FluxoraRadius.lg),
-                      onTap: () {
-                        globalState.appController.toPage(item.label);
-                      },
-                      child: Container(
-                        constraints: const BoxConstraints(minWidth: 120),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 36,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? context.colorScheme.primary.withValues(
-                                  alpha:
-                                      context.colorScheme.brightness ==
-                                              Brightness.light
-                                          ? 0.20
-                                          : 0.26,
-                                )
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(FluxoraRadius.lg),
-                          border: isFocused
-                              ? Border.all(
-                                  color: context.colorScheme.primary,
-                                  width: 2,
-                                )
-                              : Border.all(color: Colors.transparent, width: 2),
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconTheme(
-                              data: IconThemeData(
-                                color: isSelected
-                                    ? context.colorScheme.primary
-                                    : context.colorScheme.onSurfaceVariant,
-                                size: 24,
-                              ),
-                              child: item.icon,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              item.label.localizedName,
-                              style: TextStyle(
-                                color: isSelected
-                                    ? context.colorScheme.onSecondaryContainer
-                                    : context.colorScheme.onSurfaceVariant,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-      ),
+    // The visual layer lives in `AuroraTvNavBar` so it can be tested without
+    // `isAndroidTV` (unreachable on a desktop test host). Everything that makes
+    // the bar *behave* — the per-index focus nodes, the focus request that
+    // follows the current page, and the `toPage` mapping — stays here.
+    return AuroraTvNavBar(
+      destinations: navigationItems
+          .map(
+            (e) => AuroraRailDestination(
+              icon: e.icon,
+              label: e.label.localizedName,
+            ),
+          )
+          .toList(),
+      selectedIndex: currentIndex,
+      focusNodes: [
+        for (var i = 0; i < navigationItems.length; i++) _getNavFocusNode(i),
+      ],
+      onSelect: (index) {
+        globalState.appController.toPage(navigationItems[index].label);
+      },
     );
   }
 }
@@ -392,17 +371,20 @@ class _HomePageViewState extends ConsumerState<_HomePageView> {
       final motion = FluxoraMotionSet.of(
         reduceMotion: MediaQuery.maybeOf(context)?.disableAnimations ?? false,
       );
-      return AnimatedSwitcher(
+      // `KeptPageView` rather than `AnimatedSwitcher`: the switcher disposed the
+      // outgoing page when its fade ended, so every mobile switch threw away
+      // that page's `State` (scroll position, in-page selections, form text) and
+      // the next visit re-ran `initState` — which for the real pages means real
+      // work. The replacement keeps visited pages mounted and inert, and keeps
+      // the same Aurora transition: `slow` fade + the 4 px `enterOffset` lift,
+      // both collapsing to zero under reduced motion.
+      return KeptPageView(
+        index: index,
+        pageBuilder: widget.pageBuilder,
         duration: motion.slow,
-        switchInCurve: Curves.easeOutCubic,
-        switchOutCurve: Curves.easeInCubic,
-        transitionBuilder: (child, animation) {
-          return FadeTransition(opacity: animation, child: child);
-        },
-        child: KeyedSubtree(
-          key: ValueKey(widget.navigationItems[index].label),
-          child: widget.pageBuilder(context, index),
-        ),
+        inCurve: motion.enter,
+        outCurve: motion.exit,
+        enterOffset: motion.enterOffset,
       );
     }
     return PageView.builder(

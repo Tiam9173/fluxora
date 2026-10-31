@@ -139,6 +139,12 @@ class _LogsViewState extends ConsumerState<LogsView> {
   Widget build(BuildContext context) {
     final logs = ref.watch(filteredLogsProvider);
     final hasLogs = logs.isNotEmpty;
+    // The list is `reverse: true`, so index 0 — the **newest** line — renders at
+    // the visual bottom, exactly where the floating dock sits. Every other
+    // scrollable page reserves the dock through
+    // `getFloatingBottomBarReserveHeight`; this one only ever had a flat 16 px,
+    // which left the newest line behind the dock on a phone.
+    final isMobileView = ref.watch(isMobileViewProvider);
     return CommonScaffold(
       actions: [
         IconButton(
@@ -165,7 +171,7 @@ class _LogsViewState extends ConsumerState<LogsView> {
             onLongPress: _handleClearLogs,
             borderRadius: BorderRadius.circular(FluxoraRadius.full),
             child: const Padding(
-              padding: EdgeInsets.all(12),
+              padding: EdgeInsets.all(FluxoraSpacing.md),
               child: Icon(Icons.save_as_outlined, size: 24),
             ),
           ),
@@ -193,7 +199,14 @@ class _LogsViewState extends ConsumerState<LogsView> {
                     reverse: true,
                     shrinkWrap: logs.length < 20,
                     controller: _scrollController,
-                    padding: const EdgeInsets.only(bottom: 16, top: 8),
+                    padding: EdgeInsets.only(
+                      bottom:
+                          16 +
+                          (isMobileView
+                              ? getFloatingBottomBarReserveHeight(context)
+                              : 0),
+                      top: 8,
+                    ),
                     itemExtentBuilder: (index, _) {
                       return LogItem.height + 1;
                     },
@@ -262,7 +275,7 @@ class LogItem extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: context.textTheme.bodyLarge?.copyWith(
-              color: log.logLevel.color,
+              color: log.logLevel.colorOf(context),
             ),
           ),
           subtitle: Padding(
@@ -315,7 +328,7 @@ class LogDetailDialog extends StatelessWidget {
           SelectableText(
             log.payload,
             style: context.textTheme.bodyLarge?.copyWith(
-              color: log.logLevel.color,
+              color: log.logLevel.colorOf(context),
             ),
           ),
           SelectableText(

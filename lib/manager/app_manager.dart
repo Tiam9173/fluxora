@@ -7,6 +7,7 @@ import 'package:fluxora/manager/window_manager.dart';
 import 'package:fluxora/plugins/app.dart';
 import 'package:fluxora/plugins/vpn.dart';
 import 'package:fluxora/providers/providers.dart';
+import 'package:fluxora/widgets/aurora_navigation_rail.dart';
 import 'package:fluxora/state.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -308,9 +309,12 @@ class AppSidebarContainer extends ConsumerWidget {
       decoration: BoxDecoration(
         color: context.colorScheme.surfaceContainerHigh,
         border: Border(
+          // Softer than the pre-Phase-02 hairline (0.6 / 0.45): the rail now
+          // carries its own selection affordances, so the divider only has to
+          // separate two surfaces, not announce the boundary.
           right: BorderSide(
             color: context.colorScheme.outlineVariant.withValues(
-              alpha: isLight ? 0.6 : 0.45,
+              alpha: isLight ? 0.5 : 0.35,
             ),
           ),
         ),
@@ -351,7 +355,7 @@ class AppSidebarContainer extends ConsumerWidget {
                     ],
                     Expanded(
                       child: ScrollConfiguration(
-                        behavior: HiddenBarScrollBehavior(),
+                        behavior: ShowBarScrollBehavior(),
                         child: LayoutBuilder(
                           builder: (context, constraints) {
                             return SingleChildScrollView(
@@ -392,57 +396,17 @@ class AppSidebarContainer extends ConsumerWidget {
                                     },
                                     child: Focus(
                                       autofocus: true,
-                                      child: NavigationRail(
-                                        backgroundColor: Colors.transparent,
-                                        indicatorColor:
-                                            context.colorScheme.primary
-                                                .withValues(
-                                                  alpha:
-                                                      context
-                                                              .colorScheme
-                                                              .brightness ==
-                                                          Brightness.light
-                                                      ? 0.20
-                                                      : 0.26,
-                                                ),
-                                        indicatorShape:
-                                            const RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.all(
-                                                Radius.circular(FluxoraRadius.lg),
-                                              ),
-                                            ),
-                                        selectedIconTheme: IconThemeData(
-                                          color: context.colorScheme.primary,
-                                        ),
-                                        unselectedIconTheme: IconThemeData(
-                                          color:
-                                              context.colorScheme.onSurfaceVariant,
-                                        ),
-                                        selectedLabelTextStyle: context
-                                            .textTheme
-                                            .labelLarge!
-                                            .copyWith(
-                                              color: context.colorScheme.primary,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                        unselectedLabelTextStyle: context
-                                            .textTheme
-                                            .labelLarge!
-                                            .copyWith(
-                                              color: context
-                                                  .colorScheme
-                                                  .onSurfaceVariant,
-                                            ),
+                                      child: AuroraNavigationRail(
                                         destinations: navigationItems
                                             .map(
-                                              (e) => NavigationRailDestination(
+                                              (e) => AuroraRailDestination(
                                                 icon: e.icon,
-                                                label: Text(
-                                                  e.label.localizedName,
-                                                ),
+                                                label: e.label.localizedName,
                                               ),
                                             )
                                             .toList(),
+                                        selectedIndex: currentIndex,
+                                        extended: showLabel,
                                         onDestinationSelected: (index) {
                                           final label =
                                               navigationItems[index].label;
@@ -462,11 +426,6 @@ class AppSidebarContainer extends ConsumerWidget {
                                             label,
                                           );
                                         },
-                                        extended: showLabel,
-                                        selectedIndex: currentIndex,
-                                        labelType: showLabel
-                                            ? NavigationRailLabelType.none
-                                            : NavigationRailLabelType.all,
                                       ),
                                     ),
                                   ),

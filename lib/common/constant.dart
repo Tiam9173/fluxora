@@ -8,6 +8,8 @@ import 'package:fluxora/models/models.dart';
 import 'package:fluxora/state.dart';
 import 'package:flutter/material.dart';
 
+import '../widgets/floating_dock_metrics.dart';
+
 const appName = AppIdentity.displayName;
 // No longer `const`: the helper name is dev-aware now, so
 // `WindowsHelperIdentity.serviceName` is a getter rather than a constant.
@@ -59,25 +61,77 @@ const ipInfoToken = String.fromEnvironment('IPINFO_TOKEN', defaultValue: '');
 const defaultExternalController = '127.0.0.1:9090';
 const maxMobileWidth = 600;
 const maxLaptopWidth = 840;
+/// Height the floating dock occupies at the bottom of a mobile page.
+///
+/// Callers add their own visual gap on top (`16 + reserve` and similar), so this
+/// returns **the dock's own height**, not "dock + spacing".
+///
+/// It reads the height the mobile shell measured ([FloatingDockMetrics]) rather
+/// than a constant. The old fixed 84 px was an estimate of the `GNav` dock that
+/// Phase 02.2 replaced: the Aurora dock is 77 px at 1.0× and 92 px at 2.0×, so
+/// the constant over-reserved at normal text and left the last 8 px of content
+/// under the dock at 2.0×. A floor is still needed for the frame before the
+/// first post-frame measure lands, and for hosts that mount no dock.
+///
+/// `viewPadding` — never `padding` — feeds the fallback path. `padding.bottom`
+/// carries both the keyboard inset (not ours) and the dock height the shell
+/// injects (which would be counted twice: measured on a 390×844 phone it turned
+/// the reserve into 154 px and pushed four pages' content 70 px too far up).
 double getFloatingBottomBarReserveHeight(BuildContext context) {
   final mediaQuery = MediaQuery.of(context);
-  final viewBottom = max(
-    mediaQuery.viewPadding.bottom,
-    mediaQuery.padding.bottom,
-  );
+  final viewBottom = mediaQuery.viewPadding.bottom;
+
+  // TV keeps its own ladder: the 132 px figure covers the TV bar plus the
+  // ten-foot focus ring, and must not be replaced by the mobile dock's height.
   if (globalState.isAndroidTV) {
     return 132.0 + (viewBottom > 12 ? viewBottom - 12 : 0);
   }
-  return 84.0 + (viewBottom > 12 ? viewBottom - 12 : 0);
+
+  final measured = FloatingDockMetrics.maybeHeightOf(context);
+  if (measured > 0) {
+    // The measured value already includes the dock's own `SafeArea`, so the
+    // system inset must not be added again.
+    return measured > _bottomBarReserveFloor
+        ? measured
+        : _bottomBarReserveFloor;
+  }
+
+  return _bottomBarReserveFloor + (viewBottom > 12 ? viewBottom - 12 : 0);
 }
+
+/// Floor for the reserve, in logical pixels.
+///
+/// 84 is the Aurora dock at 1.0× (77 px) plus breathing room. It is a **floor,
+/// not an estimate**: a taller dock (large text) wins, a shorter one does not
+/// shrink the gap below what the layout was designed around.
+const double _bottomBarReserveFloor = 84.0;
 
 double getFloatingBottomBarFABReserveHeight(BuildContext context) {
   final mediaQuery = MediaQuery.of(context);
-  final viewBottom = max(
-    mediaQuery.viewPadding.bottom,
-    mediaQuery.padding.bottom,
-  );
-  return 84.0 - min(viewBottom, 12.0);
+  // `viewPadding` only, for the same reason as
+  // `getFloatingBottomBarReserveHeight`: `padding.bottom` also carries the dock
+  // height that the mobile shell injects, and folding that into the
+  // `min(..., 12)` term below silently shrank the FAB's clearance. Measured on
+  // a 390×844 phone: the FAB sat 6 px above the dock instead of 18 px — close
+  // enough that the button's own shadow merged into the dock.
+  //
+  // Only affects devices whose bottom inset is under 12 px (desktop, Android
+  // without a gesture bar); where the inset is ≥ 12 the `min` already capped the
+  // subtraction, so real phones are unchanged.
+  final viewBottom = mediaQuery.viewPadding.bottom;
+
+  // Same story as the content reserve: the FAB has to clear the *measured* dock,
+  // not a constant. Measured at 2.0× text on a 390×844 shell, the fixed 84 left
+  // the FAB overlapping the dock by 8 px (dock 92, FAB bottom at 844-16-84).
+  final measured = FloatingDockMetrics.maybeHeightOf(context);
+  if (measured > 0) {
+    // The measured height already contains the dock's `SafeArea`, so the inset
+    // term only belongs to the fallback.
+    return measured > _bottomBarReserveFloor
+        ? measured
+        : _bottomBarReserveFloor;
+  }
+  return _bottomBarReserveFloor - min(viewBottom, 12.0);
 }
 
 const defaultTestUrl = 'https://www.apple.com/library/test/success.html';

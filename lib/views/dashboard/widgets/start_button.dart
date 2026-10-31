@@ -171,6 +171,13 @@ class _StartButtonState extends ConsumerState<StartButton> {
       await globalState.appController.updateStatus(newState);
     } catch (e) {
       commonPrint.log('updateStatus failed: $e');
+      // The primary action used to fail silently: the optimistic toggle was
+      // rolled back in `finally`, so the card simply snapped back with no
+      // explanation. The sibling restart path already reports failures through
+      // a snackbar, and this is the more important of the two — a user who
+      // taps "connect" and sees nothing happen has no way to tell a failure
+      // from a missed tap.
+      if (mounted) context.showSnackBar('$e');
     } finally {
       if (mounted) {
         setState(() {
@@ -207,8 +214,16 @@ class _StartButtonState extends ConsumerState<StartButton> {
     );
 
     if (result == true) {
-      await globalState.appController.restartCore();
-      globalState.showNotifier(appLocalizations.success);
+      // `showNotifier(success)` must only run after a successful restart; an
+      // unhandled throw here would also leave the user with no feedback at all.
+      try {
+        await globalState.appController.restartCore();
+        globalState.showNotifier(appLocalizations.success);
+      } catch (e) {
+        commonPrint.log('restartCore failed: $e');
+        if (!mounted) return;
+        context.showSnackBar('$e');
+      }
     }
   }
 
@@ -273,6 +288,11 @@ class _StartButtonState extends ConsumerState<StartButton> {
           // is no longer enough once the header row is back.
           height: getWidgetHeight(1) + FluxoraSpacing.xxl,
           child: FluxoraCard(
+            // The connection state is the page's primary surface. `filled`
+            // lifts it from `surfaceContainerLow` (every metric card) to
+            // `surfaceContainer`, so the Hero reads as a plane above the grid
+            // instead of "the first card in a list of equals".
+            filled: true,
             onTap: canPress
                 ? _handleStart
                 : hasNoProfile
@@ -352,7 +372,7 @@ class _StartButtonState extends ConsumerState<StartButton> {
                   height: 40,
                   child: busy
                       ? const Padding(
-                          padding: EdgeInsets.all(8),
+                          padding: EdgeInsets.all(FluxoraSpacing.sm),
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : IconButton.filledTonal(

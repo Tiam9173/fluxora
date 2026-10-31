@@ -69,6 +69,30 @@ class CustomDashboardTitleNotifier extends StateNotifier<String?> {
   }
 }
 
+/// Total grid columns for a dashboard [viewWidth] logical pixels wide.
+///
+/// Grows in steps of four so a 4-cell card keeps its proportion. The floor of 8
+/// is what makes an 8-cell card a full row on a narrow window.
+int dashboardColumnCount(double viewWidth) =>
+    max(4 * ((viewWidth / 320).ceil()), 8);
+
+/// The grid span a dashboard item actually takes.
+///
+/// The start/stop control is the page's primary status and has to own a whole
+/// row. Its enum entry hardcodes `crossAxisCellCount: 8`, which is a full row
+/// only while the grid has 8 columns — above ~640 px [dashboardColumnCount]
+/// grows (16 columns at 1200 px), so the Hero silently shrank to half a row and
+/// shared it with a metric card. Everything else keeps the span it declares.
+GridItem dashboardGridItemFor(GridItem item, int columns) {
+  if (!identical(item, DashboardWidget.startButton.widget)) return item;
+  return GridItem(
+    crossAxisCellCount: columns,
+    mainAxisCellCount: item.mainAxisCellCount,
+    isDeletable: item.isDeletable,
+    child: item.child,
+  );
+}
+
 typedef _IsEditWidgetBuilder = Widget Function(bool isEdit);
 
 class DashboardView extends ConsumerStatefulWidget {
@@ -263,21 +287,22 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
   @override
   Widget build(BuildContext context) {
     final dashboardState = ref.watch(dashboardStateProvider);
-    final columns = max(4 * ((dashboardState.viewWidth / 320).ceil()), 8);
+    final columns = dashboardColumnCount(dashboardState.viewWidth);
     final spacing = 16.ap;
     final isMobileView = ref.watch(isMobileViewProvider);
+    final visibleItems = dashboardState.dashboardWidgets
+        .where(
+          (item) => item.platforms.contains(SupportPlatform.currentPlatform),
+        )
+        .toList();
     final children = [
-      ...dashboardState.dashboardWidgets
-          .where(
-            (item) => item.platforms.contains(SupportPlatform.currentPlatform),
-          )
-          .map((item) => item.widget),
+      for (final item in visibleItems) dashboardGridItemFor(item.widget, columns),
     ];
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _addedWidgetsNotifier.value = DashboardWidget.values
           .where(
             (item) =>
-                !children.contains(item.widget) &&
+                !visibleItems.any((v) => identical(v.widget, item.widget)) &&
                 item.platforms.contains(SupportPlatform.currentPlatform),
           )
           .map((item) => item.widget)
@@ -291,7 +316,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
       body: Align(
         alignment: Alignment.topCenter,
         child: SingleChildScrollView(
-          padding: EdgeInsets.all(16).copyWith(
+          padding: EdgeInsets.all(FluxoraSpacing.lg).copyWith(
             bottom:
                 16 +
                 (isMobileView ? getFloatingBottomBarReserveHeight(context) : 0),
@@ -312,13 +337,8 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                             crossAxisSpacing: spacing,
                             mainAxisSpacing: spacing,
                             children: [
-                              ...dashboardState.dashboardWidgets
-                                  .where(
-                                    (item) => item.platforms.contains(
-                                      SupportPlatform.currentPlatform,
-                                    ),
-                                  )
-                                  .map((item) => item.widget),
+                              for (final item in visibleItems)
+                                dashboardGridItemFor(item.widget, columns),
                             ],
                             onUpdate: () {
                               _handleSave();
@@ -359,7 +379,7 @@ class _AddDashboardWidgetModal extends StatelessWidget {
   Widget build(BuildContext context) {
     return DeferredPointerHandler(
       child: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
+        padding: EdgeInsets.all(FluxoraSpacing.lg),
         child: Grid(
           crossAxisCount: 8,
           crossAxisSpacing: 16,
@@ -595,7 +615,11 @@ class _DashboardTitleDialogState extends State<_DashboardTitleDialog> {
                 color: colorScheme.onSurfaceVariant,
               )
             : (isSelected
-                  ? const Icon(Icons.check, size: 16, color: Colors.white)
+                  // The tick sits on a user-chosen swatch, so a fixed white
+                  // vanishes on pale fills. `readableForeground` picks black or
+                  // white by luminance — the same rule the colour page's confirm
+                  // button uses.
+                  ? Icon(Icons.check, size: 16, color: fill.readableForeground)
                   : null),
       ),
     );
