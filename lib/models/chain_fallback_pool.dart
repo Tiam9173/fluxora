@@ -51,23 +51,26 @@ class ChainFallbackCandidate {
   /// 最近探测延迟（毫秒，null 代表未测或不可用，严禁伪造）
   ///
   /// **P1.3-A2 — 写入边界（重要，勿误解为「已生效的通用延迟信号」）**：
-  ///  * 该字段**仅**由 **failover 候选探测路径**写入
-  ///    （`ChainFailoverService._updateCandidateStats` 与候选探测回写）；
+  ///  * 该字段原本**仅**由 failover 候选探测路径写入
+  ///    （`ChainFailoverService._updateCandidateStats`），该路径已在 `7916804c`
+  ///    删除 —— 因此当前**没有任何生产路径**更新它；
   ///  * **健康检查路径不写它** —— `ChainProxyManager._writeBackProbeResultsToCandidates`
   ///    只累积 `statsByContext`（reliability 样本），**不刷新** `latencyMs` / `health`；
   ///  * **UI 主动测速不写它** —— UI 测速结果只进 `AppState.delayMap`
   ///    （供 proxies 列表展示 / 排序），**从不**进入本字段；
-  ///  * 因此**在未触发过 failover 的会话中，本字段恒为 `null`**；
-  ///  * 当它为 `null` 时，`ChainAdaptiveScoreService.calculateNodeScore` 取**默认
-  ///    `latencyScore = 50.0`** ⇒ 0.3 的 latency 权重退化为常量贡献。
+  ///  * 因此**本字段在当前生产路径中恒为 `null`**（仅旧持久化数据在反序列化时
+  ///    可能带入历史值）；
+  ///  * 当它为 `null` 时，调用方只能把 latency 当作**无数据**；原先
+  ///    `ChainAdaptiveScoreService` 的"默认 `latencyScore = 50.0`"退化规则
+  ///    已随该服务在 `7916804c` 删除。
   ///
   /// 生命周期提示：本字段**无网络上下文（fingerprint）分桶、无时间戳、且不落盘**
   /// （对比 `statsByContext` 三者皆有）—— 它与 reliability 的**生命周期不同**。
   ///
   /// **P1.3-C2 — 生命周期（与 reliability 明确不同）**：**无 TTL / 无过期 / 无 decay**
   /// （latency 是某一时刻的观测值，不是可累积的统计量，对单值做指数衰减没有意义）；
-  /// 且**使用前不校验年龄** —— `calculateNodeScore` 只判断 `latencyMs != null`，
-  /// 故**任意久远**的值都会被当作当前值参与 0.3 权重。
+  /// 且**使用前不校验年龄** —— 本字段只表示"曾经观测到过一个值"，
+  /// 故**任意久远**的值在读者看来都与当前值无异。
   ///
   /// 延迟来源的统一 / 时效 / 写入面补齐属 **P1.3-C Score Model Evolution**
   /// （会**同时**影响 UI 排序与 failover 候选，需独立设计），**不在本阶段实施**。

@@ -43,7 +43,6 @@ class ChainProxyManager extends ChangeNotifier {
 
   @visibleForTesting
   static Future<ChainProbeReport> Function(ChainProxyConfig)? chainProbeOverride;
-  @visibleForTesting
 
   /// Test-only seam overriding the runtime config reload performed by
   /// [_reloadRuntimeConfig] (the failover executor's apply / rollback path).
@@ -51,9 +50,6 @@ class ChainProxyManager extends ChangeNotifier {
   /// failure without a live Mihomo core.
   @visibleForTesting
   static Future<void> Function()? coreConfigReloadOverride;
-  
-  bool get isAutoHealthCheckRunning => _chainHealthTimer != null && _chainHealthTimer!.isActive;
-  int get consecutiveHealthCheckFailures => _consecutiveHealthCheckFailures;
 
   /// P1.5-A: the auto-failover skip diagnosis currently in effect
   /// (`null` = auto failover is not being skipped).
@@ -93,12 +89,11 @@ class ChainProxyManager extends ChangeNotifier {
 
   @override
   void notifyListeners() {
-    // P0 hardening: `dispose()` can now race an in-flight health check, because
-    // the periodic loop actually runs in production for the first time. A tick
-    // that is already suspended inside `runChainHealthCheck()` would otherwise
-    // notify a disposed ChangeNotifier (which throws) from a fire-and-forget
-    // timer callback, i.e. an unhandled async error. Notifying after dispose is
-    // meaningless anyway, so drop it.
+    // P0 hardening: `dispose()` can race any in-flight async work that calls
+    // back into this notifier — a probe that resumes after teardown would
+    // otherwise notify a disposed ChangeNotifier (which throws) from a
+    // fire-and-forget callback, i.e. an unhandled async error. Notifying after
+    // dispose is meaningless anyway, so drop it.
     if (_disposed) return;
     _stateVersion++;
     super.notifyListeners();
@@ -187,15 +182,51 @@ class ChainProxyManager extends ChangeNotifier {
   /// `statsByContext` / `cooldownUntil`) is RAM-only and is never written to
   /// disk. Write failures propagate: a failed persist must never be mistaken
   /// for a successful one.
+  /// Phase 06.7-B — serialises fallback-pool persistence.
+  ///
+  /// Two concurrent `updateFallbackPool` calls used to interleave as
+  /// "read memory → serialise → rename": the later reader could rename first and
+  /// the earlier one last, leaving the file one state behind memory. The unique
+  /// `.tmp` suffix in `AtomicConfigStorage` prevents name collisions, not
+  /// ordering, so the ordering has to live here.
+  Future<void> _saveChain = Future<void>.value();
+
+  /// Test-only seam that **wraps** the real save instead of replacing it.
+  ///
+  /// It exists so a test can hold a save open (to observe how many run at once)
+  /// or make one fail, without touching the filesystem or the queue's own
+  /// contract. Production leaves it `null` and the real write runs unchanged.
+  @visibleForTesting
+  static Future<void> Function(Future<void> Function() save)? saveInterceptor;
+
+  /// Runs one save, strictly after every save queued before it.
+  ///
+  /// The caller gets **its own** result: a failure surfaces at its `await` and
+  /// is never converted into a success. The chain itself is repaired separately
+  /// (`onError`) so one failed write cannot wedge every later one.
+  Future<void> _persistFallbackPool() {
+    final result = _saveChain.then((_) => _saveFallbackPool());
+    _saveChain = result.then((_) {}, onError: (Object _) {});
+    return result;
+  }
+
   Future<void> _saveFallbackPool() async {
     final filePath = await _getFallbackPoolFilePath();
     // P2.4-A: crash-safe atomic write (tmp → validate → .bak → rename), and the
     // failure is allowed to propagate — a failed persist must never be mistaken
     // for a successful one (P2.5-E).
-    await AtomicConfigStorage(filePath).save(<String, dynamic>{
-      ..._fallbackPool.toJson(),
-      PersistenceSchema.versionKey: PersistenceSchema.currentVersion,
-    });
+    Future<void> save() async {
+      await AtomicConfigStorage(filePath).save(<String, dynamic>{
+        ..._fallbackPool.toJson(),
+        PersistenceSchema.versionKey: PersistenceSchema.currentVersion,
+      });
+    }
+    final interceptor = saveInterceptor;
+    if (interceptor == null) {
+      await save();
+    } else {
+      await interceptor(save);
+    }
   }
 
   void _telemetryListener() => notifyListeners();
@@ -214,7 +245,6 @@ class ChainProxyManager extends ChangeNotifier {
     _probeGeneration++;
     _probeCancelToken?.cancel();
     _failoverCancelToken?.cancel();
-    _consecutiveHealthCheckFailures = 0;
     _reliabilityPersistTimer?.cancel();
     _reliabilityPersistTimer = null;
     // RC.11-C1: a pending freshness transition must not fire after teardown.
@@ -913,12 +943,6 @@ class ChainProxyManager extends ChangeNotifier {
   /// In-memory fallback pool.
   ChainFallbackPool _fallbackPool = const ChainFallbackPool();
 
-  int _consecutiveHealthCheckFailures = 0;
-
-  /// P1.5-A: the last auto-failover skip diagnosis written to the log, so a
-  /// persistent condition (e.g. an exhausted candidate pool) is reported **once**
-  /// rather than on every 1-minute health-check tick.
-  Timer? _chainHealthTimer;
   Timer? _reliabilityPersistTimer;
 
   /// RC.11-C1 (F-AR5) — the single-shot timer that advances `stateVersion` when
@@ -1238,9 +1262,7 @@ class ChainProxyManager extends ChangeNotifier {
   /// writes the pool through [updateFallbackPool], which also saves to disk and
   /// schedules the reliability write; calling this one from production would
   /// silently drop the change on the next restart. It is public purely so tests
-  /// can seed the pool directly, hence [visibleForTesting]. Full integration
-  /// with ChainFallbackService is performed by the AutoFailover coordinator at
-  /// runtime.
+  /// can seed the pool directly, hence [visibleForTesting].
   @visibleForTesting
   Future<void> setFallbackPool(ChainFallbackPool pool) async {
     _fallbackPool = pool;
@@ -1458,9 +1480,8 @@ class ChainProxyManager extends ChangeNotifier {
 
 
   List<String>? _availableProxyNames() {
-    // `null` means "do not filter by available names" (see
-    // ChainFallbackService.selectCandidates). When the app is not booted
-    // (unit tests), there is no AppController to read groups from.
+    // `null` means "do not filter by available names". When the app is not
+    // booted (unit tests), there is no AppController to read groups from.
     if (!globalState.hasAppController) return null;
     try {
       final groups = globalState.appController.ref.read(groupsProvider);
@@ -1487,25 +1508,6 @@ class ChainProxyManager extends ChangeNotifier {
   /// is not readable). Callers must treat that as "availability unknown" — not
   /// as "every node is available" — and refuse to report success.
   List<String>? get availableProxyNames => _availableProxyNames();
-
-  /// Starts the periodic health-check loop if it is not already running.
-  ///
-  /// F-C1: this is **not** a production entry point. Production turns the loop
-  /// on only through [_syncChainHealthCheck], which gates on the desired config
-  /// state; it is public purely so tests can drive the loop directly, hence
-  /// [visibleForTesting] (a production caller in another library would get an
-  /// `invalid_use_of_visible_for_testing_member` warning).
-  ///
-  /// It is also **self-guarding**: a call while the loop is already live is a
-  /// no-op. Without this, a stray caller could cancel-and-restart a running
-  /// loop and thereby reset [_consecutiveHealthCheckFailures] — which delays
-  /// automatic-failover detection by up to one full failure window. Use
-  /// [stopChainHealthCheck] to end the loop; a later start resets the counter as
-  /// expected.
-
-
-
-
 
   void _scheduleReliabilityPersist() {
     _reliabilityPersistDirty = true;
@@ -1671,7 +1673,7 @@ class ChainProxyManager extends ChangeNotifier {
   Future<void> updateFallbackPool(ChainFallbackPool Function(ChainFallbackPool) updater) async {
     _fallbackPool = updater(_fallbackPool);
     notifyListeners();
-    await _saveFallbackPool();
+    await _persistFallbackPool();
     _scheduleReliabilityPersist();
     // RC.11-C1: this is the other pool write path (`:1117` is the failover
     // callback), so a freshness transition may have changed with it.
@@ -1740,8 +1742,9 @@ class ChainProxyManager extends ChangeNotifier {
   ///  * 本函数**只**累积 `statsByContext`（reliability 样本，按当前 network
   ///    fingerprint 分桶）；
   ///  * **不写** `candidate.health` / `candidate.latencyMs` /
-  ///    `candidate.lastChecked` —— 这三个字段目前**只**由 failover 路径写入
-  ///    （`ChainFailoverService._updateCandidateStats`）；
+  ///    `candidate.lastChecked` —— 这三个字段原本由 failover 路径写入
+  ///    （`ChainFailoverService._updateCandidateStats`），该路径已在 `7916804c`
+  ///    删除，因此当前**没有任何生产路径**更新它们；
   ///  * **覆盖范围**：`report.hops` 只包含**当前生效链路**的跳（最多 3 跳），
   ///    因此一次回写最多命中 ≤3 个候选；pool 内其余候选**不会**因健康检查而更新。
   ///
@@ -1779,9 +1782,9 @@ class ChainProxyManager extends ChangeNotifier {
         // context instead of merging every network into one bucket.
         final context = networkFingerprintProvider.getCurrentFingerprint();
         
-        // Same classification and decay semantics as the failover writer
-        // (`ChainFailoverService._updateCandidateStats`), so one node has one
-        // history regardless of which path observed it.
+        // Same classification and decay semantics the failover writer used
+        // before it was deleted in `7916804c`, so one node has one history
+        // regardless of which path observed it.
         final bool? isSuccess = switch (matchedHop.healthStatus) {
           ChainHealthStatus.healthy || ChainHealthStatus.degraded => true,
           ChainHealthStatus.failed || ChainHealthStatus.unavailable => false,
