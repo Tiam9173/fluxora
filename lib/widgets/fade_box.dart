@@ -36,7 +36,13 @@ class FadeThroughBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // `FadeThroughTransition` is a fade **plus a 0.92 → 1.0 scale**. §10.5 makes
+    // reduced motion mandatory, and scale is exactly what it asks to suppress —
+    // so the duration collapses to zero and the new child is simply there.
+    // Everyone else keeps the 300 ms the `animations` package defaults to.
+    final reduce = MediaQuery.of(context).disableAnimations;
     return PageTransitionSwitcher(
+      duration: reduce ? Duration.zero : const Duration(milliseconds: 300),
       transitionBuilder: (child, animation, secondaryAnimation) {
         return Container(
           margin: margin,
@@ -68,7 +74,11 @@ class FadeScaleBox extends StatelessWidget {
           child: FadeScaleTransition(animation: animation, child: child),
         );
       },
-      duration: Duration(milliseconds: 300),
+      // Same rule as `FadeThroughBox`: a scale transition, so reduced motion
+      // collapses the duration instead of playing a 300 ms zoom.
+      duration: MediaQuery.of(context).disableAnimations
+          ? Duration.zero
+          : const Duration(milliseconds: 300),
       child: child,
     );
   }
@@ -97,6 +107,17 @@ class _FadeScaleEnterBoxState extends State<FadeScaleEnterBox>
       end: 1,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
     _controller.forward();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // A 0.70 → 1.00 entrance is the largest scale in the app; under reduced
+    // motion it jumps to its final state instead of animating. `initState`
+    // cannot read `MediaQuery`, hence the jump here.
+    if (MediaQuery.of(context).disableAnimations && _controller.value != 1.0) {
+      _controller.value = 1.0;
+    }
   }
 
   @override

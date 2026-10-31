@@ -147,6 +147,33 @@ class _HideableState extends State<_Hideable> {
 }
 
 class _OpenContainerRoute<T> extends ModalRoute<T> {
+
+  /// The curved animation, created **once**.
+  ///
+  /// It used to be constructed inside the `AnimatedBuilder.builder` below, which
+  /// runs on every animation tick. `CurvedAnimation`'s constructor calls
+  /// `parent.addStatusListener(...)` and only `dispose()` removes it, so each
+  /// frame of an open/close transition leaked one status listener onto the
+  /// animation for the rest of its life. `curve` / `reverseCurve` are mutable,
+  /// so the interrupted flag is applied without rebuilding the object.
+  CurvedAnimation? _curved;
+
+  CurvedAnimation _curveFor(Animation<double> parent) {
+    final existing = _curved;
+    final reverse = _transitionWasInterrupted
+        ? null
+        : Curves.fastOutSlowIn.flipped;
+    if (existing != null && identical(existing.parent, parent)) {
+      existing.reverseCurve = reverse;
+      return existing;
+    }
+    existing?.dispose();
+    return _curved = CurvedAnimation(
+      parent: parent,
+      curve: Curves.fastOutSlowIn,
+      reverseCurve: reverse,
+    );
+  }
   _OpenContainerRoute({
     required this.middleColor,
     required this.closedBuilder,
@@ -310,6 +337,8 @@ class _OpenContainerRoute<T> extends ModalRoute<T> {
 
   @override
   void dispose() {
+    _curved?.dispose();
+    _curved = null;
     if (hideableKey.currentState?.isVisible == false) {
       SchedulerBinding.instance.addPostFrameCallback(
         (Duration d) => _toggleHideable(hide: false),
@@ -438,13 +467,7 @@ class _OpenContainerRoute<T> extends ModalRoute<T> {
             );
           }
 
-          final Animation<double> curvedAnimation = CurvedAnimation(
-            parent: animation,
-            curve: Curves.fastOutSlowIn,
-            reverseCurve: _transitionWasInterrupted
-                ? null
-                : Curves.fastOutSlowIn.flipped,
-          );
+          final Animation<double> curvedAnimation = _curveFor(animation);
           TweenSequence<Color?>? colorTween;
           TweenSequence<double>? closedOpacityTween, openOpacityTween;
           switch (animation.status) {

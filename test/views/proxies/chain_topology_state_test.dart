@@ -458,6 +458,24 @@ void main() {
       await tester.pump();
     }
 
+    /// Same as [pumpTopology] but drives the OS reduce-motion flag through the
+    /// real platform dispatcher, which is the path `MediaQuery.disableAnimations`
+    /// takes in production. `_TopologyNode` reads it in
+    /// `didChangeDependencies` to start or park its breathing pulse.
+    Future<void> pumpTopologyWithMotion(
+      WidgetTester tester,
+      ChainProxyConfig config,
+      ChainProbeReport? report, {
+      required bool disableAnimations,
+    }) async {
+      tester.binding.platformDispatcher.accessibilityFeaturesTestValue =
+          FakeAccessibilityFeatures(disableAnimations: disableAnimations);
+      addTearDown(
+        tester.binding.platformDispatcher.clearAccessibilityFeaturesTestValue,
+      );
+      await pumpTopology(tester, config, report);
+    }
+
     testWidgets('no report → says so, and claims no failure', (tester) async {
       await pumpTopology(tester, twoHopConfig(), null);
 
@@ -618,6 +636,99 @@ void main() {
 
       // `SG-01` is the three-hop relay fixture; it must not leak into two-hop.
       expect(find.textContaining('SG-01'), findsNothing);
+    });
+
+    // ── Phase 00.6-F10 — the node pulse must honour reduced motion ──────────
+    //
+    // `_TopologyNode` breathes while its hop is `checking` (`_pulse.repeat(
+    // reverse: true)`). `F10-A` recorded that guard as real but untested; these
+    // cases pin it. The observation is `hasScheduledFrame`, because a live
+    // `repeat()` never settles — `pumpAndSettle` would time out, which is the
+    // failure this is built to catch.
+
+    ChainProbeReport checkingReport() => reportWith(
+      mode: ChainHopMode.twoHop,
+      hops: [
+        hop(1, HopRole.hop1Entry, 'HK-01', HopProbeStatus.checking),
+        hop(2, HopRole.hop2Exit, 'US-01', HopProbeStatus.checking),
+      ],
+      status: ChainHealthStatus.checking,
+    );
+
+    testWidgets('a checking chain pulses without reduced motion', (
+      tester,
+    ) async {
+      await pumpTopologyWithMotion(
+        tester,
+        twoHopConfig(),
+        checkingReport(),
+        disableAnimations: false,
+      );
+      expect(tester.binding.hasScheduledFrame, isTrue);
+    });
+
+    testWidgets('a checking chain stops pulsing under reduced motion', (
+      tester,
+    ) async {
+      await pumpTopologyWithMotion(
+        tester,
+        twoHopConfig(),
+        checkingReport(),
+        disableAnimations: true,
+      );
+      // Would time out if the pulse were still scheduling frames.
+      await tester.pumpAndSettle();
+      expect(tester.binding.hasScheduledFrame, isFalse);
+      // The node is still on screen — only the motion is gone.
+      expect(find.textContaining('HK-01'), findsWidgets);
+    });
+
+    testWidgets('a healthy chain stops animating under reduced motion', (
+      tester,
+    ) async {
+      // A healthy chain has no node pulse, but it does render the connected
+      // `FluxoraFlowIndicator`, which loops. Without reduced motion that loop
+      // keeps scheduling frames forever (so this pump would time out), which is
+      // correct — the assertion below is the reduced-motion half.
+      await pumpTopologyWithMotion(
+        tester,
+        twoHopConfig(),
+        reportWith(
+          mode: ChainHopMode.twoHop,
+          hops: [
+            hop(1, HopRole.hop1Entry, 'HK-01', HopProbeStatus.healthy),
+            hop(2, HopRole.hop2Exit, 'US-01', HopProbeStatus.healthy),
+          ],
+          status: ChainHealthStatus.healthy,
+        ),
+        disableAnimations: true,
+      );
+      await tester.pumpAndSettle();
+      expect(tester.binding.hasScheduledFrame, isFalse);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('turning reduced motion on stops an in-flight pulse', (
+      tester,
+    ) async {
+      await pumpTopologyWithMotion(
+        tester,
+        twoHopConfig(),
+        checkingReport(),
+        disableAnimations: false,
+      );
+      expect(tester.binding.hasScheduledFrame, isTrue);
+
+      // Same config and report, only the MediaQuery flag differs, so the State
+      // survives and `didChangeDependencies` re-runs `_syncPulse`.
+      await pumpTopologyWithMotion(
+        tester,
+        twoHopConfig(),
+        checkingReport(),
+        disableAnimations: true,
+      );
+      await tester.pumpAndSettle();
+      expect(tester.binding.hasScheduledFrame, isFalse);
     });
   });
 }

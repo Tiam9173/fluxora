@@ -205,6 +205,18 @@ class SuperGridState extends State<SuperGrid> with TickerProviderStateMixin {
       _shakeController.stop();
     }
 
+    // The reorder glide and the fake dragged card were the two paths this file
+    // still animated under reduced motion. Collapsing their durations makes the
+    // grid re-lay-out in one frame; positions are still applied, so the final
+    // layout is identical.
+    final motionDuration = _reduceMotion ? Duration.zero : commonDuration;
+    if (_transformController.duration != motionDuration) {
+      _transformController.duration = motionDuration;
+    }
+    if (_fakeDragWidgetController.duration != motionDuration) {
+      _fakeDragWidgetController.duration = motionDuration;
+    }
+
     final scrollable = context.findAncestorWidgetOfExactType<Scrollable>();
     if (scrollable == null) {
       return;
@@ -757,6 +769,20 @@ class _DeletableContainerState extends State<_DeletableContainer>
       begin: 1.0,
       end: 0.0,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Shrink + fade before the item is removed. Under reduced motion the two
+    // tweens collapse to zero, but `_handleDel` still awaits `forward()` and
+    // therefore still calls `widget.onDelete()` — the business action is not
+    // tied to the animation's duration.
+    final reduce = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    final duration = reduce ? Duration.zero : commonDuration;
+    if (_controller.duration != duration) {
+      _controller.duration = duration;
+    }
   }
 
   @override

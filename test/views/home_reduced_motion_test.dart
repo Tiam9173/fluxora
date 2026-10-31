@@ -10,13 +10,19 @@ import 'package:fluxora/models/models.dart';
 import 'package:fluxora/pages/home.dart';
 import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
+import 'package:fluxora/widgets/widgets.dart';
 
 /// Phase 00.6-F10-C — the mobile page transition must obey reduce motion.
 ///
 /// `_HomePageView` is library-private, so the only public entry is [HomePage].
 /// The navigation list and the current page are therefore overridden with two
 /// throwaway pages, which keeps the pumped tree small while still running the
-/// real `AnimatedSwitcher` that production builds.
+/// real page host that production builds.
+///
+/// Phase 04.3 replaced that host's `AnimatedSwitcher` with [KeptPageView] (the
+/// switcher disposed the outgoing page, losing its state). The contract asserted
+/// here is unchanged — the transition duration is the `FluxoraMotion.slow` token,
+/// and zero under reduced motion — only the widget it is read from moved.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -91,19 +97,18 @@ void main() {
     );
   }
 
-  /// The page switcher is the `AnimatedSwitcher` that wraps the current page,
-  /// so anchor on the page text rather than `find.byType` (the nav bar and
-  /// `CommonTargetIcon` bring their own switchers).
+  /// The page host that wraps the current page, anchored on the page text
+  /// rather than `find.byType` (the nav bar brings its own animated widgets).
   Duration pageSwitcherDuration(WidgetTester tester) {
-    final switcher = tester.widget<AnimatedSwitcher>(
+    final host = tester.widget<KeptPageView>(
       find
           .ancestor(
             of: find.text('page-dashboard'),
-            matching: find.byType(AnimatedSwitcher),
+            matching: find.byType(KeptPageView),
           )
           .first,
     );
-    return switcher.duration;
+    return host.duration;
   }
 
   testWidgets('reduce motion removes the page cross-fade', (tester) async {

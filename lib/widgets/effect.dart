@@ -19,28 +19,18 @@ class EffectGestureDetector extends StatefulWidget {
   State<EffectGestureDetector> createState() => _EffectGestureDetectorState();
 }
 
-class _EffectGestureDetectorState extends State<EffectGestureDetector>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+class _EffectGestureDetectorState extends State<EffectGestureDetector> {
   double _scale = 1;
 
   @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    // The press-shrink is a scale change, so reduced motion keeps the state
+    // (0.95 while held) but drops the tween — the finger already provides the
+    // feedback, the 200 ms ramp is what §10.5 asks to remove.
+    final reduce = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     return AnimatedScale(
       scale: _scale,
-      duration: kThemeAnimationDuration,
+      duration: reduce ? Duration.zero : kThemeAnimationDuration,
       curve: Curves.easeOut,
       child: GestureDetector(
         onLongPress: widget.onLongPress,
@@ -90,6 +80,21 @@ class _CommonExpandIconState extends State<CommonExpandIcon>
     _iconTurns = _animationController.drive(_iconTurnTween);
     if (widget.expand) {
       _animationController.value = pi;
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // `initState` cannot read `MediaQuery`. Setting the duration here also
+    // covers flipping the OS switch mid-session: the next forward/reverse
+    // completes in one frame instead of ramping.
+    final reduce = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    final duration = reduce
+        ? Duration.zero
+        : const Duration(milliseconds: 200);
+    if (_animationController.duration != duration) {
+      _animationController.duration = duration;
     }
   }
 

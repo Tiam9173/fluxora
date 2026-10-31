@@ -289,4 +289,58 @@ void main() {
       expect(painterOf<LineChartPainter>(tester).progress, 1.0);
     });
   });
+
+  // ── BarChart bar colour ────────────────────────────────────────────────────
+  //
+  // The bars used to be a hardcoded `Colors.blue` inside the painter, which made
+  // the dashboard's only bar chart the one surface painting a non-brand hue.
+  // These pin that the fill now follows the theme, and that an explicit override
+  // still wins.
+
+  group('BarChart bar colour', () {
+    Future<ColorScheme> pumpBarThemed(
+      WidgetTester tester, {
+      Color? color,
+    }) async {
+      final scheme = ColorScheme.fromSeed(seedColor: const Color(0xFF7C75FF));
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(colorScheme: scheme),
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 200,
+                height: 120,
+                child: BarChart(data: barsA, color: color),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      return scheme;
+    }
+
+    testWidgets('bars follow the theme primary, not Material blue', (
+      tester,
+    ) async {
+      final scheme = await pumpBarThemed(tester);
+
+      final painter = painterOf<BarChartPainter>(tester);
+      expect(painter.color, scheme.primary);
+      expect(
+        painter.color,
+        isNot(Colors.blue),
+        reason: 'the hardcoded Material blue must be gone',
+      );
+    });
+
+    testWidgets('an explicit colour wins over the theme', (tester) async {
+      const explicit = Color(0xFFFF7043);
+
+      await pumpBarThemed(tester, color: explicit);
+
+      expect(painterOf<BarChartPainter>(tester).color, explicit);
+    });
+  });
 }
