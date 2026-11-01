@@ -226,19 +226,26 @@ class _AuroraDockItemState extends State<_AuroraDockItem> {
                   const SizedBox(height: FluxoraSpacing.xxs),
                   Icon(widget.icon, size: 20, color: iconColor),
                   const SizedBox(height: FluxoraSpacing.xxs),
-                  Text(
-                    widget.label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style:
-                        (Theme.of(context).textTheme.labelLarge ??
-                                const TextStyle())
-                            .copyWith(
-                      fontSize: FluxoraFontSize.compact,
-                      height: 1.1,
-                      fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                      color: labelColor,
-                      letterSpacing: 0,
+                  // P8-2B F-3 — the `Semantics(label:)` above is the
+                  // authoritative name. Left in the tree, this `Text` merges
+                  // its own label into the same node and the screen reader
+                  // announces "dashboard dashboard".
+                  ExcludeSemantics(
+                    child: Text(
+                      widget.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style:
+                          (Theme.of(context).textTheme.labelLarge ??
+                                  const TextStyle())
+                              .copyWith(
+                        fontSize: FluxoraFontSize.compact,
+                        height: 1.1,
+                        fontWeight:
+                            selected ? FontWeight.w600 : FontWeight.w500,
+                        color: labelColor,
+                        letterSpacing: 0,
+                      ),
                     ),
                   ),
                 ],

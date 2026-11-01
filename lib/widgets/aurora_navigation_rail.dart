@@ -91,11 +91,21 @@ class AuroraNavigationRail extends StatelessWidget {
           for (var index = 0; index < destinations.length; index++)
             Padding(
               padding: const EdgeInsets.only(bottom: FluxoraSpacing.xs),
-              child: _AuroraRailItem(
-                destination: destinations[index],
+              // P8-2B F-2 — the rail item was the only one of the three
+              // navigation surfaces that announced neither a role nor a
+              // selection. No `label:` here on purpose: the item's own `Text`
+              // already supplies the name, and adding one would make the
+              // screen reader say it twice (that is F-3, fixed on the dock and
+              // the TV bar by excluding their decorative `Text`).
+              child: Semantics(
+                button: true,
                 selected: index == selectedIndex,
-                extended: extended,
-                onTap: () => onDestinationSelected(index),
+                child: _AuroraRailItem(
+                  destination: destinations[index],
+                  selected: index == selectedIndex,
+                  extended: extended,
+                  onTap: () => onDestinationSelected(index),
+                ),
               ),
             ),
         ],

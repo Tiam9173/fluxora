@@ -208,19 +208,25 @@ class _AuroraTvItem extends StatelessWidget {
                 child: destination.icon,
               ),
               const SizedBox(height: FluxoraSpacing.xs),
-              Text(
-                destination.label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style:
-                    (Theme.of(context).textTheme.labelLarge ??
-                            const TextStyle())
-                        .copyWith(
-                  fontSize: FluxoraFontSize.compact,
-                  height: 1.15,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                  color: labelColor,
-                  letterSpacing: 0,
+              // P8-2B F-3 — the `Semantics(label:)` above is the authoritative
+              // name. Left in the tree, this `Text` merges its own label into
+              // the same node and the screen reader announces
+              // "dashboard dashboard".
+              ExcludeSemantics(
+                child: Text(
+                  destination.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style:
+                      (Theme.of(context).textTheme.labelLarge ??
+                              const TextStyle())
+                          .copyWith(
+                    fontSize: FluxoraFontSize.compact,
+                    height: 1.15,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                    color: labelColor,
+                    letterSpacing: 0,
+                  ),
                 ),
               ),
             ],
