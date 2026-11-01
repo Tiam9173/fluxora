@@ -289,10 +289,21 @@ class LogItem extends StatelessWidget {
                   },
                   label: log.logLevel.name,
                 ),
-                Text(
-                  log.dateTime,
-                  style: context.textTheme.bodySmall?.copyWith(
-                    color: context.colorScheme.onSurface.opacity80,
+                // P8-2C F-4 — the chip and the timestamp are both unbounded, so
+                // at phone widths (~364 px of content against 288 px of usable
+                // width at 320) the row overflowed. The chip is short and fixed,
+                // the timestamp is the one that has to give: it shrinks and
+                // ellipsises, and the full value stays readable in
+                // `LogDetailDialog`, which opens on tap.
+                Flexible(
+                  child: Text(
+                    log.dateTime,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.end,
+                    style: context.textTheme.bodySmall?.copyWith(
+                      color: context.colorScheme.onSurface.opacity80,
+                    ),
                   ),
                 ),
               ],
