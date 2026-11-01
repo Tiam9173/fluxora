@@ -98,6 +98,7 @@ class AuroraTvNavBar extends StatelessWidget {
       ),
       child: SafeArea(
         child: Focus(
+          canRequestFocus: false,
           onKeyEvent: _handleKey,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
