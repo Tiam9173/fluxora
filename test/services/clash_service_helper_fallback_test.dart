@@ -35,6 +35,16 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 /// which reads the real `dart:io Platform` — no `System.platformOverride` is
 /// used, and each test asserts the host really is Windows so a non-Windows run
 /// fails loudly instead of passing vacuously.
+/// Reason attached to the five Windows-branch tests when the host is not
+/// Windows.
+///
+/// `test.yaml` runs on `ubuntu-latest`. Each test below drives
+/// `system.isWindows` and asserts the host really is Windows, so without this
+/// guard the whole job would go red on Linux instead of skipping the five tests
+/// that can only run on Windows. The `expect` stays: on Windows it still proves
+/// the branch is real, and a skip never reaches it elsewhere.
+const _windowsOnly = 'Windows-only: requires Windows platform';
+
 void main() {
   // `_initServer`'s error handler reaches `globalState.showNotifier`, which
   // needs `WidgetsBinding.instance`.
@@ -154,7 +164,7 @@ void main() {
         isNull,
         reason: 'the launcher was a stand-in — no real core was spawned',
       );
-    });
+    }, skip: Platform.isWindows ? false : _windowsOnly);
 
     test('a failed service registration skips the helper entirely', () async {
       expect(Platform.isWindows, isTrue, reason: 'drives the Windows branch');
@@ -184,7 +194,7 @@ void main() {
         reason: 'no service means there is nothing to ask the helper for',
       );
       expect(launches, [appPath.corePath], reason: 'launched exactly once');
-    });
+    }, skip: Platform.isWindows ? false : _windowsOnly);
 
     test('a successful helper start never launches a second core', () async {
       expect(Platform.isWindows, isTrue, reason: 'drives the Windows branch');
@@ -216,7 +226,7 @@ void main() {
         isFalse,
         reason: 'the helper path settles the starting flag',
       );
-    });
+    }, skip: Platform.isWindows ? false : _windowsOnly);
 
     test('a failing core launch propagates and leaves no started state',
         () async {
@@ -256,7 +266,7 @@ void main() {
         isFalse,
         reason: 'a failed launch must not leave the service "starting"',
       );
-    });
+    }, skip: Platform.isWindows ? false : _windowsOnly);
 
     test('a throwing helper also restores the starting state', () async {
       expect(Platform.isWindows, isTrue, reason: 'drives the Windows branch');
@@ -278,7 +288,7 @@ void main() {
 
       expect(s.isStarting, isFalse, reason: 'the flag must not stay set');
       expect(s.process, isNull);
-    });
+    }, skip: Platform.isWindows ? false : _windowsOnly);
   });
 }
 
