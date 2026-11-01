@@ -39,18 +39,24 @@ void main() {
   // from the error handler instead of from the bind.
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  /// Every `Fluxora_*.sock` currently in the system temp directory.
+  /// Every `Fluxora_*.sock` **this process** created in the system temp dir.
   ///
   /// Deliberately **not** `whereType<File>()`: on Windows a bound AF_UNIX socket
   /// is a reparse point, so `listSync` reports it as `Link` even though
   /// `File(path).existsSync()` is `true` (`entityType` is `unixDomainSock`).
+  ///
+  /// Scoped to this pid because `flutter test` runs test **files** in parallel:
+  /// another file binding its own `Fluxora_<otherPid>_…sock` would otherwise be
+  /// counted here. Every caller only ever asks for the sockets this process
+  /// made (`difference(before)`), and `decoy()` already builds a pid-scoped
+  /// name, so the filter matches what the assertions actually mean.
   Set<String> socketFiles() => Directory.systemTemp
       .listSync(followLinks: false)
       .map((e) => e.path)
       .where(
         (p) =>
             p.endsWith('.sock') &&
-            p.split(Platform.pathSeparator).last.startsWith('Fluxora_'),
+            p.split(Platform.pathSeparator).last.startsWith('Fluxora_${pid}_'),
       )
       .toSet();
 

@@ -11,10 +11,11 @@ import 'package:fluxora/state.dart';
 /// The **proxies page name sort**, reached through the real controller.
 ///
 /// `AppController.getSortProxies(sortType: ProxiesSortType.name)` delegates to
-/// `_sortOfName` (`controller.dart:2281`), which sorts with
+/// `_sortOfName`, which sorts by
 /// `utils.sortByChar(utils.getPinyin(a.name), utils.getPinyin(b.name))` —
-/// i.e. **by the pinyin of the first character, case-insensitively**, with no
-/// tie-break. This file exercises that production entry point, not a copy of it.
+/// i.e. **by the pinyin of the first character, case-insensitively** — and, when
+/// that key ties, by `String.compareTo` on the **whole name** (P7-A3). This file
+/// exercises that production entry point, not a copy of it.
 ///
 /// Several fixtures are chosen so that a pinyin sort and a code-point sort give
 /// **different** answers — a regression to `String.compareTo` (the profile page's
@@ -22,9 +23,6 @@ import 'package:fluxora/state.dart';
 /// are covered separately in `test/common/pinyin_sort_utils_test.dart`.
 ///
 /// Deliberately **not** asserted:
-///   · the relative order of names that share a first character — `_sortOfName`
-///     has no tie-break and `List.sort` is not guaranteed stable, so there is no
-///     contract to pin;
 ///   · any descending name order — `ProxiesSortType.name` has no direction.
 void main() {
   group('getSortProxies — ProxiesSortType.name', () {
@@ -122,20 +120,39 @@ void main() {
       );
     });
 
-    testWidgets('names sharing a first character are left unordered',
+    testWidgets('names sharing a first character fall back to whole-name '
+        'code-point order', (tester) async {
+      await pumpController(tester);
+
+      // Both keys are 'xiang', so the primary rule ties and the tie-break
+      // decides: '香港01' < '香港02' by `String.compareTo`.
+      expect(sortedNames(['香港02', '香港01']), ['香港01', '香港02']);
+    });
+
+    testWidgets('the tie-break does not depend on the input order',
         (tester) async {
       await pumpController(tester);
 
-      // Both keys are 'xiang'. `_sortOfName` has no tie-break, so only the
-      // membership and the determinism of repeated calls may be asserted —
-      // never which one comes first.
-      final first = sortedNames(['香港01', '香港02']);
-      expect(first.toSet(), {'香港01', '香港02'});
-      expect(first.length, 2);
+      // 北京 sorts first by pinyin (bei < xiang); the two 香 nodes tie on the
+      // primary rule and are ordered by code point. Every input permutation
+      // must land on the same list.
+      const expected = ['北京', '香港01', '香港02'];
+      expect(sortedNames(['香港02', '北京', '香港01']), expected);
+      expect(sortedNames(['北京', '香港02', '香港01']), expected);
+      expect(sortedNames(['香港01', '香港02', '北京']), expected);
+    });
 
-      for (var i = 0; i < 5; i++) {
-        expect(sortedNames(['香港01', '香港02']), first);
-      }
+    testWidgets('the tie-break is case-sensitive, unlike the primary rule',
+        (tester) async {
+      await pumpController(tester);
+
+      // Primary keys tie ('H' vs 'h' — `sortByChar` lowercases before
+      // comparing), so the tie-break decides: 'H' (0x48) < 'h' (0x68).
+      // A case-insensitive tie-break would leave these two interchangeable.
+      expect(sortedNames(['hongkong', 'Hongkong']), [
+        'Hongkong',
+        'hongkong',
+      ]);
     });
 
     testWidgets('sortType none returns the input order untouched',

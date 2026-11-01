@@ -10,7 +10,44 @@ import 'package:fluxora/models/core.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/utils/frame_codec.dart';
 import 'package:fluxora/utils/platform_check.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
+
+/// Test-only stand-ins for the three collaborators [_doRestart] reaches outside
+/// the socket: the Windows service probe, the helper client, and the core
+/// launcher.
+///
+/// None of the three can be intercepted from a test — the helper client and the
+/// `windows` probe are library globals, and `Process.start` cannot be overridden
+/// through `IOOverrides`. Production leaves [ClashService.startHooksForTest]
+/// `null`, so every branch below takes exactly the path it takes today.
+@visibleForTesting
+class ClashServiceStartHooks {
+  const ClashServiceStartHooks({
+    this.registerService,
+    this.startCore,
+    this.launchCore,
+  });
+
+  /// Stands in for `windows?.registerService()`.
+  final Future<bool> Function()? registerService;
+
+  /// Stands in for `helperClient.startCore(...)`.
+  final Future<bool> Function({
+    required String corePath,
+    required String arg,
+    required String homeDir,
+  })?
+  startCore;
+
+  /// Stands in for `Process.start(...)` **and** the two stdio listeners after it.
+  final Future<void> Function(
+    String corePath,
+    String arg,
+    Map<String, String> environment,
+  )?
+  launchCore;
+}
 
 class ClashService extends ClashHandlerInterface {
   static ClashService? _instance;
@@ -89,6 +126,14 @@ class ClashService extends ClashHandlerInterface {
   /// a real bind (`_server` / socket file ownership) has no other way to avoid
   /// launching a core binary. Production never sets it.
   static bool skipCoreSpawnForTest = false;
+
+  /// Test-only: stand-ins for the helper probe and the core launcher, so the
+  /// helper → fallback branch can be exercised without a Windows service, a
+  /// helper, or a real core binary. See [ClashServiceStartHooks].
+  ///
+  /// Production never sets it; `null` means "use the real collaborators".
+  @visibleForTesting
+  static ClashServiceStartHooks? startHooksForTest;
 
   /// Test-only: drop the singleton so the next `ClashService()` binds again.
   ///
@@ -277,6 +322,14 @@ class ClashService extends ClashHandlerInterface {
       // core after this call returns. Queued calls will run sequentially.
       await _doRestart();
     } finally {
+      // `_doRestart` clears this on every path that *returns*, but a thrown
+      // bind / service-probe / helper / `Process.start` error skips all of
+      // them. Leaving the flag set made `checkCoreHealth()` report "still
+      // starting" forever, with no way back short of a new instance. This is
+      // the only caller of `_doRestart`, so the finally covers every exit —
+      // and it does not catch, so the original error and its stack still
+      // propagate.
+      isStarting = false;
       if (_restartCompleter == completer) {
         _restartCompleter = null;
       }
@@ -341,14 +394,26 @@ class ClashService extends ClashHandlerInterface {
     final environment = Map<String, String>.from(Platform.environment);
     environment['SAFE_PATHS'] = homeDirPath;
 
+    final hooks = startHooksForTest;
+
     if (system.isWindows) {
-      final serviceOk = await windows?.registerService() ?? false;
+      final probeService = hooks?.registerService;
+      final serviceOk = probeService != null
+          ? await probeService()
+          : (await windows?.registerService() ?? false);
       if (serviceOk) {
-        final started = await helperClient.startCore(
-          corePath: appPath.corePath,
-          arg: arg,
-          homeDir: homeDirPath,
-        );
+        final startViaHelper = hooks?.startCore;
+        final started = startViaHelper != null
+            ? await startViaHelper(
+                corePath: appPath.corePath,
+                arg: arg,
+                homeDir: homeDirPath,
+              )
+            : await helperClient.startCore(
+                corePath: appPath.corePath,
+                arg: arg,
+                homeDir: homeDirPath,
+              );
         if (started) {
           await _waitForCoreReady();
           isStarting = false;
@@ -373,14 +438,19 @@ class ClashService extends ClashHandlerInterface {
       }
     }
 
-    process = await Process.start(appPath.corePath, [
-      arg,
-    ], environment: environment);
-    process?.stdout.listen((_) {});
-    process?.stderr.listen((e) {
-      final error = utf8.decode(e);
-      if (error.isNotEmpty) commonPrint.log(error);
-    });
+    final launchCore = hooks?.launchCore;
+    if (launchCore != null) {
+      await launchCore(appPath.corePath, arg, environment);
+    } else {
+      process = await Process.start(appPath.corePath, [
+        arg,
+      ], environment: environment);
+      process?.stdout.listen((_) {});
+      process?.stderr.listen((e) {
+        final error = utf8.decode(e);
+        if (error.isNotEmpty) commonPrint.log(error);
+      });
+    }
     await _waitForCoreReady();
     isStarting = false;
     if (system.isWindows && globalState.config.appSetting.enableHighPriority) {

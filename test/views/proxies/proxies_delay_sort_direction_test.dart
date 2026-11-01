@@ -152,6 +152,36 @@ void main() {
       );
     });
 
+    testWidgets('failed (-1) sorts above never-tested (absent) both ways', (
+      tester,
+    ) async {
+      // E5: `-1` is the failure sentinel, an absent key means "never tested".
+      // They used to share one bucket; they are separate tiers now.
+      await pumpWith(tester, {'Bravo': 100, 'Charlie': -1});
+
+      final ascending = order(descending: false);
+      expect(ascending.first, 'Bravo', reason: 'the measured node leads');
+      expect(
+        ascending[1],
+        'Charlie',
+        reason: 'a failed node must precede the never-tested ones',
+      );
+      expect(
+        ascending.sublist(2).toSet(),
+        {'Alpha', 'Delta'},
+        reason: 'both never-tested nodes still sink to the end',
+      );
+
+      final descending = order(descending: true);
+      expect(descending.first, 'Bravo');
+      expect(
+        descending[1],
+        'Charlie',
+        reason: 'flipping the direction must not reshuffle the tiers',
+      );
+      expect(descending.sublist(2).toSet(), {'Alpha', 'Delta'});
+    });
+
     testWidgets('equal delays keep a deterministic order across calls',
         (tester) async {
       await pumpWith(tester, {'Alpha': 100, 'Bravo': 100, 'Charlie': 100, 'Delta': 100});

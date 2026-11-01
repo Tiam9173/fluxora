@@ -39,17 +39,28 @@ import 'package:path/path.dart' as p;
 /// another process; Dart exposes no handle-based delete that would close that
 /// window. The guard removes the *accidental* case — a caller passing a wrong
 /// path — which is what this helper is for. It is not a sandbox.
+/// P7-B3-B — test-only seam for the delete step itself.
+///
+/// Before this, the only way to make the delete fail with `errno 32` was to keep
+/// a real file handle open, which is a timing race and made the retry policy
+/// untestable. A caller can now substitute the delete step; production passes
+/// nothing, so the default below is exactly the call that ran before.
+typedef TempDirDeleter = Future<void> Function(Directory dir);
+
 Future<void> deleteTempDirWithRetry(
   Directory dir, {
   int maxAttempts = 5,
   Duration retryDelay = const Duration(milliseconds: 100),
+  TempDirDeleter? deleteForTest,
 }) async {
   await assertSafeTempTarget(dir);
+
+  final delete = deleteForTest ?? (Directory d) => d.delete(recursive: true);
 
   for (var attempt = 1; attempt <= maxAttempts; attempt++) {
     if (!dir.existsSync()) return;
     try {
-      await dir.delete(recursive: true);
+      await delete(dir);
       return;
     } on FileSystemException catch (e) {
       final errno = e.osError?.errorCode;

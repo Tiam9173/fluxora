@@ -41,7 +41,7 @@ void main() {
   late String portPath;
   late bool udsSupported;
 
-  final processes = <Process>[];
+  final holders = <_LockHolder>[];
 
   late Directory pathProviderSandbox;
 
@@ -82,12 +82,19 @@ void main() {
   });
 
   tearDown(() async {
-    for (final process in processes) {
+    // P7-B3-A: hand the lock back through the protocol, not by killing the
+    // shell. A surviving grandchild would keep `Fluxora.control.lock` open and
+    // make the sandbox undeletable at `tearDownAll`.
+    for (final holder in holders) {
       try {
-        process.kill();
-      } catch (_) {}
+        await holder.release();
+      } catch (_) {
+        try {
+          holder.process.kill();
+        } catch (_) {}
+      }
     }
-    processes.clear();
+    holders.clear();
     try {
       await ExternalControl.stop();
     } catch (_) {}
@@ -96,21 +103,27 @@ void main() {
   });
 
   /// Spawns the helper in a separate process and waits until it holds the lock.
-  Future<Process> holdLockInAnotherProcess(int holdMs) async {
+  ///
+  /// P7-B3-A: the helper now releases on an explicit `RELEASE` line instead of
+  /// sleeping for a fixed time. [watchdog] is only a crash backstop — the normal
+  /// path never waits for it.
+  Future<_LockHolder> holdLockInAnotherProcess({
+    Duration watchdog = const Duration(minutes: 2),
+  }) async {
     final script = File(
       'test/common/support/control_lock_holder.dart',
     ).absolute.path;
     final process = await Process.start('dart', [
       script,
       lockPath,
-      '$holdMs',
+      '${watchdog.inMilliseconds}',
     ], runInShell: true);
-    processes.add(process);
 
     // The helper prints `LOCKED` when it got the lock, `BUSY` when someone else
     // holds it. Reporting the actual token turns "the lock was leaked" into a
     // readable assertion instead of a 20 s timeout.
     final settled = Completer<String>();
+    final released = Completer<void>();
     process.stdout
         .transform(systemEncoding.decoder)
         .transform(const LineSplitter())
@@ -119,6 +132,11 @@ void main() {
           if ((token == 'LOCKED' || token == 'BUSY') && !settled.isCompleted) {
             settled.complete(token);
           }
+          // Printed by the **real** child, not the shell: receiving it is what
+          // proves the process that held the lock actually ran to completion.
+          if (token == 'RELEASED' && !released.isCompleted) {
+            released.complete();
+          }
         });
     final result = await settled.future.timeout(const Duration(seconds: 20));
     expect(
@@ -126,7 +144,10 @@ void main() {
       'LOCKED',
       reason: 'a second process must be able to take the control lock',
     );
-    return process;
+
+    final holder = _LockHolder(process, released.future);
+    holders.add(holder);
+    return holder;
   }
 
   group('single instance', () {
@@ -242,13 +263,14 @@ void main() {
       IOOverrides.global = null;
 
       // A **real second OS process** must be able to take it.
-      final holder = await holdLockInAnotherProcess(1200);
-      await holder.exitCode;
+      final holder = await holdLockInAnotherProcess();
       expect(
-        processes.contains(holder),
+        holders.contains(holder),
         isTrue,
         reason: 'the holder really ran as a separate process',
       );
+      expect(holder.process.pid, greaterThan(0));
+      await holder.release();
     });
 
     test('transport selection happens inside the ownership try', () {
@@ -320,6 +342,57 @@ void main() {
         );
       }
     });
+
+    test('a REAL uds bound then failed to listen is unlinked and closed',
+        () async {
+      // P7-B1 / A4': the test above hands out a *fake* `ServerSocket`, so it
+      // proves the listener is closed but never touches a real file. This one
+      // binds a real AF_UNIX socket through the OS, faults only `listen()`, and
+      // then checks the actual file and the actual listener.
+      expect(
+        udsSupported,
+        isTrue,
+        reason:
+            'this test needs a real AF_UNIX bind, so it must not silently skip',
+      );
+
+      final bind = _RealUdsHalfBoundBind(socketPath);
+      IOOverrides.global = bind;
+
+      // `start()` takes the lock, binds a real UDS (the file appears), throws in
+      // `_listen()`, then `_discardBoundListener()` unlinks that file and closes
+      // that listener before falling back to TCP.
+      await ExternalControl.start();
+
+      IOOverrides.global = null;
+
+      expect(bind.udsBinds, 1, reason: 'the Unix Socket branch really ran');
+      expect(bind.tcpBinds, 1, reason: 'the TCP fallback really ran');
+      expect(
+        bind.typeAfterBind,
+        FileSystemEntityType.unixDomainSock,
+        reason: 'the OS must report a real Unix-domain socket at that path',
+      );
+      expect(bind.faulted, hasLength(1));
+      expect(
+        bind.faulted.single.closed,
+        isTrue,
+        reason: 'the real listener must be closed, not leaked',
+      );
+      expect(
+        FileSystemEntity.typeSync(socketPath),
+        FileSystemEntityType.notFound,
+        reason: 'the half-bound socket file must be unlinked',
+      );
+
+      // The TCP channel that survived the fault is still a usable one.
+      await ExternalControl.stop();
+      expect(
+        FileSystemEntity.typeSync(socketPath),
+        FileSystemEntityType.notFound,
+        reason: 'stop() must not resurrect the file',
+      );
+    });
   });
 
   group('non-owner', () {
@@ -340,18 +413,19 @@ void main() {
   });
 
   group('two real OS processes', () {
-    test('a foreign lock holder blocks start() and its socket survives',
+    test('a foreign holder blocks start(); RELEASE hands the lock over',
         () async {
       if (!udsSupported) return;
 
       File(socketPath).writeAsStringSync('first instance');
 
-      final holder = await holdLockInAnotherProcess(6000);
+      // 1) A real second OS process takes the lock.
+      final first = await holdLockInAnotherProcess();
+      expect(first.process.pid, greaterThan(0));
 
-      // The lock is held by another process: this one must decline before
-      // touching the path.
+      // 2) While it holds the lock this instance must decline before touching
+      // the path, and a non-owner stop() must not clean it up either.
       await ExternalControl.start();
-
       expect(
         FileSystemEntity.typeSync(socketPath),
         isNot(FileSystemEntityType.notFound),
@@ -362,24 +436,40 @@ void main() {
         'first instance',
         reason: 'the file must be untouched, not replaced',
       );
-
-      // And a non-owner stop() must not clean it up either.
       await ExternalControl.stop();
+      expect(File(socketPath).readAsStringSync(), 'first instance');
+
+      // 3) The lock sidecar is never deleted or replaced — not even while the
+      // lock is held and handed over.
       expect(
-        File(socketPath).readAsStringSync(),
-        'first instance',
+        File(lockPath).existsSync(),
+        isTrue,
+        reason: 'the sidecar must survive the whole handover',
       );
 
-      // After the holder exits, ownership is available again.
-      holder.kill();
-      await holder.exitCode;
-      await Future<void>.delayed(const Duration(milliseconds: 200));
+      // 4) Explicit RELEASE. `release()` waits for the `RELEASED` line, which
+      // only the real `dart` child can print — that is what proves the process
+      // holding the lock ran to completion, not just the shell around it.
+      await first.release();
 
+      // 5) A *second* independent process can now take the same lock file. This
+      // is only possible if the first one really let go of it.
+      final second = await holdLockInAnotherProcess();
+      expect(second.process.pid, isNot(first.process.pid));
+
+      // 6) And this instance can own the channel again.
       await ExternalControl.start();
       expect(
         FileSystemEntity.typeSync(socketPath),
         isNot(FileSystemEntityType.notFound),
         reason: 'the survivor now owns the channel',
+      );
+
+      await second.release();
+      expect(
+        File(lockPath).existsSync(),
+        isTrue,
+        reason: 'the sidecar is never removed by the handover',
       );
     });
   });
@@ -481,5 +571,107 @@ final class _HalfBoundBind extends IOOverrides {
     final server = _BoundButUnlistenable();
     created.add(server);
     return server;
+  }
+}
+
+/// A **real** bound listener whose `listen()` throws.
+///
+/// `close()` is delegated to the real socket, so the production cleanup closes a
+/// real listener; the wrapper only refuses to be consumed.
+final class _RealUdsHalfBound implements ServerSocket {
+  _RealUdsHalfBound(this._real);
+
+  final ServerSocket _real;
+  bool closed = false;
+
+  @override
+  StreamSubscription<Socket> listen(
+    void Function(Socket event)? onData, {
+    Function? onError,
+    void Function()? onDone,
+    bool? cancelOnError,
+  }) {
+    throw StateError('listen failed for test');
+  }
+
+  @override
+  Future<ServerSocket> close() {
+    closed = true;
+    return _real.close();
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError('${invocation.memberName}');
+}
+
+/// Performs the **real** bind and faults only the Unix-domain branch.
+///
+/// `super.serverSocketBind` reaches the native implementation, so the UDS file
+/// on disk is genuine and the TCP fallback binds normally — the fault injection
+/// never replaces the socket itself.
+final class _RealUdsHalfBoundBind extends IOOverrides {
+  _RealUdsHalfBoundBind(this.socketPath);
+
+  final String socketPath;
+
+  final List<_RealUdsHalfBound> faulted = <_RealUdsHalfBound>[];
+  int udsBinds = 0;
+  int tcpBinds = 0;
+
+  /// What the OS reported at the socket path right after the bind returned.
+  FileSystemEntityType? typeAfterBind;
+
+  @override
+  Future<ServerSocket> serverSocketBind(
+    dynamic address,
+    int port, {
+    int backlog = 0,
+    bool v6Only = false,
+    bool shared = false,
+  }) async {
+    final real = await super.serverSocketBind(
+      address,
+      port,
+      backlog: backlog,
+      v6Only: v6Only,
+      shared: shared,
+    );
+
+    final isUds =
+        address is InternetAddress &&
+        address.type == InternetAddressType.unix;
+    if (!isUds) {
+      tcpBinds++;
+      return real;
+    }
+
+    udsBinds++;
+    typeAfterBind = FileSystemEntity.typeSync(socketPath);
+    final wrapper = _RealUdsHalfBound(real);
+    faulted.add(wrapper);
+    return wrapper;
+  }
+}
+
+/// A lock-holding child process plus the explicit release handshake.
+///
+/// P7-B3-A: `kill()` alone is not enough here. `Process.start(..., runInShell:
+/// true)` puts a shell between the test and the real `dart` child, so the shell's
+/// `exitCode` says nothing about the process that actually holds the lock. This
+/// wrapper drives the `RELEASE` -> `RELEASED` -> exit sequence instead.
+final class _LockHolder {
+  _LockHolder(this.process, this._released);
+
+  final Process process;
+  final Future<void> _released;
+
+  /// Sends `RELEASE` and waits until the child has unlocked, closed its handle,
+  /// printed `RELEASED` and exited.
+  Future<void> release() async {
+    process.stdin.writeln('RELEASE');
+    await process.stdin.flush();
+    await _released.timeout(const Duration(seconds: 30));
+    await process.exitCode.timeout(const Duration(seconds: 30));
   }
 }

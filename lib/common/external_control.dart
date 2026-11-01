@@ -5,7 +5,14 @@ import 'dart:io';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/utils/platform_check.dart';
+import 'package:flutter/foundation.dart';
 import 'package:restart_app/restart_app.dart';
+
+/// What a control-channel line routes to.
+///
+/// Split out from the side effects so the routing decision can be asserted
+/// without exiting the app, relaunching it, or driving a platform channel.
+enum ExternalControlCommand { exit, restart, show, unknown }
 
 class ExternalControl {
   static ServerSocket? _server;
@@ -289,15 +296,49 @@ class ExternalControl {
         resetMessages.any((m) => osError.message.contains(m));
   }
 
-  static void _handleCommand(String command) {
-    switch (command.trim()) {
+  /// Routes one received line to the action it names.
+  ///
+  /// This is the whole routing rule: trimmed, exact-match, `unknown` otherwise.
+  @visibleForTesting
+  static ExternalControlCommand parseCommand(String raw) {
+    switch (raw.trim()) {
       case 'exit':
-        globalState.appController.handleExit();
+        return ExternalControlCommand.exit;
       case 'restart':
-        Restart.restartApp();
+        return ExternalControlCommand.restart;
       case 'show':
-        window?.show();
+        return ExternalControlCommand.show;
       default:
+        return ExternalControlCommand.unknown;
+    }
+  }
+
+  /// Test-only probe for [_handleCommand]'s side effect.
+  ///
+  /// When set, a received command is reported here **instead of** being
+  /// executed: `exit` tears down the tray and quits, `restart` relaunches, and
+  /// `show` drives a platform channel — none of which a test may trigger.
+  /// Production leaves it `null`, so the real handlers run unchanged.
+  @visibleForTesting
+  static void Function(ExternalControlCommand command)? onCommandRoutedForTest;
+
+  static void _handleCommand(String command) {
+    final routed = parseCommand(command);
+
+    final probe = onCommandRoutedForTest;
+    if (probe != null) {
+      probe(routed);
+      return;
+    }
+
+    switch (routed) {
+      case ExternalControlCommand.exit:
+        globalState.appController.handleExit();
+      case ExternalControlCommand.restart:
+        Restart.restartApp();
+      case ExternalControlCommand.show:
+        window?.show();
+      case ExternalControlCommand.unknown:
         commonPrint.log('ExternalControl unknown command: $command');
     }
   }

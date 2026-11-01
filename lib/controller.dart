@@ -2279,43 +2279,67 @@ class AppController {
   }
 
   List<Proxy> _sortOfName(List<Proxy> proxies) {
-    return List.of(proxies)..sort(
-      (a, b) =>
-          utils.sortByChar(utils.getPinyin(a.name), utils.getPinyin(b.name)),
-    );
+    return List.of(proxies)..sort((a, b) {
+      // Primary rule: the pinyin of the **first character**, compared
+      // case-insensitively (`sortByChar` lowercases each character). This is
+      // what makes `北` sort as `bei` instead of U+5317.
+      final byPinyin = utils.sortByChar(
+        utils.getPinyin(a.name),
+        utils.getPinyin(b.name),
+      );
+      if (byPinyin != 0) return byPinyin;
+
+      // Tie-break: whole-name code-point order (`String.compareTo`). Without
+      // it, every node sharing a first character keeps whatever order the list
+      // happened to arrive in, so the page reshuffles on every rebuild.
+      // Deliberately case-**sensitive**, unlike the primary rule, and
+      // deliberately whole-name — nothing else (server, port) participates.
+      // Names that are byte-identical still compare equal.
+      return a.name.compareTo(b.name);
+    });
   }
 
-  /// The rank an unusable delay collapses to. `null` (never tested) and `-1`
-  /// (the failure sentinel written by `_testProxyDelay`) both map here.
-  static const int _unknownDelay = 1 << 30;
-
-  int _delayValue(int? delay) =>
-      (delay == null || delay == -1) ? _unknownDelay : delay;
+  /// Rank of a delay value, shared with `ProfileNodesView._sortedProxies` (E5).
+  ///
+  /// * `null` — never tested. Always last.
+  /// * `-1` — the failure sentinel written by `_testProxyDelay` and by the core
+  ///   (`core/hub.go:323`). Sits just above "never tested", so a broken node is
+  ///   easier to spot than an untested one.
+  /// * `0` — cannot reach this map: the core normalises `delay == 0` to `-1`
+  ///   (`core/hub.go:322`) and `_testProxyDelay` never writes 0. It ranks with
+  ///   the failures so the rule stays total, and so it matches the profile page,
+  ///   where 0 is the "test in flight" sentinel and must not float to the top.
+  /// * anything else — a measured value, ordered by magnitude.
+  static int _delayRank(int? value) =>
+      value == null ? 2 : (value <= 0 ? 1 : 0);
 
   /// Sorts by delay. [descending] reverses the **measured** values only.
   ///
-  /// RC.7: an unknown / failed delay always sinks to the end, in both
-  /// directions — flipping to descending must not float unmeasured nodes to the
-  /// top, where they would read as the fastest ones.
+  /// RC.7: unmeasured nodes always sink, in both directions — flipping to
+  /// descending must not float them to the top, where they would read as the
+  /// fastest ones. E5: failed (`-1`) and untested (`null`) are now separate
+  /// tiers instead of one bucket, matching the profile nodes page.
   List<Proxy> _sortOfDelay({
     required List<Proxy> proxies,
     String? testUrl,
     bool descending = false,
   }) {
     return List.of(proxies)..sort((a, b) {
-      final aValue = _delayValue(
-        _ref.read(getDelayProvider(proxyName: a.name, testUrl: testUrl)),
+      final aValue = _ref.read(
+        getDelayProvider(proxyName: a.name, testUrl: testUrl),
       );
-      final bValue = _delayValue(
-        _ref.read(getDelayProvider(proxyName: b.name, testUrl: testUrl)),
+      final bValue = _ref.read(
+        getDelayProvider(proxyName: b.name, testUrl: testUrl),
       );
 
-      final aUnknown = aValue == _unknownDelay;
-      final bUnknown = bValue == _unknownDelay;
-      if (aUnknown && bUnknown) return 0;
-      if (aUnknown) return 1;
-      if (bUnknown) return -1;
+      final byRank = _delayRank(aValue).compareTo(_delayRank(bValue));
+      if (byRank != 0) return byRank;
 
+      // Same tier: only measured values have an order. Failed and untested
+      // nodes keep whatever order the list arrived in.
+      if (aValue == null || bValue == null || aValue <= 0 || bValue <= 0) {
+        return 0;
+      }
       final comparison = aValue.compareTo(bValue);
       return descending ? -comparison : comparison;
     });

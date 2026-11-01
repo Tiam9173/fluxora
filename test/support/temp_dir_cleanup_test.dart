@@ -39,6 +39,102 @@ void main() {
     expect(dir.existsSync(), isFalse);
   });
 
+  group('errno 32 retry policy', () {
+    // 32 = ERROR_SHARING_VIOLATION: the only code the helper retries.
+    FileSystemException sharingViolation(Directory dir) => FileSystemException(
+      'another program is using this file',
+      dir.path,
+      const OSError('another program is using this file', 32),
+    );
+
+    test('T1 — a transient errno 32 is retried, then the delete succeeds',
+        () async {
+      final dir = ownDir('retry');
+      File(p.join(dir.path, 'payload.json')).writeAsStringSync('{}');
+
+      var calls = 0;
+      await deleteTempDirWithRetry(
+        dir,
+        retryDelay: const Duration(milliseconds: 1),
+        deleteForTest: (d) async {
+          calls++;
+          if (calls < 3) throw sharingViolation(d);
+          await d.delete(recursive: true);
+        },
+      );
+
+      expect(calls, 3, reason: 'two violations, then the real delete');
+      expect(dir.existsSync(), isFalse, reason: 'the third attempt deleted it');
+    });
+
+    test('T2 — a permanent errno 32 exhausts the budget and rethrows',
+        () async {
+      final dir = ownDir('exhaust');
+      File(p.join(dir.path, 'payload.json')).writeAsStringSync('{}');
+
+      var calls = 0;
+      Object? thrown;
+      try {
+        await deleteTempDirWithRetry(
+          dir,
+          maxAttempts: 3,
+          retryDelay: const Duration(milliseconds: 1),
+          deleteForTest: (d) async {
+            calls++;
+            throw sharingViolation(d);
+          },
+        );
+      } catch (e) {
+        thrown = e;
+      }
+
+      expect(calls, 3, reason: 'exactly maxAttempts attempts, never more');
+      expect(
+        thrown,
+        isA<FileSystemException>(),
+        reason: 'the failure must surface, not be swallowed',
+      );
+      expect((thrown! as FileSystemException).osError?.errorCode, 32);
+      expect(
+        dir.existsSync(),
+        isTrue,
+        reason: 'nothing was actually deleted; ownDir\'s tearDown removes it',
+      );
+    });
+
+    test('T3 — a non-errno-32 failure is not retried', () async {
+      final dir = ownDir('fatal');
+      File(p.join(dir.path, 'payload.json')).writeAsStringSync('{}');
+
+      var calls = 0;
+      Object? thrown;
+      try {
+        await deleteTempDirWithRetry(
+          dir,
+          retryDelay: const Duration(milliseconds: 1),
+          deleteForTest: (d) async {
+            calls++;
+            throw FileSystemException(
+              'access denied',
+              d.path,
+              const OSError('access denied', 5),
+            );
+          },
+        );
+      } catch (e) {
+        thrown = e;
+      }
+
+      expect(calls, 1, reason: 'a non-transient error must not be retried');
+      expect(
+        (thrown! as FileSystemException).osError?.errorCode,
+        5,
+        reason: 'the original error propagates unchanged',
+      );
+      expect(dir.existsSync(), isTrue);
+    });
+  });
+
   test('a missing systemTemp child is a silent no-op', () async {
     final dir = Directory(p.join(systemTemp, 'fluxora_067a_absent'));
     expect(dir.existsSync(), isFalse);

@@ -899,9 +899,16 @@ class Utils {
   }
 
   String getPinyin(String value) {
-    return value.isNotEmpty
-        ? PinyinHelper.getFirstWordPinyin(value.substring(0, 1))
-        : '';
+    if (value.isEmpty) return '';
+    // A whole grapheme cluster, not `substring(0, 1)`: one emoji is two UTF-16
+    // code units and one flag is four, so slicing by code unit left a lone high
+    // surrogate that could never be re-paired.
+    final first = value.characters.first;
+    // `getFirstWordPinyin` splits its input on a separator and keeps only the
+    // first piece, so it truncates anything wider than one code unit. Only
+    // Chinese needs the dictionary; every other grapheme is already its own key.
+    if (!ChineseHelper.isChinese(first)) return first;
+    return PinyinHelper.getFirstWordPinyin(first);
   }
 
   String? getFileNameForDisposition(String? disposition) {

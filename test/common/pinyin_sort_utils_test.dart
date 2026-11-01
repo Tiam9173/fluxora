@@ -4,26 +4,23 @@ import 'package:fluxora/common/common.dart';
 /// The **live** pinyin sort key and comparator.
 ///
 /// `utils.getPinyin` and `utils.sortByChar` are the production name-ordering
-/// primitives behind the proxies page (`AppController._sortOfName`,
-/// `controller.dart:2284`) and the package picker (`AccessSortType.none`,
-/// `models/selector.dart:195`). Neither had any test before this file.
+/// primitives behind the proxies page (`AppController._sortOfName`) and the
+/// package picker (`AccessSortType.none`, `models/selector.dart:195`). Neither
+/// had any test before this file.
 ///
 /// What this file pins — and only what the implementation actually promises:
-///   · `getPinyin` reads the **first character only** and turns a Chinese one
+///   · `getPinyin` reads the **first grapheme cluster** and turns a Chinese one
 ///     into its full tone-less syllable (`中` → `zhong`); everything else is
-///     passed through unchanged (`A` → `A`, `5` → `5`, `-` → `-`).
+///     passed through unchanged (`A` → `A`, `5` → `5`, `-` → `-`, `😀` → `😀`,
+///     `🇺🇸` → `🇺🇸`).
 ///   · `sortByChar` compares two keys character by character,
 ///     **case-insensitively**, and treats the empty string as smallest.
 ///
 /// Deliberately **not** asserted:
-///   · **Emoji / flag prefixes.** `getPinyin` slices with `substring(0, 1)`,
-///     which splits a surrogate pair and yields a lone high surrogate. That is
-///     a side effect of the current implementation, not a designed contract, so
-///     pinning it here would freeze an accident.
-///   · **The relative order of equal keys.** `List.sort` is documented as *not
-///     guaranteed stable*, and `_sortOfName` has no tie-break, so two names
-///     with the same first character have no defined order. Only the comparator
-///     returning `0` is asserted.
+///   · **The relative order of equal keys.** `sortByChar` returns `0` for equal
+///     keys by design; the deterministic tie-break lives one level up in
+///     `_sortOfName` (P7-A3) and is pinned in
+///     `test/views/proxies/proxies_name_sort_test.dart`.
 void main() {
   group('utils.getPinyin — first-character sort key', () {
     test('Chinese first character → its full tone-less syllable', () {
@@ -57,6 +54,54 @@ void main() {
 
     test('empty string → empty key', () {
       expect(utils.getPinyin(''), '');
+    });
+  });
+
+  group('utils.getPinyin — emoji and flag prefixes (P7-A5)', () {
+    test('a single emoji survives whole (2 code units)', () {
+      final key = utils.getPinyin('😀');
+      expect(key, '😀');
+      expect(key.length, 2);
+    });
+
+    test('a flag survives whole (4 code units)', () {
+      final key = utils.getPinyin('🇺🇸');
+      expect(key, '🇺🇸');
+      expect(key.length, 4);
+    });
+
+    test('emoji sharing a high surrogate produce different keys', () {
+      // U+1F600 and U+1F601 both begin with the high surrogate 0xD83D, so the
+      // old `substring(0, 1)` handed both the same lone surrogate.
+      expect(utils.getPinyin('😀'), isNot(utils.getPinyin('😁')));
+      expect(utils.getPinyin('😀').length, 2);
+      expect(utils.getPinyin('😁').length, 2);
+    });
+
+    test('different flags are not truncated to the same key', () {
+      // 🇺🇸 (U+1F1FA U+1F1F8) and 🇨🇳 (U+1F1E8 U+1F1F3) share the high
+      // surrogate 0xD83C; the old code collapsed both to '\uD83C'.
+      expect(utils.getPinyin('🇺🇸'), isNot(utils.getPinyin('🇨🇳')));
+      expect(utils.getPinyin('🇺🇸').length, 4);
+      expect(utils.getPinyin('🇨🇳').length, 4);
+    });
+
+    test('no lone surrogate is ever produced', () {
+      for (final value in ['😀', '😁', '🇺🇸', '🇨🇳']) {
+        final key = utils.getPinyin(value);
+        expect(key, value, reason: '$value must come back intact');
+        expect(
+          key.runes.length,
+          value.runes.length,
+          reason: '$value must not be cut into a lone surrogate',
+        );
+      }
+    });
+
+    test('a trailing emoji does not disturb the Chinese key', () {
+      expect(utils.getPinyin('北😀'), 'bei');
+      // ...and an emoji first still wins over the Chinese character after it.
+      expect(utils.getPinyin('😀北'), '😀');
     });
   });
 

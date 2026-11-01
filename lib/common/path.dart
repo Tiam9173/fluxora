@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:fluxora/common/common.dart';
+import 'package:flutter/foundation.dart';
 
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
@@ -152,11 +153,21 @@ class AppPath {
     return dirname(currentExecutablePath);
   }
 
-  String get corePath => resolveCorePath(
-    devWorkspacePath: _devWorkspacePath,
-    executableDir: executableDirPath,
-    isWindows: system.isWindows,
-  );
+  /// Test-only: points [corePath] at a binary outside the app's install layout.
+  ///
+  /// A VM test runs from the Flutter SDK's `flutter_tester`, so the derived path
+  /// never reaches the repo's `libclash/windows/` build. Production never sets
+  /// this, so `corePath` resolves exactly as before.
+  @visibleForTesting
+  static String? corePathOverrideForTest;
+
+  String get corePath =>
+      corePathOverrideForTest ??
+      resolveCorePath(
+        devWorkspacePath: _devWorkspacePath,
+        executableDir: executableDirPath,
+        isWindows: system.isWindows,
+      );
 
   String get helperPath {
     final devWorkspacePath = _devWorkspacePath;

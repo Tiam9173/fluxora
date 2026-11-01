@@ -382,11 +382,19 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
       case _NodeSortMode.original:
         return list;
       case _NodeSortMode.name:
-        list.sort(
-          (a, b) => (a['name']?.toString() ?? '').compareTo(
-            b['name']?.toString() ?? '',
-          ),
-        );
+        list.sort((a, b) {
+          final aName = a['name']?.toString() ?? '';
+          final bName = b['name']?.toString() ?? '';
+          // Same rule as the proxies page (`AppController._sortOfName`, E4):
+          // first-character pinyin compared case-insensitively, then the whole
+          // name by code point. Both pages must agree on one order.
+          final byPinyin = utils.sortByChar(
+            utils.getPinyin(aName),
+            utils.getPinyin(bName),
+          );
+          if (byPinyin != 0) return byPinyin;
+          return aName.compareTo(bName);
+        });
         break;
       case _NodeSortMode.protocol:
         list.sort(
