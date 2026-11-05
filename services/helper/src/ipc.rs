@@ -49,8 +49,16 @@ pub mod named_pipe {
         pipe: &mut tokio::net::windows::named_pipe::NamedPipeServer,
     ) -> anyhow::Result<()> {
         if let Some(request) = read_frame(pipe).await? {
-            let response = rpc::handle_payload(&request).await;
+            let (response, stop) = rpc::handle_payload(&request).await;
             write_frame(pipe, &response).await?;
+
+            // Signal shutdown only after the frame is on the wire. Signalling
+            // earlier would race the write: the stop branch returns from
+            // `run_service`, the runtime is dropped, and this task — and its
+            // partially written frame — is aborted.
+            if stop {
+                crate::service::hub::signal_stop();
+            }
         }
         Ok(())
     }
@@ -166,5 +174,102 @@ mod frame {
         stream.write_all(bytes).await?;
         stream.flush().await?;
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::frame::{read_frame, write_frame};
+    use tokio::net::windows::named_pipe::{ClientOptions, PipeMode, ServerOptions};
+
+    /// Unique pipe name per test process, so a stale instance can never be
+    /// reused and the test never collides with the real service pipe.
+    fn test_pipe_name(tag: &str) -> String {
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0);
+        format!(
+            r"\\.\pipe\Fluxora.Helper.Test.{}.{}.{}",
+            std::process::id(),
+            tag,
+            nanos
+        )
+    }
+
+    /// Test: a response frame written just before the server closes is still
+    /// readable in full by the client.
+    ///
+    /// This is the reproducible replacement for the old "sleep 50ms and hope
+    /// the write flushed" assumption. The service writes the stop response,
+    /// then exits (closing the pipe handle); the client must still receive the
+    /// complete frame, not a truncated one.
+    #[tokio::test]
+    async fn frame_written_before_close_is_read_in_full() {
+        let name = test_pipe_name("flush");
+
+        let mut server = ServerOptions::new()
+            .pipe_mode(PipeMode::Byte)
+            .create(&name)
+            .expect("create pipe server");
+        let mut client = ClientOptions::new()
+            .pipe_mode(PipeMode::Byte)
+            .open(&name)
+            .expect("open pipe client");
+        server.connect().await.expect("client connects");
+
+        // A realistic stop-service response: id + ok + null data + null error.
+        let payload = r#"{"version":1,"id":"stop-1","ok":true,"data":null,"error":null}"#;
+        write_frame(&mut server, payload)
+            .await
+            .expect("write response frame");
+
+        // Close the server immediately — this is exactly what happens when the
+        // service returns and its runtime is dropped right after a stop.
+        drop(server);
+
+        let received = read_frame(&mut client)
+            .await
+            .expect("read should not error")
+            .expect("frame should be present");
+
+        assert_eq!(
+            received, payload,
+            "the response frame must arrive complete after the server closes"
+        );
+    }
+
+    /// Test: a multi-frame-sized payload survives the same close-after-write
+    /// path, so truncation is not just hidden by a tiny response.
+    #[tokio::test]
+    async fn large_frame_written_before_close_is_read_in_full() {
+        let name = test_pipe_name("large");
+
+        let mut server = ServerOptions::new()
+            .pipe_mode(PipeMode::Byte)
+            .create(&name)
+            .expect("create pipe server");
+        let mut client = ClientOptions::new()
+            .pipe_mode(PipeMode::Byte)
+            .open(&name)
+            .expect("open pipe client");
+        server.connect().await.expect("client connects");
+
+        // 64 KiB: far past any single pipe buffer, so the write really does
+        // span multiple OS-level transfers.
+        let payload = "x".repeat(64 * 1024);
+        write_frame(&mut server, payload.as_str())
+            .await
+            .expect("write large frame");
+
+        drop(server);
+
+        let received = read_frame(&mut client)
+            .await
+            .expect("read should not error")
+            .expect("frame should be present");
+
+        assert_eq!(received.len(), payload.len(), "frame length must match");
+        assert_eq!(received, payload, "frame content must match byte for byte");
     }
 }

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:fluxora/common/common.dart';
+import 'package:fluxora/common/protected_helper.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:path/path.dart';
@@ -68,7 +69,9 @@ class AppPath {
             );
           } else {
             dataDir.complete(
-              Directory(join(value.parent.parent.path, AppIdentity.dataDirName)),
+              Directory(
+                join(value.parent.parent.path, AppIdentity.dataDirName),
+              ),
             );
           }
         } else {
@@ -169,6 +172,15 @@ class AppPath {
         isWindows: system.isWindows,
       );
 
+  /// SEC-P0-01 — the core the **helper** may start.
+  ///
+  /// The helper only accepts a core that sits beside it in the protected
+  /// directory, so this is the path handed to `core.start`. Null when
+  /// `%ProgramFiles%` cannot be resolved, which means no verified copy exists
+  /// and the helper path must not be used at all.
+  String? get protectedCorePath =>
+      ProtectedPathRules.defaultProtectedCorePath();
+
   String get helperPath {
     final devWorkspacePath = _devWorkspacePath;
     if (devWorkspacePath != null) {
@@ -183,8 +195,10 @@ class AppPath {
       }
     }
 
-    final targetHelper =
-        join(executableDirPath, '$appHelperService$executableExtension');
+    final targetHelper = join(
+      executableDirPath,
+      '$appHelperService$executableExtension',
+    );
     if (File(targetHelper).existsSync()) {
       return targetHelper;
     }

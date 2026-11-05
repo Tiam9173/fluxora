@@ -340,14 +340,59 @@ jobs:
           if ($LASTEXITCODE -ne 0) { Write-Error "SignTool failed for $target (exit $LASTEXITCODE)"; exit 1 }
           Write-Host "Signed: $target"
 
+      # SEC-P0-01 — the anchor must be measured here, in the trusted build, and
+      # AFTER signing (signing rewrites the file, so a pre-signing hash would be
+      # wrong). The installed app compares the deployed copy against this value;
+      # it never derives an expected hash from the files it is about to trust.
+      - name: Compute helper asset anchor (Windows)
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          $helper = 'libclash/windows/FluxoraHelperService.exe'
+          if (-not (Test-Path $helper)) { Write-Error "Helper not built: $helper"; exit 1 }
+          $core = 'libclash/windows/FluxoraCore.exe'
+          if (-not (Test-Path $core)) { Write-Error "Core not built: $core"; exit 1 }
+
+          # vcruntime140.dll is the only non-system dependency in the helper's
+          # import closure. It ships inside the `vclibs` plugin package, which is
+          # the exact file CMake later installs beside the app — so hashing the
+          # package copy is hashing the shipped asset, not a guess.
+          $pkgConfig = Get-Content '.dart_tool/package_config.json' -Raw | ConvertFrom-Json
+          $vclibs = $pkgConfig.packages | Where-Object { $_.name -eq 'vclibs' }
+          if (-not $vclibs) { Write-Error 'SEC-P0-01: vclibs package is not resolved'; exit 1 }
+          $vclibsRoot = ([uri]$vclibs.rootUri).LocalPath
+          $vclibsArch = if ('${{ matrix.arch }}' -eq 'arm64') { 'arm64' } else { 'x64' }
+          $vcruntime = Join-Path $vclibsRoot "windows/VCLibs/$vclibsArch/vcruntime140.dll"
+          if (-not (Test-Path $vcruntime)) { Write-Error "vcruntime140.dll not found: $vcruntime"; exit 1 }
+          Write-Host "Helper:    $helper"
+          Write-Host "vcruntime: $vcruntime"
+          Write-Host "Core:      $core"
+
+          $out = dart run setup.dart helper-manifest --helper $helper --vcruntime $vcruntime --core $core 2>&1
+          $out | ForEach-Object { Write-Host $_ }
+          $match = [regex]::Match(($out | Out-String), 'HELPER_ASSET_SHA256=(\S+)')
+          if (-not $match.Success) { Write-Error 'SEC-P0-01: helper-manifest produced no anchor'; exit 1 }
+          $anchor = $match.Groups[1].Value
+          Write-Host "Anchor: $anchor"
+          Add-Content -Path $env:GITHUB_ENV -Value "HELPER_ASSET_SHA256=$anchor"
+
       - name: Build Fluxora (Windows)
         if: matrix.platform == 'windows'
         shell: pwsh
         env:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
         run: |
+          if (-not $env:HELPER_ASSET_SHA256) { Write-Error 'SEC-P0-01: helper asset anchor missing; refusing to build a helper that cannot be verified'; exit 1 }
           $coreHash = (Get-FileHash libclash/windows/FluxoraCore.exe -Algorithm SHA256).Hash.ToLower()
           Write-Host "Core SHA256: $coreHash"
+
+          # SEC-P0-01 — the helper's TOKEN and the app's CORE_SHA256 are both
+          # derived from this one file, so the anchor's core entry has to match
+          # it exactly. Failing here is cheaper than shipping an app whose
+          # helper refuses the core the installer just accepted.
+          $anchorCore = ([regex]::Match($env:HELPER_ASSET_SHA256, 'FluxoraCore\.exe=([0-9a-f]{64})')).Groups[1].Value
+          if (-not $anchorCore) { Write-Error 'SEC-P0-01: anchor has no FluxoraCore.exe entry'; exit 1 }
+          if ($anchorCore -ne $coreHash) { Write-Error "SEC-P0-01: anchor core=$anchorCore but CORE_SHA256=$coreHash"; exit 1 }
           
           $desc = if ('${{ matrix.compatible }}' -eq 'true') { "${{ matrix.arch }}-compatible" } else { "${{ matrix.arch }}" }
           $version = if ('${{ github.ref_name }}' -match '^v\d') { 
@@ -363,6 +408,7 @@ jobs:
             # version as the tag-driven runtime APP_VERSION.
             "--build-name=$version",
             "--dart-define=CORE_SHA256=$coreHash",
+            "--dart-define=HELPER_ASSET_SHA256=$env:HELPER_ASSET_SHA256",
             "--dart-define=APP_ENV=$appEnv",
             "--dart-define=APP_VERSION=$version",
             "--dart-define=APP_ASSET_SUFFIX=windows-$desc-setup.exe"
@@ -375,6 +421,21 @@ jobs:
           }
           
           flutter @flutterArgs
+
+      # SEC-P0-01 — the anchor is only useful if the bundle actually contains
+      # those bytes. This runs on the packaged output, so a stale helper in
+      # `libclash/windows/`, a vclibs arch mismatch, or any later asset rewrite
+      # fails the build instead of shipping an uninstallable app.
+      - name: Verify helper asset consistency (Windows)
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          if (-not $env:HELPER_ASSET_SHA256) { Write-Error 'SEC-P0-01: anchor missing'; exit 1 }
+          $dir = "build/windows/${{ matrix.arch == 'arm64' && 'arm64' || 'x64' }}/runner/Release"
+          if (-not (Test-Path $dir)) { Write-Error "Bundle not found: $dir"; exit 1 }
+          $coreHash = (Get-FileHash "$dir/FluxoraCore.exe" -Algorithm SHA256).Hash.ToLower()
+          dart run setup.dart helper-manifest --verify-dir $dir --expect "$env:HELPER_ASSET_SHA256" --expect-core $coreHash
+          if ($LASTEXITCODE -ne 0) { Write-Error 'SEC-P0-01: bundle does not match the helper asset anchor'; exit 1 }
 
       - name: Sign Fluxora (Windows)
         if: matrix.platform == 'windows' && env.SHOULD_SIGN == 'true'

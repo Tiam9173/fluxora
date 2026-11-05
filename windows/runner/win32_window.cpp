@@ -146,6 +146,9 @@ bool Win32Window::Create(const std::wstring &title,
 
   if (activate_existing && SendAppLinkToInstance(title))
   {
+    // The running instance was found and brought to the front. Nothing was
+    // created here, but this launch did what it was asked to do.
+    handed_off_ = true;
     return false;
   }
   Destroy();

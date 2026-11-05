@@ -83,9 +83,14 @@ void main() {
     ExternalControl.onCommandRoutedForTest = received.add;
 
     await ExternalControl.start();
+    // Transport-agnostic on purpose: POSIX publishes a socket file, Windows
+    // publishes a port file. Both mean "the channel is up".
+    final socketReady =
+        FileSystemEntity.typeSync(socketPath) != FileSystemEntityType.notFound;
+    final portReady = File(portPath).existsSync();
     expect(
-      FileSystemEntity.typeSync(socketPath),
-      isNot(FileSystemEntityType.notFound),
+      socketReady || portReady,
+      isTrue,
       reason: 'the channel must be up before a command can be routed',
     );
 
@@ -103,18 +108,12 @@ void main() {
 
   group('parseCommand — the routing rule itself', () {
     test('the three known verbs each map to their own action', () {
-      expect(
-        ExternalControl.parseCommand('exit'),
-        ExternalControlCommand.exit,
-      );
+      expect(ExternalControl.parseCommand('exit'), ExternalControlCommand.exit);
       expect(
         ExternalControl.parseCommand('restart'),
         ExternalControlCommand.restart,
       );
-      expect(
-        ExternalControl.parseCommand('show'),
-        ExternalControlCommand.show,
-      );
+      expect(ExternalControl.parseCommand('show'), ExternalControlCommand.show);
     });
 
     test('every other line is unknown', () {
@@ -167,16 +166,27 @@ void main() {
 
     test('a line that only looks like a verb is still unknown', () async {
       // Guards the exact-match rule against a `startsWith` style regression.
-      expect(await routeThroughChannel('exitnow'), ExternalControlCommand.unknown);
+      expect(
+        await routeThroughChannel('exitnow'),
+        ExternalControlCommand.unknown,
+      );
     });
   });
 
   group('sendCommand', () {
     test('without a live channel it throws instead of hanging', () async {
-      // Nothing started, no socket and no port file.
+      // Nothing started, no socket and no port file. N5 split the old opaque
+      // `StateError` into three outcomes; "no channel at all" is the one that
+      // must never be retried.
       await expectLater(
         ExternalControl.sendCommand('exit'),
-        throwsA(isA<StateError>()),
+        throwsA(
+          isA<ExternalControlException>().having(
+            (e) => e.failure,
+            'failure',
+            ExternalControlFailure.notRunning,
+          ),
+        ),
       );
     });
 

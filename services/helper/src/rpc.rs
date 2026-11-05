@@ -40,12 +40,24 @@ pub fn init_auth_key() {
     std::env::remove_var("HELPER_AUTH_KEY");
 }
 
-pub async fn handle_payload(payload: &str) -> String {
+/// Handle one request.
+///
+/// Returns the encoded response plus whether the caller must stop the service
+/// **after** writing that response. The IPC layer owns the ordering: signalling
+/// from here would let the runtime be dropped mid-write and truncate the frame.
+pub async fn handle_payload(payload: &str) -> (String, bool) {
     match HelperRequest::decode(payload) {
-        Ok(request) => handle_request(request).await.encode(),
-        Err(e) => {
-            HelperResponse::error("", HelperError::new("INVALID_REQUEST", e.to_string())).encode()
+        Ok(request) => {
+            let wants_stop = request.method == "helper.stop_service";
+            let response = handle_request(request).await;
+            // An unauthenticated stop request must never stop the service.
+            let stop = wants_stop && response.ok;
+            (response.encode(), stop)
         }
+        Err(e) => (
+            HelperResponse::error("", HelperError::new("INVALID_REQUEST", e.to_string())).encode(),
+            false,
+        ),
     }
 }
 
@@ -78,11 +90,8 @@ async fn handle_request(request: HelperRequest) -> HelperResponse {
                 "Received helper.stop_service request [{}]",
                 request.id
             ));
-            std::thread::spawn(|| {
-                std::thread::sleep(std::time::Duration::from_millis(100));
-                ops::core::stop_core();
-                std::process::exit(0);
-            });
+            // `handle_payload` turns this into the stop flag; the IPC layer
+            // signals the service loop only once the response frame is written.
             HelperResponse::empty_success(&request.id)
         }
         "core.start" => {
@@ -262,5 +271,189 @@ impl HelperError {
             code: code.to_string(),
             message: message.into(),
         }
+    }
+}
+
+// ── Tests ────────────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const TEST_KEY_HEX: &str = "00112233445566778899aabbccddeeff";
+
+    /// Install a known auth key for the duration of the test process.
+    ///
+    /// `init_auth_key()` reads `HELPER_AUTH_KEY`, decodes it, and then removes
+    /// the env var. Calling it twice simply re-installs the same key.
+    fn install_test_key() {
+        std::env::set_var("HELPER_AUTH_KEY", TEST_KEY_HEX);
+        init_auth_key();
+    }
+
+    /// Build a correctly signed request payload for `method`.
+    ///
+    /// The signature covers `"{timestamp}:{version}:{method}:{body}"`, matching
+    /// the `auth_payload` built in `handle_request`.
+    fn signed_payload(id: &str, method: &str, body: &str) -> String {
+        let timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+
+        let key = hex::decode(TEST_KEY_HEX).expect("test key is valid hex");
+        let mut mac = HmacSha256::new_from_slice(&key).expect("HMAC accepts any key length");
+        mac.update(format!("{}:{}:{}:{}", timestamp, PROTOCOL_VERSION, method, body).as_bytes());
+        let signature = hex::encode(mac.finalize().into_bytes());
+
+        serde_json::json!({
+            "version": PROTOCOL_VERSION,
+            "id": id,
+            "method": method,
+            "body": body,
+            "auth": {
+                "timestamp": timestamp,
+                "signature": signature,
+            }
+        })
+        .to_string()
+    }
+
+    fn parse_response(raw: &str) -> serde_json::Value {
+        serde_json::from_str(raw).expect("response should be valid JSON")
+    }
+
+    /// Test: `helper.stop_service` returns a normal success response and asks
+    /// the IPC layer to stop *after* that response is written.
+    ///
+    /// This is the R2 regression guard for the IPC stop path. Before the fix
+    /// the handler spawned a thread that slept, called `stop_core()`, and then
+    /// `std::process::exit(0)` — the client's response was racing the exit.
+    #[tokio::test]
+    async fn stop_service_returns_response_and_requests_stop() {
+        install_test_key();
+
+        let payload = signed_payload("stop-1", "helper.stop_service", "");
+        let (raw, stop) = handle_payload(&payload).await;
+        let response = parse_response(&raw);
+
+        assert_eq!(
+            response["ok"], true,
+            "helper.stop_service should report success, got: {}",
+            raw
+        );
+        assert_eq!(
+            response["id"], "stop-1",
+            "response must echo the request id so the client can correlate it"
+        );
+        assert!(
+            response["error"].is_null(),
+            "successful stop should carry no error, got: {}",
+            raw
+        );
+        assert!(
+            stop,
+            "a successful stop request must ask the IPC layer to stop the service"
+        );
+    }
+
+    /// Test: a non-stop method never requests a stop.
+    #[tokio::test]
+    async fn ping_does_not_request_stop() {
+        install_test_key();
+
+        let payload = signed_payload("ping-1", "helper.ping", "");
+        let (raw, stop) = handle_payload(&payload).await;
+
+        assert_eq!(parse_response(&raw)["ok"], true, "ping should succeed");
+        assert!(!stop, "helper.ping must not stop the service");
+    }
+
+    /// Test: an unauthenticated `helper.stop_service` is rejected **and does
+    /// not** request a stop.
+    ///
+    /// The auth boundary must stay intact after the R2 refactor — only a
+    /// correctly signed request may trigger a service stop.
+    #[tokio::test]
+    async fn stop_service_requires_valid_signature() {
+        install_test_key();
+
+        let payload = serde_json::json!({
+            "version": PROTOCOL_VERSION,
+            "id": "stop-bad",
+            "method": "helper.stop_service",
+            "body": "",
+            "auth": {
+                "timestamp": SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap_or_default()
+                    .as_secs(),
+                "signature": "00".repeat(32),
+            }
+        })
+        .to_string();
+
+        let (raw, stop) = handle_payload(&payload).await;
+        let response = parse_response(&raw);
+
+        assert_eq!(response["ok"], false, "forged signature must be rejected");
+        assert_eq!(
+            response["error"]["code"], "UNAUTHORIZED",
+            "rejection should use the UNAUTHORIZED code, got: {}",
+            raw
+        );
+        assert!(
+            !stop,
+            "a rejected stop request must never shut the service down"
+        );
+    }
+
+    /// Test: a stop request signed with a stale timestamp is rejected and does
+    /// not request a stop.
+    ///
+    /// Guards the 5-second replay window independently of the signature check.
+    #[tokio::test]
+    async fn stop_service_rejects_stale_timestamp() {
+        install_test_key();
+
+        let stale_ts = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs()
+            - (TIME_WINDOW_SECS + 60);
+
+        let key = hex::decode(TEST_KEY_HEX).expect("test key is valid hex");
+        let mut mac = HmacSha256::new_from_slice(&key).expect("HMAC accepts any key length");
+        mac.update(
+            format!(
+                "{}:{}:{}:",
+                stale_ts, PROTOCOL_VERSION, "helper.stop_service"
+            )
+            .as_bytes(),
+        );
+        let signature = hex::encode(mac.finalize().into_bytes());
+
+        let payload = serde_json::json!({
+            "version": PROTOCOL_VERSION,
+            "id": "stop-stale",
+            "method": "helper.stop_service",
+            "body": "",
+            "auth": { "timestamp": stale_ts, "signature": signature }
+        })
+        .to_string();
+
+        let (raw, stop) = handle_payload(&payload).await;
+        let response = parse_response(&raw);
+
+        assert_eq!(response["ok"], false, "stale timestamp must be rejected");
+        assert_eq!(
+            response["error"]["code"], "UNAUTHORIZED",
+            "stale timestamp should surface as UNAUTHORIZED, got: {}",
+            raw
+        );
+        assert!(
+            !stop,
+            "a replayed stop request must never shut the service down"
+        );
     }
 }

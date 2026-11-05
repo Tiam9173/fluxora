@@ -5,6 +5,7 @@ import 'dart:io';
 
 import 'package:args/command_runner.dart';
 import 'package:crypto/crypto.dart';
+import 'package:fluxora/common/protected_helper.dart';
 import 'package:path/path.dart';
 
 enum Target { windows, linux, android, macos }
@@ -942,6 +943,103 @@ class AutoBuildCommand extends Command {
   }
 }
 
+/// SEC-P0-01 — produces the `HELPER_ASSET_SHA256` anchor from the helper
+/// closure that was just built, and checks a packaged bundle against it.
+///
+/// Runs inside the trusted build only. The installed app never derives the
+/// anchor from the files it is about to trust: those live in a user-writable
+/// directory, so a hash computed there proves nothing.
+class HelperManifestCommand extends Command<void> {
+  @override
+  String get name => 'helper-manifest';
+
+  @override
+  String get description =>
+      'Compute or verify the helper asset SHA256 anchor (SEC-P0-01).';
+
+  HelperManifestCommand() {
+    argParser
+      ..addOption('helper', help: 'Path to $kHelperExeName')
+      ..addOption('vcruntime', help: 'Path to $kHelperRuntimeDll')
+      ..addOption('core', help: 'Path to $kCoreExeName')
+      ..addOption(
+        'verify-dir',
+        help: 'Verify the closure inside this directory instead of printing',
+      )
+      ..addOption(
+        'expect',
+        help: 'Anchor to compare against; required with --verify-dir',
+      )
+      ..addOption(
+        'expect-core',
+        help:
+            'The CORE_SHA256 compiled into the app; checked against the anchor',
+      );
+  }
+
+  @override
+  Future<void> run() async {
+    final verifyDir = argResults?['verify-dir'] as String?;
+    if (verifyDir != null) {
+      final expect = (argResults?['expect'] as String?)?.trim();
+      if (expect == null || expect.isEmpty) {
+        print('helper-manifest: --verify-dir requires --expect');
+        exitCode = 2;
+        return;
+      }
+      final expectCore = (argResults?['expect-core'] as String?)?.trim();
+      if (expectCore != null && expectCore.isNotEmpty) {
+        final mismatch = coreAnchorMismatch(
+          anchor: expect,
+          coreSha256: expectCore,
+        );
+        if (mismatch != null) {
+          print('HELPER_ASSET_CONSISTENCY=FAIL $mismatch');
+          exitCode = 1;
+          return;
+        }
+      }
+      final problem = await checkHelperAssetsAgainstManifest(
+        dir: verifyDir,
+        manifestText: expect,
+      );
+      if (problem != null) {
+        print('HELPER_ASSET_CONSISTENCY=FAIL $problem');
+        exitCode = 1;
+        return;
+      }
+      print('HELPER_ASSET_CONSISTENCY=PASS');
+      return;
+    }
+
+    final helper = argResults?['helper'] as String?;
+    final vcruntime = argResults?['vcruntime'] as String?;
+    final core = argResults?['core'] as String?;
+    if (helper == null || vcruntime == null || core == null) {
+      print(
+        'helper-manifest: --helper, --vcruntime and --core are all required '
+        '(a partial anchor would leave an asset unverified)',
+      );
+      exitCode = 2;
+      return;
+    }
+
+    try {
+      final hashes = <String, String>{
+        kHelperExeName: await sha256OfFile(helper),
+        kHelperRuntimeDll: await sha256OfFile(vcruntime),
+        kCoreExeName: await sha256OfFile(core),
+      };
+      // Prefixed so the caller can pick it out of the tool's other output
+      // (`dart run` prints "Running build hooks..." on the same stream).
+      print('HELPER_ASSET_SHA256=${buildHelperAssetDefine(hashes)}');
+    } on Object catch (e) {
+      print('helper-manifest: $e');
+      exitCode = 1;
+    }
+  }
+}
+
 Future<void> main(Iterable<String> args) async {
   final runner = CommandRunner('setup', 'build Application');
   runner.addCommand(AutoBuildCommand());
@@ -949,5 +1047,6 @@ Future<void> main(Iterable<String> args) async {
   runner.addCommand(BuildCommand(target: Target.linux));
   runner.addCommand(BuildCommand(target: Target.windows));
   runner.addCommand(BuildCommand(target: Target.macos));
+  runner.addCommand(HelperManifestCommand());
   await runner.run(args);
 }

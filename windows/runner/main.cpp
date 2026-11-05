@@ -97,7 +97,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
 
   // Initialize COM, so that it is available for use in the library and/or
   // plugins.
-  ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+  //
+  // Only a successful (S_OK) or already-initialised (S_FALSE) call may be
+  // balanced by CoUninitialize; on failure there is nothing to uninitialise.
+  const HRESULT com_init =
+      ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 
   flutter::DartProject project(L"data");
   // item 6 (Bettbox 1.19.5) - opt out of Impeller on Windows.
@@ -129,7 +133,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   const wchar_t *window_title = L"Fluxora";
 #endif
   if (!window.Create(window_title, origin, size, !is_control_command)) {
-    return EXIT_FAILURE;
+    // A second launch that activated the running window did its job; only a
+    // real window-creation failure is an error.
+    const bool ok = window.handed_off();
+    if (SUCCEEDED(com_init)) {
+      ::CoUninitialize();
+    }
+    return ok ? EXIT_SUCCESS : EXIT_FAILURE;
   }
   window.SetQuitOnClose(true);
 
@@ -139,6 +149,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
     ::DispatchMessage(&msg);
   }
 
-  ::CoUninitialize();
+  if (SUCCEEDED(com_init)) {
+    ::CoUninitialize();
+  }
   return EXIT_SUCCESS;
 }

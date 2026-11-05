@@ -143,7 +143,22 @@ void main() {
       expect(helperCalls, hasLength(1), reason: 'asked once');
       expect(launches, hasLength(1), reason: 'launched once');
 
-      expect(helperCalls.single.corePath, appPath.corePath);
+      // SEC-P0-01 — the helper is handed the **protected** copy. The bundle
+      // copy lives in a user-writable directory, and the helper refuses any
+      // core outside its own directory, so sending that one would be a
+      // guaranteed rejection (and an attempt to have SYSTEM run it).
+      final protectedCore = appPath.protectedCorePath;
+      expect(
+        protectedCore,
+        isNotNull,
+        reason: '%ProgramFiles% resolves on a real Windows host',
+      );
+      expect(helperCalls.single.corePath, protectedCore);
+      expect(
+        helperCalls.single.corePath,
+        isNot(appPath.corePath),
+        reason: 'the user-writable bundle core must never reach the helper',
+      );
       expect(helperCalls.single.homeDir, homeDir);
       expect(
         helperCalls.single.arg,
@@ -228,45 +243,48 @@ void main() {
       );
     }, skip: Platform.isWindows ? false : _windowsOnly);
 
-    test('a failing core launch propagates and leaves no started state',
-        () async {
-      expect(Platform.isWindows, isTrue, reason: 'drives the Windows branch');
+    test(
+      'a failing core launch propagates and leaves no started state',
+      () async {
+        expect(Platform.isWindows, isTrue, reason: 'drives the Windows branch');
 
-      ClashService.startHooksForTest = ClashServiceStartHooks(
-        registerService: () async => false,
-        launchCore: (corePath, arg, environment) async {
-          throw const FileSystemException('core binary is missing');
-        },
-      );
+        ClashService.startHooksForTest = ClashServiceStartHooks(
+          registerService: () async => false,
+          launchCore: (corePath, arg, environment) async {
+            throw const FileSystemException('core binary is missing');
+          },
+        );
 
-      final s = await startService();
+        final s = await startService();
 
-      await expectLater(
-        s.reStart(),
-        throwsA(isA<FileSystemException>()),
-        reason: '`reStart()` has no catch, so the launcher error reaches it',
-      );
+        await expectLater(
+          s.reStart(),
+          throwsA(isA<FileSystemException>()),
+          reason: '`reStart()` has no catch, so the launcher error reaches it',
+        );
 
-      expect(
-        s.process,
-        isNull,
-        reason: 'a failed launch must not leave a process behind',
-      );
-      expect(
-        s.hasLiveProcess,
-        isFalse,
-        reason: 'no false "core is running" state',
-      );
-      // P7-D2-R3: `reStart()`'s `finally` clears the flag on every exit,
-      // including this throw. Before the fix it stayed `true` forever, which
-      // made `checkCoreHealth()` report "still starting" for the rest of the
-      // instance's life.
-      expect(
-        s.isStarting,
-        isFalse,
-        reason: 'a failed launch must not leave the service "starting"',
-      );
-    }, skip: Platform.isWindows ? false : _windowsOnly);
+        expect(
+          s.process,
+          isNull,
+          reason: 'a failed launch must not leave a process behind',
+        );
+        expect(
+          s.hasLiveProcess,
+          isFalse,
+          reason: 'no false "core is running" state',
+        );
+        // P7-D2-R3: `reStart()`'s `finally` clears the flag on every exit,
+        // including this throw. Before the fix it stayed `true` forever, which
+        // made `checkCoreHealth()` report "still starting" for the rest of the
+        // instance's life.
+        expect(
+          s.isStarting,
+          isFalse,
+          reason: 'a failed launch must not leave the service "starting"',
+        );
+      },
+      skip: Platform.isWindows ? false : _windowsOnly,
+    );
 
     test('a throwing helper also restores the starting state', () async {
       expect(Platform.isWindows, isTrue, reason: 'drives the Windows branch');

@@ -27,6 +27,9 @@ class ClashServiceStartHooks {
     this.registerService,
     this.startCore,
     this.launchCore,
+    this.stopCore,
+    this.killProcess,
+    this.awaitExit,
   });
 
   /// Stands in for `windows?.registerService()`.
@@ -40,6 +43,19 @@ class ClashServiceStartHooks {
   })?
   startCore;
 
+  /// Stands in for `helperClient.stopCore(...)`.
+  ///
+  /// P9-S06 — without this, the ownership gate could only be tested by talking
+  /// to a real helper.
+  final Future<bool> Function()? stopCore;
+
+  /// Stands in for `Process.kill(...)`. `force` is the sigkill escalation.
+  final Future<void> Function(Process process, bool force)? killProcess;
+
+  /// Stands in for `process.exitCode` — must **throw** `TimeoutException` when
+  /// the process has not exited, never return a sentinel value.
+  final Future<int> Function(Process process)? awaitExit;
+
   /// Stands in for `Process.start(...)` **and** the two stdio listeners after it.
   final Future<void> Function(
     String corePath,
@@ -47,6 +63,52 @@ class ClashServiceStartHooks {
     Map<String, String> environment,
   )?
   launchCore;
+}
+
+/// Where the core image for this start comes from.
+///
+/// SEC-P0-01 — the helper runs as LocalSystem and now refuses any core outside
+/// its own (protected) directory, so the two launch modes need two different
+/// paths:
+///
+/// * **helper** — `%ProgramFiles%\Fluxora\Service\FluxoraCore.exe`, the copy the
+///   install step verified against the build anchor.
+/// * **direct** — the bundle copy beside the app, run under the user's own
+///   token. That one is user-writable by design and grants nothing extra.
+class CoreLaunchPlan {
+  const CoreLaunchPlan._(this.helper, this.path);
+
+  const CoreLaunchPlan.helper(String path) : this._(true, path);
+
+  const CoreLaunchPlan.direct(String path) : this._(false, path);
+
+  /// True when the image is started by the LocalSystem helper.
+  final bool helper;
+  final String path;
+
+  @override
+  String toString() => 'CoreLaunchPlan(helper=$helper, path="$path")';
+}
+
+/// Pure decision for [CoreLaunchPlan], so the rule can be tested without a
+/// socket, a helper, or a Windows host.
+///
+/// The helper is only used when a protected core path can actually be resolved.
+/// Sending it the bundle path instead would be a guaranteed rejection, and
+/// "ask the helper, get refused, fall back" is a worse outcome than "do not ask"
+/// — it also means the app never *tries* to have SYSTEM run a user-writable
+/// image.
+CoreLaunchPlan planCoreLaunch({
+  required bool isWindows,
+  required bool serviceOk,
+  required String? protectedCorePath,
+  required String bundleCorePath,
+}) {
+  if (!isWindows || !serviceOk) return CoreLaunchPlan.direct(bundleCorePath);
+  if (protectedCorePath == null || protectedCorePath.isEmpty) {
+    return CoreLaunchPlan.direct(bundleCorePath);
+  }
+  return CoreLaunchPlan.helper(protectedCorePath);
 }
 
 class ClashService extends ClashHandlerInterface {
@@ -57,6 +119,36 @@ class ClashService extends ClashHandlerInterface {
   Completer<Socket> socketCompleter = Completer();
 
   bool isStarting = false;
+
+  /// The error from the most recent failed core start, or `null` after a
+  /// successful one.
+  ///
+  /// P9-S04 — `preload()` deliberately reports **transport readiness only**, so
+  /// this is the only way a caller (or the UI) learns that the core itself never
+  /// came up. Set by [reStart], cleared when a start succeeds.
+  Object? lastStartFailure;
+
+  /// P9-S06 — did **this instance** get its core started through the helper?
+  ///
+  /// Only that grants the right to send `core.stop`: the helper owns a single
+  /// global core (`services/helper/src/ops.rs`), so an instance that spawned its
+  /// own process must never stop someone else's.
+  ///
+  /// This is a client-side claim, not server-side session ownership. It cannot
+  /// fix two old-version instances racing over the helper's one core — see
+  /// `PHASE_09_P9_S06_CORE_OWNERSHIP_FIX_REPORT.md`.
+  bool _coreStartedViaHelper = false;
+
+  @visibleForTesting
+  bool get coreStartedViaHelperForTest => _coreStartedViaHelper;
+
+  @visibleForTesting
+  set coreStartedViaHelperForTest(bool value) => _coreStartedViaHelper = value;
+
+  /// Test entry point for the failed-start cleanup.
+  @visibleForTesting
+  Future<bool> abortFailedStartForTest({required bool viaHelper}) =>
+      _abortFailedStart(viaHelper: viaHelper);
   bool _isDestroying = false;
 
   /// Set once [destroy] has run and **never cleared**.
@@ -144,12 +236,22 @@ class ClashService extends ClashHandlerInterface {
     _instance = null;
   }
 
+  /// Whether this instance actually talks to the core over AF_UNIX.
+  ///
+  /// Windows is excluded even if a transport value says otherwise: `afunix.sys`
+  /// bugchecks when a Unix-domain socket handle is torn down at process exit
+  /// (`0xD1` in `AfUnixTlConnectEndpointDisconnect`). `getRecommendedTransport()`
+  /// already refuses it there — this keeps a future regression from reaching the
+  /// bind, and keeps the core argument in step with the listener we really bind.
+  bool get _useUnixSocket =>
+      _transportType == TransportType.unixSocket && !Platform.isWindows;
+
   Future<void> _initTransport() async {
     if (skipTransportForTest) return;
 
     _transportType = await PlatformChecker.getRecommendedTransport();
 
-    if (_transportType == TransportType.unixSocket) {
+    if (_useUnixSocket) {
       final tempDir = Directory.systemTemp.path;
       _socketPath = p.join(tempDir, socketFileName());
       commonPrint.log('Using Unix Domain Socket: $_socketPath');
@@ -169,6 +271,18 @@ class ClashService extends ClashHandlerInterface {
     unawaited(
       reStart().catchError((Object e, StackTrace st) {
         commonPrint.log('Core start aborted: $e');
+        // P9-S04 — `preload()` only waits for the socket to bind, so this is the
+        // first moment the app can tell the user the core itself never came up.
+        // Mirrors the bind-failure path just above.
+        if (!_isDestroying && !globalState.isExiting) {
+          try {
+            globalState.showNotifier(e.toString());
+          } catch (_) {
+            // No binding (unit tests, headless contexts). The log above already
+            // carries the failure, and a notification must never turn a start
+            // failure into an unhandled async error.
+          }
+        }
       }),
     );
   }
@@ -200,7 +314,7 @@ class ClashService extends ClashHandlerInterface {
   /// never grants the right to unlink someone else's path.
   Future<ServerSocket> _bindListener() async {
     final ServerSocket server;
-    if (_transportType == TransportType.unixSocket) {
+    if (_useUnixSocket) {
       final address = InternetAddress(
         _socketPath!,
         type: InternetAddressType.unix,
@@ -217,7 +331,7 @@ class ClashService extends ClashHandlerInterface {
     }
 
     _server = server;
-    _ownsSocketFile = _transportType == TransportType.unixSocket;
+    _ownsSocketFile = _useUnixSocket;
     _listenerReleased = false;
     return server;
   }
@@ -321,6 +435,14 @@ class ClashService extends ClashHandlerInterface {
       // Perform a real restart so every caller is guaranteed to see a fresh
       // core after this call returns. Queued calls will run sequentially.
       await _doRestart();
+      lastStartFailure = null;
+    } catch (e) {
+      // P9-S04 — the single funnel for every start path, so the failure is
+      // recorded here rather than at one call site. `preload()` only reports
+      // transport readiness, so without this a dead core is invisible to the
+      // UI and to tests.
+      lastStartFailure = e;
+      rethrow;
     } finally {
       // `_doRestart` clears this on every path that *returns*, but a thrown
       // bind / service-probe / helper / `Process.start` error skips all of
@@ -342,20 +464,44 @@ class ClashService extends ClashHandlerInterface {
   Future<void> _doRestart() async {
     isStarting = true;
     _isDestroying = false;
+    // P9-S07 — a helper-owned core has no `Process` handle, so the kill below
+    // cannot reach it. Stop it through the helper *before* dropping the claim;
+    // a failed stop keeps the claim so `shutdown()` can retry instead of
+    // silently leaking the process.
+    if (system.isWindows && _coreStartedViaHelper) {
+      final stopped = await _stopHelperCore();
+      if (!stopped) {
+        // P9-S08 — starting now would leave two cores alive with only one of
+        // them tracked, and the untracked one could never be stopped. Refuse,
+        // keep the claim so a later attempt can retry the stop.
+        isStarting = false;
+        throw StateError(
+          'Previous helper core not confirmed stopped; refusing to start another',
+        );
+      }
+      _coreStartedViaHelper = false;
+    } else {
+      // Every other start begins with no claim; only the helper branch grants
+      // one, so a direct `Process.start` never inherits the previous start's.
+      _coreStartedViaHelper = false;
+    }
 
     await _destroySocket();
 
-    process?.kill();
-    if (process != null) {
-      await process!.exitCode.timeout(
-        const Duration(seconds: 2),
-        onTimeout: () {
-          process?.kill(ProcessSignal.sigkill);
-          return -1;
-        },
-      );
+    // P9-S09 — the previous direct core is reaped through the same confirmed
+    // path as a failed start. The old code used `onTimeout: () => -1` and then
+    // dropped the handle, so "still running" was recorded as "exited".
+    final previous = process;
+    if (previous != null) {
+      if (await _reapDirectCore(previous)) {
+        process = null;
+      } else {
+        isStarting = false;
+        throw StateError(
+          'Previous core process not confirmed exited; refusing to start another',
+        );
+      }
     }
-    process = null;
 
     socketCompleter = Completer();
 
@@ -384,7 +530,7 @@ class ClashService extends ClashHandlerInterface {
     }
 
     final String arg;
-    if (_transportType == TransportType.unixSocket) {
+    if (_useUnixSocket) {
       arg = _socketPath!;
     } else {
       arg = '${serverSocket.port}';
@@ -401,23 +547,46 @@ class ClashService extends ClashHandlerInterface {
       final serviceOk = probeService != null
           ? await probeService()
           : (await windows?.registerService() ?? false);
-      if (serviceOk) {
+
+      final plan = planCoreLaunch(
+        isWindows: true,
+        serviceOk: serviceOk,
+        protectedCorePath: appPath.protectedCorePath,
+        bundleCorePath: appPath.corePath,
+      );
+
+      if (plan.helper) {
         final startViaHelper = hooks?.startCore;
         final started = startViaHelper != null
             ? await startViaHelper(
-                corePath: appPath.corePath,
+                corePath: plan.path,
                 arg: arg,
                 homeDir: homeDirPath,
               )
             : await helperClient.startCore(
-                corePath: appPath.corePath,
+                corePath: plan.path,
                 arg: arg,
                 homeDir: homeDirPath,
               );
         if (started) {
-          await _waitForCoreReady();
+          // P9-S06 — ownership is granted here and only here: the helper
+          // accepted `core.start` for this instance.
+          _coreStartedViaHelper = true;
+          try {
+            await _ensureCoreReadyOrThrow();
+          } catch (_) {
+            // The helper launched a core that never connected — tell it to stop
+            // or the process outlives the failed start. The claim is dropped
+            // only if that stop is confirmed.
+            final stopped = await _abortFailedStart(viaHelper: true);
+            if (stopped) {
+              _coreStartedViaHelper = false;
+            }
+            rethrow;
+          }
           isStarting = false;
-          if (system.isWindows && globalState.config.appSetting.enableHighPriority) {
+          if (system.isWindows &&
+              globalState.config.appSetting.enableHighPriority) {
             unawaited(
               helperClient
                   .setProcessPriority(
@@ -432,6 +601,9 @@ class ClashService extends ClashHandlerInterface {
           }
           return;
         }
+        // The helper refused the start. The claim is **not** granted: the
+        // fallback below runs the core under the user's own token, and nothing
+        // in this process may believe a SYSTEM-owned core is running.
         commonPrint.log(
           'Helper start core failed, falling back to normal mode',
         );
@@ -451,7 +623,13 @@ class ClashService extends ClashHandlerInterface {
         if (error.isNotEmpty) commonPrint.log(error);
       });
     }
-    await _waitForCoreReady();
+    try {
+      await _ensureCoreReadyOrThrow();
+    } catch (_) {
+      // We started this process; a core that never connects must not linger.
+      await _abortFailedStart(viaHelper: false);
+      rethrow;
+    }
     isStarting = false;
     if (system.isWindows && globalState.config.appSetting.enableHighPriority) {
       unawaited(
@@ -465,11 +643,142 @@ class ClashService extends ClashHandlerInterface {
     }
   }
 
-  Future<void> _waitForCoreReady() async {
+  /// How long a freshly launched core gets to connect back.
+  ///
+  /// Test-only knob: the production budget is 5 s, which no test should wait
+  /// for. Shrinking it is the only way to exercise the timeout branch without a
+  /// real core binary.
+  @visibleForTesting
+  static Duration coreReadyTimeout = const Duration(seconds: 5);
+
+  /// P9B-D2 — a core that never connects is a **failure**, not a log line.
+  ///
+  /// This used to swallow the timeout and return normally, so `_doRestart()`
+  /// reported a successful start while `socketCompleter` was still pending. The
+  /// fault then surfaced 5–30 s later as an unrelated IPC timeout. It now
+  /// returns `false` and the caller turns that into a thrown error.
+  Future<bool> _waitForCoreReady() async {
     try {
-      await socketCompleter.future.timeout(const Duration(seconds: 5));
+      await socketCompleter.future.timeout(coreReadyTimeout);
+      return true;
     } catch (_) {
-      commonPrint.log('Core ready timeout after 5s');
+      commonPrint.log(
+        'Core ready timeout after ${coreReadyTimeout.inMilliseconds} ms',
+      );
+      return false;
+    }
+  }
+
+  /// Fails the start when the core never becomes ready, and resets
+  /// [isStarting] on the way out so the next attempt is not blocked.
+  Future<void> _ensureCoreReadyOrThrow() async {
+    if (await _waitForCoreReady()) return;
+    isStarting = false;
+    throw StateError(
+      'Core did not become ready within '
+      '${coreReadyTimeout.inMilliseconds} ms',
+    );
+  }
+
+  /// Test seam: drives the real readiness gate without spawning a core.
+  @visibleForTesting
+  Future<void> ensureCoreReadyOrThrowForTest() => _ensureCoreReadyOrThrow();
+
+  /// P9-S04 — a failed start must not leave a core behind.
+  ///
+  /// The helper branch has no `Process` handle (the helper owns the child), so
+  /// the only way to reap it is `core.stop`. The direct branch owns the handle
+  /// and kills it here.
+  /// Sends `core.stop` through the test hook when one is installed.
+  ///
+  /// P9-S07 — returns `true` **only** when the stop was confirmed. The caller
+  /// uses that to decide whether the ownership claim may be dropped: a failed
+  /// stop must never be recorded as cleaned up, or the orphan core can never be
+  /// retried.
+  Future<bool> _stopHelperCore() async {
+    final hooks = startHooksForTest;
+    if (hooks != null) {
+      final hook = hooks.stopCore;
+      if (hook == null) {
+        // P9-S08 — a test installed hooks but no `stopCore`. Falling back to the
+        // real client would reach this machine's helper pipe, so fail closed
+        // instead. Production never has hooks, so it always takes the path below.
+        commonPrint.log(
+          'stopCore hook missing; refusing to touch the real helper',
+        );
+        return false;
+      }
+      try {
+        return await hook();
+      } catch (e) {
+        commonPrint.log('core.stop failed: $e');
+        return false;
+      }
+    }
+
+    try {
+      return await helperClient.stopCore();
+    } catch (e) {
+      commonPrint.log('core.stop failed: $e');
+      return false;
+    }
+  }
+
+  Future<bool> _abortFailedStart({required bool viaHelper}) async {
+    if (viaHelper) {
+      return _stopHelperCore();
+    }
+
+    final launched = process;
+    if (launched == null) return true;
+    // P9-S09 — drop the handle only when the exit is confirmed. Keeping it lets
+    // `shutdown()` retry instead of losing the only way to reach the process.
+    final reaped = await _reapDirectCore(launched);
+    if (reaped) process = null;
+    return reaped;
+  }
+
+  /// Kills [launched] and **confirms** it exited.
+  ///
+  /// P9-S08 — a timeout is not confirmation. The sigkill escalation gets its own
+  /// budget, and if that also produces no exit code the answer is `false`, so the
+  /// caller never records an unconfirmed cleanup as done.
+  Future<bool> _reapDirectCore(Process launched) async {
+    final hooks = startHooksForTest;
+
+    Future<void> kill(bool force) async {
+      final hook = hooks?.killProcess;
+      if (hook != null) {
+        await hook(launched, force);
+        return;
+      }
+      launched.kill(force ? ProcessSignal.sigkill : ProcessSignal.sigterm);
+    }
+
+    Future<int> awaitExit() async {
+      final hook = hooks?.awaitExit;
+      if (hook != null) return hook(launched);
+      return launched.exitCode.timeout(const Duration(seconds: 2));
+    }
+
+    try {
+      await kill(false);
+      await awaitExit();
+      return true;
+    } on TimeoutException {
+      // Still running — escalate below.
+    } catch (e) {
+      commonPrint.log('Failed to reap the core after a failed start: $e');
+      return false;
+    }
+
+    try {
+      await kill(true);
+      await awaitExit();
+      return true;
+    } catch (e) {
+      commonPrint.log('Core still not reaped after sigkill: $e');
+      return false;
     }
   }
 
@@ -561,8 +870,12 @@ class ClashService extends ClashHandlerInterface {
   @override
   shutdown() async {
     _isDestroying = true;
-    if (system.isWindows) {
-      await helperClient.stopCore();
+    if (system.isWindows && _coreStartedViaHelper) {
+      // P9-S06 — only the instance that got its core started *through* the
+      // helper may stop it. The helper owns one global core, so a direct
+      // `Process.start` instance that sent `core.stop` would kill someone
+      // else's.
+      await _stopHelperCore();
     }
     await _destroySocket();
     process?.kill();

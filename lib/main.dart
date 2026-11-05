@@ -40,7 +40,30 @@ Future<void> main(List<String> args) async {
   // `SharedPreferences` caches the store's contents on first access.
   //
   // On a normal install this returns immediately without touching anything.
+  // Control commands come first: `--exit` / `--restart` are addressed to an
+  // instance that is already running, so they must not be blocked by — or take
+  // part in — the single-instance guard below.
+  if (system.isDesktop &&
+      (args.contains('--exit') || args.contains('--restart'))) {
+    final command = args.contains('--exit') ? 'exit' : 'restart';
+    await _sendControlCommand(command);
+    exit(0);
+  }
+
+  // R-MULTI — one instance per identity on every desktop platform.
+  //
+  // Order matters: this runs before the portable-prefs swap, the proxy
+  // reconciliation and the core, so a second instance cannot touch the shared
+  // profile or the system proxy on its way out.
+  if (system.isDesktop) await _enforceSingleInstance();
+
   await installPortablePrefsStore();
+
+  // B3 — a crash can leave the system proxy pointing at a port that no longer
+  // exists. Reconcile before anything reads or writes it, and before the first
+  // frame's `ProxyManager` runs. Cheap when there is nothing to reconcile: one
+  // file existence check.
+  await ProxyOwnership.reconcileOnStart();
 
   // P2.2: start the network-context fingerprint before any reliability sample
   // can be recorded, so the first real event already lands in the correct
@@ -50,25 +73,6 @@ Future<void> main(List<String> args) async {
     networkFingerprintProvider.start();
   } catch (e) {
     commonPrint.log('Failed to start network fingerprint provider: $e');
-  }
-
-  if (system.isDesktop &&
-      (args.contains('--exit') || args.contains('--restart'))) {
-    final command = args.contains('--exit') ? 'exit' : 'restart';
-    await _sendControlCommand(command);
-    exit(0);
-  }
-
-  if (system.isMacOS) {
-    final acquire = await singleInstanceLock.acquire();
-    if (!acquire) {
-      commonPrint.log(
-        'SingleInstanceLock: another instance detected or lock failed, exiting',
-      );
-      await _sendControlCommand('show');
-      await Future.delayed(const Duration(milliseconds: 100));
-      exit(0);
-    }
   }
 
   PaintingBinding.instance.imageCache.maximumSizeBytes = 50 * 1024 * 1024;
@@ -128,6 +132,155 @@ Future<void> _sendControlCommand(String command) async {
         return;
       }
       await Future.delayed(const Duration(milliseconds: 200));
+    }
+  }
+}
+
+/// R-MULTI — what the single-instance guard decided.
+enum SingleInstanceDecision {
+  /// We hold the lock; this is the only instance.
+  start,
+
+  /// Another instance answered its control channel and was asked to show.
+  surfacedExisting,
+
+  /// The lock is taken but nothing answered: refuse to start (fail-closed).
+  blocked,
+}
+
+/// How many times the single-instance lock is retried before the control
+/// channel is consulted at all.
+///
+/// 20 x 100 ms is a hard bound that still covers a controlled restart: the
+/// outgoing process was measured gone 486 ms after `--restart`, and this budget
+/// only has to outlast its teardown. A cold start exits the loop on the first
+/// attempt, so it never pays this.
+const int kSingleInstanceAcquireAttempts = 20;
+
+/// Delay between single-instance lock attempts. See
+/// [kSingleInstanceAcquireAttempts].
+const Duration kSingleInstanceAcquireDelay = Duration(milliseconds: 100);
+
+/// The decision itself, with the side effects removed so it can be tested.
+///
+/// P9-B2 — **lock first.**
+///
+/// The lock is the only authoritative answer to "am I the only instance". The
+/// control channel is a convenience layered on top of it, and reading it first
+/// was what cost every start three seconds: a port file left behind by a crash
+/// or by a restart points at a dead port, and on this platform connecting to a
+/// dead loopback port takes ~2 s before the 1 s Dart timeout even fires.
+///
+/// A free lock therefore starts immediately, without ever touching the port
+/// file. The bounded acquire retry covers the one case where "taken" does not
+/// mean "another instance": a controlled restart, where the outgoing process is
+/// still inside its teardown when the successor runs. The final acquire after
+/// the probe covers the tail of that same race — if the probe could not raise
+/// anyone, the holder may simply have finished exiting while we asked.
+Future<SingleInstanceDecision> resolveSingleInstance({
+  required Future<bool> Function() acquire,
+  required Future<bool> Function() probe,
+  int acquireAttempts = kSingleInstanceAcquireAttempts,
+  Duration acquireDelay = kSingleInstanceAcquireDelay,
+  int probeAttempts = 3,
+  Duration probeDelay = const Duration(milliseconds: 200),
+}) async {
+  // Phase 1 — bounded lock attempts. First success wins outright: no probe, no
+  // port-file read, no timeout. Never unbounded.
+  for (var attempt = 0; attempt < acquireAttempts; attempt++) {
+    if (await acquire()) return SingleInstanceDecision.start;
+    if (attempt == acquireAttempts - 1) break;
+    if (acquireDelay > Duration.zero) {
+      await Future<void>.delayed(acquireDelay);
+    }
+  }
+
+  // Phase 2 — the lock is held, so someone owns this profile. Ask it to show.
+  //
+  // A probe that **returns false** has a definitive answer ("nothing is
+  // running"), so it is never retried: retrying only adds latency. A probe that
+  // **throws** only says "could not tell", which is worth a bounded retry.
+  var running = false;
+  for (var attempt = 0; attempt < probeAttempts; attempt++) {
+    try {
+      running = await probe();
+      break;
+    } catch (_) {
+      if (attempt == probeAttempts - 1) break;
+      if (probeDelay > Duration.zero) await Future<void>.delayed(probeDelay);
+    }
+  }
+  if (running) return SingleInstanceDecision.surfacedExisting;
+
+  // Phase 3 — nothing answered, but the lock was taken. The holder may have
+  // finished exiting while we were probing, so re-check it once before giving
+  // up. Starting without the lock would mean two processes writing one profile,
+  // and claiming the wake-up worked would be a lie — so neither.
+  if (await acquire()) return SingleInstanceDecision.start;
+
+  return SingleInstanceDecision.blocked;
+}
+
+/// R-MULTI — one instance per identity, on every desktop platform.
+///
+/// Runs before the portable-prefs swap, the proxy reconciliation and the core,
+/// so a second instance cannot touch the shared profile or the system proxy on
+/// its way out. A cold start now pays exactly one non-blocking lock attempt and
+/// never opens a socket at all (P9-B2).
+Future<void> _enforceSingleInstance() async {
+  final decision = await resolveSingleInstance(
+    probe: _probeRunningInstance,
+    acquire: singleInstanceLock.acquire,
+  );
+
+  switch (decision) {
+    case SingleInstanceDecision.start:
+      // Only a lock holder may stop the helper on exit (B2 ownership rule), and
+      // only a lock holder proves there is no second HostTest instance.
+      Windows.instanceLockHeld = true;
+      return;
+    case SingleInstanceDecision.surfacedExisting:
+      commonPrint.log(
+        'SingleInstance: another instance answered; asked it to show',
+      );
+      exit(0);
+    case SingleInstanceDecision.blocked:
+      commonPrint.log(
+        'SingleInstance: lock unavailable and no instance answered; '
+        'refusing to start',
+      );
+      exit(1);
+  }
+}
+
+/// Asks the running instance to come to the front, and reports what that meant.
+///
+/// N5 — the three outcomes are genuinely different and are no longer collapsed
+/// into one opaque failure:
+///
+/// * `notRunning` — no control channel at all. A cold start; retrying would
+///   only add latency, so this is `false` and [resolveSingleInstance] moves on.
+/// * `unreachable` — a channel exists but did not answer. Rethrown so the
+///   resolver retries, bounded.
+/// * `rejected` — the peer answered and refused (no window yet, show failed).
+///   An instance **is** running, so this returns `true`: starting a second one
+///   would be worse than a window that did not come forward.
+Future<bool> _probeRunningInstance() async {
+  try {
+    await ExternalControl.sendCommand('show', requireAck: true);
+    return true;
+  } on ExternalControlException catch (e) {
+    switch (e.failure) {
+      case ExternalControlFailure.notRunning:
+        return false;
+      case ExternalControlFailure.unreachable:
+        rethrow;
+      case ExternalControlFailure.rejected:
+        commonPrint.log(
+          'ExternalControl: an instance answered but could not show: '
+          '${e.detail}',
+        );
+        return true;
     }
   }
 }

@@ -12,7 +12,15 @@ import 'package:fluxora/common/win32_kernel.dart';
 import 'package:ffi/ffi.dart';
 
 const helperProtocolVersion = 1;
-const helperPipeName = WindowsHelperIdentity.pipeName;
+
+/// Release pipe name, kept `const` so [NamedPipeHelperTransport] can keep a
+/// const default parameter. Production resolves the identity-derived name in
+/// [_createHelperTransport] instead — a HostTest build must never fall back to
+/// this one.
+const helperReleasePipeName = WindowsHelperIdentity.releasePipeName;
+
+/// The pipe this build actually talks to.
+String get helperPipeName => WindowsHelperIdentity.pipeName;
 const helperMaxFrameSize = 1024 * 1024;
 const helperDefaultTimeout = Duration(seconds: 5);
 
@@ -241,7 +249,9 @@ class HelperClient {
 
 HelperTransport _createHelperTransport() {
   if (Platform.isWindows) {
-    return const NamedPipeHelperTransport();
+    // Explicit, not the const default: the default is the Release pipe, and a
+    // HostTest build must not connect to the Release helper.
+    return NamedPipeHelperTransport(pipeName: WindowsHelperIdentity.pipeName);
   }
   return _UnsupportedHelperTransport();
 }
@@ -261,7 +271,7 @@ class _UnsupportedHelperTransport implements HelperTransport {
 final helperClient = HelperClient(transport: _createHelperTransport());
 
 class NamedPipeHelperTransport implements HelperTransport {
-  const NamedPipeHelperTransport({this.pipeName = helperPipeName});
+  const NamedPipeHelperTransport({this.pipeName = helperReleasePipeName});
 
   final String pipeName;
 

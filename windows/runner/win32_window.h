@@ -45,6 +45,11 @@ public:
               const Size &size,
               bool activate_existing = true);
 
+  // True when Create() returned false because an already-running instance was
+  // found and activated. That is a successful handoff, not a failure, so the
+  // caller must not report it as one.
+  bool handed_off() const { return handed_off_; }
+
   // Show the current window. Returns true if the window was successfully shown.
   bool Show();
 
@@ -102,6 +107,9 @@ private:
   static void UpdateTheme(HWND const window);
 
   bool quit_on_close_ = false;
+
+  // Set when Create() handed this launch off to an already-running instance.
+  bool handed_off_ = false;
 
   // window handle for top level window.
   HWND window_handle_ = nullptr;
