@@ -392,12 +392,22 @@ enum DashboardWidget {
 
   const DashboardWidget(this.widget, {this.platforms = SupportPlatform.values});
 
-  static DashboardWidget getDashboardWidget(GridItem gridItem) {
-    final dashboardWidgets = DashboardWidget.values;
-    final index = dashboardWidgets.indexWhere(
-      (item) => item.widget == gridItem,
-    );
-    return dashboardWidgets[index];
+  /// Maps a grid item back to its enum value, or `null` when it is unknown.
+  ///
+  /// Matched by **child identity** first. The dashboard re-wraps the Hero into
+  /// a full-width `GridItem` (`dashboardGridItemFor`), so the instance the grid
+  /// hands back is not the one stored in [widget]; value equality then fails,
+  /// `indexWhere` returns -1, and the old `values[-1]` threw a `RangeError`
+  /// inside a post-frame callback — which is why "add or reorder the dashboard
+  /// widgets, save, and nothing changes".
+  static DashboardWidget? getDashboardWidget(GridItem gridItem) {
+    for (final item in DashboardWidget.values) {
+      if (identical(item.widget.child, gridItem.child)) return item;
+    }
+    for (final item in DashboardWidget.values) {
+      if (item.widget == gridItem) return item;
+    }
+    return null;
   }
 }
 

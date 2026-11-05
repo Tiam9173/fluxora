@@ -20,6 +20,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart';
+import 'package:restart_app/restart_app.dart';
 import 'package:synchronized/synchronized.dart';
 import 'package:tray_manager/tray_manager.dart';
 
@@ -28,6 +29,7 @@ import 'package:yaml/yaml.dart';
 
 import 'common/archive.dart' show restoreBackupFiles;
 import 'common/common.dart';
+import 'common/external_control.dart';
 import 'common/flclash_database_extractor.dart';
 import 'manager/chain_proxy_manager.dart';
 import 'services/network_fingerprint_provider.dart';
@@ -129,13 +131,46 @@ class AppController {
     debouncer.call(FunctionTag.savePreferences, savePreferences);
   }
 
+  /// Whether a group remembers the user's pick across refreshes.
+  ///
+  /// `url-test` / `fallback` groups choose their own node. Persisting a tap
+  /// into `selectedMap` turns it into a lock that `updateGroups` re-imposes on
+  /// **every** refresh, so the group can never auto-switch again — the
+  /// reported "自动选择要么很慢，要么没反应". Those groups get a one-shot switch
+  /// instead; only `select` groups (and groups we cannot resolve) keep the
+  /// previous behaviour.
+  bool _groupRemembersSelection(String groupName) {
+    for (final group in _ref.read(groupsProvider)) {
+      if (group.name == groupName) return !group.type.isComputedSelected;
+    }
+    return true;
+  }
+
   void changeProxyDebounce(String groupName, String proxyName) {
+    // The optimistic write used to live in the caller (`card.dart`), which made
+    // it impossible to undo here: by the time the debounced call ran, the
+    // previous value was already gone. Owning both halves keeps them together.
+    final persists = _groupRemembersSelection(groupName);
+    final previous = persists
+        ? (_ref.read(currentProfileProvider)?.selectedMap[groupName] ?? '')
+        : '';
+    if (persists) updateCurrentSelectedMap(groupName, proxyName);
     debouncer.call(
       FunctionTag.changeProxy,
       (String groupName, String proxyName) async {
-        await changeProxy(groupName: groupName, proxyName: proxyName);
-        await updateGroups();
-        addCheckIp();
+        try {
+          await changeProxy(groupName: groupName, proxyName: proxyName);
+          await updateGroups();
+          addCheckIp();
+        } catch (e) {
+          // The debouncer discards this future, so an escaping error would
+          // become an unhandled async error *and* leave the optimistic
+          // selection on screen. Undo the write, keep the failure diagnosable.
+          commonPrint.log(
+            'changeProxyDebounce: failed to select $proxyName in $groupName: $e',
+          );
+          if (persists) updateCurrentSelectedMap(groupName, previous);
+        }
       },
       args: [groupName, proxyName],
       duration: const Duration(milliseconds: 50),
@@ -338,6 +373,13 @@ class AppController {
 
   void _scheduleCheckIpRefresh() {
     Future.delayed(const Duration(seconds: 1), () {
+      // Restarting the core (and the notification's 重置, which goes through
+      // it) changes the exit IP. The old result has to be cleared, not just
+      // refreshed: `startCheck()` without `clearPrevious` keeps the previous
+      // `ipInfo` on screen while the new request runs, and if that request
+      // fails — likely, one second after a restart — the stale IP simply stays
+      // there. That is the reported "重置后 IP 检测不会重新获取".
+      detectionState.startCheck(immediate: true, clearPrevious: true);
       addCheckIpNumDebounce();
     });
   }
@@ -1027,13 +1069,29 @@ class AppController {
     );
     _ref.read(delayDataSourceProvider.notifier).value = {};
     unawaited(clashCore.requestGc());
+    // One timing line per apply. Switching a subscription is reported as
+    // "loads for a long time"; without numbers the only thing left is guessing
+    // which of the four phases is slow, and three of them are on the UI
+    // isolate. Cheap enough to keep (a handful of log lines per switch) and it
+    // turns the next bug report into a measurement.
+    final total = Stopwatch()..start();
     final configured = await _setupCoreConfig();
-    if (!configured) return;
+    final setupMs = total.elapsedMilliseconds;
+    if (!configured) {
+      commonPrint.log('[applyProfile] aborted after ${setupMs}ms');
+      return;
+    }
     final providers = await clashCore.getExternalProviders();
+    final providersMs = total.elapsedMilliseconds - setupMs;
     _ref.read(providersProvider.notifier).value = providers;
     await updateGroups(preloadedProviders: providers);
+    final groupsMs = total.elapsedMilliseconds - setupMs - providersMs;
     _restoreKnownDelays(previousDelays);
     scheduleIdleGc();
+    commonPrint.log(
+      '[applyProfile] setup=${setupMs}ms providers=${providersMs}ms '
+      'groups=${groupsMs}ms total=${total.elapsedMilliseconds}ms',
+    );
   }
 
   /// 把 apply 之前测到的延迟放回去，只保留仍然存在的节点。
@@ -1491,6 +1549,61 @@ class AppController {
     await preferences.saveConfig(globalState.config);
   }
 
+  /// Moves a `url-test` group onto its fastest **measured** node.
+  ///
+  /// mihomo only re-evaluates such a group on its own `interval` (commonly
+  /// 300 s), so after a speed test — or right after the user unlocks a group —
+  /// the selection can sit on a slow node for minutes. We already have the
+  /// numbers, so pick the winner ourselves; the core accepts the change and
+  /// its next scheduled test will simply agree.
+  ///
+  /// Deliberately narrow:
+  /// * only `url-test` — `fallback` is "first healthy", `load-balance` has no
+  ///   single winner, and `select` is the user's own choice;
+  /// * never touches a group the user has locked;
+  /// * does nothing when no node has a usable measurement.
+  Future<void> selectFastestForGroup(String groupName) async {
+    if (groupName.isEmpty) return;
+
+    Group? group;
+    for (final g in _ref.read(groupsProvider)) {
+      if (g.name == groupName) {
+        group = g;
+        break;
+      }
+    }
+    if (group == null || group.type != GroupType.URLTest) return;
+
+    final locked = _ref.read(selectedMapProvider)[groupName];
+    if (locked != null && locked.isNotEmpty) return;
+
+    String? fastest;
+    var best = 0;
+    for (final proxy in group.all) {
+      final value = _ref.read(
+        getDelayProvider(proxyName: proxy.name, testUrl: group.testUrl),
+      );
+      // `null` = never tested, `<= 0` = the failure sentinel. Neither can win.
+      if (value == null || value <= 0) continue;
+      if (fastest == null || value < best) {
+        fastest = proxy.name;
+        best = value;
+      }
+    }
+
+    if (fastest == null || fastest == group.now) return;
+
+    try {
+      await changeProxy(groupName: groupName, proxyName: fastest);
+      await updateGroups();
+      commonPrint.log(
+        'selectFastestForGroup($groupName): switched to $fastest (${best}ms)',
+      );
+    } catch (e) {
+      commonPrint.log('selectFastestForGroup($groupName) failed: $e');
+    }
+  }
+
   Future<void> changeProxy({
     required String groupName,
     required String proxyName,
@@ -1506,20 +1619,44 @@ class AppController {
     detectionState.startCheck(immediate: true);
   }
 
-  Future<void> changeProxiesBatch(Map<String, String> groupToProxyMap) async {
-    if (groupToProxyMap.isEmpty) return;
+  /// Applies a `group -> proxy` map to the core.
+  ///
+  /// Returns `true` only when every requested change was accepted **and** the
+  /// follow-up read-back confirms it. A rejected change is rolled back out of
+  /// the selection map, so the UI never keeps a node the core did not accept.
+  ///
+  /// Every caller today only `await`s this, so the result is additive; it
+  /// exists so a caller that needs to know does not have to re-derive it from a
+  /// provider that may be stale.
+  Future<bool> changeProxiesBatch(Map<String, String> groupToProxyMap) async {
+    if (groupToProxyMap.isEmpty) return true;
+
+    // Snapshot what the optimistic write below is about to overwrite, so a
+    // rejected change can be undone one group at a time.
+    final currentProfile = _ref.read(currentProfileProvider);
+    final previous = <String, String>{
+      for (final group in groupToProxyMap.keys)
+        group: currentProfile?.selectedMap[group] ?? '',
+    };
 
     for (final entry in groupToProxyMap.entries) {
       updateCurrentSelectedMap(entry.key, entry.value);
     }
 
+    var allAccepted = true;
     for (final entry in groupToProxyMap.entries) {
       try {
         await clashCore.changeProxy(
           ChangeProxyParams(groupName: entry.key, proxyName: entry.value),
         );
       } catch (e) {
+        allAccepted = false;
         commonPrint.log('Failed to change proxy for group ${entry.key}: $e');
+        // The core still holds the old node. Keeping the optimistic value
+        // would show a selection that does not exist, and `updateGroups()`
+        // cannot repair it: its reconciliation is gated on the core's `now`
+        // actually changing, which is exactly what did not happen.
+        updateCurrentSelectedMap(entry.key, previous[entry.key] ?? '');
       }
     }
 
@@ -1528,6 +1665,30 @@ class AppController {
     await updateGroups();
     addCheckIp();
     detectionState.startCheck(immediate: true, clearPrevious: true);
+
+    // `updateGroups()` swallows its own failures (`_handleUpdateGroupsError`
+    // returns without touching the provider), so returning from it is not
+    // evidence that the read-back landed. Confirm against what the core
+    // actually reports — an unverifiable change is not a successful one.
+    //
+    // The rollback has to happen here too, not only in the `catch` above: a
+    // core can accept the call (no exception) and still not move, or the
+    // read-back can miss the group entirely. Leaving the optimistic value in
+    // either case would report a failure while the UI still shows the new
+    // node — a fake state, not a failure report.
+    final groups = _ref.read(groupsProvider);
+    var allConfirmed = true;
+    for (final entry in groupToProxyMap.entries) {
+      final matches = groups.where((g) => g.name == entry.key);
+      final confirmed =
+          matches.isNotEmpty && (matches.first.now ?? '') == entry.value;
+      if (confirmed) continue;
+      allConfirmed = false;
+      // Per group: confirmed groups keep their real state, and groups outside
+      // the batch are never touched.
+      updateCurrentSelectedMap(entry.key, previous[entry.key] ?? '');
+    }
+    return allAccepted && allConfirmed;
   }
 
   Future<void> handleBackOrExit() async {
@@ -1566,73 +1727,117 @@ class AppController {
     }
   }
 
-  Future<void> handleExit() async {
-    if (_exitLock != null) {
-      return _exitLock!.future;
-    }
+  /// Shared exit / restart chain (P9B-D1 + P9B-D3).
+  ///
+  /// Every cleanup step is independent: a throwing step is logged and the rest
+  /// still run. Before this the whole chain was one `try` block, so a throw in
+  /// `savePreferences()` skipped the system-proxy release and left the OS
+  /// pointing at a port that no longer exists.
+  late final LifecycleTeardown _teardown = LifecycleTeardown(
+    steps: _teardownSteps,
+    onExit: () async {
+      final lock = _exitLock;
+      if (lock != null && !lock.isCompleted) lock.complete();
+      system.exit();
+    },
+    onRestart: Restart.restartApp,
+  );
 
-    final exitLock = Completer<void>();
-    _exitLock = exitLock;
-    globalState.isExiting = true;
-
-    try {
-      if (system.isDesktop) {
-        try {
-          await trayManager.destroy();
-        } catch (e) {
-          commonPrint.log('Failed to destroy tray icon on exit: $e');
-        }
+  /// The order is load-bearing:
+  ///  * observers stop before persistence is flushed, so no new sample lands
+  ///    while the flush is in flight;
+  ///  * the proxy is released before the core goes down, so a crash between the
+  ///    two cannot leave the OS pointing at a dead listener;
+  ///  * the helper stops last — it may be the process that owns the core.
+  List<TeardownStep> _teardownSteps() => [
+    TeardownStep('tray', () async {
+      if (system.isDesktop) await trayManager.destroy();
+    }),
+    TeardownStep('wakelock', () async => stopWakelockAutoRecovery()),
+    TeardownStep(
+      'network-fingerprint',
+      () async => networkFingerprintProvider.stop(),
+    ),
+    TeardownStep('background-mode', () => globalState.handleBackground()),
+    TeardownStep('tun-flag', () async {
+      if (!system.isDesktop) return;
+      final prefs = await preferences.sharedPreferencesCompleter.future;
+      await prefs?.setBool('is_tun_running', false);
+    }),
+    TeardownStep('save-preferences', () => savePreferences()),
+    TeardownStep('proxy-release', () async {
+      if (proxy == null) return;
+      // B3 — releases only what this instance set, and only while the system
+      // still holds exactly that. An external program that changed the proxy
+      // meanwhile wins; we drop our claim without touching it.
+      final outcome = await ProxyOwnership.release(reason: 'exit');
+      if (outcome != ProxyReleaseOutcome.restored &&
+          outcome != ProxyReleaseOutcome.notOwned) {
+        commonPrint.log('Proxy release on exit: ${outcome.name}');
       }
-      stopWakelockAutoRecovery();
-      // P2.5-F: stop runtime observers BEFORE flushing persistence or closing
-      // the core. This observer owns a live resource that previously outlived
-      // the app:
-      //  * the network-fingerprint `StreamSubscription` on connectivity was
-      //    started in `main()` but never cancelled.
-      // Ordering note: this runs *before* `flushReliabilityStats()` so no new
-      // sample can be produced while the flush is in progress, but the flush
-      // still happens while its producer (`ChainProxyManager`) is alive.
-      networkFingerprintProvider.stop();
-      await globalState.handleBackground();
-      if (system.isDesktop) {
-        final prefs = await preferences.sharedPreferencesCompleter.future;
-        await prefs?.setBool('is_tun_running', false);
-      }
-      await savePreferences();
-      if (proxy != null) {
-        await proxy!.stopProxy();
-      }
-      // P2.3-A (B-2): flush the debounced chain-reliability statistics before
-      // teardown. `ChainProxyManager` writes them behind a 2s debounce, so any
-      // sample recorded inside the last window would otherwise be lost on exit.
-      // Bounded by a timeout (and wrapped) so a slow or failing write can never
-      // block or delay shutdown indefinitely.
-      try {
-        await chainProxyManager
-            .flushReliabilityStats()
-            .timeout(const Duration(seconds: 2));
-      } catch (e) {
-        commonPrint.log('Failed to flush reliability stats on exit: $e');
-      }
+    }),
+    TeardownStep('reliability-stats', () async {
+      await chainProxyManager
+          .flushReliabilityStats()
+          .timeout(const Duration(seconds: 2));
+    }),
+    TeardownStep('core-shutdown', () async {
       await clashCore.shutdown();
       if (clashService != null) {
         await clashService!.destroy();
       }
-    } catch (e) {
-      commonPrint.log('handleExit error: $e');
-    } finally {
-      if (macOS != null) {
-        try {
-          await macOS!.updateDns(true);
-        } catch (e) {
-          commonPrint.log('Failed to restore macOS system DNS on exit: $e');
-        }
+    }),
+    TeardownStep('macos-dns', () async {
+      if (macOS != null) await macOS!.updateDns(true);
+    }),
+    TeardownStep('helper-stop', () async {
+      if (!system.isWindows) return;
+      // B2 — `stopHelperService` keeps its own ownership gate; nothing here
+      // widens it. 6 s: IPC <=2 s + 4x500 ms SCM poll.
+      final outcome = await Windows()
+          .stopHelperService()
+          .timeout(const Duration(seconds: 6));
+      if (outcome != HelperStopOutcome.stopped) {
+        commonPrint.log(
+          'Helper service not confirmed stopped on exit: ${outcome.name}',
+        );
       }
-      if (!exitLock.isCompleted) {
-        exitLock.complete();
-      }
-      system.exit();
+    }, keepOnRestart: true),
+    // A control port file left behind by a dead instance costs the next launch
+    // three 1 s connect timeouts before it can conclude "nothing is running".
+    // `dispose()` calls `ExternalControl.stop()` without awaiting, so that
+    // unlink raced process exit and usually lost. Await it here, inside the
+    // chain that already waits, and keep it on restart so the successor can
+    // still probe this instance.
+    TeardownStep(
+      'external-control',
+      () => ExternalControl.stop(),
+      keepOnRestart: true,
+    ),
+  ];
+
+  Future<void> handleExit() async {
+    if (_exitLock != null) {
+      return _exitLock!.future;
     }
+    _exitLock = Completer<void>();
+    globalState.isExiting = true;
+    await _teardown.run(restart: false);
+  }
+
+  /// P9B-D3 — restart through the same chain as exit.
+  ///
+  /// Returns the teardown result so a caller can tell whether the restart
+  /// happened after a clean shutdown. The restart itself is never skipped when
+  /// a step fails: stranding the user in a half-torn-down process is worse, and
+  /// the failure list is logged rather than reported as success.
+  Future<TeardownResult> restartApp() async {
+    globalState.isExiting = true;
+    final result = await _teardown.run(restart: true);
+    if (!result.clean) {
+      commonPrint.log('Restarting with cleanup failures: $result');
+    }
+    return result;
   }
 
   Future handleClear() async {
@@ -2324,13 +2529,25 @@ class AppController {
     String? testUrl,
     bool descending = false,
   }) {
+    // Resolve every delay **once** before sorting.
+    //
+    // The comparator used to call `getDelayProvider` per comparison, i.e.
+    // O(n log n) provider resolutions — each one building and disposing an
+    // auto-dispose provider with three dependencies, from inside a build.
+    // Measured on the desktop VM: 100 nodes ≈ 0.2 s, 300 ≈ 1.4 s, 800 ≈ 10.8 s
+    // for a single sort, and this runs on every rebuild. That is why a large
+    // group looks like it never re-sorts after a speed test: the frame is
+    // blocked long enough that the user interacts again first.
+    final values = <String, int?>{};
+    for (final proxy in proxies) {
+      values[proxy.name] = _ref.read(
+        getDelayProvider(proxyName: proxy.name, testUrl: testUrl),
+      );
+    }
+
     return List.of(proxies)..sort((a, b) {
-      final aValue = _ref.read(
-        getDelayProvider(proxyName: a.name, testUrl: testUrl),
-      );
-      final bValue = _ref.read(
-        getDelayProvider(proxyName: b.name, testUrl: testUrl),
-      );
+      final aValue = values[a.name];
+      final bValue = values[b.name];
 
       final byRank = _delayRank(aValue).compareTo(_delayRank(bValue));
       if (byRank != 0) return byRank;
@@ -2625,6 +2842,12 @@ class AppController {
       }
     }
 
+    // Snapshot before the optimistic writes below, so a rejected sync can be
+    // undone one group at a time.
+    final previousSelected = <String, String>{
+      for (final group in batchMap.keys) group: selectedMap[group] ?? '',
+    };
+
     for (final entry in batchMap.entries) {
       updateCurrentSelectedMap(entry.key, entry.value);
       try {
@@ -2634,6 +2857,12 @@ class AppController {
       } catch (e) {
         commonPrint.log(
           'Failed to sync proxy in changeMode for ${entry.key}: $e',
+        );
+        // The core kept the old node; leaving the new one on screen would show
+        // a selection that does not exist.
+        updateCurrentSelectedMap(
+          entry.key,
+          previousSelected[entry.key] ?? '',
         );
       }
     }

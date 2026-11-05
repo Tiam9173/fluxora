@@ -2,6 +2,7 @@ package io.fluxora.app
 
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -51,6 +52,9 @@ class SwitchCardActivity : Activity() {
 
     private lateinit var statusView: TextView
 
+    /// 点「订阅」后要先把 App 拉起来、再关自己，见 `btn_profiles`。
+    private var closeWhenBackgrounded = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setFinishOnTouchOutside(true)
@@ -70,18 +74,36 @@ class SwitchCardActivity : Activity() {
 
         findViewById<TextView>(R.id.btn_close).setOnClickListener { finish() }
         findViewById<TextView>(R.id.btn_profiles).setOnClickListener {
-            // 切订阅要重新生成配置，原生卡片做不到 —— 直接把用户送到订阅页。
+            // 切订阅要重新生成配置，原生卡片做不到 —— 把用户送到 App 里。
+            //
+            // 这里**不能**紧接着 finish()。卡片是 singleInstance + 独立
+            // taskAffinity 的独立任务，finish() 会把整个任务移除；而 MainActivity
+            // 此时可能还没 resume（冷启动要建引擎、热启动要切任务）。任务先没了、
+            // 新界面还没上来，系统就回到桌面 —— 表现就是「点订阅把 App 退出了」，
+            // 进程随后被回收，连带把代理/VPN 服务一起带走。
+            //
+            // 改成：先把 App 拉起来，等卡片真正让位（onPause）再关自己。
             startActivity(
-                android.content.Intent(this, MainActivity::class.java).apply {
-                    addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                Intent(this, MainActivity::class.java).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    // 复用已有的 App 任务，不要再压一个 MainActivity 实例。
+                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
                 },
             )
-            finish()
+            closeWhenBackgrounded = true
         }
         findViewById<TextView>(R.id.btn_test).setOnClickListener { testAll() }
 
         readEndpoint()
         loadNodes()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        // 用 onStop 而不是 onPause：A→B 的顺序是 A.onPause → B.onCreate →
+        // B.onResume → A.onStop，只有在 onStop 里 App 才真正起来了。
+        // 下拉通知栏只会 pause 不会 stop，所以这里不会被误触发。
+        if (closeWhenBackgrounded && !isFinishing) finish()
     }
 
     override fun onDestroy() {

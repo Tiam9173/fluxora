@@ -191,6 +191,10 @@ Future<void> delayTest(
       await Future.wait(batchTasks.map((task) => task()));
     }
     appController.addSortNum();
+    // A `url-test` group would otherwise keep whatever the core picked at its
+    // last interval tick, which is what makes "自动选择" feel dead right after
+    // a speed test. Push the winner we just measured.
+    await appController.selectFastestForGroup(groupName ?? '');
   }
 
   if (groupName == null || groupName.isEmpty) {

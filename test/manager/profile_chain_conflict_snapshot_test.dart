@@ -179,4 +179,31 @@ void main() {
     expect(byName(raw, 'LandingNode').containsKey('dialer-proxy'), isFalse);
     expect(names.contains('LandingNode ➜ LandingNode'), isFalse);
   });
+
+  test('a pre-proxy naming a node this profile no longer has is skipped', () {
+    // Real report: the saved pre-proxy was a node from a previous subscription
+    // ("🇺🇸 美国05 |公益|1倍"). Writing it as `dialer-proxy` made mihomo fail
+    // every connection with `proxyName[...] not found`, which surfaced as a
+    // WARP that only ever timed out.
+    final raw = rawConfigAfterGlobalPass();
+    manager.updateChain('rc8-stale', (c) {
+      return c.copyWith(
+        enable: true,
+        preProxy: 'GoneNode',
+        landingProxy: null,
+      );
+    }, reloadCore: false, save: false);
+
+    manager.applyToClashConfig(raw, 'rc8-stale');
+
+    for (final proxy in (raw['proxies'] as List).cast<Map<String, dynamic>>()) {
+      expect(
+        proxy['dialer-proxy'],
+        isNot('GoneNode'),
+        reason: 'a dangling dialer-proxy breaks every connection, not just one',
+      );
+    }
+    // The global pass's own wiring must survive untouched.
+    expect(byName(raw, '🔗中转·AirportA')['dialer-proxy'], 'AirportA');
+  });
 }

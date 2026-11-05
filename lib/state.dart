@@ -89,6 +89,54 @@ class GlobalState {
   late AppState appState;
   bool isPre = true;
   String? coreSHA256;
+
+  /// Memoised core SHA, shared by [initApp] and the helper identity probe.
+  ///
+  /// The probe runs from `ClashService`'s constructor, which `preload()`
+  /// triggers — and `main.dart` awaits `preload()` **concurrently** with
+  /// `initApp()` inside one `Future.wait`. When the SHA had to be computed at
+  /// runtime (no `CORE_SHA256` define) that hashing took ~200 ms while the
+  /// probe reached `_pingHelper` in ~60–120 ms, so the probe read a still-null
+  /// [coreSHA256] and reported "not our helper". The app then silently fell
+  /// back to spawning the core directly and never used the helper at all.
+  ///
+  /// One future, awaited by everyone: a late arrival waits instead of guessing.
+  Future<String?>? _coreShaFuture;
+
+  /// Test-only: replaces the SHA computation so a test can hold it open and
+  /// observe whether a concurrent caller waits or gives up.
+  @visibleForTesting
+  static Future<String?> Function()? coreShaComputerForTest;
+
+  /// The core SHA, computed at most once.
+  ///
+  /// Returns `null` only when it genuinely cannot be determined (non-Windows
+  /// without a define, or an unreadable core file).
+  Future<String?> ensureCoreSha() => _coreShaFuture ??= _computeCoreSha();
+
+  @visibleForTesting
+  void resetCoreShaForTest() {
+    _coreShaFuture = null;
+    coreShaComputerForTest = null;
+    coreSHA256 = null;
+  }
+
+  Future<String?> _computeCoreSha() async {
+    final injected = coreShaComputerForTest;
+    if (injected != null) {
+      coreSHA256 = await injected();
+      return coreSHA256;
+    }
+    const fromDefine = String.fromEnvironment('CORE_SHA256');
+    if (fromDefine.isNotEmpty) {
+      coreSHA256 = fromDefine;
+      return coreSHA256;
+    }
+    if (!system.isWindows) return null;
+    coreSHA256 = await _calcCoreSHA256();
+    return coreSHA256;
+  }
+
   late PackageInfo packageInfo;
   Function? updateCurrentDelayDebounce;
   VoidCallback? focusDashboardStartSwitch;
@@ -153,10 +201,11 @@ class GlobalState {
 
   Future<void> initApp(int version) async {
     isExiting = false;
-    coreSHA256 = const String.fromEnvironment('CORE_SHA256');
-    if (system.isWindows && (coreSHA256 == null || coreSHA256!.isEmpty)) {
-      coreSHA256 = await _calcCoreSHA256();
-    }
+    // P9 — one shared computation. `preload()` starts the first core launch
+    // concurrently with this method, so the helper probe may ask for the SHA
+    // before this line finishes; it now awaits the same future instead of
+    // reading a half-initialised field.
+    await ensureCoreSha();
     isPre = const String.fromEnvironment('APP_ENV') != 'stable';
     appState = AppState(
       brightness: WidgetsBinding.instance.platformDispatcher.platformBrightness,
@@ -1250,6 +1299,19 @@ class GlobalState {
           }
           return false;
         });
+        // Removing a group is not enough: every other group that lists it in
+        // `proxies` now points at something that no longer exists, and mihomo
+        // rejects the whole file —
+        //   proxy group[1]: 陆: '故障转移' not found
+        // Drop those references too. A group emptied by this falls back to
+        // DIRECT so it stays valid.
+        for (final g in proxyGroups) {
+          if (g is! Map) continue;
+          final members = g['proxies'];
+          if (members is! List) continue;
+          members.removeWhere((m) => disabledGroups.contains(m));
+          if (members.isEmpty) members.add('DIRECT');
+        }
         for (int i = 0; i < rules.length; i++) {
           if (rules[i] is String) {
             final parsed = ParsedRule.parseString(rules[i] as String);

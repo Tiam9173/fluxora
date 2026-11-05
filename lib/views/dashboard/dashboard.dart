@@ -265,9 +265,16 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
       return;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Unknown items are dropped rather than crashing the save: the grid can
+      // hand back a re-wrapped `GridItem` (the Hero is widened to the full
+      // column count), and one unmappable tile must not cost the whole edit.
       final dashboardWidgets = children
-          .map((item) => DashboardWidget.getDashboardWidget(item))
+          .map(DashboardWidget.getDashboardWidget)
+          .whereType<DashboardWidget>()
           .toList();
+      // An empty result means the mapping failed wholesale; writing it would
+      // wipe the dashboard instead of saving an edit.
+      if (dashboardWidgets.isEmpty) return;
       ref
           .read(appSettingProvider.notifier)
           .updateState(

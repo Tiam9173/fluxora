@@ -423,7 +423,28 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                           return;
                         }
                         HapticFeedback.lightImpact();
-                        await chainProxyManager.setEnable(true);
+                        // `updateConfig` writes the config *before* reloading the
+                        // core, so a reload failure leaves `enable: true` on disk
+                        // and the switch showing ON while nothing was applied.
+                        // Roll the config back so the UI matches reality, and say
+                        // so instead of claiming success.
+                        bool selected;
+                        try {
+                          selected = await chainProxyManager.setEnable(true);
+                        } catch (error) {
+                          commonPrint.log(
+                            'ChainProxyView: enable failed: $error',
+                          );
+                          try {
+                            await chainProxyManager.setEnable(false);
+                          } catch (_) {}
+                          if (context.mounted) {
+                            context.showSnackBar(
+                              appLocalizations.chainFailed,
+                            );
+                          }
+                          return;
+                        }
                         // RC.10-A — probe once right after the chain turns on.
                         // Fire-and-forget on purpose: a failed probe must not
                         // roll the enable state back, and the UI must not block
@@ -441,11 +462,29 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                           );
                         }
                         if (context.mounted) {
-                          context.showSnackBar(appLocalizations.chainEnabled);
+                          // "Enabled" and "actually routing" are different
+                          // states: the config + core applied, but the live
+                          // selector did not move. Do not merge the two.
+                          context.showSnackBar(
+                            selected
+                                ? appLocalizations.chainEnabled
+                                : appLocalizations.chainFailed,
+                          );
                         }
                       } else {
                         HapticFeedback.lightImpact();
-                        await chainProxyManager.setEnable(false);
+                        try {
+                          await chainProxyManager.setEnable(false);
+                        } catch (error) {
+                          commonPrint.log(
+                            'ChainProxyView: disable failed: $error',
+                          );
+                          if (context.mounted) {
+                            context.showSnackBar(
+                              appLocalizations.chainFailed,
+                            );
+                          }
+                        }
                       }
                     },
                   ),

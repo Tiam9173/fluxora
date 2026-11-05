@@ -77,6 +77,22 @@ class ChainProxyManager extends ChangeNotifier {
     return _instance!;
   }
 
+  /// Test-only: drops the process-wide instance so a case can exercise [init]
+  /// from a clean slate.
+  ///
+  /// `ChainProxyManager` is a singleton and `init()` is one-shot per instance
+  /// (`if (_initialized) return;`), so without this a test file could only ever
+  /// initialise once — which is why the whole `init()` path had no coverage.
+  /// Never called from production code.
+  @visibleForTesting
+  static void resetInstanceForTest() {
+    final instance = _instance;
+    _instance = null;
+    if (instance != null && !instance._disposed) {
+      instance.dispose();
+    }
+  }
+
   int get stateVersion => _stateVersion;
   ChainProxyConfig get config => _config;
   bool get isInitialized => _initialized;
@@ -468,16 +484,31 @@ class ChainProxyManager extends ChangeNotifier {
     }
   }
 
-  Future<void> setEnable(bool enable) async {
+  /// Enables or disables the chain proxy.
+  ///
+  /// Returns `false` when the chain was enabled and applied to the core but the
+  /// live selector could not be moved onto it — the config says "enabled" while
+  /// traffic is not actually routing through the chain. The caller must not
+  /// report that as success.
+  ///
+  /// A reload failure still throws (from [updateConfig]); the caller decides
+  /// whether to roll back.
+  Future<bool> setEnable(bool enable) async {
     await updateConfig((c) => c.copyWith(enable: enable));
     if (enable) {
-      await _autoSelectChainGroup();
+      return _autoSelectChainGroup();
     }
-    // P0: `enable` is one of the two inputs that decide whether the automatic
-    // failover loop runs, so every toggle must reconcile the loop.
+    return true;
   }
 
-  Future<void> _autoSelectChainGroup() async {
+  /// Drives the live selector onto the chain's target proxy.
+  ///
+  /// Returns `true` when the chain ends up selected (including "there was
+  /// nothing to select"), `false` when a selection was attempted and did not
+  /// land. It used to return `void` and log failures only, so `setEnable(true)`
+  /// reported success while the chain was not actually routing — the caller had
+  /// no way to tell "enabled" from "enabled and selected".
+  Future<bool> _autoSelectChainGroup() async {
     try {
       final appController = globalState.appController;
       final mode = appController.ref.read(patchClashConfigProvider).mode;
@@ -490,7 +521,7 @@ class ChainProxyManager extends ChangeNotifier {
           ? dedicatedGroupName
           : (activeLanding ?? '');
 
-      if (targetProxy.isEmpty) return;
+      if (targetProxy.isEmpty) return true;
 
       final batchMap = <String, String>{};
 
@@ -542,30 +573,48 @@ class ChainProxyManager extends ChangeNotifier {
         }
       }
 
-      if (batchMap.isNotEmpty) {
-        await appController.changeProxiesBatch(batchMap);
+      // Nothing to drive (no selector in this mode / no matching selector).
+      if (batchMap.isEmpty) return true;
 
-        bool verifySelection() {
-          final sm = appController.ref.read(selectedMapProvider);
-          for (final entry in batchMap.entries) {
-            if (sm[entry.key] != entry.value) {
-              return false;
-            }
+      await appController.changeProxiesBatch(batchMap);
+
+      // Verify against the core's own state, not `selectedMapProvider`.
+      //
+      // `changeProxiesBatch` writes the selection map optimistically *before*
+      // it talks to the core, and only logs a failed `changeProxy`. The
+      // follow-up `updateGroups()` re-syncs that map from the core, but only
+      // for groups whose `now` actually moved — so a rejected change leaves
+      // the optimistic value standing. Verifying against the selection map
+      // would therefore pass even when nothing was applied, which is exactly
+      // the false success this function exists to rule out.
+      //
+      // `groupsProvider` is refreshed from the core by `updateGroups()` at the
+      // end of `changeProxiesBatch`, so by the time we get here it is honest.
+      bool verifySelection() {
+        final groups = appController.ref.read(groupsProvider);
+        for (final entry in batchMap.entries) {
+          final matches = groups.where((g) => g.name == entry.key);
+          // `now ?? ''` is `Group.realNow` — that extension lives in
+          // `models/common.dart`, which this file does not import.
+          if (matches.isEmpty || (matches.first.now ?? '') != entry.value) {
+            return false;
           }
-          return true;
         }
-
-        if (!verifySelection()) {
-          await Future.delayed(const Duration(milliseconds: 500));
-          await appController.changeProxiesBatch(batchMap);
-
-          if (!verifySelection()) {
-            commonPrint.log('Chain proxy auto-select retry failed.');
-          }
-        }
+        return true;
       }
+
+      if (verifySelection()) return true;
+
+      await Future.delayed(const Duration(milliseconds: 500));
+      await appController.changeProxiesBatch(batchMap);
+
+      if (verifySelection()) return true;
+
+      commonPrint.log('Chain proxy auto-select retry failed.');
+      return false;
     } catch (e, stack) {
       commonPrint.log('Failed to auto select chain group: $e\n$stack');
+      return false;
     }
   }
 
@@ -1739,8 +1788,8 @@ class ChainProxyManager extends ChangeNotifier {
   /// 把一次链路探测的结果**按节点名**归属到 fallback pool 的候选上。
   ///
   /// **P1.3-C1 — 写入边界（重要，勿误解为「候选状态的统一回写」）**：
-  ///  * 本函数**只**累积 `statsByContext`（reliability 样本，按当前 network
-  ///    fingerprint 分桶）；
+  ///  * 本函数累积 `statsByContext`（reliability 样本，按当前 network
+  ///    fingerprint 分桶），并在探测到有效延迟时发布 `nodeLatency`；
   ///  * **不写** `candidate.health` / `candidate.latencyMs` /
   ///    `candidate.lastChecked` —— 这三个字段原本由 failover 路径写入
   ///    （`ChainFailoverService._updateCandidateStats`），该路径已在 `7916804c`
@@ -1835,6 +1884,13 @@ class ChainProxyManager extends ChangeNotifier {
     
     notifyListeners();
     _scheduleReliabilityPersist();
+    // P10 — this is the third pool-write path (`setFallbackPool` and
+    // `updateFallbackPool` already do this). A probe hands candidates a fresh
+    // `nodeLatency`, which changes when their observation stops being trusted;
+    // without re-arming, a pool that had no gated observation at `init()`
+    // never arms a tick at all, and `stateVersion` never advances when the
+    // sample ages out — the ranking keeps using a stale trust level.
+    _scheduleFreshnessTick();
   }
 
   /// Whether a reliability sample is awaiting persistence.

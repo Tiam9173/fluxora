@@ -318,11 +318,18 @@ void main() {
 
     test('J. exit path calls flushReliabilityStats() before core shutdown', () {
       final source = File('lib/controller.dart').readAsStringSync();
-      final start = source.indexOf('Future<void> handleExit()');
-      expect(start, greaterThanOrEqualTo(0), reason: 'handleExit must exist');
 
-      // Scope to the handleExit body (up to the next top-level method).
-      final rest = source.substring(start);
+      // P9-S02: the exit chain moved out of `handleExit` into the shared
+      // `_teardownSteps()` list so exit and restart run the same steps. The
+      // ordering guarantee is unchanged; only its location moved.
+      final stepsStart = source.indexOf('List<TeardownStep> _teardownSteps()');
+      expect(
+        stepsStart,
+        greaterThanOrEqualTo(0),
+        reason: 'the shared teardown chain must exist',
+      );
+
+      final rest = source.substring(stepsStart);
       final nextMethod = rest.indexOf('\n  Future ', 1);
       final body = nextMethod > 0 ? rest.substring(0, nextMethod) : rest;
 
@@ -331,13 +338,32 @@ void main() {
       expect(
         flushIdx,
         greaterThanOrEqualTo(0),
-        reason: 'handleExit must flush the debounced reliability stats',
+        reason: 'the exit chain must flush the debounced reliability stats',
       );
       expect(shutdownIdx, greaterThanOrEqualTo(0));
       expect(
         flushIdx,
         lessThan(shutdownIdx),
         reason: 'the flush must happen before the core is shut down',
+      );
+
+      // P9B-D3: both tails must go through that one chain, or the ordering
+      // above would only cover half of the exit paths.
+      final exitStart = source.indexOf('Future<void> handleExit()');
+      final exitBody = source.substring(exitStart);
+      expect(
+        exitBody.indexOf('_teardown.run(restart: false)'),
+        greaterThanOrEqualTo(0),
+        reason: 'exit must use the shared chain',
+      );
+
+      final restartStart = source.indexOf('Future<TeardownResult> restartApp()');
+      expect(restartStart, greaterThanOrEqualTo(0));
+      final restartBody = source.substring(restartStart);
+      expect(
+        restartBody.indexOf('_teardown.run(restart: true)'),
+        greaterThanOrEqualTo(0),
+        reason: 'restart must use the same chain as exit',
       );
     });
 

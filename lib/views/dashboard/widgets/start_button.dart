@@ -282,11 +282,11 @@ class _StartButtonState extends ConsumerState<StartButton> {
         final readOut = isIdleState ? '' : hero.value;
 
         return SizedBox(
-          // Height budget (D4.6 header restore): card padding (md ×2) + power
-          // header (`baseInfoEdgeInsets.top` + glyph line) + one body row, which
-          // the 40×40 action button dominates. `getWidgetHeight(1)` alone (84)
-          // is no longer enough once the header row is back.
-          height: getWidgetHeight(1) + FluxoraSpacing.xxl,
+          // Back to one grid row, matching the upstream card
+          // (`height: getWidgetHeight(context, 1)` in Bettbox). The extra
+          // `+ FluxoraSpacing.xxl` made the Hero 24 dp taller than every other
+          // card and read as "too long" next to them.
+          height: getWidgetHeight(1),
           child: FluxoraCard(
             // The connection state is the page's primary surface. `filled`
             // lifts it from `surfaceContainerLow` (every metric card) to

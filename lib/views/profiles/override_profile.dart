@@ -286,7 +286,6 @@ class OverrideSwitch extends ConsumerWidget {
       ),
     );
     return CommonCard(
-      onPressed: () {},
       type: CommonCardType.filled,
       radius: 18,
       child: ListItem.switchItem(

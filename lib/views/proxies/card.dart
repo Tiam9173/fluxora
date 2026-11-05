@@ -180,8 +180,11 @@ class ProxyCard extends StatelessWidget {
 
       if (isUnlock) {
         appController.updateCurrentSelectedMap(groupName, '');
-        // Just unlock. We don't need to change Mihomo state explicitly because
-        // updateGroups will stop enforcing the lock and Mihomo will auto-select naturally.
+        // Unlocking must not leave the group on whatever the core last picked:
+        // a `url-test` group only re-evaluates on its own interval (often
+        // 300 s), so without this the node the user just released stays in
+        // place for minutes. Pick the fastest measured node right away.
+        await appController.selectFastestForGroup(groupName);
         return;
       }
 
@@ -297,7 +300,9 @@ class ProxyCard extends StatelessWidget {
         return;
       }
 
-      appController.updateCurrentSelectedMap(groupName, nextProxyName);
+      // `changeProxyDebounce` owns the optimistic selection write so it can
+      // undo it when the core refuses. Writing it here as well would put the
+      // value out of the controller's reach.
       appController.changeProxyDebounce(groupName, nextProxyName);
       return;
     }

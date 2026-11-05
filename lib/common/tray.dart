@@ -282,6 +282,12 @@ class Tray {
             final appController = globalState.appController;
             try {
               await appController.restartCore();
+            } catch (e) {
+              // P9-S06 — `restartCore()` already logged and notified the user
+              // (`_reportCoreRestartFailure`), then rethrew. Swallowing it here
+              // keeps the rethrow from becoming an unhandled async error in a
+              // tray callback; no second notification is sent.
+              commonPrint.log('Tray restart failed: $e');
             } finally {
               await appController.syncDesktopRuntimeState(
                 preferCurrentState: true,

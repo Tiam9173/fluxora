@@ -190,13 +190,30 @@ class ProfileChainManager extends ChangeNotifier {
     // 1. Apply Pre-Proxy (前置代理)
     // All original proxies in this subscription dial through preProxy
     if (chain.hasPreProxy && preProxy != null && preProxy.isNotEmpty) {
-      for (final item in proxiesList) {
-        if (item is Map) {
-          final pName = item['name']?.toString() ?? '';
-          if (pName.isNotEmpty && pName != preProxy) {
-            item['dialer-proxy'] = preProxy;
+      // The saved name is a snapshot of a subscription the user may have
+      // replaced since. Writing a `dialer-proxy` that names a node this
+      // profile does not contain makes mihomo fail every connection through
+      // it — the symptom is a wall of
+      // `proxyName[🇺🇸 美国05 |公益|1倍] not found` and a WARP that only times
+      // out. Skip the hop instead of poisoning the whole config; the chain is
+      // re-picked from the UI when the user notices.
+      final preProxyExists = proxiesList.any(
+        (p) => p is Map && p['name']?.toString() == preProxy,
+      );
+      if (preProxyExists) {
+        for (final item in proxiesList) {
+          if (item is Map) {
+            final pName = item['name']?.toString() ?? '';
+            if (pName.isNotEmpty && pName != preProxy) {
+              item['dialer-proxy'] = preProxy;
+            }
           }
         }
+      } else {
+        commonPrint.log(
+          'ProfileChainManager: preProxy "$preProxy" is not in this profile, '
+          'skipping the hop instead of emitting a dangling dialer-proxy',
+        );
       }
     }
 

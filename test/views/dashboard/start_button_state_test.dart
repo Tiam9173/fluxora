@@ -218,5 +218,19 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.byType(FluxoraStatus), findsOneWidget);
     });
+
+    testWidgets('the Hero is exactly one grid row tall', (tester) async {
+      await pumpHero(tester);
+
+      expect(tester.takeException(), isNull);
+      // Matches the upstream card (`getWidgetHeight(context, 1)`). An extra
+      // `+ FluxoraSpacing.xxl` was added once and made this card 24 dp taller
+      // than every other tile — the reported "启动服务组件太长了". Pinning the
+      // height here means a future change has to argue with this test.
+      expect(
+        tester.getSize(find.byType(StartButton)).height,
+        getWidgetHeight(1),
+      );
+    });
   });
 }

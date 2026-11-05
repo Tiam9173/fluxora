@@ -439,7 +439,6 @@ class TrackerInfoDetailView extends ConsumerWidget {
   Widget _buildItem({
     required String title,
     required String desc,
-    bool quickCopy = false,
   }) {
     return ListItem(
       title: Row(
@@ -451,16 +450,6 @@ class TrackerInfoDetailView extends ConsumerWidget {
             spacing: 4,
             children: [
               Text(title),
-              if (quickCopy)
-                Padding(
-                  padding: EdgeInsets.only(top: 4),
-                  child: IconButton(
-                    visualDensity: VisualDensity.compact,
-                    padding: EdgeInsets.zero,
-                    icon: Icon(Icons.content_copy, size: 18),
-                    onPressed: () {},
-                  ),
-                ),
             ],
           ),
           Flexible(child: EmojiText(desc, textAlign: TextAlign.end)),

@@ -398,6 +398,75 @@ void main() {
       // And the ring is not the selected pill's fill.
       expect(pillOf(tester, target).color, Colors.transparent);
     });
+
+    // O5 — the test above proves a ring exists (`side.width > 0`) and that it
+    // is not the selected fill, but it does not pin the declared width, does
+    // not prove the ring clears when focus leaves, and does not prove the
+    // selection survives a sibling taking focus. This closes those three gaps
+    // against the value the component actually ships: `BorderSide(width: 2)`
+    // in `lib/widgets/aurora_navigation_rail.dart`. It deliberately asserts
+    // 2 px rather than the 3 px written in the A3-3 acceptance text — that
+    // entry is a TV/visual criterion (ring legibility at ~3 m) which no widget
+    // test can speak to, and A3-3 stays NOT_STARTED.
+    testWidgets(
+      'the focus ring keeps its declared width, clears on blur, and leaves '
+      'selection untouched',
+      (tester) async {
+        await pumpRail(tester);
+        final scheme = Theme.of(
+          tester.element(find.byType(AuroraNavigationRail)),
+        ).colorScheme;
+        final items = desktopItems();
+        final selectedLabel = items[0].label.localizedName;
+
+        Iterable<RoundedRectangleBorder> ringedShapes() => tester
+            .widgetList<Material>(
+              find.descendant(
+                of: find.byType(AuroraNavigationRail),
+                matching: find.byType(Material),
+              ),
+            )
+            .where((m) => m.shape is RoundedRectangleBorder)
+            .map((m) => m.shape! as RoundedRectangleBorder)
+            .where((s) => s.side.width > 0);
+
+        expect(
+          ringedShapes(),
+          isEmpty,
+          reason: 'nothing is ringed before keyboard focus enters the rail',
+        );
+
+        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.pump();
+
+        final ringed = ringedShapes().toList();
+        expect(ringed.length, 1, reason: 'exactly one item owns the ring');
+        expect(ringed.first.side.color, scheme.primary);
+        expect(
+          ringed.first.side.width,
+          2.0,
+          reason: 'the rail declares a 2 px ring, not a 3 px one',
+        );
+
+        // A sibling taking focus must not erase the selected item's styling.
+        expect(
+          pillOf(tester, selectedLabel).color,
+          isNot(Colors.transparent),
+          reason: 'focus must not replace the selection tint',
+        );
+
+        // Drop focus out of the rail entirely.
+        FocusManager.instance.primaryFocus?.unfocus();
+        await tester.pump();
+
+        expect(
+          ringedShapes(),
+          isEmpty,
+          reason: 'the ring must not outlive the focus that drew it',
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
   });
 
   // ── Keyboard reachability ────────────────────────────────────────────────

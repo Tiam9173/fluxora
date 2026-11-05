@@ -113,12 +113,21 @@ class FluxoraProxyTile extends StatelessWidget {
   /// long node names fully readable.
   final int nameMaxLines;
 
+  /// Height reserved for the name block, in device-independent pixels.
+  ///
+  /// `nameMaxLines` lines of [style], scaled the way the platform will scale
+  /// it, so the reservation is correct at 1.0× and at 2.0× alike.
+  double _nameAreaHeight(BuildContext context, TextStyle style) {
+    final scaler = MediaQuery.textScalerOf(context);
+    final fontSize = scaler.scale(style.fontSize ?? 14);
+    return fontSize * (style.height ?? 1.2) * nameMaxLines;
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = context.colorScheme;
     final hasSecondary =
         showStatus || showLatency || traffic != null || description != null;
-
     final nameStyle = (compact ? FluxoraTypography.body : FluxoraTypography.title)
         .copyWith(
           // A touch heavier than body weight: node names are the primary label
@@ -165,11 +174,27 @@ class FluxoraProxyTile extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                EmojiText(
-                  name,
-                  maxLines: nameMaxLines,
-                  overflow: TextOverflow.ellipsis,
-                  style: nameStyle,
+                // Fixed name area, `nameMaxLines` lines tall, whether or not
+                // the name actually wraps.
+                //
+                // Letting the name take its natural height made two cards in
+                // the same row look different: a long name pushed the status
+                // row down, a short one left it high, so the row read as
+                // "these cards are not the same size" even though the boxes
+                // were identical. Bettbox reserves the same way
+                // (`measure.bodyMediumHeight * maxLines`); this is the
+                // text-scaler-aware equivalent so it holds at 2.0× too.
+                SizedBox(
+                  height: _nameAreaHeight(context, nameStyle),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: EmojiText(
+                      name,
+                      maxLines: nameMaxLines,
+                      overflow: TextOverflow.ellipsis,
+                      style: nameStyle,
+                    ),
+                  ),
                 ),
                 if (description != null) ...[
                   const SizedBox(height: FluxoraSpacing.xxs),
@@ -195,8 +220,24 @@ class FluxoraProxyTile extends StatelessWidget {
                           child: FluxoraStatus(status: status, label: protocol),
                         ),
                       if (showLatency) ...[
-                        if (showStatus) const SizedBox(width: FluxoraSpacing.md),
-                        latencySlot ?? FluxoraLatencyBadge(delay: delay),
+                        // `sm`, not `md`: at 3-column width the row has ~1.5 dp
+                        // of slack left after both children shrink, and the
+                        // wider gap was exactly what tipped it over.
+                        if (showStatus) const SizedBox(width: FluxoraSpacing.sm),
+                        // The badge used to take its intrinsic width, so on a
+                        // narrow card (a three-column phone grid is ~104 dp) the
+                        // row overflowed even with no extra decoration — and
+                        // adding the lock mark as `trailing` stole another
+                        // ~24 dp, pushing the latency clean out of view. That is
+                        // the reported "锁定后看不到延迟". Flexible + scale-down
+                        // keeps it on screen at any width.
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: latencySlot ?? FluxoraLatencyBadge(delay: delay),
+                          ),
+                        ),
                       ],
                       if (traffic != null) ...[
                         const SizedBox(width: FluxoraSpacing.md),

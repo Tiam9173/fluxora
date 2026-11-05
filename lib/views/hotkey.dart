@@ -220,7 +220,6 @@ class KeyboardKeyBox extends StatelessWidget {
         padding: const EdgeInsets.all(FluxoraSpacing.md),
         child: Text(keyboardKey.label, style: const TextStyle(fontSize: 16)),
       ),
-      onPressed: () {},
     );
   }
 }
