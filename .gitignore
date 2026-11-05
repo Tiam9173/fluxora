@@ -96,3 +96,8 @@ test_*.py
 /.workbuddy-ai/
 # Rust build artifacts from the local cargo runs
 /plugins/code_forge/rust/target/
+
+# 根目录调试截图（不属于构建产物，禁止入库）
+/*.png
+/*.jpg
+/*.jpeg
