@@ -906,12 +906,16 @@ class AppController {
       'Mixed port $configured is in use, using $next for this session',
     );
     _ref.read(mixedPortFallbackProvider.notifier).set(next);
-    // Say it out loud: a port that silently differs from the one in settings
-    // reads as a broken LAN-share address, and the user has no way to connect
-    // the two. The configured port is not modified — this is session-only.
-    globalState.showNotifier(
-      appLocalizations.portFallbackNotice('$configured', '$next'),
-    );
+    // Say it out loud — but only when asked to. A port that silently differs
+    // from the one in settings reads as a broken LAN-share address, yet the
+    // notice is noise for everyone who never uses that address. Default off;
+    // the switch lives under developer options. The configured port is not
+    // modified — this is session-only.
+    if (_ref.read(vpnSettingProvider).portFallbackNotice) {
+      globalState.showNotifier(
+        appLocalizations.portFallbackNotice('$configured', '$next'),
+      );
+    }
   }
 
   /// `force_loopback_controller` 默认开启：即使控制器开关是关的，内核也会
@@ -976,9 +980,13 @@ class AppController {
       'Controller port $port is in use, using $next for this session',
     );
     _externalControllerFallback = '$host:$next';
-    globalState.showNotifier(
-      appLocalizations.portFallbackNotice('$port', '$next'),
-    );
+    // Same gate as the mixed-port notice above: off by default, opt-in under
+    // developer options.
+    if (_ref.read(vpnSettingProvider).portFallbackNotice) {
+      globalState.showNotifier(
+        appLocalizations.portFallbackNotice('$port', '$next'),
+      );
+    }
   }
 
   Future<void> _updateClashConfig() async {

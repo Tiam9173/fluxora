@@ -690,6 +690,26 @@ class AppLocalizations {
     );
   }
 
+  /// `Notify on port fallback`
+  String get portFallbackNoticeSwitch {
+    return Intl.message(
+      'Notify on port fallback',
+      name: 'portFallbackNoticeSwitch',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Tell me when a busy port was swapped for this session`
+  String get portFallbackNoticeSwitchDesc {
+    return Intl.message(
+      'Tell me when a busy port was swapped for this session',
+      name: 'portFallbackNoticeSwitchDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `FCM Optimization`
   String get fcmOptimization {
     return Intl.message(

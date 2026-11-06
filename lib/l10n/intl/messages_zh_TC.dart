@@ -1324,6 +1324,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "設定的連接埠被佔用時，暫時使用其他連接埠",
     ),
     "portFallbackNotice": m48,
+    "portFallbackNoticeSwitch": MessageLookupByLibrary.simpleMessage(
+      "連接埠迴避時通知",
+    ),
+    "portFallbackNoticeSwitchDesc": MessageLookupByLibrary.simpleMessage(
+      "連接埠被占用、本次工作階段改用其他連接埠時彈出提示",
+    ),
     "portLabel": MessageLookupByLibrary.simpleMessage("連接埠"),
     "portTip": m49,
     "powerSwitch": MessageLookupByLibrary.simpleMessage("啟動開關"),

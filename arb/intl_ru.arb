@@ -76,6 +76,8 @@
   "loopbackProtectionDesc": "Блокировать закольцованный трафик из-за ошибок сети",
   "portFallback": "Обход занятого порта",
   "portFallbackDesc": "Использовать другой порт, если заданный уже занят",
+  "portFallbackNoticeSwitch": "Уведомлять о смене порта",
+  "portFallbackNoticeSwitchDesc": "Сообщать, когда занятый порт заменён другим на время сеанса",
   "fcmOptimization": "Оптимизация FCM",
   "fcmOptimizationDesc": "Повышает стабильность FCM при прямом подключении",
   "quickResponse": "Быстрый отклик",

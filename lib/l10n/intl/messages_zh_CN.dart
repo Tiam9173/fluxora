@@ -1310,6 +1310,10 @@ class MessageLookup extends MessageLookupByLibrary {
       "配置的端口被占用时，临时使用其他端口",
     ),
     "portFallbackNotice": m48,
+    "portFallbackNoticeSwitch": MessageLookupByLibrary.simpleMessage("端口避让时通知"),
+    "portFallbackNoticeSwitchDesc": MessageLookupByLibrary.simpleMessage(
+      "端口被占用、本次会话改用其他端口时弹出提示",
+    ),
     "portLabel": MessageLookupByLibrary.simpleMessage("端口"),
     "portTip": m49,
     "powerSwitch": MessageLookupByLibrary.simpleMessage("启动开关"),

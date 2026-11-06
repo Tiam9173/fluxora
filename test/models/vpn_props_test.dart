@@ -30,4 +30,32 @@ void main() {
       expect(restored.trayRightClickBehavior, TrayClickBehavior.showPanel);
     });
   });
+
+  group('VpnProps 端口避让通知', () {
+    test('默认关闭——避让本身静默生效，不弹提示', () {
+      const props = VpnProps();
+
+      // 避让开关默认是开的（否则端口被占内核直接起不来），但「告诉用户」
+      // 默认是关的：普通用户不需要知道会话换了端口。
+      expect(props.portFallback, isTrue);
+      expect(props.controllerPortFallback, isTrue);
+      expect(props.portFallbackNotice, isFalse);
+    });
+
+    test('打开后能序列化并恢复', () {
+      const props = VpnProps(portFallbackNotice: true);
+
+      final restored = VpnProps.fromJson(
+        jsonDecode(jsonEncode(props.toJson())) as Map<String, dynamic>,
+      );
+
+      expect(restored.portFallbackNotice, isTrue);
+    });
+
+    test('旧配置文件没有这个字段时回落到默认关，而不是读崩', () {
+      final restored = VpnProps.fromJson(<String, dynamic>{'enable': true});
+
+      expect(restored.portFallbackNotice, isFalse);
+    });
+  });
 }

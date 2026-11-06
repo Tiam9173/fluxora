@@ -1817,6 +1817,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "اگر پورت تنظیم‌شده اشغال باشد، از پورت دیگری استفاده کن",
     ),
     "portFallbackNotice": m48,
+    "portFallbackNoticeSwitch": MessageLookupByLibrary.simpleMessage(
+      "اعلان هنگام تغییر پورت",
+    ),
+    "portFallbackNoticeSwitchDesc": MessageLookupByLibrary.simpleMessage(
+      "وقتی پورت اشغال است و نشست به پورت دیگری می‌رود اطلاع بده",
+    ),
     "portLabel": MessageLookupByLibrary.simpleMessage("پورت"),
     "portTip": m49,
     "powerSwitch": MessageLookupByLibrary.simpleMessage("کلید روشن/خاموش"),

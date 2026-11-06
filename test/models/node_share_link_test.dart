@@ -77,13 +77,31 @@ void main() {
     });
 
     test('不支持的协议返回 null，而不是编一个假链接', () {
+      // juicity 在内核里没有对应实现，导入侧会直接拒收
+      // (`ManualProxyHelper.parseShareLink` 的 unsupported 列表)，所以导出
+      // 一个 `juicity://` 只会产出"粘回去必然失败"的假数据。
+      expect(
+        NodeShareLink.fromProxy(<String, dynamic>{
+          'type': 'juicity',
+          'server': '1.2.3.4',
+          'port': 443,
+          'uuid': 'u',
+          'password': 'p',
+        }),
+        isNull,
+      );
+    });
+
+    test('协议受支持但缺关键字段时返回空串，由调用方跳过', () {
+      // wireguard 现在能导出了，但没有私钥的节点导出来是个无效链接——
+      // 空串会被 `exportAll` 过滤掉，而不是生成一条坏数据。
       expect(
         NodeShareLink.fromProxy(<String, dynamic>{
           'type': 'wireguard',
           'server': '1.2.3.4',
           'port': 51820,
         }),
-        isNull,
+        '',
       );
     });
 
@@ -97,10 +115,10 @@ void main() {
           'password': 'x',
         },
         <String, dynamic>{
-          'type': 'wireguard',
-          'name': 'w1',
+          'type': 'juicity',
+          'name': 'j1',
           'server': 'b.com',
-          'port': 51820,
+          'port': 443,
         },
       ]);
       expect(text.split('\n'), hasLength(1));

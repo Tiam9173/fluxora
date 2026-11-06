@@ -76,6 +76,8 @@
   "loopbackProtectionDesc": "阻断网络错误引起的回环流量",
   "portFallback": "端口自动避让",
   "portFallbackDesc": "配置的端口被占用时，临时使用其他端口",
+  "portFallbackNoticeSwitch": "端口避让时通知",
+  "portFallbackNoticeSwitchDesc": "端口被占用、本次会话改用其他端口时弹出提示",
   "fcmOptimization": "FCM优化",
   "fcmOptimizationDesc": "增强 FCM 直连时的网络稳定性",
   "quickResponse": "快速响应",

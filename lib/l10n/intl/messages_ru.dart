@@ -1885,6 +1885,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "Использовать другой порт, если заданный уже занят",
     ),
     "portFallbackNotice": m48,
+    "portFallbackNoticeSwitch": MessageLookupByLibrary.simpleMessage(
+      "Уведомлять о смене порта",
+    ),
+    "portFallbackNoticeSwitchDesc": MessageLookupByLibrary.simpleMessage(
+      "Сообщать, когда занятый порт заменён другим на время сеанса",
+    ),
     "portLabel": MessageLookupByLibrary.simpleMessage("Порт"),
     "portTip": m49,
     "powerSwitch": MessageLookupByLibrary.simpleMessage("Запуск"),

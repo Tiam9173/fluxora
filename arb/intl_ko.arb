@@ -76,6 +76,8 @@
   "loopbackProtectionDesc": "네트워크 오류로 인한 루프백 차단",
   "portFallback": "포트 자동 회피",
   "portFallbackDesc": "설정한 포트가 사용 중이면 다른 포트를 임시로 사용합니다",
+  "portFallbackNoticeSwitch": "포트 회피 알림",
+  "portFallbackNoticeSwitchDesc": "포트가 사용 중이라 다른 포트로 전환되었을 때 알립니다",
   "fcmOptimization": "FCM 최적화",
   "fcmOptimizationDesc": "FCM 직접 연결 시 네트워크 안정성 향상",
   "quickResponse": "빠른 응답",

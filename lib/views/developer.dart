@@ -14,6 +14,9 @@ class DeveloperView extends ConsumerWidget {
     final enable = ref.watch(
       appSettingProvider.select((state) => state.developerMode),
     );
+    final portFallbackNotice = ref.watch(
+      vpnSettingProvider.select((state) => state.portFallbackNotice),
+    );
     final items = [
       ...generateSection(
         items: [
@@ -35,6 +38,22 @@ class DeveloperView extends ConsumerWidget {
       ...generateSection(
         title: appLocalizations.options,
         items: [
+          // 端口避让本身是静默修好的行为，弹提示只在排查「LAN 分享地址连不上」
+          // 时有用，所以放在开发者选项里、默认关。
+          ListItem.switchItem(
+            title: Text(appLocalizations.portFallbackNoticeSwitch),
+            subtitle: Text(appLocalizations.portFallbackNoticeSwitchDesc),
+            delegate: SwitchDelegate(
+              value: portFallbackNotice,
+              onChanged: (value) {
+                ref
+                    .read(vpnSettingProvider.notifier)
+                    .updateState(
+                      (state) => state.copyWith(portFallbackNotice: value),
+                    );
+              },
+            ),
+          ),
           ListItem(
             title: Text(appLocalizations.messageTest),
             onTap: () {

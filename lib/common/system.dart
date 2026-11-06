@@ -1463,6 +1463,12 @@ class MacOS {
 /// **按链路**设置并 `revert` 回原状，不像直接改 /etc/resolv.conf 那样既需要
 /// root、又会被各种工具覆盖回去。
 ///
+/// 这里**刻意不用** `nmcli device modify` + `nmcli device reapply`：`reapply`
+/// 不会重跑 DHCP，在 NetworkManager + iwd 的 DHCP 链路上会把物理网卡的 DNS 和
+/// resolved 的 default-route 标志一起清空，用户看到的是"开 TUN 就整机断网，
+/// 关掉也不恢复"（上游 Bettbox #598）。`resolvectl dns` 只动这一条链路的
+/// resolver 列表，不碰 DHCP、不碰 default-route，坏掉时也只是回到原来的解析器。
+///
 /// 没有 `resolvectl` 的系统（非 systemd）报告"不支持"，界面上把开关置灰，
 /// 而不是假装设置成功。
 class LinuxSystemDns {
@@ -1501,6 +1507,24 @@ class LinuxSystemDns {
       return result.exitCode == 0;
     } catch (_) {
       return false;
+    }
+  }
+
+  /// 链路是否还存在。
+  ///
+  /// 备份里记的是**网卡名**，而网卡会变：Wi-Fi 换有线、USB 网卡拔掉、systemd
+  /// 给无线链路改名（`wlp3s0` → `wlan0`）。对一条已经不存在的链路执行
+  /// `resolvectl dns <old> ...` 必然失败，而 [_setDns] 在开头就把还原当成前置
+  /// 条件——一次失败会让「自动设置系统 DNS」永久变成空操作，直到有人手动删掉
+  /// 备份文件。所以这里先判断链路在不在。
+  Future<bool> _linkExists(String iface) async {
+    try {
+      final result = await Process.run('ip', ['link', 'show', iface]);
+      return result.exitCode == 0;
+    } catch (e) {
+      commonPrint.log('Failed to probe the link $iface: $e');
+      // 探测不了不代表链路没了；宁可保持原来的失败行为，也不要假装还原成功。
+      return true;
     }
   }
 
@@ -1607,6 +1631,16 @@ class LinuxSystemDns {
           .toList();
       if (iface == null || iface.isEmpty || servers == null) {
         throw const FormatException('Invalid Linux system DNS backup');
+      }
+
+      // 链路已经没了：没有东西可还原，直接丢弃这份备份。留着它只会让下一次
+      // [_setDns] 永远卡在还原这一步。
+      if (!await _linkExists(iface)) {
+        commonPrint.log(
+          'Linux DNS: link $iface no longer exists, discarding the backup',
+        );
+        await backupFile.delete();
+        return true;
       }
 
       // 原本没有 DNS 就 revert 回链路默认，而不是塞一个空列表进去。

@@ -76,6 +76,8 @@
   "loopbackProtectionDesc": "ネットワークエラーによるループバックを遮断",
   "portFallback": "ポートの自動回避",
   "portFallbackDesc": "設定したポートが使用中のとき、別のポートを一時的に使用します",
+  "portFallbackNoticeSwitch": "ポート回避時に通知",
+  "portFallbackNoticeSwitchDesc": "ポートが使用中のため別のポートに切り替えたときに通知します",
   "fcmOptimization": "FCM最適化",
   "fcmOptimizationDesc": "FCM直連時の通信安定性を向上",
   "quickResponse": "高速レスポンス",

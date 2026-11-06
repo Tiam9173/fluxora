@@ -1465,6 +1465,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "設定したポートが使用中のとき、別のポートを一時的に使用します",
     ),
     "portFallbackNotice": m48,
+    "portFallbackNoticeSwitch": MessageLookupByLibrary.simpleMessage(
+      "ポート回避時に通知",
+    ),
+    "portFallbackNoticeSwitchDesc": MessageLookupByLibrary.simpleMessage(
+      "ポートが使用中のため別のポートに切り替えたときに通知します",
+    ),
     "portLabel": MessageLookupByLibrary.simpleMessage("ポート"),
     "portTip": m49,
     "powerSwitch": MessageLookupByLibrary.simpleMessage("電源スイッチ"),

@@ -76,6 +76,8 @@
   "loopbackProtectionDesc": "Block loopback traffic from network errors",
   "portFallback": "Port Fallback",
   "portFallbackDesc": "Use another port when the configured one is already taken",
+  "portFallbackNoticeSwitch": "Notify on port fallback",
+  "portFallbackNoticeSwitchDesc": "Tell me when a busy port was swapped for this session",
   "fcmOptimization": "FCM Optimization",
   "fcmOptimizationDesc": "Enhance FCM connection stability",
   "quickResponse": "Quick Response",

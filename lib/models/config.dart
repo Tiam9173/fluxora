@@ -297,6 +297,12 @@ abstract class VpnProps with _$VpnProps {
     /// 和 [portFallback] 分开：混合端口是给"上网"用的，控制器端口只服务于
     /// App 自己和通知栏卡片，有人希望前者自动避让、后者保持固定便于调试。
     @Default(true) bool controllerPortFallback,
+    /// 端口被占用、本次会话改用其他端口时，是否弹一条提示。
+    ///
+    /// 默认关：避让本身是为了"别让内核起不来"，属于静默修好的行为；每次冷启动
+    /// 都弹一条对普通用户只是噪声。真正需要它的是排查「LAN 分享地址为什么连
+    /// 不上」的人——所以开关放在开发者选项里，而不是常规设置。
+    @Default(false) bool portFallbackNotice,
     @Default(false) bool trayEnhancement,
     @Default(TrayClickBehavior.showPanel)
     TrayClickBehavior trayLeftClickBehavior,

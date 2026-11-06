@@ -288,6 +288,7 @@ _VpnProps _$VpnPropsFromJson(Map<String, dynamic> json) => _VpnProps(
   loopbackProtection: json['loopbackProtection'] as bool? ?? false,
   portFallback: json['portFallback'] as bool? ?? true,
   controllerPortFallback: json['controllerPortFallback'] as bool? ?? true,
+  portFallbackNotice: json['portFallbackNotice'] as bool? ?? false,
   trayEnhancement: json['trayEnhancement'] as bool? ?? false,
   trayLeftClickBehavior:
       $enumDecodeNullable(
@@ -326,6 +327,7 @@ Map<String, dynamic> _$VpnPropsToJson(_VpnProps instance) => <String, dynamic>{
   'loopbackProtection': instance.loopbackProtection,
   'portFallback': instance.portFallback,
   'controllerPortFallback': instance.controllerPortFallback,
+  'portFallbackNotice': instance.portFallbackNotice,
   'trayEnhancement': instance.trayEnhancement,
   'trayLeftClickBehavior':
       _$TrayClickBehaviorEnumMap[instance.trayLeftClickBehavior]!,
