@@ -33,7 +33,6 @@ String _routingLabel(WarpRoutingMode m, AppLocalizations l) => switch (m) {
   WarpRoutingMode.proxyOverWarp => l.warpRouteProxyOverWarp,
 };
 
-
 String _modeDesc(WarpMode m, AppLocalizations l) => switch (m) {
   WarpMode.googleAndAi => l.warpModeSmartDesc,
   WarpMode.all => l.warpModeAllDesc,
@@ -111,74 +110,96 @@ class _WarpViewState extends ConsumerState<WarpView> {
         return AdaptiveSheetScaffold(
           type: type,
           title: appLocalizations.warpStr98,
-          body: ListView(
-            padding: const EdgeInsets.symmetric(vertical: FluxoraSpacing.sm),
-            children: [
-              // 和链式跳板用同一套视觉：圆角卡片 + 带底色的图标块 + 右侧对勾。
-              _hopOption(
-                icon: Icons.grid_view_rounded,
-                color: Colors.teal,
-                title: appLocalizations.warpStr28,
-                subtitle: appLocalizations.warpStr27,
-                onTap: () {
-                  Navigator.of(ctx).pop();
-                  showChainHopPicker(
-                    context: context,
-                    title: appLocalizations.warpStr98,
-                    excludeNames: {config.proxyName},
-                    onSelect: onSelect,
-                  );
-                },
-              ),
-              _hopOption(
-                icon: Icons.auto_mode,
-                color: Colors.blue,
-                title: appLocalizations.warpStr20,
-                subtitle: appLocalizations.warpStr86,
-                selected: currentHop.isEmpty,
-                onTap: () {
-                  onSelect('');
-                  Navigator.of(ctx).pop();
-                },
-              ),
-              _hopOption(
-                icon: Icons.directions,
-                color: Colors.green,
-                title: appLocalizations.warpStr6,
-                subtitle: '不经过机场直接连接 WARP（需本地网络未屏蔽 CF Anycast IP）',
-                selected: currentHop == 'DIRECT',
-                onTap: () {
-                  onSelect('DIRECT');
-                  Navigator.of(ctx).pop();
-                },
+          body: CustomScrollView(
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: FluxoraSpacing.sm,
+                ),
+                sliver: SliverList.list(
+                  children: [
+                    // 和链式跳板用同一套视觉：圆角卡片 + 带底色的图标块 + 右侧对勾。
+                    _hopOption(
+                      icon: Icons.grid_view_rounded,
+                      color: Colors.teal,
+                      title: appLocalizations.warpStr28,
+                      subtitle: appLocalizations.warpStr27,
+                      onTap: () {
+                        Navigator.of(ctx).pop();
+                        showChainHopPicker(
+                          context: context,
+                          title: appLocalizations.warpStr98,
+                          excludeNames: {config.proxyName},
+                          onSelect: onSelect,
+                        );
+                      },
+                    ),
+                    _hopOption(
+                      icon: Icons.auto_mode,
+                      color: Colors.blue,
+                      title: appLocalizations.warpStr20,
+                      subtitle: appLocalizations.warpStr86,
+                      selected: currentHop.isEmpty,
+                      onTap: () {
+                        onSelect('');
+                        Navigator.of(ctx).pop();
+                      },
+                    ),
+                    _hopOption(
+                      icon: Icons.directions,
+                      color: Colors.green,
+                      title: appLocalizations.warpStr6,
+                      subtitle: '不经过机场直接连接 WARP（需本地网络未屏蔽 CF Anycast IP）',
+                      selected: currentHop == 'DIRECT',
+                      onTap: () {
+                        onSelect('DIRECT');
+                        Navigator.of(ctx).pop();
+                      },
+                    ),
+                  ],
+                ),
               ),
               if (groupNames.isNotEmpty) ...[
-                _hopSection(appLocalizations.warpStr84),
-                for (final g in groupNames)
-                  _hopOption(
-                    icon: Icons.folder_outlined,
-                    color: Colors.amber,
-                    title: g,
-                    selected: currentHop == g,
-                    onTap: () {
-                      onSelect(g);
-                      Navigator.of(ctx).pop();
-                    },
-                  ),
+                SliverToBoxAdapter(
+                  child: _hopSection(appLocalizations.warpStr84),
+                ),
+                SliverList.builder(
+                  itemCount: groupNames.length,
+                  itemBuilder: (_, index) {
+                    final group = groupNames[index];
+                    return _hopOption(
+                      icon: Icons.folder_outlined,
+                      color: Colors.amber,
+                      title: group,
+                      selected: currentHop == group,
+                      onTap: () {
+                        onSelect(group);
+                        Navigator.of(ctx).pop();
+                      },
+                    );
+                  },
+                ),
               ],
               if (proxyList.isNotEmpty) ...[
-                _hopSection(appLocalizations.warpStr63),
-                for (final p in proxyList)
-                  _hopOption(
-                    icon: Icons.flight_takeoff,
-                    color: Colors.indigo,
-                    title: p,
-                    selected: currentHop == p,
-                    onTap: () {
-                      onSelect(p);
-                      Navigator.of(ctx).pop();
-                    },
-                  ),
+                SliverToBoxAdapter(
+                  child: _hopSection(appLocalizations.warpStr63),
+                ),
+                SliverList.builder(
+                  itemCount: proxyList.length,
+                  itemBuilder: (_, index) {
+                    final name = proxyList[index];
+                    return _hopOption(
+                      icon: Icons.flight_takeoff,
+                      color: Colors.indigo,
+                      title: name,
+                      selected: currentHop == name,
+                      onTap: () {
+                        onSelect(name);
+                        Navigator.of(ctx).pop();
+                      },
+                    );
+                  },
+                ),
               ],
             ],
           ),
@@ -215,7 +236,10 @@ class _WarpViewState extends ConsumerState<WarpView> {
     final scheme = Theme.of(context).colorScheme;
     final radius = BorderRadius.circular(FluxoraRadius.md);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: FluxoraSpacing.md, vertical: FluxoraSpacing.xs),
+      padding: const EdgeInsets.symmetric(
+        horizontal: FluxoraSpacing.md,
+        vertical: FluxoraSpacing.xs,
+      ),
       child: Material(
         color: selected
             ? scheme.primary.withValues(alpha: 0.10)
@@ -350,7 +374,6 @@ class _WarpViewState extends ConsumerState<WarpView> {
     );
   }
 
-
   /// Probes a spread of Cloudflare endpoints and lets the user pick the fastest.
   ///
   /// Kept as a dialog rather than a background job: the numbers depend on the
@@ -451,14 +474,16 @@ class _WarpViewState extends ConsumerState<WarpView> {
                                       color: r.latencyMs! < 100
                                           ? Colors.green
                                           : r.latencyMs! < 200
-                                              ? Colors.orange
-                                              : Colors.red,
+                                          ? Colors.orange
+                                          : Colors.red,
                                     ),
                                   ),
                                   onTap: () {
                                     ctrl.text = r.ip;
                                     Navigator.of(ctx).pop();
-                                    context.showSnackBar(appLocalizations.warpIpChosen(r.ip));
+                                    context.showSnackBar(
+                                      appLocalizations.warpIpChosen(r.ip),
+                                    );
                                   },
                                 ),
                             ],
@@ -503,10 +528,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                appLocalizations.warpStr94,
-                style: TextStyle(fontSize: 13),
-              ),
+              Text(appLocalizations.warpStr94, style: TextStyle(fontSize: 13)),
               const SizedBox(height: 6),
               Text(
                 appLocalizations.warpStr34,
@@ -595,10 +617,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                appLocalizations.warpStr93,
-                style: TextStyle(fontSize: 13),
-              ),
+              Text(appLocalizations.warpStr93, style: TextStyle(fontSize: 13)),
               const SizedBox(height: FluxoraSpacing.md),
               TextField(
                 controller: ctrl,
@@ -747,7 +766,10 @@ class _WarpViewState extends ConsumerState<WarpView> {
               const SizedBox(height: FluxoraSpacing.md),
               _buildKeyField(appLocalizations.warpStr5, config.peerPublicKey),
               const SizedBox(height: FluxoraSpacing.md),
-              _buildKeyField(appLocalizations.warpStr46, config.reserved.toString()),
+              _buildKeyField(
+                appLocalizations.warpStr46,
+                config.reserved.toString(),
+              ),
               const SizedBox(height: FluxoraSpacing.md),
               _buildKeyField(appLocalizations.warpStr88, config.ip),
               const SizedBox(height: FluxoraSpacing.md),
@@ -859,7 +881,10 @@ class _WarpViewState extends ConsumerState<WarpView> {
     ];
 
     final body = ListView(
-      padding: const EdgeInsets.symmetric(horizontal: FluxoraSpacing.lg, vertical: FluxoraSpacing.md),
+      padding: const EdgeInsets.symmetric(
+        horizontal: FluxoraSpacing.lg,
+        vertical: FluxoraSpacing.md,
+      ),
       children: [
         // 1. Usage Guide Card (Collapsible)
         if (_isGuideExpanded) _buildGuideCard(colorScheme),
@@ -966,7 +991,9 @@ class _WarpViewState extends ConsumerState<WarpView> {
         ? (isPlus ? appLocalizations.warpStr14 : 'WARP 正常接管保护中 (warp=on)')
         : (report == null
               ? appLocalizations.warpStr48
-              : (report.isSuccess ? appLocalizations.warpStr77 : appLocalizations.warpStr97));
+              : (report.isSuccess
+                    ? appLocalizations.warpStr77
+                    : appLocalizations.warpStr97));
 
     return Card(
       elevation: 2,
@@ -1051,7 +1078,9 @@ class _WarpViewState extends ConsumerState<WarpView> {
                     title: appLocalizations.warpStr40,
                     value: report?.ip.isNotEmpty == true
                         ? report!.ip
-                        : (config.enable ? appLocalizations.warpStr65 : appLocalizations.warpStr61),
+                        : (config.enable
+                              ? appLocalizations.warpStr65
+                              : appLocalizations.warpStr61),
                     subtitle: 'Cloudflare Anycast',
                     icon: Icons.public,
                     onCopy: report?.ip.isNotEmpty == true ? report!.ip : null,
@@ -1084,8 +1113,11 @@ class _WarpViewState extends ConsumerState<WarpView> {
                     title: appLocalizations.warpStr7,
                     value: report?.isGoogleAntiRedirect == true
                         ? appLocalizations.warpStr109
-                        : (report == null ? appLocalizations.warpStr58 : appLocalizations.warpStr18),
-                    subtitle: report?.googleStatus ?? appLocalizations.warpStr90,
+                        : (report == null
+                              ? appLocalizations.warpStr58
+                              : appLocalizations.warpStr18),
+                    subtitle:
+                        report?.googleStatus ?? appLocalizations.warpStr90,
                     icon: Icons.search,
                     valueColor: report?.isGoogleAntiRedirect == true
                         ? Colors.green
@@ -1096,7 +1128,9 @@ class _WarpViewState extends ConsumerState<WarpView> {
                 Expanded(
                   child: _buildMetricTile(
                     title: appLocalizations.warpStr4,
-                    value: isWarp ? appLocalizations.warpStr111 : appLocalizations.warpStr95,
+                    value: isWarp
+                        ? appLocalizations.warpStr111
+                        : appLocalizations.warpStr95,
                     subtitle: 'OpenAI / Claude / Gemini',
                     icon: Icons.psychology,
                     valueColor: isWarp ? Colors.green : null,
@@ -1114,7 +1148,9 @@ class _WarpViewState extends ConsumerState<WarpView> {
                   child: FilledButton.icon(
                     style: FilledButton.styleFrom(
                       backgroundColor: colorScheme.primary,
-                      padding: const EdgeInsets.symmetric(vertical: FluxoraSpacing.md),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: FluxoraSpacing.md,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -1129,7 +1165,11 @@ class _WarpViewState extends ConsumerState<WarpView> {
                             ),
                           )
                         : const Icon(Icons.flash_on, size: 18),
-                    label: Text(isTesting ? appLocalizations.warpStr67 : appLocalizations.warpStr19),
+                    label: Text(
+                      isTesting
+                          ? appLocalizations.warpStr67
+                          : appLocalizations.warpStr19,
+                    ),
                     onPressed: isTesting
                         ? null
                         : () async {
@@ -1209,7 +1249,10 @@ class _WarpViewState extends ConsumerState<WarpView> {
           ),
           Text(
             subtitle,
-            style: const TextStyle(fontSize: FluxoraFontSize.micro, color: Colors.grey),
+            style: const TextStyle(
+              fontSize: FluxoraFontSize.micro,
+              color: Colors.grey,
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -1240,7 +1283,9 @@ class _WarpViewState extends ConsumerState<WarpView> {
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             subtitle: Text(
-              config.enable ? appLocalizations.warpStr51 : appLocalizations.warpStr74,
+              config.enable
+                  ? appLocalizations.warpStr51
+                  : appLocalizations.warpStr74,
               style: TextStyle(
                 fontSize: 12,
                 color: config.enable ? colorScheme.primary : Colors.grey,
@@ -1249,7 +1294,9 @@ class _WarpViewState extends ConsumerState<WarpView> {
             value: config.enable,
             onChanged: (val) {
               warpManager.setEnable(val);
-              context.showSnackBar(val ? appLocalizations.warpStr52 : appLocalizations.warpStr50);
+              context.showSnackBar(
+                val ? appLocalizations.warpStr52 : appLocalizations.warpStr50,
+              );
             },
           ),
           const Divider(height: 1),
@@ -1357,7 +1404,6 @@ class _WarpViewState extends ConsumerState<WarpView> {
             onTap: () => _showPortDialog(config),
           ),
           const Divider(height: 1),
-
         ],
       ),
     );
@@ -1381,7 +1427,10 @@ class _WarpViewState extends ConsumerState<WarpView> {
             Expanded(
               child: Text(
                 appLocalizations.warpStr57,
-                style: TextStyle(fontSize: FluxoraFontSize.compact, height: 1.4),
+                style: TextStyle(
+                  fontSize: FluxoraFontSize.compact,
+                  height: 1.4,
+                ),
               ),
             ),
           ],
@@ -1476,9 +1525,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
   /// the rules are prepended verbatim, so a half-written rule would be a
   /// config error rather than a silently ignored preference.
   void _showCustomRulesDialog(WarpConfig config) {
-    final ctrl = TextEditingController(
-      text: config.customRules.join('\n'),
-    );
+    final ctrl = TextEditingController(text: config.customRules.join('\n'));
     final group = config.dedicatedGroupName.trim().isEmpty
         ? WarpConfig.defaultDedicatedGroupName
         : config.dedicatedGroupName;
@@ -1548,7 +1595,10 @@ class _WarpViewState extends ConsumerState<WarpView> {
         side: BorderSide(color: colorScheme.outlineVariant),
       ),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: FluxoraSpacing.lg, vertical: FluxoraSpacing.xs),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: FluxoraSpacing.lg,
+          vertical: FluxoraSpacing.xs,
+        ),
         leading: Icon(Icons.flight_takeoff, color: colorScheme.primary),
         title: Text(
           appLocalizations.warpStr41,
@@ -1566,7 +1616,9 @@ class _WarpViewState extends ConsumerState<WarpView> {
             onSelect: (selected) {
               warpManager.setDefaultDialer(selected);
               context.showSnackBar(
-                selected.isEmpty ? appLocalizations.warpStr54 : appLocalizations.warpDialerSet(selected),
+                selected.isEmpty
+                    ? appLocalizations.warpStr54
+                    : appLocalizations.warpDialerSet(selected),
               );
             },
           );
@@ -1582,7 +1634,9 @@ class _WarpViewState extends ConsumerState<WarpView> {
   ) {
     final accountText = config.accountType == 'plus'
         ? appLocalizations.warpStr107
-        : (config.accountId.isNotEmpty ? appLocalizations.warpStr110 : appLocalizations.warpStr22);
+        : (config.accountId.isNotEmpty
+              ? appLocalizations.warpStr110
+              : appLocalizations.warpStr22);
 
     return Card(
       elevation: 0,
@@ -1595,10 +1649,13 @@ class _WarpViewState extends ConsumerState<WarpView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Wrap(
+              spacing: FluxoraSpacing.md,
+              runSpacing: FluxoraSpacing.sm,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       Icons.badge_outlined,
@@ -1606,11 +1663,13 @@ class _WarpViewState extends ConsumerState<WarpView> {
                       size: 20,
                     ),
                     const SizedBox(width: FluxoraSpacing.sm),
-                    Text(
-                      appLocalizations.warpStr11,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: FluxoraFontSize.section,
+                    Flexible(
+                      child: Text(
+                        appLocalizations.warpStr11,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: FluxoraFontSize.section,
+                        ),
                       ),
                     ),
                   ],

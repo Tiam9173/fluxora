@@ -13,7 +13,7 @@ import 'package:flutter/material.dart';
 ///
 /// Colours come entirely from `ColorScheme` (re-skinned by `genColorScheme`),
 /// so light / dark / `pureBlack` / Material You all keep working. No colour is
-/// hardcoded and there is no glow or neon.
+/// hardcoded. Hybrid material adds a restrained highlight; Classic stays flat.
 ///
 /// ```dart
 /// FluxoraCard(child: Text('Hello'));
@@ -60,8 +60,8 @@ class FluxoraCard extends StatelessWidget {
 
   /// Transient emphasis — a subtle 1px primary ring outside the surface.
   ///
-  /// Deliberately restrained (no glow, no shadow boost) per the Fluxora
-  /// "克制" principle. Independent of [selected].
+  /// Hybrid adds a soft accent shadow, suppressed by reduced effects.
+  /// Independent of [selected].
   final bool highlighted;
 
   /// Uses the `surfaceContainer` fill instead of `surfaceContainerLow`.
@@ -93,7 +93,9 @@ class FluxoraCard extends StatelessWidget {
       enterAnimated: enterAnimated,
       info: info,
       child: Padding(
-        padding: padding ?? (info != null ? EdgeInsets.zero : FluxoraSpacing.cardInsets),
+        padding:
+            padding ??
+            (info != null ? EdgeInsets.zero : FluxoraSpacing.cardInsets),
         child: child,
       ),
     );
@@ -106,6 +108,14 @@ class FluxoraCard extends StatelessWidget {
           border: Border.all(
             color: context.colorScheme.primary.withValues(alpha: 0.4),
           ),
+          boxShadow: FluxoraMaterial.of(context).blurEnabled
+              ? [
+                  BoxShadow(
+                    color: context.colorScheme.primary.withValues(alpha: .12),
+                    blurRadius: FluxoraSpacing.lg,
+                  ),
+                ]
+              : null,
         ),
         child: card,
       );

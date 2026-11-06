@@ -35,6 +35,8 @@ final baseInfoEdgeInsets = EdgeInsets.symmetric(
 final defaultTextScaleFactor =
     WidgetsBinding.instance.platformDispatcher.textScaleFactor;
 const httpTimeoutDuration = Duration(milliseconds: 5000);
+// Native core/common.go has 50 delay workers; queue before starting IPC deadlines.
+const maxConcurrentDelayTests = 50;
 const moreDuration = Duration(milliseconds: 100);
 const animateDuration = Duration(milliseconds: 100);
 const midDuration = Duration(milliseconds: 200);
@@ -61,6 +63,7 @@ const ipInfoToken = String.fromEnvironment('IPINFO_TOKEN', defaultValue: '');
 const defaultExternalController = '127.0.0.1:9090';
 const maxMobileWidth = 600;
 const maxLaptopWidth = 840;
+
 /// Height the floating dock occupies at the bottom of a mobile page.
 ///
 /// Callers add their own visual gap on top (`16 + reserve` and similar), so this
@@ -224,8 +227,8 @@ const profilesStoreKey = PageStorageKey<String>('profiles');
 ///
 /// Was `0xFF00897B` (Material Teal 600) before D4.4; now aligned with the
 /// Fluxora mark so the default theme is actually on-brand.
-/// See `D4_BRAND_PROPOSAL.md` §3.1 and `FluxoraColors.fluxCyan`.
-const defaultPrimaryColor = 0xFF29D6C7;
+/// Uses the violet accent of the Fluxora mark (`FluxoraColors.brandSeed`).
+const defaultPrimaryColor = 0xFF7C75FF;
 
 /// The primary colour Fluxora shipped **before** D4.4 (Material Teal 600).
 ///
@@ -255,10 +258,10 @@ final serviceIsolate = 'FluxoraServiceIsolate';
 /// this stays a compile-time `const` list (the token constants are `Color`
 /// objects, whose `value`/`toARGB32()` is not const).
 const defaultPrimaryColors = [
-  0xFF29D6C7, // 1. Flux      — brand cyan (default)
+  0xFF7C75FF, // 1. Flux      — violet (default)
   0xFF4C8DFF, // 2. Aurora    — aurora blue
-  0xFF0E9AA7, // 3. Ocean     — calm teal-blue
-  0xFF7C75FF, // 4. Violet    — flow violet
+  0xFF29D6C7, // 3. Cyan      — mark detail
+  0xFF0E9AA7, // 4. Ocean     — calm teal-blue
   0xFF34D399, // 5. Mint      — fresh mint
   0xFFF59E0B, // 6. Amber     — warm amber
   0xFF334155, // 7. Graphite  — neutral slate

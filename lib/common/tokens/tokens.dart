@@ -19,6 +19,7 @@ library;
 export 'fluxora_colors.dart';
 export 'fluxora_elevation.dart';
 export 'fluxora_motion.dart';
+export 'fluxora_material.dart';
 export 'fluxora_radius.dart';
 export 'fluxora_spacing.dart';
 export 'fluxora_typography.dart';

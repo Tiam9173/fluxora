@@ -173,6 +173,7 @@ abstract class AppSettingProps with _$AppSettingProps {
     // P4 (E-5): the IP reputation section is opt-in. Default OFF means no
     // third-party lookup happens until the user explicitly turns it on.
     @Default(false) bool ipReputationEnabled,
+
     /// P1 — keep a config even when some rule providers could not be fetched.
     ///
     /// Off by default: any non-empty `setupConfig` message is fatal, which is
@@ -180,6 +181,7 @@ abstract class AppSettingProps with _$AppSettingProps {
     /// rule-provider warnings is downgraded to a notice and the rest of the
     /// config still applies. Anything unrecognised stays fatal either way.
     @Default(false) bool tolerateRuleProviderErrors,
+
     /// Which IP-reputation rows the detail view shows.
     ///
     /// Empty means **not customised yet** — the view then shows every field, so
@@ -189,7 +191,7 @@ abstract class AppSettingProps with _$AppSettingProps {
     @Default(false) bool showStartSwitch,
     @Default(true) bool enableNavBarHapticFeedback,
     @Default(true) bool autoCheckUpdate,
-    @Default(false) bool showLabel,
+    @Default(true) bool showLabel,
     @Default(false) bool disclaimerAccepted,
     @Default(true) bool minimizeOnExit,
     @Default(false) bool hidden,
@@ -284,19 +286,23 @@ abstract class VpnProps with _$VpnProps {
     @Default(false) bool highPriorityNotification,
     @Default(true) bool networkSpeedNotification,
     @Default(false) bool excludeChina,
+
     /// item 6 (Bettbox 1.19.3) — reject loopback traffic aimed at our own
     /// listener ports, so a misrouted packet cannot loop back into the proxy.
     /// Off by default, matching upstream.
     @Default(false) bool loopbackProtection,
+
     /// item 6 — when the configured mixed proxy port is taken at cold start,
     /// start on the next free port for this session instead of failing.
     /// On by default: the alternative is a core that simply will not start.
     @Default(true) bool portFallback,
+
     /// 控制器端口（默认 9090）被占用时，本次会话换一个端口。
     ///
     /// 和 [portFallback] 分开：混合端口是给"上网"用的，控制器端口只服务于
     /// App 自己和通知栏卡片，有人希望前者自动避让、后者保持固定便于调试。
     @Default(true) bool controllerPortFallback,
+
     /// 端口被占用、本次会话改用其他端口时，是否弹一条提示。
     ///
     /// 默认关：避让本身是为了"别让内核起不来"，属于静默修好的行为；每次冷启动
@@ -339,9 +345,8 @@ abstract class NetworkProps with _$NetworkProps {
   /// skip generating `_$NetworkPropsFromJson`, which then breaks
   /// `json_serializable` for every model that nests a `NetworkProps`.
   factory NetworkProps.fromJson(Map<String, Object?>? json) =>
-      (json == null
-          ? const NetworkProps()
-          : _$NetworkPropsFromJson(json)).withoutInvalidBypassEntries();
+      (json == null ? const NetworkProps() : _$NetworkPropsFromJson(json))
+          .withoutInvalidBypassEntries();
 }
 
 extension NetworkPropsSanitize on NetworkProps {
@@ -381,6 +386,7 @@ abstract class ProxiesStyle with _$ProxiesStyle {
     @Default(ProxiesIconStyle.none) ProxiesIconStyle iconStyle,
     @Default(ProxyCardType.shrink) ProxyCardType cardType,
     @Default(DelayAnimationType.none) DelayAnimationType delayAnimation,
+
     /// item 6 (Bettbox 1.19.4) — show the chosen delay animation on other pages
     /// too, instead of the plain spinner.
     ///
@@ -415,8 +421,7 @@ abstract class ThemeProps with _$ThemeProps {
     int? primaryColor,
     @Default(defaultPrimaryColors) List<int> primaryColors,
     @Default(ThemeMode.system) ThemeMode themeMode,
-    @Default(DynamicSchemeVariant.tonalSpot)
-    DynamicSchemeVariant schemeVariant,
+    @Default(DynamicSchemeVariant.tonalSpot) DynamicSchemeVariant schemeVariant,
 
     /// Which colour source seeds the `ColorScheme` (D4.2 §5.2).
     ///
@@ -427,6 +432,10 @@ abstract class ThemeProps with _$ThemeProps {
     @Default(false) bool pureBlack,
     @Default(TextScale()) TextScale textScale,
     @Default(false) bool useDarkIcon,
+    @Default('official') String appIconStyle,
+    @JsonKey(unknownEnumValue: FluxoraSurfaceStyle.classic)
+    @Default(FluxoraSurfaceStyle.hybrid)
+    FluxoraSurfaceStyle surfaceStyle,
     @Default(false) bool useHarmonyFont,
     @Default(false) bool invertTrayIcon,
   }) = _ThemeProps;
@@ -582,7 +591,8 @@ abstract class Config with _$Config {
     @Default([]) List<Profile> profiles,
     @Default([]) List<HotKeyAction> hotKeyActions,
     @Default(AggregateMode.nodePool) AggregateMode aggregateMode,
-    @Default(AggregateScriptTiming.after) AggregateScriptTiming aggregateScriptTiming,
+    @Default(AggregateScriptTiming.after)
+    AggregateScriptTiming aggregateScriptTiming,
     @Default(true) bool aggregateMergeNodes,
     @Default(true) bool aggregateMergeGroups,
     @Default(true) bool aggregateMergeRules,

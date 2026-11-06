@@ -22,6 +22,7 @@ import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
 import io.fluxora.app.FluxoraApplication
 import io.fluxora.app.GlobalState
+import io.fluxora.app.LauncherIcons
 import io.fluxora.app.R
 import io.fluxora.app.extensions.awaitResult
 import io.fluxora.app.extensions.getActionIntent
@@ -243,8 +244,20 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
                 result.success(true)
             }
             "setLauncherIcon" -> {
-                setLauncherIcon(call.argument<Boolean>("useDarkIcon") ?: false)
-                result.success(true)
+                runCatching {
+                    LauncherIcons.set(FluxoraApplication.getAppContext(),
+                        call.argument<String>("style") ?: "official",
+                        call.argument<Boolean>("useDarkIcon") ?: false)
+                    io.fluxora.app.services.NotificationComponentCache.invalidate()
+                    VpnPlugin.updateNotificationIcon()
+                    true
+                }.onSuccess { result.success(it) }
+                    .onFailure { result.error("ICON_CHANGE_FAILED", it.message, null) }
+            }
+            "getLauncherIcon" -> {
+                runCatching { LauncherIcons.current(FluxoraApplication.getAppContext()) }
+                    .onSuccess { result.success(it) }
+                    .onFailure { result.error("ICON_QUERY_FAILED", it.message, null) }
             }
             "setNotificationDarkIcon" -> {
                 io.fluxora.app.services.NotificationIconTheme.isDark =
@@ -551,27 +564,6 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
                     })
                 }
             }
-    }
-
-    private fun setLauncherIcon(useDarkIcon: Boolean) {
-        val context = FluxoraApplication.getAppContext()
-        val pm = context.packageManager
-        val packageName = context.packageName
-        val defaultComponent = android.content.ComponentName(packageName, "io.fluxora.app.MainActivity")
-        val lightComponent = android.content.ComponentName(packageName, "io.fluxora.app.MainActivityLight")
-        val darkComponent = android.content.ComponentName(packageName, "io.fluxora.app.MainActivityDark")
-
-        if (useDarkIcon) {
-            pm.setComponentEnabledSetting(darkComponent, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP)
-            pm.setComponentEnabledSetting(defaultComponent, PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP)
-            pm.setComponentEnabledSetting(lightComponent, PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP)
-        } else {
-            pm.setComponentEnabledSetting(defaultComponent, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP)
-            pm.setComponentEnabledSetting(darkComponent, PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP)
-            pm.setComponentEnabledSetting(lightComponent, PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP)
-        }
-        io.fluxora.app.services.NotificationComponentCache.invalidate()
-        VpnPlugin.updateNotificationIcon()
     }
 
     private fun hasPackageListPermission(): Boolean {

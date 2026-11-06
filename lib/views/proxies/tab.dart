@@ -52,7 +52,8 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
     }, fireImmediately: true);
     // Listen for groups change (addition or removal of proxy groups)
     ref.listenManual(groupsProvider, (prev, next) {
-      if (prev?.length != next.length || (prev?.isEmpty == true && next.isNotEmpty)) {
+      if (prev?.length != next.length ||
+          (prev?.isEmpty == true && next.isNotEmpty)) {
         if (mounted) {
           setState(() {});
         }
@@ -187,8 +188,7 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
     });
   }
 
-  bool get _reduceMotion =>
-      MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+  bool get _reduceMotion => FluxoraMotion.ofContext(context).reduceMotion;
 
   /// The duration the strip and the page slide use for one group switch.
   ///
@@ -288,18 +288,21 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
   @override
   Widget build(BuildContext context) {
     ref.watch(themeSettingProvider.select((state) => state.textScale));
-    final groups =
-        ref.watch(proxiesTabStateProvider.select((state) => state.groups));
-    final columns =
-        ref.watch(proxiesTabStateProvider.select((state) => state.columns));
+    final groups = ref.watch(
+      proxiesTabStateProvider.select((state) => state.groups),
+    );
+    final columns = ref.watch(
+      proxiesTabStateProvider.select((state) => state.columns),
+    );
     final cardType = ref.watch(
       proxiesTabStateProvider.select((state) => state.proxyCardType),
     );
     final sortType = ref.watch(
       proxiesTabStateProvider.select((state) => state.proxiesSortType),
     );
-    final sortNum =
-        ref.watch(proxiesTabStateProvider.select((state) => state.sortNum));
+    final sortNum = ref.watch(
+      proxiesTabStateProvider.select((state) => state.sortNum),
+    );
     // RC.7: the delay sort's direction. A standalone provider so the Freezed
     // `ProxiesTabState` did not have to change.
     final delayDescending = ref.watch(delaySortDescendingProvider);
@@ -376,9 +379,7 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
                     // both the strip and the page move together.
                     padding: EdgeInsets.only(
                       left: 16,
-                      right: globalState.isAndroidTV
-                          ? 48
-                          : (value ? 48 : 0),
+                      right: globalState.isAndroidTV ? 48 : (value ? 48 : 0),
                     ),
                     dividerColor: Colors.transparent,
                     isScrollable: true,
@@ -389,7 +390,9 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
                     indicator: globalState.isAndroidTV
                         ? BoxDecoration(
                             color: context.colorScheme.primaryContainer,
-                            borderRadius: BorderRadius.circular(FluxoraRadius.sm),
+                            borderRadius: BorderRadius.circular(
+                              FluxoraRadius.sm,
+                            ),
                           )
                         : null,
                     indicatorColor: globalState.isAndroidTV
@@ -419,10 +422,7 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
                       right: 0,
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _buildDelayTestButton(),
-                          if (value) child!,
-                        ],
+                        children: [_buildDelayTestButton(), if (value) child!],
                       ),
                     )
                   else if (value)
@@ -556,7 +556,7 @@ class _ProxyGroupViewState extends ConsumerState<ProxyGroupView> {
     // A 300 ms glide across the group strip is pure motion — under reduced
     // motion the strip simply arrives at the selected group. The *result* is
     // identical, so nothing is lost by jumping.
-    final reduce = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    final reduce = FluxoraMotion.ofContext(context).reduceMotion;
     if (reduce) {
       _controller.jumpTo(target);
       return;
@@ -686,10 +686,8 @@ class _DelayTestButtonState extends ConsumerState<DelayTestButton>
     // Collapsing the duration keeps the *state* (loading vs. idle) and only
     // removes the cross-fade, so `showLoading` still flips — the indicator
     // remains visible, it just appears in one frame.
-    final reduce = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
-    final duration = reduce
-        ? Duration.zero
-        : const Duration(milliseconds: 200);
+    final reduce = FluxoraMotion.ofContext(context).reduceMotion;
+    final duration = reduce ? Duration.zero : const Duration(milliseconds: 200);
     if (_controller.duration != duration) {
       _controller.duration = duration;
     }
@@ -744,10 +742,16 @@ class _DelayTestButtonState extends ConsumerState<DelayTestButton>
                   child: OverflowBox(
                     maxWidth: 30,
                     maxHeight: 16,
-                    child: SpinKitThreeBounce(
-                      color: context.colorScheme.onPrimaryContainer,
-                      size: 16,
-                    ),
+                    child: FluxoraMotion.ofContext(context).reduceMotion
+                        ? Icon(
+                            Icons.hourglass_top_rounded,
+                            color: context.colorScheme.onPrimaryContainer,
+                            size: 16,
+                          )
+                        : SpinKitThreeBounce(
+                            color: context.colorScheme.onPrimaryContainer,
+                            size: 16,
+                          ),
                   ),
                 ),
               ),

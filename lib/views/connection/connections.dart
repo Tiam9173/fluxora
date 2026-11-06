@@ -199,6 +199,9 @@ class _ConnectionsViewState extends ConsumerState<ConnectionsView>
   @override
   Widget build(BuildContext context) {
     return CommonScaffold(
+      backgroundColor: FluxoraMaterial.of(context).enabled
+          ? context.colorScheme.surface
+          : null,
       title: widget.titleWidgetOverride == null
           ? appLocalizations.connections
           : null,

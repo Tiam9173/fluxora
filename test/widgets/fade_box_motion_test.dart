@@ -27,13 +27,18 @@ void main() {
     );
   }
 
-  Widget app(Widget child) => MaterialApp(home: Scaffold(body: Center(child: child)));
+  Widget app(Widget child) => MaterialApp(
+    home: Scaffold(body: Center(child: child)),
+  );
 
   /// Opacity of the `FadeTransition` that wraps [text] right now.
   double opacityOf(WidgetTester tester, String text) => tester
       .widget<FadeTransition>(
         find
-            .ancestor(of: find.text(text), matching: find.byType(FadeTransition))
+            .ancestor(
+              of: find.text(text),
+              matching: find.byType(FadeTransition),
+            )
             .first,
       )
       .opacity
@@ -90,7 +95,9 @@ void main() {
         .scale
         .value;
 
-    testWidgets('enters from 0.70 when motion is allowed', (tester) async {
+    testWidgets('uses a restrained entrance when motion is allowed', (
+      tester,
+    ) async {
       setReducedMotion(tester, reduce: false);
 
       await tester.pumpWidget(app(const FadeScaleEnterBox(child: Text('x'))));
@@ -98,8 +105,8 @@ void main() {
 
       expect(
         scaleOf(tester),
-        lessThan(0.8),
-        reason: 'the entrance starts near 0.70 and grows',
+        inInclusiveRange(0.98, 0.999),
+        reason: 'the entrance remains inside the motion intensity limit',
       );
 
       await tester.pumpAndSettle();

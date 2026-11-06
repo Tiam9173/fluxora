@@ -47,6 +47,7 @@ void main() {
 
   setUp(() {
     bound = false;
+    globalState.config = const Config(themeProps: ThemeProps());
     globalState.appState = AppState(
       viewSize: const Size(1200, 800),
       brightness: Brightness.dark,
@@ -104,6 +105,10 @@ void main() {
     ViewMode viewMode = ViewMode.desktop,
     double width = 1200,
   }) async {
+    tester.view.physicalSize = Size(width, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     final items = desktopItems(width: width);
     await tester.pumpWidget(
       ProviderScope(
@@ -226,7 +231,7 @@ void main() {
       ).colorScheme;
 
       // The pill is the first `Material` inside the rail; its colour must be the
-      // shared tint over the *scheme's* primary, not `FluxoraColorSet.primary`.
+      // shared tint over the existing violet brand token.
       final pill = tester
           .widgetList<Material>(
             find.descendant(
@@ -238,7 +243,10 @@ void main() {
 
       expect(
         pill.color,
-        FluxoraColorSet.selectionTint(scheme.primary, scheme.brightness),
+        FluxoraColorSet.selectionTint(
+          FluxoraColors.dark.tertiary,
+          scheme.brightness,
+        ),
       );
       expect(
         pill.shape,
@@ -278,7 +286,7 @@ void main() {
       final selectedIcon = items[0].icon.icon!;
       expect(
         IconTheme.of(tester.element(find.byIcon(selectedIcon))).color,
-        scheme.primary,
+        FluxoraColors.dark.tertiary,
       );
 
       // Unselected icon: the muted role.
@@ -338,9 +346,7 @@ void main() {
 
       expect(pillOf(tester, target).color, Colors.transparent);
 
-      final gesture = await tester.createGesture(
-        kind: PointerDeviceKind.mouse,
-      );
+      final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
       await gesture.addPointer(location: Offset.zero);
       addTearDown(gesture.removePointer);
       await gesture.moveTo(tester.getCenter(find.text(target)));
@@ -355,7 +361,10 @@ void main() {
       expect(
         hovered.color,
         isNot(
-          FluxoraColorSet.selectionTint(scheme.primary, scheme.brightness),
+          FluxoraColorSet.selectionTint(
+            FluxoraColors.dark.tertiary,
+            scheme.brightness,
+          ),
         ),
         reason: 'hover must not look like selection',
       );
@@ -515,10 +524,12 @@ void main() {
 
       final items = desktopItems();
       final itemRect = tester.getRect(
-        find.ancestor(
-          of: find.text(items[1].label.localizedName),
-          matching: find.byType(Material),
-        ).first,
+        find
+            .ancestor(
+              of: find.text(items[1].label.localizedName),
+              matching: find.byType(Material),
+            )
+            .first,
       );
 
       // The ring is a border on that material, so it is inside by construction;
@@ -533,23 +544,13 @@ void main() {
   });
 
   group('K4 — label presentation', () {
-    testWidgets('a collapsed rail still shows labels under the icons', (
+    testWidgets('the default expanded rail shows labels beside icons', (
       tester,
     ) async {
-      // `showLabel` defaults to false → collapsed rail, labels always visible.
-      // The old implementation reached the same result through
-      // `extended: false` + `labelType: all`; the rendered outcome is pinned
-      // here so a future rename cannot silently hide them.
       await pumpRail(tester);
-
-      final rail = railOf(tester);
-      expect(rail.extended, isFalse);
+      expect(railOf(tester).extended, isTrue);
       for (final item in desktopItems()) {
-        expect(
-          find.text(item.label.localizedName),
-          findsOneWidget,
-          reason: 'every destination keeps a visible label',
-        );
+        expect(find.text(item.label.localizedName), findsOneWidget);
       }
     });
   });
@@ -597,7 +598,7 @@ void main() {
     testWidgets('tapping a destination requests its own page', (tester) async {
       await pumpRail(tester);
 
-      await tester.tap(find.byIcon(Icons.folder)); // profiles
+      await tester.tap(find.byIcon(Icons.folder_open_outlined)); // profiles
       await tester.pump();
 
       expect(controller.pages, [PageLabel.profiles]);
@@ -620,11 +621,9 @@ void main() {
         await tester.tap(find.byIcon(icon!));
         await tester.pump();
 
-        expect(
-          controller.pages,
-          [items[i].label],
-          reason: 'destination $i must request ${items[i].label}',
-        );
+        expect(controller.pages, [
+          items[i].label,
+        ], reason: 'destination $i must request ${items[i].label}');
       }
     });
 
@@ -635,7 +634,7 @@ void main() {
       // gesture), then switches. The request must still be issued.
       await pumpRail(tester, currentIndex: 2);
 
-      await tester.tap(find.byIcon(Icons.folder));
+      await tester.tap(find.byIcon(Icons.folder_open_outlined));
       await tester.pump();
 
       expect(controller.pages, [PageLabel.profiles]);
@@ -798,11 +797,7 @@ void main() {
       // the overflow threshold moved out. Six destinations at 1.4x fit the
       // shortest legal window — which is the better outcome: no destination is
       // hidden at a text scale the OS actually offers.
-      await pumpRailFrame(
-        tester,
-        size: const Size(1200, 492),
-        textScale: 1.4,
-      );
+      await pumpRailFrame(tester, size: const Size(1200, 492), textScale: 1.4);
 
       expect(
         railScrollPosition(tester).maxScrollExtent,
@@ -817,11 +812,7 @@ void main() {
       // 2.0 is the largest scale Windows' accessibility settings offer. The
       // compact item keeps all six destinations visible even there — which is
       // the point of the redesign.
-      await pumpRailFrame(
-        tester,
-        size: const Size(1200, 492),
-        textScale: 2.0,
-      );
+      await pumpRailFrame(tester, size: const Size(1200, 492), textScale: 2.0);
 
       expect(railScrollPosition(tester).maxScrollExtent, 0);
     });
@@ -829,14 +820,8 @@ void main() {
     testWidgets('an extreme text scale still scrolls instead of clipping', (
       tester,
     ) async {
-      // Measured: 2.5x is where six destinations start to overflow a 492 px
-      // window (38 px). Not an OS preset — a stress case that proves the rail
-      // degrades by scrolling rather than by cutting a destination off.
-      await pumpRailFrame(
-        tester,
-        size: const Size(1200, 492),
-        textScale: 2.5,
-      );
+      // Beside-icon labels fit larger scales; stress scrolling at 4x.
+      await pumpRailFrame(tester, size: const Size(1200, 492), textScale: 4);
 
       expect(
         railScrollPosition(tester).maxScrollExtent,
@@ -853,11 +838,7 @@ void main() {
       // `ScrollBehavior.buildScrollbar` can hand over a null controller, which
       // makes `Scrollbar` fall back to `PrimaryScrollController` and show the
       // position of an unrelated scrollable.
-      await pumpRailFrame(
-        tester,
-        size: const Size(1200, 492),
-        textScale: 2.5,
-      );
+      await pumpRailFrame(tester, size: const Size(1200, 492), textScale: 4);
 
       final bar = tester.widget<Scrollbar>(
         find

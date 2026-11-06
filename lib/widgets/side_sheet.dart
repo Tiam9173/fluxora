@@ -5,6 +5,8 @@ import 'package:fluxora/common/tokens/fluxora_colors.dart';
 import 'package:fluxora/common/tokens/fluxora_motion.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import '../common/tokens/fluxora_material.dart';
+import 'glass_surface.dart';
 
 // Aurora motion tokens (§10.1) rather than local milliseconds: the sheet used to
 // hardcode 300/200, which matched no token and made the enter duration the only
@@ -83,7 +85,10 @@ class _SideSheetState extends State<SideSheet> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final Color color = widget.backgroundColor ?? colorScheme.surface;
+    final material = FluxoraMaterial.of(context);
+    final Color color =
+        widget.backgroundColor ??
+        (material.enabled ? Colors.transparent : colorScheme.surface);
     final Color surfaceTintColor = colorScheme.surfaceTint;
     final Color shadowColor = widget.shadowColor ?? Colors.transparent;
     final double elevation = widget.elevation ?? 0;
@@ -105,7 +110,13 @@ class _SideSheetState extends State<SideSheet> {
       shadowColor: shadowColor,
       shape: shape,
       clipBehavior: clipBehavior,
-      child: widget.builder(context),
+      child: widget.backgroundColor != null
+          ? widget.builder(context)
+          : GlassSurface(
+              radius: 0,
+              floating: true,
+              child: widget.builder(context),
+            ),
     );
 
     return ConstrainedBox(constraints: constraints, child: sideSheet);
@@ -651,7 +662,7 @@ Future<T?> showModalSideSheet<T>({
       transitionAnimationController: transitionAnimationController,
       anchorPoint: anchorPoint,
       useSafeArea: useSafeArea,
-      reduceMotion: MediaQuery.maybeOf(context)?.disableAnimations ?? false,
+      reduceMotion: FluxoraMotion.ofContext(context).reduceMotion,
     ),
   );
 }

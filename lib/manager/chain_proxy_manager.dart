@@ -11,7 +11,6 @@ import 'package:fluxora/services/services.dart';
 import 'package:fluxora/services/chain_support_package_service.dart';
 import 'package:fluxora/services/chain_diagnostic_export_service.dart';
 
-
 import 'package:fluxora/clash/core.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/enum/enum.dart';
@@ -36,13 +35,13 @@ import 'package:path/path.dart' as p;
 // 这个类在 lib 内部被 providers / services 正常构造，不是仅供测试的
 // 类型；类级 @visibleForTesting 是历史遗留，成员级的保留。
 class ChainProxyManager extends ChangeNotifier {
-
   static Duration autoHealthCheckInterval = const Duration(minutes: 1);
   static const capabilityProbeTimeout = Duration(seconds: 10);
   static bool? coreRunningOverride;
 
   @visibleForTesting
-  static Future<ChainProbeReport> Function(ChainProxyConfig)? chainProbeOverride;
+  static Future<ChainProbeReport> Function(ChainProxyConfig)?
+  chainProbeOverride;
 
   /// Test-only seam overriding the runtime config reload performed by
   /// [_reloadRuntimeConfig] (the failover executor's apply / rollback path).
@@ -59,7 +58,6 @@ class ChainProxyManager extends ChangeNotifier {
   /// [_reportAutoFailoverSkip]. Read-only: tests assert the state here, while
   /// `debugPrint` counting proves how often it was actually emitted.
 
-  
   static ChainProxyManager? _instance;
   ChainProxyConfig _config = const ChainProxyConfig();
   bool _initialized = false;
@@ -237,6 +235,7 @@ class ChainProxyManager extends ChangeNotifier {
         PersistenceSchema.versionKey: PersistenceSchema.currentVersion,
       });
     }
+
     final interceptor = saveInterceptor;
     if (interceptor == null) {
       await save();
@@ -298,9 +297,9 @@ class ChainProxyManager extends ChangeNotifier {
       // P2.5-A: read through the shared atomic storage so a missing / corrupt
       // primary recovers from `.bak` / orphan `.tmp`. P2.5-C: the schema
       // predicate rejects an unsupported primary without clobbering it.
-      final jsonMap = await AtomicConfigStorage(filePath).load(
-        accept: PersistenceSchema.accepts,
-      );
+      final jsonMap = await AtomicConfigStorage(
+        filePath,
+      ).load(accept: PersistenceSchema.accepts);
       if (jsonMap != null) {
         _config = ChainProxyConfig.fromJson(jsonMap);
       }
@@ -371,9 +370,9 @@ class ChainProxyManager extends ChangeNotifier {
     // survives a restart. Runtime telemetry is never restored from disk.
     try {
       final poolPath = await _getFallbackPoolFilePath();
-      final poolJson = await AtomicConfigStorage(poolPath).load(
-        accept: PersistenceSchema.accepts,
-      );
+      final poolJson = await AtomicConfigStorage(
+        poolPath,
+      ).load(accept: PersistenceSchema.accepts);
       if (poolJson != null) {
         _fallbackPool = ChainFallbackPool.fromJson(poolJson);
       }
@@ -968,10 +967,7 @@ class ChainProxyManager extends ChangeNotifier {
     Map<String, dynamic> rawConfig, {
     Map<String, Map<String, dynamic>> extraProxyConfigs = const {},
   }) {
-    _config.applyToClashConfig(
-      rawConfig,
-      extraProxyConfigs: extraProxyConfigs,
-    );
+    _config.applyToClashConfig(rawConfig, extraProxyConfigs: extraProxyConfigs);
   }
 
   // ─── Phase 5.x Runtime State ─────────────────────────────────────────────
@@ -1039,8 +1035,9 @@ class ChainProxyManager extends ChangeNotifier {
   ///
   /// Private on purpose: it is only ever called from within this class, so
   /// marking it `@visibleForTesting` would wrongly flag production use.
-  DateTime _now() =>
-      freshnessClockOverride != null ? freshnessClockOverride!() : DateTime.now();
+  DateTime _now() => freshnessClockOverride != null
+      ? freshnessClockOverride!()
+      : DateTime.now();
 
   /// The delay from [from] until the earliest applicable freshness transition
   /// among the current candidates, or `null` if none is due.
@@ -1056,8 +1053,8 @@ class ChainProxyManager extends ChangeNotifier {
   /// still-equal age due to clock granularity) cannot reschedule itself into a
   /// busy loop.
   Duration? _computeNextFreshnessTransition(DateTime from) {
-    final String currentFingerprint =
-        networkFingerprintProvider.getCurrentFingerprint();
+    final String currentFingerprint = networkFingerprintProvider
+        .getCurrentFingerprint();
     Duration? earliest;
 
     void consider(LatencyState? state) {
@@ -1091,8 +1088,7 @@ class ChainProxyManager extends ChangeNotifier {
       // schedule an arbitrary delay.
       if (age.isNegative) return;
 
-      final Duration delay =
-          (boundary - age) + const Duration(seconds: 1);
+      final Duration delay = (boundary - age) + const Duration(seconds: 1);
       if (earliest == null || delay < earliest!) earliest = delay;
     }
 
@@ -1230,10 +1226,9 @@ class ChainProxyManager extends ChangeNotifier {
   }
 
   Future<void> setHop1Node(String name) async {
-    await updateConfig((c) => c.copyWith(
-          hop1Node: name,
-          defaultDialerProxy: name,
-        ));
+    await updateConfig(
+      (c) => c.copyWith(hop1Node: name, defaultDialerProxy: name),
+    );
   }
 
   /// Replaces the front-hop chain wholesale.
@@ -1246,11 +1241,13 @@ class ChainProxyManager extends ChangeNotifier {
         .map((e) => e.trim())
         .where((e) => e.isNotEmpty)
         .toList();
-    await updateConfig((c) => c.copyWith(
-          frontHops: cleaned,
-          hop1Node: cleaned.isNotEmpty ? cleaned.first : '',
-          defaultDialerProxy: cleaned.isNotEmpty ? cleaned.first : '',
-        ));
+    await updateConfig(
+      (c) => c.copyWith(
+        frontHops: cleaned,
+        hop1Node: cleaned.isNotEmpty ? cleaned.first : '',
+        defaultDialerProxy: cleaned.isNotEmpty ? cleaned.first : '',
+      ),
+    );
   }
 
   Future<void> addFrontHop(String name) async {
@@ -1294,13 +1291,15 @@ class ChainProxyManager extends ChangeNotifier {
     required String hop2,
     String? hop3,
   }) async {
-    await updateConfig((c) => c.copyWith(
-          hopMode: mode,
-          hop1Node: hop1,
-          defaultDialerProxy: hop1,
-          hop2Node: hop2,
-          hop3Node: hop3 ?? '',
-        ));
+    await updateConfig(
+      (c) => c.copyWith(
+        hopMode: mode,
+        hop1Node: hop1,
+        defaultDialerProxy: hop1,
+        hop2Node: hop2,
+        hop3Node: hop3 ?? '',
+      ),
+    );
   }
 
   // ─── Phase 5.x Fallback Pool ──────────────────────────────────────────────
@@ -1322,11 +1321,6 @@ class ChainProxyManager extends ChangeNotifier {
   }
 
   // ─── Phase 5.x Failover Lifecycle ────────────────────────────────────────
-
-
-
-
-
 
   // ─── Phase 5.x Probe Lifecycle ─────────────────────────────────────────────
   void cancelCurrentProbe() {
@@ -1432,7 +1426,6 @@ class ChainProxyManager extends ChangeNotifier {
 
   // ─── Phase 5.x Flap Dampening ────────────────────────────────────────────
 
-
   // ─── Phase 5.x Telemetry ──────────────────────────────────────────────────
 
   void clearTelemetry() {
@@ -1486,7 +1479,7 @@ class ChainProxyManager extends ChangeNotifier {
   /// config. Empty until [refreshCapabilityProfiles] succeeds.
   Map<String, ProtocolCapabilityProfile> get capabilityProfiles =>
       Map.unmodifiable(_capabilityProfiles);
-  
+
   /// Test seam: redirects `chain_proxies.json` away from the real
   /// application data directory. `null` in production.
   @visibleForTesting
@@ -1526,7 +1519,6 @@ class ChainProxyManager extends ChangeNotifier {
     if (_isProbingChain) return;
     await probeCurrentChain();
   }
-
 
   List<String>? _availableProxyNames() {
     // `null` means "do not filter by available names". When the app is not
@@ -1582,16 +1574,31 @@ class ChainProxyManager extends ChangeNotifier {
         if (resolved == null) return true;
         filePath = resolved;
       }
-      
-      final mapToSave = <FallbackCandidateRole, Map<String, Map<String, ChainReliabilityStats>>>{};
-      mapToSave[FallbackCandidateRole.entry] = { for (var c in _fallbackPool.entryCandidates) c.nodeName: c.statsByContext };
-      mapToSave[FallbackCandidateRole.relay] = { for (var c in _fallbackPool.relayCandidates) c.nodeName: c.statsByContext };
-      mapToSave[FallbackCandidateRole.exit] = { for (var c in _fallbackPool.exitCandidates) c.nodeName: c.statsByContext };
-      
+
+      final mapToSave =
+          <
+            FallbackCandidateRole,
+            Map<String, Map<String, ChainReliabilityStats>>
+          >{};
+      mapToSave[FallbackCandidateRole.entry] = {
+        for (var c in _fallbackPool.entryCandidates)
+          c.nodeName: c.statsByContext,
+      };
+      mapToSave[FallbackCandidateRole.relay] = {
+        for (var c in _fallbackPool.relayCandidates)
+          c.nodeName: c.statsByContext,
+      };
+      mapToSave[FallbackCandidateRole.exit] = {
+        for (var c in _fallbackPool.exitCandidates)
+          c.nodeName: c.statsByContext,
+      };
+
       const service = ChainReliabilityStatsPersistence();
       return await service.save(filePath, mapToSave);
     } catch (e) {
-      commonPrint.log('ChainProxyManager: Failed to flush reliability stats: $e');
+      commonPrint.log(
+        'ChainProxyManager: Failed to flush reliability stats: $e',
+      );
       return false;
     }
   }
@@ -1602,28 +1609,27 @@ class ChainProxyManager extends ChangeNotifier {
     // against the previous view must not write back into this one.
     _capabilityViewGeneration++;
     try {
-    
       final targets = <dynamic>[];
-    
+
       if (capabilityProbeSourceOverride != null) {
         targets.addAll(capabilityProbeSourceOverride!);
       } else {
         final currentProfileId = globalState.config.currentProfileId;
         if (currentProfileId == null || currentProfileId.isEmpty) return;
-      
+
         final configMap = await globalState.getProfileConfig(currentProfileId);
         final proxies = configMap['proxies'];
         if (proxies is! List) return;
         targets.addAll(proxies);
       }
-    
+
       final currentNames = <String>{};
       for (final proxy in targets) {
         if (proxy is! Map) continue;
         final nodeName = proxy['name']?.toString() ?? '';
         if (nodeName.isEmpty) continue;
         currentNames.add(nodeName);
-      
+
         final capability = ChainCapabilityService.getCapability(proxy);
         _capabilityProfiles[nodeName] = capability;
       }
@@ -1634,11 +1640,13 @@ class ChainProxyManager extends ChangeNotifier {
       // unbounded retention, and they make `availableProxyProfiles` — which is
       // handed to failover — carry names the config no longer has. Pruning here
       // is therefore behaviour-neutral by construction.
-      _capabilityProfiles.removeWhere((name, _) => !currentNames.contains(name));
-    
+      _capabilityProfiles.removeWhere(
+        (name, _) => !currentNames.contains(name),
+      );
+
       _capabilityRevision++;
       notifyListeners();
-    
+
       unawaited(_startRuntimeCapabilityProbes(targets));
     } catch (e) {
       // Best-effort by contract: a core/read failure here must never break the
@@ -1650,7 +1658,7 @@ class ChainProxyManager extends ChangeNotifier {
       );
     }
   }
-  
+
   Future<void> _startRuntimeCapabilityProbes(List<dynamic> targets) async {
     // P1.2-G3 (K1): bound the fan-out. The previous `for` + `unawaited` fired
     // one probe per node at once, so the in-flight count grew linearly with the
@@ -1676,7 +1684,7 @@ class ChainProxyManager extends ChangeNotifier {
     }
 
     final configuredLimit = globalState.config.proxiesStyle.concurrencyLimit;
-    final limit = configuredLimit > 0 ? configuredLimit : 250;
+    final limit = configuredLimit.clamp(1, maxConcurrentDelayTests);
 
     // Still fire-and-forget for the caller (`unawaited` at the call site):
     // awaiting batch-by-batch does not delay `refreshCapabilityProfiles`.
@@ -1685,41 +1693,52 @@ class ChainProxyManager extends ChangeNotifier {
       // cannot cancel the probes already in flight (a native `getDelay` call is
       // not cancellable) — it only stops *new* ones from being issued.
       if (_disposed) break;
-      await Future.wait(batch.map((proxy) async {
-        final nodeName = proxy['name']?.toString() ?? '';
-        try {
-          final profile = await ChainCapabilityProbeService.probeAndVerify(
-            proxy,
-            timeout: capabilityProbeTimeout,
-          );
-          if (_disposed) return;
-          // P1.2-K3 (S1): the capability view was rebuilt while this probe was
-          // in flight. The result describes the *previous* config (including its
-          // declared `udp`), so writing it back by node name would overwrite the
-          // new baseline — discard it instead.
-          if (generation != _capabilityViewGeneration) return;
-          // Only a probe that actually changed the capability view may bump
-          // the revision. An inconclusive probe (e.g. a failed/timeout probe
-          // that returns the unchanged `unknown` baseline) must not churn the
-          // ranking with a phantom state change.
-          final current = _capabilityProfiles[nodeName];
-          final changed = current == null ||
-              current.tcp.evidence != profile.tcp.evidence ||
-              current.tls.evidence != profile.tls.evidence ||
-              current.udp.evidence != profile.udp.evidence;
-          if (!changed) return;
-          _capabilityProfiles[nodeName] = profile;
-          _capabilityRevision++;
-          notifyListeners();
-        } catch (_) {
-        } finally {
-          _capabilityProbesInFlight.remove(nodeName);
-        }
-      }));
+      var capabilityChanged = false;
+      await Future.wait(
+        batch.map((proxy) async {
+          final nodeName = proxy['name']?.toString() ?? '';
+          try {
+            final profile = await ChainCapabilityProbeService.probeAndVerify(
+              proxy,
+              timeout: capabilityProbeTimeout,
+            );
+            if (_disposed) return;
+            // P1.2-K3 (S1): the capability view was rebuilt while this probe was
+            // in flight. The result describes the *previous* config (including its
+            // declared `udp`), so writing it back by node name would overwrite the
+            // new baseline — discard it instead.
+            if (generation != _capabilityViewGeneration) return;
+            // Only a probe that actually changed the capability view may bump
+            // the revision. An inconclusive probe (e.g. a failed/timeout probe
+            // that returns the unchanged `unknown` baseline) must not churn the
+            // ranking with a phantom state change.
+            final current = _capabilityProfiles[nodeName];
+            final changed =
+                current == null ||
+                current.tcp.evidence != profile.tcp.evidence ||
+                current.tls.evidence != profile.tls.evidence ||
+                current.udp.evidence != profile.udp.evidence;
+            if (!changed) return;
+            _capabilityProfiles[nodeName] = profile;
+            _capabilityRevision++;
+            capabilityChanged = true;
+          } catch (_) {
+          } finally {
+            _capabilityProbesInFlight.remove(nodeName);
+          }
+        }),
+      );
+      if (capabilityChanged &&
+          !_disposed &&
+          generation == _capabilityViewGeneration) {
+        notifyListeners();
+      }
     }
   }
 
-  Future<void> updateFallbackPool(ChainFallbackPool Function(ChainFallbackPool) updater) async {
+  Future<void> updateFallbackPool(
+    ChainFallbackPool Function(ChainFallbackPool) updater,
+  ) async {
     _fallbackPool = updater(_fallbackPool);
     notifyListeners();
     await _persistFallbackPool();
@@ -1753,17 +1772,18 @@ class ChainProxyManager extends ChangeNotifier {
             if (c.nodeName == name)
               (() {
                 updated = true;
-                final context =
-                    networkFingerprintProvider.getCurrentFingerprint();
-                final stats = (c.statsByContext[context] ??
-                        ChainReliabilityStats.initial(
-                          networkFingerprint: context,
-                        ))
-                    .recordEvent(
-                  isSuccess: success,
-                  now: DateTime.now(),
-                  lambda: ChainReliabilityStats.decayLambda,
-                );
+                final context = networkFingerprintProvider
+                    .getCurrentFingerprint();
+                final stats =
+                    (c.statsByContext[context] ??
+                            ChainReliabilityStats.initial(
+                              networkFingerprint: context,
+                            ))
+                        .recordEvent(
+                          isSuccess: success,
+                          now: DateTime.now(),
+                          lambda: ChainReliabilityStats.decayLambda,
+                        );
                 final map = Map<String, ChainReliabilityStats>.from(
                   c.statsByContext,
                 );
@@ -1784,7 +1804,6 @@ class ChainProxyManager extends ChangeNotifier {
     return updated;
   }
 
-
   /// 把一次链路探测的结果**按节点名**归属到 fallback pool 的候选上。
   ///
   /// **P1.3-C1 — 写入边界（重要，勿误解为「候选状态的统一回写」）**：
@@ -1801,7 +1820,10 @@ class ChainProxyManager extends ChangeNotifier {
   /// 单跳还是链总、以及 timestamp / fingerprint 生命周期）在当前生产路径中
   /// **未覆盖**，需要在 **P1.3-C Score Model Evolution** 中统一设计，
   /// 而不是在本函数内补写字段。
-  void _writeBackProbeResultsToCandidates(ChainProbeReport report, {FallbackCandidateRole? role}) {
+  void _writeBackProbeResultsToCandidates(
+    ChainProbeReport report, {
+    FallbackCandidateRole? role,
+  }) {
     if (_probeCancelToken?.isCancelled == true) return;
     // A cancelled probe carries no evidence about the chain, so it must not
     // move the reliability counters. The cancel may be carried by the report
@@ -1810,27 +1832,30 @@ class ChainProxyManager extends ChangeNotifier {
         report.healthStatus == ChainHealthStatus.cancelled) {
       return;
     }
-    
+
     final now = DateTime.now();
 
-    List<ChainFallbackCandidate> processCandidates(List<ChainFallbackCandidate> candidates, FallbackCandidateRole currentRole) {
+    List<ChainFallbackCandidate> processCandidates(
+      List<ChainFallbackCandidate> candidates,
+      FallbackCandidateRole currentRole,
+    ) {
       if (role != null && currentRole != role) return candidates;
-      
+
       return candidates.map((c) {
         HopProbeState? matchedHop;
         for (final h in report.hops) {
-           if (h.nodeName == c.nodeName) {
-             matchedHop = h;
-             break;
-           }
+          if (h.nodeName == c.nodeName) {
+            matchedHop = h;
+            break;
+          }
         }
         if (matchedHop == null) return c;
-        
+
         // P2.2: reliability samples are keyed by the CURRENT network
         // fingerprint, so a transport change routes later samples into a new
         // context instead of merging every network into one bucket.
         final context = networkFingerprintProvider.getCurrentFingerprint();
-        
+
         // Same classification and decay semantics the failover writer used
         // before it was deleted in `7916804c`, so one node has one history
         // regardless of which path observed it.
@@ -1843,14 +1868,17 @@ class ChainProxyManager extends ChangeNotifier {
         };
         if (isSuccess == null) return c;
 
-        final newStats = (c.statsByContext[context] ??
-                ChainReliabilityStats.initial(networkFingerprint: context))
-            .recordEvent(
-              isSuccess: isSuccess,
-              now: now,
-              lambda: ChainReliabilityStats.decayLambda,
-            );
-        final newMap = Map<String, ChainReliabilityStats>.from(c.statsByContext);
+        final newStats =
+            (c.statsByContext[context] ??
+                    ChainReliabilityStats.initial(networkFingerprint: context))
+                .recordEvent(
+                  isSuccess: isSuccess,
+                  now: now,
+                  lambda: ChainReliabilityStats.decayLambda,
+                );
+        final newMap = Map<String, ChainReliabilityStats>.from(
+          c.statsByContext,
+        );
         newMap[context] = newStats;
 
         // The manual chain probe used to record reliability only, and the
@@ -1859,7 +1887,8 @@ class ChainProxyManager extends ChangeNotifier {
         // hop latency is exactly the number those views want, so publish it
         // here, tagged with the network context it was measured on.
         final int? hopLatency = matchedHop.latencyMs;
-        final LatencyState? nodeLatency = (hopLatency == null || hopLatency <= 0)
+        final LatencyState? nodeLatency =
+            (hopLatency == null || hopLatency <= 0)
             ? null
             : LatencyState(
                 latencyMs: hopLatency,
@@ -1877,11 +1906,20 @@ class ChainProxyManager extends ChangeNotifier {
     }
 
     _fallbackPool = _fallbackPool.copyWith(
-      entryCandidates: processCandidates(_fallbackPool.entryCandidates, FallbackCandidateRole.entry),
-      relayCandidates: processCandidates(_fallbackPool.relayCandidates, FallbackCandidateRole.relay),
-      exitCandidates: processCandidates(_fallbackPool.exitCandidates, FallbackCandidateRole.exit),
+      entryCandidates: processCandidates(
+        _fallbackPool.entryCandidates,
+        FallbackCandidateRole.entry,
+      ),
+      relayCandidates: processCandidates(
+        _fallbackPool.relayCandidates,
+        FallbackCandidateRole.relay,
+      ),
+      exitCandidates: processCandidates(
+        _fallbackPool.exitCandidates,
+        FallbackCandidateRole.exit,
+      ),
     );
-    
+
     notifyListeners();
     _scheduleReliabilityPersist();
     // P10 — this is the third pool-write path (`setFallbackPool` and
@@ -1917,17 +1955,36 @@ class ChainProxyManager extends ChangeNotifier {
     });
   }
 
-  List<ChainFallbackCandidate> _candidatesForRole(ChainFallbackPool pool, FallbackCandidateRole role) {
-    if (role == FallbackCandidateRole.entry) return List.from(pool.entryCandidates);
-    if (role == FallbackCandidateRole.relay) return List.from(pool.relayCandidates);
-    if (role == FallbackCandidateRole.exit) return List.from(pool.exitCandidates);
+  List<ChainFallbackCandidate> _candidatesForRole(
+    ChainFallbackPool pool,
+    FallbackCandidateRole role,
+  ) {
+    if (role == FallbackCandidateRole.entry) {
+      return List.from(pool.entryCandidates);
+    }
+    if (role == FallbackCandidateRole.relay) {
+      return List.from(pool.relayCandidates);
+    }
+    if (role == FallbackCandidateRole.exit) {
+      return List.from(pool.exitCandidates);
+    }
     return [];
   }
 
-  ChainFallbackPool _withReplacedRoleCandidates(ChainFallbackPool pool, FallbackCandidateRole role, List<ChainFallbackCandidate> candidates) {
-    if (role == FallbackCandidateRole.entry) return pool.copyWith(entryCandidates: candidates);
-    if (role == FallbackCandidateRole.relay) return pool.copyWith(relayCandidates: candidates);
-    if (role == FallbackCandidateRole.exit) return pool.copyWith(exitCandidates: candidates);
+  ChainFallbackPool _withReplacedRoleCandidates(
+    ChainFallbackPool pool,
+    FallbackCandidateRole role,
+    List<ChainFallbackCandidate> candidates,
+  ) {
+    if (role == FallbackCandidateRole.entry) {
+      return pool.copyWith(entryCandidates: candidates);
+    }
+    if (role == FallbackCandidateRole.relay) {
+      return pool.copyWith(relayCandidates: candidates);
+    }
+    if (role == FallbackCandidateRole.exit) {
+      return pool.copyWith(exitCandidates: candidates);
+    }
     return pool;
   }
 
@@ -1989,16 +2046,29 @@ class ChainProxyManager extends ChangeNotifier {
 
   @visibleForTesting
   void applyRestoredReliabilityStatsForTest(
-      Map<FallbackCandidateRole, Map<String, Map<String, ChainReliabilityStats>>> loaded) {
+    Map<FallbackCandidateRole, Map<String, Map<String, ChainReliabilityStats>>>
+    loaded,
+  ) {
     _fallbackPool = _fallbackPool.copyWith(
-      entryCandidates: _injectStats(_fallbackPool.entryCandidates, loaded[FallbackCandidateRole.entry]),
-      relayCandidates: _injectStats(_fallbackPool.relayCandidates, loaded[FallbackCandidateRole.relay]),
-      exitCandidates: _injectStats(_fallbackPool.exitCandidates, loaded[FallbackCandidateRole.exit]),
+      entryCandidates: _injectStats(
+        _fallbackPool.entryCandidates,
+        loaded[FallbackCandidateRole.entry],
+      ),
+      relayCandidates: _injectStats(
+        _fallbackPool.relayCandidates,
+        loaded[FallbackCandidateRole.relay],
+      ),
+      exitCandidates: _injectStats(
+        _fallbackPool.exitCandidates,
+        loaded[FallbackCandidateRole.exit],
+      ),
     );
   }
 
   List<ChainFallbackCandidate> _injectStats(
-      List<ChainFallbackCandidate> candidates, Map<String, Map<String, ChainReliabilityStats>>? stats) {
+    List<ChainFallbackCandidate> candidates,
+    Map<String, Map<String, ChainReliabilityStats>>? stats,
+  ) {
     if (stats == null) return candidates;
     return candidates.map((c) {
       final nodeStats = stats[c.nodeName];
@@ -2011,4 +2081,3 @@ class ChainProxyManager extends ChangeNotifier {
 }
 
 final chainProxyManager = ChainProxyManager();
-

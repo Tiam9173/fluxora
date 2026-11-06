@@ -54,7 +54,11 @@ void main() {
     );
   }
 
-  Future<void> pumpHero(WidgetTester tester, {required bool reduce}) async {
+  Future<void> pumpHero(
+    WidgetTester tester, {
+    required bool reduce,
+    bool lowEffects = false,
+  }) async {
     tester.binding.platformDispatcher.accessibilityFeaturesTestValue =
         FakeAccessibilityFeatures(disableAnimations: reduce);
     addTearDown(
@@ -69,14 +73,21 @@ void main() {
         // seeded `globalState.appState` the way they do in production.
         overrides: [
           startButtonSelectorStateProvider.overrideWith(
-            (ref) => const StartButtonSelectorState(
-              isInit: true,
-              hasProfile: true,
-            ),
+            (ref) =>
+                const StartButtonSelectorState(isInit: true, hasProfile: true),
           ),
           isRestartingCoreProvider.overrideWith((ref) => false),
         ],
         child: MaterialApp(
+          theme: ThemeData(
+            extensions: [
+              FluxoraMaterial(
+                style: lowEffects
+                    ? FluxoraSurfaceStyle.reduced
+                    : FluxoraSurfaceStyle.classic,
+              ),
+            ],
+          ),
           home: Scaffold(
             body: seedGlobals(
               const Center(child: SizedBox(width: 320, child: StartButton())),
@@ -127,14 +138,17 @@ void main() {
       );
     });
 
-    test('Android TV shows the switch even if the TV probe is still pending', () {
-      System.platformOverride = 'android';
-      addTearDown(() => System.platformOverride = null);
+    test(
+      'Android TV shows the switch even if the TV probe is still pending',
+      () {
+        System.platformOverride = 'android';
+        addTearDown(() => System.platformOverride = null);
 
-      // `_isAndroidTV` is resolved asynchronously, so `false` can simply mean
-      // "not known yet" — `isAndroid` still has to carry it.
-      expect(defaultShowStartSwitch(isAndroidTV: false), isTrue);
-    });
+        // `_isAndroidTV` is resolved asynchronously, so `false` can simply mean
+        // "not known yet" — `isAndroid` still has to carry it.
+        expect(defaultShowStartSwitch(isAndroidTV: false), isTrue);
+      },
+    );
 
     test('desktop keeps the switch off', () {
       for (final platform in const ['windows', 'macos', 'linux']) {
@@ -161,6 +175,15 @@ void main() {
   // continuous rotation; §10.5 requires the reduced-motion path to remove the
   // motion entirely rather than speed it up.
   group('Hero entrance honours the motion tokens', () {
+    testWidgets('low-effects material shows the card at rest immediately', (
+      tester,
+    ) async {
+      await pumpHero(tester, reduce: false, lowEffects: true);
+      final entrance = heroEntrance(tester);
+      expect(entrance.opacity, 1.0);
+      expect(entrance.dy, 0.0);
+    });
+
     testWidgets('reduced motion shows the card at rest on the first frame', (
       tester,
     ) async {
@@ -177,7 +200,11 @@ void main() {
       await pumpHero(tester, reduce: false);
 
       final start = heroEntrance(tester);
-      expect(start.opacity, 0.0, reason: 'the entrance starts fully transparent');
+      expect(
+        start.opacity,
+        0.0,
+        reason: 'the entrance starts fully transparent',
+      );
       expect(
         start.dy,
         FluxoraMotion.enterOffset.dy,

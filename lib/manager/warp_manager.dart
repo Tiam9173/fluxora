@@ -17,6 +17,7 @@ class WarpManager extends ChangeNotifier {
   WarpStatusReport? _latestReport;
   bool _isTesting = false;
   bool _isRegistering = false;
+  Future<WarpStatusReport>? _statusCheck;
 
   WarpManager._internal();
 
@@ -191,12 +192,14 @@ class WarpManager extends ChangeNotifier {
     String? size,
     String? delay,
   }) async {
-    await updateConfig((c) => c.copyWith(
-          noiseCount: count,
-          noiseMode: mode,
-          noiseSize: size,
-          noiseDelay: delay,
-        ));
+    await updateConfig(
+      (c) => c.copyWith(
+        noiseCount: count,
+        noiseMode: mode,
+        noiseSize: size,
+        noiseDelay: delay,
+      ),
+    );
   }
 
   Future<void> resetConfig() async {
@@ -218,16 +221,17 @@ class WarpManager extends ChangeNotifier {
 
   Future<void> generateNewKeys() async {
     final keyPair = Curve25519.generateKeyPair();
-    await updateConfig((c) => c.copyWith(
-          privateKey: keyPair.privateKey,
-          publicKey: keyPair.publicKey,
-        ));
+    await updateConfig(
+      (c) => c.copyWith(
+        privateKey: keyPair.privateKey,
+        publicKey: keyPair.publicKey,
+      ),
+    );
   }
 
   HttpClient _createHttpClient([int proxyPort = 0]) {
     final client = HttpClient();
     client.connectionTimeout = const Duration(seconds: 12);
-    client.badCertificateCallback = (cert, host, port) => true;
 
     if (proxyPort > 0) {
       client.findProxy = (uri) => 'PROXY 127.0.0.1:$proxyPort';
@@ -255,7 +259,7 @@ class WarpManager extends ChangeNotifier {
   Future<bool> registerCloudflareAccount({String? license}) async {
     _isRegistering = true;
     notifyListeners();
-
+    HttpClient? client;
     try {
       // 1. Ensure valid key pair
       String priv = _config.privateKey;
@@ -267,7 +271,7 @@ class WarpManager extends ChangeNotifier {
       }
 
       final proxyPort = await _getEffectiveProxyPort();
-      final client = _createHttpClient(proxyPort);
+      client = _createHttpClient(proxyPort);
 
       // Cloudflare rotates the API version in the path; an old one starts
       // answering 404/400 and registration then fails with no usable message.
@@ -290,10 +294,7 @@ class WarpManager extends ChangeNotifier {
           'https://api.cloudflareclient.com/$version/reg',
         );
         final request = await client.postUrl(regUri);
-        request.headers.set(
-          'Content-Type',
-          'application/json; charset=UTF-8',
-        );
+        request.headers.set('Content-Type', 'application/json; charset=UTF-8');
         request.headers.set('User-Agent', 'okhttp/3.12.1');
         request.write(jsonEncode(body));
         final attempt = await request.close();
@@ -363,10 +364,13 @@ class WarpManager extends ChangeNotifier {
         if (lic.isNotEmpty && accountId.isNotEmpty && token.isNotEmpty) {
           try {
             final licUri = Uri.parse(
-                'https://api.cloudflareclient.com/v0a2158/reg/$accountId/account');
+              'https://api.cloudflareclient.com/v0a2158/reg/$accountId/account',
+            );
             final licReq = await client.putUrl(licUri);
             licReq.headers.set(
-                'Content-Type', 'application/json; charset=UTF-8');
+              'Content-Type',
+              'application/json; charset=UTF-8',
+            );
             licReq.headers.set('Authorization', 'Bearer $token');
             licReq.write(jsonEncode({'license': lic}));
             final licResp = await licReq.close();
@@ -376,95 +380,112 @@ class WarpManager extends ChangeNotifier {
           } catch (_) {}
         }
 
-        await updateConfig((c) => c.copyWith(
-              privateKey: priv,
-              publicKey: pub,
-              accountId: accountId,
-              accountToken: token,
-              accountType: finalAccountType,
-              reserved: reserved,
-              ip: v4,
-              ipv6: v6,
-              server: server.isNotEmpty ? server : WarpConfig.defaultEndpoint,
-              port: port,
-              licenseKey: lic,
-            ));
+        await updateConfig(
+          (c) => c.copyWith(
+            privateKey: priv,
+            publicKey: pub,
+            accountId: accountId,
+            accountToken: token,
+            accountType: finalAccountType,
+            reserved: reserved,
+            ip: v4,
+            ipv6: v6,
+            server: server.isNotEmpty ? server : WarpConfig.defaultEndpoint,
+            port: port,
+            licenseKey: lic,
+          ),
+        );
         return true;
       } else {
-        commonPrint.log('WarpManager: CF API error: ${response.statusCode} $respStr');
+        commonPrint.log(
+          'WarpManager: CF API error: ${response.statusCode} $respStr',
+        );
         return false;
       }
     } catch (e) {
       commonPrint.log('WarpManager: Registration failed: $e');
       return false;
     } finally {
+      client?.close(force: true);
       _isRegistering = false;
       notifyListeners();
     }
   }
 
-  /// Diagnostic testing: requests Cloudflare trace and Google to inspect WARP status and anti-redirection
-  Future<WarpStatusReport> checkWarpStatus() async {
-    _isTesting = true;
-    notifyListeners();
+  /// Concurrent diagnostic triggers share one operation and one result.
+  Future<WarpStatusReport> checkWarpStatus() =>
+      _statusCheck ??= Future.microtask(
+        _checkWarpStatus,
+      ).whenComplete(() => _statusCheck = null);
 
-    final stopwatch = Stopwatch()..start();
-    try {
-      final proxyPort = await _getEffectiveProxyPort();
-      final client = _createHttpClient(proxyPort);
-
-      // 1. Cloudflare CDN-CGI Trace check
-      final traceUri = Uri.parse('https://www.cloudflare.com/cdn-cgi/trace');
-      final request = await client.getUrl(traceUri);
+  Future<(int, String, String?)> _readDiagnostic(HttpClient client, Uri uri) {
+    return (() async {
+      final request = await client.getUrl(uri);
+      request.followRedirects = false;
       request.headers.set('User-Agent', 'Mozilla/5.0');
       final response = await request.close();
-      final traceContent = await response.transform(utf8.decoder).join();
-      stopwatch.stop();
+      final body = await response.transform(utf8.decoder).join();
+      return (response.statusCode, body, response.headers.value('location'));
+    })().timeout(const Duration(seconds: 12));
+  }
 
-      // 2. Google Anti-Redirect & Anti-Captcha check
+  Future<WarpStatusReport> _checkWarpStatus() async {
+    _isTesting = true;
+    notifyListeners();
+    final stopwatch = Stopwatch()..start();
+    HttpClient? client;
+    HttpClient? googleClient;
+    try {
+      final proxyPort = await _getEffectiveProxyPort();
+      client = _createHttpClient(proxyPort);
+      final trace = await _readDiagnostic(
+        client,
+        Uri.parse('https://www.cloudflare.com/cdn-cgi/trace'),
+      );
+      if (trace.$1 != HttpStatus.ok) {
+        throw HttpException('Trace HTTP ${trace.$1}');
+      }
+      stopwatch.stop();
       bool googleOk = false;
       String googleDetail = '未测试';
       try {
-        final gClient = _createHttpClient(proxyPort);
-        final gUri = Uri.parse('https://www.google.com/generate_204');
-        final gReq = await gClient.getUrl(gUri);
-        gReq.followRedirects = false;
-        final gResp = await gReq.close();
-        if (gResp.statusCode == 204) {
+        googleClient = _createHttpClient(proxyPort);
+        final google = await _readDiagnostic(
+          googleClient,
+          Uri.parse('https://www.google.com/generate_204'),
+        );
+        if (google.$1 == HttpStatus.noContent) {
           googleOk = true;
           googleDetail = '原生访问正常，无送中与验证码拦截';
-        } else if (gResp.isRedirect) {
-          final location = gResp.headers.value('location') ?? '';
+        } else if (google.$1 >= 300 && google.$1 < 400) {
+          final location = google.$3 ?? '';
           if (location.contains('.hk') || location.contains('.cn')) {
-            googleOk = false;
             googleDetail = '存在送中风险 (重定向至 $location)';
           } else {
             googleOk = true;
             googleDetail = '重定向至正常区域: $location';
           }
         } else {
-          googleOk = false;
-          googleDetail = 'Google 响应状态码: ${gResp.statusCode}';
+          googleDetail = 'Google 响应状态码: ${google.$1}';
         }
-      } catch (ge) {
-        googleOk = false;
-        googleDetail = 'Google 连接超时或受阻: $ge';
+      } catch (error) {
+        googleDetail = 'Google 连接超时或受阻: $error';
       }
-
       final report = WarpStatusReport.fromTrace(
-        traceText: traceContent,
+        traceText: trace.$2,
         latencyMs: stopwatch.elapsedMilliseconds,
         googleOk: googleOk,
         googleDetail: googleDetail,
       );
-
       _latestReport = report;
       return report;
-    } catch (e) {
-      final report = WarpStatusReport.failure('诊断请求超时或连接失败: $e');
+    } catch (error) {
+      final report = WarpStatusReport.failure('诊断请求超时或连接失败: $error');
       _latestReport = report;
       return report;
     } finally {
+      client?.close(force: true);
+      googleClient?.close(force: true);
       _isTesting = false;
       notifyListeners();
     }

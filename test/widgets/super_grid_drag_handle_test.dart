@@ -116,7 +116,9 @@ void main() {
     expect(find.text('card'), findsOneWidget);
   });
 
-  testWidgets('the wobble keeps running without reduced motion', (tester) async {
+  testWidgets('the wobble keeps running without reduced motion', (
+    tester,
+  ) async {
     await pumpGrid(tester, withHandle: false, disableAnimations: false);
     expect(tester.binding.hasScheduledFrame, isTrue);
   });
@@ -158,5 +160,59 @@ void main() {
     await tester.tap(find.text('card'), warnIfMissed: false);
     await tester.pump();
     expect(taps(), 1);
+  });
+  testWidgets('button sorting respects bounds and protects mandatory items', (
+    tester,
+  ) async {
+    final key = GlobalKey<SuperGridState>();
+    var updates = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MediaQuery(
+          data: const MediaQueryData(disableAnimations: true),
+          child: Scaffold(
+            body: SingleChildScrollView(
+              child: SuperGrid(
+                key: key,
+                crossAxisCount: 1,
+                onUpdate: () => updates++,
+                children: const [
+                  GridItem(
+                    key: ValueKey('mandatory'),
+                    isDeletable: false,
+                    child: SizedBox(height: 64, child: Text('mandatory')),
+                  ),
+                  GridItem(
+                    key: ValueKey('optional'),
+                    child: SizedBox(height: 64, child: Text('optional')),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final state = key.currentState!;
+    updates = 0;
+    state.moveItem(-1, 1);
+    state.moveItem(0, -1);
+    state.moveItem(1, 1);
+    await state.removeItem(-1);
+    await state.removeItem(2);
+    await state.removeItem(0);
+    expect(updates, 0);
+    expect(state.children.length, 2);
+    state.moveItem(0, 1);
+    await tester.pumpAndSettle();
+    expect(state.children.first.key, const ValueKey('optional'));
+    expect(updates, 1);
+    final removal = state.removeItem(0);
+    await tester.pumpAndSettle();
+    await removal;
+    expect(state.children.single.key, const ValueKey('mandatory'));
+    expect(updates, 2);
+    expect(tester.takeException(), isNull);
   });
 }

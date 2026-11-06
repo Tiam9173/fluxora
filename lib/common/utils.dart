@@ -14,11 +14,7 @@ import 'package:flutter/services.dart';
 import 'package:fluxora/widgets/fluxora/fluxora_latency_badge.dart';
 import 'package:lpinyin/lpinyin.dart';
 
-enum IpCategory {
-  tun,
-  lan,
-  public,
-}
+enum IpCategory { tun, lan, public }
 
 class Utils {
   /// Legacy latency colour helper.
@@ -716,22 +712,24 @@ class Utils {
   Locale getSystemLocale() {
     final platformLocale = WidgetsBinding.instance.platformDispatcher.locale;
     final supportedLocales = AppLocalizations.delegate.supportedLocales;
-    
+
     if (platformLocale.languageCode.toLowerCase() == 'zh') {
-      final isTraditional = 
-        (platformLocale.countryCode?.toUpperCase() == 'TW') ||
-        (platformLocale.countryCode?.toUpperCase() == 'HK') ||
-        (platformLocale.countryCode?.toUpperCase() == 'MO') ||
-        (platformLocale.scriptCode?.toLowerCase() == 'hant');
-      return isTraditional ? const Locale('zh', 'TC') : const Locale('zh', 'CN');
+      final isTraditional =
+          (platformLocale.countryCode?.toUpperCase() == 'TW') ||
+          (platformLocale.countryCode?.toUpperCase() == 'HK') ||
+          (platformLocale.countryCode?.toUpperCase() == 'MO') ||
+          (platformLocale.scriptCode?.toLowerCase() == 'hant');
+      return isTraditional
+          ? const Locale('zh', 'TC')
+          : const Locale('zh', 'CN');
     }
-    
+
     for (final locale in supportedLocales) {
       if (locale.languageCode == platformLocale.languageCode) {
         return locale;
       }
     }
-    
+
     // Fall back to English, not Chinese. An unsupported system language, an
     // unset locale and the POSIX `C` locale must all start in English:
     // AppImageHub runs the AppImage under the `C` locale and rejects a
@@ -799,10 +797,6 @@ class Utils {
     bool isStart = false,
     bool invertTrayIcon = false,
   }) {
-    if (system.isLinux) {
-      return 'assets/images/icon.png';
-    }
-
     if (system.isMacOS && isStart) {
       return 'assets/images/icon_black.png';
     }
@@ -810,10 +804,10 @@ class Utils {
     final suffix = system.isWindows ? 'ico' : 'png';
 
     final darkPath = !isStart
-        ? 'assets/images/icon_light.$suffix'
+        ? 'assets/images/tray_white_stopped.$suffix'
         : 'assets/images/icon_white.$suffix';
     final lightPath = !isStart
-        ? 'assets/images/icon.$suffix'
+        ? 'assets/images/tray_black_stopped.$suffix'
         : 'assets/images/icon_black.$suffix';
 
     if (invertTrayIcon) {
@@ -944,12 +938,14 @@ class Utils {
     return regex
         .allMatches(body)
         .map((match) => match.group(1)?.trim() ?? '')
-        .where((item) =>
-            item.isNotEmpty &&
-            !item.startsWith('---') &&
-            !item.startsWith(':') &&
-            !item.startsWith('|') &&
-            !item.startsWith('['))
+        .where(
+          (item) =>
+              item.isNotEmpty &&
+              !item.startsWith('---') &&
+              !item.startsWith(':') &&
+              !item.startsWith('|') &&
+              !item.startsWith('['),
+        )
         .toList();
   }
 
@@ -1062,7 +1058,8 @@ class Utils {
   /// [getLocalGateways] is the gateway-only view of the same data — it stays a
   /// `List<String>` because five call sites (including two Android
   /// `MethodChannel` wrappers) depend on that shape.
-  Future<List<({String gateway, String interfaceName})>> _getDefaultRoutes() async {
+  Future<List<({String gateway, String interfaceName})>>
+  _getDefaultRoutes() async {
     if (Platform.isLinux) {
       return _getLinuxDefaultRoutes();
     }
@@ -1146,15 +1143,12 @@ class Utils {
   Future<List<({String gateway, String interfaceName})>>
   _getWindowsDefaultRoutes() async {
     try {
-      final result = await Process.run(
-        'powershell',
-        [
-          '-NoProfile',
-          '-Command',
-          'Get-NetRoute -DestinationPrefix \'0.0.0.0/0\' '
-              r'| ForEach-Object { "$($_.NextHop)|$($_.InterfaceAlias)" }',
-        ],
-      );
+      final result = await Process.run('powershell', [
+        '-NoProfile',
+        '-Command',
+        'Get-NetRoute -DestinationPrefix \'0.0.0.0/0\' '
+            r'| ForEach-Object { "$($_.NextHop)|$($_.InterfaceAlias)" }',
+      ]);
       if (result.exitCode != 0) return [];
 
       final routes = <({String gateway, String interfaceName})>[];
@@ -1185,20 +1179,16 @@ class Utils {
   Future<NetworkInfo> getNetworkInfo() async {
     try {
       if (system.isAndroid) {
-        final info = await const MethodChannel('service').invokeMapMethod<
-          String,
-          Object?
-        >('getNetworkInfo');
-        return info == null
-            ? const NetworkInfo()
-            : NetworkInfo.fromJson(info);
+        final info = await const MethodChannel(
+          'service',
+        ).invokeMapMethod<String, Object?>('getNetworkInfo');
+        return info == null ? const NetworkInfo() : NetworkInfo.fromJson(info);
       }
       final routes = await _getDefaultRoutes();
       final route = routes
           .where(
             (route) =>
-                route.gateway != '0.0.0.0' &&
-                route.interfaceName.isNotEmpty,
+                route.gateway != '0.0.0.0' && route.interfaceName.isNotEmpty,
           )
           .firstOrNull;
       final interfaces = await NetworkInterface.list(includeLoopback: false);
@@ -1206,7 +1196,9 @@ class Utils {
           .where((interface) => interface.name == route?.interfaceName)
           .firstOrNull;
       final Iterable<InternetAddress> addresses =
-          matchedInterface?.addresses.where((address) => !address.isLinkLocal) ??
+          matchedInterface?.addresses.where(
+            (address) => !address.isLinkLocal,
+          ) ??
           const <InternetAddress>[];
       final address =
           addresses.where((address) => address.isIPv4).firstOrNull ??
@@ -1303,7 +1295,6 @@ class Utils {
     final control = system.isMacOS ? false : true;
     return SingleActivator(trigger, control: control, meta: !control);
   }
-
 
   FutureOr<T> handleWatch<T>(Function function) async {
     if (kDebugMode) {

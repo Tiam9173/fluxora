@@ -146,6 +146,9 @@ class _LogsViewState extends ConsumerState<LogsView> {
     // which left the newest line behind the dock on a phone.
     final isMobileView = ref.watch(isMobileViewProvider);
     return CommonScaffold(
+      backgroundColor: FluxoraMaterial.of(context).enabled
+          ? context.colorScheme.surface
+          : null,
       actions: [
         IconButton(
           onPressed: _handleLogLevelSettings,

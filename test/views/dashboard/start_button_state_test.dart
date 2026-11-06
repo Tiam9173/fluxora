@@ -29,7 +29,9 @@ import 'package:fluxora/widgets/fluxora/fluxora.dart';
 /// controls exactly when the future completes. The four providers are pinned the
 /// way `hero_entrance_test.dart` pins them; nothing here fakes a connection.
 class _ControllableController extends AppController {
-  _ControllableController(super.context, super.ref);
+  _ControllableController(BuildContext context, this.bindingRef)
+    : super(context, bindingRef);
+  final WidgetRef bindingRef;
 
   int updateStatusCalls = 0;
   int restartCoreCalls = 0;
@@ -91,10 +93,8 @@ void main() {
       ProviderScope(
         overrides: [
           startButtonSelectorStateProvider.overrideWith(
-            (ref) => const StartButtonSelectorState(
-              isInit: true,
-              hasProfile: true,
-            ),
+            (ref) =>
+                const StartButtonSelectorState(isInit: true, hasProfile: true),
           ),
           isRestartingCoreProvider.overrideWith((ref) => false),
         ],
@@ -167,6 +167,32 @@ void main() {
     });
   });
 
+  testWidgets(
+    'pending start and stop never claim success before runtime evidence',
+    (tester) async {
+      final controller = await pumpHero(tester);
+      await tester.tap(find.byType(FluxoraCard));
+      await tester.pump();
+      expect(find.text(appLocalizations.startVpn), findsOneWidget);
+      expect(find.text(appLocalizations.coreConnected), findsNothing);
+      controller.pending!.complete();
+      await tester.pumpAndSettle();
+      // Completing an operation alone does not prove the core is connected.
+      expect(find.text(appLocalizations.coreConnected), findsNothing);
+      controller.bindingRef.read(runTimeProvider.notifier).value = 156000;
+      await tester.pumpAndSettle();
+      expect(find.text(appLocalizations.coreConnected), findsOneWidget);
+      await tester.tap(find.byType(FluxoraCard));
+      await tester.pump();
+      expect(find.text(appLocalizations.stopVpn), findsOneWidget);
+      expect(find.text(appLocalizations.serviceReady), findsNothing);
+      controller.bindingRef.read(runTimeProvider.notifier).value = null;
+      controller.pending!.complete();
+      await tester.pumpAndSettle();
+      expect(find.text(appLocalizations.serviceReady), findsOneWidget);
+    },
+  );
+
   group('failures reach the user', () {
     testWidgets('a failed toggle surfaces a snackbar', (tester) async {
       final controller = await pumpHero(tester);
@@ -200,11 +226,7 @@ void main() {
     testWidgets('narrow window at 2.0x renders without overflow', (
       tester,
     ) async {
-      await pumpHero(
-        tester,
-        size: const Size(320, 640),
-        textScale: 2.0,
-      );
+      await pumpHero(tester, size: const Size(320, 640), textScale: 2.0);
 
       expect(tester.takeException(), isNull);
       expect(find.byType(FluxoraCard), findsOneWidget);
@@ -219,17 +241,15 @@ void main() {
       expect(find.byType(FluxoraStatus), findsOneWidget);
     });
 
-    testWidgets('the Hero is exactly one grid row tall', (tester) async {
+    testWidgets('the primary connection panel has room for status and route', (
+      tester,
+    ) async {
       await pumpHero(tester);
 
       expect(tester.takeException(), isNull);
-      // Matches the upstream card (`getWidgetHeight(context, 1)`). An extra
-      // `+ FluxoraSpacing.xxl` was added once and made this card 24 dp taller
-      // than every other tile — the reported "启动服务组件太长了". Pinning the
-      // height here means a future change has to argue with this test.
       expect(
         tester.getSize(find.byType(StartButton)).height,
-        getWidgetHeight(1),
+        getWidgetHeight(2),
       );
     });
   });

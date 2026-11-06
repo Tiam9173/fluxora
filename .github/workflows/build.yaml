@@ -662,7 +662,12 @@ jobs:
 
       - name: Generate release.md
         run: |
-          printf '%s\n' "- Fixes and improvements" "- Recommended version update" > release.md
+          notes="RELEASE_NOTES_${GITHUB_REF_NAME#v}.md"
+          if [ -f "$notes" ]; then
+            cp "$notes" release.md
+          else
+            printf '%s\n' "- Fixes and improvements" "- Recommended version update" > release.md
+          fi
 
       - name: Patch release.md
         run: |

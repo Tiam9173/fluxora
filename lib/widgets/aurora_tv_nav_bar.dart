@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'glass_surface.dart';
 import 'package:flutter/services.dart';
 
 import '../common/common.dart';
@@ -89,35 +90,40 @@ class AuroraTvNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainer,
-        // A floating navigation surface above content — the `menu` rung, same
-        // as the mobile dock.
-        boxShadow: FluxoraElevation.of(scheme.brightness).menu,
-      ),
-      child: SafeArea(
-        child: Focus(
-          canRequestFocus: false,
-          onKeyEvent: _handleKey,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: destinations.asMap().entries.map((entry) {
-              final index = entry.key;
-              return FocusTraversalOrder(
-                order: NumericFocusOrder(index.toDouble()),
-                child: AnimatedBuilder(
-                  animation: focusNodes[index],
-                  builder: (context, _) => _AuroraTvItem(
-                    destination: entry.value,
-                    selected: index == selectedIndex,
-                    focused: focusNodes[index].hasFocus,
-                    focusNode: focusNodes[index],
-                    onTap: () => onSelect(index),
+    return GlassSurface(
+      radius: 0,
+      child: Container(
+        decoration: BoxDecoration(
+          color: FluxoraMaterial.of(context).enabled
+              ? Colors.transparent
+              : scheme.surfaceContainer,
+          // A floating navigation surface above content — the `menu` rung, same
+          // as the mobile dock.
+          boxShadow: FluxoraElevation.of(scheme.brightness).menu,
+        ),
+        child: SafeArea(
+          child: Focus(
+            canRequestFocus: false,
+            onKeyEvent: _handleKey,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: destinations.asMap().entries.map((entry) {
+                final index = entry.key;
+                return FocusTraversalOrder(
+                  order: NumericFocusOrder(index.toDouble()),
+                  child: AnimatedBuilder(
+                    animation: focusNodes[index],
+                    builder: (context, _) => _AuroraTvItem(
+                      destination: entry.value,
+                      selected: index == selectedIndex,
+                      focused: focusNodes[index].hasFocus,
+                      focusNode: focusNodes[index],
+                      onTap: () => onSelect(index),
+                    ),
                   ),
-                ),
-              );
-            }).toList(),
+                );
+              }).toList(),
+            ),
           ),
         ),
       ),
@@ -221,12 +227,14 @@ class _AuroraTvItem extends StatelessWidget {
                       (Theme.of(context).textTheme.labelLarge ??
                               const TextStyle())
                           .copyWith(
-                    fontSize: FluxoraFontSize.compact,
-                    height: 1.15,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                    color: labelColor,
-                    letterSpacing: 0,
-                  ),
+                            fontSize: FluxoraFontSize.compact,
+                            height: 1.15,
+                            fontWeight: selected
+                                ? FontWeight.w600
+                                : FontWeight.w500,
+                            color: labelColor,
+                            letterSpacing: 0,
+                          ),
                 ),
               ),
             ],

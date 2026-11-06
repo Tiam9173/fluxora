@@ -45,6 +45,7 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
       globalState.showNotifier(appLocalizations.success);
     });
   }
+
   bool _hasProviders = false;
   bool _isTab = false;
 
@@ -54,7 +55,10 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
     );
     final (scriptOn, compatible) = ref.watch(
       scriptStateProvider.select(
-        (s) => (s.currentId != null, s.currentScript?.isCompatibleWithFluxora ?? false),
+        (s) => (
+          s.currentId != null,
+          s.currentScript?.isCompatibleWithFluxora ?? false,
+        ),
       ),
     );
     final profileOverride = ref.watch(
@@ -189,8 +193,7 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
                           Consumer(
                             builder: (_, ref, _) {
                               return IconButton(
-                                onPressed: () =>
-                                    _handleResetIconCache(context),
+                                onPressed: () => _handleResetIconCache(context),
                                 tooltip: appLocalizations.resetIconCache,
                                 icon: const Icon(
                                   Icons.cleaning_services_outlined,
@@ -310,7 +313,16 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
       title: appLocalizations.proxies,
       searchState: AppBarSearchState(onSearch: _onSearch),
       body: switch (hasGroups) {
-        false => FluxoraEmptyState(title: appLocalizations.noProxy),
+        false => FluxoraEmptyState(
+          icon: Icons.hub_outlined,
+          title: appLocalizations.noProxy,
+          action: FilledButton.icon(
+            onPressed: () =>
+                globalState.appController.toPage(PageLabel.profiles),
+            icon: const Icon(Icons.folder_open_outlined),
+            label: Text(appLocalizations.profiles),
+          ),
+        ),
         true => switch (proxiesType) {
           ProxiesType.tab => ProxiesTabView(key: _proxiesTabKey),
           ProxiesType.list => const ProxiesListView(),

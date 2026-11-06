@@ -6,7 +6,7 @@ import 'dart:ui' as ui;
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/models/selector.dart';
-import 'package:fluxora/plugins/app.dart';
+import 'package:fluxora/views/app_icons.dart';
 import 'package:fluxora/providers/config.dart';
 import 'package:fluxora/providers/state.dart';
 import 'package:fluxora/state.dart';
@@ -59,13 +59,14 @@ class ThemeView extends ConsumerWidget {
 
     final toggleItems = [
       if (shouldShowHarmonyFont) _HarmonyFontItem(),
-      if (system.isAndroid) const _DarkIconItem(),
+      const AppIconsItem(),
       if (system.isWindows) _TrayIconInvertItem(),
       _TextScaleFactorItem(),
     ];
 
     final items = [
       _ThemeModeItem(),
+      const _SurfaceStyleItem(),
       // D4.8: where the theme colour comes from (Fluxora / System / Custom).
       // Must come before the palette card, which now reflects the choice.
       _ColorSourceItem(),
@@ -74,6 +75,46 @@ class ThemeView extends ConsumerWidget {
       if (toggleItems.isNotEmpty) ...generateSection(items: toggleItems),
     ];
     return generateListView(items);
+  }
+}
+
+class _SurfaceStyleItem extends ConsumerWidget {
+  const _SurfaceStyleItem();
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final style = ref.watch(themeSettingProvider.select((s) => s.surfaceStyle));
+    final chinese = Localizations.localeOf(context).languageCode == 'zh';
+    final names = {
+      FluxoraSurfaceStyle.classic: chinese ? '经典' : 'Classic',
+      FluxoraSurfaceStyle.hybrid: 'Hybrid Glass',
+      FluxoraSurfaceStyle.reduced: chinese ? '轻量 · 无模糊' : 'Reduced effects',
+    };
+    return ItemCard(
+      info: Info(
+        label: chinese ? '界面材质' : 'Interface material',
+        iconData: Icons.layers_outlined,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: FluxoraSpacing.lg),
+        child: Wrap(
+          spacing: FluxoraSpacing.sm,
+          runSpacing: FluxoraSpacing.sm,
+          children: [
+            for (final entry in names.entries)
+              ChoiceChip(
+                key: ValueKey('surface-style-${entry.key.name}'),
+                label: Text(entry.value),
+                selected: style == entry.key,
+                onSelected: (_) => ref
+                    .read(themeSettingProvider.notifier)
+                    .updateState(
+                      (state) => state.copyWith(surfaceStyle: entry.key),
+                    ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -496,42 +537,6 @@ class _HarmonyFontItem extends ConsumerWidget {
           ref
               .read(themeSettingProvider.notifier)
               .updateState((state) => state.copyWith(useHarmonyFont: value));
-        },
-      ),
-    );
-  }
-}
-
-class _DarkIconItem extends ConsumerWidget {
-  const _DarkIconItem();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final useDarkIcon = ref.watch(
-      themeSettingProvider.select((state) => state.useDarkIcon),
-    );
-    return ListItem.switchItem(
-      leading: const Icon(Icons.dark_mode_outlined),
-      horizontalTitleGap: 12,
-      title: Text(
-        appLocalizations.darkIcon,
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-          color: context.colorScheme.onSurfaceVariant,
-        ),
-      ),
-      subtitle: Text(
-        appLocalizations.darkIconDesc,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: context.colorScheme.onSurfaceVariant.withOpacity(0.7),
-        ),
-      ),
-      delegate: SwitchDelegate(
-        value: useDarkIcon,
-        onChanged: (value) async {
-          await app.setLauncherIcon(value);
-          ref
-              .read(themeSettingProvider.notifier)
-              .updateState((state) => state.copyWith(useDarkIcon: value));
         },
       ),
     );

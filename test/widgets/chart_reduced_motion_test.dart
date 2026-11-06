@@ -162,7 +162,8 @@ void main() {
       expect(
         painterOf<DonutChartPainter>(tester).entryProgress,
         inExclusiveRange(0.0, 1.0),
-        reason: 'the entrance must actually be running for this test to mean '
+        reason:
+            'the entrance must actually be running for this test to mean '
             'anything',
       );
 
@@ -214,7 +215,9 @@ void main() {
       expect(painterOf<BarChartPainter>(tester).progress, 1.0);
     });
 
-    testWidgets('without reduced motion the entrance still runs', (tester) async {
+    testWidgets('without reduced motion the entrance still runs', (
+      tester,
+    ) async {
       setReduceMotion(tester, false);
 
       await pumpBar(tester, barsA);
@@ -272,17 +275,19 @@ void main() {
     // never started, and `prevPoints == points` on the first frame), so nothing
     // is asserted about an entrance. Only the data tween is pinned, to prove the
     // reduced-motion batch did not disturb it.
-    testWidgets('data updates still animate', (tester) async {
+    testWidgets('data updates land immediately under reduced motion', (
+      tester,
+    ) async {
       setReduceMotion(tester, true);
 
       await pumpLine(tester, const [Point(0, 0), Point(1, 10)]);
-      expect(painterOf<LineChartPainter>(tester).progress, 0.0);
+      expect(painterOf<LineChartPainter>(tester).progress, 1.0);
 
       await pumpLine(tester, const [Point(0, 5), Point(1, 20)]);
       expect(
         painterOf<LineChartPainter>(tester).progress,
-        0.0,
-        reason: 'a new point set must restart the tween',
+        1.0,
+        reason: 'the real sample is visible immediately under reduced motion',
       );
 
       await tester.pumpAndSettle();

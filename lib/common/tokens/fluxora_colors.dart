@@ -13,7 +13,7 @@ abstract final class FluxoraColors {
   // Brand
   // ─────────────────────────────────────────────────────────────────────────
 
-  /// Brand primary — "Flux Cyan". Carried over from the Fluxora mark.
+  /// Logo detail — "Flux Cyan". Kept as an optional custom accent.
   static const fluxCyan = Color(0xFF29D6C7);
 
   /// Brand secondary — "Aurora Blue". Fills the hue gap between cyan and violet.
@@ -21,6 +21,9 @@ abstract final class FluxoraColors {
 
   /// Brand accent / tertiary — "Flow Violet". Carried over from the mark node.
   static const flowViolet = Color(0xFF7C75FF);
+
+  /// Default UI accent; cyan remains a detail of the brand mark.
+  static const brandSeed = flowViolet;
 
   // ─────────────────────────────────────────────────────────────────────────
   // Neutral (Slate family — matches the values already used across the app)
@@ -76,10 +79,10 @@ abstract final class FluxoraColors {
   /// Light semantic colors. Access as `FluxoraColors.light.primary`.
   static const light = FluxoraColorSet(
     brightness: Brightness.light,
-    primary: Color(0xFF006A63),
+    primary: Color(0xFF5A52D5),
     onPrimary: Color(0xFFFFFFFF),
-    primaryContainer: Color(0xFF71F8E8),
-    onPrimaryContainer: Color(0xFF00201D),
+    primaryContainer: Color(0xFFE3DFFF),
+    onPrimaryContainer: Color(0xFF170065),
     secondary: Color(0xFF1B5FC4),
     onSecondary: Color(0xFFFFFFFF),
     secondaryContainer: Color(0xFFD9E2FF),
@@ -88,13 +91,13 @@ abstract final class FluxoraColors {
     onTertiary: Color(0xFFFFFFFF),
     tertiaryContainer: Color(0xFFE3DFFF),
     onTertiaryContainer: Color(0xFF170065),
-    background: Color(0xFFF6F9FB),
+    background: Color(0xFFF6F7FC),
     onBackground: Color(0xFF1E293B),
     surface: Color(0xFFFFFFFF),
     onSurface: Color(0xFF1E293B),
-    surfaceContainer: Color(0xFFEFF3F6),
-    surfaceContainerHigh: Color(0xFFE2E8ED),
-    surfaceContainerHighest: Color(0xFFDCE3E9),
+    surfaceContainer: Color(0xFFF0F1F8),
+    surfaceContainerHigh: Color(0xFFE7E9F3),
+    surfaceContainerHighest: Color(0xFFDDE0EF),
     outline: Color(0xFFCBD5E1),
     outlineVariant: Color(0xFFE2E8ED),
     success: Color(0xFF006D4B),
@@ -110,15 +113,15 @@ abstract final class FluxoraColors {
   /// Dark semantic colors. Access as `FluxoraColors.dark.primary`.
   ///
   /// Dark surfaces deliberately use a navy ladder instead of pure black:
-  /// background `#0C1222` → surface `#121A2B` → container `#18223A`
-  /// → containerHigh `#1F2A44`. Pure black stays a user opt-in
+  /// background `#090B14` → surface `#10131F` → container `#171B2C`
+  /// → containerHigh `#20263B`. Pure black stays a user opt-in
   /// (`ThemeProps.pureBlack`) and is intentionally not represented here.
   static const dark = FluxoraColorSet(
     brightness: Brightness.dark,
-    primary: Color(0xFF4FDBCC),
-    onPrimary: Color(0xFF003731),
-    primaryContainer: Color(0xFF00504A),
-    onPrimaryContainer: Color(0xFF71F8E8),
+    primary: Color(0xFFC6BFFF),
+    onPrimary: Color(0xFF2B1F86),
+    primaryContainer: Color(0xFF4239AC),
+    onPrimaryContainer: Color(0xFFE3DFFF),
     secondary: Color(0xFFA9C7FF),
     onSecondary: Color(0xFF002E6B),
     secondaryContainer: Color(0xFF00458F),
@@ -127,13 +130,13 @@ abstract final class FluxoraColors {
     onTertiary: Color(0xFF2B1F86),
     tertiaryContainer: Color(0xFF4239AC),
     onTertiaryContainer: Color(0xFFE3DFFF),
-    background: Color(0xFF0C1222),
+    background: Color(0xFF090B14),
     onBackground: Color(0xFFF1F5F9),
-    surface: Color(0xFF121A2B),
+    surface: Color(0xFF10131F),
     onSurface: Color(0xFFF1F5F9),
-    surfaceContainer: Color(0xFF18223A),
-    surfaceContainerHigh: Color(0xFF1F2A44),
-    surfaceContainerHighest: Color(0xFF26334F),
+    surfaceContainer: Color(0xFF171B2C),
+    surfaceContainerHigh: Color(0xFF20263B),
+    surfaceContainerHighest: Color(0xFF2A3149),
     outline: Color(0xFF334155),
     outlineVariant: Color(0xFF243049),
     success: Color(0xFF5CDBA0),

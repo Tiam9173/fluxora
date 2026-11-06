@@ -100,13 +100,7 @@ enum ViewMode { mobile, laptop, desktop }
 /// which makes the enum's reverse lookup ambiguous and offers the user two
 /// identical choices. The wire value stays `silent` because that is the name the
 /// core understands.
-enum LogLevel {
-  debug,
-  info,
-  warning,
-  error,
-  silent,
-}
+enum LogLevel { debug, info, warning, error, silent }
 
 extension LogLevelExt on LogLevel {
   /// The colour this level paints its payload with.
@@ -150,7 +144,12 @@ enum AccessSortType { none, installTime, updateTime }
 
 enum ProfileType { file, url }
 
-enum ConnectionsSortType { defaultSort, realTimeSpeed, totalTraffic, creationTime }
+enum ConnectionsSortType {
+  defaultSort,
+  realTimeSpeed,
+  totalTraffic,
+  creationTime,
+}
 
 enum ResultType {
   @JsonValue(0)
@@ -392,6 +391,50 @@ enum DashboardWidget {
 
   const DashboardWidget(this.widget, {this.platforms = SupportPlatform.values});
 
+  String get title => switch (this) {
+    networkSpeed || networkSpeedSmall => appLocalizations.networkSpeed,
+    outboundMode || outboundModeV2 => appLocalizations.outboundMode,
+    trafficUsage => appLocalizations.trafficUsage,
+    networkDetection => appLocalizations.networkDetection,
+    tunButton => 'TUN',
+    vpnButton => 'VPN',
+    systemProxyButton => appLocalizations.systemProxy,
+    intranetIp => appLocalizations.intranetIP,
+    memoryInfo => appLocalizations.memoryInfo,
+    connectionsCount => appLocalizations.connections,
+    ipv6Switch => 'IPv6',
+    wakelockSwitch => appLocalizations.wakelock,
+    dnsOverride => 'DNS',
+    snifferOverride => appLocalizations.sniffer,
+    ntpOverride => 'NTP',
+    providersInfo => appLocalizations.providers,
+    fcmStatus => appLocalizations.fcmOptimization,
+    onlinePanel => appLocalizations.onlinePanel,
+    mediaUnlock || mediaUnlockSmall => appLocalizations.mediaUnlock,
+    startButton => appLocalizations.powerSwitch,
+  };
+
+  IconData get icon => switch (this) {
+    networkSpeed || networkSpeedSmall => Icons.speed_outlined,
+    outboundMode || outboundModeV2 => Icons.call_split_rounded,
+    trafficUsage => Icons.data_usage_rounded,
+    networkDetection => Icons.travel_explore_rounded,
+    tunButton || vpnButton => Icons.vpn_key_outlined,
+    systemProxyButton => Icons.swap_calls_rounded,
+    intranetIp || ipv6Switch => Icons.lan_outlined,
+    memoryInfo => Icons.memory_rounded,
+    connectionsCount => Icons.swap_vert_rounded,
+    wakelockSwitch => Icons.wb_sunny_outlined,
+    dnsOverride => Icons.dns_outlined,
+    snifferOverride => Icons.radar_rounded,
+    ntpOverride => Icons.schedule_rounded,
+    providersInfo => Icons.cloud_download_outlined,
+    fcmStatus => Icons.notifications_outlined,
+    onlinePanel => Icons.open_in_browser_rounded,
+    mediaUnlock || mediaUnlockSmall => Icons.play_circle_outline,
+    startButton => Icons.power_settings_new_rounded,
+  };
+
   /// Maps a grid item back to its enum value, or `null` when it is unknown.
   ///
   /// Matched by **child identity** first. The dashboard re-wraps the Hero into
@@ -449,7 +492,6 @@ extension PageLabelExtension on PageLabel {
     }
   }
 }
-
 
 enum RuleAction {
   DOMAIN('DOMAIN'),

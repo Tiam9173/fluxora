@@ -812,7 +812,7 @@ class DynamicPalette extends _$DynamicPalette {
 /// Builds the app's [ColorScheme] for [brightness].
 ///
 /// Seed priority follows `ThemeProps.colorSource` (D4.2 §5.2): `fluxora` and
-/// `custom` resolve `primaryColor` → Flux `#29D6C7`, while `system` resolves
+/// `custom` resolve `primaryColor` → Fluxora brand indigo, while `system` resolves
 /// `corePalette` → `accentColor` → Flux. Only `system` consults Android Material
 /// You, so the brand identity survives on Android. [ignoreConfig] forces the
 /// `system` path and an explicit [color] wins over every mode.
@@ -840,26 +840,26 @@ ColorScheme genColorScheme(
   final variant = vm3.b;
   final source = ignoreConfig == true ? ColorSource.system : vm3.c;
 
-  // `ThemeProps.primaryColor` → Flux preset, falling back to Flux Cyan if null or legacy Bettbox teal.
+  // `ThemeProps.primaryColor` → Flux preset, falling back to brand indigo for null or legacy teal.
   final isLegacyColor =
       vm3.a != null &&
       (vm3.a == legacyDefaultPrimaryColor ||
           vm3.a!.toUnsigned(32) == legacyDefaultPrimaryColor);
   final configured = (vm3.a == null || isLegacyColor)
-      ? FluxoraColors.fluxCyan
+      ? FluxoraColors.brandSeed
       : Color(vm3.a!);
 
   final seed = switch (source) {
-    // Brand-first: Android's Material You palette is deliberately bypassed. Always Flux Cyan.
-    ColorSource.fluxora => FluxoraColors.fluxCyan,
+    // Brand accent is independent of wallpaper; custom/system choices stay intact.
+    ColorSource.fluxora => FluxoraColors.brandSeed,
     // Material You / system dynamic colour stays fully functional here. Read
     // through the provider, not `globalState`, so a wallpaper change is picked
     // up without a restart.
     ColorSource.system =>
       (brightness == Brightness.dark
-              ? dynamicPalette.dark
-              : dynamicPalette.light)
-          ?.primary ??
+                  ? dynamicPalette.dark
+                  : dynamicPalette.light)
+              ?.primary ??
           globalState.accentColor,
     // User-picked colour from the palette picker.
     ColorSource.custom => configured,

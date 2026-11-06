@@ -9,6 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
+import 'ip_reputation_result.dart';
+
 class NetworkDetection extends ConsumerStatefulWidget {
   const NetworkDetection({super.key});
 
@@ -87,159 +89,9 @@ class _NetworkDetectionState extends ConsumerState<NetworkDetection> {
   }
 
   void _showMoreIpInfoDialog() {
-    final rawIpInfo = detectionState.rawIpInfo;
-    if (rawIpInfo == null) return;
-
-    final flagEmoji = rawIpInfo.countryCode.isNotEmpty
-        ? _countryCodeToEmoji(rawIpInfo.countryCode)
-        : '';
-
-    final countryName =
-        (rawIpInfo.country != null && rawIpInfo.country!.isNotEmpty)
-        ? rawIpInfo.country!
-        : (rawIpInfo.countryCode.isNotEmpty ? rawIpInfo.countryCode : '');
-
-    final countryContinent = [
-      if (countryName.isNotEmpty) countryName,
-      if (rawIpInfo.continent != null && rawIpInfo.continent!.isNotEmpty)
-        rawIpInfo.continent,
-    ].join(' · ');
-
-    final provinceCity = [
-      if (rawIpInfo.province != null && rawIpInfo.province!.isNotEmpty)
-        rawIpInfo.province,
-      if (rawIpInfo.city != null &&
-          rawIpInfo.city!.isNotEmpty &&
-          rawIpInfo.city != rawIpInfo.province)
-        rawIpInfo.city,
-    ].join(' · ');
-
-    final ispText = (rawIpInfo.isp != null && rawIpInfo.isp!.isNotEmpty)
-        ? rawIpInfo.isp!
-        : '';
-
-    final operatorText = [
-      if (rawIpInfo.asName != null &&
-          rawIpInfo.asName!.isNotEmpty &&
-          rawIpInfo.asName != rawIpInfo.isp &&
-          rawIpInfo.asName != rawIpInfo.asDomain)
-        rawIpInfo.asName,
-      if (rawIpInfo.asn != null && rawIpInfo.asn!.isNotEmpty)
-        rawIpInfo.asn,
-    ].join(' · ');
-
-    globalState.showCommonDialog(
-      child: CommonDialog(
-        title: appLocalizations.moreIpInfo,
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context, rootNavigator: true).pop();
-            },
-            child: Text(appLocalizations.confirm),
-          ),
-        ],
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 1. IP 地址（附带查看详细 IP 数据外链与 Tooltip 提示）
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.location_on_outlined),
-                title: Text(appLocalizations.ipAddress),
-                subtitle: SelectableText(
-                  rawIpInfo.ip,
-                  style: context.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                trailing: IconButton(
-                  icon: const Icon(Icons.open_in_new, size: 18),
-                  tooltip: appLocalizations.viewDetailedIpData,
-                  onPressed: () {
-                    Navigator.of(context, rootNavigator: true).pop();
-                    globalState.openUrl('https://www.ip2location.com/demo');
-                  },
-                ),
-              ),
-              // 2. 国家与大洲合并（Emoji 统一使用 twEmoji，精准间距）
-              if (countryContinent.isNotEmpty || flagEmoji.isNotEmpty)
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.flag_outlined),
-                  title: Text(appLocalizations.countryOrRegion),
-                  subtitle: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (flagEmoji.isNotEmpty) ...[
-                        Text(
-                          flagEmoji,
-                          style: TextStyle(
-                            fontFamily: FontFamily.twEmoji.value,
-                            fontFamilyFallback: [
-                              FontFamily.twEmoji.value,
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                      ],
-                      Flexible(
-                        child: Text(
-                          countryContinent,
-                          style: context.textTheme.bodyMedium,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              // 3. 省份 / 城市 (独立行，非空才展示)
-              if (provinceCity.isNotEmpty)
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.location_city_outlined),
-                  title: Text(appLocalizations.provinceAndCity),
-                  subtitle: Text(provinceCity),
-                ),
-              // 4. 归属 / ASN (非空才展示)
-              if (operatorText.isNotEmpty)
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.business_outlined),
-                  title: Text(appLocalizations.operatorOrAsn),
-                  subtitle: Text(operatorText),
-                ),
-              // 5. 运营商 (非空才展示)
-              if (ispText.isNotEmpty)
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.router_outlined),
-                  title: Text(appLocalizations.isp),
-                  subtitle: Text(ispText),
-                ),
-              // 6. 组织 / 域名 (非空才展示)
-              if (rawIpInfo.asDomain != null && rawIpInfo.asDomain!.isNotEmpty)
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.link_outlined),
-                  title: Text(appLocalizations.domain),
-                  subtitle: Text(rawIpInfo.asDomain!),
-                ),
-              // 7. P4 — IP 风险情报。
-              //
-              // E-5: a **separate** section, never merged into the `IpInfo`
-              // fields above; default OFF, so nothing is sent anywhere until the
-              // user turns it on.
-              if (rawIpInfo.ip.isNotEmpty) ...[
-                const Divider(height: 24),
-                _IpRiskSection(ip: rawIpInfo.ip),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
+    final info = detectionState.rawIpInfo;
+    if (info == null) return;
+    globalState.showCommonDialog(child: NetworkIpInfoDialog(info: info));
   }
 
   @override
@@ -326,6 +178,7 @@ class _NetworkDetectionState extends ConsumerState<NetworkDetection> {
                     child: FadeThroughBox(
                       child: ipInfo != null
                           ? TooltipText(
+                              key: ValueKey(ipInfo.ip),
                               text: Text(
                                 ipInfo.ip,
                                 style: context.textTheme.bodyMedium?.toLight
@@ -337,6 +190,7 @@ class _NetworkDetectionState extends ConsumerState<NetworkDetection> {
                           : FadeThroughBox(
                               child: isLoading == false && ipInfo == null
                                   ? Text(
+                                      key: ValueKey(state.errorMessage),
                                       state.errorMessage ?? 'timeout',
                                       style: context.textTheme.bodyMedium
                                           ?.copyWith(
@@ -352,10 +206,23 @@ class _NetworkDetectionState extends ConsumerState<NetworkDetection> {
                                         child: OverflowBox(
                                           maxWidth: 30,
                                           maxHeight: 16,
-                                          child: SpinKitThreeBounce(
-                                            color: context.colorScheme.primary,
-                                            size: 16,
-                                          ),
+                                          child:
+                                              FluxoraMotion.ofContext(
+                                                context,
+                                              ).reduceMotion
+                                              ? Icon(
+                                                  Icons.hourglass_top_rounded,
+                                                  size: 16,
+                                                  color: context
+                                                      .colorScheme
+                                                      .primary,
+                                                )
+                                              : SpinKitThreeBounce(
+                                                  color: context
+                                                      .colorScheme
+                                                      .primary,
+                                                  size: 16,
+                                                ),
                                         ),
                                       ),
                                     ),
@@ -367,6 +234,149 @@ class _NetworkDetectionState extends ConsumerState<NetworkDetection> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class NetworkIpInfoDialog extends StatelessWidget {
+  const NetworkIpInfoDialog({super.key, required this.info});
+  final IpInfo info;
+
+  @override
+  Widget build(BuildContext context) {
+    final country = (info.country?.isNotEmpty ?? false)
+        ? info.country!
+        : info.countryCode;
+    final facts = <(String, String)>[
+      if (country.isNotEmpty || (info.continent?.isNotEmpty ?? false))
+        (
+          appLocalizations.countryOrRegion,
+          [
+            country,
+            info.continent,
+          ].whereType<String>().where((s) => s.isNotEmpty).join(' · '),
+        ),
+      if ((info.province?.isNotEmpty ?? false) ||
+          (info.city?.isNotEmpty ?? false))
+        (
+          appLocalizations.provinceAndCity,
+          [
+            info.province,
+            if (info.city != info.province) info.city,
+          ].whereType<String>().where((s) => s.isNotEmpty).join(' · '),
+        ),
+      if (info.isp?.isNotEmpty ?? false) (appLocalizations.isp, info.isp!),
+      if ((info.asn?.isNotEmpty ?? false) ||
+          ((info.asName?.isNotEmpty ?? false) &&
+              info.asName != info.isp &&
+              info.asName != info.asDomain))
+        (
+          appLocalizations.operatorOrAsn,
+          [
+            if (info.asName != info.isp && info.asName != info.asDomain)
+              info.asName,
+            info.asn,
+          ].whereType<String>().where((s) => s.isNotEmpty).join(' · '),
+        ),
+      if (info.asDomain?.isNotEmpty ?? false)
+        (appLocalizations.domain, info.asDomain!),
+    ];
+    return CommonDialog(
+      title: appLocalizations.moreIpInfo,
+      maxWidth: 600,
+      padding: const EdgeInsets.symmetric(
+        horizontal: FluxoraSpacing.xl,
+        vertical: FluxoraSpacing.lg,
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(appLocalizations.confirm),
+        ),
+      ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: FluxoraSpacing.md,
+        children: [
+          FluxoraCard(
+            filled: true,
+            padding: const EdgeInsets.all(FluxoraSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        appLocalizations.ipAddress,
+                        style: context.textTheme.labelMedium?.copyWith(
+                          color: context.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: appLocalizations.viewDetailedIpData,
+                      icon: const Icon(Icons.open_in_new_rounded, size: 20),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        globalState.openUrl('https://www.ip2location.com/demo');
+                      },
+                    ),
+                  ],
+                ),
+                SelectableText(
+                  info.ip,
+                  style: context.textTheme.bodyLarge?.toJetBrainsMono,
+                ),
+              ],
+            ),
+          ),
+          if (facts.isNotEmpty)
+            FluxoraCard(
+              filled: true,
+              padding: const EdgeInsets.all(FluxoraSpacing.lg),
+              child: LayoutBuilder(
+                builder: (_, constraints) {
+                  final columns =
+                      constraints.maxWidth >= 420 &&
+                          MediaQuery.textScalerOf(context).scale(14) <= 18
+                      ? 2
+                      : 1;
+                  return Wrap(
+                    spacing: FluxoraSpacing.lg,
+                    runSpacing: FluxoraSpacing.lg,
+                    children: [
+                      for (final (label, value) in facts)
+                        SizedBox(
+                          width:
+                              (constraints.maxWidth -
+                                  FluxoraSpacing.lg * (columns - 1)) /
+                              columns,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                label,
+                                style: context.textTheme.labelMedium?.copyWith(
+                                  color: context.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                              const SizedBox(height: FluxoraSpacing.xs),
+                              SelectableText(
+                                value,
+                                style: context.textTheme.bodyMedium,
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          if (info.ip.isNotEmpty) _IpRiskSection(ip: info.ip),
+        ],
       ),
     );
   }
@@ -396,7 +406,9 @@ class _NetworkDetectionUrlDialog extends ConsumerWidget {
                 onTap: () async {
                   ref
                       .read(appSettingProvider.notifier)
-                      .updateState((state) => state.copyWith(networkDetectionUrl: url));
+                      .updateState(
+                        (state) => state.copyWith(networkDetectionUrl: url),
+                      );
                   if (context.mounted) {
                     Navigator.of(context, rootNavigator: true).pop();
                   }
@@ -512,205 +524,11 @@ class _NetworkDetectionUrlDialog extends ConsumerWidget {
   }
 }
 
-/// P4 — the "IP risk intel" section.
-///
-/// Contract (E-4 / E-5):
-/// * **Separate** from the `IpInfo` rows above — it never reads or writes
-///   `IpInfo`, and `networkDetectionUrl` is untouched.
-/// * **Default OFF.** Nothing leaves the device until the user flips the switch;
-///   every lookup is gated on that switch. Opening this dialog is a user action,
-///   and a node switch never reaches this widget.
-/// * Shows the source, the source's own query time and a stale warning, so a
-///   cached report is never presented as real-time.
-/// * A failed lookup renders as a failure with its reason — **never** as a clean
-///   result.
-/// * **No composite score**: only the independent markers (E-4).
-/// item 6 — the source's composite score, always rendered as a unit with the
-/// reasons behind it.
-///
-/// User decision B relaxed E-4's "no composite score" rule, but only on this
-/// condition: a bare number is the black box that rule rejected. So [IpRiskScore
-/// .factors] travels with the number, and the whole card is labelled as the
-/// source's judgement rather than ours.
-class _IpRiskScoreCard extends StatelessWidget {
-  const _IpRiskScoreCard({
-    required this.risk,
-    this.scenarios = const [],
-    this.showScenarios = true,
-  });
-
-  final IpRiskScore risk;
-  final List<IpScenarioScore> scenarios;
-  final bool showScenarios;
-
-  /// Localised label for a scenario id. Unknown ids are dropped upstream, so
-  /// the fallback is unreachable in practice — it exists so a new source-side id
-  /// fails visibly rather than silently rendering an id string.
-  static String _scenarioLabel(String id) {
-    return switch (id) {
-      'ai' => appLocalizations.scenarioAi,
-      'social' => appLocalizations.scenarioSocial,
-      'streaming' => appLocalizations.scenarioStreaming,
-      'gaming' => appLocalizations.scenarioGaming,
-      'ecommerce' => appLocalizations.scenarioEcommerce,
-      'email' => appLocalizations.scenarioEmail,
-      _ => id,
-    };
-  }
-
-  Color? _scoreColor(BuildContext context, int purity) {
-    final scheme = Theme.of(context).colorScheme;
-    if (purity < 40) return scheme.error;
-    if (purity < 75) {
-      // The other two rungs already come from the theme; the middle one was the
-      // last hardcoded branch, so the ladder read as three unrelated reds.
-      return FluxoraColorSet.of(Theme.of(context).brightness).warning;
-    }
-    return scheme.primary;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 2),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 96,
-            child: Text(
-              appLocalizations.ipRiskScore,
-              style: textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      '${risk.purity}',
-                      style: textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: _scoreColor(context, risk.purity ?? 0),
-                      ),
-                    ),
-                    if (risk.label != null)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 6),
-                        child: Text(risk.label!, style: textTheme.bodyMedium),
-                      ),
-                  ],
-                ),
-                if (risk.verdict != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: Text(
-                      '${appLocalizations.ipRiskVerdict}: ${risk.verdict}',
-                      style: textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                if (showScenarios && scenarios.isNotEmpty) ...[
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Text(
-                      appLocalizations.ipRiskScenarios,
-                      style: textTheme.bodySmall,
-                    ),
-                  ),
-                  for (final scenario in scenarios)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              _scenarioLabel(scenario.id),
-                              style: textTheme.bodySmall,
-                            ),
-                          ),
-                          Text(
-                            '${scenario.score}',
-                            style: textTheme.bodySmall?.copyWith(
-                              color: _scoreColor(
-                                context,
-                                scenario.score ?? 0,
-                              ),
-                            ),
-                          ),
-                          if (scenario.levelLabel != null)
-                            Padding(
-                              padding: const EdgeInsets.only(left: 6),
-                              child: Text(
-                                scenario.levelLabel!,
-                                style: textTheme.bodySmall?.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                ],
-                if (risk.factors.isNotEmpty) ...[
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Text(
-                      appLocalizations.ipRiskFactors,
-                      style: textTheme.bodySmall,
-                    ),
-                  ),
-                  for (final factor in risk.factors)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(
-                            width: 44,
-                            child: Text(
-                              factor.points < 0
-                                  ? '+${-factor.points}'
-                                  : '-${factor.points}',
-                              style: textTheme.bodySmall?.copyWith(
-                                color: factor.points < 0
-                                    ? colorScheme.primary
-                                    : colorScheme.error,
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              factor.label,
-                              style: textTheme.bodySmall,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 /// item 6 — pick which IP-reputation rows the detail view shows.
 ///
 /// A flat checkbox list rather than the shared `OptionsDialog`, which is
 /// single-select and would need a different return contract. Saving an empty
-/// selection is allowed: it means "show nothing".
+/// selection preserves the existing default of showing all fields.
 class _IpRiskFieldsDialog extends StatefulWidget {
   const _IpRiskFieldsDialog({required this.selected});
 
@@ -819,8 +637,7 @@ class _IpRiskSectionState extends ConsumerState<_IpRiskSection> {
     }
   }
 
-  /// item 6 — open the field picker. An empty result is a valid answer ("show
-  /// nothing"), so it is saved as-is rather than treated as a cancel.
+  /// Cancel keeps the saved selection; an empty set retains the existing default.
   Future<void> _pickFields() async {
     final current = resolveIpReputationFields(
       ref.read(appSettingProvider).ipReputationFields,
@@ -829,67 +646,13 @@ class _IpRiskSectionState extends ConsumerState<_IpRiskSection> {
       child: _IpRiskFieldsDialog(selected: current),
     );
     if (next == null) return;
-    ref.read(appSettingProvider.notifier).updateState(
-      (state) => state.copyWith(ipReputationFields: next),
-    );
-  }
-
-  String _markerLabel(IpRiskMarker marker) => switch (marker.id) {
-    'vpn' => appLocalizations.ipRiskVpn,
-    'proxy' => appLocalizations.ipRiskProxy,
-    'tor' => appLocalizations.ipRiskTor,
-    'hosting' => appLocalizations.ipRiskHosting,
-    'relay' => appLocalizations.ipRiskRelay,
-    'mobile' => appLocalizations.ipRiskMobile,
-    'bogon' => appLocalizations.ipRiskBogon,
-    'searchEngineBot' => appLocalizations.ipRiskSearchEngineBot,
-    _ => marker.id,
-  };
-
-  String _stateLabel(IpRiskMarkerState state) => switch (state) {
-    IpRiskMarkerState.flagged => appLocalizations.flagged,
-    IpRiskMarkerState.clear => appLocalizations.ipRiskNotFlagged,
-    IpRiskMarkerState.unknown => appLocalizations.unknown,
-  };
-
-  String _formatQueriedAt(DateTime t) {
-    final l = t.toLocal();
-    String two(int v) => v.toString().padLeft(2, '0');
-    return '${l.year}-${two(l.month)}-${two(l.day)} '
-        '${two(l.hour)}:${two(l.minute)}';
-  }
-
-  Widget _markerChip(IpRiskMarker marker) {
-    final scheme = Theme.of(context).colorScheme;
-    final (IconData icon, Color color) = switch (marker.state) {
-      IpRiskMarkerState.flagged => (Icons.error_outline, scheme.error),
-      IpRiskMarkerState.clear => (Icons.check_circle_outline, scheme.outline),
-      IpRiskMarkerState.unknown => (Icons.help_outline, scheme.outlineVariant),
-    };
-    return SizedBox(
-      width: 150,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 4),
-          Flexible(
-            child: Text(
-              '${_markerLabel(marker)} · ${_stateLabel(marker.state)}',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: context.textTheme.bodySmall?.copyWith(color: color),
-            ),
-          ),
-        ],
-      ),
-    );
+    ref
+        .read(appSettingProvider.notifier)
+        .updateState((state) => state.copyWith(ipReputationFields: next));
   }
 
   @override
   Widget build(BuildContext context) {
-    // item 6 - which rows the user wants. Empty means "not customised",
-    // which resolves to every field.
     final fields = resolveIpReputationFields(
       ref.watch(appSettingProvider.select((s) => s.ipReputationFields)),
     );
@@ -897,156 +660,80 @@ class _IpRiskSectionState extends ConsumerState<_IpRiskSection> {
       appSettingProvider.select((s) => s.ipReputationEnabled),
     );
     final report = _report;
-
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: FluxoraSpacing.md,
       children: [
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: const Icon(Icons.shield_outlined),
-          title: Text(appLocalizations.ipRiskIntel),
-          subtitle: Text(appLocalizations.ipRiskPrivacyNote),
-        ),
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          dense: true,
-          title: Text(appLocalizations.ipRiskEnable),
-          value: enabled,
-          onChanged: _setLoadingGuard(_setEnabled),
-          // Only meaningful once the section is on — there is nothing to
-          // customise while no lookup happens.
-          secondary: enabled
-              ? IconButton(
-                  onPressed: _pickFields,
-                  tooltip: appLocalizations.ipRiskFieldsTitle,
-                  icon: const Icon(Icons.tune),
-                )
-              : null,
-        ),
-        if (enabled) ...[
-          if (_loading)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Center(
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              ),
-            )
-          else if (report == null)
-            const SizedBox.shrink()
-          else if (!report.isOk)
-            // E-5: a failure is shown as a failure — it is never a clean result.
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(
-                Icons.cloud_off_outlined,
-                color: Theme.of(context).colorScheme.error,
-              ),
-              title: Text(appLocalizations.ipRiskFailed),
-              subtitle: Text(report.failureReason ?? ''),
-            )
-          else ...[
-            if (report.risk case final risk? when risk.hasScore)
-              if (fields.contains(IpReputationFieldIds.score) ||
-                  fields.contains(IpReputationFieldIds.scenarios))
-                _IpRiskScoreCard(
-                  risk: risk,
-                  scenarios: report.scenarios,
-                  showScenarios: fields.contains(
-                    IpReputationFieldIds.scenarios,
-                  ),
-                ),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 4,
+        FluxoraCard(
+          filled: true,
+          padding: const EdgeInsets.all(FluxoraSpacing.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  if (fields.contains(IpReputationFieldIds.markers))
-                    for (final marker in report.markers) _markerChip(marker),
-                ],
-              ),
-            ),
-            _kv(appLocalizations.source, report.source ?? ''),
-            if (report.queriedAt != null)
-              _kv(appLocalizations.time, _formatQueriedAt(report.queriedAt!)),
-            if (report.stale)
-              // E-5: a stale report must not masquerade as real-time.
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.schedule_outlined,
-                      size: 14,
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                    const SizedBox(width: 4),
-                    Flexible(
+                  Icon(
+                    Icons.shield_outlined,
+                    color: context.colorScheme.primary,
+                    size: 22,
+                  ),
+                  const SizedBox(width: FluxoraSpacing.sm),
+                  Expanded(
+                    child: Semantics(
+                      header: true,
                       child: Text(
-                        appLocalizations.ipRiskStale,
-                        style: context.textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.error,
-                        ),
+                        appLocalizations.ipRiskIntel,
+                        style: context.textTheme.titleSmall,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                  if (enabled)
+                    IconButton(
+                      onPressed: _pickFields,
+                      tooltip: appLocalizations.ipRiskFieldsTitle,
+                      icon: const Icon(Icons.tune_rounded, size: 20),
+                    ),
+                  Semantics(
+                    label: appLocalizations.ipRiskEnable,
+                    child: Switch.adaptive(
+                      value: enabled,
+                      onChanged: _loading
+                          ? null
+                          : _setLoadingGuard(_setEnabled),
+                    ),
+                  ),
+                ],
               ),
-            if (fields.contains(IpReputationFieldIds.asn) &&
-                (report.asn != null || report.asnOrg != null))
-              _kv(
-                'ASN',
-                [report.asn, report.asnOrg].whereType<String>().join(' · '),
-              ),
-            if (fields.contains(IpReputationFieldIds.usageType) && report.usageType != null)
-              _kv(appLocalizations.ipRiskHosting, report.usageType!),
-            if (fields.contains(IpReputationFieldIds.nativeType) && report.nativeType != null)
-              _kv(appLocalizations.ipRiskNativeType, report.nativeType!),
-            if (fields.contains(IpReputationFieldIds.blocklists) &&
-                report.blocklistsHit.isNotEmpty)
-              _kv(
-                appLocalizations.ipRiskBlocklists,
-                report.blocklistsHit.join(' · '),
-              ),
-            if (fields.contains(IpReputationFieldIds.unknownNotes) &&
-                report.unknownNotes.isNotEmpty)
-              _kv(
-                appLocalizations.ipRiskUnknownNotes,
-                report.unknownNotes.join('\n'),
-              ),
-            if (fields.contains(IpReputationFieldIds.abuse) && report.abuseScore != null)
-              _kv(
-                appLocalizations.ipRiskAbuse,
-                '${report.abuseScore}'
-                    '${report.abuseReports == null ? '' : ' (${report.abuseReports})'}',
-              ),
-            if (report.blocklistsHit.isNotEmpty)
-              _kv(appLocalizations.ipRiskBlocklists, report.blocklistsHit.join(', ')),
-            // The source's own limits, surfaced so a high score is never read as
-            // a safety guarantee (E-4).
-            if (report.unknownNotes.isNotEmpty) ...[
-              const SizedBox(height: 6),
+              const SizedBox(height: FluxoraSpacing.sm),
               Text(
-                appLocalizations.ipRiskLimits,
-                style: context.textTheme.labelMedium,
-              ),
-              for (final note in report.unknownNotes)
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Text('• $note', style: context.textTheme.bodySmall),
+                appLocalizations.ipRiskPrivacyNote,
+                style: context.textTheme.bodySmall?.copyWith(
+                  color: context.colorScheme.onSurfaceVariant,
                 ),
-            ],
-            if (report.reportUrl != null)
-              TextButton(
-                onPressed: () => globalState.openUrl(report.reportUrl!),
-                child: Text(appLocalizations.ipRiskOpenReport),
               ),
-          ],
-        ],
+            ],
+          ),
+        ),
+        if (enabled && _loading)
+          Padding(
+            padding: const EdgeInsets.all(FluxoraSpacing.lg),
+            child: Center(
+              child: FluxoraMotion.ofContext(context).reduceMotion
+                  ? const Icon(Icons.hourglass_top_rounded)
+                  : const SizedBox.square(
+                      dimension: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+            ),
+          )
+        else if (enabled && report != null)
+          IpReputationResult(
+            report: report,
+            fields: fields,
+            onOpenReport: report.reportUrl == null
+                ? null
+                : () => globalState.openUrl(report.reportUrl!),
+          ),
       ],
     );
   }
@@ -1057,29 +744,5 @@ class _IpRiskSectionState extends ConsumerState<_IpRiskSection> {
       if (_loading) return;
       inner(value);
     };
-  }
-
-  Widget _kv(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 2),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 96,
-            child: Text(
-              label,
-              style: context.textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(value, style: context.textTheme.bodySmall),
-          ),
-        ],
-      ),
-    );
   }
 }

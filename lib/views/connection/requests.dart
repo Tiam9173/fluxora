@@ -64,6 +64,9 @@ class _RequestsViewState extends ConsumerState<RequestsView> {
     final hasRequests = requests.isNotEmpty;
 
     return CommonScaffold(
+      backgroundColor: FluxoraMaterial.of(context).enabled
+          ? context.colorScheme.surface
+          : null,
       title: widget.titleWidgetOverride == null
           ? appLocalizations.requests
           : null,

@@ -15,13 +15,13 @@ class Navigation {
     return [
       NavigationItem(
         keep: false,
-        icon: Icon(Icons.space_dashboard),
+        icon: Icon(Icons.dashboard_outlined),
         label: PageLabel.dashboard,
         builder: (_) =>
             DashboardView(key: const GlobalObjectKey(PageLabel.dashboard)),
       ),
       NavigationItem(
-        icon: const Icon(Icons.article),
+        icon: const Icon(Icons.hub_outlined),
         label: PageLabel.proxies,
         builder: (_) => ProviderScope(
           overrides: [queryProvider.overrideWith(() => Query())],
@@ -32,7 +32,7 @@ class Navigation {
             : [],
       ),
       NavigationItem(
-        icon: Icon(Icons.folder),
+        icon: Icon(Icons.folder_open_outlined),
         label: PageLabel.profiles,
         builder: (_) =>
             ProfilesView(key: const GlobalObjectKey(PageLabel.profiles)),
@@ -40,7 +40,7 @@ class Navigation {
       // 请求和连接合成一个入口：内容是一件事的两面，分成两个导航项只是让人
       // 来回切。页面内的「请求 | 连接」切换器负责分栏。
       NavigationItem(
-        icon: Icon(Icons.ballot),
+        icon: Icon(Icons.swap_vert_rounded),
         label: PageLabel.connections,
         builder: (_) => RequestsConnectionsView(
           key: const GlobalObjectKey(PageLabel.connections),
@@ -49,7 +49,7 @@ class Navigation {
         modes: [NavigationItemMode.desktop, NavigationItemMode.more],
       ),
       NavigationItem(
-        icon: Icon(Icons.storage),
+        icon: Icon(Icons.storage_rounded),
         label: PageLabel.resources,
         description: 'resourcesDesc',
         builder: (_) =>
@@ -57,7 +57,7 @@ class Navigation {
         modes: [NavigationItemMode.more],
       ),
       NavigationItem(
-        icon: Icon(Icons.functions),
+        icon: Icon(Icons.code_rounded),
         label: PageLabel.script,
         description: 'scriptDesc',
         builder: (_) =>
@@ -65,14 +65,14 @@ class Navigation {
         modes: [NavigationItemMode.more],
       ),
       NavigationItem(
-        icon: const Icon(Icons.adb),
+        icon: const Icon(Icons.terminal_rounded),
         label: PageLabel.logs,
         builder: (_) => LogsView(key: const GlobalObjectKey(PageLabel.logs)),
         description: 'logsDesc',
         modes: [NavigationItemMode.desktop, NavigationItemMode.more],
       ),
       NavigationItem(
-        icon: Icon(Icons.construction),
+        icon: Icon(Icons.tune_rounded),
         label: PageLabel.tools,
         builder: (_) => ToolsView(key: const GlobalObjectKey(PageLabel.tools)),
         modes: [NavigationItemMode.desktop, NavigationItemMode.mobile],

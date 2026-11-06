@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'fluxora_material.dart';
 
 /// Fluxora motion tokens.
 ///
@@ -21,9 +22,9 @@ import 'package:flutter/widgets.dart';
 ///
 /// ── reduced-motion (§10.5, mandatory) ──────────────────────────────────────
 ///
-/// This file defines the *design space* for reduced motion but never reads it
-/// itself — the token layer takes no `BuildContext`. Instead, callers resolve a
-/// [FluxoraMotionSet] from a plain `bool`:
+/// Widget callers use [FluxoraMotion.ofContext] to combine OS accessibility
+/// with the existing low-effects material setting. Pure callers can resolve
+/// a [FluxoraMotionSet] from a plain `bool`:
 ///
 /// ```dart
 /// final reduce = MediaQuery.of(context).disableAnimations; // D4.9 wiring
@@ -38,8 +39,7 @@ import 'package:flutter/widgets.dart';
 /// * looping animations stop entirely ([FluxoraMotionSet.loopEnabled] is false),
 ///   so the connection indicator falls back to a static icon + text.
 ///
-/// This is a **definition layer**: it declares values only. Applying motion to
-/// widgets — including the 55 existing `AnimationController`s — is D4.9.
+/// Widgets reuse these tokens rather than defining a separate timing system.
 abstract final class FluxoraMotion {
   // ─────────────────────────────────────────────────────────────────────────
   // Durations (§10.1)
@@ -96,8 +96,10 @@ abstract final class FluxoraMotion {
   // ─────────────────────────────────────────────────────────────────────────
 
   /// Collapses a duration to zero under reduced motion.
-  static Duration resolveDuration(Duration duration, {required bool reduceMotion}) =>
-      reduceMotion ? Duration.zero : duration;
+  static Duration resolveDuration(
+    Duration duration, {
+    required bool reduceMotion,
+  }) => reduceMotion ? Duration.zero : duration;
 
   /// Swaps a curve for [linear] under reduced motion.
   static Curve resolveCurve(Curve curve, {required bool reduceMotion}) =>
@@ -106,6 +108,13 @@ abstract final class FluxoraMotion {
   /// Removes displacement under reduced motion.
   static Offset resolveOffset(Offset offset, {required bool reduceMotion}) =>
       reduceMotion ? Offset.zero : offset;
+
+  /// OS accessibility and the existing low-effects material share one policy.
+  static FluxoraMotionSet ofContext(BuildContext context) => of(
+    reduceMotion:
+        MediaQuery.disableAnimationsOf(context) ||
+        FluxoraMaterial.of(context).style == FluxoraSurfaceStyle.reduced,
+  );
 
   /// Resolved set for a given preference — the ergonomic entry point.
   static FluxoraMotionSet of({required bool reduceMotion}) =>

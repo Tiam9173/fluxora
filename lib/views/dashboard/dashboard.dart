@@ -3,7 +3,6 @@ import 'dart:math';
 
 import 'package:fluxora/state.dart';
 
-import 'package:defer_pointer/defer_pointer.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/providers/providers.dart';
@@ -160,32 +159,53 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                   onPressed: () {
                     _showAddWidgetsModal();
                   },
-                  icon: Icon(Icons.add_circle),
+                  key: const ValueKey('dashboard-add-components'),
+                  tooltip: appLocalizations.add,
+                  icon: const Icon(Icons.add_rounded),
                 ),
               )
             : SizedBox();
       }),
+      _buildIsEdit(
+        (isEdit) => isEdit
+            ? IconButton(
+                key: const ValueKey('dashboard-organize'),
+                tooltip: appLocalizations.sort,
+                icon: const Icon(Icons.reorder_rounded),
+                onPressed: _showOrganize,
+              )
+            : const SizedBox.shrink(),
+      ),
       Material(
         type: MaterialType.transparency,
         shape: const CircleBorder(),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
+          key: const ValueKey('dashboard-edit-toggle'),
           onTap: _handleUpdateIsEdit,
           onLongPress: () {
             if (!_isEditNotifier.value) {
               _showEditTitleDialog();
             }
           },
-          child: Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: _buildIsEdit((isEdit) {
-              return isEdit ? const Icon(Icons.save) : const Icon(Icons.edit);
-            }),
+          child: _buildIsEdit(
+            (isEdit) => Tooltip(
+              message: isEdit ? appLocalizations.save : appLocalizations.edit,
+              child: Semantics(
+                button: true,
+                label: isEdit ? appLocalizations.save : appLocalizations.edit,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Icon(
+                    isEdit ? Icons.check_rounded : Icons.edit_outlined,
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
       ),
-      if (showStartSwitch)
-        _DashboardStartSwitch(key: _startSwitchKey),
+      if (showStartSwitch) _DashboardStartSwitch(key: _startSwitchKey),
     ];
   }
 
@@ -212,6 +232,73 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
     );
   }
 
+  void _showOrganize() {
+    final grid = key.currentState;
+    if (grid == null) return;
+    showSheet(
+      context: context,
+      builder: (_, type) => AdaptiveSheetScaffold(
+        type: type,
+        title: appLocalizations.sort,
+        body: Consumer(
+          builder: (context, ref, _) {
+            ref.watch(
+              dashboardStateProvider.select((state) => state.dashboardWidgets),
+            );
+            final items = grid.children;
+            return ListView.builder(
+              shrinkWrap: true,
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                final entry = DashboardWidget.getDashboardWidget(items[index])!;
+                return ListTile(
+                  title: Text(
+                    entry.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        key: ValueKey('move-up-${entry.name}'),
+                        tooltip:
+                            '${entry.title} · ${WidgetsLocalizations.of(context).reorderItemUp}',
+                        onPressed: index == 0
+                            ? null
+                            : () => grid.moveItem(index, -1),
+                        icon: const Icon(Icons.arrow_upward_rounded),
+                      ),
+                      IconButton(
+                        key: ValueKey('move-down-${entry.name}'),
+                        tooltip:
+                            '${entry.title} · ${WidgetsLocalizations.of(context).reorderItemDown}',
+                        onPressed: index == items.length - 1
+                            ? null
+                            : () => grid.moveItem(index, 1),
+                        icon: const Icon(Icons.arrow_downward_rounded),
+                      ),
+                      IconButton(
+                        key: ValueKey('remove-${entry.name}'),
+                        tooltip: MaterialLocalizations.of(
+                          context,
+                        ).deleteButtonTooltip,
+                        onPressed: items[index].isDeletable
+                            ? () => grid.removeItem(index)
+                            : null,
+                        icon: const Icon(Icons.remove_circle_outline_rounded),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        ),
+      ),
+    );
+  }
+
   /// The app-bar title, tappable to edit. Rendered through [EmojiText] so a
   /// custom title keeps the same typography (and emoji support) as the default.
   Widget _buildCustomTitle(BuildContext context) {
@@ -225,9 +312,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
         title,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: colorValue == null
-            ? null
-            : TextStyle(color: Color(colorValue)),
+        style: colorValue == null ? null : TextStyle(color: Color(colorValue)),
       ),
     );
   }
@@ -303,7 +388,8 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
         )
         .toList();
     final children = [
-      for (final item in visibleItems) dashboardGridItemFor(item.widget, columns),
+      for (final item in visibleItems)
+        dashboardGridItemFor(item.widget, columns),
     ];
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _addedWidgetsNotifier.value = DashboardWidget.values
@@ -384,87 +470,30 @@ class _AddDashboardWidgetModal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DeferredPointerHandler(
-      child: SingleChildScrollView(
-        padding: EdgeInsets.all(FluxoraSpacing.lg),
-        child: Grid(
-          crossAxisCount: 8,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          children: items
-              .map(
-                (item) => item.wrap(
-                  builder: (child) {
-                    return _AddedContainer(
-                      onAdd: () {
-                        onAdd(item);
-                      },
-                      child: child,
-                    );
-                  },
-                ),
-              )
-              .toList(),
-        ),
-      ),
-    );
-  }
-}
-
-class _AddedContainer extends StatefulWidget {
-  final Widget child;
-  final VoidCallback onAdd;
-
-  const _AddedContainer({required this.child, required this.onAdd});
-
-  @override
-  State<_AddedContainer> createState() => _AddedContainerState();
-}
-
-class _AddedContainerState extends State<_AddedContainer> {
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  void didUpdateWidget(_AddedContainer oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.child != widget.child) {}
-  }
-
-  Future<void> _handleAdd() async {
-    widget.onAdd();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        ActivateBox(child: widget.child),
-        Positioned(
-          top: -8,
-          right: -8,
-          child: DeferPointer(
-            child: SizedBox(
-              width: 24,
-              height: 24,
-              child: IconButton.filled(
-                iconSize: 20,
-                padding: EdgeInsets.all(2),
-                onPressed: _handleAdd,
-                icon: Icon(Icons.add),
-              ),
+    final chinese = Localizations.localeOf(context).languageCode == 'zh';
+    return ListView.separated(
+      shrinkWrap: true,
+      padding: const EdgeInsets.all(FluxoraSpacing.lg),
+      itemCount: items.length,
+      separatorBuilder: (_, _) => const SizedBox(height: FluxoraSpacing.sm),
+      itemBuilder: (context, index) {
+        final item = items[index];
+        final type = DashboardWidget.getDashboardWidget(item)!;
+        return CommonCard(
+          key: ValueKey('catalog-${type.name}'),
+          onPressed: () => onAdd(item),
+          child: ListTile(
+            leading: ExcludeSemantics(child: Icon(type.icon)),
+            title: Text(type.title),
+            subtitle: Text(
+              item.crossAxisCellCount > 4
+                  ? (chinese ? '宽幅' : 'Wide')
+                  : (chinese ? '紧凑' : 'Compact'),
             ),
+            trailing: const ExcludeSemantics(child: Icon(Icons.add_rounded)),
           ),
-        ),
-      ],
+        );
+      },
     );
   }
 }
@@ -480,10 +509,7 @@ class _DashboardTitleDialog extends StatefulWidget {
   final String initialValue;
   final int? initialColor;
 
-  const _DashboardTitleDialog({
-    required this.initialValue,
-    this.initialColor,
-  });
+  const _DashboardTitleDialog({required this.initialValue, this.initialColor});
 
   @override
   State<_DashboardTitleDialog> createState() => _DashboardTitleDialogState();
@@ -587,8 +613,7 @@ class _DashboardTitleDialogState extends State<_DashboardTitleDialog> {
               spacing: 10,
               runSpacing: 10,
               children: [
-                for (final swatch in _palette)
-                  _buildSwatch(context, swatch),
+                for (final swatch in _palette) _buildSwatch(context, swatch),
               ],
             ),
           ],
@@ -600,7 +625,9 @@ class _DashboardTitleDialogState extends State<_DashboardTitleDialog> {
   Widget _buildSwatch(BuildContext context, int? value) {
     final colorScheme = Theme.of(context).colorScheme;
     final isSelected = value == _color;
-    final fill = value == null ? colorScheme.surfaceContainerHighest : Color(value);
+    final fill = value == null
+        ? colorScheme.surfaceContainerHighest
+        : Color(value);
     return InkWell(
       onTap: () => setState(() => _color = value),
       borderRadius: BorderRadius.circular(FluxoraRadius.full),
@@ -611,7 +638,9 @@ class _DashboardTitleDialogState extends State<_DashboardTitleDialog> {
           color: fill,
           shape: BoxShape.circle,
           border: Border.all(
-            color: isSelected ? colorScheme.primary : colorScheme.outlineVariant,
+            color: isSelected
+                ? colorScheme.primary
+                : colorScheme.outlineVariant,
             width: isSelected ? 2.5 : 1,
           ),
         ),
@@ -662,8 +691,7 @@ class _DashboardStartSwitchState extends ConsumerState<_DashboardStartSwitch> {
   }
 
   void _onFocusChange() {
-    globalState.isDashboardStartSwitchFocused =
-        _focusNode?.hasFocus ?? false;
+    globalState.isDashboardStartSwitchFocused = _focusNode?.hasFocus ?? false;
   }
 
   void requestFocus() {
@@ -703,7 +731,11 @@ class _DashboardStartSwitchState extends ConsumerState<_DashboardStartSwitch> {
     final displayStart = isSmartStopped ? false : (_optimisticStart ?? isStart);
 
     final canPress =
-        state.isInit && state.hasProfile && !_isDisabled && !isRestarting && !isSmartStopped;
+        state.isInit &&
+        state.hasProfile &&
+        !_isDisabled &&
+        !isRestarting &&
+        !isSmartStopped;
 
     final theme = Theme.of(context);
 

@@ -1,3 +1,5 @@
+import 'package:fluxora/common/theme.dart';
+import '../../support/render_capture.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -113,33 +115,35 @@ void main() {
       );
     });
 
-    test('second hop failed (two-hop) → the exit is failed, the entry is not',
-        () {
-      final report = reportWith(
-        mode: ChainHopMode.twoHop,
-        hops: [
-          hop(1, HopRole.hop1Entry, 'HK-01', HopProbeStatus.healthy),
-          hop(2, HopRole.hop2Exit, 'US-01', HopProbeStatus.failed),
-        ],
-        failureHop: 2,
-      );
-      expect(
-        resolveTopologySegmentState(
-          nodeName: 'US-01',
-          hopIndex: 2,
-          report: report,
-        ),
-        TopologySegmentState.failed,
-      );
-      expect(
-        resolveTopologySegmentState(
-          nodeName: 'HK-01',
-          hopIndex: 1,
-          report: report,
-        ),
-        TopologySegmentState.healthy,
-      );
-    });
+    test(
+      'second hop failed (two-hop) → the exit is failed, the entry is not',
+      () {
+        final report = reportWith(
+          mode: ChainHopMode.twoHop,
+          hops: [
+            hop(1, HopRole.hop1Entry, 'HK-01', HopProbeStatus.healthy),
+            hop(2, HopRole.hop2Exit, 'US-01', HopProbeStatus.failed),
+          ],
+          failureHop: 2,
+        );
+        expect(
+          resolveTopologySegmentState(
+            nodeName: 'US-01',
+            hopIndex: 2,
+            report: report,
+          ),
+          TopologySegmentState.failed,
+        );
+        expect(
+          resolveTopologySegmentState(
+            nodeName: 'HK-01',
+            hopIndex: 1,
+            report: report,
+          ),
+          TopologySegmentState.healthy,
+        );
+      },
+    );
 
     test('third hop failed (three-hop) → only the third hop is failed', () {
       final report = reportWith(
@@ -180,9 +184,7 @@ void main() {
     test('a node absent from a populated report → unknown, never healthy', () {
       final report = reportWith(
         mode: ChainHopMode.threeHop,
-        hops: [
-          hop(1, HopRole.hop1Entry, 'HK-01', HopProbeStatus.healthy),
-        ],
+        hops: [hop(1, HopRole.hop1Entry, 'HK-01', HopProbeStatus.healthy)],
         status: ChainHealthStatus.healthy,
       );
       expect(
@@ -226,9 +228,7 @@ void main() {
     test('an in-flight hop reports checking', () {
       final report = reportWith(
         mode: ChainHopMode.twoHop,
-        hops: [
-          hop(1, HopRole.hop1Entry, 'HK-01', HopProbeStatus.checking),
-        ],
+        hops: [hop(1, HopRole.hop1Entry, 'HK-01', HopProbeStatus.checking)],
         status: ChainHealthStatus.checking,
       );
       expect(
@@ -256,32 +256,34 @@ void main() {
       );
     });
 
-    test('a topology-level rejection still names the offending hop by index',
-        () {
-      // `probeChain` returns an EMPTY hop list for an invalid topology, with
-      // `failureHop` pointing at the offending slot.
-      final report = reportWith(
-        mode: ChainHopMode.threeHop,
-        hops: const [],
-        failureHop: 3,
-      );
-      expect(
-        resolveTopologySegmentState(
-          nodeName: 'US-01',
-          hopIndex: 3,
-          report: report,
-        ),
-        TopologySegmentState.failed,
-      );
-      expect(
-        resolveTopologySegmentState(
-          nodeName: 'HK-01',
-          hopIndex: 1,
-          report: report,
-        ),
-        TopologySegmentState.unknown,
-      );
-    });
+    test(
+      'a topology-level rejection still names the offending hop by index',
+      () {
+        // `probeChain` returns an EMPTY hop list for an invalid topology, with
+        // `failureHop` pointing at the offending slot.
+        final report = reportWith(
+          mode: ChainHopMode.threeHop,
+          hops: const [],
+          failureHop: 3,
+        );
+        expect(
+          resolveTopologySegmentState(
+            nodeName: 'US-01',
+            hopIndex: 3,
+            report: report,
+          ),
+          TopologySegmentState.failed,
+        );
+        expect(
+          resolveTopologySegmentState(
+            nodeName: 'HK-01',
+            hopIndex: 1,
+            report: report,
+          ),
+          TopologySegmentState.unknown,
+        );
+      },
+    );
 
     test('degraded transport counts as healthy for that hop', () {
       final report = reportWith(
@@ -372,6 +374,9 @@ void main() {
       // The view reads the global `appLocalizations`, whose `_current` is only
       // set by `AppLocalizations.load` — without it the first build asserts.
       await AppLocalizations.load(const Locale('zh', 'CN'));
+      await (FontLoader(
+        'MaterialIcons',
+      )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
 
       tempDir = await Directory.systemTemp.createTemp('fluxora_p3_topology_');
       final sep = Platform.pathSeparator;
@@ -436,8 +441,9 @@ void main() {
     Future<void> pumpTopology(
       WidgetTester tester,
       ChainProxyConfig config,
-      ChainProbeReport? report,
-    ) async {
+      ChainProbeReport? report, {
+      Brightness brightness = Brightness.light,
+    }) async {
       tester.view.physicalSize = const Size(1200, 2600);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -452,7 +458,23 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: const MaterialApp(home: ChainProxyView()),
+          child: RepaintBoundary(
+            key: const ValueKey('chain-capture'),
+            child: MaterialApp(
+              theme: fluxoraMaterialTheme(
+                ThemeData(
+                  fontFamily: 'HarmonyOS_Sans',
+                  colorScheme: fluxoraSchemeFromSeed(
+                    brightness: brightness,
+                    seed: FluxoraColors.brandSeed,
+                    variant: DynamicSchemeVariant.tonalSpot,
+                  ),
+                ),
+                FluxoraSurfaceStyle.hybrid,
+              ),
+              home: const ChainProxyView(),
+            ),
+          ),
         ),
       );
       await tester.pump();
@@ -467,13 +489,14 @@ void main() {
       ChainProxyConfig config,
       ChainProbeReport? report, {
       required bool disableAnimations,
+      Brightness brightness = Brightness.light,
     }) async {
       tester.binding.platformDispatcher.accessibilityFeaturesTestValue =
           FakeAccessibilityFeatures(disableAnimations: disableAnimations);
       addTearDown(
         tester.binding.platformDispatcher.clearAccessibilityFeaturesTestValue,
       );
-      await pumpTopology(tester, config, report);
+      await pumpTopology(tester, config, report, brightness: brightness);
     }
 
     testWidgets('no report → says so, and claims no failure', (tester) async {
@@ -484,8 +507,9 @@ void main() {
       expect(find.textContaining('逐跳探测通过'), findsNothing);
     });
 
-    testWidgets('second hop failed (two-hop) → the failure is surfaced',
-        (tester) async {
+    testWidgets('second hop failed (two-hop) → the failure is surfaced', (
+      tester,
+    ) async {
       await pumpTopology(
         tester,
         twoHopConfig(),
@@ -503,8 +527,9 @@ void main() {
       expect(find.textContaining('US-01'), findsWidgets);
     });
 
-    testWidgets('first hop failed (three-hop) → the first hop is named',
-        (tester) async {
+    testWidgets('first hop failed (three-hop) → the first hop is named', (
+      tester,
+    ) async {
       await pumpTopology(
         tester,
         threeHopConfig(),
@@ -523,8 +548,9 @@ void main() {
       expect(find.textContaining('HK-01'), findsWidgets);
     });
 
-    testWidgets('third hop failed (three-hop) → the third hop is named',
-        (tester) async {
+    testWidgets('third hop failed (three-hop) → the third hop is named', (
+      tester,
+    ) async {
       await pumpTopology(
         tester,
         threeHopConfig(),
@@ -543,8 +569,9 @@ void main() {
       expect(find.textContaining('US-01'), findsWidgets);
     });
 
-    testWidgets('all hops healthy → passes, with an end-to-end caveat',
-        (tester) async {
+    testWidgets('all hops healthy → passes, with an end-to-end caveat', (
+      tester,
+    ) async {
       await pumpTopology(
         tester,
         threeHopConfig(),
@@ -665,7 +692,48 @@ void main() {
         disableAnimations: false,
       );
       expect(tester.binding.hasScheduledFrame, isTrue);
+      if (const bool.fromEnvironment('MOTION_CAPTURE')) {
+        for (final brightness in Brightness.values) {
+          await pumpTopologyWithMotion(
+            tester,
+            twoHopConfig(),
+            checkingReport(),
+            disableAnimations: false,
+            brightness: brightness,
+          );
+          for (var i = 0; i < 12; i++) {
+            await tester.pump(const Duration(milliseconds: 60));
+            await captureFlutterFrame(
+              tester,
+              find.byKey(const ValueKey('chain-capture')),
+              'build/motion_full/captures/motion-chain-${brightness.name}/${i.toString().padLeft(3, '0')}.png',
+            );
+          }
+        }
+      }
     });
+
+    testWidgets(
+      'confirmed healthy chain stays still without implying live traffic',
+      (tester) async {
+        await pumpTopologyWithMotion(
+          tester,
+          twoHopConfig(),
+          reportWith(
+            mode: ChainHopMode.twoHop,
+            hops: [
+              hop(1, HopRole.hop1Entry, 'HK-01', HopProbeStatus.healthy),
+              hop(2, HopRole.hop2Exit, 'US-01', HopProbeStatus.healthy),
+            ],
+            status: ChainHealthStatus.healthy,
+          ),
+          disableAnimations: false,
+        );
+        await tester.pumpAndSettle();
+        expect(tester.binding.hasScheduledFrame, isFalse);
+        expect(find.textContaining('逐跳探测通过'), findsOneWidget);
+      },
+    );
 
     testWidgets('a checking chain stops pulsing under reduced motion', (
       tester,

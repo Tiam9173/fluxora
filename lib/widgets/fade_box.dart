@@ -11,6 +11,7 @@ class FadeBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PageTransitionSwitcher(
+      duration: FluxoraMotion.ofContext(context).base,
       transitionBuilder: (child, animation, secondaryAnimation) {
         return Container(
           alignment: alignment ?? Alignment.centerLeft,
@@ -39,10 +40,10 @@ class FadeThroughBox extends StatelessWidget {
     // `FadeThroughTransition` is a fade **plus a 0.92 → 1.0 scale**. §10.5 makes
     // reduced motion mandatory, and scale is exactly what it asks to suppress —
     // so the duration collapses to zero and the new child is simply there.
-    // Everyone else keeps the 300 ms the `animations` package defaults to.
-    final reduce = MediaQuery.of(context).disableAnimations;
+    // Normal motion uses the existing shared state-transition token.
+    final reduce = FluxoraMotion.ofContext(context).reduceMotion;
     return PageTransitionSwitcher(
-      duration: reduce ? Duration.zero : const Duration(milliseconds: 300),
+      duration: reduce ? Duration.zero : FluxoraMotion.base,
       transitionBuilder: (child, animation, secondaryAnimation) {
         return Container(
           margin: margin,
@@ -76,9 +77,7 @@ class FadeScaleBox extends StatelessWidget {
       },
       // Same rule as `FadeThroughBox`: a scale transition, so reduced motion
       // collapses the duration instead of playing a 300 ms zoom.
-      duration: MediaQuery.of(context).disableAnimations
-          ? Duration.zero
-          : const Duration(milliseconds: 300),
+      duration: FluxoraMotion.ofContext(context).base,
       child: child,
     );
   }
@@ -112,10 +111,9 @@ class _FadeScaleEnterBoxState extends State<FadeScaleEnterBox>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // A 0.70 → 1.00 entrance is the largest scale in the app; under reduced
-    // motion it jumps to its final state instead of animating. `initState`
-    // cannot read `MediaQuery`, hence the jump here.
-    if (MediaQuery.of(context).disableAnimations && _controller.value != 1.0) {
+    // Read accessibility before the first paint so reduced motion never zooms.
+    if (FluxoraMotion.ofContext(context).reduceMotion &&
+        _controller.value != 1.0) {
       _controller.value = 1.0;
     }
   }
@@ -152,7 +150,7 @@ class FadeScaleEnterTransition extends StatelessWidget {
     curve: const Interval(0.0, 0.3),
   );
   static final Animatable<double> _scaleInTransition = Tween<double>(
-    begin: 0.70,
+    begin: 0.98,
     end: 1.00,
   ).chain(CurveTween(curve: Easing.legacyDecelerate));
 

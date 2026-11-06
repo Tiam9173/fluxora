@@ -78,6 +78,46 @@ void main() {
 
   // ── P-2: baseline capability semantics ────────────────────────────────────
   group('P2.3-B (P-2) baseline semantics', () {
+    test(
+      'large capability refresh stays within native capacity and coalesces updates',
+      () async {
+        final gates = <Completer<Delay>>[];
+        var notifications = 0;
+        void changed() => notifications++;
+        manager.addListener(changed);
+        addTearDown(() => manager.removeListener(changed));
+        ChainCapabilityProbeService.delayProbeOverride = (url, name) {
+          final gate = Completer<Delay>();
+          gates.add(gate);
+          return gate.future;
+        };
+        ChainProxyManager.capabilityProbeSourceOverride = [
+          for (var i = 0; i < 120; i++) node('batch-$i', 'batch-$i.example'),
+        ];
+        await manager.refreshCapabilityProfiles();
+        expect(gates, hasLength(50));
+        for (var start = 0; start < 120; start += 50) {
+          final end = (start + 50).clamp(0, 120);
+          for (var i = start; i < end; i++) {
+            gates[i].complete(Delay(name: 'batch-$i', url: 'u', value: 20));
+          }
+          if (end < 120) await waitFor(() => gates.length > end);
+        }
+        await waitFor(
+          () =>
+              manager.capabilityProfiles['batch-119']?.tcp.evidence ==
+              CapabilityEvidenceType.runtimeVerified,
+        );
+        expect(
+          manager.capabilityProfiles.values.every(
+            (p) => p.tcp.evidence == CapabilityEvidenceType.runtimeVerified,
+          ),
+          isTrue,
+        );
+        expect(notifications, lessThanOrEqualTo(4));
+      },
+    );
+
     test('1. baseline never pairs verifiedSupported with unknown evidence', () {
       const protocols = [
         'vless',
@@ -225,14 +265,8 @@ void main() {
         isNot(CapabilityEvidenceType.runtimeVerified),
         reason: 'an inconclusive probe must not claim verification',
       );
-      expect(
-        profile.tcp.status,
-        isNot(CapabilityStatus.verifiedUnsupported),
-      );
-      expect(
-        profile.udp.status,
-        isNot(CapabilityStatus.verifiedUnsupported),
-      );
+      expect(profile.tcp.status, isNot(CapabilityStatus.verifiedUnsupported));
+      expect(profile.udp.status, isNot(CapabilityStatus.verifiedUnsupported));
     });
 
     test('E. unknown capability is never treated as unsupported', () {

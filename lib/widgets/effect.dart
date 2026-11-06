@@ -2,6 +2,7 @@ import 'dart:math';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:fluxora/common/tokens/fluxora_motion.dart';
 
 class EffectGestureDetector extends StatefulWidget {
   final Widget child;
@@ -27,10 +28,10 @@ class _EffectGestureDetectorState extends State<EffectGestureDetector> {
     // The press-shrink is a scale change, so reduced motion keeps the state
     // (0.95 while held) but drops the tween — the finger already provides the
     // feedback, the 200 ms ramp is what §10.5 asks to remove.
-    final reduce = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    final reduce = FluxoraMotion.ofContext(context).reduceMotion;
     return AnimatedScale(
       scale: _scale,
-      duration: reduce ? Duration.zero : kThemeAnimationDuration,
+      duration: reduce ? Duration.zero : FluxoraMotion.base,
       curve: Curves.easeOut,
       child: GestureDetector(
         onLongPress: widget.onLongPress,
@@ -89,12 +90,13 @@ class _CommonExpandIconState extends State<CommonExpandIcon>
     // `initState` cannot read `MediaQuery`. Setting the duration here also
     // covers flipping the OS switch mid-session: the next forward/reverse
     // completes in one frame instead of ramping.
-    final reduce = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
-    final duration = reduce
-        ? Duration.zero
-        : const Duration(milliseconds: 200);
+    final motion = FluxoraMotion.ofContext(context);
+    final duration = motion.base;
     if (_animationController.duration != duration) {
       _animationController.duration = duration;
+    }
+    if (motion.reduceMotion) {
+      _animationController.value = widget.expand ? 1 : 0;
     }
   }
 

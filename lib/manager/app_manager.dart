@@ -8,6 +8,7 @@ import 'package:fluxora/plugins/app.dart';
 import 'package:fluxora/plugins/vpn.dart';
 import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/widgets/aurora_navigation_rail.dart';
+import 'package:fluxora/widgets/glass_surface.dart';
 import 'package:fluxora/state.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -148,7 +149,8 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
       }
       isMinimized = await window?.isMinimized ?? false;
     }
-    final isPinned = system.isDesktop &&
+    final isPinned =
+        system.isDesktop &&
         ref.read(windowSettingProvider.select((s) => s.isPinned));
     final shouldRun = system.isDesktop
         ? (isPinned || (isVisible && !isMinimized))
@@ -305,21 +307,30 @@ class AppSidebarContainer extends ConsumerWidget {
     required Widget child,
   }) {
     final isLight = context.colorScheme.brightness == Brightness.light;
-    return Container(
-      decoration: BoxDecoration(
-        color: context.colorScheme.surfaceContainerHigh,
-        border: Border(
-          // Softer than the pre-Phase-02 hairline (0.6 / 0.45): the rail now
-          // carries its own selection affordances, so the divider only has to
-          // separate two surfaces, not announce the boundary.
-          right: BorderSide(
-            color: context.colorScheme.outlineVariant.withValues(
-              alpha: isLight ? 0.5 : 0.35,
+    final material = FluxoraMaterial.of(context);
+    return GlassSurface(
+      radius: 0,
+      border: false,
+      child: Container(
+        decoration: BoxDecoration(
+          color: material.enabled
+              ? Colors.transparent
+              : context.colorScheme.surfaceContainerHigh,
+        ),
+        foregroundDecoration: BoxDecoration(
+          border: Border(
+            // Softer than the pre-Phase-02 hairline (0.6 / 0.45): the rail now
+            // carries its own selection affordances, so the divider only has to
+            // separate two surfaces, not announce the boundary.
+            right: BorderSide(
+              color: context.colorScheme.outlineVariant.withValues(
+                alpha: isLight ? 0.5 : 0.35,
+              ),
             ),
           ),
         ),
+        child: Material(color: Colors.transparent, child: child),
       ),
-      child: Material(color: Colors.transparent, child: child),
     );
   }
 
@@ -332,128 +343,207 @@ class AppSidebarContainer extends ConsumerWidget {
       return child;
     }
     final currentIndex = navigationState.currentIndex;
-    final showLabel = ref.watch(appSettingProvider).showLabel;
-    return Row(
-      children: [
-        Stack(
-          alignment: Alignment.topRight,
+    final showLabel = ref.watch(
+      appSettingProvider.select((state) => state.showLabel),
+    );
+    final motion = FluxoraMotion.ofContext(context);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final canExpand = constraints.maxWidth > maxLaptopWidth;
+        final extended = showLabel && canExpand;
+        final chinese = Localizations.localeOf(context).languageCode == 'zh';
+        final toggleLabel = !canExpand
+            ? (chinese ? '窗口加宽后可展开导航' : 'Widen the window to expand navigation')
+            : (extended
+                  ? (chinese ? '收起导航' : 'Collapse navigation')
+                  : (chinese ? '展开导航' : 'Expand navigation'));
+        return Row(
           children: [
-            _buildBackground(
-              context: context,
-              child: SafeArea(
-                left: true,
-                top: true,
-                right: false,
-                bottom: false,
-                child: Column(
-                  children: [
-                    if (system.isMacOS) const SizedBox(height: 22),
-                    const SizedBox(height: 16),
-                    if (!system.isMacOS) ...[
-                      const AppIcon(),
-                      const SizedBox(height: 12),
-                    ],
-                    Expanded(
-                      child: ScrollConfiguration(
-                        behavior: ShowBarScrollBehavior(),
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            return SingleChildScrollView(
-                              child: ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  minHeight: constraints.maxHeight,
-                                ),
-                                child: IntrinsicHeight(
-                                  child: CallbackShortcuts(
-                                    bindings: <ShortcutActivator, VoidCallback>{
-                                      const SingleActivator(
-                                        LogicalKeyboardKey.arrowUp,
-                                      ): () {
-                                        if (currentIndex > 0) {
-                                          globalState.appController.toPage(
-                                            navigationItems[currentIndex - 1]
-                                                .label,
-                                          );
-                                        }
-                                      },
-                                      const SingleActivator(
-                                        LogicalKeyboardKey.arrowDown,
-                                      ): () {
-                                        if (currentIndex <
-                                            navigationItems.length - 1) {
-                                          globalState.appController.toPage(
-                                            navigationItems[currentIndex + 1]
-                                                .label,
-                                          );
-                                        }
-                                      },
-                                      const SingleActivator(
-                                        LogicalKeyboardKey.select,
-                                      ): () {},
-                                      const SingleActivator(
-                                        LogicalKeyboardKey.enter,
-                                      ): () {},
-                                    },
-                                    child: Focus(
-                                      autofocus: true,
-                                      child: AuroraNavigationRail(
-                                        destinations: navigationItems
-                                            .map(
-                                              (e) => AuroraRailDestination(
-                                                icon: e.icon,
-                                                label: e.label.localizedName,
-                                              ),
-                                            )
-                                            .toList(),
-                                        selectedIndex: currentIndex,
-                                        extended: showLabel,
-                                        onDestinationSelected: (index) {
-                                          final label =
-                                              navigationItems[index].label;
-                                          if (currentIndex == index) {
-                                            final pageContext = GlobalObjectKey(
-                                              label,
-                                            ).currentContext;
-                                            if (pageContext != null) {
-                                              Navigator.of(
-                                                pageContext,
-                                              ).popUntil(
-                                                (route) => route.isFirst,
-                                              );
-                                            }
-                                          }
-                                          globalState.appController.toPage(
-                                            label,
-                                          );
-                                        },
+            AnimatedContainer(
+              key: const ValueKey('desktop-sidebar'),
+              width: extended
+                  ? AuroraNavigationRail.extendedWidth
+                  : AuroraNavigationRail.collapsedWidth,
+              duration: motion.base,
+              curve: motion.standard,
+              child: Stack(
+                alignment: Alignment.topRight,
+                children: [
+                  _buildBackground(
+                    context: context,
+                    child: SafeArea(
+                      left: true,
+                      top: true,
+                      right: false,
+                      bottom: false,
+                      child: Column(
+                        children: [
+                          if (system.isMacOS) const SizedBox(height: 22),
+                          const SizedBox(height: FluxoraSpacing.lg),
+                          if (!system.isMacOS) ...[
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: FluxoraSpacing.md,
+                              ),
+                              child: LayoutBuilder(
+                                builder: (context, constraints) => Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const AppIcon(),
+                                    if (extended &&
+                                        constraints.maxWidth >= 120) ...[
+                                      const SizedBox(width: FluxoraSpacing.md),
+                                      Expanded(
+                                        child: Text(
+                                          appName,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.titleSmall,
+                                        ),
                                       ),
-                                    ),
-                                  ),
+                                    ],
+                                  ],
                                 ),
                               ),
-                            );
-                          },
-                        ),
+                            ),
+                            const SizedBox(height: FluxoraSpacing.sm),
+                          ],
+                          Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: FluxoraSpacing.md,
+                              ),
+                              child: IconButton(
+                                key: const ValueKey('toggle-desktop-sidebar'),
+                                tooltip: toggleLabel,
+                                icon: Icon(
+                                  showLabel ? Icons.menu_open : Icons.menu,
+                                ),
+                                onPressed: !canExpand
+                                    ? null
+                                    : () => ref
+                                          .read(appSettingProvider.notifier)
+                                          .updateState(
+                                            (state) => state.copyWith(
+                                              showLabel: !state.showLabel,
+                                            ),
+                                          ),
+                              ),
+                            ),
+                          ),
+                          const Divider(
+                            indent: FluxoraSpacing.md,
+                            endIndent: FluxoraSpacing.md,
+                          ),
+                          Expanded(
+                            child: ScrollConfiguration(
+                              behavior: ShowBarScrollBehavior(),
+                              child: LayoutBuilder(
+                                builder: (context, constraints) {
+                                  return SingleChildScrollView(
+                                    child: ConstrainedBox(
+                                      constraints: BoxConstraints(
+                                        minHeight: constraints.maxHeight,
+                                      ),
+                                      child: CallbackShortcuts(
+                                        bindings: <ShortcutActivator, VoidCallback>{
+                                          const SingleActivator(
+                                            LogicalKeyboardKey.arrowUp,
+                                          ): () {
+                                            if (currentIndex > 0) {
+                                              globalState.appController.toPage(
+                                                navigationItems[currentIndex -
+                                                        1]
+                                                    .label,
+                                              );
+                                            }
+                                          },
+                                          const SingleActivator(
+                                            LogicalKeyboardKey.arrowDown,
+                                          ): () {
+                                            if (currentIndex <
+                                                navigationItems.length - 1) {
+                                              globalState.appController.toPage(
+                                                navigationItems[currentIndex +
+                                                        1]
+                                                    .label,
+                                              );
+                                            }
+                                          },
+                                          const SingleActivator(
+                                            LogicalKeyboardKey.select,
+                                          ): () {},
+                                          const SingleActivator(
+                                            LogicalKeyboardKey.enter,
+                                          ): () {},
+                                        },
+                                        child: Focus(
+                                          autofocus: true,
+                                          child: AuroraNavigationRail(
+                                            destinations: navigationItems
+                                                .map(
+                                                  (e) => AuroraRailDestination(
+                                                    icon: e.icon,
+                                                    label:
+                                                        e.label.localizedName,
+                                                  ),
+                                                )
+                                                .toList(),
+                                            selectedIndex: currentIndex,
+                                            extended: extended,
+                                            onDestinationSelected: (index) {
+                                              final label =
+                                                  navigationItems[index].label;
+                                              if (currentIndex == index) {
+                                                final pageContext =
+                                                    GlobalObjectKey(
+                                                      label,
+                                                    ).currentContext;
+                                                if (pageContext != null) {
+                                                  Navigator.of(
+                                                    pageContext,
+                                                  ).popUntil(
+                                                    (route) => route.isFirst,
+                                                  );
+                                                }
+                                              }
+                                              globalState.appController.toPage(
+                                                label,
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
+                  ),
+                  _buildLoading(),
+                ],
+              ),
+            ),
+            Expanded(
+              flex: 1,
+              child: ClipRect(
+                child: MediaQuery.removePadding(
+                  context: context,
+                  removeLeft: true,
+                  child: child,
                 ),
               ),
             ),
-            _buildLoading(),
           ],
-        ),
-        Expanded(
-          flex: 1,
-          child: ClipRect(
-            child: MediaQuery.removePadding(
-              context: context,
-              removeLeft: true,
-              child: child,
-            ),
-          ),
-        ),
-      ],
+        );
+      },
     );
   }
 }

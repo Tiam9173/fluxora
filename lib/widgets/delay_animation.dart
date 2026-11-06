@@ -24,6 +24,9 @@ class DelayAnimation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (FluxoraMotion.ofContext(context).reduceMotion) {
+      return Icon(Icons.hourglass_top_rounded, size: size, color: color);
+    }
     return switch (type) {
       DelayAnimationType.none => Icon(Icons.bolt, size: size),
       DelayAnimationType.rotatingCircle => SpinKitRotatingCircle(
@@ -87,6 +90,13 @@ class SyncedLoading extends ConsumerWidget {
         (state) => (state.delayAnimation, state.syncDelayAnimation),
       ),
     );
+    if (FluxoraMotion.ofContext(context).reduceMotion) {
+      return Icon(
+        Icons.hourglass_top_rounded,
+        size: size,
+        color: color ?? context.colorScheme.primary,
+      );
+    }
     if (!sync || type == DelayAnimationType.none) return child;
     return Center(
       child: SizedBox.square(

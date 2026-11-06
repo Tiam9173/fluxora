@@ -289,6 +289,20 @@ class _ConfigViewState extends State<ConfigView> {
       ),
     ];
 
-    return generateListView(generateSection(items: items));
+    final chinese = Localizations.localeOf(context).languageCode == 'zh';
+    return generateListView([
+      ...generateSection(
+        title: chinese ? '连接基础' : 'Connection basics',
+        items: items.sublist(0, 2),
+      ),
+      ...generateSection(
+        title: chinese ? '解析与识别' : 'Resolution & inspection',
+        items: items.sublist(2, 5),
+      ),
+      ...generateSection(
+        title: chinese ? '高级能力' : 'Advanced capabilities',
+        items: items.sublist(5),
+      ),
+    ]);
   }
 }

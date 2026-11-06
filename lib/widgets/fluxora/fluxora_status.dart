@@ -88,7 +88,9 @@ class FluxoraStatus extends StatelessWidget {
     final text = label;
     final showText = showLabel && text != null && text.isNotEmpty;
 
-    final indicator = Container(
+    final indicator = AnimatedContainer(
+      duration: FluxoraMotion.ofContext(context).fast,
+      curve: FluxoraMotion.standard,
       width: dotSize,
       height: dotSize,
       decoration: BoxDecoration(color: color, shape: BoxShape.circle),

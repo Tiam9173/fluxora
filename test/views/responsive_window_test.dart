@@ -62,8 +62,7 @@ void main() {
                 ],
                 body: generateListView([
                   _Probe(inits: inits),
-                  for (var i = 0; i < 40; i++)
-                    ListTile(title: Text('row-$i')),
+                  for (var i = 0; i < 40; i++) ListTile(title: Text('row-$i')),
                 ]),
               ),
             ),
@@ -139,70 +138,73 @@ void main() {
       Size(1200, 520),
       Size(1920, 1080),
     ]) {
-      testWidgets('${size.width.toInt()}x${size.height.toInt()} keeps the shell intact', (
-        tester,
-      ) async {
-        await pumpAt(tester, size);
+      testWidgets(
+        '${size.width.toInt()}x${size.height.toInt()} keeps the shell intact',
+        (tester) async {
+          await pumpAt(tester, size);
 
-        expect(
-          tester.takeException(),
-          isNull,
-          reason: 'no overflow at ${size.width.toInt()}x${size.height.toInt()}',
-        );
-
-        // The rail is a fixed 80 px and the content column starts right after
-        // its 1 px border — at every width, including the minimum.
-        // The rail *widget* is the destination list inside the shell column
-        // (the column also holds the app mark and the bottom section), so the
-        // honest assertions are its fixed width and that it stays inside the
-        // window at every height.
-        final rail = tester.getRect(find.byType(AuroraNavigationRail));
-        expect(rail.width, 80);
-        expect(rail.top, greaterThanOrEqualTo(0));
-        // A short window is allowed to overflow the rail — it lives inside a
-        // scroll view (`K4 — short window scroll affordance` covers the bar).
-        // What must hold is that it is then *scrollable* and not clipped with
-        // no way to reach the last destination.
-        final railScroll = tester.state<ScrollableState>(
-          find
-              .ancestor(
-                of: find.byType(AuroraNavigationRail),
-                matching: find.byType(Scrollable),
-              )
-              .first,
-        );
-        if (rail.bottom > size.height) {
           expect(
-            railScroll.position.maxScrollExtent,
-            greaterThan(0),
-            reason: 'the rail overflows ${size.height}px but cannot scroll',
+            tester.takeException(),
+            isNull,
+            reason:
+                'no overflow at ${size.width.toInt()}x${size.height.toInt()}',
           );
-        } else {
-          expect(railScroll.position.maxScrollExtent, 0);
-        }
 
-        final contentLeft = tester.getTopLeft(find.byType(CommonScaffold)).dx;
-        expect(contentLeft, 81);
+          // The accepted sidebar contract is 208 px expanded / 68 px compact.
+          // Its foreground divider consumes no additional layout width.
+          // The rail *widget* is the destination list inside the shell column
+          // (the column also holds the app mark and the bottom section), so the
+          // honest assertions are its fixed width and that it stays inside the
+          // window at every height.
+          final rail = tester.getRect(find.byType(AuroraNavigationRail));
+          final expectedWidth = size.width > 840 ? 208.0 : 68.0;
+          expect(rail.width, expectedWidth);
+          expect(rail.top, greaterThanOrEqualTo(0));
+          // A short window is allowed to overflow the rail — it lives inside a
+          // scroll view (`K4 — short window scroll affordance` covers the bar).
+          // What must hold is that it is then *scrollable* and not clipped with
+          // no way to reach the last destination.
+          final railScroll = tester.state<ScrollableState>(
+            find
+                .ancestor(
+                  of: find.byType(AuroraNavigationRail),
+                  matching: find.byType(Scrollable),
+                )
+                .first,
+          );
+          if (rail.bottom > size.height) {
+            expect(
+              railScroll.position.maxScrollExtent,
+              greaterThan(0),
+              reason: 'the rail overflows ${size.height}px but cannot scroll',
+            );
+          } else {
+            expect(railScroll.position.maxScrollExtent, 0);
+          }
 
-        // The trailing actions must stay inside the window.
-        final actionRight = tester
-            .getBottomRight(find.byIcon(Icons.delete_outline))
-            .dx;
-        expect(
-          actionRight,
-          lessThanOrEqualTo(size.width - 8),
-          reason: 'the last toolbar action is not clipped by the window edge',
-        );
+          final contentLeft = tester.getTopLeft(find.byType(CommonScaffold)).dx;
+          expect(contentLeft, expectedWidth);
 
-        // The list is reachable: it overflows (12 rows) and can scroll.
-        final position = listPosition(tester);
-        expect(position.maxScrollExtent, greaterThan(0));
-        expect(position.viewportDimension, greaterThan(0));
-        expect(
-          tester.getSize(find.byType(CommonScaffold)).height,
-          lessThanOrEqualTo(size.height),
-        );
-      });
+          // The trailing actions must stay inside the window.
+          final actionRight = tester
+              .getBottomRight(find.byIcon(Icons.delete_outline))
+              .dx;
+          expect(
+            actionRight,
+            lessThanOrEqualTo(size.width - 8),
+            reason: 'the last toolbar action is not clipped by the window edge',
+          );
+
+          // The list is reachable: it overflows (12 rows) and can scroll.
+          final position = listPosition(tester);
+          expect(position.maxScrollExtent, greaterThan(0));
+          expect(position.viewportDimension, greaterThan(0));
+          expect(
+            tester.getSize(find.byType(CommonScaffold)).height,
+            lessThanOrEqualTo(size.height),
+          );
+        },
+      );
     }
 
     testWidgets('the 601 breakpoint is not a cliff', (tester) async {
@@ -212,7 +214,7 @@ void main() {
       expect(tester.takeException(), isNull);
       await pumpAt(tester, const Size(601, 800));
       expect(tester.takeException(), isNull);
-      expect(tester.getSize(find.byType(AuroraNavigationRail)).width, 80);
+      expect(tester.getSize(find.byType(AuroraNavigationRail)).width, 68);
     });
   });
 
@@ -227,11 +229,9 @@ void main() {
       await pumpAt(tester, const Size(1920, 1080));
       await pumpAt(tester, const Size(372, 492));
 
-      expect(
-        inits,
-        ['probe'],
-        reason: 'the page kept its State across two size changes',
-      );
+      expect(inits, [
+        'probe',
+      ], reason: 'the page kept its State across two size changes');
       expect(tester.takeException(), isNull);
     });
 
@@ -302,9 +302,15 @@ void main() {
                 focusNodes: nodes,
                 onSelect: (_) {},
                 destinations: const [
-                  AuroraRailDestination(icon: Icon(Icons.dashboard), label: 'a'),
+                  AuroraRailDestination(
+                    icon: Icon(Icons.dashboard),
+                    label: 'a',
+                  ),
                   AuroraRailDestination(icon: Icon(Icons.folder), label: 'b'),
-                  AuroraRailDestination(icon: Icon(Icons.construction), label: 'c'),
+                  AuroraRailDestination(
+                    icon: Icon(Icons.construction),
+                    label: 'c',
+                  ),
                   AuroraRailDestination(icon: Icon(Icons.settings), label: 'd'),
                 ],
               ),
@@ -316,26 +322,31 @@ void main() {
     }
 
     for (final size in const [Size(1280, 720), Size(1920, 1080)]) {
-      testWidgets('${size.width.toInt()}x${size.height.toInt()} keeps every target on screen', (
-        tester,
-      ) async {
-        await pumpTv(tester, size);
+      testWidgets(
+        '${size.width.toInt()}x${size.height.toInt()} keeps every target on screen',
+        (tester) async {
+          await pumpTv(tester, size);
 
-        expect(tester.takeException(), isNull);
+          expect(tester.takeException(), isNull);
 
-        // A remote has to be able to land on each destination: the bar must be
-        // tall enough to be a real target and stay inside the viewport.
-        final bar = tester.getRect(find.byType(AuroraTvNavBar));
-        expect(bar.height, greaterThanOrEqualTo(44));
-        expect(bar.left, greaterThanOrEqualTo(0));
-        expect(bar.right, lessThanOrEqualTo(size.width));
+          // A remote has to be able to land on each destination: the bar must be
+          // tall enough to be a real target and stay inside the viewport.
+          final bar = tester.getRect(find.byType(AuroraTvNavBar));
+          expect(bar.height, greaterThanOrEqualTo(44));
+          expect(bar.left, greaterThanOrEqualTo(0));
+          expect(bar.right, lessThanOrEqualTo(size.width));
 
-        for (final label in ['a', 'b', 'c', 'd']) {
-          final rect = tester.getRect(find.text(label));
-          expect(rect.left, greaterThanOrEqualTo(0), reason: 'label $label');
-          expect(rect.right, lessThanOrEqualTo(size.width), reason: 'label $label');
-        }
-      });
+          for (final label in ['a', 'b', 'c', 'd']) {
+            final rect = tester.getRect(find.text(label));
+            expect(rect.left, greaterThanOrEqualTo(0), reason: 'label $label');
+            expect(
+              rect.right,
+              lessThanOrEqualTo(size.width),
+              reason: 'label $label',
+            );
+          }
+        },
+      );
     }
   });
 }

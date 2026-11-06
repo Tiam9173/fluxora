@@ -4,6 +4,7 @@ import 'package:fluxora/widgets/fade_box.dart';
 import 'package:flutter/material.dart';
 
 import 'text.dart';
+import 'glass_surface.dart';
 
 class Info {
   final String label;
@@ -40,6 +41,7 @@ class InfoHeader extends StatelessWidget {
                 if (info.iconData != null) ...[
                   Icon(
                     info.iconData,
+                    size: 18,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                   const SizedBox(width: 8),
@@ -153,9 +155,12 @@ class CommonCard extends StatelessWidget {
       return BorderSide(color: hoverColor);
     }
     final isLight = colorScheme.brightness == Brightness.light;
+    final material = FluxoraMaterial.of(context);
     return BorderSide(
       color: isSelected
           ? colorScheme.primary
+          : material.enabled
+          ? material.border(colorScheme)
           : colorScheme.outlineVariant.withValues(alpha: isLight ? 0.45 : 0.25),
     );
   }
@@ -164,14 +169,18 @@ class CommonCard extends StatelessWidget {
     final colorScheme = context.colorScheme;
     if (type == CommonCardType.filled) {
       if (isSelected) {
-        return colorScheme.secondaryContainer.opacity80;
+        return FluxoraMaterial.of(context).enabled
+            ? colorScheme.secondaryContainer
+            : colorScheme.secondaryContainer.opacity80;
       }
       return colorScheme.surfaceContainer;
     }
     if (isSelected) {
       return colorScheme.secondaryContainer;
     }
-    return colorScheme.surfaceContainerLow;
+    return FluxoraMaterial.of(context).enabled
+        ? Colors.transparent
+        : colorScheme.surfaceContainerLow;
   }
 
   @override
@@ -203,10 +212,11 @@ class CommonCard extends StatelessWidget {
     }
 
     final isInteractive = onPressed != null || onLongPress != null;
-    final card = OutlinedButton(
+    Widget card = OutlinedButton(
       onLongPress: onLongPress,
       clipBehavior: Clip.antiAlias,
       style: ButtonStyle(
+        animationDuration: FluxoraMotion.ofContext(context).fast,
         padding: const WidgetStatePropertyAll(EdgeInsets.zero),
         shape: WidgetStatePropertyAll(
           SmoothRoundedRectangleBorder(
@@ -227,6 +237,9 @@ class CommonCard extends StatelessWidget {
       onPressed: onPressed,
       child: childWidget,
     );
+    if (type != CommonCardType.filled && FluxoraMaterial.of(context).enabled) {
+      card = GlassSurface(radius: actualRadius, border: false, child: card);
+    }
 
     return switch (enterAnimated) {
       true => FadeScaleEnterBox(child: card),

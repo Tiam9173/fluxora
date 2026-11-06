@@ -17,189 +17,233 @@ void main() {
       expect(theme.primaryColor, defaultPrimaryColor);
     });
 
-    test('Legacy Bettbox config without colorSource migrates to fluxora brand', () {
-      final legacyJson = {
-        'primaryColor': legacyDefaultPrimaryColor, // 0xFF00897B (4278225275)
-        'primaryColors': [
-          0xFF1E293B,
-          0xFF1976D2,
-          legacyDefaultPrimaryColor,
-          0xFFE91E63,
-        ],
-        'themeMode': 'system',
-      };
+    test(
+      'Legacy Bettbox config without colorSource migrates to fluxora brand',
+      () {
+        final legacyJson = {
+          'primaryColor': legacyDefaultPrimaryColor, // 0xFF00897B (4278225275)
+          'primaryColors': [
+            0xFF1E293B,
+            0xFF1976D2,
+            legacyDefaultPrimaryColor,
+            0xFFE91E63,
+          ],
+          'themeMode': 'system',
+        };
 
-      final migrated = ThemeProps.migrateColorSource(legacyJson);
-      expect(migrated['colorSource'], ColorSource.fluxora.name);
-      expect(migrated['primaryColor'], defaultPrimaryColor);
+        final migrated = ThemeProps.migrateColorSource(legacyJson);
+        expect(migrated['colorSource'], ColorSource.fluxora.name);
+        expect(migrated['primaryColor'], defaultPrimaryColor);
 
-      final theme = ThemeProps.safeFromJson(legacyJson);
-      expect(theme.colorSource, ColorSource.fluxora);
-      expect(theme.primaryColor, defaultPrimaryColor);
-      expect(theme.primaryColors.contains(legacyDefaultPrimaryColor), isFalse);
-      expect(theme.primaryColors.contains(defaultPrimaryColor), isTrue);
-    });
+        final theme = ThemeProps.safeFromJson(legacyJson);
+        expect(theme.colorSource, ColorSource.fluxora);
+        expect(theme.primaryColor, defaultPrimaryColor);
+        expect(
+          theme.primaryColors.contains(legacyDefaultPrimaryColor),
+          isFalse,
+        );
+        expect(theme.primaryColors.contains(defaultPrimaryColor), isTrue);
+      },
+    );
 
-    test('Legacy Android signed 32-bit integer (-16741989) migrates correctly', () {
-      // 0xFF00897B as signed 32-bit integer is -16741989
-      final signedLegacyTeal = legacyDefaultPrimaryColor.toSigned(32);
-      final legacyAndroidJson = {
-        'primaryColor': signedLegacyTeal,
-        'primaryColors': [signedLegacyTeal],
-        'themeMode': 'system',
-      };
+    test(
+      'Legacy Android signed 32-bit integer (-16741989) migrates correctly',
+      () {
+        // 0xFF00897B as signed 32-bit integer is -16741989
+        final signedLegacyTeal = legacyDefaultPrimaryColor.toSigned(32);
+        final legacyAndroidJson = {
+          'primaryColor': signedLegacyTeal,
+          'primaryColors': [signedLegacyTeal],
+          'themeMode': 'system',
+        };
 
-      final migrated = ThemeProps.migrateColorSource(legacyAndroidJson);
-      expect(migrated['colorSource'], ColorSource.fluxora.name);
-      expect(migrated['primaryColor'], defaultPrimaryColor);
+        final migrated = ThemeProps.migrateColorSource(legacyAndroidJson);
+        expect(migrated['colorSource'], ColorSource.fluxora.name);
+        expect(migrated['primaryColor'], defaultPrimaryColor);
 
-      final theme = ThemeProps.safeFromJson(legacyAndroidJson);
-      expect(theme.colorSource, ColorSource.fluxora);
-      expect(theme.primaryColor, defaultPrimaryColor);
-      expect(theme.primaryColors.contains(signedLegacyTeal), isFalse);
-      expect(theme.primaryColors.contains(defaultPrimaryColor), isTrue);
-    });
+        final theme = ThemeProps.safeFromJson(legacyAndroidJson);
+        expect(theme.colorSource, ColorSource.fluxora);
+        expect(theme.primaryColor, defaultPrimaryColor);
+        expect(theme.primaryColors.contains(signedLegacyTeal), isFalse);
+        expect(theme.primaryColors.contains(defaultPrimaryColor), isTrue);
+      },
+    );
 
-    test('Config already containing colorSource: fluxora but legacy primaryColor is normalized', () {
-      final json = {
-        'colorSource': 'fluxora',
-        'primaryColor': legacyDefaultPrimaryColor,
-        'themeMode': 'system',
-      };
+    test(
+      'Config already containing colorSource: fluxora but legacy primaryColor is normalized',
+      () {
+        final json = {
+          'colorSource': 'fluxora',
+          'primaryColor': legacyDefaultPrimaryColor,
+          'themeMode': 'system',
+        };
 
-      final migrated = ThemeProps.migrateColorSource(json);
-      expect(migrated['colorSource'], ColorSource.fluxora.name);
-      expect(migrated['primaryColor'], defaultPrimaryColor);
+        final migrated = ThemeProps.migrateColorSource(json);
+        expect(migrated['colorSource'], ColorSource.fluxora.name);
+        expect(migrated['primaryColor'], defaultPrimaryColor);
 
-      final theme = ThemeProps.safeFromJson(json);
-      expect(theme.colorSource, ColorSource.fluxora);
-      expect(theme.primaryColor, defaultPrimaryColor);
-    });
+        final theme = ThemeProps.safeFromJson(json);
+        expect(theme.colorSource, ColorSource.fluxora);
+        expect(theme.primaryColor, defaultPrimaryColor);
+      },
+    );
 
-    test('Config mistakenly marked colorSource: custom with legacy Bettbox teal is upgraded', () {
-      final signedLegacyTeal = legacyDefaultPrimaryColor.toSigned(32);
-      final json = {
-        'colorSource': 'custom',
-        'primaryColor': signedLegacyTeal,
-        'themeMode': 'system',
-      };
+    test(
+      'Config mistakenly marked colorSource: custom with legacy Bettbox teal is upgraded',
+      () {
+        final signedLegacyTeal = legacyDefaultPrimaryColor.toSigned(32);
+        final json = {
+          'colorSource': 'custom',
+          'primaryColor': signedLegacyTeal,
+          'themeMode': 'system',
+        };
 
-      final migrated = ThemeProps.migrateColorSource(json);
-      expect(migrated['colorSource'], ColorSource.fluxora.name);
-      expect(migrated['primaryColor'], defaultPrimaryColor);
+        final migrated = ThemeProps.migrateColorSource(json);
+        expect(migrated['colorSource'], ColorSource.fluxora.name);
+        expect(migrated['primaryColor'], defaultPrimaryColor);
 
-      final theme = ThemeProps.safeFromJson(json);
-      expect(theme.colorSource, ColorSource.fluxora);
-      expect(theme.primaryColor, defaultPrimaryColor);
-    });
+        final theme = ThemeProps.safeFromJson(json);
+        expect(theme.colorSource, ColorSource.fluxora);
+        expect(theme.primaryColor, defaultPrimaryColor);
+      },
+    );
 
-    test('Real user custom color is strictly preserved and not overwritten', () {
-      const userPickedPink = 0xFFE91E63;
-      final userJson = {
-        'primaryColor': userPickedPink,
-        'primaryColors': [defaultPrimaryColor, userPickedPink],
-        'themeMode': 'dark',
-      };
+    test(
+      'Real user custom color is strictly preserved and not overwritten',
+      () {
+        const userPickedPink = 0xFFE91E63;
+        final userJson = {
+          'primaryColor': userPickedPink,
+          'primaryColors': [defaultPrimaryColor, userPickedPink],
+          'themeMode': 'dark',
+        };
 
-      final migrated = ThemeProps.migrateColorSource(userJson);
-      expect(migrated['colorSource'], ColorSource.custom.name);
-      expect(migrated['primaryColor'], userPickedPink);
+        final migrated = ThemeProps.migrateColorSource(userJson);
+        expect(migrated['colorSource'], ColorSource.custom.name);
+        expect(migrated['primaryColor'], userPickedPink);
 
-      final theme = ThemeProps.safeFromJson(userJson);
-      expect(theme.colorSource, ColorSource.custom);
-      expect(theme.primaryColor, userPickedPink);
-    });
+        final theme = ThemeProps.safeFromJson(userJson);
+        expect(theme.colorSource, ColorSource.custom);
+        expect(theme.primaryColor, userPickedPink);
+      },
+    );
   });
 
   group('genColorSchemeProvider Tests', () {
-    test('ColorSource.fluxora always seeds FluxoraColors.fluxCyan regardless of primaryColor', () {
-      final container = ProviderContainer(
-        overrides: [
-          themeSettingProvider.overrideWith(() => _MockThemeSetting(
+    test(
+      'ColorSource.fluxora always seeds FluxoraColors.brandSeed regardless of primaryColor',
+      () {
+        final container = ProviderContainer(
+          overrides: [
+            themeSettingProvider.overrideWith(
+              () => _MockThemeSetting(
                 ThemeProps(
                   colorSource: ColorSource.fluxora,
-                  primaryColor: legacyDefaultPrimaryColor, // Even if legacy teal is set!
+                  primaryColor:
+                      legacyDefaultPrimaryColor, // Even if legacy teal is set!
                 ),
-              )),
-        ],
-      );
+              ),
+            ),
+          ],
+        );
 
-      final scheme = container.read(genColorSchemeProvider(Brightness.light));
-      // Primary color must match seed ColorScheme.fromSeed with FluxoraColors.fluxCyan
-      final expectedScheme = ColorScheme.fromSeed(
-        seedColor: FluxoraColors.fluxCyan,
-        brightness: Brightness.light,
-        dynamicSchemeVariant: DynamicSchemeVariant.tonalSpot,
-      );
-      expect(scheme.primary, expectedScheme.primary);
-      expect(scheme.primary, isNot(equals(
-        ColorScheme.fromSeed(
-          seedColor: const Color(legacyDefaultPrimaryColor),
+        final scheme = container.read(genColorSchemeProvider(Brightness.light));
+        // Primary color must match seed ColorScheme.fromSeed with FluxoraColors.brandSeed
+        final expectedScheme = ColorScheme.fromSeed(
+          seedColor: FluxoraColors.brandSeed,
           brightness: Brightness.light,
-        ).primary,
-      )));
-    });
+          dynamicSchemeVariant: DynamicSchemeVariant.tonalSpot,
+        );
+        expect(scheme.primary, expectedScheme.primary);
+        expect(
+          scheme.primary,
+          isNot(
+            equals(
+              ColorScheme.fromSeed(
+                seedColor: const Color(legacyDefaultPrimaryColor),
+                brightness: Brightness.light,
+              ).primary,
+            ),
+          ),
+        );
+      },
+    );
 
-    test('ColorSource.custom with legacy Bettbox teal falls back to FluxoraColors.fluxCyan', () {
-      final container = ProviderContainer(
-        overrides: [
-          themeSettingProvider.overrideWith(() => _MockThemeSetting(
+    test(
+      'ColorSource.custom with legacy Bettbox teal falls back to FluxoraColors.brandSeed',
+      () {
+        final container = ProviderContainer(
+          overrides: [
+            themeSettingProvider.overrideWith(
+              () => _MockThemeSetting(
                 const ThemeProps(
                   colorSource: ColorSource.custom,
                   primaryColor: legacyDefaultPrimaryColor,
                 ),
-              )),
-        ],
-      );
+              ),
+            ),
+          ],
+        );
 
-      final scheme = container.read(genColorSchemeProvider(Brightness.light));
-      final expectedScheme = ColorScheme.fromSeed(
-        seedColor: FluxoraColors.fluxCyan,
-        brightness: Brightness.light,
-        dynamicSchemeVariant: DynamicSchemeVariant.tonalSpot,
-      );
-      expect(scheme.primary, expectedScheme.primary);
-    });
+        final scheme = container.read(genColorSchemeProvider(Brightness.light));
+        final expectedScheme = ColorScheme.fromSeed(
+          seedColor: FluxoraColors.brandSeed,
+          brightness: Brightness.light,
+          dynamicSchemeVariant: DynamicSchemeVariant.tonalSpot,
+        );
+        expect(scheme.primary, expectedScheme.primary);
+      },
+    );
 
-    test('ColorSource.custom with genuine custom color produces that custom scheme', () {
-      const customColor = Color(0xFFE91E63);
-      final container = ProviderContainer(
-        overrides: [
-          themeSettingProvider.overrideWith(() => _MockThemeSetting(
+    test(
+      'ColorSource.custom with genuine custom color produces that custom scheme',
+      () {
+        const customColor = Color(0xFFE91E63);
+        final container = ProviderContainer(
+          overrides: [
+            themeSettingProvider.overrideWith(
+              () => _MockThemeSetting(
                 const ThemeProps(
                   colorSource: ColorSource.custom,
                   primaryColor: 0xFFE91E63,
                 ),
-              )),
-        ],
-      );
+              ),
+            ),
+          ],
+        );
 
-      final scheme = container.read(genColorSchemeProvider(Brightness.light));
-      final expectedScheme = ColorScheme.fromSeed(
-        seedColor: customColor,
-        brightness: Brightness.light,
-        dynamicSchemeVariant: DynamicSchemeVariant.tonalSpot,
-      );
-      expect(scheme.primary, expectedScheme.primary);
-    });
+        final scheme = container.read(genColorSchemeProvider(Brightness.light));
+        final expectedScheme = ColorScheme.fromSeed(
+          seedColor: customColor,
+          brightness: Brightness.light,
+          dynamicSchemeVariant: DynamicSchemeVariant.tonalSpot,
+        );
+        expect(scheme.primary, expectedScheme.primary);
+      },
+    );
 
-    test('Dark mode with pureBlack retains Fluxora brand seeds and surface', () {
-      final container = ProviderContainer(
-        overrides: [
-          themeSettingProvider.overrideWith(() => _MockThemeSetting(
+    test(
+      'Dark mode with pureBlack retains Fluxora brand seeds and surface',
+      () {
+        final container = ProviderContainer(
+          overrides: [
+            themeSettingProvider.overrideWith(
+              () => _MockThemeSetting(
                 const ThemeProps(
                   colorSource: ColorSource.fluxora,
                   pureBlack: true,
                 ),
-              )),
-        ],
-      );
+              ),
+            ),
+          ],
+        );
 
-      final scheme = container.read(genColorSchemeProvider(Brightness.dark));
-      final fluxoraDark = FluxoraColorSet.of(Brightness.dark);
-      expect(scheme.surface, fluxoraDark.background);
-      expect(scheme.surfaceContainerLowest, fluxoraDark.surface);
-    });
+        final scheme = container.read(genColorSchemeProvider(Brightness.dark));
+        final fluxoraDark = FluxoraColorSet.of(Brightness.dark);
+        expect(scheme.surface, fluxoraDark.background);
+        expect(scheme.surfaceContainerLowest, fluxoraDark.surface);
+      },
+    );
   });
 
   // Phase 01-B1 — the error roles must come from the Fluxora semantic set, not
@@ -270,7 +314,7 @@ void main() {
     test('primary still tracks the seed', () {
       final scheme = schemeFor(Brightness.light);
       final seeded = ColorScheme.fromSeed(
-        seedColor: FluxoraColors.fluxCyan,
+        seedColor: FluxoraColors.brandSeed,
         brightness: Brightness.light,
         dynamicSchemeVariant: DynamicSchemeVariant.tonalSpot,
       );
@@ -289,9 +333,8 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           themeSettingProvider.overrideWith(
-            () => _MockThemeSetting(
-              ThemeProps(colorSource: ColorSource.fluxora),
-            ),
+            () =>
+                _MockThemeSetting(ThemeProps(colorSource: ColorSource.fluxora)),
           ),
         ],
       );
@@ -374,35 +417,47 @@ void main() {
   });
 
   group('Theme Switching & State Updates Tests', () {
-    test('Switching from custom to fluxora resets primaryColor to defaultPrimaryColor', () {
-      final notifier = _MockThemeSetting(
-        const ThemeProps(
-          colorSource: ColorSource.custom,
-          primaryColor: 0xFFE91E63,
-        ),
-      );
-      final container = ProviderContainer(
-        overrides: [
-          themeSettingProvider.overrideWith(() => notifier),
-        ],
-      );
+    test(
+      'Switching from custom to fluxora resets primaryColor to defaultPrimaryColor',
+      () {
+        final notifier = _MockThemeSetting(
+          const ThemeProps(
+            colorSource: ColorSource.custom,
+            primaryColor: 0xFFE91E63,
+          ),
+        );
+        final container = ProviderContainer(
+          overrides: [themeSettingProvider.overrideWith(() => notifier)],
+        );
 
-      expect(container.read(themeSettingProvider).colorSource, ColorSource.custom);
-      expect(container.read(themeSettingProvider).primaryColor, 0xFFE91E63);
+        expect(
+          container.read(themeSettingProvider).colorSource,
+          ColorSource.custom,
+        );
+        expect(container.read(themeSettingProvider).primaryColor, 0xFFE91E63);
 
-      // Simulate user selecting Fluxora in _ColorSourceItem
-      container.read(themeSettingProvider.notifier).updateState(
-            (state) => state.copyWith(
-              colorSource: ColorSource.fluxora,
-              primaryColor: ColorSource.fluxora == ColorSource.fluxora
-                  ? defaultPrimaryColor
-                  : state.primaryColor,
-            ),
-          );
+        // Simulate user selecting Fluxora in _ColorSourceItem
+        container
+            .read(themeSettingProvider.notifier)
+            .updateState(
+              (state) => state.copyWith(
+                colorSource: ColorSource.fluxora,
+                primaryColor: ColorSource.fluxora == ColorSource.fluxora
+                    ? defaultPrimaryColor
+                    : state.primaryColor,
+              ),
+            );
 
-      expect(container.read(themeSettingProvider).colorSource, ColorSource.fluxora);
-      expect(container.read(themeSettingProvider).primaryColor, defaultPrimaryColor);
-    });
+        expect(
+          container.read(themeSettingProvider).colorSource,
+          ColorSource.fluxora,
+        );
+        expect(
+          container.read(themeSettingProvider).primaryColor,
+          defaultPrimaryColor,
+        );
+      },
+    );
 
     test('Full JSON round-trip maintains ThemeProps fidelity', () {
       final original = const ThemeProps(
@@ -621,9 +676,8 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           themeSettingProvider.overrideWith(
-            () => _MockThemeSetting(
-              ThemeProps(colorSource: ColorSource.fluxora),
-            ),
+            () =>
+                _MockThemeSetting(ThemeProps(colorSource: ColorSource.fluxora)),
           ),
         ],
       );
@@ -719,9 +773,8 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           themeSettingProvider.overrideWith(
-            () => _MockThemeSetting(
-              ThemeProps(colorSource: ColorSource.fluxora),
-            ),
+            () =>
+                _MockThemeSetting(ThemeProps(colorSource: ColorSource.fluxora)),
           ),
         ],
       );
@@ -790,9 +843,8 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           themeSettingProvider.overrideWith(
-            () => _MockThemeSetting(
-              ThemeProps(colorSource: ColorSource.fluxora),
-            ),
+            () =>
+                _MockThemeSetting(ThemeProps(colorSource: ColorSource.fluxora)),
           ),
         ],
       );
@@ -869,9 +921,8 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           themeSettingProvider.overrideWith(
-            () => _MockThemeSetting(
-              ThemeProps(colorSource: ColorSource.fluxora),
-            ),
+            () =>
+                _MockThemeSetting(ThemeProps(colorSource: ColorSource.fluxora)),
           ),
         ],
       );
@@ -903,20 +954,23 @@ void main() {
         expect(s.surfaceContainer, isNot(equals(s.surface)));
       });
 
-      test('the rail steps further from the page than the bar ($brightness)', () {
-        // Elevation order, expressed in luminance: the rail is the "higher"
-        // plane in both themes, so its distance from the page must be larger.
-        final s = schemeFor(brightness);
-        final page = s.surface.computeLuminance();
-        final bar = s.surfaceContainer.computeLuminance();
-        final rail = s.surfaceContainerHigh.computeLuminance();
+      test(
+        'the rail steps further from the page than the bar ($brightness)',
+        () {
+          // Elevation order, expressed in luminance: the rail is the "higher"
+          // plane in both themes, so its distance from the page must be larger.
+          final s = schemeFor(brightness);
+          final page = s.surface.computeLuminance();
+          final bar = s.surfaceContainer.computeLuminance();
+          final rail = s.surfaceContainerHigh.computeLuminance();
 
-        expect(
-          (rail - page).abs(),
-          greaterThan((bar - page).abs()),
-          reason: 'the rail must sit further from the page than the bar',
-        );
-      });
+          expect(
+            (rail - page).abs(),
+            greaterThan((bar - page).abs()),
+            reason: 'the rail must sit further from the page than the bar',
+          );
+        },
+      );
 
       test('the ladder direction matches the brightness ($brightness)', () {
         // Light: planes get darker as they rise. Dark: planes get lighter.
@@ -936,7 +990,6 @@ void main() {
     }
   });
 
-
   // ── Phase 02 — Aurora rail state legibility ──────────────────────────────
   //
   // The rail marks the current page with a low-saturation brand wash plus a
@@ -950,9 +1003,8 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           themeSettingProvider.overrideWith(
-            () => _MockThemeSetting(
-              ThemeProps(colorSource: ColorSource.fluxora),
-            ),
+            () =>
+                _MockThemeSetting(ThemeProps(colorSource: ColorSource.fluxora)),
           ),
         ],
       );
@@ -997,14 +1049,17 @@ void main() {
         );
       });
 
-      test('the selected icon clears the 3:1 graphic threshold ($brightness)', () {
-        final s = schemeFor(brightness);
-        expect(
-          contrastRatio(s.primary, pill(s)),
-          greaterThanOrEqualTo(3.0),
-          reason: 'the icon is a graphic, not text — 3:1 is its bar',
-        );
-      });
+      test(
+        'the selected icon clears the 3:1 graphic threshold ($brightness)',
+        () {
+          final s = schemeFor(brightness);
+          expect(
+            contrastRatio(s.primary, pill(s)),
+            greaterThanOrEqualTo(3.0),
+            reason: 'the icon is a graphic, not text — 3:1 is its bar',
+          );
+        },
+      );
 
       test('hover is visible but weaker than selection ($brightness)', () {
         final s = schemeFor(brightness);

@@ -52,7 +52,7 @@ _AppSettingProps _$AppSettingPropsFromJson(
   enableNavBarHapticFeedback:
       json['enableNavBarHapticFeedback'] as bool? ?? true,
   autoCheckUpdate: json['autoCheckUpdate'] as bool? ?? true,
-  showLabel: json['showLabel'] as bool? ?? false,
+  showLabel: json['showLabel'] as bool? ?? true,
   disclaimerAccepted: json['disclaimerAccepted'] as bool? ?? false,
   minimizeOnExit: json['minimizeOnExit'] as bool? ?? true,
   hidden: json['hidden'] as bool? ?? false,
@@ -493,6 +493,14 @@ _ThemeProps _$ThemePropsFromJson(Map<String, dynamic> json) => _ThemeProps(
       ? const TextScale()
       : TextScale.fromJson(json['textScale'] as Map<String, dynamic>),
   useDarkIcon: json['useDarkIcon'] as bool? ?? false,
+  appIconStyle: json['appIconStyle'] as String? ?? 'official',
+  surfaceStyle:
+      $enumDecodeNullable(
+        _$FluxoraSurfaceStyleEnumMap,
+        json['surfaceStyle'],
+        unknownValue: FluxoraSurfaceStyle.classic,
+      ) ??
+      FluxoraSurfaceStyle.hybrid,
   useHarmonyFont: json['useHarmonyFont'] as bool? ?? false,
   invertTrayIcon: json['invertTrayIcon'] as bool? ?? false,
 );
@@ -507,6 +515,8 @@ Map<String, dynamic> _$ThemePropsToJson(_ThemeProps instance) =>
       'pureBlack': instance.pureBlack,
       'textScale': instance.textScale,
       'useDarkIcon': instance.useDarkIcon,
+      'appIconStyle': instance.appIconStyle,
+      'surfaceStyle': _$FluxoraSurfaceStyleEnumMap[instance.surfaceStyle]!,
       'useHarmonyFont': instance.useHarmonyFont,
       'invertTrayIcon': instance.invertTrayIcon,
     };
@@ -533,6 +543,12 @@ const _$ColorSourceEnumMap = {
   ColorSource.fluxora: 'fluxora',
   ColorSource.system: 'system',
   ColorSource.custom: 'custom',
+};
+
+const _$FluxoraSurfaceStyleEnumMap = {
+  FluxoraSurfaceStyle.classic: 'classic',
+  FluxoraSurfaceStyle.hybrid: 'hybrid',
+  FluxoraSurfaceStyle.reduced: 'reduced',
 };
 
 _ScriptProps _$ScriptPropsFromJson(Map<String, dynamic> json) => _ScriptProps(

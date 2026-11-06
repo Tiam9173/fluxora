@@ -1,3 +1,4 @@
+import 'package:fluxora/common/tokens/fluxora_motion.dart';
 import 'dart:math' as math;
 import 'dart:math';
 
@@ -200,7 +201,7 @@ class _CommonTabBarState<T extends Object> extends State<CommonTabBar<T>>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    _reduceMotion = FluxoraMotion.ofContext(context).reduceMotion;
     final duration = _reduceMotion ? Duration.zero : _kSpringAnimationDuration;
     if (thumbController.duration != duration) {
       thumbController.duration = duration;
@@ -605,10 +606,8 @@ class _SegmentState<T> extends State<_Segment<T>>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
-    final duration = _reduceMotion
-        ? Duration.zero
-        : _kOpacityAnimationDuration;
+    _reduceMotion = FluxoraMotion.ofContext(context).reduceMotion;
+    final duration = _reduceMotion ? Duration.zero : _kOpacityAnimationDuration;
     if (highlightPressScaleController.duration != duration) {
       highlightPressScaleController.duration = duration;
     }
@@ -736,7 +735,7 @@ class _SegmentSeparatorState extends State<_SegmentSeparator>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    _reduceMotion = FluxoraMotion.ofContext(context).reduceMotion;
   }
 
   @override

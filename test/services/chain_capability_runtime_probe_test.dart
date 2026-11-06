@@ -1,4 +1,3 @@
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluxora/models/core.dart';
 import 'package:fluxora/models/protocol_capability.dart';
@@ -103,20 +102,32 @@ void main() {
 
     test('5. supported → compatible', () {
       final res = ChainCompatibilityValidator.validateEdge(
-        profile('vless', CapabilityStatus.verifiedSupported,
-            CapabilityEvidenceType.configDeclared),
-        profile('hysteria2', CapabilityStatus.verifiedSupported,
-            CapabilityEvidenceType.unknown),
+        profile(
+          'vless',
+          CapabilityStatus.verifiedSupported,
+          CapabilityEvidenceType.configDeclared,
+        ),
+        profile(
+          'hysteria2',
+          CapabilityStatus.verifiedSupported,
+          CapabilityEvidenceType.unknown,
+        ),
       );
       expect(res.compatible, isTrue);
     });
 
     test('6. unsupported → PROTOCOL_INCOMPATIBLE', () {
       final res = ChainCompatibilityValidator.validateEdge(
-        profile('http', CapabilityStatus.verifiedUnsupported,
-            CapabilityEvidenceType.configDeclared),
-        profile('hysteria2', CapabilityStatus.verifiedSupported,
-            CapabilityEvidenceType.unknown),
+        profile(
+          'http',
+          CapabilityStatus.verifiedUnsupported,
+          CapabilityEvidenceType.configDeclared,
+        ),
+        profile(
+          'hysteria2',
+          CapabilityStatus.verifiedSupported,
+          CapabilityEvidenceType.unknown,
+        ),
       );
       expect(res.compatible, isFalse);
       expect(res.reason, 'ENTRY_UDP_UNSUPPORTED');
@@ -124,20 +135,32 @@ void main() {
 
     test('7. unknown → NOT excluded by capability alone', () {
       final res = ChainCompatibilityValidator.validateEdge(
-        profile('vless', CapabilityStatus.unknown,
-            CapabilityEvidenceType.unknown),
-        profile('hysteria2', CapabilityStatus.verifiedSupported,
-            CapabilityEvidenceType.unknown),
+        profile(
+          'vless',
+          CapabilityStatus.unknown,
+          CapabilityEvidenceType.unknown,
+        ),
+        profile(
+          'hysteria2',
+          CapabilityStatus.verifiedSupported,
+          CapabilityEvidenceType.unknown,
+        ),
       );
       expect(res.compatible, isTrue);
     });
 
     test('8. entry UDP unsupported + exit hysteria2 → rejected', () {
       final res = ChainCompatibilityValidator.validateEdge(
-        profile('http', CapabilityStatus.verifiedUnsupported,
-            CapabilityEvidenceType.configDeclared),
-        profile('hysteria2', CapabilityStatus.verifiedSupported,
-            CapabilityEvidenceType.unknown),
+        profile(
+          'http',
+          CapabilityStatus.verifiedUnsupported,
+          CapabilityEvidenceType.configDeclared,
+        ),
+        profile(
+          'hysteria2',
+          CapabilityStatus.verifiedSupported,
+          CapabilityEvidenceType.unknown,
+        ),
       );
       expect(res.compatible, isFalse);
       expect(res.blockingProtocol, 'http');
@@ -145,20 +168,32 @@ void main() {
 
     test('9. entry UDP unknown + exit hysteria2 → NOT rejected', () {
       final res = ChainCompatibilityValidator.validateEdge(
-        profile('vless', CapabilityStatus.unknown,
-            CapabilityEvidenceType.unknown),
-        profile('hysteria2', CapabilityStatus.verifiedSupported,
-            CapabilityEvidenceType.unknown),
+        profile(
+          'vless',
+          CapabilityStatus.unknown,
+          CapabilityEvidenceType.unknown,
+        ),
+        profile(
+          'hysteria2',
+          CapabilityStatus.verifiedSupported,
+          CapabilityEvidenceType.unknown,
+        ),
       );
       expect(res.compatible, isTrue);
     });
 
     test('9b. runtimeRejected + unsupported → ENTRY_UDP_RUNTIME_REJECTED', () {
       final res = ChainCompatibilityValidator.validateEdge(
-        profile('vless', CapabilityStatus.verifiedUnsupported,
-            CapabilityEvidenceType.runtimeRejected),
-        profile('hysteria2', CapabilityStatus.verifiedSupported,
-            CapabilityEvidenceType.unknown),
+        profile(
+          'vless',
+          CapabilityStatus.verifiedUnsupported,
+          CapabilityEvidenceType.runtimeRejected,
+        ),
+        profile(
+          'hysteria2',
+          CapabilityStatus.verifiedSupported,
+          CapabilityEvidenceType.unknown,
+        ),
       );
       expect(res.compatible, isFalse);
       expect(res.reason, 'ENTRY_UDP_RUNTIME_REJECTED');
@@ -189,72 +224,81 @@ void main() {
       );
     });
 
-    test('11. definite probe failure → runtimeRejected (and cached)', () async {
+    test('11. missing probe result remains unknown', () async {
       ChainCapabilityProbeService.delayProbeOverride = (url, name) async =>
           Delay(name: 'n', url: 'u');
 
       final result = await ChainCapabilityProbeService.probeAndVerify(
         nodeConfig,
       );
-      expect(result.tcp.evidence, CapabilityEvidenceType.runtimeRejected);
-      expect(result.tcp.status, CapabilityStatus.verifiedUnsupported);
+      expect(result.tcp.evidence, CapabilityEvidenceType.unknown);
+      expect(result.tcp.status, CapabilityStatus.unknown);
     });
 
     // P1.2-G1: the delay primitive may answer with a **non-positive** sentinel
     // instead of `null` — the native bridge returns `value == -1` on its own 6s
     // timeout, which fires *before* this call's longer timeout. A non-positive
     // round-trip is a failure, never a verification.
-    test(
-      '11a. timeout sentinel (value: -1) → runtimeRejected, NOT verified',
-      () async {
-        ChainCapabilityProbeService.delayProbeOverride = (url, name) async =>
-            Delay(name: 'n', url: 'u', value: -1);
-
-        final result = await ChainCapabilityProbeService.probeAndVerify(
-          nodeConfig,
-        );
-        expect(result.tcp.evidence, CapabilityEvidenceType.runtimeRejected);
-        expect(result.tcp.status, CapabilityStatus.verifiedUnsupported);
-        // The false positive used to also mark TLS verified on an https URL.
-        expect(
-          result.tls.evidence,
-          isNot(CapabilityEvidenceType.runtimeVerified),
-        );
-        // The cache may hold the rejection, but never a verification.
-        expect(
-          ChainCapabilityService.getCapability(nodeConfig).tcp.evidence,
-          isNot(CapabilityEvidenceType.runtimeVerified),
-        );
-      },
-    );
-
-    test(
-      '11b. zero delay (value: 0) → runtimeRejected, NOT verified',
-      () async {
-        ChainCapabilityProbeService.delayProbeOverride = (url, name) async =>
-            Delay(name: 'n', url: 'u', value: 0);
-
-        final result = await ChainCapabilityProbeService.probeAndVerify(
-          nodeConfig,
-        );
-        expect(result.tcp.evidence, CapabilityEvidenceType.runtimeRejected);
-        expect(
-          ChainCapabilityService.getCapability(nodeConfig).tcp.evidence,
-          isNot(CapabilityEvidenceType.runtimeVerified),
-        );
-      },
-    );
-
-    test('11c. boundary: value 1 still verifies (no over-correction)', () async {
+    test('11a. timeout sentinel (value: -1) → unknown, NOT verified', () async {
       ChainCapabilityProbeService.delayProbeOverride = (url, name) async =>
-          Delay(name: 'n', url: 'u', value: 1);
+          Delay(name: 'n', url: 'u', value: -1);
 
       final result = await ChainCapabilityProbeService.probeAndVerify(
         nodeConfig,
       );
-      expect(result.tcp.evidence, CapabilityEvidenceType.runtimeVerified);
-      expect(result.tcp.status, CapabilityStatus.verifiedSupported);
+      expect(result.tcp.evidence, CapabilityEvidenceType.unknown);
+      expect(
+        ChainCapabilityCacheService.get(
+          ChainCapabilityCacheService.generateKey(nodeConfig),
+        ),
+        isNull,
+      );
+      expect(result.tcp.status, CapabilityStatus.unknown);
+      // The false positive used to also mark TLS verified on an https URL.
+      expect(
+        result.tls.evidence,
+        isNot(CapabilityEvidenceType.runtimeVerified),
+      );
+      // An inconclusive measurement must not poison the capability cache.
+      expect(
+        ChainCapabilityService.getCapability(nodeConfig).tcp.evidence,
+        isNot(CapabilityEvidenceType.runtimeVerified),
+      );
     });
+
+    test('11b. zero delay (value: 0) → unknown, NOT verified', () async {
+      ChainCapabilityProbeService.delayProbeOverride = (url, name) async =>
+          Delay(name: 'n', url: 'u', value: 0);
+
+      final result = await ChainCapabilityProbeService.probeAndVerify(
+        nodeConfig,
+      );
+      expect(result.tcp.evidence, CapabilityEvidenceType.unknown);
+      expect(
+        ChainCapabilityCacheService.get(
+          ChainCapabilityCacheService.generateKey(nodeConfig),
+        ),
+        isNull,
+      );
+      expect(
+        ChainCapabilityService.getCapability(nodeConfig).tcp.evidence,
+        isNot(CapabilityEvidenceType.runtimeVerified),
+      );
+    });
+
+    test(
+      '11c. boundary: value 1 still verifies (no over-correction)',
+      () async {
+        ChainCapabilityProbeService.delayProbeOverride = (url, name) async =>
+            Delay(name: 'n', url: 'u', value: 1);
+
+        final result = await ChainCapabilityProbeService.probeAndVerify(
+          nodeConfig,
+        );
+        expect(result.tcp.evidence, CapabilityEvidenceType.runtimeVerified);
+        expect(result.tcp.status, CapabilityStatus.verifiedSupported);
+      },
+    );
 
     test('12. probe exception → unknown, cache NOT polluted', () async {
       ChainCapabilityProbeService.delayProbeOverride = (url, name) async =>
@@ -264,9 +308,12 @@ void main() {
         nodeConfig,
       );
       expect(result.tcp.evidence, CapabilityEvidenceType.unknown);
-      expect(ChainCapabilityCacheService.get(
-        ChainCapabilityCacheService.generateKey(nodeConfig),
-      ), isNull);
+      expect(
+        ChainCapabilityCacheService.get(
+          ChainCapabilityCacheService.generateKey(nodeConfig),
+        ),
+        isNull,
+      );
     });
 
     test('13. probe timeout → unknown, cache NOT polluted', () async {
@@ -280,9 +327,12 @@ void main() {
         timeout: const Duration(milliseconds: 20),
       );
       expect(result.tcp.evidence, CapabilityEvidenceType.unknown);
-      expect(ChainCapabilityCacheService.get(
-        ChainCapabilityCacheService.generateKey(nodeConfig),
-      ), isNull);
+      expect(
+        ChainCapabilityCacheService.get(
+          ChainCapabilityCacheService.generateKey(nodeConfig),
+        ),
+        isNull,
+      );
     });
 
     test('15. cache hit → probe not repeated', () async {
@@ -347,6 +397,32 @@ void main() {
 
   // ── 18–20. Ranking / UI integration semantics ─────────────────────────────
   group('P1.2 ranking / UI integration', () {
+    test(
+      'a timed-out URL probe can later recover without a negative cache hit',
+      () async {
+        const nodeConfig = {
+          'name': 'recovering',
+          'type': 'vless',
+          'server': 'recovering.example',
+          'port': 443,
+        };
+        var calls = 0;
+        ChainCapabilityProbeService.delayProbeOverride = (url, name) async {
+          calls++;
+          return Delay(name: name, url: url, value: calls == 1 ? -1 : 42);
+        };
+        final first = await ChainCapabilityProbeService.probeAndVerify(
+          nodeConfig,
+        );
+        expect(first.tcp.evidence, CapabilityEvidenceType.unknown);
+        final second = await ChainCapabilityProbeService.probeAndVerify(
+          nodeConfig,
+        );
+        expect(second.tcp.evidence, CapabilityEvidenceType.runtimeVerified);
+        expect(calls, 2);
+      },
+    );
+
     test('18. configDeclared no longer resolves to unknown evidence', () {
       final profile = ChainCapabilityService.getCapability({
         'type': 'hysteria2',
@@ -409,7 +485,7 @@ void main() {
 
       final result = await ChainCapabilityProbeService.probeAndVerify(udpNode);
 
-      expect(result.tcp.evidence, CapabilityEvidenceType.runtimeRejected);
+      expect(result.tcp.evidence, CapabilityEvidenceType.unknown);
       expect(result.udp.evidence, CapabilityEvidenceType.configDeclared);
       expect(
         result.udp.evidence,

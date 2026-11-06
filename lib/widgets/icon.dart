@@ -185,12 +185,16 @@ class _CommonTargetIconState extends State<CommonTargetIcon> {
       final int targetHeight;
       if (origWidth >= origHeight) {
         targetWidth = targetSize;
-        targetHeight =
-            (origHeight * targetSize / origWidth).round().clamp(1, targetSize);
+        targetHeight = (origHeight * targetSize / origWidth).round().clamp(
+          1,
+          targetSize,
+        );
       } else {
         targetHeight = targetSize;
-        targetWidth =
-            (origWidth * targetSize / origHeight).round().clamp(1, targetSize);
+        targetWidth = (origWidth * targetSize / origHeight).round().clamp(
+          1,
+          targetSize,
+        );
       }
 
       final codec = await ui.instantiateImageCodec(
@@ -473,7 +477,7 @@ class _CommonTargetIconState extends State<CommonTargetIcon> {
         valueListenable: CommonTargetIcon._cacheVersion,
         builder: (_, cacheVersion, child) {
           return AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
+            duration: FluxoraMotion.ofContext(context).base,
             child: KeyedSubtree(
               // The cache version is part of the key so that clearing the cache
               // rebuilds the subtree and re-resolves the icon, rather than

@@ -62,8 +62,7 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  bool get isNavFocused =>
-      _navFocusNodes.values.any((node) => node.hasFocus);
+  bool get isNavFocused => _navFocusNodes.values.any((node) => node.hasFocus);
 
   void focusNav() {
     if (!globalState.isAndroidTV || !mounted) return;
@@ -363,25 +362,19 @@ class _HomePageViewState extends ConsumerState<_HomePageView> {
   Widget build(BuildContext context) {
     if (ref.watch(isMobileViewProvider)) {
       final index = _pageIndex < 0 ? 0 : _pageIndex;
-      // §10.5: the page switch must not cross-fade when the OS "reduce motion"
-      // setting is on. `FluxoraMotion.slow` is the raw 320 ms constant and knows
-      // nothing about the preference, so resolve it through the set — `slow`
-      // collapses to `Duration.zero` under reduced motion and stays 320 ms
-      // otherwise.
-      final motion = FluxoraMotionSet.of(
-        reduceMotion: MediaQuery.maybeOf(context)?.disableAnimations ?? false,
-      );
+      // Cached pages switch instantly when accessibility or low-effects mode requests it.
+      final motion = FluxoraMotion.ofContext(context);
       // `KeptPageView` rather than `AnimatedSwitcher`: the switcher disposed the
       // outgoing page when its fade ended, so every mobile switch threw away
       // that page's `State` (scroll position, in-page selections, form text) and
       // the next visit re-ran `initState` — which for the real pages means real
       // work. The replacement keeps visited pages mounted and inert, and keeps
-      // the same Aurora transition: `slow` fade + the 4 px `enterOffset` lift,
+      // the Aurora transition: `base` fade + the 4 px `enterOffset` lift,
       // both collapsing to zero under reduced motion.
       return KeptPageView(
         index: index,
         pageBuilder: widget.pageBuilder,
-        duration: motion.slow,
+        duration: motion.base,
         inCurve: motion.enter,
         outCurve: motion.exit,
         enterOffset: motion.enterOffset,

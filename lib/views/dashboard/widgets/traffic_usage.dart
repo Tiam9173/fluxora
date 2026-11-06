@@ -1,248 +1,92 @@
-import 'dart:math';
-
 import 'package:fluxora/common/common.dart';
-import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/models/models.dart';
 import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:fluxora/views/dashboard/widgets/traffic_detail.dart';
 
-class TrafficUsage extends ConsumerStatefulWidget {
+import 'traffic_detail.dart';
+
+class TrafficUsage extends ConsumerWidget {
   const TrafficUsage({super.key});
 
-  @override
-  ConsumerState<TrafficUsage> createState() => _TrafficUsageState();
-}
-
-class _TrafficUsageState extends ConsumerState<TrafficUsage> {
-  final _donutKey = GlobalKey<DonutChartState>();
-  // cache text measurement results
-  Size? _uploadTextSize;
-  Size? _downloadTextSize;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // dependency changes when clear cache
-    _uploadTextSize = null;
-    _downloadTextSize = null;
-  }
-
-  Size _getUploadTextSize(BuildContext context) {
-    return _uploadTextSize ??= globalState.measure.computeTextSize(
-      Text(
-        appLocalizations.upload,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: context.textTheme.bodySmall,
-      ),
-    );
-  }
-
-  Size _getDownloadTextSize(BuildContext context) {
-    return _downloadTextSize ??= globalState.measure.computeTextSize(
-      Text(
-        appLocalizations.download,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: context.textTheme.bodySmall,
-      ),
-    );
-  }
-
-  Widget _buildTrafficDataItem(
+  Widget _total(
     BuildContext context,
-    Icon icon,
-    TrafficValue trafficValue,
+    String label,
+    IconData icon,
+    TrafficValue value,
   ) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      mainAxisSize: MainAxisSize.max,
-      children: [
-        Flexible(
-          flex: 1,
-          child: Row(
-            mainAxisSize: MainAxisSize.max,
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              icon,
-              const SizedBox(width: 8),
-              Flexible(
-                flex: 1,
-                child: Text(
-                  trafficValue.showValue,
-                  style: context.textTheme.bodySmall,
-                  maxLines: 1,
+    return Expanded(
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: context.colorScheme.primary),
+          const SizedBox(width: FluxoraSpacing.sm),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: context.textTheme.bodySmall?.copyWith(
+                    color: context.colorScheme.onSurfaceVariant,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: FluxoraSpacing.xs),
+                Text(
+                  '${value.showValue} ${value.showUnit}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: FluxoraTypography.numericBody.copyWith(
+                    color: context.colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        Text(
-          trafficValue.showUnit,
-          style: context.textTheme.bodySmall?.toLighter,
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   @override
-  Widget build(BuildContext context) {
-    ref.listen<PageLabel>(currentPageLabelProvider, (prev, next) {
-      if (next == PageLabel.dashboard && prev != PageLabel.dashboard) {
-        _donutKey.currentState?.replayEntryAnimation();
-      }
-    });
-
-    final primaryColor = globalState.theme.darken3PrimaryContainer;
-    final secondaryColor = globalState.theme.darken2SecondaryContainer;
-    // watch, not read: the provider is autoDispose, so a bare `read` leaves no
-    // subscriber behind and it is torn down immediately. updateTraffic then
-    // throws "Cannot use the Ref ... after it has been disposed" on every tick
-    // and the counter stays at zero forever.
-    final totalTraffic = ref.watch(totalTrafficProvider);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final traffic = ref.watch(totalTrafficProvider);
     return SizedBox(
       height: getWidgetHeight(2),
       child: CommonCard(
         info: Info(
           label: appLocalizations.trafficUsage,
-          iconData: Icons.data_saver_off,
+          iconData: Icons.data_usage_rounded,
         ),
-        // Was an empty callback: the card looked interactive and did nothing.
         onPressed: showTrafficDetailDialog,
-        child: ValueListenableBuilder<int>(
-          valueListenable: dashboardRefreshManager.tick1s,
-          builder: (_, _, _) {
-                final upTotalTrafficValue = totalTraffic.up;
-                final downTotalTrafficValue = totalTraffic.down;
-                return Padding(
-                  padding: baseInfoEdgeInsets.copyWith(top: 0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.max,
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Flexible(
-                        child: Container(
-                          padding: EdgeInsets.symmetric(vertical: 12),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.max,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              AspectRatio(
-                                aspectRatio: 1,
-                                child: DonutChart(
-                                  key: _donutKey,
-                                  trackColor: context
-                                      .colorScheme.surfaceContainerHighest
-                                      .withValues(alpha: 0.35),
-                                  data: [
-                                    DonutChartData(
-                                      value: upTotalTrafficValue.value.toDouble(),
-                                      color: primaryColor,
-                                    ),
-                                    DonutChartData(
-                                      value: downTotalTrafficValue.value.toDouble(),
-                                      color: secondaryColor,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              SizedBox(width: 8),
-                              Flexible(
-                                child: LayoutBuilder(
-                                  builder: (_, container) {
-                                    final uploadTextSize = _getUploadTextSize(
-                                      context,
-                                    );
-                                    final downloadTextSize =
-                                        _getDownloadTextSize(context);
-                                    final maxTextWidth = max(
-                                      uploadTextSize.width,
-                                      downloadTextSize.width,
-                                    );
-                                    if (maxTextWidth + 24 > container.maxWidth) {
-                                      return Container();
-                                    }
-                                    return Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Container(
-                                              width: 20,
-                                              height: 8,
-                                              decoration: BoxDecoration(
-                                                color: primaryColor,
-                                                borderRadius:
-                                                    BorderRadius.circular(3),
-                                              ),
-                                            ),
-                                            SizedBox(width: 4),
-                                            Text(
-                                              maxLines: 1,
-                                              appLocalizations.upload,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: context.textTheme.bodySmall,
-                                            ),
-                                          ],
-                                        ),
-                                        SizedBox(height: 4),
-                                        Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Container(
-                                              width: 20,
-                                              height: 8,
-                                              decoration: BoxDecoration(
-                                                color: secondaryColor,
-                                                borderRadius:
-                                                    BorderRadius.circular(3),
-                                              ),
-                                            ),
-                                            SizedBox(width: 4),
-                                            Text(
-                                              maxLines: 1,
-                                              appLocalizations.download,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: context.textTheme.bodySmall,
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      _buildTrafficDataItem(
-                        context,
-                        Icon(Icons.arrow_upward, color: primaryColor, size: 14),
-                        upTotalTrafficValue,
-                      ),
-                      const SizedBox(height: 8),
-                      _buildTrafficDataItem(
-                        context,
-                        Icon(
-                          Icons.arrow_downward,
-                          color: secondaryColor,
-                          size: 14,
-                        ),
-                        downTotalTrafficValue,
-                      ),
-                    ],
-                  ),
-                );
-              },
+        child: Padding(
+          padding: baseInfoEdgeInsets.copyWith(top: 0),
+          child: ValueListenableBuilder<int>(
+            valueListenable: dashboardRefreshManager.tick1s,
+            builder: (_, _, _) => Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _total(
+                  context,
+                  appLocalizations.download,
+                  Icons.arrow_downward_rounded,
+                  traffic.down,
+                ),
+                Divider(height: 1, color: context.colorScheme.outlineVariant),
+                _total(
+                  context,
+                  appLocalizations.upload,
+                  Icons.arrow_upward_rounded,
+                  traffic.up,
+                ),
+              ],
             ),
           ),
-        );
-      }
-    }
+        ),
+      ),
+    );
+  }
+}

@@ -171,7 +171,8 @@ Future<void> delayTest(
       }
       targets.add(DelayTestTarget(name: name, url: url));
     }
-    final concurrencyLimit = globalState.config.proxiesStyle.concurrencyLimit;
+    final concurrencyLimit = globalState.config.proxiesStyle.concurrencyLimit
+        .clamp(1, maxConcurrentDelayTests);
 
     // 按实际节点和实际测试地址创建任务，避免多个代理组别名重复测速。
     final delayTasks = targets.map((target) {

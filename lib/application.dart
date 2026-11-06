@@ -342,63 +342,65 @@ class ApplicationState extends ConsumerState<Application>
                 return ValueListenableBuilder<bool>(
                   valueListenable: globalState.cardOnlyMode,
                   builder: (_, cardOnly, _) {
-                // Card-only mode keeps this MaterialApp (and therefore the
-                // theme) but replaces everything it draws. The window behind is
-                // translucent, so what shows around the card is whatever app the
-                // user was in.
-                if (cardOnly) {
-                  final colors = Theme.of(context).colorScheme;
-                  return Material(
-                    color: Colors.transparent,
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: _closeCardOnlyMode,
-                      // 不再铺满屏压暗：全屏不透明的一层会把整个窗口染成
-                      // 一片色块，反而盖掉了"卡片外能看到下层界面"这件事。
-                      child: Center(
-                          child: Padding(
-                            // 和 App 内弹窗一样贴边：多加的内边距会让卡片比
-                            // App 内窄一圈，看起来"周围都是空白"。
-                            padding: const EdgeInsets.all(FluxoraSpacing.sm),
-                            child: GestureDetector(
-                              onTap: () {},
-                              child: Material(
-                                elevation: 12,
-                                borderRadius: BorderRadius.circular(FluxoraRadius.xl),
-                                clipBehavior: Clip.antiAlias,
-                                color: colors.surface,
-                                child: SwitchCard(
-                                  onFinished: _closeCardOnlyMode,
+                    // Card-only mode keeps this MaterialApp (and therefore the
+                    // theme) but replaces everything it draws. The window behind is
+                    // translucent, so what shows around the card is whatever app the
+                    // user was in.
+                    if (cardOnly) {
+                      final colors = Theme.of(context).colorScheme;
+                      return Material(
+                        color: Colors.transparent,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: _closeCardOnlyMode,
+                          // 不再铺满屏压暗：全屏不透明的一层会把整个窗口染成
+                          // 一片色块，反而盖掉了"卡片外能看到下层界面"这件事。
+                          child: Center(
+                            child: Padding(
+                              // 和 App 内弹窗一样贴边：多加的内边距会让卡片比
+                              // App 内窄一圈，看起来"周围都是空白"。
+                              padding: const EdgeInsets.all(FluxoraSpacing.sm),
+                              child: GestureDetector(
+                                onTap: () {},
+                                child: Material(
+                                  elevation: 12,
+                                  borderRadius: BorderRadius.circular(
+                                    FluxoraRadius.xl,
+                                  ),
+                                  clipBehavior: Clip.antiAlias,
+                                  color: colors.surface,
+                                  child: SwitchCard(
+                                    onFinished: _closeCardOnlyMode,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                  );
-                }
-                return Directionality(
-                  textDirection: TextDirection.ltr,
-                  child: ValueListenableBuilder<bool>(
-                    valueListenable: globalState.animationEnabled,
-                    builder: (_, enabled, _) {
-                      return TickerMode(
-                        enabled: enabled,
-                        child: AppEnvManager(
-                          // 这里已经在 MaterialApp 之下，`Theme.of` 拿到的是
-                          // 解析后的主题；通知栏大图标据此选深/浅版本。
-                          child: _NotificationIconSync(
-                            child: _buildApp(
-                              AppSidebarContainer(
-                                child: _buildPlatformApp(child!),
+                      );
+                    }
+                    return Directionality(
+                      textDirection: TextDirection.ltr,
+                      child: ValueListenableBuilder<bool>(
+                        valueListenable: globalState.animationEnabled,
+                        builder: (_, enabled, _) {
+                          return TickerMode(
+                            enabled: enabled,
+                            child: AppEnvManager(
+                              // 这里已经在 MaterialApp 之下，`Theme.of` 拿到的是
+                              // 解析后的主题；通知栏大图标据此选深/浅版本。
+                              child: _NotificationIconSync(
+                                child: _buildApp(
+                                  AppSidebarContainer(
+                                    child: _buildPlatformApp(child!),
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                );
+                          );
+                        },
+                      ),
+                    );
                   },
                 );
               },
@@ -408,277 +410,215 @@ class ApplicationState extends ConsumerState<Application>
                   utils.getLocaleForString(locale) ?? utils.getSystemLocale(),
               supportedLocales: AppLocalizations.delegate.supportedLocales,
               themeMode: themeProps.themeMode,
-              theme: ThemeData(
-                useMaterial3: true,
-                pageTransitionsTheme: _pageTransitionsTheme,
-                colorScheme: lightColorScheme,
-                fontFamily: fontFamily,
-                // Fluxora typography (D4.2 §9): 6 levels, 3 weights. The token
-                // styles leave `fontFamily` null, so they inherit the
-                // `fontFamily` above (HarmonyOS_Sans or the platform default).
-                textTheme: FluxoraTypography.textTheme(),
-                floatingActionButtonTheme: const FloatingActionButtonThemeData(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: FluxoraRadius.fabAll,
-                  ),
-                  elevation: FluxoraElevation.raised,
-                  hoverElevation: FluxoraElevation.menu,
-                ),
-                dialogTheme: DialogThemeData(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(FluxoraRadius.dialog),
-                  ),
-                  elevation: FluxoraElevation.modal,
-                  // One scrim role for every modal surface (Phase 04.4). This is
-                  // the value the framework already used by default, so dialogs
-                  // do not change — it is now explicit and shared with the side
-                  // sheet, which used to dim the page half as much.
-                  barrierColor: FluxoraColors.scrim,
-                ),
-                // Raw `Card` widgets (10 call sites) fell back to Material's
-                // 12 px shape while `CommonCard` renders at
-                // `FluxoraRadius.card` (16). Only the shape is pinned here:
-                // colour and elevation stay on the Material defaults until the
-                // flat-vs-tinted card decision is made.
-                cardTheme: const CardThemeData(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: FluxoraRadius.cardAll,
-                  ),
-                ),
-                bottomSheetTheme: const BottomSheetThemeData(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(FluxoraRadius.sheet),
-                    ),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  modalBarrierColor: FluxoraColors.scrim,
-                ),
-                popupMenuTheme: const PopupMenuThemeData(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(
-                      Radius.circular(FluxoraRadius.md),
-                    ),
-                  ),
-                  elevation: FluxoraElevation.menu,
-                ),
-                dividerTheme: DividerThemeData(
-                  color: _getAppColorScheme(
-                    brightness: Brightness.light,
-                    primaryColor: themeProps.primaryColor,
-                  ).outline.withValues(alpha: 0.75),
-                  thickness: 1,
-                  space: 1,
-                ),
-                inputDecorationTheme: InputDecorationTheme(
-                  // 表单里字段多，默认高度会把弹窗撑得很长；紧凑一点。
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 14,
-                  ),
-                  labelStyle: const TextStyle(fontSize: 12),
-                  hintStyle: const TextStyle(fontSize: 12),
-                  border: const OutlineInputBorder(
-                    borderRadius: FluxoraRadius.fieldAll,
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: FluxoraRadius.fieldAll,
-                    borderSide: BorderSide(
-                      // A field edge is a necessary component boundary (WCAG
-                      // 1.4.11, 3:1). The Lines roles are 1.4–1.8:1 here, and at
-                      // 45–75 % alpha the border was 1.1–1.3:1 — invisible.
-                      color: fluxoraFieldBorder(
-                        _getAppColorScheme(
-                          brightness: Brightness.light,
-                          primaryColor: themeProps.primaryColor,
+              theme: fluxoraMaterialTheme(
+                ThemeData(
+                  useMaterial3: true,
+                  pageTransitionsTheme: _pageTransitionsTheme,
+                  colorScheme: lightColorScheme,
+                  fontFamily: fontFamily,
+                  // Fluxora typography (D4.2 §9): 6 levels, 3 weights. The token
+                  // styles leave `fontFamily` null, so they inherit the
+                  // `fontFamily` above (HarmonyOS_Sans or the platform default).
+                  textTheme: FluxoraTypography.textTheme(),
+                  floatingActionButtonTheme:
+                      const FloatingActionButtonThemeData(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: FluxoraRadius.fabAll,
                         ),
+                        elevation: FluxoraElevation.raised,
+                        hoverElevation: FluxoraElevation.menu,
+                      ),
+                  dialogTheme: DialogThemeData(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(FluxoraRadius.dialog),
+                    ),
+                    elevation: FluxoraElevation.modal,
+                    // One scrim role for every modal surface (Phase 04.4). This is
+                    // the value the framework already used by default, so dialogs
+                    // do not change — it is now explicit and shared with the side
+                    // sheet, which used to dim the page half as much.
+                    barrierColor: FluxoraColors.scrim,
+                  ),
+                  // Raw `Card` widgets (10 call sites) fell back to Material's
+                  // 12 px shape while `CommonCard` renders at
+                  // `FluxoraRadius.card` (16). Only the shape is pinned here:
+                  // colour and elevation stay on the Material defaults until the
+                  // flat-vs-tinted card decision is made.
+                  cardTheme: const CardThemeData(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: FluxoraRadius.cardAll,
+                    ),
+                  ),
+                  bottomSheetTheme: const BottomSheetThemeData(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(FluxoraRadius.sheet),
                       ),
                     ),
+                    clipBehavior: Clip.antiAlias,
+                    modalBarrierColor: FluxoraColors.scrim,
                   ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: FluxoraRadius.fieldAll,
-                    borderSide: BorderSide(
-                      color: _getAppColorScheme(
-                        brightness: Brightness.light,
-                        primaryColor: themeProps.primaryColor,
-                      ).primary,
-                      width: 2,
+                  popupMenuTheme: const PopupMenuThemeData(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(
+                        Radius.circular(FluxoraRadius.md),
+                      ),
                     ),
+                    elevation: FluxoraElevation.menu,
                   ),
-                  // Without these two the error state fell back to the call
-                  // site's bare `OutlineInputBorder()` — a 4 px radius in a
-                  // non-error colour — so a field visibly snapped from 18 px to
-                  // 4 px the moment validation failed. Widths mirror the normal
-                  // (1) and focused (2) states above. `disabledBorder` is left
-                  // untouched in this batch.
-                  errorBorder: OutlineInputBorder(
-                    borderRadius: FluxoraRadius.fieldAll,
-                    borderSide: BorderSide(
-                      color: _getAppColorScheme(
-                        brightness: Brightness.light,
-                        primaryColor: themeProps.primaryColor,
-                      ).error,
-                    ),
-                  ),
-                  focusedErrorBorder: OutlineInputBorder(
-                    borderRadius: FluxoraRadius.fieldAll,
-                    borderSide: BorderSide(
-                      color: _getAppColorScheme(
-                        brightness: Brightness.light,
-                        primaryColor: themeProps.primaryColor,
-                      ).error,
-                      width: 2,
-                    ),
-                  ),
-                ),
-                chipTheme: ChipThemeData(
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(FluxoraRadius.lg)),
-                  ),
-                  side: BorderSide(
+                  dividerTheme: DividerThemeData(
                     color: _getAppColorScheme(
                       brightness: Brightness.light,
                       primaryColor: themeProps.primaryColor,
                     ).outline.withValues(alpha: 0.75),
+                    thickness: 1,
+                    space: 1,
                   ),
-                ),
-                tooltipTheme: TooltipThemeData(
-                  decoration: BoxDecoration(
-                    color: lightColorScheme.inverseSurface,
-                    borderRadius: const BorderRadius.all(Radius.circular(FluxoraRadius.sm)),
-                  ),
-                  textStyle: TextStyle(
-                    color: lightColorScheme.onInverseSurface,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-              darkTheme: ThemeData(
-                useMaterial3: true,
-                pageTransitionsTheme: _pageTransitionsTheme,
-                colorScheme: darkColorScheme,
-                fontFamily: fontFamily,
-                // Same Fluxora typography scale as the light theme.
-                textTheme: FluxoraTypography.textTheme(),
-                floatingActionButtonTheme: const FloatingActionButtonThemeData(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: FluxoraRadius.fabAll,
-                  ),
-                  elevation: FluxoraElevation.raised,
-                  hoverElevation: FluxoraElevation.menu,
-                ),
-                dialogTheme: DialogThemeData(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(FluxoraRadius.dialog),
-                  ),
-                  elevation: FluxoraElevation.modal,
-                  // One scrim role for every modal surface (Phase 04.4). This is
-                  // the value the framework already used by default, so dialogs
-                  // do not change — it is now explicit and shared with the side
-                  // sheet, which used to dim the page half as much.
-                  barrierColor: FluxoraColors.scrim,
-                ),
-                // Raw `Card` widgets (10 call sites) fell back to Material's
-                // 12 px shape while `CommonCard` renders at
-                // `FluxoraRadius.card` (16). Only the shape is pinned here:
-                // colour and elevation stay on the Material defaults until the
-                // flat-vs-tinted card decision is made.
-                cardTheme: const CardThemeData(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: FluxoraRadius.cardAll,
-                  ),
-                ),
-                bottomSheetTheme: const BottomSheetThemeData(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(FluxoraRadius.sheet),
+                  inputDecorationTheme: InputDecorationTheme(
+                    // 表单里字段多，默认高度会把弹窗撑得很长；紧凑一点。
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 14,
                     ),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  modalBarrierColor: FluxoraColors.scrim,
-                ),
-                popupMenuTheme: const PopupMenuThemeData(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(
-                      Radius.circular(FluxoraRadius.md),
+                    labelStyle: const TextStyle(fontSize: 12),
+                    hintStyle: const TextStyle(fontSize: 12),
+                    border: const OutlineInputBorder(
+                      borderRadius: FluxoraRadius.fieldAll,
                     ),
-                  ),
-                  elevation: FluxoraElevation.menu,
-                ),
-                dividerTheme: DividerThemeData(
-                  color:
-                      _getAppColorScheme(
-                            brightness: Brightness.dark,
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: FluxoraRadius.fieldAll,
+                      borderSide: BorderSide(
+                        // A field edge is a necessary component boundary (WCAG
+                        // 1.4.11, 3:1). The Lines roles are 1.4–1.8:1 here, and at
+                        // 45–75 % alpha the border was 1.1–1.3:1 — invisible.
+                        color: fluxoraFieldBorder(
+                          _getAppColorScheme(
+                            brightness: Brightness.light,
                             primaryColor: themeProps.primaryColor,
-                          )
-                          .toPureBlack(themeProps.pureBlack)
-                          .outlineVariant
-                          .withValues(alpha: 0.45),
-                  thickness: 1,
-                  space: 1,
-                ),
-                inputDecorationTheme: InputDecorationTheme(
-                  // 表单里字段多，默认高度会把弹窗撑得很长；紧凑一点。
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 14,
-                  ),
-                  labelStyle: const TextStyle(fontSize: 12),
-                  hintStyle: const TextStyle(fontSize: 12),
-                  border: const OutlineInputBorder(
-                    borderRadius: FluxoraRadius.fieldAll,
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: FluxoraRadius.fieldAll,
-                    borderSide: BorderSide(
-                      color: fluxoraFieldBorder(
-                        _getAppColorScheme(
-                          brightness: Brightness.dark,
+                          ),
+                        ),
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: FluxoraRadius.fieldAll,
+                      borderSide: BorderSide(
+                        color: _getAppColorScheme(
+                          brightness: Brightness.light,
                           primaryColor: themeProps.primaryColor,
-                        ).toPureBlack(themeProps.pureBlack),
+                        ).primary,
+                        width: 2,
+                      ),
+                    ),
+                    // Without these two the error state fell back to the call
+                    // site's bare `OutlineInputBorder()` — a 4 px radius in a
+                    // non-error colour — so a field visibly snapped from 18 px to
+                    // 4 px the moment validation failed. Widths mirror the normal
+                    // (1) and focused (2) states above. `disabledBorder` is left
+                    // untouched in this batch.
+                    errorBorder: OutlineInputBorder(
+                      borderRadius: FluxoraRadius.fieldAll,
+                      borderSide: BorderSide(
+                        color: _getAppColorScheme(
+                          brightness: Brightness.light,
+                          primaryColor: themeProps.primaryColor,
+                        ).error,
+                      ),
+                    ),
+                    focusedErrorBorder: OutlineInputBorder(
+                      borderRadius: FluxoraRadius.fieldAll,
+                      borderSide: BorderSide(
+                        color: _getAppColorScheme(
+                          brightness: Brightness.light,
+                          primaryColor: themeProps.primaryColor,
+                        ).error,
+                        width: 2,
                       ),
                     ),
                   ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: FluxoraRadius.fieldAll,
-                    borderSide: BorderSide(
+                  chipTheme: ChipThemeData(
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(
+                        Radius.circular(FluxoraRadius.lg),
+                      ),
+                    ),
+                    side: BorderSide(
                       color: _getAppColorScheme(
-                        brightness: Brightness.dark,
+                        brightness: Brightness.light,
                         primaryColor: themeProps.primaryColor,
-                      ).toPureBlack(themeProps.pureBlack).primary,
-                      width: 2,
+                      ).outline.withValues(alpha: 0.75),
                     ),
                   ),
-                  // Same reason as the light theme: keep the error state on the
-                  // 18 px outline instead of dropping to the call site's bare
-                  // `OutlineInputBorder()` (4 px, non-error colour).
-                  errorBorder: OutlineInputBorder(
-                    borderRadius: FluxoraRadius.fieldAll,
-                    borderSide: BorderSide(
-                      color: _getAppColorScheme(
-                        brightness: Brightness.dark,
-                        primaryColor: themeProps.primaryColor,
-                      ).toPureBlack(themeProps.pureBlack).error,
+                  tooltipTheme: TooltipThemeData(
+                    decoration: BoxDecoration(
+                      color: lightColorScheme.inverseSurface,
+                      borderRadius: const BorderRadius.all(
+                        Radius.circular(FluxoraRadius.sm),
+                      ),
                     ),
-                  ),
-                  focusedErrorBorder: OutlineInputBorder(
-                    borderRadius: FluxoraRadius.fieldAll,
-                    borderSide: BorderSide(
-                      color: _getAppColorScheme(
-                        brightness: Brightness.dark,
-                        primaryColor: themeProps.primaryColor,
-                      ).toPureBlack(themeProps.pureBlack).error,
-                      width: 2,
+                    textStyle: TextStyle(
+                      color: lightColorScheme.onInverseSurface,
+                      fontSize: 12,
                     ),
                   ),
                 ),
-                chipTheme: ChipThemeData(
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(FluxoraRadius.lg)),
+                themeProps.surfaceStyle,
+              ),
+              darkTheme: fluxoraMaterialTheme(
+                ThemeData(
+                  useMaterial3: true,
+                  pageTransitionsTheme: _pageTransitionsTheme,
+                  colorScheme: darkColorScheme,
+                  fontFamily: fontFamily,
+                  // Same Fluxora typography scale as the light theme.
+                  textTheme: FluxoraTypography.textTheme(),
+                  floatingActionButtonTheme:
+                      const FloatingActionButtonThemeData(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: FluxoraRadius.fabAll,
+                        ),
+                        elevation: FluxoraElevation.raised,
+                        hoverElevation: FluxoraElevation.menu,
+                      ),
+                  dialogTheme: DialogThemeData(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(FluxoraRadius.dialog),
+                    ),
+                    elevation: FluxoraElevation.modal,
+                    // One scrim role for every modal surface (Phase 04.4). This is
+                    // the value the framework already used by default, so dialogs
+                    // do not change — it is now explicit and shared with the side
+                    // sheet, which used to dim the page half as much.
+                    barrierColor: FluxoraColors.scrim,
                   ),
-                  side: BorderSide(
+                  // Raw `Card` widgets (10 call sites) fell back to Material's
+                  // 12 px shape while `CommonCard` renders at
+                  // `FluxoraRadius.card` (16). Only the shape is pinned here:
+                  // colour and elevation stay on the Material defaults until the
+                  // flat-vs-tinted card decision is made.
+                  cardTheme: const CardThemeData(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: FluxoraRadius.cardAll,
+                    ),
+                  ),
+                  bottomSheetTheme: const BottomSheetThemeData(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(FluxoraRadius.sheet),
+                      ),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    modalBarrierColor: FluxoraColors.scrim,
+                  ),
+                  popupMenuTheme: const PopupMenuThemeData(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(
+                        Radius.circular(FluxoraRadius.md),
+                      ),
+                    ),
+                    elevation: FluxoraElevation.menu,
+                  ),
+                  dividerTheme: DividerThemeData(
                     color:
                         _getAppColorScheme(
                               brightness: Brightness.dark,
@@ -687,18 +627,96 @@ class ApplicationState extends ConsumerState<Application>
                             .toPureBlack(themeProps.pureBlack)
                             .outlineVariant
                             .withValues(alpha: 0.45),
+                    thickness: 1,
+                    space: 1,
+                  ),
+                  inputDecorationTheme: InputDecorationTheme(
+                    // 表单里字段多，默认高度会把弹窗撑得很长；紧凑一点。
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 14,
+                    ),
+                    labelStyle: const TextStyle(fontSize: 12),
+                    hintStyle: const TextStyle(fontSize: 12),
+                    border: const OutlineInputBorder(
+                      borderRadius: FluxoraRadius.fieldAll,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: FluxoraRadius.fieldAll,
+                      borderSide: BorderSide(
+                        color: fluxoraFieldBorder(
+                          _getAppColorScheme(
+                            brightness: Brightness.dark,
+                            primaryColor: themeProps.primaryColor,
+                          ).toPureBlack(themeProps.pureBlack),
+                        ),
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: FluxoraRadius.fieldAll,
+                      borderSide: BorderSide(
+                        color: _getAppColorScheme(
+                          brightness: Brightness.dark,
+                          primaryColor: themeProps.primaryColor,
+                        ).toPureBlack(themeProps.pureBlack).primary,
+                        width: 2,
+                      ),
+                    ),
+                    // Same reason as the light theme: keep the error state on the
+                    // 18 px outline instead of dropping to the call site's bare
+                    // `OutlineInputBorder()` (4 px, non-error colour).
+                    errorBorder: OutlineInputBorder(
+                      borderRadius: FluxoraRadius.fieldAll,
+                      borderSide: BorderSide(
+                        color: _getAppColorScheme(
+                          brightness: Brightness.dark,
+                          primaryColor: themeProps.primaryColor,
+                        ).toPureBlack(themeProps.pureBlack).error,
+                      ),
+                    ),
+                    focusedErrorBorder: OutlineInputBorder(
+                      borderRadius: FluxoraRadius.fieldAll,
+                      borderSide: BorderSide(
+                        color: _getAppColorScheme(
+                          brightness: Brightness.dark,
+                          primaryColor: themeProps.primaryColor,
+                        ).toPureBlack(themeProps.pureBlack).error,
+                        width: 2,
+                      ),
+                    ),
+                  ),
+                  chipTheme: ChipThemeData(
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(
+                        Radius.circular(FluxoraRadius.lg),
+                      ),
+                    ),
+                    side: BorderSide(
+                      color:
+                          _getAppColorScheme(
+                                brightness: Brightness.dark,
+                                primaryColor: themeProps.primaryColor,
+                              )
+                              .toPureBlack(themeProps.pureBlack)
+                              .outlineVariant
+                              .withValues(alpha: 0.45),
+                    ),
+                  ),
+                  tooltipTheme: TooltipThemeData(
+                    decoration: BoxDecoration(
+                      color: darkColorScheme.inverseSurface,
+                      borderRadius: const BorderRadius.all(
+                        Radius.circular(FluxoraRadius.sm),
+                      ),
+                    ),
+                    textStyle: TextStyle(
+                      color: darkColorScheme.onInverseSurface,
+                      fontSize: 12,
+                    ),
                   ),
                 ),
-                tooltipTheme: TooltipThemeData(
-                  decoration: BoxDecoration(
-                    color: darkColorScheme.inverseSurface,
-                    borderRadius: const BorderRadius.all(Radius.circular(FluxoraRadius.sm)),
-                  ),
-                  textStyle: TextStyle(
-                    color: darkColorScheme.onInverseSurface,
-                    fontSize: 12,
-                  ),
-                ),
+                themeProps.surfaceStyle,
               ),
               home: child!,
             );

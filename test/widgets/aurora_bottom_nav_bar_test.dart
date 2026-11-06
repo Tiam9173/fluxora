@@ -134,7 +134,7 @@ void main() {
   });
 
   group('Aurora surface', () {
-    testWidgets('the panel sits on surfaceContainer with the xl radius', (
+    testWidgets('the panel sits on surfaceContainer with capsule corners', (
       tester,
     ) async {
       await pumpNavBar(tester);
@@ -144,24 +144,22 @@ void main() {
       expect(decoration.color, scheme.surfaceContainer);
       expect(
         decoration.borderRadius,
-        BorderRadius.circular(FluxoraRadius.xl),
-        reason: '24 keeps the corner soft without the capsule silhouette',
+        BorderRadius.circular(FluxoraRadius.sheet),
+        reason: 'the dock uses the shared 28px floating capsule radius',
       );
     });
   });
 
   group('selected / unselected', () {
-    testWidgets('the selected pill uses the shared selection tint', (
+    testWidgets('the selected pill uses a quiet neutral highlight', (
       tester,
     ) async {
       await pumpNavBar(tester, brightness: Brightness.light);
       final scheme = schemeOf(tester);
 
-      // Phase 02 moved this out of three duplicated literals; the bar must keep
-      // tinting the *scheme's* primary, not `FluxoraColorSet.primary`.
       expect(
         pillOf(tester, labelOf(PageLabel.dashboard)).color,
-        FluxoraColorSet.selectionTint(scheme.primary, scheme.brightness),
+        scheme.onSurface.withValues(alpha: .06),
       );
       expect(
         pillOf(tester, labelOf(PageLabel.profiles)).color,
@@ -170,13 +168,13 @@ void main() {
       );
     });
 
-    testWidgets('only the current page carries the accent tick', (
+    testWidgets('only the current page carries the selection highlight', (
       tester,
     ) async {
       await pumpNavBar(tester, selectedIndex: 1);
 
       expect(
-        find.byKey(const ValueKey('aurora-dock-accent')),
+        find.byKey(const ValueKey('aurora-dock-selection')),
         findsOneWidget,
         reason: 'exactly one destination is current',
       );
@@ -191,23 +189,25 @@ void main() {
       expect(find.text(labelOf(PageLabel.profiles)), findsOneWidget);
     });
 
-    testWidgets('the selected icon is brand, the label is neutral', (
-      tester,
-    ) async {
+    testWidgets('selected icon and label remain high contrast', (tester) async {
       await pumpNavBar(tester);
       final scheme = schemeOf(tester);
 
       final selectedIcon = tester.widget<Icon>(find.byIcon(Icons.dashboard));
-      expect(selectedIcon.color, scheme.primary);
+      expect(selectedIcon.color, scheme.onSurface);
 
       final unselectedIcon = tester.widget<Icon>(find.byIcon(Icons.folder));
       expect(unselectedIcon.color, scheme.onSurfaceVariant);
 
-      final selectedLabel = tester.widget<Text>(find.text(labelOf(PageLabel.dashboard)));
+      final selectedLabel = tester.widget<Text>(
+        find.text(labelOf(PageLabel.dashboard)),
+      );
       expect(selectedLabel.style?.color, scheme.onSurface);
       expect(selectedLabel.style?.fontWeight, FontWeight.w600);
 
-      final unselectedLabel = tester.widget<Text>(find.text(labelOf(PageLabel.profiles)));
+      final unselectedLabel = tester.widget<Text>(
+        find.text(labelOf(PageLabel.profiles)),
+      );
       expect(unselectedLabel.style?.color, scheme.onSurfaceVariant);
       expect(unselectedLabel.style?.fontWeight, FontWeight.w500);
     });
@@ -220,12 +220,17 @@ void main() {
       await pumpNavBar(tester);
       final scheme = schemeOf(tester);
 
-      expect(pillOf(tester, labelOf(PageLabel.profiles)).color, Colors.transparent);
+      expect(
+        pillOf(tester, labelOf(PageLabel.profiles)).color,
+        Colors.transparent,
+      );
 
       final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
       await gesture.addPointer(location: Offset.zero);
       addTearDown(gesture.removePointer);
-      await gesture.moveTo(tester.getCenter(find.text(labelOf(PageLabel.profiles))));
+      await gesture.moveTo(
+        tester.getCenter(find.text(labelOf(PageLabel.profiles))),
+      );
       await tester.pump();
 
       final hovered = pillOf(tester, labelOf(PageLabel.profiles)).color;
@@ -235,7 +240,10 @@ void main() {
         isNot(FluxoraColorSet.selectionTint(scheme.primary, scheme.brightness)),
         reason: 'hover must not look like the current page',
       );
-      expect(find.byKey(const ValueKey('aurora-dock-accent')), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('aurora-dock-selection')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('keyboard focus draws a ring, not a filled pill', (
@@ -264,7 +272,10 @@ void main() {
         reason: 'a focused destination must draw a visible ring',
       );
       expect(ringed.first.side.color, scheme.primary);
-      expect(pillOf(tester, labelOf(PageLabel.profiles)).color, Colors.transparent);
+      expect(
+        pillOf(tester, labelOf(PageLabel.profiles)).color,
+        Colors.transparent,
+      );
     });
   });
 

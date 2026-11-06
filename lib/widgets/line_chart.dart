@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:fluxora/common/color.dart';
+import 'package:fluxora/common/tokens/fluxora_motion.dart';
 import 'package:flutter/material.dart';
 
 class Point {
@@ -20,7 +21,7 @@ class LineChart extends StatefulWidget {
     this.gradient = false,
     required this.points,
     required this.color,
-    this.duration = Duration.zero,
+    this.duration = FluxoraMotion.slow,
   });
 
   @override
@@ -30,38 +31,66 @@ class LineChart extends StatefulWidget {
 class _LineChartState extends State<LineChart>
     with SingleTickerProviderStateMixin {
   AnimationController? _controller;
-  List<Point> prevPoints = [];
-  List<Point> points = [];
-  bool get _hasAnimation => widget.duration != Duration.zero;
+  late List<Point> _previous;
+  late List<Point> _points;
+  bool _previousNormalized = false;
+  bool _reduced = false;
+  bool _visible = true;
+
+  bool get _animated =>
+      !_reduced && _visible && widget.duration > Duration.zero;
+  double get _progress =>
+      FluxoraMotion.standard.transform(_controller?.value ?? 1);
 
   @override
   void initState() {
     super.initState();
-    points = widget.points;
-    prevPoints = points;
+    _previous = _points = widget.points;
+  }
 
-    // Create AnimationController only if needed
-    if (_hasAnimation) {
-      _controller = AnimationController(vsync: this, duration: widget.duration);
+  void _syncController() {
+    if (_animated) {
+      _controller ??= AnimationController(vsync: this, value: 1);
+      _controller!.duration = widget.duration;
+    } else {
+      _controller?.stop();
+      _controller?.value = 1;
     }
   }
 
   @override
-  void didUpdateWidget(LineChart oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.points != points) {
-      prevPoints = points;
-      points = widget.points;
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _reduced = FluxoraMotion.ofContext(context).reduceMotion;
+    _visible = TickerMode.valuesOf(context).enabled;
+    _syncController();
+  }
 
-      // Trigger animation if needed
-      if (_hasAnimation) {
-        _controller?.forward(from: 0);
-      } else {
-        // Direct repaint without animation
-        setState(() {});
-      }
+  @override
+  void didUpdateWidget(covariant LineChart oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _syncController();
+    if (widget.points == _points) return;
+    // Retarget from the painted geometry when samples arrive during a tween.
+    _previous = _painter().getInterpolatePoints(_previous, _points, _progress);
+    _previousNormalized = true;
+    _points = widget.points;
+    if (_animated && _points.isNotEmpty) {
+      _controller!.forward(from: 0);
+    } else {
+      _controller?.value = 1;
     }
   }
+
+  LineChartPainter _painter() => LineChartPainter(
+    prevPoints: _previous,
+    points: _points,
+    progress: _animated ? _progress : 1,
+    color: widget.color,
+    gradient: widget.gradient,
+    hasAnimation: _animated,
+    previousNormalized: _previousNormalized,
+  );
 
   @override
   void dispose() {
@@ -70,50 +99,16 @@ class _LineChartState extends State<LineChart>
   }
 
   @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (_, container) {
-        // Fast path without animation
-        if (!_hasAnimation) {
-          return CustomPaint(
-            painter: LineChartPainter(
-              prevPoints: points,
-              points: points,
-              progress: 1.0,
-              gradient: widget.gradient,
-              color: widget.color,
-              hasAnimation: false,
-            ),
-            child: SizedBox(
-              height: container.maxHeight,
-              width: container.maxWidth,
-            ),
-          );
-        }
-
-        // Use AnimatedBuilder with animation
-        return AnimatedBuilder(
-          animation: _controller!.view,
-          builder: (_, _) {
-            return CustomPaint(
-              painter: LineChartPainter(
-                prevPoints: prevPoints,
-                points: points,
-                progress: _controller!.value,
-                gradient: widget.gradient,
-                color: widget.color,
-                hasAnimation: true,
-              ),
-              child: SizedBox(
-                height: container.maxHeight,
-                width: container.maxWidth,
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (_, constraints) {
+      final size = Size(constraints.maxWidth, constraints.maxHeight);
+      if (!_animated) return CustomPaint(painter: _painter(), size: size);
+      return AnimatedBuilder(
+        animation: _controller!,
+        builder: (_, _) => CustomPaint(painter: _painter(), size: size),
+      );
+    },
+  );
 }
 
 class LineChartPainter extends CustomPainter {
@@ -123,6 +118,7 @@ class LineChartPainter extends CustomPainter {
   final Color color;
   final bool gradient;
   final bool hasAnimation;
+  final bool previousNormalized;
 
   LineChartPainter({
     required this.prevPoints,
@@ -131,6 +127,7 @@ class LineChartPainter extends CustomPainter {
     required this.color,
     required this.gradient,
     this.hasAnimation = true,
+    this.previousNormalized = false,
   });
 
   List<Point> getRenderPoints(List<Point> points) {
@@ -161,7 +158,9 @@ class LineChartPainter extends CustomPainter {
     List<Point> points,
     double t,
   ) {
-    final renderPrevPoints = getRenderPoints(prevPoints);
+    final renderPrevPoints = previousNormalized
+        ? prevPoints
+        : getRenderPoints(prevPoints);
     final renderPoints = getRenderPoints(points);
 
     return List.generate(renderPoints.length, (i) {
@@ -175,6 +174,7 @@ class LineChartPainter extends CustomPainter {
   }
 
   Path getPath(List<Point> points, Size size) {
+    if (points.isEmpty) return Path();
     final path = Path()
       ..moveTo(points[0].x * size.width, (1 - points[0].y) * size.height);
 
@@ -202,16 +202,12 @@ class LineChartPainter extends CustomPainter {
       points,
       progress,
     );
-    final path = getPath(interpolatedPoints, size);
-
-    // Expensive operation: only with animation
-    final metric = path.computeMetrics().first;
-    final length = metric.length;
-    return metric.extractPath(0, length);
+    return getPath(interpolatedPoints, size);
   }
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (points.isEmpty) return;
     const strokeWidth = 2.0;
     final chartSize = Size(size.width, size.height * 0.7);
 
@@ -261,7 +257,9 @@ class LineChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant LineChartPainter oldDelegate) {
-    return oldDelegate.progress != progress ||
+    return oldDelegate.hasAnimation != hasAnimation ||
+        oldDelegate.previousNormalized != previousNormalized ||
+        oldDelegate.progress != progress ||
         oldDelegate.prevPoints != prevPoints ||
         oldDelegate.points != points ||
         oldDelegate.color != color ||

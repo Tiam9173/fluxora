@@ -226,7 +226,15 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
           );
           final isMobileView = ref.watch(isMobileViewProvider);
           if (profilesSelectorState.profiles.isEmpty) {
-            return FluxoraEmptyState(title: appLocalizations.nullProfileDesc);
+            return FluxoraEmptyState(
+              icon: Icons.folder_open_outlined,
+              title: appLocalizations.nullProfileDesc,
+              action: FilledButton.icon(
+                onPressed: _handleShowAddExtendPage,
+                icon: const Icon(Icons.add_rounded),
+                label: Text(appLocalizations.add),
+              ),
+            );
           }
           final columns = system.isAndroid
               ? 1
@@ -359,11 +367,7 @@ class ProfileItem extends StatelessWidget {
           content: content,
           readOnly: true,
         );
-        BaseNavigator.push<String>(
-          context,
-          previewPage,
-          maintainState: false,
-        );
+        BaseNavigator.push<String>(context, previewPage, maintainState: false);
       },
       needLoading: true,
       title: appLocalizations.tip,
@@ -535,10 +539,7 @@ class ProfileItem extends StatelessWidget {
         ),
         if (subtitleText != null && subtitleText.isNotEmpty) ...[
           const SizedBox(width: 6),
-          Text(
-            '·',
-            style: context.textTheme.labelMedium?.toLight,
-          ),
+          Text('·', style: context.textTheme.labelMedium?.toLight),
           const SizedBox(width: 6),
           Text(
             subtitleText,
@@ -554,7 +555,8 @@ class ProfileItem extends StatelessWidget {
   Widget _buildContentInfo(BuildContext context) {
     final subscriptionInfo = profile.subscriptionInfo;
     final updateTimeText = profile.lastUpdateDate?.lastUpdateTimeDesc ?? '';
-    final hasUsageBar = subscriptionInfo != null &&
+    final hasUsageBar =
+        subscriptionInfo != null &&
         ((subscriptionInfo.upload + subscriptionInfo.download > 0) ||
             subscriptionInfo.total > 0);
 
@@ -585,15 +587,17 @@ class ProfileItem extends StatelessWidget {
                     child: Container(
                       height: 5,
                       alignment: Alignment.centerLeft,
-                      color:
-                          context.colorScheme.primary.withValues(alpha: 0.15),
+                      color: context.colorScheme.primary.withValues(
+                        alpha: 0.15,
+                      ),
                       child: FractionallySizedBox(
-                        widthFactor: (subscriptionInfo.total > 0
-                                ? (subscriptionInfo.upload +
-                                        subscriptionInfo.download) /
-                                    subscriptionInfo.total
-                                : 0.0)
-                            .clamp(0.0, 1.0),
+                        widthFactor:
+                            (subscriptionInfo.total > 0
+                                    ? (subscriptionInfo.upload +
+                                              subscriptionInfo.download) /
+                                          subscriptionInfo.total
+                                    : 0.0)
+                                .clamp(0.0, 1.0),
                         child: Container(
                           decoration: BoxDecoration(
                             color: context.colorScheme.primary,
@@ -862,10 +866,7 @@ class ProfileItem extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildTitleRow(context),
-                  _buildContentInfo(context),
-                ],
+                children: [_buildTitleRow(context), _buildContentInfo(context)],
               ),
             ),
           ),

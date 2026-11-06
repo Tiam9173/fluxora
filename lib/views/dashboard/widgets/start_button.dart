@@ -3,6 +3,7 @@ import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluxora/views/profiles/add_profile.dart';
 
@@ -11,45 +12,12 @@ import 'package:fluxora/views/profiles/add_profile.dart';
 /// Pure presentation data — derived from the same providers the previous
 /// implementation read, with no new data source and no new logic.
 typedef _HeroPresentation = ({
-  FluxoraFlowState flow,
   FluxoraStatusKind kind,
   String label,
   String value,
 });
 
-/// The Dashboard connection Hero (D4.6).
-///
-/// Was a half-width card whose header carried the state and whose body was a
-/// single line of text. It is now the full-width (8-column) anchor of the
-/// Dashboard: a [FluxoraCard] holding the brand's [FluxoraFlowIndicator] plus a
-/// semantic [FluxoraStatus] and the mono uptime read-out.
-///
-/// **D4.6 regression fix.** The redesign dropped the card's `Info` header and
-/// replaced the body's play/pause glyph with a decorative `Icon` — no
-/// `onPressed`, no press feedback, no cursor change. The card was still the
-/// control (its whole surface is a tap target), but nothing said so. The header
-/// is back (`Icons.power_settings_new` + `powerSwitch`) and the trailing glyph
-/// is now an `IconButton.filledTonal`. The D4.6 body — flow indicator, status,
-/// uptime — is untouched.
-///
-/// **Behaviour is unchanged**: the same `startButtonSelectorStateProvider` /
-/// `runTimeProvider` / `isRestartingCoreProvider` / `isSmartStoppedProvider`
-/// drive it, tapping still calls `updateStatus`, long-press still offers a core
-/// restart, and a missing profile still opens the add-profile sheet.
-/// One-shot entrance for the dashboard Hero.
-///
-/// Every number comes from [FluxoraMotion] — none is invented here:
-///
-/// * duration `base` (200 ms) — the "state change / fade / card expand" tier of
-///   §10.1, which is what a single card entering is;
-/// * curve `enter` (§10.2);
-/// * offset `enterOffset` — the §10.2 4 px lift.
-///
-/// §10.4 forbids scale changes over 1.1×, so the motion is **fade + translate
-/// only**: no `Transform.scale`, no rotation, no flashing. §10.5 is honoured by
-/// resolving a [FluxoraMotionSet] from `MediaQuery.disableAnimations`: under
-/// reduced motion both the duration and the offset collapse to zero, so the card
-/// simply appears with no displacement.
+/// A single token-driven entrance; reduced motion renders the final state.
 class _HeroEntrance extends StatefulWidget {
   const _HeroEntrance({required this.child});
 
@@ -66,21 +34,18 @@ class _HeroEntranceState extends State<_HeroEntrance>
   /// Runs the entrance exactly once, even if dependencies are rebuilt.
   bool _played = false;
 
-  FluxoraMotionSet get _motion => FluxoraMotionSet.of(
-    reduceMotion: MediaQuery.maybeOf(context)?.disableAnimations ?? false,
-  );
+  FluxoraMotionSet get _motion => FluxoraMotion.ofContext(context);
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final motion = _motion;
     _controller.duration = motion.base;
-    if (_played) return;
-    _played = true;
     if (motion.reduceMotion) {
-      // No displacement and no fade — §10.5.
+      _played = true;
       _controller.value = 1;
-    } else {
+    } else if (!_played) {
+      _played = true;
       _controller.forward();
     }
   }
@@ -149,14 +114,13 @@ class _StartButtonState extends ConsumerState<StartButton> {
       await globalState.appController.restartCore();
     } catch (e) {
       if (!mounted) return;
-      // Only failures are worth a message: the success case is visible in the
-      // status row, and a snackbar there sits behind the bottom navigation bar.
+      // Success is already visible in the status row.
       context.showSnackBar('$e');
     }
   }
 
   bool _isDisabled = false;
-  bool? _optimisticStart;
+  bool? _requestedStart;
 
   void _handleStart() async {
     if (_isDisabled) return;
@@ -164,7 +128,7 @@ class _StartButtonState extends ConsumerState<StartButton> {
     final newState = !isStart;
     setState(() {
       _isDisabled = true;
-      _optimisticStart = newState;
+      _requestedStart = newState;
     });
 
     try {
@@ -182,7 +146,7 @@ class _StartButtonState extends ConsumerState<StartButton> {
       if (mounted) {
         setState(() {
           _isDisabled = false;
-          _optimisticStart = null;
+          _requestedStart = null;
         });
       }
     }
@@ -249,6 +213,14 @@ class _StartButtonState extends ConsumerState<StartButton> {
     final hasNoProfile =
         state.isInit && !state.hasProfile && !_isDisabled && !isSmartStopped;
     final isRestarting = ref.watch(isRestartingCoreProvider);
+    final runTime = ref.watch(runTimeProvider);
+    final profile = ref.watch(currentProfileProvider);
+    final selectedMap = ref.watch(selectedMapProvider);
+    final selectedName =
+        selectedMap[profile?.currentGroupName] ??
+        profile?.label ??
+        appLocalizations.profiles;
+    final mode = ref.watch(patchClashConfigProvider.select((s) => s.mode));
 
     // item — the Hero's one-shot entrance. Wrapping the scroll content keeps the
     // 1 s tick listener untouched: `_HeroEntrance` passes its child through and
@@ -257,144 +229,258 @@ class _StartButtonState extends ConsumerState<StartButton> {
       child: ValueListenableBuilder<int>(
         valueListenable: dashboardRefreshManager.tick1s,
         builder: (_, _, _) {
-        final runTime = ref.read(runTimeProvider);
-        final isStart = runTime != null;
-        final displayStart =
-            isSmartStopped ? false : (_optimisticStart ?? isStart);
-        // Busy covers the initial read plus the brief optimistic toggle window.
-        final busy = !state.isInit || _isDisabled || isRestarting;
+          final isStart = runTime != null;
+          final displayStart = !isSmartStopped && isStart;
+          // Busy means initialization or a real operation still awaiting completion.
+          final busy = !state.isInit || _isDisabled || isRestarting;
 
-        final hero = _resolveHero(
-          isInit: state.isInit,
-          hasProfile: state.hasProfile,
-          isRestarting: isRestarting,
-          isSmartStopped: isSmartStopped,
-          started: displayStart,
-          runTime: runTime,
-        );
+          final hero = _isDisabled
+              ? (
+                  kind: FluxoraStatusKind.connecting,
+                  label: _requestedStart == true
+                      ? appLocalizations.startVpn
+                      : appLocalizations.stopVpn,
+                  value: '',
+                )
+              : _resolveHero(
+                  isInit: state.isInit,
+                  hasProfile: state.hasProfile,
+                  isRestarting: isRestarting,
+                  isSmartStopped: isSmartStopped,
+                  started: displayStart,
+                  runTime: runTime,
+                );
 
-        // The header names the *control*; `hero.label` names the *state*.
-        // `_resolveHero` reuses `powerSwitch` as its idle state label, which is
-        // the same string the header now shows — in that one case the read-out
-        // is promoted into the status slot so the card never prints it twice.
-        final isIdleState = hero.label == appLocalizations.powerSwitch;
-        final statusLabel = isIdleState ? hero.value : hero.label;
-        final readOut = isIdleState ? '' : hero.value;
+          // The header names the *control*; `hero.label` names the *state*.
+          // `_resolveHero` reuses `powerSwitch` as its idle state label, which is
+          // the same string the header now shows — in that one case the read-out
+          // is promoted into the status slot so the card never prints it twice.
+          final isIdleState = hero.label == appLocalizations.powerSwitch;
+          final statusLabel = isIdleState ? hero.value : hero.label;
+          final readOut = isIdleState ? '' : hero.value;
 
-        return SizedBox(
-          // Back to one grid row, matching the upstream card
-          // (`height: getWidgetHeight(context, 1)` in Bettbox). The extra
-          // `+ FluxoraSpacing.xxl` made the Hero 24 dp taller than every other
-          // card and read as "too long" next to them.
-          height: getWidgetHeight(1),
-          child: FluxoraCard(
-            // The connection state is the page's primary surface. `filled`
-            // lifts it from `surfaceContainerLow` (every metric card) to
-            // `surfaceContainer`, so the Hero reads as a plane above the grid
-            // instead of "the first card in a list of equals".
-            filled: true,
-            onTap: canPress
-                ? _handleStart
-                : hasNoProfile
-                ? _handleShowAddProfile
-                : null,
-            onLongPress: canPress ? _handleLongPress : null,
-            semanticLabel: hero.label,
-            // Restores the power affordance D4.6 dropped: a power glyph plus a
-            // control label in the card header, so the card reads as the
-            // start/stop control instead of a status card that happens to hold a
-            // play icon. Layout stays D4.6's — only the header comes back.
-            info: Info(
-              label: appLocalizations.powerSwitch,
-              iconData: Icons.power_settings_new,
+          final scheme = context.colorScheme;
+          final action = canPress
+              ? _handleStart
+              : hasNoProfile
+              ? _handleShowAddProfile
+              : null;
+          final largeText =
+              MediaQuery.textScalerOf(context).scale(16) > 22 &&
+              MediaQuery.sizeOf(context).width < 600;
+          final control = DecoratedBox(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: scheme.primary.withValues(alpha: .3)),
             ),
-            padding: const EdgeInsets.symmetric(
-              horizontal: FluxoraSpacing.lg,
-              vertical: FluxoraSpacing.md,
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                FluxoraFlowIndicator(state: hero.flow, width: 56, height: 16),
-                const SizedBox(width: FluxoraSpacing.lg),
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      FluxoraStatus(
-                        status: hero.kind,
-                        label: statusLabel,
-                        semanticLabel: statusLabel,
-                      ),
-                      if (readOut.isNotEmpty) ...[
-                        const SizedBox(height: FluxoraSpacing.xxs),
-                        Text(
-                          readOut,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: FluxoraTypography.numericLabel.copyWith(
-                            color: context.colorScheme.onSurfaceVariant,
+            child: Padding(
+              padding: const EdgeInsets.all(6),
+              child: SizedBox(
+                width: 56,
+                height: 56,
+                child: AnimatedSwitcher(
+                  duration: FluxoraMotion.ofContext(context).fast,
+                  child: busy
+                      ? Padding(
+                          key: const ValueKey('connection-pending'),
+                          padding: EdgeInsets.all(16),
+                          child: FluxoraMotion.ofContext(context).reduceMotion
+                              ? const Icon(
+                                  Icons.hourglass_top_rounded,
+                                  size: 24,
+                                )
+                              : const CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : IconButton.filled(
+                          key: ValueKey(displayStart),
+                          onPressed: action,
+                          tooltip: hasNoProfile
+                              ? appLocalizations.checkOrAddProfile
+                              : appLocalizations.powerSwitch,
+                          style: IconButton.styleFrom(
+                            fixedSize: const Size(56, 56),
+                            backgroundColor: scheme.primary,
+                            foregroundColor: scheme.onPrimary,
+                          ),
+                          icon: Icon(
+                            hasNoProfile
+                                ? Icons.add_rounded
+                                : displayStart
+                                ? Icons.pause_rounded
+                                : Icons.power_settings_new_rounded,
+                            size: 28,
                           ),
                         ),
-                      ],
+                ),
+              ),
+            ),
+          );
+          return SizedBox(
+            height: getWidgetHeight(largeText ? 2.4 : 2),
+            child: FluxoraCard(
+              filled: true,
+              onTap: action,
+              onLongPress: canPress ? _handleLongPress : null,
+              semanticLabel: hero.label,
+              padding: EdgeInsets.zero,
+              child: AnimatedContainer(
+                duration: FluxoraMotion.ofContext(context).base,
+                curve: FluxoraMotion.standard,
+                decoration: BoxDecoration(
+                  borderRadius: FluxoraRadius.cardAll,
+                  border: Border.all(
+                    color: displayStart
+                        ? FluxoraStatus.colorOf(
+                            context,
+                            FluxoraStatusKind.connected,
+                          ).withValues(alpha: .4)
+                        : Colors.transparent,
+                  ),
+                  color: scheme.surfaceContainerHigh,
+                  gradient: FluxoraMaterial.of(context).blurEnabled
+                      ? LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Color.alphaBlend(
+                              FluxoraColors.flowViolet.withValues(
+                                alpha: scheme.brightness == Brightness.light
+                                    ? .10
+                                    : .22,
+                              ),
+                              scheme.surfaceContainer,
+                            ),
+                            Color.alphaBlend(
+                              FluxoraColors.auroraBlue.withValues(alpha: .06),
+                              scheme.surfaceContainer,
+                            ),
+                          ],
+                        )
+                      : null,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(FluxoraSpacing.lg),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      ExcludeSemantics(
+                                        child: FluxoraStatus(
+                                          status: hero.kind,
+                                          showLabel: false,
+                                        ),
+                                      ),
+                                      const SizedBox(width: FluxoraSpacing.sm),
+                                      Flexible(
+                                        child: Text(
+                                          Localizations.localeOf(
+                                                    context,
+                                                  ).languageCode ==
+                                                  'zh'
+                                              ? '连接'
+                                              : 'Connection',
+                                          style: context.textTheme.labelMedium
+                                              ?.copyWith(
+                                                color: scheme.onSurfaceVariant,
+                                              ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: FluxoraSpacing.sm),
+                                  Text(
+                                    statusLabel,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: context.textTheme.titleLarge
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                          color: scheme.onSurface,
+                                        ),
+                                  ),
+                                  if (readOut.isNotEmpty) ...[
+                                    const SizedBox(height: FluxoraSpacing.xs),
+                                    Text(
+                                      readOut,
+                                      style: FluxoraTypography.numericLabel
+                                          .copyWith(
+                                            color: scheme.onSurfaceVariant,
+                                          ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            if (!largeText) ...[
+                              const SizedBox(width: FluxoraSpacing.md),
+                              control,
+                            ],
+                          ],
+                        ),
+                      ),
+                      Divider(
+                        color: scheme.onSurface.withValues(alpha: .1),
+                        height: FluxoraSpacing.lg,
+                      ),
+                      Row(
+                        children: [
+                          ExcludeSemantics(
+                            child: Icon(
+                              Icons.route_outlined,
+                              size: 18,
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                          const SizedBox(width: FluxoraSpacing.sm),
+                          Expanded(
+                            child: EmojiText(
+                              selectedName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: context.textTheme.bodyMedium?.copyWith(
+                                color: scheme.onSurface,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: FluxoraSpacing.sm),
+                          Text(
+                            Intl.message(mode.name),
+                            style: context.textTheme.labelMedium?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                          if (largeText) ...[
+                            const SizedBox(width: FluxoraSpacing.sm),
+                            control,
+                          ],
+                          if (displayStart)
+                            SizedBox(
+                              width: 48,
+                              height: 48,
+                              child: IconButton(
+                                onPressed: busy ? null : _handleRestartCore,
+                                tooltip: appLocalizations.restartCore,
+                                icon: const Icon(Icons.restart_alt, size: 22),
+                              ),
+                            ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
-                const SizedBox(width: FluxoraSpacing.md),
-                // Restart sits next to the power switch: both act on the
-                // running core, and it is only meaningful while that is up.
-                // A plain icon so it never competes with the primary action.
-                if (displayStart) ...[
-                  SizedBox(
-                    width: 40,
-                    height: 40,
-                    child: IconButton(
-                      onPressed: busy ? null : _handleRestartCore,
-                      tooltip: appLocalizations.restartCore,
-                      icon: const Icon(Icons.restart_alt, size: 20),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                ],
-                // A real Material 3 button, not a decorative glyph. D4.6 left a
-                // bare `Icon` here (no `onPressed`), which removed the only
-                // visible cue that the card starts/stops the service.
-                //
-                // Nested buttons do not double-fire: hit testing walks deepest
-                // first, so the IconButton's tap recognizer enters the gesture
-                // arena before the card's `OutlinedButton`, and the arena sweep
-                // accepts the first member and rejects the rest. `_handleStart`'s
-                // synchronous `_isDisabled` guard is the second line of defence.
-                SizedBox(
-                  width: 40,
-                  height: 40,
-                  child: busy
-                      ? const Padding(
-                          padding: EdgeInsets.all(FluxoraSpacing.sm),
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : IconButton.filledTonal(
-                          onPressed: canPress
-                              ? _handleStart
-                              : hasNoProfile
-                              ? _handleShowAddProfile
-                              : null,
-                          tooltip: appLocalizations.powerSwitch,
-                          icon: Icon(
-                            displayStart
-                                ? Icons.pause_circle_outline
-                                : Icons.play_circle_outline,
-                            size: 20,
-                          ),
-                        ),
-                ),
-              ],
+              ),
             ),
-          ),
-        );
-      },
+          );
+        },
       ),
     );
   }
@@ -413,15 +499,13 @@ class _StartButtonState extends ConsumerState<StartButton> {
   }) {
     if (!isInit) {
       return (
-        flow: FluxoraFlowState.connecting,
         kind: FluxoraStatusKind.connecting,
-        label: appLocalizations.serviceRunning,
+        label: appLocalizations.init,
         value: '',
       );
     }
     if (isRestarting) {
       return (
-        flow: FluxoraFlowState.connecting,
         kind: FluxoraStatusKind.connecting,
         label: appLocalizations.restartCoreTitle,
         value: '',
@@ -429,7 +513,6 @@ class _StartButtonState extends ConsumerState<StartButton> {
     }
     if (isSmartStopped) {
       return (
-        flow: FluxoraFlowState.idle,
         kind: FluxoraStatusKind.disconnected,
         label: appLocalizations.coreSuspended,
         value: appLocalizations.serviceReady,
@@ -437,7 +520,6 @@ class _StartButtonState extends ConsumerState<StartButton> {
     }
     if (!hasProfile) {
       return (
-        flow: FluxoraFlowState.error,
         kind: FluxoraStatusKind.warning,
         label: appLocalizations.checkOrAddProfile,
         value: '',
@@ -445,14 +527,12 @@ class _StartButtonState extends ConsumerState<StartButton> {
     }
     if (started) {
       return (
-        flow: FluxoraFlowState.connected,
         kind: FluxoraStatusKind.connected,
         label: appLocalizations.coreConnected,
         value: _formatRunTime(runTime),
       );
     }
     return (
-      flow: FluxoraFlowState.idle,
       kind: FluxoraStatusKind.disconnected,
       label: appLocalizations.powerSwitch,
       value: appLocalizations.serviceReady,

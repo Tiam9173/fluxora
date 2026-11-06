@@ -4,6 +4,7 @@ import 'package:fluxora/common/common.dart';
 import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
+import 'package:fluxora/models/chain_proxy.dart';
 import 'package:fluxora/views/proxies/common.dart';
 import 'package:fluxora/widgets/widgets.dart';
 
@@ -84,8 +85,13 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
     final visibleGroups = groups.where((g) => g.hidden != true).toList();
     // Fall back to whatever the core says is current, then to the first group:
     // the group list is replaced wholesale when the subscription changes.
-    final currentGroup = visibleGroups.where((g) => g.name == _groupName).firstOrNull ??
-        visibleGroups.where((g) => g.name == globalState.appController.getCurrentGroupName()).firstOrNull ??
+    final currentGroup =
+        visibleGroups.where((g) => g.name == _groupName).firstOrNull ??
+        visibleGroups
+            .where(
+              (g) => g.name == globalState.appController.getCurrentGroupName(),
+            )
+            .firstOrNull ??
         (visibleGroups.isEmpty ? null : visibleGroups.first);
 
     return CommonDialog(
@@ -168,40 +174,43 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
           // offering other subscriptions here would switch the whole app
           // without showing anything different.
           if (widget.onSelect == null)
-          InkWell(
-            onTap: () => setState(() => _showProfiles = !_showProfiles),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.folder_outlined,
-                    size: 16,
-                    color: colorScheme.primary,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      profile?.label ?? appLocalizations.profiles,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: FluxoraFontSize.compact,
-                        fontWeight: FontWeight.w600,
+            InkWell(
+              onTap: () => setState(() => _showProfiles = !_showProfiles),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.folder_outlined,
+                      size: 16,
+                      color: colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        profile?.label ?? appLocalizations.profiles,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: FluxoraFontSize.compact,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                  ),
-                  Icon(
-                    _showProfiles
-                        ? Icons.expand_less_rounded
-                        : Icons.expand_more_rounded,
-                    size: 18,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ],
+                    Icon(
+                      _showProfiles
+                          ? Icons.expand_less_rounded
+                          : Icons.expand_more_rounded,
+                      size: 18,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
           if (_showProfiles)
             ConstrainedBox(
               constraints: const BoxConstraints(maxHeight: 132),
@@ -318,90 +327,107 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
                     builder: (context) {
                       final visible = currentGroup.all
                           .where((p) => !widget.excludeNames.contains(p.name))
+                          .where(
+                            (p) =>
+                                widget.onSelect == null ||
+                                ChainProxyConfig.isSelectableProxy(
+                                  name: p.name,
+                                  type: p.type,
+                                ),
+                          )
                           .toList();
                       return ListView.builder(
-                    shrinkWrap: true,
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    itemCount: visible.length,
-                    itemBuilder: (context, index) {
-                      final proxy = visible[index];
-                      final selected =
-                          selectedMap[currentGroup.name] == proxy.name ||
-                          (selectedMap[currentGroup.name] == null &&
-                              currentGroup.now == proxy.name);
-                      // url-test / fallback / relay pick their node themselves,
-                      // so tapping one would be undone by the core a moment
-                      // later. Shown, but not selectable.
-                      final selectable = !currentGroup.type.isComputedSelected;
-                      // Resolve the same way delayTest does: it stores results
-                      // under getRealTestUrl(...), so looking them up by the
-                      // raw group URL never matched and every row stayed blank.
-                      final delayUrl = globalState.appController.getRealTestUrl(
-                        currentGroup.testUrl ?? defaultTestUrl,
-                      );
-                      final delay = delayMap[delayUrl]?[proxy.name];
-                      return InkWell(
-                        onTap: selectable
-                            ? () async {
-                                final handler = widget.onSelect;
-                                if (handler != null) {
-                                  handler(proxy.name, currentGroup.name);
-                                } else {
-                                  // 必须等切换真正发出去再关卡片：卡片模式关掉
-                                  // 就 finishAndRemoveTask，进程可能随之结束，
-                                  // 没发完的请求会连同引擎一起消失 —— 表现就是
-                                  // "点了节点但没切换"。
-                                  // 用非防抖的版本：防抖会延后执行，而卡片关掉
-                                  // 后进程可能就没了，延后的那次调用永远不会发生。
-                                  await globalState.appController.changeProxy(
-                                    groupName: currentGroup.name,
-                                    proxyName: proxy.name,
-                                  );
-                                }
-                                setState(() {});
-                                widget.onFinished?.call();
-                              }
-                            : null,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                selected
-                                    ? Icons.check_circle
-                                    : Icons.circle_outlined,
-                                size: 15,
-                                color: selected
-                                    ? colorScheme.primary
-                                    : colorScheme.outlineVariant,
+                        shrinkWrap: true,
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        itemCount: visible.length,
+                        itemBuilder: (context, index) {
+                          final proxy = visible[index];
+                          final selected =
+                              selectedMap[currentGroup.name] == proxy.name ||
+                              (selectedMap[currentGroup.name] == null &&
+                                  currentGroup.now == proxy.name);
+                          // url-test / fallback / relay pick their node themselves,
+                          // so tapping one would be undone by the core a moment
+                          // later. Shown, but not selectable.
+                          final selectable =
+                              widget.onSelect != null ||
+                              !currentGroup.type.isComputedSelected;
+                          // Resolve the same way delayTest does: it stores results
+                          // under getRealTestUrl(...), so looking them up by the
+                          // raw group URL never matched and every row stayed blank.
+                          final delayUrl = globalState.appController
+                              .getRealTestUrl(
+                                currentGroup.testUrl ?? defaultTestUrl,
+                              );
+                          final delay = delayMap[delayUrl]?[proxy.name];
+                          return InkWell(
+                            onTap: selectable
+                                ? () async {
+                                    final handler = widget.onSelect;
+                                    if (handler != null) {
+                                      handler(proxy.name, currentGroup.name);
+                                    } else {
+                                      // 必须等切换真正发出去再关卡片：卡片模式关掉
+                                      // 就 finishAndRemoveTask，进程可能随之结束，
+                                      // 没发完的请求会连同引擎一起消失 —— 表现就是
+                                      // "点了节点但没切换"。
+                                      // 用非防抖的版本：防抖会延后执行，而卡片关掉
+                                      // 后进程可能就没了，延后的那次调用永远不会发生。
+                                      await globalState.appController
+                                          .changeProxy(
+                                            groupName: currentGroup.name,
+                                            proxyName: proxy.name,
+                                          );
+                                    }
+                                    setState(() {});
+                                    widget.onFinished?.call();
+                                  }
+                                : null,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
                               ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  proxy.name,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontSize: 12.5,
-                                    fontWeight: selected
-                                        ? FontWeight.w600
-                                        : FontWeight.w400,
-                                    color: selectable
-                                        ? colorScheme.onSurface
-                                        : colorScheme.onSurfaceVariant,
-                                  ),
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  minHeight: 36,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      selected
+                                          ? Icons.check_circle
+                                          : Icons.circle_outlined,
+                                      size: 15,
+                                      color: selected
+                                          ? colorScheme.primary
+                                          : colorScheme.outlineVariant,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        proxy.name,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 12.5,
+                                          fontWeight: selected
+                                              ? FontWeight.w600
+                                              : FontWeight.w400,
+                                          color: selectable
+                                              ? colorScheme.onSurface
+                                              : colorScheme.onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    _DelayChip(delay: delay),
+                                  ],
                                 ),
                               ),
-                              const SizedBox(width: 6),
-                              _DelayChip(delay: delay),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
+                            ),
+                          );
+                        },
                       );
                     },
                   ),
@@ -420,41 +446,10 @@ class _DelayChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = context.colorScheme;
-    final value = delay;
-    final Color color;
-    final String text;
-    if (value == null) {
-      color = colorScheme.onSurfaceVariant;
-      text = '—';
-    } else if (value < 0) {
-      color = colorScheme.error;
-      text = appLocalizations.timeoutLabel;
-    } else if (value <= 200) {
-      color = FluxoraColors.success;
-      text = '$value ms';
-    } else if (value <= 500) {
-      color = FluxoraColors.warning;
-      text = '$value ms';
-    } else {
-      color = colorScheme.error;
-      text = '$value ms';
-    }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(7),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color: color,
-          fontFeatures: const [FontFeature.tabularFigures()],
-        ),
-      ),
+    return FluxoraLatencyBadge(
+      delay: delay,
+      timeoutLabel: appLocalizations.timeoutLabel,
+      dense: true,
     );
   }
 }

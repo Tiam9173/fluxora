@@ -23,7 +23,6 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
-import android.content.ComponentName
 import android.content.Intent
 
 import android.graphics.BitmapFactory
@@ -186,11 +185,7 @@ suspend fun Service.createFluxoraNotificationBuilder(
     isHighPriority: Boolean = GlobalState.isNotificationHighPriority
 ): NotificationCompat.Builder =
     withContext(Dispatchers.IO) {
-        val defaultComponent = ComponentName(packageName, "io.fluxora.app.MainActivity")
-        val lightComponent = ComponentName(packageName, "io.fluxora.app.MainActivityLight")
-        val darkComponent = ComponentName(packageName, "io.fluxora.app.MainActivityDark")
-
-        val targetComponent = NotificationComponentCache.get(packageManager, defaultComponent, lightComponent, darkComponent)
+        val targetComponent = NotificationComponentCache.get(this@createFluxoraNotificationBuilder)
 
         android.util.Log.d("Notification", "Using ${targetComponent.className}")
 
@@ -230,7 +225,7 @@ suspend fun Service.createFluxoraNotificationBuilder(
         val priority = if (isSuspended || isHighPriority) NotificationCompat.PRIORITY_HIGH else NotificationCompat.PRIORITY_LOW
 
         NotificationCompat.Builder(this@createFluxoraNotificationBuilder, channelId).apply {
-            setSmallIcon(R.drawable.ic)
+            setSmallIcon(R.drawable.ic_notification_light)
             if (largeIconBitmap != null) {
                 setLargeIcon(largeIconBitmap)
             }

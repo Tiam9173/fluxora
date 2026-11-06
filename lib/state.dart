@@ -527,7 +527,8 @@ class GlobalState {
   ///
   /// `stopVpn()` 返回不代表系统已经拆完隧道，重启内核时要靠这个轮询确认，
   /// 否则紧接着的 start 会撞上旧会话。
-  Future<bool> isVpnServiceRunning() async => await service?.getStatus() ?? false;
+  Future<bool> isVpnServiceRunning() async =>
+      await service?.getStatus() ?? false;
 
   Future handleStop([bool includeVpnService = true]) async {
     startTime = null;
@@ -607,18 +608,16 @@ class GlobalState {
       barrierColor: isDark ? const Color(0xCC000000) : const Color(0x99000000),
       barrierDismissible: dismissible,
       barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-      transitionDuration: const Duration(milliseconds: 250),
+      transitionDuration: FluxoraMotion.ofContext(context).base,
       pageBuilder: (context, animation, secondaryAnimation) => child,
       transitionBuilder: (context, animation, secondaryAnimation, child) {
-        final curved = CurvedAnimation(
-          parent: animation,
-          curve: Curves.easeOutCubic,
-        );
+        if (FluxoraMotion.ofContext(context).reduceMotion) return child;
+        final curved = animation.drive(CurveTween(curve: FluxoraMotion.enter));
         return RepaintBoundary(
           child: FadeTransition(
             opacity: curved,
             child: ScaleTransition(
-              scale: curved.drive(Tween<double>(begin: 0.94, end: 1.0)),
+              scale: curved.drive(Tween<double>(begin: 0.98, end: 1.0)),
               child: child,
             ),
           ),
@@ -864,9 +863,7 @@ class GlobalState {
     // 卡死在这一行，appState 也永远赋不上值。
     var forceLoopback = true;
     try {
-      final prefs = await Preferences()
-          .sharedPreferencesCompleter
-          .future
+      final prefs = await Preferences().sharedPreferencesCompleter.future
           .timeout(const Duration(milliseconds: 300), onTimeout: () => null);
       forceLoopback = prefs?.getBool('force_loopback_controller') ?? true;
     } catch (e) {
@@ -889,10 +886,12 @@ class GlobalState {
       }
       // 通知栏切换卡片是原生 Activity，它不跑 Flutter，拿不到这份配置。
       // 把地址和密钥写进 SharedPreferences，原生侧直接读。
-      unawaited(_persistCoreEndpoint(
-        rawConfig['external-controller']?.toString(),
-        realPatchConfig.secret,
-      ));
+      unawaited(
+        _persistCoreEndpoint(
+          rawConfig['external-controller']?.toString(),
+          realPatchConfig.secret,
+        ),
+      );
     }
     rawConfig['external-ui'] = await appPath.uiPath;
     rawConfig['external-ui-url'] =
@@ -1236,9 +1235,9 @@ class GlobalState {
       // Resolve "follow system" / unset before the language check.
       final isRussian =
           (utils.getLocaleForString(config.appSetting.locale) ??
-                      utils.getSystemLocale())
-                  .languageCode ==
-              'ru';
+                  utils.getSystemLocale())
+              .languageCode ==
+          'ru';
       final quicRules = config.vpnProps.excludeChina && !isRussian
           ? [
               'AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((OR,((GEOSITE,geolocation-cn),(GEOIP,CN,no-resolve)))))),REJECT',
@@ -1344,8 +1343,8 @@ class GlobalState {
       final currentRules = rawConfig['rules'] is List
           ? (rawConfig['rules'] as List).whereType<String>().toList()
           : <String>[];
-      rawConfig['rules'] = aggregateOverride.rule.type ==
-              OverrideRuleType.override
+      rawConfig['rules'] =
+          aggregateOverride.rule.type == OverrideRuleType.override
           ? aggregateOverride.runningRule
           : [...aggregateOverride.runningRule, ...currentRules];
     }
@@ -1466,10 +1465,7 @@ class GlobalState {
   }) async {
     final activeAggregate = config.currentAggregate;
     final memberIds = activeAggregate == null
-        ? config.profiles
-              .where((p) => p.joinAggregate)
-              .map((p) => p.id)
-              .toSet()
+        ? config.profiles.where((p) => p.joinAggregate).map((p) => p.id).toSet()
         : activeAggregate.memberIds.toSet();
     final others = config.profiles
         .where((p) => p.id != currentProfileId && memberIds.contains(p.id))
@@ -1535,9 +1531,7 @@ class GlobalState {
         applyMemberScripts,
         config.effectiveApplyNodeOverrides,
         NodeOverrideStore.instance.revision,
-        memberScript?.digest ??
-            config.scriptProps.currentScript?.digest ??
-            '',
+        memberScript?.digest ?? config.scriptProps.currentScript?.digest ?? '',
         profile.overrideData.hashCode,
       ].join('|');
       Map<String, dynamic> evaluated;
@@ -1576,7 +1570,9 @@ class GlobalState {
       }
       final nodes = evaluated['proxies'];
       if (nodes is! List || nodes.isEmpty) {
-        commonPrint.log('aggregate: skip ${profile.id}, no nodes after evaluate');
+        commonPrint.log(
+          'aggregate: skip ${profile.id}, no nodes after evaluate',
+        );
         continue;
       }
 
@@ -1652,8 +1648,7 @@ class GlobalState {
           'path': providerPath,
           // The derived file already contains prefixed names. Only the fallback
           // source file needs the kernel-side prefix override.
-          if (!derivedProvider)
-            'override': {'additional-prefix': '[$alias] '},
+          if (!derivedProvider) 'override': {'additional-prefix': '[$alias] '},
           'health-check': {
             'enable': true,
             'url': healthCheckUrl,
@@ -1703,18 +1698,12 @@ class GlobalState {
     final aggregateGroup = appLocalizations.aggregateGroupNodes;
     final aggregateAutoGroup = appLocalizations.aggregateGroupAuto;
     final aggregateGroupProxies = customNodeMode
-        ? <String>{
-            ...baseProxyNames,
-            ...aggregateNodeNames,
-          }.toList()
+        ? <String>{...baseProxyNames, ...aggregateNodeNames}.toList()
         : aggregateNodeNames;
     groups.add(<String, dynamic>{
       'name': aggregateGroup,
       'type': 'select',
-      if (fullMerge)
-        'proxies': aggregateGroupProxies
-      else
-        'use': providerNames,
+      if (fullMerge) 'proxies': aggregateGroupProxies else 'use': providerNames,
     });
     if (!customNodeMode) {
       groups.add(<String, dynamic>{
@@ -1875,7 +1864,8 @@ class GlobalState {
     Script? script,
   }) async {
     return _scriptEvaluateLock.synchronized(() async {
-      final currentScript = script ?? globalState.config.scriptProps.currentScript;
+      final currentScript =
+          script ?? globalState.config.scriptProps.currentScript;
       if (currentScript == null) return config;
 
       if (profile != null && !profile.useScriptOverride) return config;
@@ -2069,10 +2059,7 @@ class DetectionState {
         errorMessage: null,
       );
     } else if (showLoading || state.value.ipInfo == null) {
-      state.value = state.value.copyWith(
-        isLoading: true,
-        errorMessage: null,
-      );
+      state.value = state.value.copyWith(isLoading: true, errorMessage: null);
     }
 
     final delay = immediate
@@ -2217,9 +2204,7 @@ class MediaUnlockStateNotifier {
   Timer? _nodeChangeTimer;
   static const _nodeChangeDelay = Duration(milliseconds: 800);
 
-  final state = ValueNotifier<MediaUnlockState>(
-    const MediaUnlockState(),
-  );
+  final state = ValueNotifier<MediaUnlockState>(const MediaUnlockState());
 
   MediaUnlockStateNotifier._internal();
 
@@ -2238,24 +2223,27 @@ class MediaUnlockStateNotifier {
   void checkSingle(MediaPlatform platform) async {
     if (state.value.testingPlatforms.contains(platform)) return;
     final requestId = _requestId;
-    final currentTesting =
-        Set<MediaPlatform>.from(state.value.testingPlatforms)..add(platform);
+    final currentTesting = Set<MediaPlatform>.from(state.value.testingPlatforms)
+      ..add(platform);
     state.value = state.value.copyWith(testingPlatforms: currentTesting);
 
     try {
-      final res = await _checker.checkPlatform(platform).timeout(
-        const Duration(seconds: 8),
-        onTimeout: () => MediaUnlockResult(
-          platform: platform,
-          status: MediaUnlockStatus.failed,
-        ),
-      );
+      final res = await _checker
+          .checkPlatform(platform)
+          .timeout(
+            const Duration(seconds: 8),
+            onTimeout: () => MediaUnlockResult(
+              platform: platform,
+              status: MediaUnlockStatus.failed,
+            ),
+          );
       if (requestId != _requestId) return;
-      final finalMap =
-          Map<MediaPlatform, MediaUnlockResult>.from(state.value.results);
+      final finalMap = Map<MediaPlatform, MediaUnlockResult>.from(
+        state.value.results,
+      );
       finalMap[platform] = res;
-      final nextTesting =
-          Set<MediaPlatform>.from(state.value.testingPlatforms)..remove(platform);
+      final nextTesting = Set<MediaPlatform>.from(state.value.testingPlatforms)
+        ..remove(platform);
       state.value = state.value.copyWith(
         results: finalMap,
         testingPlatforms: nextTesting,
@@ -2263,8 +2251,9 @@ class MediaUnlockStateNotifier {
       );
     } catch (_) {
       if (requestId != _requestId) return;
-      final finalMap =
-          Map<MediaPlatform, MediaUnlockResult>.from(state.value.results);
+      final finalMap = Map<MediaPlatform, MediaUnlockResult>.from(
+        state.value.results,
+      );
       finalMap.putIfAbsent(
         platform,
         () => MediaUnlockResult(
@@ -2272,8 +2261,8 @@ class MediaUnlockStateNotifier {
           status: MediaUnlockStatus.failed,
         ),
       );
-      final nextTesting =
-          Set<MediaPlatform>.from(state.value.testingPlatforms)..remove(platform);
+      final nextTesting = Set<MediaPlatform>.from(state.value.testingPlatforms)
+        ..remove(platform);
       state.value = state.value.copyWith(
         results: finalMap,
         testingPlatforms: nextTesting,
@@ -2296,9 +2285,8 @@ class MediaUnlockStateNotifier {
     if (targetPlatforms.isEmpty) return;
 
     final requestId = ++_requestId;
-    final pendingTesting =
-        Set<MediaPlatform>.from(state.value.testingPlatforms)
-          ..addAll(targetPlatforms);
+    final pendingTesting = Set<MediaPlatform>.from(state.value.testingPlatforms)
+      ..addAll(targetPlatforms);
 
     state.value = state.value.copyWith(
       isLoading: isFullCheck ? true : state.value.isLoading,
@@ -2314,12 +2302,11 @@ class MediaUnlockStateNotifier {
       if (requestId != _requestId || bufferResults.isEmpty) return;
       final updates = Map<MediaPlatform, MediaUnlockResult>.from(bufferResults);
       bufferResults.clear();
-      final nextResults =
-          Map<MediaPlatform, MediaUnlockResult>.from(state.value.results)
-            ..addAll(updates);
-      final nextTesting =
-          Set<MediaPlatform>.from(state.value.testingPlatforms)
-            ..removeAll(updates.keys);
+      final nextResults = Map<MediaPlatform, MediaUnlockResult>.from(
+        state.value.results,
+      )..addAll(updates);
+      final nextTesting = Set<MediaPlatform>.from(state.value.testingPlatforms)
+        ..removeAll(updates.keys);
       state.value = state.value.copyWith(
         results: nextResults,
         testingPlatforms: nextTesting,
@@ -2327,40 +2314,42 @@ class MediaUnlockStateNotifier {
     }
 
     try {
-      final results = await _checker.checkAll(
-        platforms: targetPlatforms,
-        onProgress: (res) {
-          if (requestId != _requestId) return;
-          bufferResults[res.platform] = res;
-          throttleTimer ??= Timer(
-            const Duration(milliseconds: 100),
-            flushUpdates,
+      final results = await _checker
+          .checkAll(
+            platforms: targetPlatforms,
+            onProgress: (res) {
+              if (requestId != _requestId) return;
+              bufferResults[res.platform] = res;
+              throttleTimer ??= Timer(
+                const Duration(milliseconds: 100),
+                flushUpdates,
+              );
+            },
+          )
+          .timeout(
+            Duration(seconds: (targetPlatforms.length / 8).ceil() * 8 + 5),
+            onTimeout: () {
+              _checker.cancel();
+              final timeoutMap = <MediaPlatform, MediaUnlockResult>{};
+              for (final p in targetPlatforms) {
+                timeoutMap[p] =
+                    bufferResults[p] ??
+                    state.value.results[p] ??
+                    MediaUnlockResult(
+                      platform: p,
+                      status: MediaUnlockStatus.failed,
+                    );
+              }
+              return timeoutMap;
+            },
           );
-        },
-      ).timeout(
-        Duration(seconds: (targetPlatforms.length / 8).ceil() * 8 + 5),
-        onTimeout: () {
-          _checker.cancel();
-          final timeoutMap = <MediaPlatform, MediaUnlockResult>{};
-          for (final p in targetPlatforms) {
-            timeoutMap[p] = bufferResults[p] ??
-                state.value.results[p] ??
-                MediaUnlockResult(
-                  platform: p,
-                  status: MediaUnlockStatus.failed,
-                );
-          }
-          return timeoutMap;
-        },
-      );
       if (requestId != _requestId) return;
       flushUpdates();
-      final nextResults =
-          Map<MediaPlatform, MediaUnlockResult>.from(state.value.results)
-            ..addAll(results);
-      final nextTesting =
-          Set<MediaPlatform>.from(state.value.testingPlatforms)
-            ..removeAll(targetPlatforms);
+      final nextResults = Map<MediaPlatform, MediaUnlockResult>.from(
+        state.value.results,
+      )..addAll(results);
+      final nextTesting = Set<MediaPlatform>.from(state.value.testingPlatforms)
+        ..removeAll(targetPlatforms);
       state.value = state.value.copyWith(
         isLoading: isFullCheck ? false : state.value.isLoading,
         results: nextResults,
@@ -2371,20 +2360,18 @@ class MediaUnlockStateNotifier {
       throttleTimer?.cancel();
       if (requestId != _requestId) return;
       flushUpdates();
-      final fallbackResults =
-          Map<MediaPlatform, MediaUnlockResult>.from(state.value.results);
+      final fallbackResults = Map<MediaPlatform, MediaUnlockResult>.from(
+        state.value.results,
+      );
       for (final p in targetPlatforms) {
         fallbackResults.putIfAbsent(
           p,
-          () => MediaUnlockResult(
-            platform: p,
-            status: MediaUnlockStatus.failed,
-          ),
+          () =>
+              MediaUnlockResult(platform: p, status: MediaUnlockStatus.failed),
         );
       }
-      final nextTesting =
-          Set<MediaPlatform>.from(state.value.testingPlatforms)
-            ..removeAll(targetPlatforms);
+      final nextTesting = Set<MediaPlatform>.from(state.value.testingPlatforms)
+        ..removeAll(targetPlatforms);
       state.value = state.value.copyWith(
         isLoading: isFullCheck ? false : state.value.isLoading,
         results: fallbackResults,
@@ -2398,10 +2385,7 @@ class MediaUnlockStateNotifier {
     checkPlatforms(platforms ?? pinnedPlatforms, force: force);
   }
 
-  void checkAll({
-    bool force = false,
-    List<MediaPlatform>? platforms,
-  }) {
+  void checkAll({bool force = false, List<MediaPlatform>? platforms}) {
     final targets = platforms ?? MediaPlatform.values;
     final isFull = targets.length >= MediaPlatform.values.length;
     checkPlatforms(targets, force: force, isFullCheck: isFull);
@@ -2414,8 +2398,9 @@ class MediaUnlockStateNotifier {
     if (!globalState.config.appSetting.mediaUnlockRefreshOnNodeChange) return;
     _checker.cancel();
     _nodeChangeTimer?.cancel();
-    final nextResults =
-        Map<MediaPlatform, MediaUnlockResult>.from(state.value.results);
+    final nextResults = Map<MediaPlatform, MediaUnlockResult>.from(
+      state.value.results,
+    );
     for (final p in pinnedPlatforms) {
       nextResults.remove(p);
     }
@@ -2433,16 +2418,18 @@ class MediaUnlockStateNotifier {
     final isRunning = globalState.appState.runTime != null;
     if (!isRunning) return;
     if (!globalState.hasMediaUnlockWidget) return;
-    if (state.value.isLoading || state.value.testingPlatforms.isNotEmpty) return;
-    final needsInitialCheck =
-        pinnedPlatforms.any((p) => !state.value.results.containsKey(p));
+    if (state.value.isLoading || state.value.testingPlatforms.isNotEmpty) {
+      return;
+    }
+    final needsInitialCheck = pinnedPlatforms.any(
+      (p) => !state.value.results.containsKey(p),
+    );
     if (!needsInitialCheck) return;
     checkPinned();
   }
 }
 
 final mediaUnlockState = MediaUnlockStateNotifier();
-
 
 /// item 6 (Bettbox 1.19.3) — the rules that make up loopback protection.
 ///

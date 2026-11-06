@@ -21,9 +21,8 @@ class ChainCapabilityProbeService {
   /// Verifies **reachability** through the runtime primitive already used by
   /// P1.1-D1 (`clashCore.getDelay`). A **strictly positive** round-trip
   /// (`value > 0`) is recorded as [CapabilityEvidenceType.runtimeVerified]; a
-  /// definite failure — `null`, `0` or a negative value, including the native
-  /// bridge's own `-1` timeout sentinel — as
-  /// [CapabilityEvidenceType.runtimeRejected] (P1.2-G1).
+  /// non-positive value only says that this HTTP probe did not answer; it does
+  /// not prove a TCP/protocol incompatibility and must not be cached as one.
   ///
   /// Everything else — timeout / core unavailable / cancelled / unexpected
   /// exception / insufficient evidence — returns the previous profile with
@@ -64,44 +63,31 @@ class ChainCapabilityProbeService {
 
     try {
       final probe = delayProbeOverride;
-      final res = await (probe != null
-              ? probe(url, name)
-              : clashCore.getDelay(url, name))
-          .timeout(timeout);
+      final res =
+          await (probe != null
+                  ? probe(url, name)
+                  : clashCore.getDelay(url, name))
+              .timeout(timeout);
       final delay = res.value;
-      // P1.2-G1: a delay primitive can answer with a **non-positive** sentinel
-      // instead of `null`. The native bridge returns `value == -1` on its own
-      // 6s timeout (`clash/interface.dart` `asyncTestDelay`'s `onTimeout`),
-      // which fires *before* this call's own (longer) timeout — so `-1` used to
-      // be read as a completed round-trip and recorded as `runtimeVerified`.
-      // Only a strictly positive round-trip counts as verified; `null` **or**
-      // `<= 0` is a definite failure. This mirrors the existing convention at
-      // `chain_proxy_manager.dart` (`val != null && val > 0`).
-      final verified = delay != null && delay > 0;
-      final probed = verified
-          ? baseline.copyWith(
-              tcp: baseline.tcp.copyWith(
+      // A timeout can be caused by the target URL or network load, not the protocol.
+      if (delay == null || delay <= 0) return baseline;
+      final probed = baseline.copyWith(
+        tcp: baseline.tcp.copyWith(
+          status: CapabilityStatus.verifiedSupported,
+          evidence: CapabilityEvidenceType.runtimeVerified,
+        ),
+        // P1.2-B: the delay primitive performs a real HTTP HEAD through
+        // the node with a TLS-capable transport, so a completed round-trip
+        // against an `https://` URL also proves the TLS handshake. A
+        // non-https test URL leaves TLS untouched (`copyWith(null)` keeps
+        // the previous value).
+        tls: url.toLowerCase().startsWith('https://')
+            ? baseline.tls.copyWith(
                 status: CapabilityStatus.verifiedSupported,
                 evidence: CapabilityEvidenceType.runtimeVerified,
-              ),
-              // P1.2-B: the delay primitive performs a real HTTP HEAD through
-              // the node with a TLS-capable transport, so a completed round-trip
-              // against an `https://` URL also proves the TLS handshake. A
-              // non-https test URL leaves TLS untouched (`copyWith(null)` keeps
-              // the previous value).
-              tls: url.toLowerCase().startsWith('https://')
-                  ? baseline.tls.copyWith(
-                      status: CapabilityStatus.verifiedSupported,
-                      evidence: CapabilityEvidenceType.runtimeVerified,
-                    )
-                  : null,
-            )
-          : baseline.copyWith(
-              tcp: baseline.tcp.copyWith(
-                status: CapabilityStatus.verifiedUnsupported,
-                evidence: CapabilityEvidenceType.runtimeRejected,
-              ),
-            );
+              )
+            : null,
+      );
       ChainCapabilityCacheService.set(key, probed);
       return probed;
     } on TimeoutException {

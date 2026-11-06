@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'glass_surface.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -7,32 +8,8 @@ import '../common/common.dart';
 import '../models/common.dart';
 import '../providers/config.dart';
 
-/// Aurora's floating mobile dock.
-///
-/// ## Why this replaced `google_nav_bar`
-///
-/// `GNav` renders one `tabBackgroundColor` pill, one `hoverColor` for every
-/// item, and expands the selected tab to reveal its label. There is no seam for
-/// a brand accent, no separate focus treatment, and no way to keep the label
-/// visible without the pill resizing on selection — so the only things a design
-/// system could tune were two colours. Phase 02 replaces it with a bar that
-/// speaks the same language as [AuroraNavigationRail]:
-///
-/// | state    | treatment                                                    |
-/// | -------- | ------------------------------------------------------------ |
-/// | selected | low-saturation brand wash + a 16×3 accent tick on top of the   |
-/// |          | pill + brand icon + full-strength label                        |
-/// | hovered  | 6 % `onSurface` wash (dark) / 5 % (light), never the tick      |
-/// | focused  | 2 px `primary` ring around the pill                            |
-///
-/// The rail puts its accent on the **left edge**; the dock rotates the same
-/// gesture to the **top edge**, which is the only side with room in a 44 px
-/// item. Everything else — the tint, the radius family, the type scale, the
-/// "brand on the graphic, contrast on the text" split — is shared.
-///
-/// Unlike the old bar, **every** item keeps its label. `GNav` only expanded the
-/// selected one, which made the bar change height as you navigated and hid the
-/// destination names behind an interaction.
+/// Stable, labelled destinations in a restrained floating capsule.
+/// Selection uses a neutral glass highlight; keyboard focus keeps its own ring.
 class AuroraBottomNavBar extends ConsumerWidget {
   const AuroraBottomNavBar({
     super.key,
@@ -41,8 +18,7 @@ class AuroraBottomNavBar extends ConsumerWidget {
     required this.onTabChange,
   });
 
-  /// Item height. 3 px accent lane + 20 icon + 2 gap + 15 label.
-  static const double itemHeight = 44;
+  static const double itemHeight = 48;
 
   final List<NavigationItem> navigationItems;
   final int selectedIndex;
@@ -79,42 +55,53 @@ class AuroraBottomNavBar extends ConsumerWidget {
             right: FluxoraSpacing.lg,
             top: FluxoraSpacing.sm,
           ),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: scheme.surfaceContainer,
-              // 24 rather than the old 36: a 36 radius on a 78 px bar reads as
-              // a capsule, which made the dock look heavier than the content it
-              // floats over. 24 keeps the corner unmistakably soft without the
-              // pill silhouette.
-              borderRadius: BorderRadius.circular(FluxoraRadius.xl),
-              border: Border.all(
-                color: scheme.outlineVariant.withValues(
-                  alpha: scheme.brightness == Brightness.light ? 0.45 : 0.3,
-                ),
-                width: 1,
-              ),
-              // It is a floating surface above scrolling content, i.e. the
-              // `menu` rung (§8.1 / §8.2). The ladder already encodes "soft in
-              // light, faint in dark", so the widget does not invent numbers.
-              boxShadow: FluxoraElevation.of(scheme.brightness).menu,
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: FluxoraSpacing.sm,
-                vertical: FluxoraSpacing.xs + FluxoraSpacing.xxs,
-              ),
-              child: Row(
-                children: [
-                  for (var index = 0; index < navigationItems.length; index++)
-                    Expanded(
-                      child: _AuroraDockItem(
-                        icon: _iconOf(navigationItems[index].icon),
-                        label: Intl.message(navigationItems[index].label.name),
-                        selected: index == selectedIndex,
-                        onTap: () => handleTabChange(index),
+          child: GlassSurface(
+            radius: FluxoraRadius.sheet,
+            floating: true,
+            blur: true,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: FluxoraMaterial.of(context).enabled
+                    ? Colors.transparent
+                    : scheme.surfaceContainer,
+                borderRadius: BorderRadius.circular(FluxoraRadius.sheet),
+                border: FluxoraMaterial.of(context).enabled
+                    ? null
+                    : Border.all(
+                        color: scheme.outlineVariant.withValues(
+                          alpha: scheme.brightness == Brightness.light
+                              ? 0.45
+                              : 0.3,
+                        ),
+                        width: 1,
                       ),
-                    ),
-                ],
+                // It is a floating surface above scrolling content, i.e. the
+                // `menu` rung (§8.1 / §8.2). The ladder already encodes "soft in
+                // light, faint in dark", so the widget does not invent numbers.
+                boxShadow: FluxoraMaterial.of(context).enabled
+                    ? null
+                    : FluxoraElevation.of(scheme.brightness).menu,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: FluxoraSpacing.xs,
+                  vertical: FluxoraSpacing.xs,
+                ),
+                child: Row(
+                  children: [
+                    for (var index = 0; index < navigationItems.length; index++)
+                      Expanded(
+                        child: _AuroraDockItem(
+                          icon: _iconOf(navigationItems[index].icon),
+                          label: Intl.message(
+                            navigationItems[index].label.name,
+                          ),
+                          selected: index == selectedIndex,
+                          onTap: () => handleTabChange(index),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -151,21 +138,16 @@ class _AuroraDockItemState extends State<_AuroraDockItem> {
     final brightness = scheme.brightness;
     final selected = widget.selected;
 
-    final tint = FluxoraColorSet.selectionTint(scheme.primary, brightness);
+    final tint = scheme.onSurface.withValues(
+      alpha: brightness == Brightness.dark ? .09 : .06,
+    );
     final hoverWash = scheme.onSurface.withValues(
       alpha: brightness == Brightness.dark ? 0.06 : 0.05,
     );
-    final iconColor = selected ? scheme.primary : scheme.onSurfaceVariant;
-    // Same split as the rail: `primary` on the tinted pill is ~4.1:1 in the
-    // light theme, so the label stays neutral and the icon + accent carry the
-    // brand.
+    final iconColor = selected ? scheme.onSurface : scheme.onSurfaceVariant;
     final labelColor = selected ? scheme.onSurface : scheme.onSurfaceVariant;
-    final radius = BorderRadius.circular(FluxoraRadius.md);
+    final radius = BorderRadius.circular(FluxoraRadius.xl);
 
-    // No `Stack`: a fixed-height box clipped the label at 1.4x (measured: 1 px
-    // overflow at 320×640). The accent lane is a real child instead, so the item
-    // grows with the text and the dock height follows — which is fine, because
-    // `home.dart` measures the dock and injects the real inset.
     return Semantics(
       button: true,
       selected: selected,
@@ -175,15 +157,18 @@ class _AuroraDockItemState extends State<_AuroraDockItem> {
           minHeight: AuroraBottomNavBar.itemHeight,
         ),
         child: Material(
-          color: selected
-              ? tint
-              : (_hovered ? hoverWash : Colors.transparent),
+          animationDuration: FluxoraMotion.ofContext(context).base,
+          color: selected ? tint : (_hovered ? hoverWash : Colors.transparent),
           clipBehavior: Clip.antiAlias,
           shape: RoundedRectangleBorder(
             borderRadius: radius,
             side: _focused
                 ? BorderSide(color: scheme.primary, width: 2)
-                : BorderSide.none,
+                : BorderSide(
+                    color: selected
+                        ? scheme.onSurface.withValues(alpha: .16)
+                        : Colors.transparent,
+                  ),
           ),
           child: InkWell(
             onTap: widget.onTap,
@@ -197,6 +182,7 @@ class _AuroraDockItemState extends State<_AuroraDockItem> {
             // vibration should not turn off the touch response.
             splashColor: scheme.primary.withValues(alpha: 0.10),
             child: Padding(
+              key: selected ? const ValueKey('aurora-dock-selection') : null,
               padding: const EdgeInsets.symmetric(
                 horizontal: FluxoraSpacing.xxs,
                 vertical: FluxoraSpacing.xxs,
@@ -205,27 +191,10 @@ class _AuroraDockItemState extends State<_AuroraDockItem> {
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Accent lane. Always 3 px tall so the icon does not shift
-                  // when the selection moves; only the tick itself appears.
-                  SizedBox(
-                    height: 3,
-                    child: selected
-                        ? Center(
-                            child: Container(
-                              key: const ValueKey('aurora-dock-accent'),
-                              width: 16,
-                              height: 3,
-                              decoration: BoxDecoration(
-                                color: scheme.primary,
-                                borderRadius: BorderRadius.circular(1.5),
-                              ),
-                            ),
-                          )
-                        : null,
+                  ExcludeSemantics(
+                    child: Icon(widget.icon, size: 22, color: iconColor),
                   ),
-                  const SizedBox(height: FluxoraSpacing.xxs),
-                  Icon(widget.icon, size: 20, color: iconColor),
-                  const SizedBox(height: FluxoraSpacing.xxs),
+                  const SizedBox(height: FluxoraSpacing.xs),
                   // P8-2B F-3 — the `Semantics(label:)` above is the
                   // authoritative name. Left in the tree, this `Text` merges
                   // its own label into the same node and the screen reader
@@ -239,13 +208,14 @@ class _AuroraDockItemState extends State<_AuroraDockItem> {
                           (Theme.of(context).textTheme.labelLarge ??
                                   const TextStyle())
                               .copyWith(
-                        fontSize: FluxoraFontSize.compact,
-                        height: 1.1,
-                        fontWeight:
-                            selected ? FontWeight.w600 : FontWeight.w500,
-                        color: labelColor,
-                        letterSpacing: 0,
-                      ),
+                                fontSize: FluxoraFontSize.compact,
+                                height: 1.1,
+                                fontWeight: selected
+                                    ? FontWeight.w600
+                                    : FontWeight.w500,
+                                color: labelColor,
+                                letterSpacing: 0,
+                              ),
                     ),
                   ),
                 ],

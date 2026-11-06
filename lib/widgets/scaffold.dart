@@ -12,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'chip.dart';
 import 'text.dart';
+import 'glass_surface.dart';
 
 typedef OnKeywordsUpdateCallback = void Function(List<String> keywords);
 
@@ -321,6 +322,16 @@ class CommonScaffoldState extends State<CommonScaffold> {
                       // the toolbar on purpose: the global `surfaceTint` question
                       // (native `Card`, dialogs) is still an open decision.
                       surfaceTintColor: Colors.transparent,
+                      flexibleSpace: FluxoraMaterial.of(context).enabled
+                          ? const GlassSurface(
+                              radius: 0,
+                              border: false,
+                              child: SizedBox.expand(),
+                            )
+                          : null,
+                      backgroundColor: FluxoraMaterial.of(context).enabled
+                          ? Colors.transparent
+                          : null,
                       leading: _buildLeading(),
                       title: _buildTitle(state.searchState),
                       actions: _buildActions(
@@ -394,23 +405,27 @@ class CommonScaffoldState extends State<CommonScaffold> {
       ),
     );
     return DesktopBackShortcutWrapper(
-      child: Scaffold(
-        appBar: _buildAppBar(),
-        body: body,
-        resizeToAvoidBottomInset: true,
-        backgroundColor: widget.backgroundColor,
-        floatingActionButton:
-            widget.floatingActionButton ??
-            ValueListenableBuilder<Widget?>(
-              valueListenable: _floatingActionButton,
-              builder: (_, value, _) {
-                return IntrinsicWidth(
-                  child: IntrinsicHeight(
-                    child: FadeScaleBox(child: value ?? SizedBox()),
-                  ),
-                );
-              },
-            ),
+      child: GlassCanvas(
+        child: Scaffold(
+          appBar: _buildAppBar(),
+          body: body,
+          resizeToAvoidBottomInset: true,
+          backgroundColor:
+              widget.backgroundColor ??
+              (FluxoraMaterial.of(context).enabled ? Colors.transparent : null),
+          floatingActionButton:
+              widget.floatingActionButton ??
+              ValueListenableBuilder<Widget?>(
+                valueListenable: _floatingActionButton,
+                builder: (_, value, _) {
+                  return IntrinsicWidth(
+                    child: IntrinsicHeight(
+                      child: FadeScaleBox(child: value ?? SizedBox()),
+                    ),
+                  );
+                },
+              ),
+        ),
       ),
     );
   }

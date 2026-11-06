@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:isolate';
 
@@ -126,6 +127,8 @@ void clashInvokeAndForget(FutureOr<Object?> result, String name) {
 
 abstract class ClashHandlerInterface with ClashInterface {
   Map<String, Completer> callbackCompleterMap = {};
+  int _activeDelayTests = 0;
+  final _delayWaiters = Queue<Completer<void>>();
 
   Future<void> handleResult(ActionResult result) async {
     final completer = callbackCompleterMap[result.id];
@@ -234,10 +237,7 @@ abstract class ClashHandlerInterface with ClashInterface {
 
   @override
   FutureOr<String> validateConfig(String data, {String? ageSecretKey}) {
-    final params = {
-      'data': data,
-      'age-secret-key': ageSecretKey ?? '',
-    };
+    final params = {'data': data, 'age-secret-key': ageSecretKey ?? ''};
     return invoke<String>(
       method: ActionMethod.validateConfig,
       data: json.encode(params),
@@ -246,10 +246,7 @@ abstract class ClashHandlerInterface with ClashInterface {
 
   @override
   FutureOr<String> decryptAgeConfig(String data, String ageSecretKey) {
-    final params = {
-      'data': data,
-      'age-secret-key': ageSecretKey,
-    };
+    final params = {'data': data, 'age-secret-key': ageSecretKey};
     return invoke<String>(
       method: ActionMethod.decryptAgeConfig,
       data: json.encode(params),
@@ -267,10 +264,7 @@ abstract class ClashHandlerInterface with ClashInterface {
 
   @override
   Future<Result> getConfig(String path, {String? ageSecretKey}) async {
-    final params = {
-      'path': path,
-      'age-secret-key': ageSecretKey ?? '',
-    };
+    final params = {'path': path, 'age-secret-key': ageSecretKey ?? ''};
     final res = await invoke<Result>(
       method: ActionMethod.getConfig,
       data: json.encode(params),
@@ -406,10 +400,7 @@ abstract class ClashHandlerInterface with ClashInterface {
 
   @override
   stopLog() {
-    clashInvokeAndForget(
-      invoke<bool>(method: ActionMethod.stopLog),
-      'stopLog',
-    );
+    clashInvokeAndForget(invoke<bool>(method: ActionMethod.stopLog), 'stopLog');
   }
 
   @override
@@ -433,20 +424,35 @@ abstract class ClashHandlerInterface with ClashInterface {
   }
 
   @override
-  Future<String> asyncTestDelay(String url, String proxyName) {
+  Future<String> asyncTestDelay(String url, String proxyName) async {
+    if (_activeDelayTests >= maxConcurrentDelayTests) {
+      final ready = Completer<void>();
+      _delayWaiters.add(ready);
+      await ready.future;
+    } else {
+      _activeDelayTests++;
+    }
     final delayParams = {
       'proxy-name': proxyName,
       'timeout': httpTimeoutDuration.inMilliseconds,
       'test-url': url,
     };
-    return invoke<String>(
-      method: ActionMethod.asyncTestDelay,
-      data: json.encode(delayParams),
-      timeout: Duration(milliseconds: 6000),
-      onTimeout: () {
-        return json.encode(Delay(name: proxyName, value: -1, url: url));
-      },
-    );
+    try {
+      return await invoke<String>(
+        method: ActionMethod.asyncTestDelay,
+        data: json.encode(delayParams),
+        timeout: Duration(milliseconds: 6000),
+        onTimeout: () {
+          return json.encode(Delay(name: proxyName, value: -1, url: url));
+        },
+      );
+    } finally {
+      if (_delayWaiters.isEmpty) {
+        _activeDelayTests--;
+      } else {
+        _delayWaiters.removeFirst().complete();
+      }
+    }
   }
 
   @override
@@ -481,14 +487,14 @@ abstract class ClashHandlerInterface with ClashInterface {
 
   @override
   Future<Map<String, String>> generateAgeKeyPair() async {
-    final res = await invoke<Map>(
-      method: ActionMethod.generateAgeKeyPair,
-    );
+    final res = await invoke<Map>(method: ActionMethod.generateAgeKeyPair);
     return res.map((key, value) => MapEntry(key.toString(), value.toString()));
   }
 
   @override
-  Future<Result<String>> convertAgeSecretKeyToPublicKey(String secretKey) async {
+  Future<Result<String>> convertAgeSecretKeyToPublicKey(
+    String secretKey,
+  ) async {
     final res = await invoke<Result>(
       method: ActionMethod.convertAgeSecretKeyToPublicKey,
       data: secretKey,

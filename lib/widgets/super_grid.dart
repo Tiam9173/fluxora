@@ -59,6 +59,33 @@ class SuperGridState extends State<SuperGrid> with TickerProviderStateMixin {
   bool _isSyncingChildren = false;
   List<GridItem> children = [];
 
+  void moveItem(int index, int delta) {
+    final target = index + delta;
+    if (_animating.value ||
+        _dragIndexNotifier.value != -1 ||
+        index < 0 ||
+        index >= length ||
+        target < 0 ||
+        target >= length) {
+      return;
+    }
+    final next = List<GridItem>.of(_childrenNotifier.value);
+    next.insert(target, next.removeAt(index));
+    _childrenNotifier.value = next;
+    _initState();
+  }
+
+  Future<void> removeItem(int index) async {
+    if (_animating.value ||
+        _dragIndexNotifier.value != -1 ||
+        index < 0 ||
+        index >= length ||
+        !_childrenNotifier.value[index].isDeletable) {
+      return;
+    }
+    await _handleDelete(index);
+  }
+
   int get length => _childrenNotifier.value.length;
   List<int> _tempIndexList = [];
   List<BuildContext?> _itemContexts = [];
@@ -200,7 +227,7 @@ class SuperGridState extends State<SuperGrid> with TickerProviderStateMixin {
     // callback Flutter runs when `MediaQuery` changes, so flipping the OS switch
     // rebuilds the grid and stops the wobble immediately. Must stay above the
     // early return below, which bails out when there is no enclosing scrollable.
-    _reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    _reduceMotion = FluxoraMotion.ofContext(context).reduceMotion;
     if (_reduceMotion) {
       _shakeController.stop();
     }
@@ -566,10 +593,7 @@ class SuperGridState extends State<SuperGrid> with TickerProviderStateMixin {
         ValueListenableBuilder<int>(
           valueListenable: _dragIndexNotifier,
           builder: (_, dragIndex, child) {
-            return Opacity(
-              opacity: dragIndex == index ? 0.6 : 1,
-              child: child,
-            );
+            return Opacity(opacity: dragIndex == index ? 0.6 : 1, child: child);
           },
           child: shakeTarget,
         ),
@@ -778,7 +802,7 @@ class _DeletableContainerState extends State<_DeletableContainer>
     // tweens collapse to zero, but `_handleDel` still awaits `forward()` and
     // therefore still calls `widget.onDelete()` — the business action is not
     // tied to the animation's duration.
-    final reduce = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    final reduce = FluxoraMotion.ofContext(context).reduceMotion;
     final duration = reduce ? Duration.zero : commonDuration;
     if (_controller.duration != duration) {
       _controller.duration = duration;
@@ -826,18 +850,10 @@ class _DeletableContainerState extends State<_DeletableContainer>
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(FluxoraRadius.lg),
             border: _isFocused
-                ? Border.all(
-                    color: context.colorScheme.error,
-                    width: 2.5,
-                  )
-                : Border.all(
-                    color: Colors.transparent,
-                    width: 2.5,
-                  ),
+                ? Border.all(color: context.colorScheme.error, width: 2.5)
+                : Border.all(color: Colors.transparent, width: 2.5),
           ),
-          child: ExcludeFocus(
-            child: AbsorbPointer(child: widget.child),
-          ),
+          child: ExcludeFocus(child: AbsorbPointer(child: widget.child)),
         ),
       );
     }
@@ -861,8 +877,8 @@ class _DeletableContainerState extends State<_DeletableContainer>
             right: -8,
             child: DeferPointer(
               child: SizedBox(
-                width: globalState.isAndroidTV ? 28 : 24,
-                height: globalState.isAndroidTV ? 28 : 24,
+                width: 48,
+                height: 48,
                 child: IconButton.filled(
                   iconSize: globalState.isAndroidTV ? 18 : 20,
                   padding: const EdgeInsets.all(2),

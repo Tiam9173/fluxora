@@ -2,6 +2,7 @@ import 'package:fluxora/common/common.dart';
 import 'package:fluxora/models/common.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'glass_surface.dart';
 
 class CommonPopupRoute<T> extends PopupRoute<T> {
   final WidgetBuilder builder;
@@ -50,8 +51,7 @@ class CommonPopupRoute<T> extends PopupRoute<T> {
     // context; reading it here as well means a route constructed directly (as
     // the tests and any future caller may do) still lands in its final state.
     final reduce =
-        reduceMotion ||
-        (MediaQuery.maybeOf(context)?.disableAnimations ?? false);
+        reduceMotion || FluxoraMotion.ofContext(context).reduceMotion;
     return SafeArea(
       child: ValueListenableBuilder(
         valueListenable: offsetNotifier,
@@ -100,6 +100,10 @@ class CommonPopupRoute<T> extends PopupRoute<T> {
 
   @override
   Duration get transitionDuration =>
+      reduceMotion ? Duration.zero : FluxoraMotion.base;
+
+  @override
+  Duration get reverseTransitionDuration =>
       reduceMotion ? Duration.zero : FluxoraMotion.fast;
 }
 
@@ -132,7 +136,7 @@ class _CommonPopupBoxState extends State<CommonPopupBox> {
         .push(
           CommonPopupRoute(
             barrierLabel: utils.id,
-            reduceMotion: MediaQuery.maybeOf(context)?.disableAnimations ?? false,
+            reduceMotion: FluxoraMotion.ofContext(context).reduceMotion,
             builder: (BuildContext context) {
               return widget.popup;
             },
@@ -420,21 +424,28 @@ class _CommonPopupMenuState extends State<CommonPopupMenu> {
       child: IntrinsicWidth(
         child: Card(
           elevation: 12,
-          color: context.colorScheme.surfaceContainer,
+          color: FluxoraMaterial.of(context).enabled
+              ? Colors.transparent
+              : context.colorScheme.surfaceContainer,
           clipBehavior: Clip.antiAlias,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(FluxoraRadius.md),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              for (var index = 0; index < widget.items.length; index++) ...[
-                _item(context, index),
-                if (widget.items[index] != widget.items.last)
-                  const Divider(height: 0),
+          child: GlassSurface(
+            radius: FluxoraRadius.md,
+            floating: true,
+            blur: true,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (var index = 0; index < widget.items.length; index++) ...[
+                  _item(context, index),
+                  if (widget.items[index] != widget.items.last)
+                    const Divider(height: 0),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

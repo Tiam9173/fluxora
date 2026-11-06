@@ -123,8 +123,8 @@ void main() {
     await pumpHome(tester, reduce: false);
 
     // Pinned to the token, not to a literal: the value is whatever
-    // `FluxoraMotion.slow` currently is.
-    expect(pageSwitcherDuration(tester), FluxoraMotion.slow);
+    // `FluxoraMotion.base` currently is.
+    expect(pageSwitcherDuration(tester), FluxoraMotion.base);
     expect(pageSwitcherDuration(tester), isNot(Duration.zero));
   });
 }

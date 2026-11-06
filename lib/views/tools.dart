@@ -8,6 +8,7 @@ import 'package:fluxora/models/models.dart';
 import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/views/about.dart';
+import 'package:fluxora/views/app_icons.dart';
 import 'package:fluxora/views/access.dart';
 import 'package:fluxora/views/application_setting.dart';
 import 'package:fluxora/views/config/config.dart';
@@ -69,9 +70,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
   Widget _buildNavigationPage(NavigationItem navigationItem) {
     if (navigationItem.label == PageLabel.connections) {
       // 合并页面后从工具箱点进来要落在「连接」那一栏，而不是默认的请求栏。
-      return const RequestsConnectionsView(
-        startOnConnections: true,
-      );
+      return const RequestsConnectionsView(startOnConnections: true);
     }
     return navigationItem.builder(context);
   }
@@ -95,8 +94,10 @@ class _ToolViewState extends ConsumerState<ToolsView> {
     BuildContext context, {
     required String title,
     required List<Widget> items,
+    String? id,
   }) {
     return Padding(
+      key: id == null ? null : ValueKey(id),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -106,7 +107,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
             padding: const EdgeInsets.only(left: 8, bottom: 8),
           ),
           CommonCard(
-            type: CommonCardType.filled,
+            type: CommonCardType.plain,
             child: Column(
               children: [
                 for (var i = 0; i < items.length; i++) ...[
@@ -234,7 +235,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
         title: appLocalizations.theme,
         subtitle: appLocalizations.themeDesc,
         category: settingsCategory,
-        leading: const Icon(Icons.style),
+        leading: const Icon(Icons.palette_outlined),
         onTap: (context, _) =>
             _pushPage(context, appLocalizations.theme, const ThemeView()),
       ),
@@ -242,7 +243,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
         title: appLocalizations.backupAndRecovery,
         subtitle: appLocalizations.backupAndRecoveryDesc,
         category: settingsCategory,
-        leading: const Icon(Icons.cloud_sync),
+        leading: const Icon(Icons.cloud_sync_outlined),
         onTap: (context, _) => _pushPage(
           context,
           appLocalizations.backupAndRecovery,
@@ -253,12 +254,8 @@ class _ToolViewState extends ConsumerState<ToolsView> {
         title: 'WARP',
         subtitle: 'Cloudflare WARP',
         category: settingsCategory,
-        leading: const Icon(Icons.cloud_rounded),
-        onTap: (context, _) => _pushPage(
-          context,
-          'WARP',
-          const WarpView(),
-        ),
+        leading: const Icon(Icons.cloud_outlined),
+        onTap: (context, _) => _pushPage(context, 'WARP', const WarpView()),
       ),
       _SearchItem(
         title: appLocalizations.chainProxy,
@@ -276,7 +273,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
           title: appLocalizations.hotkeyManagement,
           subtitle: appLocalizations.hotkeyManagementDesc,
           category: settingsCategory,
-          leading: const Icon(Icons.keyboard),
+          leading: const Icon(Icons.keyboard_outlined),
           onTap: (context, _) => _pushPage(
             context,
             appLocalizations.hotkeyManagement,
@@ -288,7 +285,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
           title: appLocalizations.loopback,
           subtitle: appLocalizations.loopbackDesc,
           category: settingsCategory,
-          leading: const Icon(Icons.lock),
+          leading: const Icon(Icons.lock_outline_rounded),
           onTap: (context, _) {
             windows?.runas(
               '"${join(dirname(Platform.resolvedExecutable), "FluxoraLoopbackManager.exe")}"',
@@ -313,7 +310,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
         title: appLocalizations.basicConfig,
         subtitle: appLocalizations.basicConfigDesc,
         category: settingsCategory,
-        leading: const Icon(Icons.edit),
+        leading: const Icon(Icons.tune_rounded),
         onTap: (context, _) => _pushPage(
           context,
           appLocalizations.basicConfig,
@@ -335,7 +332,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
         title: appLocalizations.application,
         subtitle: appLocalizations.applicationDesc,
         category: settingsCategory,
-        leading: const Icon(Icons.settings),
+        leading: const Icon(Icons.settings_outlined),
         onTap: (context, _) => _pushPage(
           context,
           appLocalizations.application,
@@ -356,14 +353,14 @@ class _ToolViewState extends ConsumerState<ToolsView> {
       _SearchItem(
         title: appLocalizations.about,
         category: otherCategory,
-        leading: const Icon(Icons.info),
+        leading: const Icon(Icons.info_outline_rounded),
         onTap: (context, _) =>
             _pushPage(context, appLocalizations.about, const AboutView()),
       ),
       _SearchItem(
         title: appLocalizations.developerMode,
         category: otherCategory,
-        leading: const Icon(Icons.developer_board),
+        leading: const Icon(Icons.developer_board_outlined),
         onTap: (context, _) => _pushPage(
           context,
           appLocalizations.developerMode,
@@ -398,14 +395,12 @@ class _ToolViewState extends ConsumerState<ToolsView> {
         onTap: (context, _) =>
             _pushPage(context, appLocalizations.theme, const ThemeView()),
       ),
-      if (system.isAndroid)
-        _SearchItem(
-          title: appLocalizations.darkIcon,
-          subtitle: appLocalizations.darkIconDesc,
-          category: themeCategory,
-          onTap: (context, _) =>
-              _pushPage(context, appLocalizations.theme, const ThemeView()),
-        ),
+      _SearchItem(
+        title: appIconsTitle(context),
+        category: themeCategory,
+        onTap: (context, _) =>
+            _pushPage(context, appIconsTitle(context), const AppIconsView()),
+      ),
       if (system.isWindows)
         _SearchItem(
           title: appLocalizations.trayIconInvert,
@@ -1409,8 +1404,37 @@ class _ToolViewState extends ConsumerState<ToolsView> {
     final searchResults = _query.isEmpty
         ? const <Widget>[]
         : _buildSearchResults(searchItems);
+    final chinese = Localizations.localeOf(context).languageCode == 'zh';
 
     final items = [
+      _buildModernSection(
+        context,
+        id: 'settings-appearance',
+        title: chinese ? '外观与操作' : 'Appearance & controls',
+        items: [
+          _ThemeItem(),
+          _LocaleItem(),
+          if (system.isDesktop) _HotkeyItem(),
+        ],
+      ),
+      _buildModernSection(
+        context,
+        id: 'settings-routing',
+        title: chinese ? '连接与路由' : 'Connection & routing',
+        items: [
+          const _ChainProxyItem(),
+          const _WarpProxyItem(),
+          if (system.isAndroid) _AccessItem(),
+          if (system.isWindows) _LoopbackItem(),
+          _ConfigItem(),
+        ],
+      ),
+      _buildModernSection(
+        context,
+        id: 'settings-application',
+        title: chinese ? '应用与数据' : 'Application & data',
+        items: [_SettingItem(), _OtherSettingItem(), _BackupItem()],
+      ),
       Consumer(
         builder: (_, ref, _) {
           final state = ref.watch(moreToolsSelectorStateProvider);
@@ -1419,7 +1443,8 @@ class _ToolViewState extends ConsumerState<ToolsView> {
           }
           return _buildModernSection(
             context,
-            title: appLocalizations.more,
+            id: 'settings-resources',
+            title: chinese ? '工具与资源' : 'Tools & resources',
             items: state.navigationItems
                 .map((item) => _buildNavigationMenuItem(item))
                 .toList(),
@@ -1428,42 +1453,33 @@ class _ToolViewState extends ConsumerState<ToolsView> {
       ),
       _buildModernSection(
         context,
-        title: appLocalizations.settings,
-        items: [
-          _LocaleItem(),
-          _ThemeItem(),
-          _BackupItem(),
-          if (system.isDesktop) _HotkeyItem(),
-          if (system.isWindows) _LoopbackItem(),
-          if (system.isAndroid) _AccessItem(),
-          const _WarpProxyItem(),
-          const _ChainProxyItem(),
-          _ConfigItem(),
-          _OtherSettingItem(),
-          _SettingItem(),
-        ],
-      ),
-      _buildModernSection(
-        context,
-        title: appLocalizations.other,
-        items: [_DisclaimerItem(), if (vm2.b) _DeveloperItem(), _InfoItem()],
+        id: 'settings-support',
+        title: chinese ? '支持与关于' : 'Support & about',
+        items: [_InfoItem(), _DisclaimerItem(), if (vm2.b) _DeveloperItem()],
       ),
     ];
 
     return CommonScaffold(
-      title: appLocalizations.tools,
+      title: appLocalizations.settings,
       searchState: AppBarSearchState(onSearch: _onSearchChanged),
-      body: ListView.builder(
-        key: _query.isEmpty ? toolsStoreKey : null,
-        itemCount: _query.isEmpty ? items.length : searchResults.length,
-        itemBuilder: (_, index) {
-          return _query.isEmpty ? items[index] : searchResults[index];
-        },
-        padding: EdgeInsets.only(
-          bottom:
-              (globalState.isAndroidTV ? 80.0 : 20.0) +
-              (isMobileView ? getFloatingBottomBarReserveHeight(context) : 0),
-          top: 8,
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 960),
+          child: ListView.builder(
+            key: _query.isEmpty ? toolsStoreKey : null,
+            itemCount: _query.isEmpty ? items.length : searchResults.length,
+            itemBuilder: (_, index) {
+              return _query.isEmpty ? items[index] : searchResults[index];
+            },
+            padding: EdgeInsets.only(
+              bottom:
+                  (globalState.isAndroidTV ? 80.0 : 20.0) +
+                  (isMobileView
+                      ? getFloatingBottomBarReserveHeight(context)
+                      : 0),
+              top: 8,
+            ),
+          ),
         ),
       ),
     );
@@ -1489,7 +1505,9 @@ class _LocaleItem extends ConsumerWidget {
 
   static List<Locale> _getOrderedLocales() {
     final priority = ['zh_CN', 'zh_TC', 'en', 'ru', 'fa', 'ja', 'ko'];
-    final locales = List<Locale>.from(AppLocalizations.delegate.supportedLocales);
+    final locales = List<Locale>.from(
+      AppLocalizations.delegate.supportedLocales,
+    );
     locales.sort((a, b) {
       final aKey = a.toString();
       final bKey = b.toString();
@@ -1522,7 +1540,7 @@ class _LocaleItem extends ConsumerWidget {
     final currentLocale =
         utils.getLocaleForString(locale) ?? _systemLocaleOption;
     return ListItem<Locale>.options(
-      leading: const Icon(Icons.language_outlined),
+      leading: const _SettingsIcon(Icons.language_outlined),
       title: Text(appLocalizations.language),
       subtitle: Text(_getLocaleString(currentLocale)),
       delegate: OptionsDelegate(
@@ -1553,9 +1571,8 @@ class _ThemeItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListItem.next(
-      leading: const Icon(Icons.style),
+      leading: const _SettingsIcon(Icons.palette_outlined),
       title: Text(appLocalizations.theme),
-      subtitle: Text(appLocalizations.themeDesc),
       delegate: NextDelegate(
         title: appLocalizations.theme,
         builder: (_) => const ThemeView(),
@@ -1570,9 +1587,8 @@ class _BackupItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListItem.next(
-      leading: const Icon(Icons.cloud_sync),
+      leading: const _SettingsIcon(Icons.cloud_sync_outlined),
       title: Text(appLocalizations.backupAndRecovery),
-      subtitle: Text(appLocalizations.backupAndRecoveryDesc),
       delegate: NextDelegate(
         title: appLocalizations.backupAndRecovery,
         builder: (_) => const BackupAndRecovery(),
@@ -1587,13 +1603,10 @@ class _WarpProxyItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListItem.next(
-      leading: const Icon(Icons.cloud_rounded),
+      leading: const _SettingsIcon(Icons.cloud_outlined),
       title: const Text('WARP'),
       subtitle: const Text('Cloudflare WARP'),
-      delegate: NextDelegate(
-        title: 'WARP',
-        builder: (_) => const WarpView(),
-      ),
+      delegate: NextDelegate(title: 'WARP', builder: (_) => const WarpView()),
     );
   }
 }
@@ -1604,7 +1617,7 @@ class _ChainProxyItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListItem.next(
-      leading: const Icon(Icons.alt_route),
+      leading: const _SettingsIcon(Icons.alt_route),
       title: Text(appLocalizations.chainProxy),
       subtitle: Text(appLocalizations.chainProxyDesc),
       delegate: NextDelegate(
@@ -1621,9 +1634,8 @@ class _HotkeyItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListItem.next(
-      leading: const Icon(Icons.keyboard),
+      leading: const _SettingsIcon(Icons.keyboard_outlined),
       title: Text(appLocalizations.hotkeyManagement),
-      subtitle: Text(appLocalizations.hotkeyManagementDesc),
       delegate: NextDelegate(
         title: appLocalizations.hotkeyManagement,
         builder: (_) => const HotKeyView(),
@@ -1638,7 +1650,7 @@ class _LoopbackItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListItem(
-      leading: const Icon(Icons.lock),
+      leading: const _SettingsIcon(Icons.lock_outline_rounded),
       title: Text(appLocalizations.loopback),
       subtitle: Text(appLocalizations.loopbackDesc),
       onTap: () {
@@ -1658,7 +1670,7 @@ class _AccessItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListItem.next(
-      leading: const Icon(Icons.view_list),
+      leading: const _SettingsIcon(Icons.view_list),
       title: Text(appLocalizations.accessControl),
       subtitle: Text(appLocalizations.accessControlDesc),
       delegate: NextDelegate(
@@ -1675,7 +1687,7 @@ class _ConfigItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListItem.next(
-      leading: const Icon(Icons.edit),
+      leading: const _SettingsIcon(Icons.tune_rounded),
       title: Text(appLocalizations.basicConfig),
       subtitle: Text(appLocalizations.basicConfigDesc),
       delegate: NextDelegate(
@@ -1692,7 +1704,7 @@ class _OtherSettingItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListItem.next(
-      leading: const Icon(Icons.settings_suggest_outlined),
+      leading: const _SettingsIcon(Icons.settings_suggest_outlined),
       title: Text(appLocalizations.otherSettings),
       subtitle: Text(appLocalizations.otherSettingsDesc),
       delegate: NextDelegate(
@@ -1709,9 +1721,8 @@ class _SettingItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListItem.next(
-      leading: const Icon(Icons.settings),
+      leading: const _SettingsIcon(Icons.settings_outlined),
       title: Text(appLocalizations.application),
-      subtitle: Text(appLocalizations.applicationDesc),
       delegate: NextDelegate(
         title: appLocalizations.application,
         builder: (_) => const ApplicationSettingView(),
@@ -1726,7 +1737,7 @@ class _DisclaimerItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListItem(
-      leading: const Icon(Icons.gavel),
+      leading: const _SettingsIcon(Icons.gavel),
       title: Text(appLocalizations.disclaimer),
       onTap: () async {
         final isDisclaimerAccepted = await globalState.appController
@@ -1745,7 +1756,7 @@ class _InfoItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListItem.next(
-      leading: const Icon(Icons.info),
+      leading: const _SettingsIcon(Icons.info_outline_rounded),
       title: Text(appLocalizations.about),
       delegate: NextDelegate(
         title: appLocalizations.about,
@@ -1761,11 +1772,31 @@ class _DeveloperItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListItem.next(
-      leading: const Icon(Icons.developer_board),
+      leading: const _SettingsIcon(Icons.developer_board_outlined),
       title: Text(appLocalizations.developerMode),
       delegate: NextDelegate(
         title: appLocalizations.developerMode,
         builder: (_) => const DeveloperView(),
+      ),
+    );
+  }
+}
+
+class _SettingsIcon extends StatelessWidget {
+  const _SettingsIcon(this.icon);
+  final IconData icon;
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return ExcludeSemantics(
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: scheme.tertiaryContainer,
+          borderRadius: FluxoraRadius.smAll,
+        ),
+        child: Icon(icon, size: 20, color: scheme.onTertiaryContainer),
       ),
     );
   }

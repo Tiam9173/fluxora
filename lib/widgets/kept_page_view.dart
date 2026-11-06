@@ -114,12 +114,18 @@ class _KeptPageViewState extends State<KeptPageView>
     if (oldWidget.enterOffset != widget.enterOffset ||
         oldWidget.inCurve != widget.inCurve ||
         oldWidget.outCurve != widget.outCurve) {
+      _in.dispose();
+      _out.dispose();
       _resolveAnimations();
     }
     if (_controller.duration != widget.duration) {
       _controller.duration = widget.duration;
     }
 
+    if (widget.duration == Duration.zero) {
+      _controller.value = 1;
+      _leaving = null;
+    }
     if (widget.index != _current) {
       _leaving = _current;
       _current = widget.index;

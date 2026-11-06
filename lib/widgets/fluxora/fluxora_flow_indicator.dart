@@ -26,9 +26,13 @@ class FluxoraFlowIndicator extends StatefulWidget {
     this.width = 64,
     this.height = 16,
     this.semanticLabel,
+    this.animate = true,
   });
 
   final FluxoraFlowState state;
+
+  /// A probe result can describe connectivity without implying live traffic.
+  final bool animate;
 
   /// Total width of line + gap + node.
   final double width;
@@ -58,7 +62,8 @@ class _FluxoraFlowIndicatorState extends State<FluxoraFlowIndicator>
   @override
   void didUpdateWidget(covariant FluxoraFlowIndicator oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.state != widget.state) {
+    if (oldWidget.state != widget.state ||
+        oldWidget.animate != widget.animate) {
       _syncAnimation();
     }
   }
@@ -71,7 +76,9 @@ class _FluxoraFlowIndicatorState extends State<FluxoraFlowIndicator>
 
   /// Starts the loop for looping states, or parks the controller for static ones.
   void _syncAnimation() {
-    final loop = _loopDurationFor(context, widget.state);
+    final loop = widget.animate
+        ? _loopDurationFor(context, widget.state)
+        : null;
     if (loop == null) {
       _controller.stop();
       _controller.value = 0;
@@ -89,11 +96,14 @@ class _FluxoraFlowIndicatorState extends State<FluxoraFlowIndicator>
   ///
   /// Also returns null under reduced motion — looping animations must stop
   /// entirely (`D4_BRAND_PROPOSAL.md` §10.5).
-  static Duration? _loopDurationFor(BuildContext context, FluxoraFlowState state) {
-    final motion = FluxoraMotionSet.of(
-      reduceMotion: MediaQuery.maybeOf(context)?.disableAnimations ?? false,
-    );
-    if (!motion.loopEnabled) return null;
+  static Duration? _loopDurationFor(
+    BuildContext context,
+    FluxoraFlowState state,
+  ) {
+    final motion = FluxoraMotion.ofContext(context);
+    if (!motion.loopEnabled || !TickerMode.valuesOf(context).enabled) {
+      return null;
+    }
     return switch (state) {
       FluxoraFlowState.connected => motion.connectedLoop,
       FluxoraFlowState.connecting => motion.connectingLoop,
@@ -138,9 +148,7 @@ class _FluxoraFlowIndicatorState extends State<FluxoraFlowIndicator>
 
   @override
   Widget build(BuildContext context) {
-    final motion = FluxoraMotionSet.of(
-      reduceMotion: MediaQuery.maybeOf(context)?.disableAnimations ?? false,
-    );
+    final motion = FluxoraMotion.ofContext(context);
     final scheme = Theme.of(context).colorScheme;
     final palette = _palette(
       scheme,
@@ -176,16 +184,26 @@ class _FluxoraFlowIndicatorState extends State<FluxoraFlowIndicator>
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Expanded(
-              child: AnimatedBuilder(
-                animation: _controller,
-                builder: (context, _) => Container(
-                  height: lineHeight,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(lineHeight / 2),
-                    gradient: _lineGradient(palette, _controller.value),
-                  ),
-                ),
-              ),
+              child: !widget.animate
+                  ? AnimatedContainer(
+                      duration: motion.base,
+                      curve: motion.standard,
+                      height: lineHeight,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(lineHeight / 2),
+                        gradient: _lineGradient(palette, 0),
+                      ),
+                    )
+                  : AnimatedBuilder(
+                      animation: _controller,
+                      builder: (context, _) => Container(
+                        height: lineHeight,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(lineHeight / 2),
+                          gradient: _lineGradient(palette, _controller.value),
+                        ),
+                      ),
+                    ),
             ),
             const SizedBox(width: FluxoraSpacing.sm),
             node,

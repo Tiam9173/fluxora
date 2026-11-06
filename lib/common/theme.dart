@@ -48,6 +48,104 @@ class CommonTheme {
   }
 }
 
+/// Extends the current theme; Classic returns the original theme unchanged.
+ThemeData fluxoraMaterialTheme(ThemeData base, FluxoraSurfaceStyle style) {
+  if (style == FluxoraSurfaceStyle.classic) return base;
+  final material = FluxoraMaterial(style: style);
+  final original = base.colorScheme;
+  final scheme = original.surface == Colors.black
+      ? original
+      : original.copyWith(
+          surfaceContainerLow: Color.alphaBlend(
+            original.tertiary.withValues(alpha: .035),
+            original.surfaceContainerLow,
+          ),
+          surfaceContainer: Color.alphaBlend(
+            original.tertiary.withValues(alpha: .04),
+            original.surfaceContainer,
+          ),
+          surfaceContainerHigh: Color.alphaBlend(
+            original.primary.withValues(alpha: .025),
+            original.surfaceContainerHigh,
+          ),
+        );
+  final side = BorderSide(color: material.border(scheme));
+  return base.copyWith(
+    colorScheme: scheme,
+    scaffoldBackgroundColor: Color.alphaBlend(
+      scheme.tertiary.withValues(
+        alpha: scheme.surface == Colors.black ? 0 : .035,
+      ),
+      scheme.surface,
+    ),
+    extensions: [
+      ...base.extensions.values.where((e) => e is! FluxoraMaterial),
+      material,
+    ],
+    cardTheme: base.cardTheme.copyWith(
+      color: scheme.surfaceContainer,
+      surfaceTintColor: Colors.transparent,
+      elevation: FluxoraElevation.resting,
+      shape: RoundedRectangleBorder(
+        borderRadius: FluxoraRadius.cardAll,
+        side: side,
+      ),
+    ),
+    dialogTheme: base.dialogTheme.copyWith(
+      backgroundColor: scheme.surfaceContainerHigh,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: FluxoraRadius.dialogAll,
+        side: side,
+      ),
+    ),
+    bottomSheetTheme: base.bottomSheetTheme.copyWith(
+      backgroundColor: scheme.surfaceContainerHigh,
+      surfaceTintColor: Colors.transparent,
+    ),
+    popupMenuTheme: base.popupMenuTheme.copyWith(
+      color: scheme.surfaceContainerHigh,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: FluxoraRadius.mdAll,
+        side: side,
+      ),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: (base.filledButtonTheme.style ?? const ButtonStyle()).copyWith(
+        side: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.disabled)
+              ? null
+              : BorderSide(color: scheme.onPrimary.withValues(alpha: .18)),
+        ),
+      ),
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: (base.elevatedButtonTheme.style ?? const ButtonStyle()).copyWith(
+        surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+      ),
+    ),
+    appBarTheme: base.appBarTheme.copyWith(
+      surfaceTintColor: Colors.transparent,
+    ),
+    snackBarTheme: base.snackBarTheme.copyWith(
+      shape: RoundedRectangleBorder(
+        borderRadius: FluxoraRadius.mdAll,
+        side: BorderSide(color: scheme.onInverseSurface.withValues(alpha: .14)),
+      ),
+    ),
+    tooltipTheme: base.tooltipTheme.copyWith(
+      decoration: BoxDecoration(
+        color: scheme.inverseSurface,
+        borderRadius: FluxoraRadius.smAll,
+        border: Border.all(
+          color: scheme.onInverseSurface.withValues(alpha: .14),
+        ),
+      ),
+    ),
+  );
+}
+
 /// Maps the Aurora semantic set onto a Material `ColorScheme`.
 ///
 /// Pure on purpose: the provider in `providers/state.dart` is a thin wrapper, so
@@ -91,10 +189,7 @@ ColorScheme fluxoraSchemeFromSeed({
   // roles in *both* modes — a red seed must not turn "failed" into something
   // that reads as the accent colour.
   if (followSeed) {
-    return seeded.copyWith(
-      error: fluxora.error,
-      onError: fluxora.onError,
-    );
+    return seeded.copyWith(error: fluxora.error, onError: fluxora.onError);
   }
 
   return seeded.copyWith(

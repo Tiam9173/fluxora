@@ -60,6 +60,10 @@ Future<T?> showSheet<T>({
       builder: (_) {
         return SafeArea(child: builder(context, SheetType.bottomSheet));
       },
+      sheetAnimationStyle: AnimationStyle(
+        duration: FluxoraMotion.ofContext(context).base,
+        reverseDuration: FluxoraMotion.ofContext(context).fast,
+      ),
       showDragHandle: false,
       useSafeArea: props.useSafeArea,
     ),
@@ -69,7 +73,11 @@ Future<T?> showSheet<T>({
       barrierColor: props.barrierColor,
       context: context,
       constraints: BoxConstraints(maxWidth: props.maxWidth ?? 360),
-      filter: props.blur ? commonFilter : null,
+      filter:
+          props.blur &&
+              FluxoraMaterial.of(context).style != FluxoraSurfaceStyle.reduced
+          ? commonFilter
+          : null,
       builder: (_) {
         return builder(context, SheetType.sideSheet);
       },
@@ -89,7 +97,11 @@ Future<T?> showExtend<T>(
       useSafeArea: props.useSafeArea,
       context: context,
       constraints: BoxConstraints(maxWidth: props.maxWidth ?? 360),
-      filter: props.blur ? commonFilter : null,
+      filter:
+          props.blur &&
+              FluxoraMaterial.of(context).style != FluxoraSurfaceStyle.reduced
+          ? commonFilter
+          : null,
       builder: (context) {
         return builder(context, SheetType.sideSheet);
       },
@@ -113,7 +125,10 @@ class AdaptiveSheetScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final backgroundColor = context.colorScheme.surface;
+    final material = FluxoraMaterial.of(context);
+    final backgroundColor = material.enabled
+        ? material.fill(context.colorScheme, floating: true)
+        : context.colorScheme.surface;
     final bottomSheet = type == SheetType.bottomSheet;
     final sideSheet = type == SheetType.sideSheet;
     final appBar = AppBar(

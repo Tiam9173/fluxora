@@ -6,9 +6,8 @@ import 'package:fluxora/views/dashboard/widgets/speed_test_card.dart';
 
 /// Phase 00.6-F10 — `SpeedTestCard`'s reduced-motion contract.
 ///
-/// The card tweens its headline number from the previous frame to the current
-/// one over 320 ms. Under reduced motion that tween must collapse to zero so the
-/// number lands immediately instead of sliding (`D4_BRAND_PROJECT` §10.5).
+/// The arc follows the supplied reading over 320 ms; the numeric reading is
+/// immediate. OS reduced motion and low-effects material suppress the arc tween.
 ///
 /// The card is reachable in a VM test because `speedTestStatus()` degrades
 /// safely: `speedTestStatusRaw()` returns `'not-lib-handler'` when the native
@@ -31,6 +30,7 @@ void main() {
   Future<void> pumpCard(
     WidgetTester tester, {
     required bool disableAnimations,
+    bool lowEffects = false,
   }) async {
     tester.binding.platformDispatcher.accessibilityFeaturesTestValue =
         FakeAccessibilityFeatures(disableAnimations: disableAnimations);
@@ -38,7 +38,18 @@ void main() {
       tester.binding.platformDispatcher.clearAccessibilityFeaturesTestValue,
     );
     await tester.pumpWidget(
-      const MaterialApp(home: Scaffold(body: SpeedTestCard())),
+      MaterialApp(
+        theme: ThemeData(
+          extensions: [
+            FluxoraMaterial(
+              style: lowEffects
+                  ? FluxoraSurfaceStyle.reduced
+                  : FluxoraSurfaceStyle.classic,
+            ),
+          ],
+        ),
+        home: const Scaffold(body: SpeedTestCard()),
+      ),
     );
     // Let `_syncOnce()` resolve; it completes synchronously against the absent
     // native lib.
@@ -52,12 +63,21 @@ void main() {
     return tween.duration;
   }
 
-  testWidgets('the headline tweens over 320 ms without reduced motion', (
+  testWidgets('the arc tweens over 320 ms without reduced motion', (
     tester,
   ) async {
     await pumpCard(tester, disableAnimations: false);
 
     expect(headlineTweenDuration(tester), const Duration(milliseconds: 320));
+  });
+
+  testWidgets('low-effects material settles without scheduled frames', (
+    tester,
+  ) async {
+    await pumpCard(tester, disableAnimations: false, lowEffects: true);
+    await tester.pumpAndSettle();
+    expect(headlineTweenDuration(tester), Duration.zero);
+    expect(tester.binding.hasScheduledFrame, isFalse);
   });
 
   testWidgets('the headline lands immediately under reduced motion', (

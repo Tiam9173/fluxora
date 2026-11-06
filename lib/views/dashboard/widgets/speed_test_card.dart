@@ -207,11 +207,13 @@ class _SpeedTestCardState extends State<SpeedTestCard> {
     final p = _progress;
     final target = p.headlineMbps;
     // 系统开了「减少动画」时补间必须归零（项目规范 §10.5）。
-    final reduceMotion = MediaQuery.of(context).disableAnimations;
+    final motion = FluxoraMotion.ofContext(context);
 
     return Dialog(
       backgroundColor: scheme.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(FluxoraRadius.xl)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(FluxoraRadius.xl),
+      ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
         child: Column(
@@ -235,10 +237,8 @@ class _SpeedTestCardState extends State<SpeedTestCard> {
             const SizedBox(height: 4),
             TweenAnimationBuilder<double>(
               tween: Tween<double>(end: target),
-              duration: reduceMotion
-                  ? Duration.zero
-                  : const Duration(milliseconds: 320),
-              curve: Curves.easeOutCubic,
+              duration: motion.slow,
+              curve: FluxoraMotion.standard,
               builder: (context, value, _) {
                 return SizedBox(
                   width: 180,
@@ -260,7 +260,7 @@ class _SpeedTestCardState extends State<SpeedTestCard> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            _fmt(value),
+                            _fmt(target),
                             style: context.textTheme.displaySmall?.copyWith(
                               fontWeight: FontWeight.w600,
                               color: scheme.primary,
@@ -270,7 +270,7 @@ class _SpeedTestCardState extends State<SpeedTestCard> {
                             ),
                           ),
                           Text(
-                            '${_unitFor(value)} / ${_scaleLabel(_scale)}',
+                            '${_unitFor(target)} / ${_scaleLabel(_scale)}',
                             style: context.textTheme.bodySmall,
                           ),
                         ],
@@ -300,7 +300,7 @@ class _SpeedTestCardState extends State<SpeedTestCard> {
                 child: _history.length < 2
                     ? const SizedBox.shrink()
                     : LineChart(
-                        points: _history,
+                        points: List.of(_history),
                         color: scheme.primary,
                         gradient: true,
                       ),

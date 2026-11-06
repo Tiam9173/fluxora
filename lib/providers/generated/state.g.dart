@@ -2088,7 +2088,7 @@ abstract class _$DynamicPalette
 /// Builds the app's [ColorScheme] for [brightness].
 ///
 /// Seed priority follows `ThemeProps.colorSource` (D4.2 §5.2): `fluxora` and
-/// `custom` resolve `primaryColor` → Flux `#29D6C7`, while `system` resolves
+/// `custom` resolve `primaryColor` → Fluxora brand indigo, while `system` resolves
 /// `corePalette` → `accentColor` → Flux. Only `system` consults Android Material
 /// You, so the brand identity survives on Android. [ignoreConfig] forces the
 /// `system` path and an explicit [color] wins over every mode.
@@ -2103,7 +2103,7 @@ final genColorSchemeProvider = GenColorSchemeFamily._();
 /// Builds the app's [ColorScheme] for [brightness].
 ///
 /// Seed priority follows `ThemeProps.colorSource` (D4.2 §5.2): `fluxora` and
-/// `custom` resolve `primaryColor` → Flux `#29D6C7`, while `system` resolves
+/// `custom` resolve `primaryColor` → Fluxora brand indigo, while `system` resolves
 /// `corePalette` → `accentColor` → Flux. Only `system` consults Android Material
 /// You, so the brand identity survives on Android. [ignoreConfig] forces the
 /// `system` path and an explicit [color] wins over every mode.
@@ -2118,7 +2118,7 @@ final class GenColorSchemeProvider
   /// Builds the app's [ColorScheme] for [brightness].
   ///
   /// Seed priority follows `ThemeProps.colorSource` (D4.2 §5.2): `fluxora` and
-  /// `custom` resolve `primaryColor` → Flux `#29D6C7`, while `system` resolves
+  /// `custom` resolve `primaryColor` → Fluxora brand indigo, while `system` resolves
   /// `corePalette` → `accentColor` → Flux. Only `system` consults Android Material
   /// You, so the brand identity survives on Android. [ignoreConfig] forces the
   /// `system` path and an explicit [color] wins over every mode.
@@ -2183,12 +2183,12 @@ final class GenColorSchemeProvider
   }
 }
 
-String _$genColorSchemeHash() => r'573e3b5c675212cd8e3a14883ca16c887e2d0a45';
+String _$genColorSchemeHash() => r'386af77f3aaf7c1a6eca7ad4c91a6167c9241f55';
 
 /// Builds the app's [ColorScheme] for [brightness].
 ///
 /// Seed priority follows `ThemeProps.colorSource` (D4.2 §5.2): `fluxora` and
-/// `custom` resolve `primaryColor` → Flux `#29D6C7`, while `system` resolves
+/// `custom` resolve `primaryColor` → Fluxora brand indigo, while `system` resolves
 /// `corePalette` → `accentColor` → Flux. Only `system` consults Android Material
 /// You, so the brand identity survives on Android. [ignoreConfig] forces the
 /// `system` path and an explicit [color] wins over every mode.
@@ -2215,7 +2215,7 @@ final class GenColorSchemeFamily extends $Family
   /// Builds the app's [ColorScheme] for [brightness].
   ///
   /// Seed priority follows `ThemeProps.colorSource` (D4.2 §5.2): `fluxora` and
-  /// `custom` resolve `primaryColor` → Flux `#29D6C7`, while `system` resolves
+  /// `custom` resolve `primaryColor` → Fluxora brand indigo, while `system` resolves
   /// `corePalette` → `accentColor` → Flux. Only `system` consults Android Material
   /// You, so the brand identity survives on Android. [ignoreConfig] forces the
   /// `system` path and an explicit [color] wins over every mode.

@@ -210,11 +210,20 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
       targetOffset += rowIndex * (itemHeight + 8.0);
     }
 
-    _scrollController.animateTo(
-      targetOffset.clamp(0.0, _scrollController.position.maxScrollExtent),
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeIn,
+    final offset = targetOffset.clamp(
+      0.0,
+      _scrollController.position.maxScrollExtent,
     );
+    final motion = FluxoraMotion.ofContext(context);
+    if (motion.reduceMotion) {
+      _scrollController.jumpTo(offset);
+    } else {
+      _scrollController.animateTo(
+        offset,
+        duration: motion.slow,
+        curve: FluxoraMotion.standard,
+      );
+    }
   }
 
   List<_FlatItem> _buildFlatItems() {
@@ -283,7 +292,10 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: SizedBox(height: itemHeight, child: Row(children: rowChildren)),
+      child: SizedBox(
+        height: itemHeight,
+        child: Row(children: rowChildren),
+      ),
     );
   }
 
@@ -312,8 +324,8 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
       sortType: widget.sortType,
       testUrl: group.testUrl,
     );
-    final rowCount = (sortedProxies.length + widget.columns - 1) ~/
-        widget.columns;
+    final rowCount =
+        (sortedProxies.length + widget.columns - 1) ~/ widget.columns;
 
     return SliverVariedExtentList.builder(
       itemCount: rowCount,
@@ -380,7 +392,9 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
             padding: EdgeInsets.only(
               bottom:
                   (globalState.isAndroidTV ? 48.0 : 16.0) +
-                  (isMobileView ? getFloatingBottomBarReserveHeight(context) : 0),
+                  (isMobileView
+                      ? getFloatingBottomBarReserveHeight(context)
+                      : 0),
             ),
           ),
         ],
@@ -446,9 +460,7 @@ class _GroupHeader extends ConsumerWidget {
         .watch(getSelectedProxyNameProvider(group.name))
         .getSafeValue('');
 
-    final selectedProxyIcon = ref.watch(
-      proxyIconProvider(selectedProxyName),
-    );
+    final selectedProxyIcon = ref.watch(proxyIconProvider(selectedProxyName));
 
     return FluxoraCard(
       // radius == FluxoraRadius.card (16), matching the previous hardcoded 16.

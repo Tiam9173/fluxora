@@ -10,9 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 Future<void> showCoreStatusDialog(BuildContext context) async {
-  await globalState.showCommonDialog<void>(
-    child: const CoreStatusDialog(),
-  );
+  await globalState.showCommonDialog<void>(child: const CoreStatusDialog());
 }
 
 class CoreStatusDialog extends StatefulWidget {
@@ -126,10 +124,7 @@ class _CoreStatusDialogState extends State<CoreStatusDialog> {
               Container(
                 width: 7,
                 height: 7,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                ),
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
               ),
               const SizedBox(width: 6),
               Text(
@@ -179,8 +174,9 @@ class _CoreStatusDialogState extends State<CoreStatusDialog> {
     required int reclaimable,
     required int physical,
   }) {
-    final totalMemory =
-        (inUse + reclaimable) > 0 ? (inUse + reclaimable) : physical;
+    final totalMemory = (inUse + reclaimable) > 0
+        ? (inUse + reclaimable)
+        : physical;
     final totalTraffic = TrafficValue(value: totalMemory);
     final inUseTraffic = _formatBytes(inUse);
     final reclaimableTraffic = _formatBytes(reclaimable);
@@ -257,11 +253,8 @@ class _CoreStatusDialogState extends State<CoreStatusDialog> {
                   textDirection: Directionality.of(context),
                 )..layout();
 
-                final maxNeededWidth = max(
-                      reclaimTextPainter.width,
-                      allocTextPainter.width,
-                    ) +
-                    18;
+                final maxNeededWidth =
+                    max(reclaimTextPainter.width, allocTextPainter.width) + 18;
                 final isTight = maxNeededWidth > constraints.maxWidth;
 
                 return Column(
@@ -436,10 +429,7 @@ class _CoreStatusDialogState extends State<CoreStatusDialog> {
       }
     }
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: rows,
-    );
+    return Column(mainAxisSize: MainAxisSize.min, children: rows);
   }
 
   Widget _buildGeodataSection(String geodataUse) {
@@ -526,11 +516,7 @@ class _CoreStatusDialogState extends State<CoreStatusDialog> {
             ),
           ),
           const SizedBox(width: 6),
-          Wrap(
-            spacing: 4,
-            runSpacing: 4,
-            children: chips,
-          ),
+          Wrap(spacing: 4, runSpacing: 4, children: chips),
         ],
       ),
     );
@@ -543,18 +529,23 @@ class _CoreStatusDialogState extends State<CoreStatusDialog> {
     final reclaimable = status?.reclaimable ?? 0;
     final physical = status?.physical ?? 0;
 
-    final goroutinesText =
-        status != null ? _formatCount(status.goroutines) : '-';
-    final heapObjectsText =
-        status != null ? _formatCount(status.heapObjects) : '-';
+    final goroutinesText = status != null
+        ? _formatCount(status.goroutines)
+        : '-';
+    final heapObjectsText = status != null
+        ? _formatCount(status.heapObjects)
+        : '-';
     final rulesText = status != null ? _formatCount(status.rules) : '-';
     final proxiesText = status != null ? _formatCount(status.proxies) : '-';
-    final proxyGroupsText =
-        status != null ? _formatCount(status.proxyGroups) : '-';
-    final ruleProvidersText =
-        status != null ? _formatCount(status.ruleProviders) : '-';
-    final proxyProvidersText =
-        status != null ? _formatCount(status.proxyProviders) : '-';
+    final proxyGroupsText = status != null
+        ? _formatCount(status.proxyGroups)
+        : '-';
+    final ruleProvidersText = status != null
+        ? _formatCount(status.ruleProviders)
+        : '-';
+    final proxyProvidersText = status != null
+        ? _formatCount(status.proxyProviders)
+        : '-';
     final geodataUseText = status?.geodataUse ?? 'None';
 
     final metricItems = <_MetricItem>[
@@ -679,8 +670,8 @@ class _MemoryRingChart extends StatelessWidget {
         children: [
           TweenAnimationBuilder<double>(
             tween: Tween(begin: 0.0, end: 1.0),
-            duration: const Duration(milliseconds: 700),
-            curve: Curves.easeOutCubic,
+            duration: FluxoraMotion.ofContext(context).slow,
+            curve: FluxoraMotion.standard,
             builder: (context, progress, _) {
               return CustomPaint(
                 size: const Size(76, 76),

@@ -1,5 +1,6 @@
 import 'package:fluxora/manager/message_manager.dart';
 import 'package:fluxora/widgets/scaffold.dart';
+import 'package:fluxora/widgets/floating_dock_metrics.dart';
 import 'package:flutter/material.dart';
 
 extension BuildContextExtension on BuildContext {
@@ -30,17 +31,29 @@ extension BuildContextExtension on BuildContext {
     return findAncestorStateOfType<CommonScaffoldState>();
   }
 
-  Future<void>? showNotifier(String text,
-      {VoidCallback? onAction, String? actionLabel, bool showCountdown = false}) {
-    return findAncestorStateOfType<MessageManagerState>()
-        ?.message(text, onAction: onAction, actionLabel: actionLabel, showCountdown: showCountdown);
+  Future<void>? showNotifier(
+    String text, {
+    VoidCallback? onAction,
+    String? actionLabel,
+    bool showCountdown = false,
+  }) {
+    return findAncestorStateOfType<MessageManagerState>()?.message(
+      text,
+      onAction: onAction,
+      actionLabel: actionLabel,
+      showCountdown: showCountdown,
+    );
   }
 
   void showSnackBar(String message, {SnackBarAction? action}) {
-    final width = viewWidth;
+    final width = Scaffold.maybeOf(this)?.context.size?.width ?? viewWidth;
     EdgeInsets margin;
     if (width < 600) {
-      margin = const EdgeInsets.only(bottom: 16, right: 16, left: 16);
+      margin = EdgeInsets.only(
+        bottom: 16 + FloatingDockMetrics.maybeHeightOf(this),
+        right: 16,
+        left: 16,
+      );
     } else {
       margin = EdgeInsets.only(bottom: 16, left: 16, right: width - 316);
     }

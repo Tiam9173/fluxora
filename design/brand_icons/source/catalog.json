@@ -1,0 +1,66 @@
+{
+  "official": {
+    "master": "design/brand_icons/source/official_pair.png",
+    "native_cell": [
+      887,
+      887
+    ],
+    "sha256": "0562ba22ab7b4683cbf1e4f8f9f2446db273f29e34833bfa611fa111dff7fdb8"
+  },
+  "classic": {
+    "master": "design/brand_icons/source/classic_pair.png",
+    "native_cell": [
+      887,
+      887
+    ],
+    "sha256": "71f19d16244a99135915914d5252c3a636c15915120aca96395539927f00a446"
+  },
+  "aqua": {
+    "master": "design/brand_icons/source/aqua_pair.png",
+    "native_cell": [
+      887,
+      887
+    ],
+    "sha256": "5a168d7f46da77dc0094d5ab3d6a19bb98506c559fab9754bddd76c757194940"
+  },
+  "premium": {
+    "master": "design/brand_icons/source/premium_pair.png",
+    "native_cell": [
+      887,
+      887
+    ],
+    "sha256": "6020ed311b20c70902f9aef78adc0400e1eff024b320c069b22e63bd97c4f4a5"
+  },
+  "speed": {
+    "master": "design/brand_icons/source/speed_pair.png",
+    "native_cell": [
+      887,
+      887
+    ],
+    "sha256": "9b08e3f164e4dabcef7a47faf27c30b0f74120431ab89dfc9d711bfa327fdef9"
+  },
+  "sky": {
+    "master": "design/brand_icons/source/sky_pair.png",
+    "native_cell": [
+      887,
+      887
+    ],
+    "sha256": "990ccc75ef93ffb85a9211b3d7be97155def3889e8a52f0bba0e571d779d1fa7"
+  },
+  "sunset": {
+    "master": "design/brand_icons/source/sunset_pair.png",
+    "native_cell": [
+      887,
+      887
+    ],
+    "sha256": "c83dd9cf343e98bf1a518275e6c4937907f7b27ba698ef2f50cbd3ea16d3f4e7"
+  },
+  "blue_night": {
+    "master": "design/brand_icons/source/blue_night_pair.png",
+    "native_cell": [
+      887,
+      887
+    ],
+    "sha256": "ecd5a1b4e8f68f753790ce9a47e5dbe2727bf499172447d2bfb771da100d29fa"
+  }
+}

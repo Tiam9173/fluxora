@@ -128,8 +128,8 @@ class FluxoraProxyTile extends StatelessWidget {
     final colorScheme = context.colorScheme;
     final hasSecondary =
         showStatus || showLatency || traffic != null || description != null;
-    final nameStyle = (compact ? FluxoraTypography.body : FluxoraTypography.title)
-        .copyWith(
+    final nameStyle =
+        (compact ? FluxoraTypography.body : FluxoraTypography.title).copyWith(
           // A touch heavier than body weight: node names are the primary label
           // and sit next to dense status text, so the hierarchy needs the help.
           fontWeight: FontWeight.w600,
@@ -137,6 +137,8 @@ class FluxoraProxyTile extends StatelessWidget {
         );
 
     final card = FluxoraCard(
+      // Dense rows stay opaque and never request per-row backdrop filters.
+      filled: FluxoraMaterial.of(context).enabled,
       selected: selected,
       onTap: onTap,
       onLongPress: onLongPress,
@@ -223,7 +225,8 @@ class FluxoraProxyTile extends StatelessWidget {
                         // `sm`, not `md`: at 3-column width the row has ~1.5 dp
                         // of slack left after both children shrink, and the
                         // wider gap was exactly what tipped it over.
-                        if (showStatus) const SizedBox(width: FluxoraSpacing.sm),
+                        if (showStatus)
+                          const SizedBox(width: FluxoraSpacing.sm),
                         // The badge used to take its intrinsic width, so on a
                         // narrow card (a three-column phone grid is ~104 dp) the
                         // row overflowed even with no extra decoration — and
@@ -235,7 +238,9 @@ class FluxoraProxyTile extends StatelessWidget {
                           child: FittedBox(
                             fit: BoxFit.scaleDown,
                             alignment: Alignment.centerLeft,
-                            child: latencySlot ?? FluxoraLatencyBadge(delay: delay),
+                            child:
+                                latencySlot ??
+                                FluxoraLatencyBadge(delay: delay),
                           ),
                         ),
                       ],

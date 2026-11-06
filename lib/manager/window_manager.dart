@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 
 import 'package:fluxora/common/common.dart';
+import 'package:fluxora/common/brand_icons.dart';
 import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
@@ -46,7 +47,8 @@ class _WindowContainerState extends ConsumerState<WindowManager>
     _windowGeometryTimer?.cancel();
     _windowGeometryTimer = Timer(const Duration(milliseconds: 125), () async {
       if (!mounted || revision != _windowGeometryRevision) return;
-      final isAbnormal = (await windowManager.isMaximized()) ||
+      final isAbnormal =
+          (await windowManager.isMaximized()) ||
           (await windowManager.isFullScreen()) ||
           (await windowManager.isMinimized());
       if (isAbnormal) return;
@@ -60,7 +62,9 @@ class _WindowContainerState extends ConsumerState<WindowManager>
       }
       if (!bounds.left.isFinite || !bounds.top.isFinite) return;
 
-      ref.read(windowSettingProvider.notifier).updateState(
+      ref
+          .read(windowSettingProvider.notifier)
+          .updateState(
             (state) => state.copyWith(
               width: bounds.width,
               height: bounds.height,
@@ -259,7 +263,7 @@ class _WindowHeaderState extends ConsumerState<WindowHeader> {
     final isMaximized = await windowManager.isMaximized();
     if (!mounted) return;
     isMaximizedNotifier.value = isMaximized;
-    
+
     final isAlwaysOnTop = await windowManager.isAlwaysOnTop();
     if (!mounted) return;
     isPinNotifier.value = isAlwaysOnTop;
@@ -291,9 +295,9 @@ class _WindowHeaderState extends ConsumerState<WindowHeader> {
     final newIsPinned = !isAlwaysOnTop;
     await windowManager.setAlwaysOnTop(newIsPinned);
     isPinNotifier.value = newIsPinned;
-    ref.read(windowSettingProvider.notifier).updateState(
-          (state) => state.copyWith(isPinned: newIsPinned),
-        );
+    ref
+        .read(windowSettingProvider.notifier)
+        .updateState((state) => state.copyWith(isPinned: newIsPinned));
   }
 
   Widget _buildActions() {
@@ -453,7 +457,11 @@ class AppIcon extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final iconProps = ref.watch(themeSettingProvider);
+    final brandAsset = BrandIcons.asset(
+      iconProps.appIconStyle,
+      iconProps.useDarkIcon,
+    );
     final customIconPath = ref.watch(sidebarIconPathProvider);
 
     Widget icon;
@@ -468,20 +476,12 @@ class AppIcon extends ConsumerWidget {
           cacheHeight: 64,
           errorBuilder: (_, _, _) {
             // Fallback if file load fails
-            return Image.asset(
-              isDark
-                  ? 'assets/images/icon.png'
-                  : 'assets/images/icon_light.png',
-              fit: BoxFit.contain,
-            );
+            return Image.asset(brandAsset, fit: BoxFit.contain);
           },
         ),
       );
     } else {
-      icon = Image.asset(
-        isDark ? 'assets/images/icon.png' : 'assets/images/icon_light.png',
-        fit: BoxFit.contain,
-      );
+      icon = Image.asset(brandAsset, fit: BoxFit.contain);
     }
 
     return GestureDetector(

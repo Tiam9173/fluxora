@@ -42,13 +42,10 @@ class NetworkSpeed extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final primaryColor = Theme.of(context).colorScheme.primary;
     return SizedBox(
-      height: getWidgetHeight(2),
+      height: getWidgetHeight(1.5),
       child: FluxoraCard(
         onTap: () {
-          showDialog(
-            context: context,
-            builder: (_) => const SpeedTestCard(),
-          );
+          showDialog(context: context, builder: (_) => const SpeedTestCard());
         },
         info: Info(
           label: appLocalizations.networkSpeed,
@@ -61,46 +58,41 @@ class NetworkSpeed extends ConsumerWidget {
               final traffics = ref.read(trafficsProvider).list;
               final points = _getPoints(traffics);
               final last = _getLastTraffic(traffics);
-              return Stack(
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Positioned.fill(
-                    child: Padding(
-                      padding: const EdgeInsets.only(
-                        top: 24,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                      ),
-                      child: RepaintBoundary(
-                        child: LineChart(
-                          gradient: true,
-                          color: primaryColor,
-                          points: points,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: FluxoraSpacing.lg,
+                      vertical: FluxoraSpacing.sm,
+                    ),
+                    child: Wrap(
+                      spacing: FluxoraSpacing.xl,
+                      runSpacing: FluxoraSpacing.sm,
+                      children: [
+                        FluxoraSpeedGauge(
+                          mode: FluxoraSpeedGaugeMode.download,
+                          download: traffics.isEmpty ? null : last.down.value,
+                          // No sample is unknown (—), not a measured zero or loading task.
+                          state: traffics.isEmpty
+                              ? FluxoraSpeedGaugeState.zero
+                              : null,
                         ),
-                      ),
+                        FluxoraSpeedGauge(
+                          mode: FluxoraSpeedGaugeMode.upload,
+                          upload: traffics.isEmpty ? null : last.up.value,
+                          state: traffics.isEmpty
+                              ? FluxoraSpeedGaugeState.zero
+                              : null,
+                        ),
+                      ],
                     ),
                   ),
-                  Positioned(
-                    top: 0,
-                    right: 0,
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 16),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          FluxoraSpeedGauge(
-                            mode: FluxoraSpeedGaugeMode.download,
-                            download: last.down.value,
-                            compact: true,
-                          ),
-                          const SizedBox(width: FluxoraSpacing.lg),
-                          FluxoraSpeedGauge(
-                            mode: FluxoraSpeedGaugeMode.upload,
-                            upload: last.up.value,
-                            compact: true,
-                          ),
-                        ],
-                      ),
+                  Expanded(
+                    child: LineChart(
+                      gradient: true,
+                      color: primaryColor,
+                      points: points,
                     ),
                   ),
                 ],

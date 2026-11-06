@@ -12,32 +12,8 @@ import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/widgets/widgets.dart';
 
-/// Desktop shell baseline — the measured geometry the toolbar and content area
-/// actually produce today.
-///
-/// Phase 02 has to be able to tell "this is the design" apart from "this drifted",
-/// and the only way is to record the numbers. Everything below was measured on
-/// 2026-10-28 through `AppSidebarContainer` with a real `CommonScaffold`; the
-/// assertions are the specification, not a guess at what the design should be.
-///
-/// Recorded values (601 / 840 / 1200 wide, 800 tall):
-///
-/// | measurement                     | value |
-/// | ------------------------------- | ----- |
-/// | rail width (`AuroraNavigationRail`) | 80 |
-/// | content area starts at          | 81 — the rail's 1 px right border sits |
-/// |                                 | *outside* the rail widget, so the shell |
-/// |                                 | column is 81 wide and there is no gutter |
-/// | page title glyph x              | contentOrigin + 16 |
-/// | first content card left edge    | rail.right + 16 |
-/// | first card's inner text x       | rail.right + 32 (card padding, **not** misalignment) |
-/// | trailing action glyph right     | appBar.right − 20 |
-/// | content card right edge         | appBar.right − 16 |
-///
-/// The 4 px difference on the right is **optical**: a 24 px icon glyph carries
-/// its own whitespace, so it is inset 8 px inside its `IconButton` on top of the
-/// 8 px spacer `genActions` adds. Aligning the *glyph box* to 16 would make the
-/// icon look tighter than the cards beside it. It is pinned, not "fixed".
+/// Desktop content alignment with a 68px narrow rail or 208px expanded sidebar.
+/// Borders paint inside the sidebar; page gutters and app-bar metrics stay intact.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -124,13 +100,10 @@ void main() {
         await pumpDesktop(tester, width: width);
 
         final rail = tester.getRect(find.byType(AuroraNavigationRail));
-        expect(rail.width, 80, reason: 'collapsed rail with labels');
+        final sidebarWidth = width <= maxLaptopWidth ? 68.0 : 208.0;
+        expect(rail.width, sidebarWidth);
 
-        // Content is an `Expanded` sibling: it starts at the rail column's right
-        // edge — the rail's own 1 px right border is painted outside the
-        // rail widget, so the column is one pixel wider. There is no
-        // extra gutter; every horizontal inset comes from the page itself.
-        const contentOrigin = 81.0;
+        final contentOrigin = sidebarWidth;
         final card = tester.getRect(find.byType(CommonCard).first);
         expect(card.left, contentOrigin + 16);
       });
@@ -146,7 +119,7 @@ void main() {
         // The title aligns with the *card edge*, not with the text inside the
         // card — that inner 16 px is the card's own padding.
         expect(title, card.left);
-        expect(title, 81 + 16);
+        expect(title, (width <= maxLaptopWidth ? 68 : 208) + 16);
       });
 
       testWidgets('card inner text is inset by the card padding @ $width', (

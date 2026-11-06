@@ -1,202 +1,83 @@
 <div align="center">
-
-<img src="assets/images/fluxora_mark.svg" alt="Fluxora" width="104" height="104">
+<img src="assets/images/fluxora_mark.svg" alt="Fluxora" width="96" height="96">
 
 # Fluxora
 
-**Make routing legible. — Clear routes, calm control.**
-
 An open-source, cross-platform Mihomo routing client.
-Profiles, connections, rules and traffic state — in one restrained, legible, auditable interface.
 
-[![License](https://img.shields.io/badge/license-GPL--3.0-29D6C7?style=flat-square)](LICENSE)
-[![Platforms](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux%20%7C%20Android-4C8DFF?style=flat-square)](#supported-platforms)
-[![Stars](https://img.shields.io/github/stars/Tiam9173/fluxora?style=flat-square&color=7C75FF&label=stars)](https://github.com/Tiam9173/fluxora/stargazers)
+[Downloads](https://github.com/Tiam9173/fluxora/releases) · [Issues](https://github.com/Tiam9173/fluxora/issues) · [简体中文](README.md) · [GPL-3.0](LICENSE)
 
-<!-- 文档语言 / Documentation language -->
-
-[![简体中文](https://img.shields.io/badge/简体中文-29D6C7?style=flat-square)](README.md)
-[![English](https://img.shields.io/badge/English-Current-4C8DFF?style=flat-square)](README_en.md)
-[![日本語](https://img.shields.io/badge/日本語-7C75FF?style=flat-square)](readme/README_ja.md)
-[![한국어](https://img.shields.io/badge/한국어-FF6B9D?style=flat-square)](readme/README_ko.md)
-[![Русский](https://img.shields.io/badge/Русский-FFB020?style=flat-square)](readme/README_ru.md)
-[![فارسی](https://img.shields.io/badge/فارسی-56C1FF?style=flat-square)](readme/README_fa.md)
-
-**[Download](#download)** · **[Issues](https://github.com/Tiam9173/fluxora/issues)** · **[Contributing](#contributing)** · **[License](LICENSE)**
-
-📢 **[Official Telegram Channel](https://t.me/Fluxora_Channel)** · 💬 **[Official Telegram Group](https://t.me/Fluxora_Group1)**
-
+[Telegram channel](https://t.me/Fluxora_Channel) · [Telegram group](https://t.me/Fluxora_Group1)
 </div>
 
----
+## Releases and installation
 
-## Community
+The published stable release is [v1.1.1](https://github.com/Tiam9173/fluxora/releases/tag/v1.1.1). The `dev` branch is preparing **1.1.2-rc.2 pre-release**. A source version does not mean packages have been published. See the [rc2 notes](RELEASE_NOTES_1.1.2-rc.2.md) for changes and limitations; download only the actual attachments on [Releases](https://github.com/Tiam9173/fluxora/releases).
 
-- 📢 **[Official Telegram Channel](https://t.me/Fluxora_Channel)** — Fluxora updates, release announcements and project news
-- 💬 **[Official Telegram Group](https://t.me/Fluxora_Group1)** — Community discussion, bug reports and usage help
+| Platform | Packages | Architectures |
+| --- | --- | --- |
+| Android 8.0+ | APK | arm64-v8a / armeabi-v7a / x86_64 / universal |
+| Windows 10 / 11 | Installer, portable ZIP | amd64 / amd64-compatible / arm64 |
+| macOS | DMG | Apple Silicon / Intel / Intel-compatible |
+| Linux | AppImage, DEB, RPM | amd64 / amd64-compatible; ARM64 DEB |
+| iOS | No official client | — |
 
-## Why Fluxora
+These formats exist in v1.1.1; this is not a claim that every candidate already has all packages. Prefer regular builds; use `compatible` variants for older CPUs or systems. Regular macOS builds target 12+; check individual release notes for compatible builds.
 
-Most proxy clients treat "it connects" as the finish line, then bury rules, logs and connection state in nested submenus. Fluxora does the opposite: **make the state visible first, then make the actions reachable.**
-
-Built on the Mihomo (Clash Meta) core and written in Flutter, it gives desktop and mobile the same information architecture — nine pages, each with one job: Dashboard, Proxies, Profiles, Tools, Logs, Requests, Resources, Script, Connections. Nothing decorative, nothing hidden.
-
-Three design principles guide it: **restraint** (no ornamental animation or neon glow), **clarity** (state is always more prominent than controls), and **auditability** (open source, no account system, no undeclared closed-source dependencies).
-
-Fluxora is an independent product with no official affiliation to any upstream project. Its origin and licence obligations are recorded in [NOTICE](NOTICE).
-
-## Highlights
-
-- **Modern UI** — a Material 3 design system with unified tokens (colour, type, spacing, radius, motion); not a reskin of an upstream interface.
-- **Consistent across platforms** — Windows, macOS, Linux and Android share one Flutter codebase and one information architecture.
-- **Full proxy control** — rule / global / direct outbound modes, proxy-group selection, latency testing, chain proxy and pre-landing relays.
-- **Network takeover** — TUN virtual adapter and system proxy, plus tray residency and global hotkeys on desktop.
-- **Theme system** — light / dark / system, pure-black mode, 7 brand presets, and Material You dynamic colour on Android.
-- **Open and auditable** — GPL-3.0, with the core, script engine and dependencies all inspectable. No cloud account.
+On Windows, run the installer or extract the portable ZIP and open `Fluxora.exe`. Install the matching APK on Android, open the DMG on macOS, or use the appropriate Linux package. Current Windows builds use a self-signed certificate, which may still trigger Windows trust or SmartScreen prompts. See the [signing policy](SIGNING-POLICY.md).
 
 ## Features
 
-### Connection
-- System proxy (desktop)
-- TUN virtual adapter (stack and route mode options)
-- Outbound modes: rule / global / direct
-- Connection list with live throughput and per-connection close
-- Smart auto-stop: stop the proxy service when joining specified networks
+- **Routing**: rule / global / direct modes, proxy selection, latency tests, connection and traffic records; system proxy, TUN, tray and shortcuts where supported.
+- **Configuration**: local files, subscriptions, profile switching, subscription aggregation, rule providers and JavaScript configuration processing.
+- **Chain proxy**: front and exit nodes, two / three-hop configurations and explicit multiple front hops, topology and diagnostics. Candidate pools and manual actions are not automatic failover; chain auto Failover is currently absent.
+- **Cloudflare WARP**: account registration, WARP+ key settings, endpoints, MTU, UDP and upstream dialers. Availability depends on your nodes, network and Cloudflare.
+- **Network tools**: exit IPv4/IPv6, network and media checks, optional IP reputation, logs and requests. A probe timeout does not establish that a node is unusable. A reputation score is not a security or anonymity guarantee.
 
-### Nodes
-- Proxy groups: select / url-test / fallback / load-balance
-- Latency testing and node switching
+## The 1.1.2 candidate interface
 
-### Chain proxy
-- Two-hop relay (front relay + landing static residential IP), traffic forwarded front → landing
-- Dedicated proxy-group card (🔗 Chain proxy) managed alongside regular groups
-- Per-hop node selection and status (front / landing), with per-hop latency probes and diagnostics
-- Route topology preview of both hops
-- Enable per profile; failover and automatic fallback
+The existing Flutter application and state management now support Classic, Hybrid Glass and reduced-effects materials, light / dark / system appearance, custom accent colours and Android dynamic colour. The desktop sidebar switches between 208px labelled navigation and a 68px icon rail. Mobile uses compact floating navigation. Dashboard widgets can be added, reordered and removed while preserving the primary connection control.
 
-### Cloudflare WARP
-- Built-in WARP outbound as a dedicated "🛡️ WARP exit" group, composable with any proxy group
-- One-tap Cloudflare account registration with optional WARP+ licence key
-- Custom endpoint / port, preferred IP (clean IP), MTU, UDP toggle and remote DNS resolution
-- Selectable routing mode, with an optional upstream dialer (default dialer proxy)
+Motion follows actual state and the system reduced-motion preference. Dense lists retain solid surfaces. These implementations are not a claim of performance certification on every device.
 
-### Profiles
-- Multiple profiles (local file / subscription URL)
-- Config import and update, rule providers
-- Support multi-subscription aggregation
 
-### Tools
-- Network detection, intranet IP, media-unlock checks
-- DNS override, Sniffer override, NTP override
-- IPv6 switch, memory usage, traffic statistics
-- Logs, request records, connection diagnostics
-- JavaScript scripting (rule and config processing)
+### Brand icons
 
-### Personalisation
-- Light / dark / follow system
-- Pure-black mode (OLED)
-- 7 brand presets plus a custom primary colour
-- Material You dynamic colour on Android
-- Desktop tray, global hotkeys, launch at login
+Eight styles each have separate dark and light icon artwork: Official, Classic, Aqua, Premium, Speed, Sky, Sunset and Blue Night. Open Settings → Theme → App icons. Icon colours are independent of the page theme.
 
-## Screenshots
+![Fluxora icon catalogue](design/brand_icons/preview.png)
 
-![Fluxora home](snapshots/home.png)
+Android implements switching between packaged launcher aliases; launcher refresh, notifications and Quick Settings still need device acceptance. Desktop saves the in-app mark; installed system icons change at build time, with no runtime switching in this implementation. Notifications, tray and Android Quick Settings use dedicated monochrome F marks. iOS Control Centre and downloading arbitrary icon packs at runtime are not implemented. See the [icon sources and generation steps](design/brand_icons/README.txt).
 
-## Supported platforms
+## Usage and privacy
 
-| Platform | Status |
-|---|---|
-| Windows 10 / 11 | Supported |
-| macOS 12+ | Supported |
-| Linux | Supported |
-| Android 8.0+ | Supported |
-| iOS | No official client currently |
+Import your own subscription or local configuration, select a profile and a node, then connect. Fluxora does not supply proxy servers or subscriptions. TUN and system proxy availability depends on the platform and permissions; system proxy affects applications that honour that setting.
 
-## Download
+Subscription updates, latency tests, exit-IP / media checks and WARP registration contact their respective services. IP reputation is off by default; enabling and querying it sends the queried IP to the intelligence provider. Having no Fluxora cloud account does not mean there are no third-party requests. Remove subscription URLs, keys and personal information before sharing configurations, logs or diagnostics.
 
-Every package is published on **[GitHub Releases](https://github.com/Tiam9173/fluxora/releases)**, named `Fluxora-<version>-<platform>`.
+## Development and verification
 
-The **v1.1.0 series is currently in pre-release (RC)**; the stable release is not out yet. RC builds are for validation and feedback, not for production use.
+Install Flutter / Dart and the target platform toolchain. Core and Helper builds also require Go / Rust. CI currently pins Flutter 3.47.4, with workflow-specific versions on some ARM runners. See [.github/workflows](.github/workflows).
 
-| Platform | Formats | Architectures |
-|---|---|---|
-| Windows 10 / 11 | `setup.exe` installer · `portable.zip` | amd64 · amd64-compatible · arm64 |
-| macOS 12+ | `.dmg` | arm64 · amd64 · amd64-compatible |
-| Linux | `.AppImage` · `.deb` · `.rpm` | amd64 · amd64-compatible (all three) · arm64 (deb) |
-| Android 8.0+ | `.apk` | arm64-v8a · armeabi-v7a · x86_64 · universal |
-| iOS | No official client yet | — |
-
-> The `-compatible` variants target older CPUs and systems (e.g. devices missing newer instruction sets); regular builds are preferred otherwise.
-
-## Installation
-
-### Windows
-1. Download the portable package (`*-windows-amd64-portable.zip`) from Releases.
-2. Extract it anywhere (no installation required).
-3. Run `Fluxora.exe`.
-
-> An `.exe` installer wizard is still in preparation; use the portable package for now.
-
-### Android
-Download the APK for your ABI from Releases and sideload it, or wait for the store build.
-
-### Linux
-Download the AppImage / deb / rpm from Releases, depending on what is published.
-
-### macOS
-Download the DMG for your architecture from Releases.
-
-> Linux and macOS release packages are not built yet — always refer to the actual contents of the Releases page.
-
-## FAQ
-
-### What is Fluxora?
-An open-source, cross-platform network routing client built on the Mihomo (Clash Meta) core and written in Flutter.
-
-### Which platforms are supported?
-Windows, macOS, Linux and Android. There is no official iOS client, and none is currently planned.
-
-### How does Fluxora relate to upstream projects?
-Fluxora is an **independent product**, not an official release of any upstream project. It is an independent continuation of the Bettbox project, on top of which Fluxora's branding, UI, design system and Windows components were developed independently. See [NOTICE](NOTICE) for the full origin and licence obligations.
-
-### Is it open source? Under what licence?
-Yes — **GPL-3.0**. See [LICENSE](LICENSE).
-
-### How do I import a profile?
-Add a subscription URL or import a local config file on the Profiles page, select it, then connect. `fluxora://install-config` links are also supported.
-
-### What is the difference between TUN and system proxy?
-System proxy only affects applications that honour the system proxy setting. TUN takes over traffic at a lower level through a virtual adapter, covering more applications, and usually requires administrator privileges. Both can be toggled independently on desktop.
-
-### Why are some platforms missing installers?
-Each platform's package needs its own build environment (Linux needs the GTK toolchain; macOS needs Xcode signing and notarisation). They will follow with the first stable release.
-
-### Does Fluxora collect my data?
-No. There is no cloud account service and no built-in telemetry. Subscriptions, rules and network requests are entirely determined by the configuration you choose.
-
-## Development
-
-**Prerequisites**: Flutter (with Dart), Android SDK/NDK and a JDK, plus the build tools for your target platform (Visual Studio Build Tools on Windows, Xcode on macOS, GTK development libraries on Linux). The proxy core and helper are Go / Rust components and need their respective toolchains.
-
-```bash
+```sh
 git clone https://github.com/Tiam9173/fluxora.git
 cd fluxora
 flutter pub get
 dart run build_runner build -d
-flutter run            # or: flutter build windows --release
+flutter analyze
+flutter test
 ```
+
+A local source run is not an official signed package. Windows distribution builds also verify Core / Helper asset anchors. Candidate checks and outstanding validation are recorded in [rc2 readiness](RELEASE_READINESS_1.1.2-rc.2.md).
 
 ## Contributing
 
-Issues, documentation improvements, bug fixes and code contributions are welcome:
+Report the platform, version, reproduction steps and redacted logs through [Issues](https://github.com/Tiam9173/fluxora/issues), or contribute through [Pull Requests](https://github.com/Tiam9173/fluxora/pulls). Preserve GPL and third-party notices.
 
-- **Bug reports / feature requests** → [Issues](https://github.com/Tiam9173/fluxora/issues)
-- **Code contributions** → [Pull Requests](https://github.com/Tiam9173/fluxora/pulls)
-
-Please make sure your changes do not introduce undeclared closed-source dependencies or remove GPL and third-party licence notices.
+Other languages: [日本語](readme/README_ja.md) · [한국어](readme/README_ko.md) · [Русский](readme/README_ru.md) · [فارسی](readme/README_fa.md). Translations may lag; use this page and the Chinese homepage for current release status.
 
 ## License & Lineage
+
 
 Fluxora is distributed under the GNU General Public License v3.0. See [LICENSE](LICENSE).
 

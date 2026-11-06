@@ -39,10 +39,12 @@ class App {
   }
 
   Future<List<Package>> getPackages({bool forceRefresh = false}) async {
-    final packagesRaw = await methodChannel.invokeListMethod<Map<dynamic, dynamic>>(
-      'getPackages',
-      {'forceRefresh': forceRefresh},
-    ) ?? const [];
+    final packagesRaw =
+        await methodChannel.invokeListMethod<Map<dynamic, dynamic>>(
+          'getPackages',
+          {'forceRefresh': forceRefresh},
+        ) ??
+        const [];
     return packagesRaw
         .map((e) => Package.fromJson(Map<String, Object?>.from(e)))
         .toList();
@@ -95,20 +97,15 @@ class App {
 
   Future<bool?> tip(String? message) async {
     if (message == null || message.isEmpty) return false;
-    return await methodChannel.invokeMethod<bool>('tip', {
-      'message': message,
-    });
+    return await methodChannel.invokeMethod<bool>('tip', {'message': message});
   }
 
   Future<bool?> initShortcuts() async {
-    return await methodChannel.invokeMethod<bool>(
-      'initShortcuts',
-      {
-        'toggle': appLocalizations.toggle,
-        'start': appLocalizations.start,
-        'stop': appLocalizations.stop,
-      },
-    );
+    return await methodChannel.invokeMethod<bool>('initShortcuts', {
+      'toggle': appLocalizations.toggle,
+      'start': appLocalizations.start,
+      'stop': appLocalizations.stop,
+    });
   }
 
   Future<bool?> updateExcludeFromRecents(bool value) async {
@@ -135,11 +132,22 @@ class App {
     await methodChannel.invokeMethod<void>('requestIgnoreBatteryOptimizations');
   }
 
-  Future<bool> setLauncherIcon(bool useDarkIcon) async {
+  Future<bool> setLauncherIcon(
+    bool useDarkIcon, {
+    String style = 'official',
+  }) async {
     final result = await methodChannel.invokeMethod<bool>('setLauncherIcon', {
       'useDarkIcon': useDarkIcon,
+      'style': style,
     });
     return result ?? false;
+  }
+
+  Future<Map<String, dynamic>> getLauncherIcon() async {
+    return await methodChannel.invokeMapMethod<String, dynamic>(
+          'getLauncherIcon',
+        ) ??
+        <String, dynamic>{};
   }
 
   /// 把当前界面主题的明暗同步给原生层，用于通知栏大图标。

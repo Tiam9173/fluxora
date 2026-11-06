@@ -13,6 +13,8 @@ import 'package:fluxora/models/models.dart';
 import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/views/proxies/warp_view.dart';
+import 'package:fluxora/common/theme.dart';
+import '../../support/render_capture.dart';
 
 /// B4.1 — WARP hop picker node filtering.
 ///
@@ -57,6 +59,9 @@ void main() {
       WarpManager.configFilePathOverride =
           '${tempDir.path}${Platform.pathSeparator}warp_config.json';
       await warpManager.init();
+      await (FontLoader(
+        'MaterialIcons',
+      )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
       container = ProviderContainer();
     });
 
@@ -88,10 +93,21 @@ void main() {
     });
 
     /// Pumps `WarpView`, taps the hop tile and returns once the sheet is open.
-    Future<void> openHopPicker(WidgetTester tester, List<Group> groups) async {
+    Future<void> openHopPicker(
+      WidgetTester tester,
+      List<Group> groups, {
+      Brightness brightness = Brightness.dark,
+      Size? size,
+    }) async {
       // A tall, realistic surface so the page's lazy `ListView` builds the hop
       // card without needing to scroll.
-      tester.view.physicalSize = const Size(1000, 2400);
+      tester.view.physicalSize = size ?? const Size(1000, 2400);
+      if (size != null) {
+        globalState.appState = globalState.appState.copyWith(
+          viewSize: size,
+          brightness: brightness,
+        );
+      }
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
@@ -109,6 +125,17 @@ void main() {
         UncontrolledProviderScope(
           container: container,
           child: MaterialApp(
+            theme: fluxoraMaterialTheme(
+              ThemeData(
+                fontFamily: 'HarmonyOS_Sans',
+                colorScheme: container.read(genColorSchemeProvider(brightness)),
+              ),
+              FluxoraSurfaceStyle.hybrid,
+            ),
+            builder: (_, child) => RepaintBoundary(
+              key: const ValueKey('warp-capture'),
+              child: child!,
+            ),
             localizationsDelegates: const [AppLocalizationDelegate()],
             supportedLocales: const [Locale('en')],
             locale: const Locale('en'),
@@ -140,7 +167,8 @@ void main() {
       expect(
         hopTile,
         findsOneWidget,
-        reason: 'the hop tile must render — default routingMode is warpOverProxy',
+        reason:
+            'the hop tile must render — default routingMode is warpOverProxy',
       );
 
       await tester.ensureVisible(hopTile);
@@ -157,8 +185,9 @@ void main() {
       );
     }
 
-    testWidgets('offers ordinary nodes and refuses internal/non-node objects',
-        (tester) async {
+    testWidgets('offers ordinary nodes and refuses internal/non-node objects', (
+      tester,
+    ) async {
       // Read the LIVE names the production filter compares against — this is the
       // whole point of B4.1 (no hard-coded literals).
       final proxyName = warpManager.config.proxyName;
@@ -203,7 +232,12 @@ void main() {
           now: '',
         ),
         // A plain strategy group with no members — 策略组 section only.
-        Group(name: 'Airport-Auto', type: GroupType.URLTest, all: const [], now: ''),
+        Group(
+          name: 'Airport-Auto',
+          type: GroupType.URLTest,
+          all: const [],
+          now: '',
+        ),
       ];
 
       await openHopPicker(tester, groups);
@@ -250,8 +284,73 @@ void main() {
       expect(find.text(warpHopGroupName), findsNothing);
     });
 
-    testWidgets('keeps a group rename from leaking internal groups',
+    for (final brightness in Brightness.values) {
+      testWidgets(
+        'large hop list stays lazy and reaches its last node $brightness',
         (tester) async {
+          final groups = [
+            Group(
+              name: 'Large group',
+              type: GroupType.Selector,
+              all: [
+                for (var i = 0; i < 500; i++)
+                  Proxy(
+                    name: 'node-${i.toString().padLeft(3, '0')}',
+                    type: 'vless',
+                  ),
+              ],
+            ),
+          ];
+          await openHopPicker(
+            tester,
+            groups,
+            brightness: brightness,
+            size: const Size(390, 844),
+          );
+          expect(find.text('node-499'), findsNothing);
+          final view = find.byType(CustomScrollView);
+          expect(view, findsOneWidget);
+          if (const bool.fromEnvironment('FEEDBACK_CAPTURE')) {
+            await captureFlutterFrame(
+              tester,
+              find.byKey(const ValueKey('warp-capture')),
+              'build/feedback_fixes/screenshots/warp-${brightness.name}.png',
+            );
+          }
+          await tester.scrollUntilVisible(
+            find.text('node-499'),
+            800,
+            scrollable: find
+                .descendant(of: view, matching: find.byType(Scrollable))
+                .first,
+            maxScrolls: 100,
+          );
+          await tester.pump();
+          expect(find.text('node-499'), findsOneWidget);
+          expect(tester.takeException(), isNull);
+          Navigator.of(tester.element(view)).pop();
+          await tester.pumpAndSettle();
+          await tester.scrollUntilVisible(
+            find.text(appLocalizations.warpStr11),
+            300,
+            scrollable: find.byType(Scrollable).first,
+          );
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+          if (const bool.fromEnvironment('FEEDBACK_CAPTURE')) {
+            await captureFlutterFrame(
+              tester,
+              find.byKey(const ValueKey('warp-capture')),
+              'build/feedback_fixes/screenshots/warp-account-${brightness.name}.png',
+            );
+          }
+        },
+      );
+    }
+
+    testWidgets('keeps a group rename from leaking internal groups', (
+      tester,
+    ) async {
       // Guards the B4.1 de-hardcoding: the picker must follow the LIVE
       // `ChainProxyConfig.dedicatedGroupName`, not the historical literal.
       final chainGroupName = chainProxyManager.config.dedicatedGroupName;
