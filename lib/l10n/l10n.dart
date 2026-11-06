@@ -5595,6 +5595,16 @@ class AppLocalizations {
     return Intl.message('Custom', name: 'custom', desc: '', args: []);
   }
 
+  /// `Monet colours need Android 12 or newer; this device falls back to the system accent colour`
+  String get colorSourceSystemUnavailable {
+    return Intl.message(
+      'Monet colours need Android 12 or newer; this device falls back to the system accent colour',
+      name: 'colorSourceSystemUnavailable',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Custom Rule Switch`
   String get customScriptOptions {
     return Intl.message(

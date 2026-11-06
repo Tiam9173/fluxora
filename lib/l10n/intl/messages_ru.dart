@@ -802,6 +802,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "closeAll": MessageLookupByLibrary.simpleMessage("Закрыть все"),
     "color": MessageLookupByLibrary.simpleMessage("Цвет"),
     "colorSchemes": MessageLookupByLibrary.simpleMessage("Цветовые схемы"),
+    "colorSourceSystemUnavailable": MessageLookupByLibrary.simpleMessage(
+      "Для цветов Monet нужен Android 12 или новее; на этом устройстве используется системный акцент",
+    ),
     "columns": MessageLookupByLibrary.simpleMessage("Колонки"),
     "compatible": MessageLookupByLibrary.simpleMessage("Режим совместимости"),
     "compatibleDesc": MessageLookupByLibrary.simpleMessage(

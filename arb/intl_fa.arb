@@ -676,6 +676,7 @@
   "onlinePanel": "پنل آنلاین",
   "openDashboard": "باز کردن Zashboard",
   "custom": "سفارشی",
+  "colorSourceSystemUnavailable": "رنگ‌های مونِه به Android 12 یا بالاتر نیاز دارد؛ این دستگاه از رنگ تأکیدی سیستم استفاده می‌کند",
   "customScriptOptions": "قوانین سفارشی",
   "wakelock": "قفل روشن ماندن صفحه",
   "wakelockDescription": "جلوگیری از خاموش شدن خودکار صفحه نمایش برای فعال ماندن برنامه‌ها در پس‌زمینه.",

@@ -635,6 +635,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "closeAll": MessageLookupByLibrary.simpleMessage("모두 닫기"),
     "color": MessageLookupByLibrary.simpleMessage("색상"),
     "colorSchemes": MessageLookupByLibrary.simpleMessage("색상 팔레트"),
+    "colorSourceSystemUnavailable": MessageLookupByLibrary.simpleMessage(
+      "머티리얼 유 색상에는 Android 12 이상이 필요합니다. 이 기기에서는 시스템 강조 색을 사용합니다",
+    ),
     "columns": MessageLookupByLibrary.simpleMessage("열 수"),
     "compatible": MessageLookupByLibrary.simpleMessage("호환 모드"),
     "compatibleDesc": MessageLookupByLibrary.simpleMessage(

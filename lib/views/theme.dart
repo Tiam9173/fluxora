@@ -896,6 +896,16 @@ class _ColorSourceItem extends ConsumerWidget {
     final colorSource = ref.watch(
       themeSettingProvider.select((state) => state.colorSource),
     );
+    // `dynamic_color` returns null on pre-Android-12, so on Android a null
+    // palette means Monet is genuinely unavailable — offering the option there
+    // is a fake choice that silently resolves to the fallback accent.
+    //
+    // On desktop it is a different story: "system" means the OS accent colour
+    // (macOS 10.14+, Windows Vista+, GTK), which is a real source, so the
+    // option stays enabled even though the Monet palette is null too.
+    final palette = ref.watch(dynamicPaletteProvider);
+    final systemUnavailable =
+        system.isAndroid && palette.light == null && palette.dark == null;
     final items = [
       ColorSourceItem(
         colorSource: ColorSource.fluxora,
@@ -915,46 +925,77 @@ class _ColorSourceItem extends ConsumerWidget {
     ];
     return ItemCard(
       info: Info(label: appLocalizations.themeColor, iconData: Icons.palette),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        height: 56,
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          itemCount: items.length,
-          itemBuilder: (_, index) {
-            final item = items[index];
-            return CommonCard(
-              isSelected: item.colorSource == colorSource,
-              onPressed: () {
-                ref
-                    .read(themeSettingProvider.notifier)
-                    .updateState(
-                      (state) => state.copyWith(
-                        colorSource: item.colorSource,
-                        primaryColor: item.colorSource == ColorSource.fluxora
-                            ? defaultPrimaryColor
-                            : state.primaryColor,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            height: 56,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: items.length,
+              itemBuilder: (_, index) {
+                final item = items[index];
+                final disabled =
+                    item.colorSource == ColorSource.system && systemUnavailable;
+                return CommonCard(
+                  isSelected: item.colorSource == colorSource,
+                  // `null` is what makes `CommonCard` non-interactive
+                  // (`isInteractive = onPressed != null`), so a disabled option
+                  // does not even animate a press it will not honour.
+                  onPressed: disabled
+                      ? null
+                      : () {
+                          ref
+                              .read(themeSettingProvider.notifier)
+                              .updateState(
+                                (state) => state.copyWith(
+                                  colorSource: item.colorSource,
+                                  primaryColor:
+                                      item.colorSource == ColorSource.fluxora
+                                      ? defaultPrimaryColor
+                                      : state.primaryColor,
+                                ),
+                              );
+                        },
+                  child: Opacity(
+                    opacity: disabled ? 0.4 : 1,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Flexible(child: Icon(item.iconData)),
+                          const SizedBox(width: 8),
+                          Flexible(child: Text(item.label)),
+                        ],
                       ),
-                    );
+                    ),
+                  ),
+                );
               },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Flexible(child: Icon(item.iconData)),
-                    const SizedBox(width: 8),
-                    Flexible(child: Text(item.label)),
-                  ],
+              separatorBuilder: (_, _) {
+                return const SizedBox(width: 16);
+              },
+            ),
+          ),
+          // 提示放在卡片内部，紧贴选项下面；放到 ItemCard 外面会被它自带的
+          // 16 px 下间距隔开，看起来像是下一块内容。
+          if (systemUnavailable)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  appLocalizations.colorSourceSystemUnavailable,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: context.colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ),
-            );
-          },
-          separatorBuilder: (_, _) {
-            return const SizedBox(width: 16);
-          },
-        ),
+            ),
+        ],
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:fluxora/clash/clash.dart';
 import 'package:fluxora/common/common.dart';
@@ -154,6 +155,9 @@ class ApplicationState extends ConsumerState<Application>
           globalState.config.appSetting.enableHighRefreshRate) {
         _restoreHighRefreshRate();
       }
+      // A wallpaper / system-theme change happens while we are in the
+      // background; this is the only moment we can notice it.
+      unawaited(_refreshDynamicPalette());
     }
   }
 
@@ -267,6 +271,33 @@ class ApplicationState extends ConsumerState<Application>
 
   Widget _buildApp(Widget child) {
     return MessageManager(child: ThemeManager(child: child));
+  }
+
+  /// Re-reads the platform palette and pushes it into
+  /// [dynamicPaletteProvider].
+  ///
+  /// `globalState.corePalette` is filled once by `init()`, so a wallpaper change
+  /// used to require a full restart. Changing the wallpaper means leaving the
+  /// app, so refreshing on `resumed` covers the real flow.
+  ///
+  /// Deliberately not `DynamicColorBuilder`: that widget only catches
+  /// `PlatformException`, while an unregistered channel throws
+  /// `MissingPluginException` — an unhandled async error in tests and on any
+  /// platform that does not ship the plugin.
+  Future<void> _refreshDynamicPalette() async {
+    try {
+      final palette = await DynamicColorPlugin.getCorePalette();
+      if (!mounted) return;
+      globalState.corePalette = palette;
+      ref
+          .read(dynamicPaletteProvider.notifier)
+          .update(
+            palette?.toColorScheme(brightness: Brightness.light),
+            palette?.toColorScheme(brightness: Brightness.dark),
+          );
+    } catch (e) {
+      commonPrint.log('Failed to refresh the dynamic palette: $e');
+    }
   }
 
   @override

@@ -634,6 +634,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "closeAll": MessageLookupByLibrary.simpleMessage("すべて閉じる"),
     "color": MessageLookupByLibrary.simpleMessage("カラー"),
     "colorSchemes": MessageLookupByLibrary.simpleMessage("カラーパレット"),
+    "colorSourceSystemUnavailable": MessageLookupByLibrary.simpleMessage(
+      "モネの配色には Android 12 以降が必要です。この端末ではシステムのアクセントカラーを使います",
+    ),
     "columns": MessageLookupByLibrary.simpleMessage("列数"),
     "compatible": MessageLookupByLibrary.simpleMessage("互換モード"),
     "compatibleDesc": MessageLookupByLibrary.simpleMessage(

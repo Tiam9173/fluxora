@@ -676,6 +676,7 @@
   "onlinePanel": "線上面板",
   "openDashboard": "打開 Zashboard",
   "custom": "自訂",
+  "colorSourceSystemUnavailable": "莫奈取色需要 Android 12 及以上，目前裝置會回退到系統強調色",
   "customScriptOptions": "自訂規則開關",
   "wakelock": "亮螢幕鎖",
   "wakelockDescription": "本功能不需要任何特殊權限，因為它僅啟用螢幕喚醒鎖，而不是任何 CPU 喚醒鎖，應用會在後台保持必要的活躍，且螢幕不會自動熄滅，這在一些場景下會很有用",

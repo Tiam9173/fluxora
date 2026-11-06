@@ -776,6 +776,39 @@ VM2<int, bool> checkMediaUnlock(Ref ref) {
   return VM2(a: checkIpNum, b: containsMediaUnlock);
 }
 
+/// The platform's Material You palette, **refreshed while the app runs**.
+///
+/// `globalState.corePalette` is filled once in `state.dart`'s `init()`, which is
+/// enough for a cold start but wrong the moment the user changes the wallpaper
+/// or the system theme — the app then keeps painting the palette it read at
+/// launch until it is restarted. `DynamicColorBuilder` at the app root reports
+/// those changes; this provider is where they land.
+///
+/// Both entries are null on pre-Android-12 and on every non-Android platform
+/// (`dynamic_color` documents exactly that), which is also how the settings page
+/// tells "Monet is not available here" apart from "the palette happens to be
+/// the fallback".
+/// `keepAlive` is load-bearing: the palette arrives out-of-band from the
+/// platform, so an auto-dispose provider would drop the update as soon as no
+/// widget happened to be listening, and the next read would fall back to the
+/// stale value captured at launch.
+@Riverpod(keepAlive: true)
+class DynamicPalette extends _$DynamicPalette {
+  @override
+  ({ColorScheme? light, ColorScheme? dark}) build() => (
+    light: globalState.corePalette?.toColorScheme(brightness: Brightness.light),
+    dark: globalState.corePalette?.toColorScheme(brightness: Brightness.dark),
+  );
+
+  /// No-op when nothing actually moved: `DynamicColorBuilder` rebuilds on every
+  /// platform notification, and writing the same value back would re-run every
+  /// `genColorScheme` watcher for nothing.
+  void update(ColorScheme? light, ColorScheme? dark) {
+    if (state.light == light && state.dark == dark) return;
+    state = (light: light, dark: dark);
+  }
+}
+
 /// Builds the app's [ColorScheme] for [brightness].
 ///
 /// Seed priority follows `ThemeProps.colorSource` (D4.2 §5.2): `fluxora` and
@@ -803,6 +836,7 @@ ColorScheme genColorScheme(
       ),
     ),
   );
+  final dynamicPalette = ref.watch(dynamicPaletteProvider);
   final variant = vm3.b;
   final source = ignoreConfig == true ? ColorSource.system : vm3.c;
 
@@ -818,9 +852,14 @@ ColorScheme genColorScheme(
   final seed = switch (source) {
     // Brand-first: Android's Material You palette is deliberately bypassed. Always Flux Cyan.
     ColorSource.fluxora => FluxoraColors.fluxCyan,
-    // Material You / system dynamic colour stays fully functional here.
+    // Material You / system dynamic colour stays fully functional here. Read
+    // through the provider, not `globalState`, so a wallpaper change is picked
+    // up without a restart.
     ColorSource.system =>
-      globalState.corePalette?.toColorScheme(brightness: brightness).primary ??
+      (brightness == Brightness.dark
+              ? dynamicPalette.dark
+              : dynamicPalette.light)
+          ?.primary ??
           globalState.accentColor,
     // User-picked colour from the palette picker.
     ColorSource.custom => configured,

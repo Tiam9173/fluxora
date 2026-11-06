@@ -780,6 +780,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "closeAll": MessageLookupByLibrary.simpleMessage("بستن همه"),
     "color": MessageLookupByLibrary.simpleMessage("رنگ"),
     "colorSchemes": MessageLookupByLibrary.simpleMessage("پالت‌های رنگی"),
+    "colorSourceSystemUnavailable": MessageLookupByLibrary.simpleMessage(
+      "رنگ‌های مونِه به Android 12 یا بالاتر نیاز دارد؛ این دستگاه از رنگ تأکیدی سیستم استفاده می‌کند",
+    ),
     "columns": MessageLookupByLibrary.simpleMessage("تعداد ستون‌ها"),
     "compatible": MessageLookupByLibrary.simpleMessage("حالت سازگاری"),
     "compatibleDesc": MessageLookupByLibrary.simpleMessage(

@@ -776,6 +776,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "closeAll": MessageLookupByLibrary.simpleMessage("Close All"),
     "color": MessageLookupByLibrary.simpleMessage("Color"),
     "colorSchemes": MessageLookupByLibrary.simpleMessage("Color Schemes"),
+    "colorSourceSystemUnavailable": MessageLookupByLibrary.simpleMessage(
+      "Monet colours need Android 12 or newer; this device falls back to the system accent colour",
+    ),
     "columns": MessageLookupByLibrary.simpleMessage("Columns"),
     "compatible": MessageLookupByLibrary.simpleMessage("Compatible Mode"),
     "compatibleDesc": MessageLookupByLibrary.simpleMessage(

@@ -577,6 +577,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "closeAll": MessageLookupByLibrary.simpleMessage("關閉全部"),
     "color": MessageLookupByLibrary.simpleMessage("顏色"),
     "colorSchemes": MessageLookupByLibrary.simpleMessage("配色方案"),
+    "colorSourceSystemUnavailable": MessageLookupByLibrary.simpleMessage(
+      "莫奈取色需要 Android 12 及以上，目前裝置會回退到系統強調色",
+    ),
     "columns": MessageLookupByLibrary.simpleMessage("列數"),
     "compatible": MessageLookupByLibrary.simpleMessage("相容模式"),
     "compatibleDesc": MessageLookupByLibrary.simpleMessage(

@@ -1953,6 +1953,138 @@ final class CheckMediaUnlockProvider
 
 String _$checkMediaUnlockHash() => r'6487b5f673e9092c48978ec82f79d9a4f0fd078a';
 
+/// The platform's Material You palette, **refreshed while the app runs**.
+///
+/// `globalState.corePalette` is filled once in `state.dart`'s `init()`, which is
+/// enough for a cold start but wrong the moment the user changes the wallpaper
+/// or the system theme — the app then keeps painting the palette it read at
+/// launch until it is restarted. `DynamicColorBuilder` at the app root reports
+/// those changes; this provider is where they land.
+///
+/// Both entries are null on pre-Android-12 and on every non-Android platform
+/// (`dynamic_color` documents exactly that), which is also how the settings page
+/// tells "Monet is not available here" apart from "the palette happens to be
+/// the fallback".
+/// `keepAlive` is load-bearing: the palette arrives out-of-band from the
+/// platform, so an auto-dispose provider would drop the update as soon as no
+/// widget happened to be listening, and the next read would fall back to the
+/// stale value captured at launch.
+
+@ProviderFor(DynamicPalette)
+final dynamicPaletteProvider = DynamicPaletteProvider._();
+
+/// The platform's Material You palette, **refreshed while the app runs**.
+///
+/// `globalState.corePalette` is filled once in `state.dart`'s `init()`, which is
+/// enough for a cold start but wrong the moment the user changes the wallpaper
+/// or the system theme — the app then keeps painting the palette it read at
+/// launch until it is restarted. `DynamicColorBuilder` at the app root reports
+/// those changes; this provider is where they land.
+///
+/// Both entries are null on pre-Android-12 and on every non-Android platform
+/// (`dynamic_color` documents exactly that), which is also how the settings page
+/// tells "Monet is not available here" apart from "the palette happens to be
+/// the fallback".
+/// `keepAlive` is load-bearing: the palette arrives out-of-band from the
+/// platform, so an auto-dispose provider would drop the update as soon as no
+/// widget happened to be listening, and the next read would fall back to the
+/// stale value captured at launch.
+final class DynamicPaletteProvider
+    extends
+        $NotifierProvider<
+          DynamicPalette,
+          ({ColorScheme? dark, ColorScheme? light})
+        > {
+  /// The platform's Material You palette, **refreshed while the app runs**.
+  ///
+  /// `globalState.corePalette` is filled once in `state.dart`'s `init()`, which is
+  /// enough for a cold start but wrong the moment the user changes the wallpaper
+  /// or the system theme — the app then keeps painting the palette it read at
+  /// launch until it is restarted. `DynamicColorBuilder` at the app root reports
+  /// those changes; this provider is where they land.
+  ///
+  /// Both entries are null on pre-Android-12 and on every non-Android platform
+  /// (`dynamic_color` documents exactly that), which is also how the settings page
+  /// tells "Monet is not available here" apart from "the palette happens to be
+  /// the fallback".
+  /// `keepAlive` is load-bearing: the palette arrives out-of-band from the
+  /// platform, so an auto-dispose provider would drop the update as soon as no
+  /// widget happened to be listening, and the next read would fall back to the
+  /// stale value captured at launch.
+  DynamicPaletteProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'dynamicPaletteProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$dynamicPaletteHash();
+
+  @$internal
+  @override
+  DynamicPalette create() => DynamicPalette();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(({ColorScheme? dark, ColorScheme? light}) value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride:
+          $SyncValueProvider<({ColorScheme? dark, ColorScheme? light})>(value),
+    );
+  }
+}
+
+String _$dynamicPaletteHash() => r'edcd9d6892b0f1ddaf08a17c21f9f0f60b754e5f';
+
+/// The platform's Material You palette, **refreshed while the app runs**.
+///
+/// `globalState.corePalette` is filled once in `state.dart`'s `init()`, which is
+/// enough for a cold start but wrong the moment the user changes the wallpaper
+/// or the system theme — the app then keeps painting the palette it read at
+/// launch until it is restarted. `DynamicColorBuilder` at the app root reports
+/// those changes; this provider is where they land.
+///
+/// Both entries are null on pre-Android-12 and on every non-Android platform
+/// (`dynamic_color` documents exactly that), which is also how the settings page
+/// tells "Monet is not available here" apart from "the palette happens to be
+/// the fallback".
+/// `keepAlive` is load-bearing: the palette arrives out-of-band from the
+/// platform, so an auto-dispose provider would drop the update as soon as no
+/// widget happened to be listening, and the next read would fall back to the
+/// stale value captured at launch.
+
+abstract class _$DynamicPalette
+    extends $Notifier<({ColorScheme? dark, ColorScheme? light})> {
+  ({ColorScheme? dark, ColorScheme? light}) build();
+  @$mustCallSuper
+  @override
+  WhenComplete runBuild() {
+    final ref =
+        this.ref
+            as $Ref<
+              ({ColorScheme? dark, ColorScheme? light}),
+              ({ColorScheme? dark, ColorScheme? light})
+            >;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<
+                ({ColorScheme? dark, ColorScheme? light}),
+                ({ColorScheme? dark, ColorScheme? light})
+              >,
+              ({ColorScheme? dark, ColorScheme? light}),
+              Object?,
+              Object?
+            >;
+    return element.handleCreate(ref, build);
+  }
+}
+
 /// Builds the app's [ColorScheme] for [brightness].
 ///
 /// Seed priority follows `ThemeProps.colorSource` (D4.2 §5.2): `fluxora` and
@@ -2051,7 +2183,7 @@ final class GenColorSchemeProvider
   }
 }
 
-String _$genColorSchemeHash() => r'f002a70f8785cafba7a4e3296514a7d3c93d37ae';
+String _$genColorSchemeHash() => r'573e3b5c675212cd8e3a14883ca16c887e2d0a45';
 
 /// Builds the app's [ColorScheme] for [brightness].
 ///

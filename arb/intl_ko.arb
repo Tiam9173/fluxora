@@ -676,6 +676,7 @@
   "onlinePanel": "온라인 패널",
   "openDashboard": "Zashboard 열기",
   "custom": "사용자 지정",
+  "colorSourceSystemUnavailable": "머티리얼 유 색상에는 Android 12 이상이 필요합니다. 이 기기에서는 시스템 강조 색을 사용합니다",
   "customScriptOptions": "커스텀 규칙",
   "wakelock": "화면 켜짐 고정",
   "wakelockDescription": "화면 자동 꺼짐을 방지하는 스크린 웨이크록을 활성화합니다. 백그라운드 작업을 유지할 때 유용합니다.",

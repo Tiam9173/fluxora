@@ -679,6 +679,7 @@
   "onlinePanel": "Online Panel",
   "openDashboard": "Open Zashboard",
   "custom": "Custom",
+  "colorSourceSystemUnavailable": "Monet colours need Android 12 or newer; this device falls back to the system accent colour",
   "customScriptOptions": "Custom Rule Switch",
   "wakelock": "Wakelock",
   "wakelockDescription": "Keeps the screen on and app active in the background without requiring special CPU wakelock permissions.",
