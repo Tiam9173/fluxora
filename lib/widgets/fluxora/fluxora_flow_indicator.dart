@@ -101,30 +101,36 @@ class _FluxoraFlowIndicatorState extends State<FluxoraFlowIndicator>
     };
   }
 
-  _FlowPalette _palette(FluxoraColorSet colors) {
+  /// 画强调色 / 线条，状态色仍取语义 token。
+  ///
+  /// 强调色必须读 `colorScheme` 而不是 `FluxoraColorSet.primary`：后者是固定的
+  /// 品牌青，换主题色（尤其莫奈）时会和周围所有跟着变的控件对不上——整条链路
+  /// 只有一个元素停在旧颜色上，比全都不变更显眼。success / warning / error /
+  /// info 是**语义**色（绿就是成功），不跟主题走。
+  _FlowPalette _palette(ColorScheme scheme, FluxoraColorSet status) {
     return switch (widget.state) {
       FluxoraFlowState.idle => (
-        line: colors.outlineVariant,
-        accent: colors.outline,
-        node: colors.outline,
+        line: scheme.outlineVariant,
+        accent: scheme.outline,
+        node: scheme.outline,
         fill: null,
       ),
       FluxoraFlowState.connecting => (
-        line: colors.outlineVariant,
-        accent: colors.info,
-        node: colors.info,
+        line: scheme.outlineVariant,
+        accent: status.info,
+        node: status.info,
         fill: null,
       ),
       FluxoraFlowState.connected => (
-        line: colors.primary,
-        accent: colors.primary,
-        node: colors.primary,
-        fill: colors.primary,
+        line: scheme.primary,
+        accent: scheme.primary,
+        node: scheme.primary,
+        fill: scheme.primary,
       ),
       FluxoraFlowState.error => (
-        line: colors.outlineVariant,
-        accent: colors.error,
-        node: colors.error,
+        line: scheme.outlineVariant,
+        accent: status.error,
+        node: status.error,
         fill: null,
       ),
     };
@@ -135,7 +141,11 @@ class _FluxoraFlowIndicatorState extends State<FluxoraFlowIndicator>
     final motion = FluxoraMotionSet.of(
       reduceMotion: MediaQuery.maybeOf(context)?.disableAnimations ?? false,
     );
-    final palette = _palette(FluxoraColorSet.of(Theme.of(context).brightness));
+    final scheme = Theme.of(context).colorScheme;
+    final palette = _palette(
+      scheme,
+      FluxoraColorSet.of(Theme.of(context).brightness),
+    );
     final lineHeight = (widget.height * 0.18).clamp(2.0, 4.0).toDouble();
     final nodeSize = widget.height;
 

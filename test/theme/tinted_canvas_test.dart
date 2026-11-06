@@ -7,12 +7,15 @@ import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/models/models.dart';
 import 'package:fluxora/providers/providers.dart';
 
-/// 用户反馈：「这个底色再怎么自定义都不会改变」。
+/// 用户反馈：「自定义配色后所改变的地方太少，只有字体和几个按钮颜色变了」
+/// 以及「怎么换都没啥大变化」。
 ///
-/// 原因是 `fluxoraSchemeFromSeed` 把画布和卡片层级全部钉在
-/// `FluxoraColorSet` 的固定 token 上，种子色只影响 `primary`。这里把新的约定
-/// 钉住：**品牌配色保持设计稿的底色；用户自己选的颜色（或系统取色）连底色一起
-/// 跟着变**，而且亮度不变——对比度靠亮度，所以已经测量过的比例不受影响。
+/// 原因不是没生效，而是 `fluxoraSchemeFromSeed` 把画布、卡片层级和两条线全部
+/// 钉死在 `FluxoraColorSet` 上，种子色只影响 `primary` / `onSurface`。
+///
+/// 现在的约定：
+///  * **品牌配色** → 画设计稿那套（中性色 = token，逐值相等）；
+///  * **系统取色 / 自定义** → 用种子自己的完整方案，只有 error 对被钉住。
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -24,69 +27,113 @@ void main() {
     variant: DynamicSchemeVariant.tonalSpot,
   );
 
-  ColorScheme custom(Brightness brightness) => fluxoraSchemeFromSeed(
-    brightness: brightness,
-    seed: red,
-    variant: DynamicSchemeVariant.tonalSpot,
-    tintNeutrals: true,
-  );
-
-  group('画布跟随种子色', () {
-    test('品牌配色仍然画设计稿的底色（不染）', () {
-      for (final brightness in Brightness.values) {
-        final tokens = FluxoraColorSet.of(brightness);
-        expect(brand(brightness).surface, tokens.background);
-        expect(brand(brightness).surfaceContainerLowest, tokens.surface);
-      }
-    });
-
-    test('自定义颜色会把画布和卡片层级一起染色', () {
-      for (final brightness in Brightness.values) {
-        final tokens = FluxoraColorSet.of(brightness);
-        final scheme = custom(brightness);
-        expect(
-          scheme.surface,
-          isNot(tokens.background),
-          reason: '选了颜色底色却不变，就是用户报的那个问题',
-        );
-        // 浅色主题的卡片是纯白（亮度 1.0），HSL 下再高的饱和度也还是白 ——
-        // 这不是缺陷，"白卡片浮在带色画布上"本来就该是浅色主题的样子。
-        // 深色主题的卡片不是纯白，所以它必须跟着染色。
-        if (brightness == Brightness.dark) {
-          expect(scheme.surfaceContainerLowest, isNot(tokens.surface));
-        }
-        expect(scheme.surfaceContainer, isNot(tokens.surfaceContainer));
-      }
-    });
-
-    test('染色后亮度不变——对比度是靠亮度算的', () {
-      for (final brightness in Brightness.values) {
-        final tokens = FluxoraColorSet.of(brightness);
-        final before = HSLColor.fromColor(tokens.background);
-        final after = HSLColor.fromColor(custom(brightness).surface);
-        expect(after.lightness, closeTo(before.lightness, 0.0001));
-      }
-    });
-
-    test('色相跟着种子走', () {
-      final scheme = custom(Brightness.dark);
-      final hue = HSLColor.fromColor(scheme.surface).hue;
-      expect(hue, closeTo(HSLColor.fromColor(red).hue, 1));
-    });
-
-    test('纯灰种子不会被强行染成红色', () {
-      // HSL 里灰色的 hue 是 0，直接套用会把中性配色染红。
-      final scheme = fluxoraSchemeFromSeed(
-        brightness: Brightness.dark,
-        seed: const Color(0xFF808080),
-        variant: DynamicSchemeVariant.neutral,
-        tintNeutrals: true,
+  ColorScheme followed(Brightness brightness, {Color seed = red}) =>
+      fluxoraSchemeFromSeed(
+        brightness: brightness,
+        seed: seed,
+        variant: DynamicSchemeVariant.tonalSpot,
+        followSeed: true,
       );
-      expect(scheme.surface, FluxoraColorSet.of(Brightness.dark).background);
+
+  group('品牌配色 = 设计稿', () {
+    test('画布、卡片层级、线条逐值等于 token', () {
+      for (final brightness in Brightness.values) {
+        final tokens = FluxoraColorSet.of(brightness);
+        final scheme = brand(brightness);
+        expect(scheme.surface, tokens.background);
+        expect(scheme.surfaceContainerLowest, tokens.surface);
+        expect(scheme.surfaceContainer, tokens.surfaceContainer);
+        expect(scheme.surfaceContainerHigh, tokens.surfaceContainerHigh);
+        expect(scheme.surfaceContainerHighest, tokens.surfaceContainerHighest);
+        expect(scheme.outline, tokens.outline);
+        expect(scheme.outlineVariant, tokens.outlineVariant);
+      }
     });
   });
 
-  group('genColorSchemeProvider 按颜色来源决定是否染色', () {
+  group('跟随种子 = 完整方案', () {
+    test('画布 / 卡片 / 线条全部不再等于 token', () {
+      for (final brightness in Brightness.values) {
+        final tokens = FluxoraColorSet.of(brightness);
+        final scheme = followed(brightness);
+        expect(
+          scheme.surface,
+          isNot(tokens.background),
+          reason: '底色不变就是用户报的那个问题',
+        );
+        expect(scheme.surfaceContainer, isNot(tokens.surfaceContainer));
+        expect(scheme.surfaceContainerHigh, isNot(tokens.surfaceContainerHigh));
+        expect(scheme.outline, isNot(tokens.outline));
+        expect(scheme.outlineVariant, isNot(tokens.outlineVariant));
+      }
+    });
+
+    test('取值就是种子自己的方案，而不是 token 的某个变体', () {
+      for (final brightness in Brightness.values) {
+        final expected = ColorScheme.fromSeed(
+          seedColor: red,
+          brightness: brightness,
+          dynamicSchemeVariant: DynamicSchemeVariant.tonalSpot,
+        );
+        final scheme = followed(brightness);
+        expect(scheme.surface, expected.surface);
+        expect(scheme.surfaceContainer, expected.surfaceContainer);
+        expect(scheme.outline, expected.outline);
+        expect(scheme.primary, expected.primary);
+      }
+    });
+
+    test('换一个种子，整个方案都跟着换', () {
+      final blue = followed(Brightness.dark, seed: const Color(0xFF1565C0));
+      final green = followed(Brightness.dark, seed: const Color(0xFF2E7D32));
+      expect(blue.surface, isNot(green.surface));
+      expect(blue.surfaceContainer, isNot(green.surfaceContainer));
+      expect(blue.primary, isNot(green.primary));
+    });
+  });
+
+  group('两种模式都必须钉住 error', () {
+    test('红色种子不会把「失败」染成主题色', () {
+      for (final brightness in Brightness.values) {
+        final tokens = FluxoraColorSet.of(brightness);
+        for (final scheme in [brand(brightness), followed(brightness)]) {
+          expect(scheme.error, tokens.error);
+          expect(scheme.onError, tokens.onError);
+        }
+      }
+    });
+  });
+
+  group('完整方案仍然满足对比度下限', () {
+    // Material 的色调板保证 on/off 配对，但这条是产品底线，用测试钉住。
+    double contrast(Color a, Color b) {
+      final la = a.computeLuminance();
+      final lb = b.computeLuminance();
+      final hi = la > lb ? la : lb;
+      final lo = la > lb ? lb : la;
+      return (hi + 0.05) / (lo + 0.05);
+    }
+
+    test('onSurface / surface 与 primary / surface 都过 4.5:1', () {
+      for (final brightness in Brightness.values) {
+        final scheme = followed(brightness);
+        expect(
+          contrast(scheme.onSurface, scheme.surface),
+          greaterThanOrEqualTo(4.5),
+        );
+        expect(
+          contrast(scheme.onSurfaceVariant, scheme.surface),
+          greaterThanOrEqualTo(4.5),
+        );
+        expect(
+          contrast(scheme.primary, scheme.surface),
+          greaterThanOrEqualTo(4.5),
+        );
+      }
+    });
+  });
+
+  group('genColorSchemeProvider 按颜色来源选择模式', () {
     ColorScheme schemeFor(ThemeProps props, Brightness brightness) {
       final container = ProviderContainer(
         overrides: [
@@ -97,7 +144,7 @@ void main() {
       return container.read(genColorSchemeProvider(brightness));
     }
 
-    test('fluxora 品牌 → 底色不动', () {
+    test('fluxora 品牌 → 画设计稿的底色', () {
       final scheme = schemeFor(
         const ThemeProps(colorSource: ColorSource.fluxora),
         Brightness.dark,
@@ -105,15 +152,21 @@ void main() {
       expect(scheme.surface, FluxoraColorSet.of(Brightness.dark).background);
     });
 
-    test('custom → 底色跟着选的颜色变', () {
+    test('custom → 完整跟随选中的颜色', () {
       final scheme = schemeFor(
-        const ThemeProps(colorSource: ColorSource.custom, primaryColor: 0xFFE53935),
+        const ThemeProps(
+          colorSource: ColorSource.custom,
+          primaryColor: 0xFFE53935,
+        ),
         Brightness.dark,
       );
-      expect(
-        scheme.surface,
-        isNot(FluxoraColorSet.of(Brightness.dark).background),
+      final expected = ColorScheme.fromSeed(
+        seedColor: const Color(0xFFE53935),
+        brightness: Brightness.dark,
+        dynamicSchemeVariant: DynamicSchemeVariant.tonalSpot,
       );
+      expect(scheme.surface, expected.surface);
+      expect(scheme.surface, isNot(FluxoraColorSet.of(Brightness.dark).background));
     });
   });
 }

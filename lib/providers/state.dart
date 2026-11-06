@@ -869,11 +869,10 @@ ColorScheme genColorScheme(
     brightness: brightness,
     seed: color ?? seed,
     variant: variant,
-    // The brand palette keeps the designed canvas. Anything the user picked —
-    // a custom colour, or the system's Material You palette — tints the
-    // background and card ladder too, which is what people mean when they say
-    // "I changed the theme colour and nothing happened".
-    tintNeutrals: source != ColorSource.fluxora,
+    // 品牌配色画设计稿那套中性色；系统取色和用户自选颜色走**完整**方案——
+    // 否则"换了颜色"只有按钮和文字动，画布、卡片、分隔线、选中态全是原来的，
+    // 用户看到的就是"怎么换都没啥大变化"。
+    followSeed: source != ColorSource.fluxora,
   );
 }
 
