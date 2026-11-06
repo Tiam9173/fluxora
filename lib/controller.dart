@@ -1790,7 +1790,17 @@ class AppController {
           .timeout(const Duration(seconds: 2));
     }),
     TeardownStep('core-shutdown', () async {
-      await clashCore.shutdown();
+      // Bounded on purpose. `shutdown()` waits for the core isolate to answer
+      // over IPC, and that port can already be gone (service engine torn down,
+      // core wedged). Without a bound this step waits forever, the exit looks
+      // frozen, and the user force-kills — which is exactly how a
+      // half-torn-down core ends up outliving the app and holding the proxy
+      // port another proxy tool needs. 3 s is generous for a local round trip.
+      try {
+        await clashCore.shutdown().timeout(const Duration(seconds: 3));
+      } catch (e) {
+        commonPrint.log('Core shutdown did not finish on exit: $e');
+      }
       if (clashService != null) {
         await clashService!.destroy();
       }

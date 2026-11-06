@@ -937,6 +937,7 @@
   "nodeUpdateSubscription": "Update current subscription",
   "nodeNoMatches": "No matching nodes",
   "nodeDeletedCount": "{count} nodes deleted",
+  "nodeDeleteNoChange": "No nodes were removed (the profile file did not change)",
   "nodeSearchHint": "Search name or server",
   "nodeOnlyFailed": "Failed only",
   "nodeClearResults": "Clear test results",

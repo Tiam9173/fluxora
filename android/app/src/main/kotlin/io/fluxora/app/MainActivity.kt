@@ -221,6 +221,21 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onDestroy() {
+        // `GlobalState.flutterEngine` was only ever assigned (here and in
+        // `createAndCacheEngine`), never cleared — so `handleTryDestroy()`'s
+        // `flutterEngine == null` gate could never be true after the first
+        // launch. The `serviceEngine` therefore outlived the task: its core
+        // isolate kept the proxy port and the TUN fd, another proxy app failed
+        // to start, and getting a clean exit needed a second kill.
+        //
+        // Clearing it here is what finally lets a stopped session let go. The
+        // engine itself is cached and stays alive on purpose (fast relaunch);
+        // only the service engine is torn down, and only when no session is
+        // starting or running (see `handleTryDestroy`).
+        if (GlobalState.flutterEngine === flutterEngine) {
+            GlobalState.flutterEngine = null
+        }
+        GlobalState.handleTryDestroy()
         super.onDestroy()
     }
 }

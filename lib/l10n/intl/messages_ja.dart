@@ -1276,6 +1276,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "nodeClearResults": MessageLookupByLibrary.simpleMessage("テスト結果を消去"),
     "nodeDeleteDuplicates": MessageLookupByLibrary.simpleMessage("重複サーバーを削除"),
+    "nodeDeleteNoChange": MessageLookupByLibrary.simpleMessage(
+      "ノードは削除されませんでした（プロファイルは変更されていません）",
+    ),
     "nodeDeleted": m38,
     "nodeDeletedCount": m39,
     "nodeDetailCancel": MessageLookupByLibrary.simpleMessage("キャンセル"),

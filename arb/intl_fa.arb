@@ -937,6 +937,7 @@
   "nodeUpdateSubscription": "به‌روزرسانی اشتراک فعلی",
   "nodeNoMatches": "گره مطابقی وجود ندارد",
   "nodeDeletedCount": "{count} گره حذف شد",
+  "nodeDeleteNoChange": "هیچ گره‌ای حذف نشد (فایل پروفایل تغییر نکرد)",
   "nodeSearchHint": "جستجوی نام یا سرور",
   "nodeOnlyFailed": "فقط ناموفق",
   "nodeClearResults": "پاک کردن نتایج تست",

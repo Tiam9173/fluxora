@@ -938,6 +938,7 @@
   "nodeUpdateSubscription": "更新当前组订阅",
   "nodeNoMatches": "没有匹配的节点",
   "nodeDeletedCount": "已删除 {count} 个节点",
+  "nodeDeleteNoChange": "没有节点被删除（配置文件未改变）",
   "nodeSearchHint": "搜索节点名或服务器",
   "nodeOnlyFailed": "只看失败",
   "nodeClearResults": "清理测速结果",

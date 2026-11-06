@@ -1271,6 +1271,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "nodeClearResults": MessageLookupByLibrary.simpleMessage("테스트 결과 지우기"),
     "nodeDeleteDuplicates": MessageLookupByLibrary.simpleMessage("중복 서버 삭제"),
+    "nodeDeleteNoChange": MessageLookupByLibrary.simpleMessage(
+      "삭제된 노드가 없습니다(프로필 파일이 변경되지 않음)",
+    ),
     "nodeDeleted": m38,
     "nodeDeletedCount": m39,
     "nodeDetailCancel": MessageLookupByLibrary.simpleMessage("취소"),

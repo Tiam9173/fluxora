@@ -937,6 +937,7 @@
   "nodeUpdateSubscription": "現在の購読を更新",
   "nodeNoMatches": "一致するノードがありません",
   "nodeDeletedCount": "{count} 個のノードを削除しました",
+  "nodeDeleteNoChange": "ノードは削除されませんでした（プロファイルは変更されていません）",
   "nodeSearchHint": "名前またはサーバーを検索",
   "nodeOnlyFailed": "失敗のみ",
   "nodeClearResults": "テスト結果を消去",

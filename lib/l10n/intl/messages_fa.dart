@@ -1584,6 +1584,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "nodeDeleteDuplicates": MessageLookupByLibrary.simpleMessage(
       "حذف سرورهای تکراری",
     ),
+    "nodeDeleteNoChange": MessageLookupByLibrary.simpleMessage(
+      "هیچ گره‌ای حذف نشد (فایل پروفایل تغییر نکرد)",
+    ),
     "nodeDeleted": m38,
     "nodeDeletedCount": m39,
     "nodeDetailCancel": MessageLookupByLibrary.simpleMessage("لغو"),

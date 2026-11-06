@@ -498,22 +498,30 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
 
   Future<void> _deleteNames(Set<String> names) async {
     if (names.isEmpty) return;
-    final updated = await ManualProxyHelper.deleteProxiesFromProfile(
+    final result = await ManualProxyHelper.deleteProxiesFromProfile(
       _profile,
       names,
     );
     if (!mounted) return;
     setState(() {
-      _profile = updated;
+      _profile = result.profile;
       _delays.removeWhere((name, _) => names.contains(name));
       _selected.removeWhere(names.contains);
     });
     await _loadProxies();
+    if (result.removed == 0) {
+      // 文件没变（YAML 解析失败 / `proxies` 不是列表 / 文件还没落盘）。以前这里
+      // 照样报"已删除 N 个"，用户看到的就是点了没反应、提示却说删了。
+      if (mounted) {
+        context.showNotifier(appLocalizations.nodeDeleteNoChange);
+      }
+      return;
+    }
     if (globalState.config.currentProfileId == _profile.id) {
       globalState.appController.applyProfileDebounce(silence: true);
     }
     if (mounted) {
-      context.showNotifier(appLocalizations.nodeDeletedCount(names.length));
+      context.showNotifier(appLocalizations.nodeDeletedCount(result.removed));
     }
   }
 

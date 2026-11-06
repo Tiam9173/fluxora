@@ -937,6 +937,7 @@
   "nodeUpdateSubscription": "현재 구독 업데이트",
   "nodeNoMatches": "일치하는 노드 없음",
   "nodeDeletedCount": "노드 {count}개 삭제됨",
+  "nodeDeleteNoChange": "삭제된 노드가 없습니다(프로필 파일이 변경되지 않음)",
   "nodeSearchHint": "이름 또는 서버 검색",
   "nodeOnlyFailed": "실패만",
   "nodeClearResults": "테스트 결과 지우기",

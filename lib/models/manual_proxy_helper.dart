@@ -1257,21 +1257,27 @@ class ManualProxyHelper {
   static Future<Profile> deleteProxyFromProfile(
     Profile profile,
     String proxyName,
-  ) {
-    return deleteProxiesFromProfile(profile, {proxyName});
+  ) async {
+    final result = await deleteProxiesFromProfile(profile, {proxyName});
+    return result.profile;
   }
 
-  static Future<Profile> deleteProxiesFromProfile(
+  /// 从 profile 文件里删掉这些节点，并**报告真正删掉了几个**。
+  ///
+  /// 返回值不能省：下面每一条早退路径（文件不存在、YAML 解析失败、`proxies`
+  /// 不是列表）都会把原 profile 原样返回。以前调用方不看这个，删完之后照样弹
+  /// 「已删除 N 个」——用户看到的就是"点了没反应，但提示说删了"。
+  static Future<({Profile profile, int removed})> deleteProxiesFromProfile(
     Profile profile,
     Set<String> proxyNames,
   ) async {
-    if (proxyNames.isEmpty) return profile;
+    if (proxyNames.isEmpty) return (profile: profile, removed: 0);
     for (final name in proxyNames) {
       await _forgetManual(profile, name);
     }
     final file = await profile.getFile();
     String content = await file.exists() ? await file.readAsString() : '';
-    if (content.trim().isEmpty) return profile;
+    if (content.trim().isEmpty) return (profile: profile, removed: 0);
 
     Map<String, dynamic> configMap = {};
     try {
@@ -1280,17 +1286,45 @@ class ManualProxyHelper {
         configMap = deepConvertYamlMap(loaded);
       }
     } catch (_) {
-      return profile;
+      return (profile: profile, removed: 0);
     }
 
+    final removed = removeProxiesFromConfig(configMap, proxyNames);
+
+    // 一个都没删掉就别重写文件：写回去是同样的内容，只会让"没反应"更像没反应，
+    // 还白白触发一次文件监听。
+    if (removed == 0) return (profile: profile, removed: 0);
+
+    final newYaml = await encodeYamlTask(configMap);
+    return (
+      profile: await profile.saveFileWithString(newYaml),
+      removed: removed,
+    );
+  }
+
+  /// 从一份 config map 里删掉这些节点，返回**真正删掉的数量**。
+  ///
+  /// 抽成纯函数是为了能脱离文件系统验证：`Profile.getFile()` 依赖 app 的数据
+  /// 目录，测试里拿不到，所以这段逻辑以前只能靠人肉点。`proxy-groups` 里对这些
+  /// 节点的引用必须一起摘掉，否则 mihomo 会拒绝整份配置（`'xxx' not found`）。
+  @visibleForTesting
+  static int removeProxiesFromConfig(
+    Map<String, dynamic> configMap,
+    Set<String> proxyNames,
+  ) {
+    if (proxyNames.isEmpty) return 0;
+    var removed = 0;
     if (configMap['proxies'] is List) {
       final list = List<dynamic>.from(configMap['proxies'] as List);
+      final before = list.length;
       list.removeWhere(
         (item) =>
             item is Map && proxyNames.contains(item['name']?.toString()),
       );
+      removed = before - list.length;
       configMap['proxies'] = list;
     }
+    if (removed == 0) return 0;
 
     if (configMap['proxy-groups'] is List) {
       for (final g in configMap['proxy-groups']) {
@@ -1303,9 +1337,7 @@ class ManualProxyHelper {
         }
       }
     }
-
-    final newYaml = await encodeYamlTask(configMap);
-    return await profile.saveFileWithString(newYaml);
+    return removed;
   }
 
   /// Deep conversion of YamlMap/YamlList to standard Map/List

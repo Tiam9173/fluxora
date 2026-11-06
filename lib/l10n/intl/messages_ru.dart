@@ -1642,6 +1642,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "nodeDeleteDuplicates": MessageLookupByLibrary.simpleMessage(
       "Удалить дубликаты серверов",
     ),
+    "nodeDeleteNoChange": MessageLookupByLibrary.simpleMessage(
+      "Ни один узел не удалён (файл профиля не изменился)",
+    ),
     "nodeDeleted": m38,
     "nodeDeletedCount": m39,
     "nodeDetailCancel": MessageLookupByLibrary.simpleMessage("Отмена"),

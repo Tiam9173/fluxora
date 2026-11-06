@@ -1139,6 +1139,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "nodeClearResults": MessageLookupByLibrary.simpleMessage("清理测速结果"),
     "nodeDeleteDuplicates": MessageLookupByLibrary.simpleMessage("删除重复服务器"),
+    "nodeDeleteNoChange": MessageLookupByLibrary.simpleMessage(
+      "没有节点被删除（配置文件未改变）",
+    ),
     "nodeDeleted": m38,
     "nodeDeletedCount": m39,
     "nodeDetailCancel": MessageLookupByLibrary.simpleMessage("取消"),

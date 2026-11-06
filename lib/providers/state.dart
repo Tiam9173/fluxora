@@ -830,6 +830,11 @@ ColorScheme genColorScheme(
     brightness: brightness,
     seed: color ?? seed,
     variant: variant,
+    // The brand palette keeps the designed canvas. Anything the user picked —
+    // a custom colour, or the system's Material You palette — tints the
+    // background and card ladder too, which is what people mean when they say
+    // "I changed the theme colour and nothing happened".
+    tintNeutrals: source != ColorSource.fluxora,
   );
 }
 

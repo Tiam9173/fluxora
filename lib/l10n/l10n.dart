@@ -7890,6 +7890,16 @@ class AppLocalizations {
     );
   }
 
+  /// `No nodes were removed (the profile file did not change)`
+  String get nodeDeleteNoChange {
+    return Intl.message(
+      'No nodes were removed (the profile file did not change)',
+      name: 'nodeDeleteNoChange',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Search name or server`
   String get nodeSearchHint {
     return Intl.message(

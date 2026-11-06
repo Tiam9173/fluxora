@@ -364,7 +364,17 @@ object GlobalState {
         }
     }
 
+    /// 没有会话在跑的时候，把 service 引擎（以及它托管的内核 isolate）收掉。
+    ///
+    /// 两个条件都不能省：
+    ///  * `currentRunState` —— 正在启动或正在运行的会话**拥有**这个引擎，在这里
+    ///    销毁等于把用户的隧道从脚底下抽走；
+    ///  * `flutterEngine == null` —— 主界面还在时，Dart 侧可能仍要通过 IPC 收尾，
+    ///    提前销毁会让收尾步骤全部失败。
     fun handleTryDestroy() {
+        if (currentRunState == RunState.START || currentRunState == RunState.PENDING) {
+            return
+        }
         if (flutterEngine == null) destroyServiceEngine()
     }
 

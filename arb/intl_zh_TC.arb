@@ -937,6 +937,7 @@
   "nodeUpdateSubscription": "更新目前組訂閱",
   "nodeNoMatches": "沒有符合的節點",
   "nodeDeletedCount": "已刪除 {count} 個節點",
+  "nodeDeleteNoChange": "沒有節點被刪除（設定檔未變更）",
   "nodeSearchHint": "搜尋節點名稱或伺服器",
   "nodeOnlyFailed": "只看失敗",
   "nodeClearResults": "清理測速結果",

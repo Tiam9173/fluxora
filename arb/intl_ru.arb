@@ -937,6 +937,7 @@
   "nodeUpdateSubscription": "Обновить текущую подписку",
   "nodeNoMatches": "Нет подходящих узлов",
   "nodeDeletedCount": "Удалено узлов: {count}",
+  "nodeDeleteNoChange": "Ни один узел не удалён (файл профиля не изменился)",
   "nodeSearchHint": "Поиск по имени или серверу",
   "nodeOnlyFailed": "Только ошибки",
   "nodeClearResults": "Очистить результаты",

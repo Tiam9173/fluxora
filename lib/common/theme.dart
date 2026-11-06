@@ -48,6 +48,25 @@ class CommonTheme {
   }
 }
 
+/// 让一个中性色带上品牌色相。
+///
+/// 只改**色相和饱和度，亮度原样保留**。这是关键：对比度由亮度决定，所以已经
+/// 测量过的 `onSurface / surface`、`primary / surface` 这些比例不会被破坏；而
+/// 画布和卡片会随用户选的种子色一起变，不再是"怎么改主题都是同一个深蓝"。
+///
+/// 种子是纯灰（saturation == 0）时没有色相可用，原样返回——否则会把一个本来
+/// 中性的配色强行染成红色（HSL 里灰色的 hue 是 0）。
+Color _tintedNeutral(Color base, Color seed, double amount) {
+  final b = HSLColor.fromColor(base);
+  final s = HSLColor.fromColor(seed);
+  if (s.saturation <= 0.001) return base;
+  // 保留一点底色自己的饱和度：完全取种子的饱和度会让深色画布过分鲜艳，
+  // 卡片层级（surfaceContainer*）也就分不出来了。
+  final saturation =
+      (b.saturation + (s.saturation - b.saturation) * amount).clamp(0.0, 1.0);
+  return HSLColor.fromAHSL(b.alpha, s.hue, saturation, b.lightness).toColor();
+}
+
 /// Maps the Aurora semantic set onto a Material `ColorScheme`.
 ///
 /// Pure on purpose: the provider in `providers/state.dart` is a thin wrapper, so
@@ -62,8 +81,21 @@ ColorScheme fluxoraSchemeFromSeed({
   required Brightness brightness,
   required Color seed,
   required DynamicSchemeVariant variant,
+  bool tintNeutrals = false,
 }) {
   final fluxora = FluxoraColorSet.of(brightness);
+  // How far the neutrals lean toward the seed. 0.55 is enough to read as "the
+  // background follows my colour" without turning the canvas into a colour
+  // block; the ladder keeps its own steps because lightness is untouched.
+  const tint = 0.55;
+  // Off by default so the shipped brand palette still paints exactly the
+  // designed canvas (and the measured contrast tests keep their meaning).
+  // `genColorScheme` turns it on for system / user-picked colours — the whole
+  // complaint was that picking a colour left the background unchanged.
+  Color neutral(Color base) =>
+      tintNeutrals ? _tintedNeutral(base, seed, tint) : base;
+  final background = neutral(fluxora.background);
+  final surface = neutral(fluxora.surface);
   return ColorScheme.fromSeed(
     seedColor: seed,
     brightness: brightness,
@@ -71,16 +103,17 @@ ColorScheme fluxoraSchemeFromSeed({
   ).copyWith(
     // Page canvas. The app shell paints `Material(color: colorScheme.surface)`
     // (`lib/pages/home.dart`), and `scaffoldBackgroundColor` also defaults to
-    // `surface` — so D4.2's "Background" (#F6F9FB / #0C1222) belongs here.
-    surface: fluxora.background,
+    // `surface` — so D4.2's "Background" (#F6F9FB / #0C1222) belongs here, now
+    // carrying the seed's hue.
+    surface: background,
     // Card / panel surfaces. `CommonCard` reads `surfaceContainerLow` (plain)
     // and `surfaceContainer` (filled), so D4.2's "Surface" (#FFFFFF / #121A2B)
     // lands on the container ladder.
-    surfaceContainerLowest: fluxora.surface,
-    surfaceContainerLow: fluxora.surface,
-    surfaceContainer: fluxora.surfaceContainer,
-    surfaceContainerHigh: fluxora.surfaceContainerHigh,
-    surfaceContainerHighest: fluxora.surfaceContainerHighest,
+    surfaceContainerLowest: surface,
+    surfaceContainerLow: surface,
+    surfaceContainer: neutral(fluxora.surfaceContainer),
+    surfaceContainerHigh: neutral(fluxora.surfaceContainerHigh),
+    surfaceContainerHighest: neutral(fluxora.surfaceContainerHighest),
     // Lines.
     outline: fluxora.outline,
     outlineVariant: fluxora.outlineVariant,
