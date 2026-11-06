@@ -1,32 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Fluxora QS Tile icon — night qualifier — derived from fluxora_mark_mono.svg
-     Identical to drawable/ic_tile.xml: Android SystemUI applies theme tinting
-     from the alpha mask automatically; no separate night variant needed. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
-    android:viewportWidth="24.0"
-    android:viewportHeight="24.0">
-
-    <!-- Upper flow line: left anchor → curve → convergence point -->
-    <path
-        android:pathData="M 4,7.5 L 9,7.5 C 11.2,7.5 13.2,8.6 14.2,10.5 L 16.5,12"
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="2.1"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round" />
-
-    <!-- Lower flow line: symmetric convergence -->
-    <path
-        android:pathData="M 4,16.5 L 9,16.5 C 11.2,16.5 13.2,15.4 14.2,13.5 L 16.5,12"
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="2.1"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round" />
-
-    <!-- Convergence node -->
-    <path
-        android:pathData="M 18.7,12 m -2.2,0 a 2.2,2.2 0 1,0 4.4,0 a 2.2,2.2 0 1,0 -4.4,0"
-        android:fillColor="#FFFFFF" />
-
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:pathData="M24,26 L64,46 L64,56 L24,40 Z" android:fillColor="#FFFFFF" />
+    <path android:pathData="M24,68 L64,52 L64,62 L24,82 Z" android:fillColor="#FFFFFF" />
+    <path android:pathData="M70,54 m-12,0 a12,12 0 1,0 24,0 a12,12 0 1,0 -24,0 Z" android:fillColor="#FFFFFF" />
 </vector>

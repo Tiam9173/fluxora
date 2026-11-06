@@ -1,32 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Fluxora notification icon — dark mode
-     Derived from fluxora_mark_mono.svg. Android 5.0+ enforces alpha-mask
-     rendering: only the alpha channel is used; all paths must be #FFFFFF. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
-    android:viewportWidth="24.0"
-    android:viewportHeight="24.0">
-
-    <!-- Upper flow line -->
-    <path
-        android:pathData="M 3,8 L 8.5,8 C 10.5,8 12.3,9 13.2,10.7 L 15.5,12"
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="2.0"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round" />
-
-    <!-- Lower flow line -->
-    <path
-        android:pathData="M 3,16 L 8.5,16 C 10.5,16 12.3,15 13.2,13.3 L 15.5,12"
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="2.0"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round" />
-
-    <!-- Convergence node -->
-    <path
-        android:pathData="M 17.5,12 m -2,0 a 2,2 0 1,0 4,0 a 2,2 0 1,0 -4,0"
-        android:fillColor="#FFFFFF" />
-
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:pathData="M24,26 L64,46 L64,56 L24,40 Z" android:fillColor="#FFFFFF" />
+    <path android:pathData="M24,68 L64,52 L64,62 L24,82 Z" android:fillColor="#FFFFFF" />
+    <path android:pathData="M70,54 m-12,0 a12,12 0 1,0 24,0 a12,12 0 1,0 -24,0 Z" android:fillColor="#FFFFFF" />
 </vector>
