@@ -1,7 +1,5 @@
 // ignore_for_file: constant_identifier_names
 
-import 'dart:io';
-
 import 'package:fluxora/common/system.dart';
 // Token layer directly (not the `common/common.dart` barrel) so this file does
 // not depend on the barrel that transitively imports it.
@@ -25,7 +23,7 @@ enum SupportPlatform {
       return SupportPlatform.Windows;
     } else if (system.isMacOS) {
       return SupportPlatform.MacOS;
-    } else if (Platform.isLinux) {
+    } else if (system.isLinux) {
       return SupportPlatform.Linux;
     } else if (system.isAndroid) {
       return SupportPlatform.Android;

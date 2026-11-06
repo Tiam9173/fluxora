@@ -35,3 +35,9 @@
 设备帧率、ROM 刷新、真实连接 / WARP、安装升级与卸载回收仍未验收。测试绿色不等于全设备视觉或生产稳定性认证。
 
 本轮提交前检查为定向审查，不认证整仓：独立重新评审 17 个关键变动文件，其他文件依赖前轮专项交付及本次自动化检查；完整范围和逐项跳过原因留在本机 build/release_rc2/review-coverage.json。
+
+## 初轮远端结果与修正
+
+提交 18d7d602 的 [Linux CI](https://github.com/Tiam9173/fluxora/actions/runs/42239768791) 静态分析成功，测试为 2274 通过、34 跳过、2 失败。两项均为 Linux runner 上模拟 Android 首页时 VpnButton 被错误过滤；SupportPlatform 的 Linux 分支直接读 Platform.isLinux，绕过了其余分支共用的 System 测试入口。现改为 system.isLinux，真实平台默认行为不变；本机相关 43 项组件与交互测试通过。
+
+初轮 [构建验证](https://github.com/Tiam9173/fluxora/actions/runs/42239928625) 中 Android ARMv7、Linux ARM64 已成功。修正提交会重新运行测试和全平台验证，旧轮构建不作为最终候选的发布凭证。
