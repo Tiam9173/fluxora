@@ -1,3 +1,4 @@
+import 'package:fluxora/common/brand_icons.dart';
 import 'dart:async';
 
 import 'package:fluxora/common/common.dart';
@@ -132,23 +133,20 @@ class AboutView extends StatelessWidget {
               _LinkGridTile(
                 title: 'FlClash',
                 icon: Icons.launch,
-                onTap: () => globalState.openUrl(
-                  'https://github.com/chen08209/FlClash',
-                ),
+                onTap: () =>
+                    globalState.openUrl('https://github.com/chen08209/FlClash'),
               ),
               _LinkGridTile(
                 title: 'Bettbox',
                 icon: Icons.launch,
-                onTap: () => globalState.openUrl(
-                  'https://github.com/appshubcc/Bettbox',
-                ),
+                onTap: () =>
+                    globalState.openUrl('https://github.com/appshubcc/Bettbox'),
               ),
               _LinkGridTile(
                 title: 'Mihomo',
                 icon: Icons.launch,
-                onTap: () => globalState.openUrl(
-                  'https://github.com/MetaCubeX/mihomo',
-                ),
+                onTap: () =>
+                    globalState.openUrl('https://github.com/MetaCubeX/mihomo'),
               ),
             ],
           ),
@@ -174,7 +172,10 @@ class AboutView extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.all(FluxoraSpacing.md),
                         child: Image.asset(
-                          'assets/images/icon.png',
+                          BrandIcons.asset(
+                            ref.watch(themeSettingProvider).appIconStyle,
+                            ref.watch(themeSettingProvider).useDarkIcon,
+                          ),
                           width: 48,
                           height: 48,
                         ),
@@ -340,8 +341,7 @@ class _LinkGridTile extends StatelessWidget {
                 icon,
                 size: 16,
                 color:
-                    iconColor ??
-                    Theme.of(context).colorScheme.onSurfaceVariant,
+                    iconColor ?? Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ],
           ],

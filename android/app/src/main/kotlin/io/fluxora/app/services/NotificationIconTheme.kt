@@ -1,13 +1,23 @@
 package io.fluxora.app.services
 
-/**
- * 通知栏大图标该用深色还是浅色版本。
- *
- * 这个值由 Flutter 侧在主题变化时写入。它和桌面启动图标的「深色图标」开关
- * 是两件事：启动图标在桌面上，通知图标在通知栏里，后者应当跟随当前界面主题，
- * 而不是跟随一个用户手动设置、且与主题无关的开关。
- */
+import android.content.Context
+import io.fluxora.app.R
+
 object NotificationIconTheme {
-    @Volatile
-    var isDark: Boolean = false
+    @Volatile var isDark: Boolean = false
+
+    fun setStyle(context: Context, style: String) {
+        require(style in listOf("flow", "plain", "outline")) { "Unknown notification icon" }
+        check(context.getSharedPreferences("fluxora_brand", Context.MODE_PRIVATE).edit()
+            .putString("notification_style", style).commit()) { "Unable to save notification icon" }
+    }
+
+    fun smallIcon(context: Context): Int = when (
+        context.getSharedPreferences("fluxora_brand", Context.MODE_PRIVATE)
+            .getString("notification_style", "flow")
+    ) {
+        "plain" -> R.drawable.ic_notification_plain
+        "outline" -> R.drawable.ic_notification_outline
+        else -> R.drawable.ic_notification_flow
+    }
 }

@@ -50,6 +50,7 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
   bool _isTab = false;
 
   List<Widget> _buildActions() {
+    final chinese = Localizations.localeOf(context).languageCode == 'zh';
     final showHiddenItems = ref.watch(
       proxiesStyleSettingProvider.select((state) => state.showHiddenItems),
     );
@@ -101,11 +102,13 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
             PopupMenuItemData(
               icon: Icons.swap_horiz_rounded,
               label: appLocalizations.switchProxy,
+              section: chinese ? '节点操作' : 'Node controls',
               onPressed: () => showNotificationSwitchCard(context),
             ),
             PopupMenuItemData(
               icon: Icons.tune,
               label: appLocalizations.settings,
+              section: chinese ? '显示与筛选' : 'Display & filters',
               onPressed: () {
                 showSheet(
                   context: context,
@@ -134,7 +137,7 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
                 },
               ),
             PopupMenuItemData(
-              icon: Icons.settings_suggest,
+              icon: Icons.settings_suggest_outlined,
               label: appLocalizations.advancedSettings,
               onPressed: () {
                 showExtend(
@@ -150,8 +153,23 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
               },
             ),
             PopupMenuItemData(
+              icon: showHiddenItems
+                  ? Icons.radio_button_checked
+                  : Icons.radio_button_unchecked,
+              label: appLocalizations.showHiddenItems,
+              onPressed: () {
+                ref
+                    .read(proxiesStyleSettingProvider.notifier)
+                    .updateState(
+                      (state) =>
+                          state.copyWith(showHiddenItems: !showHiddenItems),
+                    );
+              },
+            ),
+            PopupMenuItemData(
               icon: Icons.alt_route,
               label: appLocalizations.chainProxy,
+              section: chinese ? '路由工具' : 'Routing tools',
               onPressed: () {
                 showExtend(
                   context,
@@ -166,7 +184,7 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
               },
             ),
             PopupMenuItemData(
-              icon: Icons.cloud_rounded,
+              icon: Icons.cloud_outlined,
               label: 'WARP',
               onPressed: () {
                 showExtend(
@@ -207,20 +225,6 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
                   );
                 },
               ),
-            PopupMenuItemData(
-              icon: showHiddenItems
-                  ? Icons.radio_button_checked
-                  : Icons.radio_button_unchecked,
-              label: appLocalizations.showHiddenItems,
-              onPressed: () {
-                ref
-                    .read(proxiesStyleSettingProvider.notifier)
-                    .updateState(
-                      (state) =>
-                          state.copyWith(showHiddenItems: !showHiddenItems),
-                    );
-              },
-            ),
           ],
         ),
       ),
@@ -323,10 +327,29 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
             label: Text(appLocalizations.profiles),
           ),
         ),
-        true => switch (proxiesType) {
-          ProxiesType.tab => ProxiesTabView(key: _proxiesTabKey),
-          ProxiesType.list => const ProxiesListView(),
-        },
+        true => Column(
+          children: [
+            ListTile(
+              dense: true,
+              leading: const Icon(Icons.folder_open_outlined, size: 20),
+              title: Text(
+                ref.watch(currentProfileProvider)?.label ??
+                    ref.watch(currentProfileProvider)?.id ??
+                    appLocalizations.profiles,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              trailing: const Icon(Icons.chevron_right, size: 20),
+              onTap: () => globalState.appController.toPage(PageLabel.profiles),
+            ),
+            Expanded(
+              child: switch (proxiesType) {
+                ProxiesType.tab => ProxiesTabView(key: _proxiesTabKey),
+                ProxiesType.list => const ProxiesListView(),
+              },
+            ),
+          ],
+        ),
       },
     );
   }

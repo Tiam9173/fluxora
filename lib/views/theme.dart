@@ -1,3 +1,4 @@
+import 'package:fluxora/common/brand_icons.dart';
 // ignore_for_file: deprecated_member_use
 
 import 'dart:math';
@@ -57,24 +58,152 @@ class ThemeView extends ConsumerWidget {
         effectiveLocale.languageCode == 'zh' ||
         effectiveLocale.languageCode == 'en';
 
-    final toggleItems = [
-      if (shouldShowHarmonyFont) _HarmonyFontItem(),
-      const AppIconsItem(),
-      if (system.isWindows) _TrayIconInvertItem(),
-      _TextScaleFactorItem(),
-    ];
+    final chinese = Localizations.localeOf(context).languageCode == 'zh';
+    final appearance = _ThemePanel(
+      title: chinese ? '显示与材质' : 'Display & material',
+      children: [
+        _ThemeModeItem(),
+        const _SurfaceStyleItem(),
+        if (brightness == Brightness.dark) _PrueBlackItem(),
+      ],
+    );
+    final palette = _ThemePanel(
+      title: chinese ? '配色工作台' : 'Colour studio',
+      children: [_ColorSourceItem(), _PrimaryColorItem()],
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 960),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const _ThemePreview(),
+                  const SizedBox(height: 20),
+                  if (constraints.maxWidth >= 760)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: appearance),
+                        const SizedBox(width: 16),
+                        Expanded(child: palette),
+                      ],
+                    )
+                  else ...[
+                    appearance,
+                    const SizedBox(height: 16),
+                    palette,
+                  ],
+                  const SizedBox(height: 16),
+                  _ThemePanel(
+                    title: chinese ? '品牌标识' : 'Brand identity',
+                    children: [
+                      const AppIconsItem(),
+                      if (system.isWindows) _TrayIconInvertItem(),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  _ThemePanel(
+                    title: chinese ? '阅读体验' : 'Reading',
+                    children: [
+                      if (shouldShowHarmonyFont) _HarmonyFontItem(),
+                      _TextScaleFactorItem(),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
 
-    final items = [
-      _ThemeModeItem(),
-      const _SurfaceStyleItem(),
-      // D4.8: where the theme colour comes from (Fluxora / System / Custom).
-      // Must come before the palette card, which now reflects the choice.
-      _ColorSourceItem(),
-      _PrimaryColorItem(),
-      if (brightness == Brightness.dark) _PrueBlackItem(),
-      if (toggleItems.isNotEmpty) ...generateSection(items: toggleItems),
-    ];
-    return generateListView(items);
+class _ThemePanel extends StatelessWidget {
+  const _ThemePanel({required this.title, required this.children});
+  final String title;
+  final List<Widget> children;
+  @override
+  Widget build(BuildContext context) => CommonCard(
+    type: CommonCardType.plain,
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(title, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 20),
+          ...children,
+        ],
+      ),
+    ),
+  );
+}
+
+class _ThemePreview extends ConsumerWidget {
+  const _ThemePreview();
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final props = ref.watch(themeSettingProvider);
+    final scheme = Theme.of(context).colorScheme;
+    final chinese = Localizations.localeOf(context).languageCode == 'zh';
+    return CommonCard(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Wrap(
+          spacing: 20,
+          runSpacing: 16,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Image.asset(
+              BrandIcons.asset(props.appIconStyle, props.useDarkIcon),
+              width: 64,
+              height: 64,
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Fluxora',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  chinese ? '外观预览' : 'Appearance preview',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ],
+            ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final color in [
+                  scheme.primary,
+                  scheme.secondary,
+                  scheme.tertiary,
+                  scheme.surfaceContainerHighest,
+                ])
+                  Container(
+                    width: 28,
+                    height: 28,
+                    margin: const EdgeInsets.only(right: 8),
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: scheme.outlineVariant),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -149,27 +278,25 @@ class ItemCard extends StatelessWidget {
 
 class _ThemeModeItem extends ConsumerWidget {
   const _ThemeModeItem();
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(
-      themeSettingProvider.select((state) => state.themeMode),
-    );
-    List<ThemeModeItem> themeModeItems = [
+    final mode = ref.watch(themeSettingProvider.select((s) => s.themeMode));
+    final scheme = Theme.of(context).colorScheme;
+    final options = [
       ThemeModeItem(
+        themeMode: ThemeMode.system,
         iconData: Icons.auto_mode,
         label: appLocalizations.auto,
-        themeMode: ThemeMode.system,
       ),
       ThemeModeItem(
-        iconData: Icons.light_mode,
-        label: appLocalizations.light,
         themeMode: ThemeMode.light,
+        iconData: Icons.light_mode_outlined,
+        label: appLocalizations.light,
       ),
       ThemeModeItem(
-        iconData: Icons.dark_mode,
-        label: appLocalizations.dark,
         themeMode: ThemeMode.dark,
+        iconData: Icons.dark_mode_outlined,
+        label: appLocalizations.dark,
       ),
     ];
     return ItemCard(
@@ -177,42 +304,24 @@ class _ThemeModeItem extends ConsumerWidget {
         label: appLocalizations.themeMode,
         iconData: Icons.brightness_high,
       ),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        height: 56,
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          itemCount: themeModeItems.length,
-          itemBuilder: (_, index) {
-            final themeModeItem = themeModeItems[index];
-            return CommonCard(
-              isSelected: themeModeItem.themeMode == themeMode,
-              onPressed: () {
-                ref
-                    .read(themeSettingProvider.notifier)
-                    .updateState(
-                      (state) =>
-                          state.copyWith(themeMode: themeModeItem.themeMode),
-                    );
-              },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Flexible(child: Icon(themeModeItem.iconData)),
-                    const SizedBox(width: 8),
-                    Flexible(child: Text(themeModeItem.label)),
-                  ],
-                ),
-              ),
-            );
-          },
-          separatorBuilder: (_, _) {
-            return const SizedBox(width: 16);
-          },
-        ),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          for (final item in options)
+            ChoiceChip(
+              key: ValueKey('theme-mode-${item.themeMode.name}'),
+              avatar: Icon(item.iconData, size: 18),
+              showCheckmark: false,
+              label: Text(item.label),
+              selected: mode == item.themeMode,
+              backgroundColor: scheme.surfaceContainerHigh,
+              selectedColor: scheme.primaryContainer,
+              onSelected: (_) => ref
+                  .read(themeSettingProvider.notifier)
+                  .updateState((s) => s.copyWith(themeMode: item.themeMode)),
+            ),
+        ],
       ),
     );
   }
@@ -895,109 +1004,73 @@ class _SliderDefaultsM3 extends SliderThemeData {
 /// (`system` / `custom`); "Fluxora" is a brand name and needs no translation.
 class _ColorSourceItem extends ConsumerWidget {
   const _ColorSourceItem();
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colorSource = ref.watch(
-      themeSettingProvider.select((state) => state.colorSource),
-    );
-    // `dynamic_color` returns null on pre-Android-12, so on Android a null
-    // palette means Monet is genuinely unavailable — offering the option there
-    // is a fake choice that silently resolves to the fallback accent.
-    //
-    // On desktop it is a different story: "system" means the OS accent colour
-    // (macOS 10.14+, Windows Vista+, GTK), which is a real source, so the
-    // option stays enabled even though the Monet palette is null too.
+    final source = ref.watch(themeSettingProvider.select((s) => s.colorSource));
     final palette = ref.watch(dynamicPaletteProvider);
-    final systemUnavailable =
+    final unavailable =
         system.isAndroid && palette.light == null && palette.dark == null;
-    final items = [
+    final scheme = Theme.of(context).colorScheme;
+    final options = [
       ColorSourceItem(
         colorSource: ColorSource.fluxora,
-        iconData: Icons.auto_awesome,
+        iconData: Icons.auto_awesome_outlined,
         label: AppIdentity.displayName,
       ),
       ColorSourceItem(
         colorSource: ColorSource.system,
-        iconData: Icons.smartphone,
+        iconData: Icons.smartphone_outlined,
         label: appLocalizations.system,
       ),
       ColorSourceItem(
         colorSource: ColorSource.custom,
-        iconData: Icons.colorize,
+        iconData: Icons.colorize_outlined,
         label: appLocalizations.custom,
       ),
     ];
     return ItemCard(
-      info: Info(label: appLocalizations.themeColor, iconData: Icons.palette),
+      info: Info(
+        label: appLocalizations.themeColor,
+        iconData: Icons.palette_outlined,
+      ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            height: 56,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: items.length,
-              itemBuilder: (_, index) {
-                final item = items[index];
-                final disabled =
-                    item.colorSource == ColorSource.system && systemUnavailable;
-                return CommonCard(
-                  isSelected: item.colorSource == colorSource,
-                  // `null` is what makes `CommonCard` non-interactive
-                  // (`isInteractive = onPressed != null`), so a disabled option
-                  // does not even animate a press it will not honour.
-                  onPressed: disabled
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final item in options)
+                ChoiceChip(
+                  avatar: Icon(item.iconData, size: 18),
+                  showCheckmark: false,
+                  label: Text(item.label),
+                  selected: source == item.colorSource,
+                  backgroundColor: scheme.surfaceContainerHigh,
+                  selectedColor: scheme.primaryContainer,
+                  onSelected:
+                      item.colorSource == ColorSource.system && unavailable
                       ? null
-                      : () {
-                          ref
-                              .read(themeSettingProvider.notifier)
-                              .updateState(
-                                (state) => state.copyWith(
-                                  colorSource: item.colorSource,
-                                  primaryColor:
-                                      item.colorSource == ColorSource.fluxora
-                                      ? defaultPrimaryColor
-                                      : state.primaryColor,
-                                ),
-                              );
-                        },
-                  child: Opacity(
-                    opacity: disabled ? 0.4 : 1,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          Flexible(child: Icon(item.iconData)),
-                          const SizedBox(width: 8),
-                          Flexible(child: Text(item.label)),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-              separatorBuilder: (_, _) {
-                return const SizedBox(width: 16);
-              },
-            ),
-          ),
-          // 提示放在卡片内部，紧贴选项下面；放到 ItemCard 外面会被它自带的
-          // 16 px 下间距隔开，看起来像是下一块内容。
-          if (systemUnavailable)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  appLocalizations.colorSourceSystemUnavailable,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: context.colorScheme.onSurfaceVariant,
-                  ),
+                      : (_) => ref
+                            .read(themeSettingProvider.notifier)
+                            .updateState(
+                              (s) => s.copyWith(
+                                colorSource: item.colorSource,
+                                primaryColor:
+                                    item.colorSource == ColorSource.fluxora
+                                    ? defaultPrimaryColor
+                                    : s.primaryColor,
+                              ),
+                            ),
                 ),
+            ],
+          ),
+          if (unavailable)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                appLocalizations.colorSourceSystemUnavailable,
+                style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
         ],
@@ -1006,11 +1079,6 @@ class _ColorSourceItem extends ConsumerWidget {
   }
 }
 
-/// Read-only preview shown in place of the palette picker when the colour comes
-/// from Fluxora or from the system (D4.8).
-///
-/// Fluxora shows its three brand colours; System shows the colour the platform
-/// actually resolved (Material You on Android, the safe fallback elsewhere).
 Widget _buildColorSourcePreview(BuildContext context, ColorSource source) {
   final isFluxora = source == ColorSource.fluxora;
   return ItemCard(

@@ -12,7 +12,7 @@
 
 ## 版本与下载
 
-已发布正式版为 [v1.1.1](https://github.com/Tiam9173/fluxora/releases/tag/v1.1.1)。`dev` 分支正在准备 **1.1.2-rc.2 预览版（Pre-release）**；源码中的版本号不代表安装包已经发布。候选版的变化与限制见 [rc2 发布说明](RELEASE_NOTES_1.1.2-rc.2.md)，实际下载以 [Releases](https://github.com/Tiam9173/fluxora/releases) 中的附件为准。
+已发布正式版为 [v1.1.1](https://github.com/Tiam9173/fluxora/releases/tag/v1.1.1)。`dev` 分支的 **1.1.2-rc.2 预览版（Pre-release）暂缓发布**，正在处理配置切换、图标与界面反馈；源码中的版本号不代表安装包已经发布。版本说明和下载以 [Releases](https://github.com/Tiam9173/fluxora/releases) 为准。
 
 | 平台 | 安装包 | 架构 |
 | --- | --- | --- |
@@ -70,7 +70,7 @@ flutter analyze
 flutter test
 ```
 
-普通源码运行不等于官方签名安装包，Windows 发行构建还会校验 Core / Helper 的文件锚点。rc2 的本机测试、远端 CI、构建及未验证项见 [发布核验](RELEASE_READINESS_1.1.2-rc.2.md)。
+普通源码运行不等于官方签名安装包，Windows 发行构建还会校验 Core / Helper 的文件锚点。
 
 ## 参与贡献
 

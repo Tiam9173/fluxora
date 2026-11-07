@@ -77,7 +77,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
 
   Widget _buildNavigationMenuItem(NavigationItem navigationItem) {
     return ListItem.next(
-      leading: navigationItem.icon,
+      leading: _SettingsIcon.child(navigationItem.icon),
       title: Text(Intl.message(navigationItem.label.name)),
       subtitle: navigationItem.description != null
           ? Text(Intl.message(navigationItem.description!))
@@ -1783,8 +1783,10 @@ class _DeveloperItem extends StatelessWidget {
 }
 
 class _SettingsIcon extends StatelessWidget {
-  const _SettingsIcon(this.icon);
-  final IconData icon;
+  const _SettingsIcon(this.icon) : child = null;
+  const _SettingsIcon.child(this.child) : icon = null;
+  final IconData? icon;
+  final Widget? child;
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -1793,10 +1795,13 @@ class _SettingsIcon extends StatelessWidget {
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: scheme.tertiaryContainer,
+          color: scheme.primary.withValues(alpha: .10),
           borderRadius: FluxoraRadius.smAll,
         ),
-        child: Icon(icon, size: 20, color: scheme.onTertiaryContainer),
+        child: IconTheme(
+          data: IconThemeData(size: 20, color: scheme.primary),
+          child: child ?? Icon(icon),
+        ),
       ),
     );
   }

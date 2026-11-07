@@ -433,6 +433,7 @@ abstract class ThemeProps with _$ThemeProps {
     @Default(TextScale()) TextScale textScale,
     @Default(false) bool useDarkIcon,
     @Default('official') String appIconStyle,
+    @Default('flow') String notificationIconStyle,
     @JsonKey(unknownEnumValue: FluxoraSurfaceStyle.classic)
     @Default(FluxoraSurfaceStyle.hybrid)
     FluxoraSurfaceStyle surfaceStyle,

@@ -106,87 +106,103 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
   List<Widget> _buildActions() {
     return [
       IconButton(
-        onPressed: () {
-          _updateProfiles();
-        },
-        icon: const Icon(Icons.sync),
+        onPressed: _updateProfiles,
+        icon: const Icon(Icons.sync_rounded),
         tooltip: appLocalizations.syncAll,
       ),
-      IconButton(
-        onPressed: () {
-          showExtend(
-            context,
-            builder: (_, type) {
-              return const ScriptsView();
-            },
-          );
-        },
-        tooltip: appLocalizations.script,
-        icon: Consumer(
-          builder: (_, ref, _) {
-            final isScriptMode = ref.watch(
-              scriptStateProvider.select((state) => state.realId != null),
-            );
-            return Icon(
-              Icons.functions,
-              color: isScriptMode ? context.colorScheme.primary : null,
-            );
-          },
-        ),
-      ),
-      IconButton(
-        onPressed: () {
-          final profiles = globalState.config.profiles;
-          showSheet(
-            context: context,
-            builder: (_, type) {
-              return ReorderableProfilesSheet(type: type, profiles: profiles);
-            },
-          );
-        },
-        tooltip: appLocalizations.sort,
-        icon: const Icon(Icons.sort),
-        iconSize: 26,
-      ),
       PopupMenuButton<String>(
-        tooltip: '',
-        icon: const Icon(Icons.more_vert, size: 26),
+        tooltip: appLocalizations.more,
+        icon: const Icon(Icons.more_horiz_rounded),
         onSelected: (value) async {
           if (value == 'aggregate') {
             showExtend(
               context,
-              builder: (_, type) {
-                return AdaptiveSheetScaffold(
-                  type: type,
-                  body: const AggregateView(),
-                  title: appLocalizations.aggregateTitle,
-                );
-              },
+              builder: (_, type) => AdaptiveSheetScaffold(
+                type: type,
+                body: const AggregateView(),
+                title: appLocalizations.aggregateTitle,
+              ),
             );
-            return;
+          } else if (value == 'clearRulesScripts') {
+            final confirmed = await globalState.showMessage(
+              title: appLocalizations.tip,
+              message: TextSpan(
+                text: appLocalizations.clearAllRulesAndScriptsTip,
+              ),
+            );
+            if (confirmed == true) {
+              await globalState.appController.clearAllRulesAndScripts();
+            }
           }
-          if (value != 'clearRulesScripts') return;
-          final res = await globalState.showMessage(
-            title: appLocalizations.tip,
-            message: TextSpan(
-              text: appLocalizations.clearAllRulesAndScriptsTip,
-            ),
-          );
-          if (res != true) return;
-          await globalState.appController.clearAllRulesAndScripts();
         },
         itemBuilder: (_) => [
           PopupMenuItem(
             value: 'aggregate',
-            child: Text(appLocalizations.aggregateManage),
+            child: Row(
+              children: [
+                const Icon(Icons.layers_outlined),
+                const SizedBox(width: 12),
+                Flexible(child: Text(appLocalizations.aggregateManage)),
+              ],
+            ),
           ),
+          const PopupMenuDivider(),
           PopupMenuItem(
             value: 'clearRulesScripts',
-            child: Text(appLocalizations.clearAllRulesAndScripts),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.cleaning_services_outlined,
+                  color: context.colorScheme.error,
+                ),
+                const SizedBox(width: 12),
+                Flexible(child: Text(appLocalizations.clearAllRulesAndScripts)),
+              ],
+            ),
           ),
         ],
       ),
     ];
+  }
+
+  Widget _buildProfileControls() {
+    final scriptOn = ref.watch(
+      scriptStateProvider.select((s) => s.realId != null),
+    );
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Wrap(
+        spacing: FluxoraSpacing.sm,
+        children: [
+          TextButton.icon(
+            key: const ValueKey('profile-script'),
+            style: TextButton.styleFrom(
+              minimumSize: const Size(48, 48),
+              foregroundColor: scriptOn
+                  ? context.colorScheme.primary
+                  : context.colorScheme.onSurfaceVariant,
+            ),
+            onPressed: () =>
+                showExtend(context, builder: (_, type) => const ScriptsView()),
+            icon: const Icon(Icons.code_rounded),
+            label: Text(appLocalizations.script),
+          ),
+          TextButton.icon(
+            key: const ValueKey('profile-sort'),
+            style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+            onPressed: () => showSheet(
+              context: context,
+              builder: (_, type) => ReorderableProfilesSheet(
+                type: type,
+                profiles: globalState.config.profiles,
+              ),
+            ),
+            icon: const Icon(Icons.reorder_rounded),
+            label: Text(appLocalizations.sort),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildFAB() {
@@ -213,86 +229,101 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
       title: appLocalizations.profiles,
       floatingActionButton: _buildFAB(),
       actions: _buildActions(),
-      body: Consumer(
-        builder: (_, ref, _) {
-          // Watch the profile list itself, not only the derived selector: the
-          // selector is a scoped provider (`dependencies: [Query]`), and a
-          // scoped provider can keep serving its cached value when the
-          // unscoped list changes. That mismatch is why edits used to appear
-          // only after leaving and re-entering the page.
-          ref.watch(profilesProvider);
-          final profilesSelectorState = ref.watch(
-            profilesSelectorStateProvider,
-          );
-          final isMobileView = ref.watch(isMobileViewProvider);
-          if (profilesSelectorState.profiles.isEmpty) {
-            return FluxoraEmptyState(
-              icon: Icons.folder_open_outlined,
-              title: appLocalizations.nullProfileDesc,
-              action: FilledButton.icon(
-                onPressed: _handleShowAddExtendPage,
-                icon: const Icon(Icons.add_rounded),
-                label: Text(appLocalizations.add),
-              ),
-            );
-          }
-          final columns = system.isAndroid
-              ? 1
-              : profilesSelectorState.profiles.length <
-                    profilesSelectorState.columns
-              ? profilesSelectorState.profiles.length
-              : profilesSelectorState.columns;
-          return Align(
-            alignment: Alignment.topCenter,
-            child: SingleChildScrollView(
-              key: profilesStoreKey,
-              padding: EdgeInsets.only(
-                left: 16,
-                right: 16,
-                top: 16,
-                bottom:
-                    (profilesSelectorState.profiles.isNotEmpty &&
-                            profilesSelectorState.profiles.length % columns == 0
-                        ? 88
-                        : 16) +
-                    (isMobileView
-                        ? getFloatingBottomBarReserveHeight(context)
-                        : 0),
-              ),
-              child: SuperGrid(
-                key: _profilesGridKey,
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
-                crossAxisCount: columns,
-                onUpdate: _handleProfilesReordered,
-                // Only the handle drags, so `ProfileItem` keeps its tap (select)
-                // and long-press (edit the subscription file) untouched.
-                dragHandleBuilder: (index) => const _ProfileDragHandle(),
-                children: [
-                  for (final profile in profilesSelectorState.profiles)
-                    GridItem(
-                      // Read back by `_handleProfilesReordered` after a reorder.
-                      key: ValueKey(profile.id),
-                      // Subscriptions are deleted from their own menu, never via
-                      // the grid's corner X: that X also put a tappable delete
-                      // over the card's top-right, stealing the tap that selects
-                      // a profile.
-                      isDeletable: false,
-                      child: ProfileItem(
-                        key: Key(profile.id),
-                        profile: profile,
-                        groupValue: profilesSelectorState.currentProfileId,
-                        onChanged: (profileId) {
-                          ref.read(currentProfileIdProvider.notifier).value =
-                              profileId;
-                        },
-                      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: _buildProfileControls(),
+          ),
+          Expanded(
+            child: Consumer(
+              builder: (_, ref, _) {
+                // Watch the profile list itself, not only the derived selector: the
+                // selector is a scoped provider (`dependencies: [Query]`), and a
+                // scoped provider can keep serving its cached value when the
+                // unscoped list changes. That mismatch is why edits used to appear
+                // only after leaving and re-entering the page.
+                ref.watch(profilesProvider);
+                final profilesSelectorState = ref.watch(
+                  profilesSelectorStateProvider,
+                );
+                final isMobileView = ref.watch(isMobileViewProvider);
+                if (profilesSelectorState.profiles.isEmpty) {
+                  return FluxoraEmptyState(
+                    icon: Icons.folder_open_outlined,
+                    title: appLocalizations.nullProfileDesc,
+                    action: FilledButton.icon(
+                      onPressed: _handleShowAddExtendPage,
+                      icon: const Icon(Icons.add_rounded),
+                      label: Text(appLocalizations.add),
                     ),
-                ],
-              ),
+                  );
+                }
+                final columns = system.isAndroid
+                    ? 1
+                    : profilesSelectorState.profiles.length <
+                          profilesSelectorState.columns
+                    ? profilesSelectorState.profiles.length
+                    : profilesSelectorState.columns;
+                return Align(
+                  alignment: Alignment.topCenter,
+                  child: SingleChildScrollView(
+                    key: profilesStoreKey,
+                    padding: EdgeInsets.only(
+                      left: 16,
+                      right: 16,
+                      top: 16,
+                      bottom:
+                          (profilesSelectorState.profiles.isNotEmpty &&
+                                  profilesSelectorState.profiles.length %
+                                          columns ==
+                                      0
+                              ? 88
+                              : 16) +
+                          (isMobileView
+                              ? getFloatingBottomBarReserveHeight(context)
+                              : 0),
+                    ),
+                    child: SuperGrid(
+                      key: _profilesGridKey,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 16,
+                      crossAxisCount: columns,
+                      onUpdate: _handleProfilesReordered,
+                      // Only the handle drags, so `ProfileItem` keeps its tap (select)
+                      // and long-press (edit the subscription file) untouched.
+                      dragHandleBuilder: (index) => const _ProfileDragHandle(),
+                      children: [
+                        for (final profile in profilesSelectorState.profiles)
+                          GridItem(
+                            // Read back by `_handleProfilesReordered` after a reorder.
+                            key: ValueKey(profile.id),
+                            // Subscriptions are deleted from their own menu, never via
+                            // the grid's corner X: that X also put a tappable delete
+                            // over the card's top-right, stealing the tap that selects
+                            // a profile.
+                            isDeletable: false,
+                            child: ProfileItem(
+                              key: Key(profile.id),
+                              profile: profile,
+                              groupValue:
+                                  profilesSelectorState.currentProfileId,
+                              onChanged: (profileId) {
+                                ref
+                                        .read(currentProfileIdProvider.notifier)
+                                        .value =
+                                    profileId;
+                              },
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              },
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }
@@ -807,8 +838,8 @@ class ProfileItem extends StatelessWidget {
                   IconButton(
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints.tightFor(
-                      width: 40,
-                      height: 40,
+                      width: 48,
+                      height: 48,
                     ),
                     onPressed: () => _handleOpenPortal(context),
                     tooltip: _portalActionLabel,
@@ -820,8 +851,8 @@ class ProfileItem extends StatelessWidget {
                     return IconButton(
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints.tightFor(
-                        width: 40,
-                        height: 40,
+                        width: 48,
+                        height: 48,
                       ),
                       onPressed: () {
                         open();
@@ -836,17 +867,42 @@ class ProfileItem extends StatelessWidget {
     );
     return Stack(
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Padding(
-                padding: EdgeInsets.only(right: hasPortal ? 80 : 40),
-                child: _buildTitleRow(context),
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: context.colorScheme.primary.withValues(alpha: .10),
+                  borderRadius: FluxoraRadius.smAll,
+                ),
+                child: Icon(
+                  profile.id == groupValue
+                      ? Icons.check_rounded
+                      : (profile.type == ProfileType.file
+                            ? Icons.description_outlined
+                            : Icons.cloud_download_outlined),
+                  size: 20,
+                  color: context.colorScheme.primary,
+                ),
               ),
-              _buildContentInfo(context),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.only(right: hasPortal ? 88 : 40),
+                      child: _buildTitleRow(context),
+                    ),
+                    _buildContentInfo(context),
+                  ],
+                ),
+              ),
             ],
           ),
         ),

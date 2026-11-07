@@ -135,5 +135,11 @@
   "android/app/src/main/res/drawable/ic_notification_dark.xml": "36d307bd4d6bed395f513b81360d25db8416cbc7d558049657198919d5f32efd",
   "android/app/src/main/res/drawable/ic_notification_light.xml": "36d307bd4d6bed395f513b81360d25db8416cbc7d558049657198919d5f32efd",
   "android/app/src/main/res/drawable/ic_tile.xml": "36d307bd4d6bed395f513b81360d25db8416cbc7d558049657198919d5f32efd",
-  "android/app/src/main/res/drawable-night/ic_tile.xml": "36d307bd4d6bed395f513b81360d25db8416cbc7d558049657198919d5f32efd"
+  "android/app/src/main/res/drawable-night/ic_tile.xml": "36d307bd4d6bed395f513b81360d25db8416cbc7d558049657198919d5f32efd",
+  "assets/images/notification_flow.svg": "35fc387f47eaa1d23b8585b18987f585e85025e85577c3402dd6bfaf3d647f92",
+  "assets/images/notification_outline.svg": "617aa9662571413529def141f8cbb8f02d707a384df33c6b44fa783d82ef7131",
+  "assets/images/notification_plain.svg": "6b9136be1c1a8d9924d396c251ba6c0c028008dbba01da59c10e784d8ffa94bf",
+  "android/app/src/main/res/drawable/ic_notification_flow.xml": "49d0d7747463441ee1e1e964fdae9fdbde87c862552cd0657983dd721ed4e920",
+  "android/app/src/main/res/drawable/ic_notification_plain.xml": "36d307bd4d6bed395f513b81360d25db8416cbc7d558049657198919d5f32efd",
+  "android/app/src/main/res/drawable/ic_notification_outline.xml": "f156316b925c38771281f0f30b351158ca9f411dfd2fc2d4bb2caea5c0de0cc1"
 }

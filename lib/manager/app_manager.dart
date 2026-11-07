@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:fluxora/clash/core.dart';
+import 'package:fluxora/common/brand_icons.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/manager/window_manager.dart';
@@ -84,6 +85,20 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
         mediaUnlockState.startCheckOnNodeChange();
       }
     });
+    if (system.isAndroid) {
+      ref.listenManual(
+        themeSettingProvider.select((s) => s.notificationIconStyle),
+        (prev, next) {
+          app
+              .setNotificationIconStyle(BrandIcons.normalizeNotification(next))
+              .catchError((Object error) {
+                commonPrint.log('Notification icon sync failed: $error');
+                return false;
+              });
+        },
+        fireImmediately: true,
+      );
+    }
     ref.listenManual(configStateProvider, (prev, next) {
       if (prev != next) {
         globalState.appController.savePreferencesDebounce();

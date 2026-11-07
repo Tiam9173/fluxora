@@ -55,11 +55,26 @@ def write(path, text):
     path.write_text(text, encoding='utf-8', newline='\n')
 
 
-def vector(size):
-    paths = ''.join(f'<path android:fillColor="#FFFFFFFF" android:pathData="{d}"/>' for d in WINGS)
-    # Small status surfaces omit the orbit and nodes: solid F remains readable at 16px.
-    scale = .11 if size == 24 else .31
-    translate = -2.08 if size == 24 else 14.32
+def status_paths(style, android=False):
+    if android:
+        fill = '#00000000' if style == 'outline' else '#FFFFFFFF'
+        stroke = ' android:strokeColor="#FFFFFFFF" android:strokeWidth="12" android:strokeLineJoin="round"' if style == 'outline' else ''
+        paths = ''.join(f'<path android:fillColor="{fill}"{stroke} android:pathData="{d}"/>' for d in WINGS)
+        if style == 'flow':
+            paths += f'<path android:fillColor="#00000000" android:strokeColor="#FFFFFFFF" android:strokeWidth="7" android:pathData="{ORBIT}"/>'
+        return paths
+    fill = 'none' if style == 'outline' else '#ffffff'
+    stroke = ' stroke="#ffffff" stroke-width="12" stroke-linejoin="round"' if style == 'outline' else ''
+    paths = ''.join(f'<path fill="{fill}"{stroke} d="{d}"/>' for d in WINGS)
+    if style == 'flow':
+        paths += f'<path d="{ORBIT}" fill="none" stroke="#ffffff" stroke-width="7"/>'
+    return paths
+
+
+def vector(size, style='plain'):
+    paths = status_paths(style, android=True)
+    scale = (.09 if style == 'flow' else .11) if size == 24 else .31
+    translate = .48 if style == 'flow' and size == 24 else (-2.08 if size == 24 else 14.32)
     return f'''<?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="{size}dp" android:height="{size}dp" android:viewportWidth="{size}" android:viewportHeight="{size}">
   <group android:scaleX="{scale}" android:scaleY="{scale}" android:translateX="{translate}" android:translateY="{translate}">{paths}</group>
@@ -111,6 +126,15 @@ def sources():
     write(BUILD / 'status.svg', svg(f'<g transform="translate(-22 -22) scale(1.16)">{mark(True, True, False)}</g>'))
     for name in ['ic_notification_dark', 'ic_notification_light', 'ic_tile']:
         write(RES / f'drawable/{name}.xml', vector(24))
+    for style in ['flow', 'plain', 'outline']:
+        write(RES / f'drawable/ic_notification_{style}.xml', vector(24, style))
+        write(ASSETS / f'notification_{style}.svg', svg(status_paths(style)))
+    for folder in ['values', 'values-night']:
+        styles = RES / folder / 'styles.xml'
+        text = styles.read_text(encoding='utf-8')
+        icon = '@mipmap/ic_launcher' if folder.endswith('night') else '@mipmap/ic_launcher_light'
+        text = re.sub(r'@drawable/(splash_text_(light|dark)|ic_brand_splash)', icon, text)
+        write(styles, text)
     write(RES / 'drawable-night/ic_tile.xml', vector(24))
     write(RES / 'drawable/ic_launcher_monochrome.xml', vector(108))
     for old, variant in [('ic_launcher', 'official_dark'), ('ic_launcher_round', 'official_dark'), ('ic_launcher_light', 'official_light'), ('ic_launcher_round_light', 'official_light')]:
@@ -196,6 +220,8 @@ def package():
     files += [ROOT / 'windows/runner/resources/app_icon.ico']
     files += [RES / f'drawable/{name}.xml' for name in ['ic_launcher_monochrome', 'ic_notification_dark', 'ic_notification_light', 'ic_tile']]
     files += [RES / 'drawable-night/ic_tile.xml']
+    files += list(ASSETS.glob('notification_*.svg'))
+    files += [RES / f'drawable/ic_notification_{s}.xml' for s in ['flow', 'plain', 'outline']]
     inventory = {str(p.relative_to(ROOT)).replace('\\', '/'): hashlib.sha256(p.read_bytes()).hexdigest() for p in files}
     write(OUT / 'inventory.json', json.dumps(inventory, indent=2, ensure_ascii=False) + '\n')
     print(f'Packaged icons, ICOs, Android layers, macOS assets, preview; {len(inventory)} inventory entries.')
@@ -270,6 +296,18 @@ def check():
         resource = node.attrib[ns + 'icon']
         if resource.startswith('@mipmap/'):
             assert (RES / f'mipmap-anydpi-v26/{resource[8:]}.xml').exists(), resource
+    notification_hashes = set()
+    for style in ['flow', 'plain', 'outline']:
+        path = RES / f'drawable/ic_notification_{style}.xml'
+        ET.parse(path)
+        colours = set(re.findall(r'#[0-9A-Fa-f]{8}', path.read_text()))
+        assert colours <= {'#FFFFFFFF', '#00000000'}, 'Small icons must remain monochrome alpha masks'
+        notification_hashes.add(hashlib.sha256(path.read_bytes()).hexdigest())
+        ET.parse(ASSETS / f'notification_{style}.svg')
+    assert len(notification_hashes) == 3
+    for folder in ['values', 'values-night']:
+        styles = (RES / folder / 'styles.xml').read_text(encoding='utf-8')
+        assert 'splash_text_' not in styles and '@mipmap/ic_launcher' in styles
     inventory = json.loads((OUT / 'inventory.json').read_text(encoding='utf-8'))
     assert all(hashlib.sha256((ROOT / p).read_bytes()).hexdigest() == h for p,h in inventory.items())
     print('PASS: 16 distinct master-matched exports, adaptive padding, 7-size ICOs, monochrome alpha, aliases, hashes.')

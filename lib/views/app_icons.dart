@@ -7,6 +7,7 @@ import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 bool _chinese(BuildContext context) =>
     Localizations.localeOf(context).languageCode == 'zh';
@@ -306,8 +307,11 @@ class _AppIconsViewState extends ConsumerState<AppIconsView> {
               ),
           ],
           const SizedBox(height: 24),
+          if (system.isAndroid) const NotificationIconsItem(),
           Text(
-            tr('通知栏 · 状态栏 · 快捷磁贴', 'Notification · Status · Quick Settings'),
+            system.isAndroid
+                ? tr('快捷磁贴', 'Quick Settings')
+                : tr('托盘图标', 'Tray icon'),
             style: Theme.of(context).textTheme.titleSmall,
           ),
           const SizedBox(height: 12),
@@ -330,11 +334,112 @@ class _AppIconsViewState extends ConsumerState<AppIconsView> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  tr('单色 F，由系统着色。', 'Monochrome F, tinted by the system.'),
+                  system.isAndroid
+                      ? tr('单色 F，由系统着色。', 'Monochrome F, tinted by the system.')
+                      : tr(
+                          '专用单色 F，外观由托盘设置控制。',
+                          'Dedicated monochrome F, controlled by tray settings.',
+                        ),
                 ),
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class NotificationIconsItem extends ConsumerStatefulWidget {
+  const NotificationIconsItem({super.key});
+  @override
+  ConsumerState<NotificationIconsItem> createState() =>
+      _NotificationIconsItemState();
+}
+
+class _NotificationIconsItemState extends ConsumerState<NotificationIconsItem> {
+  bool _busy = false;
+  String? _error;
+
+  Future<void> _select(String style) async {
+    final container = ProviderScope.containerOf(context, listen: false);
+    final previous = BrandIcons.normalizeNotification(
+      ref.read(themeSettingProvider).notificationIconStyle,
+    );
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      if (!await app.setNotificationIconStyle(style)) {
+        throw StateError('Notification icon update failed');
+      }
+      final config = globalState.config;
+      if (!await preferences.saveConfig(
+        config.copyWith(
+          themeProps: config.themeProps.copyWith(notificationIconStyle: style),
+        ),
+      )) {
+        throw StateError('Unable to save notification icon');
+      }
+      container
+          .read(themeSettingProvider.notifier)
+          .updateState((s) => s.copyWith(notificationIconStyle: style));
+    } catch (error) {
+      try {
+        await app.setNotificationIconStyle(previous);
+      } catch (_) {}
+      if (mounted) setState(() => _error = error.toString());
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final chinese = _chinese(context);
+    final scheme = Theme.of(context).colorScheme;
+    final style = BrandIcons.normalizeNotification(
+      ref.watch(themeSettingProvider).notificationIconStyle,
+    );
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            chinese ? '通知栏图标' : 'Notification icon',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final item in BrandIcons.notificationStyles.entries)
+                ChoiceChip(
+                  key: ValueKey('notification-icon-${item.key}'),
+                  selected: style == item.key,
+                  showCheckmark: false,
+                  backgroundColor: scheme.surfaceContainerHigh,
+                  selectedColor: scheme.primaryContainer,
+                  avatar: SvgPicture.asset(
+                    'assets/images/notification_${item.key}.svg',
+                    width: 24,
+                    height: 24,
+                    colorFilter: ColorFilter.mode(
+                      scheme.onSurface,
+                      BlendMode.srcIn,
+                    ),
+                  ),
+                  label: Text(chinese ? item.value.$1 : item.value.$2),
+                  onSelected: _busy ? null : (_) => _select(item.key),
+                ),
+            ],
+          ),
+          if (_busy) const LinearProgressIndicator(),
+          if (_error != null)
+            Text(_error!, style: TextStyle(color: scheme.error)),
         ],
       ),
     );

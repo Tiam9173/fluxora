@@ -450,10 +450,16 @@ class IpInfo {
       final loc = data['location'];
       if (loc is List && ip.isNotEmpty) {
         final locList = loc.map((e) => e?.toString() ?? '').toList();
-        final country = locList.isNotEmpty && locList[0].isNotEmpty ? locList[0] : null;
+        final country = locList.isNotEmpty && locList[0].isNotEmpty
+            ? locList[0]
+            : null;
         final countryCode = country == '中国' ? 'CN' : '';
-        final province = locList.length > 1 && locList[1].isNotEmpty ? locList[1] : null;
-        final city = locList.length > 2 && locList[2].isNotEmpty ? locList[2] : null;
+        final province = locList.length > 1 && locList[1].isNotEmpty
+            ? locList[1]
+            : null;
+        final city = locList.length > 2 && locList[2].isNotEmpty
+            ? locList[2]
+            : null;
         final last = locList.length > 4 && locList[4].isNotEmpty
             ? locList[4]
             : (locList.length > 3 && locList[3].isNotEmpty ? locList[3] : null);
@@ -502,16 +508,21 @@ class IpInfo {
       }
     }
 
-    if (json['query'] != null || json['countryCode'] != null || json['status'] != null) {
+    if (json['query'] != null ||
+        json['countryCode'] != null ||
+        json['status'] != null) {
       if (json['status'] != null && json['status'] != 'success') {
-        throw FormatException('ip-api.com status not success: ${json['message']}');
+        throw FormatException(
+          'ip-api.com status not success: ${json['message']}',
+        );
       }
       final ip = (json['query'] ?? json['ip'])?.toString() ?? '';
       final countryCode =
           (json['countryCode'] ?? json['country_code'])?.toString() ?? '';
       final country = json['country']?.toString();
       final province =
-          (json['regionName'] ?? json['region'] ?? json['province'])?.toString();
+          (json['regionName'] ?? json['region'] ?? json['province'])
+              ?.toString();
       final city = json['city']?.toString();
       final isp = json['isp']?.toString();
       final org = json['org']?.toString();
@@ -520,8 +531,10 @@ class IpInfo {
           : (json['as_name']?.toString());
 
       final rawAs = (json['as'] ?? json['asn'])?.toString() ?? '';
-      final asnMatch =
-          RegExp(r'^(AS\d+)', caseSensitive: false).firstMatch(rawAs.trim());
+      final asnMatch = RegExp(
+        r'^(AS\d+)',
+        caseSensitive: false,
+      ).firstMatch(rawAs.trim());
       final asn = asnMatch != null
           ? asnMatch.group(1)!.toUpperCase()
           : (rawAs.isNotEmpty ? rawAs.trim().split(' ').first : null);
@@ -542,13 +555,14 @@ class IpInfo {
 
     if (json['country_code'] != null && json['country_code3'] != null) {
       final ip = json['ip']?.toString() ?? '';
-      final org = json['organization_name']?.toString() ??
+      final org =
+          json['organization_name']?.toString() ??
           json['organization']?.toString();
       final rawAsn = json['asn']?.toString() ?? '';
       final asn = rawAsn.isNotEmpty
           ? (rawAsn.toUpperCase().startsWith('AS')
-              ? rawAsn.toUpperCase()
-              : 'AS$rawAsn')
+                ? rawAsn.toUpperCase()
+                : 'AS$rawAsn')
           : null;
       if (ip.isNotEmpty) {
         return IpInfo(
@@ -620,7 +634,8 @@ class IpInfo {
   }
 
   IpInfo merge(IpInfo other, {bool otherIsAuthoritative = false}) {
-    final isOtherPrimary = otherIsAuthoritative ||
+    final isOtherPrimary =
+        otherIsAuthoritative ||
         ((asn == null || asn!.isEmpty) &&
             (other.asn != null && other.asn!.isNotEmpty));
 
@@ -628,17 +643,17 @@ class IpInfo {
     final secondary = isOtherPrimary ? this : other;
 
     final mergedIp = primary.ip.isNotEmpty ? primary.ip : secondary.ip;
-    final bool isSameIp = primary.ip.isEmpty ||
+    final bool isSameIp =
+        primary.ip.isEmpty ||
         secondary.ip.isEmpty ||
         primary.ip == secondary.ip;
 
     final primaryCc = primary.countryCode.trim().toUpperCase();
     final secondaryCc = secondary.countryCode.trim().toUpperCase();
 
-    final bool isSameCountry = isSameIp &&
-        (primaryCc.isEmpty ||
-            secondaryCc.isEmpty ||
-            primaryCc == secondaryCc);
+    final bool isSameCountry =
+        isSameIp &&
+        (primaryCc.isEmpty || secondaryCc.isEmpty || primaryCc == secondaryCc);
 
     final mergedCountryCode = primaryCc.isNotEmpty ? primaryCc : secondaryCc;
 
@@ -663,15 +678,18 @@ class IpInfo {
         ? primary.city
         : (isSameCountry ? secondary.city : null);
 
-    final mergedAsn =
-        primary.asn?.isNotEmpty == true ? primary.asn : secondary.asn;
-    final mergedAsName =
-        primary.asName?.isNotEmpty == true ? primary.asName : secondary.asName;
+    final mergedAsn = primary.asn?.isNotEmpty == true
+        ? primary.asn
+        : secondary.asn;
+    final mergedAsName = primary.asName?.isNotEmpty == true
+        ? primary.asName
+        : secondary.asName;
     final mergedAsDomain = primary.asDomain?.isNotEmpty == true
         ? primary.asDomain
         : secondary.asDomain;
-    final mergedIsp =
-        primary.isp?.isNotEmpty == true ? primary.isp : secondary.isp;
+    final mergedIsp = primary.isp?.isNotEmpty == true
+        ? primary.isp
+        : secondary.isp;
     final mergedContinent = primary.continent?.isNotEmpty == true
         ? primary.continent
         : secondary.continent;
@@ -772,10 +790,12 @@ enum PopupMenuItemType { primary, danger }
 class PopupMenuItemData {
   const PopupMenuItemData({
     this.icon,
+    this.section,
     required this.label,
     required this.onPressed,
   });
 
+  final String? section;
   final String label;
   final VoidCallback? onPressed;
   final IconData? icon;
@@ -808,8 +828,12 @@ abstract class Result<T> with _$Result<T> {
     @Default(false) bool needRestart,
   }) = _Result;
 
-  factory Result.success(T data, {bool needRestart = false}) =>
-      Result(data: data, type: ResultType.success, message: '', needRestart: needRestart);
+  factory Result.success(T data, {bool needRestart = false}) => Result(
+    data: data,
+    type: ResultType.success,
+    message: '',
+    needRestart: needRestart,
+  );
 
   factory Result.error(String message) =>
       Result(data: null, type: ResultType.error, message: message);

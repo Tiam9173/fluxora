@@ -11,6 +11,15 @@ abstract final class BrandIcons {
     'blue_night': ('蓝夜', 'Blue night'),
   };
 
+  static const notificationStyles = {
+    'flow': ('轨道 F', 'Orbit F'),
+    'plain': ('极简 F', 'Minimal F'),
+    'outline': ('线框 F', 'Outline F'),
+  };
+
+  static String normalizeNotification(String style) =>
+      notificationStyles.containsKey(style) ? style : 'flow';
+
   static String normalize(String style) =>
       styles.containsKey(style) ? style : 'official';
 

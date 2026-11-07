@@ -254,6 +254,15 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
                 }.onSuccess { result.success(it) }
                     .onFailure { result.error("ICON_CHANGE_FAILED", it.message, null) }
             }
+            "setNotificationIconStyle" -> {
+                runCatching {
+                    val context = FluxoraApplication.getAppContext()
+                    io.fluxora.app.services.NotificationIconTheme.setStyle(context, call.argument<String>("style") ?: "flow")
+                    VpnPlugin.updateNotificationIcon()
+                    true
+                }.onSuccess { result.success(it) }
+                    .onFailure { result.error("NOTIFICATION_ICON_FAILED", it.message, null) }
+            }
             "getLauncherIcon" -> {
                 runCatching { LauncherIcons.current(FluxoraApplication.getAppContext()) }
                     .onSuccess { result.success(it) }

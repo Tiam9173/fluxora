@@ -2302,7 +2302,7 @@ mixin _$ThemeProps {
 /// Defaults to [ColorSource.fluxora] so the brand stays in charge — and so
 /// configs written before this field existed keep working: `@Default`
 /// applies whenever the key is absent from JSON.
- ColorSource get colorSource; bool get pureBlack; TextScale get textScale; bool get useDarkIcon; String get appIconStyle;@JsonKey(unknownEnumValue: FluxoraSurfaceStyle.classic) FluxoraSurfaceStyle get surfaceStyle; bool get useHarmonyFont; bool get invertTrayIcon;
+ ColorSource get colorSource; bool get pureBlack; TextScale get textScale; bool get useDarkIcon; String get appIconStyle; String get notificationIconStyle;@JsonKey(unknownEnumValue: FluxoraSurfaceStyle.classic) FluxoraSurfaceStyle get surfaceStyle; bool get useHarmonyFont; bool get invertTrayIcon;
 /// Create a copy of ThemeProps
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -2316,20 +2316,20 @@ $ThemePropsCopyWith<ThemeProps> get copyWith => _$ThemePropsCopyWithImpl<ThemePr
 @override
 bool operator ==(Object other) {
   final _this = this as ThemeProps;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ThemeProps&&(identical(other.primaryColor, _this.primaryColor) || other.primaryColor == _this.primaryColor)&&const DeepCollectionEquality().equals(other.primaryColors, _this.primaryColors)&&(identical(other.themeMode, _this.themeMode) || other.themeMode == _this.themeMode)&&(identical(other.schemeVariant, _this.schemeVariant) || other.schemeVariant == _this.schemeVariant)&&(identical(other.colorSource, _this.colorSource) || other.colorSource == _this.colorSource)&&(identical(other.pureBlack, _this.pureBlack) || other.pureBlack == _this.pureBlack)&&(identical(other.textScale, _this.textScale) || other.textScale == _this.textScale)&&(identical(other.useDarkIcon, _this.useDarkIcon) || other.useDarkIcon == _this.useDarkIcon)&&(identical(other.appIconStyle, _this.appIconStyle) || other.appIconStyle == _this.appIconStyle)&&(identical(other.surfaceStyle, _this.surfaceStyle) || other.surfaceStyle == _this.surfaceStyle)&&(identical(other.useHarmonyFont, _this.useHarmonyFont) || other.useHarmonyFont == _this.useHarmonyFont)&&(identical(other.invertTrayIcon, _this.invertTrayIcon) || other.invertTrayIcon == _this.invertTrayIcon));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ThemeProps&&(identical(other.primaryColor, _this.primaryColor) || other.primaryColor == _this.primaryColor)&&const DeepCollectionEquality().equals(other.primaryColors, _this.primaryColors)&&(identical(other.themeMode, _this.themeMode) || other.themeMode == _this.themeMode)&&(identical(other.schemeVariant, _this.schemeVariant) || other.schemeVariant == _this.schemeVariant)&&(identical(other.colorSource, _this.colorSource) || other.colorSource == _this.colorSource)&&(identical(other.pureBlack, _this.pureBlack) || other.pureBlack == _this.pureBlack)&&(identical(other.textScale, _this.textScale) || other.textScale == _this.textScale)&&(identical(other.useDarkIcon, _this.useDarkIcon) || other.useDarkIcon == _this.useDarkIcon)&&(identical(other.appIconStyle, _this.appIconStyle) || other.appIconStyle == _this.appIconStyle)&&(identical(other.notificationIconStyle, _this.notificationIconStyle) || other.notificationIconStyle == _this.notificationIconStyle)&&(identical(other.surfaceStyle, _this.surfaceStyle) || other.surfaceStyle == _this.surfaceStyle)&&(identical(other.useHarmonyFont, _this.useHarmonyFont) || other.useHarmonyFont == _this.useHarmonyFont)&&(identical(other.invertTrayIcon, _this.invertTrayIcon) || other.invertTrayIcon == _this.invertTrayIcon));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as ThemeProps;
-  return Object.hash(runtimeType,_this.primaryColor,const DeepCollectionEquality().hash(_this.primaryColors),_this.themeMode,_this.schemeVariant,_this.colorSource,_this.pureBlack,_this.textScale,_this.useDarkIcon,_this.appIconStyle,_this.surfaceStyle,_this.useHarmonyFont,_this.invertTrayIcon);
+  return Object.hash(runtimeType,_this.primaryColor,const DeepCollectionEquality().hash(_this.primaryColors),_this.themeMode,_this.schemeVariant,_this.colorSource,_this.pureBlack,_this.textScale,_this.useDarkIcon,_this.appIconStyle,_this.notificationIconStyle,_this.surfaceStyle,_this.useHarmonyFont,_this.invertTrayIcon);
 }
 
 @override
 String toString() {
   final _this = this as ThemeProps;
-  return 'ThemeProps(primaryColor: ${_this.primaryColor}, primaryColors: ${_this.primaryColors}, themeMode: ${_this.themeMode}, schemeVariant: ${_this.schemeVariant}, colorSource: ${_this.colorSource}, pureBlack: ${_this.pureBlack}, textScale: ${_this.textScale}, useDarkIcon: ${_this.useDarkIcon}, appIconStyle: ${_this.appIconStyle}, surfaceStyle: ${_this.surfaceStyle}, useHarmonyFont: ${_this.useHarmonyFont}, invertTrayIcon: ${_this.invertTrayIcon})';
+  return 'ThemeProps(primaryColor: ${_this.primaryColor}, primaryColors: ${_this.primaryColors}, themeMode: ${_this.themeMode}, schemeVariant: ${_this.schemeVariant}, colorSource: ${_this.colorSource}, pureBlack: ${_this.pureBlack}, textScale: ${_this.textScale}, useDarkIcon: ${_this.useDarkIcon}, appIconStyle: ${_this.appIconStyle}, notificationIconStyle: ${_this.notificationIconStyle}, surfaceStyle: ${_this.surfaceStyle}, useHarmonyFont: ${_this.useHarmonyFont}, invertTrayIcon: ${_this.invertTrayIcon})';
 }
 
 
@@ -2340,7 +2340,7 @@ abstract mixin class $ThemePropsCopyWith<$Res>  {
   factory $ThemePropsCopyWith(ThemeProps value, $Res Function(ThemeProps) _then) = _$ThemePropsCopyWithImpl;
 @useResult
 $Res call({
- int? primaryColor, List<int> primaryColors, ThemeMode themeMode, DynamicSchemeVariant schemeVariant, ColorSource colorSource, bool pureBlack, TextScale textScale, bool useDarkIcon, String appIconStyle,@JsonKey(unknownEnumValue: FluxoraSurfaceStyle.classic) FluxoraSurfaceStyle surfaceStyle, bool useHarmonyFont, bool invertTrayIcon
+ int? primaryColor, List<int> primaryColors, ThemeMode themeMode, DynamicSchemeVariant schemeVariant, ColorSource colorSource, bool pureBlack, TextScale textScale, bool useDarkIcon, String appIconStyle, String notificationIconStyle,@JsonKey(unknownEnumValue: FluxoraSurfaceStyle.classic) FluxoraSurfaceStyle surfaceStyle, bool useHarmonyFont, bool invertTrayIcon
 });
 
 
@@ -2357,7 +2357,7 @@ class _$ThemePropsCopyWithImpl<$Res>
 
 /// Create a copy of ThemeProps
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? primaryColor = freezed,Object? primaryColors = null,Object? themeMode = null,Object? schemeVariant = null,Object? colorSource = null,Object? pureBlack = null,Object? textScale = null,Object? useDarkIcon = null,Object? appIconStyle = null,Object? surfaceStyle = null,Object? useHarmonyFont = null,Object? invertTrayIcon = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? primaryColor = freezed,Object? primaryColors = null,Object? themeMode = null,Object? schemeVariant = null,Object? colorSource = null,Object? pureBlack = null,Object? textScale = null,Object? useDarkIcon = null,Object? appIconStyle = null,Object? notificationIconStyle = null,Object? surfaceStyle = null,Object? useHarmonyFont = null,Object? invertTrayIcon = null,}) {
   return _then(ThemeProps(
 primaryColor: freezed == primaryColor ? _self.primaryColor : primaryColor // ignore: cast_nullable_to_non_nullable
 as int?,primaryColors: null == primaryColors ? _self.primaryColors : primaryColors // ignore: cast_nullable_to_non_nullable
@@ -2368,6 +2368,7 @@ as ColorSource,pureBlack: null == pureBlack ? _self.pureBlack : pureBlack // ign
 as bool,textScale: null == textScale ? _self.textScale : textScale // ignore: cast_nullable_to_non_nullable
 as TextScale,useDarkIcon: null == useDarkIcon ? _self.useDarkIcon : useDarkIcon // ignore: cast_nullable_to_non_nullable
 as bool,appIconStyle: null == appIconStyle ? _self.appIconStyle : appIconStyle // ignore: cast_nullable_to_non_nullable
+as String,notificationIconStyle: null == notificationIconStyle ? _self.notificationIconStyle : notificationIconStyle // ignore: cast_nullable_to_non_nullable
 as String,surfaceStyle: null == surfaceStyle ? _self.surfaceStyle : surfaceStyle // ignore: cast_nullable_to_non_nullable
 as FluxoraSurfaceStyle,useHarmonyFont: null == useHarmonyFont ? _self.useHarmonyFont : useHarmonyFont // ignore: cast_nullable_to_non_nullable
 as bool,invertTrayIcon: null == invertTrayIcon ? _self.invertTrayIcon : invertTrayIcon // ignore: cast_nullable_to_non_nullable
@@ -2465,10 +2466,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int? primaryColor,  List<int> primaryColors,  ThemeMode themeMode,  DynamicSchemeVariant schemeVariant,  ColorSource colorSource,  bool pureBlack,  TextScale textScale,  bool useDarkIcon,  String appIconStyle, @JsonKey(unknownEnumValue: FluxoraSurfaceStyle.classic)  FluxoraSurfaceStyle surfaceStyle,  bool useHarmonyFont,  bool invertTrayIcon)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int? primaryColor,  List<int> primaryColors,  ThemeMode themeMode,  DynamicSchemeVariant schemeVariant,  ColorSource colorSource,  bool pureBlack,  TextScale textScale,  bool useDarkIcon,  String appIconStyle,  String notificationIconStyle, @JsonKey(unknownEnumValue: FluxoraSurfaceStyle.classic)  FluxoraSurfaceStyle surfaceStyle,  bool useHarmonyFont,  bool invertTrayIcon)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ThemeProps() when $default != null:
-return $default(_that.primaryColor,_that.primaryColors,_that.themeMode,_that.schemeVariant,_that.colorSource,_that.pureBlack,_that.textScale,_that.useDarkIcon,_that.appIconStyle,_that.surfaceStyle,_that.useHarmonyFont,_that.invertTrayIcon);case _:
+return $default(_that.primaryColor,_that.primaryColors,_that.themeMode,_that.schemeVariant,_that.colorSource,_that.pureBlack,_that.textScale,_that.useDarkIcon,_that.appIconStyle,_that.notificationIconStyle,_that.surfaceStyle,_that.useHarmonyFont,_that.invertTrayIcon);case _:
   return orElse();
 
 }
@@ -2486,10 +2487,10 @@ return $default(_that.primaryColor,_that.primaryColors,_that.themeMode,_that.sch
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int? primaryColor,  List<int> primaryColors,  ThemeMode themeMode,  DynamicSchemeVariant schemeVariant,  ColorSource colorSource,  bool pureBlack,  TextScale textScale,  bool useDarkIcon,  String appIconStyle, @JsonKey(unknownEnumValue: FluxoraSurfaceStyle.classic)  FluxoraSurfaceStyle surfaceStyle,  bool useHarmonyFont,  bool invertTrayIcon)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int? primaryColor,  List<int> primaryColors,  ThemeMode themeMode,  DynamicSchemeVariant schemeVariant,  ColorSource colorSource,  bool pureBlack,  TextScale textScale,  bool useDarkIcon,  String appIconStyle,  String notificationIconStyle, @JsonKey(unknownEnumValue: FluxoraSurfaceStyle.classic)  FluxoraSurfaceStyle surfaceStyle,  bool useHarmonyFont,  bool invertTrayIcon)  $default,) {final _that = this;
 switch (_that) {
 case _ThemeProps():
-return $default(_that.primaryColor,_that.primaryColors,_that.themeMode,_that.schemeVariant,_that.colorSource,_that.pureBlack,_that.textScale,_that.useDarkIcon,_that.appIconStyle,_that.surfaceStyle,_that.useHarmonyFont,_that.invertTrayIcon);case _:
+return $default(_that.primaryColor,_that.primaryColors,_that.themeMode,_that.schemeVariant,_that.colorSource,_that.pureBlack,_that.textScale,_that.useDarkIcon,_that.appIconStyle,_that.notificationIconStyle,_that.surfaceStyle,_that.useHarmonyFont,_that.invertTrayIcon);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -2506,10 +2507,10 @@ return $default(_that.primaryColor,_that.primaryColors,_that.themeMode,_that.sch
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int? primaryColor,  List<int> primaryColors,  ThemeMode themeMode,  DynamicSchemeVariant schemeVariant,  ColorSource colorSource,  bool pureBlack,  TextScale textScale,  bool useDarkIcon,  String appIconStyle, @JsonKey(unknownEnumValue: FluxoraSurfaceStyle.classic)  FluxoraSurfaceStyle surfaceStyle,  bool useHarmonyFont,  bool invertTrayIcon)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int? primaryColor,  List<int> primaryColors,  ThemeMode themeMode,  DynamicSchemeVariant schemeVariant,  ColorSource colorSource,  bool pureBlack,  TextScale textScale,  bool useDarkIcon,  String appIconStyle,  String notificationIconStyle, @JsonKey(unknownEnumValue: FluxoraSurfaceStyle.classic)  FluxoraSurfaceStyle surfaceStyle,  bool useHarmonyFont,  bool invertTrayIcon)?  $default,) {final _that = this;
 switch (_that) {
 case _ThemeProps() when $default != null:
-return $default(_that.primaryColor,_that.primaryColors,_that.themeMode,_that.schemeVariant,_that.colorSource,_that.pureBlack,_that.textScale,_that.useDarkIcon,_that.appIconStyle,_that.surfaceStyle,_that.useHarmonyFont,_that.invertTrayIcon);case _:
+return $default(_that.primaryColor,_that.primaryColors,_that.themeMode,_that.schemeVariant,_that.colorSource,_that.pureBlack,_that.textScale,_that.useDarkIcon,_that.appIconStyle,_that.notificationIconStyle,_that.surfaceStyle,_that.useHarmonyFont,_that.invertTrayIcon);case _:
   return null;
 
 }
@@ -2521,7 +2522,7 @@ return $default(_that.primaryColor,_that.primaryColors,_that.themeMode,_that.sch
 @JsonSerializable()
 
 class _ThemeProps implements ThemeProps {
-  const _ThemeProps({this.primaryColor,  List<int> primaryColors = defaultPrimaryColors, this.themeMode = ThemeMode.system, this.schemeVariant = DynamicSchemeVariant.tonalSpot, this.colorSource = ColorSource.fluxora, this.pureBlack = false, this.textScale = const TextScale(), this.useDarkIcon = false, this.appIconStyle = 'official', @JsonKey(unknownEnumValue: FluxoraSurfaceStyle.classic) this.surfaceStyle = FluxoraSurfaceStyle.hybrid, this.useHarmonyFont = false, this.invertTrayIcon = false}): _primaryColors = primaryColors;
+  const _ThemeProps({this.primaryColor,  List<int> primaryColors = defaultPrimaryColors, this.themeMode = ThemeMode.system, this.schemeVariant = DynamicSchemeVariant.tonalSpot, this.colorSource = ColorSource.fluxora, this.pureBlack = false, this.textScale = const TextScale(), this.useDarkIcon = false, this.appIconStyle = 'official', this.notificationIconStyle = 'flow', @JsonKey(unknownEnumValue: FluxoraSurfaceStyle.classic) this.surfaceStyle = FluxoraSurfaceStyle.hybrid, this.useHarmonyFont = false, this.invertTrayIcon = false}): _primaryColors = primaryColors;
   factory _ThemeProps.fromJson(Map<String, dynamic> json) => _$ThemePropsFromJson(json);
 
 @override final  int? primaryColor;
@@ -2544,6 +2545,7 @@ class _ThemeProps implements ThemeProps {
 @override@JsonKey() final  TextScale textScale;
 @override@JsonKey() final  bool useDarkIcon;
 @override@JsonKey() final  String appIconStyle;
+@override@JsonKey() final  String notificationIconStyle;
 @override@JsonKey(unknownEnumValue: FluxoraSurfaceStyle.classic) final  FluxoraSurfaceStyle surfaceStyle;
 @override@JsonKey() final  bool useHarmonyFont;
 @override@JsonKey() final  bool invertTrayIcon;
@@ -2561,18 +2563,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ThemeProps&&(identical(other.primaryColor, primaryColor) || other.primaryColor == primaryColor)&&const DeepCollectionEquality().equals(other.primaryColors, _primaryColors)&&(identical(other.themeMode, themeMode) || other.themeMode == themeMode)&&(identical(other.schemeVariant, schemeVariant) || other.schemeVariant == schemeVariant)&&(identical(other.colorSource, colorSource) || other.colorSource == colorSource)&&(identical(other.pureBlack, pureBlack) || other.pureBlack == pureBlack)&&(identical(other.textScale, textScale) || other.textScale == textScale)&&(identical(other.useDarkIcon, useDarkIcon) || other.useDarkIcon == useDarkIcon)&&(identical(other.appIconStyle, appIconStyle) || other.appIconStyle == appIconStyle)&&(identical(other.surfaceStyle, surfaceStyle) || other.surfaceStyle == surfaceStyle)&&(identical(other.useHarmonyFont, useHarmonyFont) || other.useHarmonyFont == useHarmonyFont)&&(identical(other.invertTrayIcon, invertTrayIcon) || other.invertTrayIcon == invertTrayIcon));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ThemeProps&&(identical(other.primaryColor, primaryColor) || other.primaryColor == primaryColor)&&const DeepCollectionEquality().equals(other.primaryColors, _primaryColors)&&(identical(other.themeMode, themeMode) || other.themeMode == themeMode)&&(identical(other.schemeVariant, schemeVariant) || other.schemeVariant == schemeVariant)&&(identical(other.colorSource, colorSource) || other.colorSource == colorSource)&&(identical(other.pureBlack, pureBlack) || other.pureBlack == pureBlack)&&(identical(other.textScale, textScale) || other.textScale == textScale)&&(identical(other.useDarkIcon, useDarkIcon) || other.useDarkIcon == useDarkIcon)&&(identical(other.appIconStyle, appIconStyle) || other.appIconStyle == appIconStyle)&&(identical(other.notificationIconStyle, notificationIconStyle) || other.notificationIconStyle == notificationIconStyle)&&(identical(other.surfaceStyle, surfaceStyle) || other.surfaceStyle == surfaceStyle)&&(identical(other.useHarmonyFont, useHarmonyFont) || other.useHarmonyFont == useHarmonyFont)&&(identical(other.invertTrayIcon, invertTrayIcon) || other.invertTrayIcon == invertTrayIcon));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,primaryColor,const DeepCollectionEquality().hash(_primaryColors),themeMode,schemeVariant,colorSource,pureBlack,textScale,useDarkIcon,appIconStyle,surfaceStyle,useHarmonyFont,invertTrayIcon);
+    return Object.hash(runtimeType,primaryColor,const DeepCollectionEquality().hash(_primaryColors),themeMode,schemeVariant,colorSource,pureBlack,textScale,useDarkIcon,appIconStyle,notificationIconStyle,surfaceStyle,useHarmonyFont,invertTrayIcon);
 }
 
 @override
 String toString() {
-    return 'ThemeProps(primaryColor: $primaryColor, primaryColors: $primaryColors, themeMode: $themeMode, schemeVariant: $schemeVariant, colorSource: $colorSource, pureBlack: $pureBlack, textScale: $textScale, useDarkIcon: $useDarkIcon, appIconStyle: $appIconStyle, surfaceStyle: $surfaceStyle, useHarmonyFont: $useHarmonyFont, invertTrayIcon: $invertTrayIcon)';
+    return 'ThemeProps(primaryColor: $primaryColor, primaryColors: $primaryColors, themeMode: $themeMode, schemeVariant: $schemeVariant, colorSource: $colorSource, pureBlack: $pureBlack, textScale: $textScale, useDarkIcon: $useDarkIcon, appIconStyle: $appIconStyle, notificationIconStyle: $notificationIconStyle, surfaceStyle: $surfaceStyle, useHarmonyFont: $useHarmonyFont, invertTrayIcon: $invertTrayIcon)';
 }
 
 
@@ -2583,7 +2585,7 @@ abstract mixin class _$ThemePropsCopyWith<$Res> implements $ThemePropsCopyWith<$
   factory _$ThemePropsCopyWith(_ThemeProps value, $Res Function(_ThemeProps) _then) = __$ThemePropsCopyWithImpl;
 @override @useResult
 $Res call({
- int? primaryColor, List<int> primaryColors, ThemeMode themeMode, DynamicSchemeVariant schemeVariant, ColorSource colorSource, bool pureBlack, TextScale textScale, bool useDarkIcon, String appIconStyle,@JsonKey(unknownEnumValue: FluxoraSurfaceStyle.classic) FluxoraSurfaceStyle surfaceStyle, bool useHarmonyFont, bool invertTrayIcon
+ int? primaryColor, List<int> primaryColors, ThemeMode themeMode, DynamicSchemeVariant schemeVariant, ColorSource colorSource, bool pureBlack, TextScale textScale, bool useDarkIcon, String appIconStyle, String notificationIconStyle,@JsonKey(unknownEnumValue: FluxoraSurfaceStyle.classic) FluxoraSurfaceStyle surfaceStyle, bool useHarmonyFont, bool invertTrayIcon
 });
 
 
@@ -2600,7 +2602,7 @@ class __$ThemePropsCopyWithImpl<$Res>
 
 /// Create a copy of ThemeProps
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? primaryColor = freezed,Object? primaryColors = null,Object? themeMode = null,Object? schemeVariant = null,Object? colorSource = null,Object? pureBlack = null,Object? textScale = null,Object? useDarkIcon = null,Object? appIconStyle = null,Object? surfaceStyle = null,Object? useHarmonyFont = null,Object? invertTrayIcon = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? primaryColor = freezed,Object? primaryColors = null,Object? themeMode = null,Object? schemeVariant = null,Object? colorSource = null,Object? pureBlack = null,Object? textScale = null,Object? useDarkIcon = null,Object? appIconStyle = null,Object? notificationIconStyle = null,Object? surfaceStyle = null,Object? useHarmonyFont = null,Object? invertTrayIcon = null,}) {
   return _then(_ThemeProps(
 primaryColor: freezed == primaryColor ? _self.primaryColor : primaryColor // ignore: cast_nullable_to_non_nullable
 as int?,primaryColors: null == primaryColors ? _self._primaryColors : primaryColors // ignore: cast_nullable_to_non_nullable
@@ -2611,6 +2613,7 @@ as ColorSource,pureBlack: null == pureBlack ? _self.pureBlack : pureBlack // ign
 as bool,textScale: null == textScale ? _self.textScale : textScale // ignore: cast_nullable_to_non_nullable
 as TextScale,useDarkIcon: null == useDarkIcon ? _self.useDarkIcon : useDarkIcon // ignore: cast_nullable_to_non_nullable
 as bool,appIconStyle: null == appIconStyle ? _self.appIconStyle : appIconStyle // ignore: cast_nullable_to_non_nullable
+as String,notificationIconStyle: null == notificationIconStyle ? _self.notificationIconStyle : notificationIconStyle // ignore: cast_nullable_to_non_nullable
 as String,surfaceStyle: null == surfaceStyle ? _self.surfaceStyle : surfaceStyle // ignore: cast_nullable_to_non_nullable
 as FluxoraSurfaceStyle,useHarmonyFont: null == useHarmonyFont ? _self.useHarmonyFont : useHarmonyFont // ignore: cast_nullable_to_non_nullable
 as bool,invertTrayIcon: null == invertTrayIcon ? _self.invertTrayIcon : invertTrayIcon // ignore: cast_nullable_to_non_nullable

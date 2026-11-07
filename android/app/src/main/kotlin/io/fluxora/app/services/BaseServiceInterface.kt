@@ -25,7 +25,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
 import android.content.Intent
 
-import android.graphics.BitmapFactory
 import kotlinx.coroutines.launch
 
 interface BaseServiceInterface {
@@ -205,16 +204,12 @@ suspend fun Service.createFluxoraNotificationBuilder(
             PendingIntent.getActivity(this@createFluxoraNotificationBuilder, 0, intent, flags)
         }
 
-        // 跟随当前界面主题，而不是桌面启动图标那个手动开关。
-        val isDark = io.fluxora.app.services.NotificationIconTheme.isDark
-        val largeIconRes = if (isDark) {
-            R.mipmap.ic_launcher
-        } else {
-            R.mipmap.ic_launcher_light
-        }
-
         val largeIconBitmap = runCatching {
-            BitmapFactory.decodeResource(resources, largeIconRes)
+            val drawable = packageManager.getActivityIcon(targetComponent)
+            val bitmap = android.graphics.Bitmap.createBitmap(128, 128, android.graphics.Bitmap.Config.ARGB_8888)
+            drawable.setBounds(0, 0, bitmap.width, bitmap.height)
+            drawable.draw(android.graphics.Canvas(bitmap))
+            bitmap
         }.getOrNull()
 
         val channelId = when {
@@ -225,7 +220,7 @@ suspend fun Service.createFluxoraNotificationBuilder(
         val priority = if (isSuspended || isHighPriority) NotificationCompat.PRIORITY_HIGH else NotificationCompat.PRIORITY_LOW
 
         NotificationCompat.Builder(this@createFluxoraNotificationBuilder, channelId).apply {
-            setSmallIcon(R.drawable.ic_notification_light)
+            setSmallIcon(NotificationIconTheme.smallIcon(this@createFluxoraNotificationBuilder))
             if (largeIconBitmap != null) {
                 setLargeIcon(largeIconBitmap)
             }

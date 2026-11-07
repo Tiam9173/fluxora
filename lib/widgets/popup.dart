@@ -187,15 +187,22 @@ class OverflowAwareLayoutDelegate extends SingleChildLayoutDelegate {
   }
 
   @override
+  BoxConstraints getConstraintsForChild(BoxConstraints constraints) =>
+      BoxConstraints(
+        maxWidth: (constraints.maxWidth - 32).clamp(0, constraints.maxWidth),
+        maxHeight: (constraints.maxHeight - 32).clamp(0, constraints.maxHeight),
+      );
+
+  @override
   Offset getPositionForChild(Size size, Size childSize) {
     final safeOffset = Offset(16, 16);
     double x = (offset.dx - childSize.width).clamp(
       0,
-      size.width - safeOffset.dx - childSize.width,
+      (size.width - safeOffset.dx - childSize.width).clamp(0, size.width),
     );
     double y = (offset.dy).clamp(
       0,
-      size.height - safeOffset.dy - childSize.height,
+      (size.height - safeOffset.dy - childSize.height).clamp(0, size.height),
     );
     return Offset(x, y);
   }
@@ -239,6 +246,7 @@ class _CommonPopupMenuState extends State<CommonPopupMenu> {
   void initState() {
     super.initState();
     _syncNodes();
+    FocusManager.instance.addHighlightModeListener(_highlightChanged);
     // The menu is opened by a pointer or a key; either way the keyboard has to
     // land on the first row the user can actually act on.
     final first = _firstEnabled();
@@ -247,6 +255,10 @@ class _CommonPopupMenuState extends State<CommonPopupMenu> {
         if (mounted) _nodes[first].requestFocus();
       });
     }
+  }
+
+  void _highlightChanged(FocusHighlightMode mode) {
+    if (mounted) setState(() {});
   }
 
   @override
@@ -259,6 +271,7 @@ class _CommonPopupMenuState extends State<CommonPopupMenu> {
 
   @override
   void dispose() {
+    FocusManager.instance.removeHighlightModeListener(_highlightChanged);
     for (final node in _nodes) {
       node.dispose();
     }
@@ -296,6 +309,13 @@ class _CommonPopupMenuState extends State<CommonPopupMenu> {
       final index = ((start + delta * step) % count + count) % count;
       if (widget.items[index].onPressed != null) {
         _nodes[index].requestFocus();
+        final target = _nodes[index].context;
+        if (target != null) {
+          Scrollable.ensureVisible(
+            target,
+            duration: FluxoraMotion.ofContext(context).fast,
+          );
+        }
         return;
       }
     }
@@ -340,7 +360,9 @@ class _CommonPopupMenuState extends State<CommonPopupMenu> {
     final color = disabled
         ? context.colorScheme.onSurface.opacity30
         : context.colorScheme.onSurface;
-    final focused = _focused == index;
+    final focused =
+        _focused == index &&
+        FocusManager.instance.highlightMode == FocusHighlightMode.traditional;
     final scheme = Theme.of(context).colorScheme;
 
     return Focus(
@@ -365,6 +387,7 @@ class _CommonPopupMenuState extends State<CommonPopupMenu> {
           // Always-present border so gaining focus never shifts the row; the
           // same 2 px `primary` ring the segmented control uses.
           decoration: BoxDecoration(
+            borderRadius: FluxoraRadius.smAll,
             border: Border.all(
               color: focused ? scheme.primary : const Color(0x00000000),
               width: 2,
@@ -381,7 +404,7 @@ class _CommonPopupMenuState extends State<CommonPopupMenu> {
               constraints: BoxConstraints(minWidth: widget.minWidth),
               padding: EdgeInsets.only(
                 left: 16,
-                right: 64,
+                right: 20,
                 top: widget.minItemVerticalPadding,
                 bottom: widget.minItemVerticalPadding,
               ),
@@ -420,29 +443,40 @@ class _CommonPopupMenuState extends State<CommonPopupMenu> {
 
   @override
   Widget build(BuildContext context) {
-    return IntrinsicHeight(
-      child: IntrinsicWidth(
-        child: Card(
-          elevation: 12,
-          color: FluxoraMaterial.of(context).enabled
-              ? Colors.transparent
-              : context.colorScheme.surfaceContainer,
-          clipBehavior: Clip.antiAlias,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(FluxoraRadius.md),
-          ),
-          child: GlassSurface(
-            radius: FluxoraRadius.md,
-            floating: true,
-            blur: true,
+    return IntrinsicWidth(
+      child: Card(
+        elevation: 12,
+        color: FluxoraMaterial.of(context).enabled
+            ? Colors.transparent
+            : context.colorScheme.surfaceContainer,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(FluxoraRadius.md),
+        ),
+        child: GlassSurface(
+          radius: FluxoraRadius.md,
+          floating: true,
+          blur: true,
+          child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 for (var index = 0; index < widget.items.length; index++) ...[
+                  if (widget.items[index].section case final section?)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
+                      child: Semantics(
+                        header: true,
+                        child: Text(
+                          section,
+                          style: context.textTheme.labelMedium?.copyWith(
+                            color: context.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ),
                   _item(context, index),
-                  if (widget.items[index] != widget.items.last)
-                    const Divider(height: 0),
                 ],
               ],
             ),

@@ -12,7 +12,7 @@ An open-source, cross-platform Mihomo routing client.
 
 ## Releases and installation
 
-The published stable release is [v1.1.1](https://github.com/Tiam9173/fluxora/releases/tag/v1.1.1). The `dev` branch is preparing **1.1.2-rc.2 pre-release**. A source version does not mean packages have been published. See the [rc2 notes](RELEASE_NOTES_1.1.2-rc.2.md) for changes and limitations; download only the actual attachments on [Releases](https://github.com/Tiam9173/fluxora/releases).
+The published stable release is [v1.1.1](https://github.com/Tiam9173/fluxora/releases/tag/v1.1.1). The **1.1.2-rc.2 pre-release is on hold** while the `dev` branch addresses profile switching, icon and interface feedback. A source version does not mean packages have been published. Version notes and downloads are available on [Releases](https://github.com/Tiam9173/fluxora/releases).
 
 | Platform | Packages | Architectures |
 | --- | --- | --- |
@@ -68,7 +68,7 @@ flutter analyze
 flutter test
 ```
 
-A local source run is not an official signed package. Windows distribution builds also verify Core / Helper asset anchors. Candidate checks and outstanding validation are recorded in [rc2 readiness](RELEASE_READINESS_1.1.2-rc.2.md).
+A local source run is not an official signed package. Windows distribution builds also verify Core / Helper asset anchors.
 
 ## Contributing
 

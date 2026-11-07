@@ -79,9 +79,7 @@ void main() {
                   CommonPopupRoute<void>(
                     barrierLabel: 'menu',
                     offsetNotifier: offset,
-                    builder: (_) => CommonPopupMenu(
-                      items: items ?? menu(),
-                    ),
+                    builder: (_) => CommonPopupMenu(items: items ?? menu()),
                   ),
                 ),
                 child: const Text('open'),
@@ -100,12 +98,40 @@ void main() {
   }
 
   group('focus entry and movement', () {
-    testWidgets('the first enabled row owns the keyboard on open', (
+    testWidgets(
+      'a short window scrolls the menu and keeps keyboard focus visible',
+      (tester) async {
+        tester.view.physicalSize = const Size(400, 240);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        await openMenu(
+          tester,
+          items: List.generate(
+            12,
+            (i) => PopupMenuItemData(label: 'row$i', onPressed: () {}),
+          ),
+        );
+        expect(tester.takeException(), isNull);
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+        await tester.pumpAndSettle();
+        expect(ringOf(tester, 'row11'), primaryOf(tester, 'row11'));
+        expect(
+          tester.getRect(find.text('row11')).bottom,
+          lessThanOrEqualTo(240),
+        );
+      },
+    );
+
+    testWidgets('touch opening hides the ring and keyboard input reveals it', (
       tester,
     ) async {
       await openMenu(tester);
 
       expect(find.text('a'), findsOneWidget);
+      expect(ringOf(tester, 'a'), transparent);
+      await tester.sendKeyEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.pump();
       expect(ringOf(tester, 'a'), primaryOf(tester, 'a'));
       expect(ringOf(tester, 'b'), transparent);
     });
@@ -202,9 +228,7 @@ void main() {
       var fired = <String>[];
       await openMenu(
         tester,
-        items: [
-          PopupMenuItemData(label: 'a', onPressed: () => fired.add('a')),
-        ],
+        items: [PopupMenuItemData(label: 'a', onPressed: () => fired.add('a'))],
       );
 
       await tester.sendKeyEvent(LogicalKeyboardKey.space);
@@ -318,10 +342,7 @@ void main() {
       await openMenu(
         tester,
         items: [
-          PopupMenuItemData(
-            label: 'a',
-            onPressed: () => fired.add('a'),
-          ),
+          PopupMenuItemData(label: 'a', onPressed: () => fired.add('a')),
           const PopupMenuItemData(label: 'b', onPressed: null),
         ],
       );
@@ -341,10 +362,7 @@ void main() {
       expect(find.text('a'), findsOneWidget);
       final opacity = tester
           .widgetList<Opacity>(
-            find.ancestor(
-              of: find.text('a'),
-              matching: find.byType(Opacity),
-            ),
+            find.ancestor(of: find.text('a'), matching: find.byType(Opacity)),
           )
           .first
           .opacity;

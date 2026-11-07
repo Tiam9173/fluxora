@@ -29,12 +29,17 @@ import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/services/system_proxy_readback.dart';
 import 'package:fluxora/views/theme.dart';
+import 'package:fluxora/views/app_icons.dart';
+import 'package:fluxora/views/about.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:fluxora/views/config/config.dart';
 import 'package:fluxora/views/dashboard/widgets/memory_info.dart';
 import 'package:fluxora/views/dashboard/widgets/network_speed.dart';
 import 'package:fluxora/views/dashboard/widgets/traffic_usage.dart';
 import 'package:fluxora/views/dashboard/widgets/start_button.dart';
 import 'package:fluxora/views/tools.dart';
+import 'package:fluxora/views/profiles/profiles.dart';
+import 'package:fluxora/views/proxies/proxies.dart';
 import 'package:fluxora/widgets/widgets.dart';
 
 import '../support/recording_app_controller.dart';
@@ -98,6 +103,19 @@ void main() {
     PathProviderPlatform.instance = _VisualPaths();
     originalCore = clashCore.clashInterface;
     clashCore.clashInterface = _VisualCore();
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(const MethodChannel('app'), (call) async {
+          if (call.method == 'getLauncherIcon') {
+            return {'style': 'official', 'useDarkIcon': false};
+          }
+          return true;
+        });
+    globalState.packageInfo = PackageInfo(
+      appName: 'Fluxora',
+      packageName: 'io.fluxora.app',
+      version: '1.1.2-rc.2',
+      buildNumber: '2026110701',
+    );
     SharedPreferences.setMockInitialValues({});
     await preferences.sharedPreferencesCompleter.future;
     await AppLocalizations.load(const Locale('zh', 'CN'));
@@ -364,9 +382,24 @@ void main() {
         );
         expect(tester.takeException(), isNull);
         await capture(tester, '$screen-settings-${brightness.name}');
+        await tester.ensureVisible(
+          find.byKey(const ValueKey('settings-resources')),
+        );
+        await tester.pumpAndSettle();
+        await capture(tester, '$screen-settings-resources-${brightness.name}');
+        final toolsScroll = find
+            .descendant(
+              of: find.byType(ToolsView),
+              matching: find.byType(Scrollable),
+            )
+            .first;
+        await tester.drag(toolsScroll, const Offset(0, 1800));
+        await tester.pumpAndSettle();
+
         await tester.tap(find.text(appLocalizations.theme).first);
         await tester.pumpAndSettle();
         expect(find.byType(ThemeView), findsOneWidget);
+        await capture(tester, 'theme-$screen-${brightness.name}');
         final reduced = find.byKey(const ValueKey('surface-style-reduced'));
         await tester.ensureVisible(reduced);
         await tester.tap(reduced);
@@ -376,6 +409,18 @@ void main() {
           FluxoraSurfaceStyle.reduced,
         );
         expect(tester.takeException(), isNull);
+        if (size.width < 600) {
+          await tester.ensureVisible(find.byType(AppIconsItem));
+          await tester.tap(find.byType(AppIconsItem));
+          await tester.pumpAndSettle();
+          expect(find.byType(AppIconsView), findsOneWidget);
+          await capture(tester, 'app-icons-${brightness.name}');
+          await tester.ensureVisible(find.byType(NotificationIconsItem));
+          await tester.pumpAndSettle();
+          await capture(tester, 'notification-icons-${brightness.name}');
+          Navigator.of(tester.element(find.byType(AppIconsView))).pop();
+          await tester.pumpAndSettle();
+        }
         final back = find.byIcon(Icons.arrow_back);
         await tester.tap(
           back.evaluate().isNotEmpty
@@ -621,6 +666,19 @@ void main() {
       expect(find.text('日常网络'), findsWidgets);
       expect(tester.takeException(), isNull);
       await capture(tester, 'profiles-populated-${brightness.name}');
+      await tester.tap(find.byIcon(Icons.more_horiz_rounded).first);
+      await tester.pumpAndSettle();
+      expect(find.text(appLocalizations.aggregateManage), findsOneWidget);
+      await capture(tester, 'profile-actions-${brightness.name}');
+      Navigator.of(
+        tester.element(find.byType(PopupMenuItem<String>).first),
+      ).pop();
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('profile-sort')));
+      await tester.pumpAndSettle();
+      expect(find.byType(ReorderableProfilesSheet), findsOneWidget);
+      Navigator.of(tester.element(find.byType(ReorderableProfilesSheet))).pop();
+      await tester.pumpAndSettle();
       await tester.pumpWidget(const SizedBox());
       await tester.pump(const Duration(seconds: 1));
       await show(
@@ -643,6 +701,22 @@ void main() {
       expect(find.text('东京 · 高速线路 01'), findsWidgets);
       expect(tester.takeException(), isNull);
       await capture(tester, 'proxies-populated-${brightness.name}');
+      await tester.tap(find.byTooltip(appLocalizations.more).first);
+      await tester.pumpAndSettle();
+      expect(find.text('节点操作'), findsOneWidget);
+      expect(find.text('路由工具'), findsOneWidget);
+      await capture(tester, 'proxy-actions-${brightness.name}');
+      final beforeHidden = ProviderScope.containerOf(
+        tester.element(find.byType(ProxiesView)),
+      ).read(proxiesStyleSettingProvider).showHiddenItems;
+      await tester.tap(find.text(appLocalizations.showHiddenItems));
+      await tester.pumpAndSettle();
+      expect(
+        ProviderScope.containerOf(
+          tester.element(find.byType(ProxiesView)),
+        ).read(proxiesStyleSettingProvider).showHiddenItems,
+        !beforeHidden,
+      );
       await tester.pumpWidget(const SizedBox());
       await tester.pump(const Duration(seconds: 1));
     });
@@ -668,6 +742,69 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
     });
   }
+
+  for (final brightness in Brightness.values) {
+    testWidgets('About shows the applied artwork $brightness', (tester) async {
+      final container = await show(
+        tester,
+        brightness: brightness,
+        page: PageLabel.tools,
+        reduce: true,
+      );
+      final scroll = find
+          .descendant(
+            of: find.byType(ToolsView),
+            matching: find.byType(Scrollable),
+          )
+          .first;
+      await tester.scrollUntilVisible(
+        find.text(appLocalizations.about),
+        350,
+        scrollable: scroll,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(appLocalizations.about));
+      await tester.pumpAndSettle();
+      expect(find.byType(AboutView), findsOneWidget);
+      container
+          .read(themeSettingProvider.notifier)
+          .updateState(
+            (s) => s.copyWith(
+              appIconStyle: 'sunset',
+              useDarkIcon: brightness == Brightness.dark,
+            ),
+          );
+      await tester.pumpAndSettle();
+      await capture(tester, 'about-${brightness.name}');
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 1));
+    });
+  }
+
+  testWidgets('theme keeps controls reachable at 320px and double text size', (
+    tester,
+  ) async {
+    await show(
+      tester,
+      size: const Size(320, 740),
+      textScale: 2,
+      page: PageLabel.tools,
+      reduce: true,
+    );
+    await tester.ensureVisible(find.text(appLocalizations.theme).first);
+    await tester.tap(find.text(appLocalizations.theme).first);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    await capture(tester, 'theme-narrow-large-text');
+    final dark = find.byKey(const ValueKey('theme-mode-dark'));
+    await tester.ensureVisible(dark);
+    await tester.tap(dark);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 1));
+  });
 
   for (final size in [
     const Size(375, 812),
@@ -943,6 +1080,13 @@ Future<void> capture(WidgetTester tester, String name) async {
       : aurora
       ? 'aurora_refresh'
       : 'ui_refinement';
+  await tester.runAsync(() async {
+    for (final element in tester.elementList(find.byType(Image))) {
+      final image = element.widget as Image;
+      if (image.image is AssetImage) await precacheImage(image.image, element);
+    }
+  });
+  await tester.pump();
   await captureFlutterFrame(
     tester,
     find.byKey(const ValueKey('refinement-capture')),

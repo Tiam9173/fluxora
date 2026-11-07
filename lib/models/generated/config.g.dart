@@ -494,6 +494,7 @@ _ThemeProps _$ThemePropsFromJson(Map<String, dynamic> json) => _ThemeProps(
       : TextScale.fromJson(json['textScale'] as Map<String, dynamic>),
   useDarkIcon: json['useDarkIcon'] as bool? ?? false,
   appIconStyle: json['appIconStyle'] as String? ?? 'official',
+  notificationIconStyle: json['notificationIconStyle'] as String? ?? 'flow',
   surfaceStyle:
       $enumDecodeNullable(
         _$FluxoraSurfaceStyleEnumMap,
@@ -516,6 +517,7 @@ Map<String, dynamic> _$ThemePropsToJson(_ThemeProps instance) =>
       'textScale': instance.textScale,
       'useDarkIcon': instance.useDarkIcon,
       'appIconStyle': instance.appIconStyle,
+      'notificationIconStyle': instance.notificationIconStyle,
       'surfaceStyle': _$FluxoraSurfaceStyleEnumMap[instance.surfaceStyle]!,
       'useHarmonyFont': instance.useHarmonyFont,
       'invertTrayIcon': instance.invertTrayIcon,

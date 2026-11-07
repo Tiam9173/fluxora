@@ -10,6 +10,9 @@ import 'package:fluxora/models/config.dart';
 import 'package:fluxora/providers/config.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/views/app_icons.dart';
+import 'package:fluxora/views/about.dart';
+import 'package:fluxora/l10n/l10n.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -25,6 +28,7 @@ void main() {
   late List<MethodCall> calls;
 
   setUpAll(() async {
+    await AppLocalizations.load(const Locale('en'));
     SharedPreferences.setMockInitialValues({});
     await preferences.sharedPreferencesCompleter.future;
   });
@@ -84,6 +88,143 @@ void main() {
     });
     await tester.pumpAndSettle();
   }
+
+  test(
+    'notification styles round-trip without changing app or page appearance',
+    () {
+      expect(ThemeProps.safeFromJson({}).notificationIconStyle, 'flow');
+      for (final style in BrandIcons.notificationStyles.keys) {
+        final props = const ThemeProps(
+          appIconStyle: 'sunset',
+          useDarkIcon: true,
+          themeMode: ThemeMode.light,
+        ).copyWith(notificationIconStyle: style);
+        final restored = ThemeProps.fromJson(jsonDecode(jsonEncode(props)));
+        expect(restored.notificationIconStyle, style);
+        expect(restored.appIconStyle, 'sunset');
+        expect(restored.themeMode, ThemeMode.light);
+      }
+    },
+  );
+
+  testWidgets('notification selection updates native icon and saved choice', (
+    tester,
+  ) async {
+    System.platformOverride = 'android';
+    final container = await show(tester);
+    final outline = find.byKey(const ValueKey('notification-icon-outline'));
+    await tester.ensureVisible(outline);
+    await tester.runAsync(() async {
+      await tester.tap(outline);
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+    });
+    await tester.pumpAndSettle();
+    expect(
+      container.read(themeSettingProvider).notificationIconStyle,
+      'outline',
+    );
+    expect(
+      calls.where((c) => c.method == 'setNotificationIconStyle').last.arguments,
+      {'style': 'outline'},
+    );
+    expect(container.read(themeSettingProvider).appIconStyle, 'official');
+  });
+
+  testWidgets('leaving the picker during apply still keeps the saved choice', (
+    tester,
+  ) async {
+    System.platformOverride = 'android';
+    final pending = Completer<bool>();
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      if (call.method == 'getLauncherIcon') {
+        return {'style': 'official', 'useDarkIcon': false};
+      }
+      if (call.method == 'setNotificationIconStyle') return pending.future;
+      return true;
+    });
+    final container = await show(tester);
+    final outline = find.byKey(const ValueKey('notification-icon-outline'));
+    await tester.ensureVisible(outline);
+    await tester.tap(outline);
+    await tester.pump();
+    await tester.pumpWidget(const SizedBox());
+    await tester.runAsync(() async {
+      pending.complete(true);
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+    });
+    await tester.pumpAndSettle();
+    expect(
+      container.read(themeSettingProvider).notificationIconStyle,
+      'outline',
+    );
+    expect(
+      jsonDecode(
+        store.getString(configKey)!,
+      )['themeProps']['notificationIconStyle'],
+      'outline',
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a native notification failure keeps the previous choice', (
+    tester,
+  ) async {
+    System.platformOverride = 'android';
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      if (call.method == 'getLauncherIcon') {
+        return {'style': 'official', 'useDarkIcon': false};
+      }
+      if (call.method == 'setNotificationIconStyle') return false;
+      return true;
+    });
+    final container = await show(tester);
+    final plain = find.byKey(const ValueKey('notification-icon-plain'));
+    await tester.ensureVisible(plain);
+    await tester.tap(plain);
+    await tester.pumpAndSettle();
+    expect(container.read(themeSettingProvider).notificationIconStyle, 'flow');
+    expect(
+      find.textContaining('Notification icon update failed'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('About follows the selected app artwork immediately', (
+    tester,
+  ) async {
+    globalState.packageInfo = PackageInfo(
+      appName: 'Fluxora',
+      packageName: 'io.fluxora.app',
+      version: '1.1.2-rc.2',
+      buildNumber: '2026110602',
+    );
+    final container = await show(tester);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(home: Scaffold(body: AboutView())),
+      ),
+    );
+    await tester.pumpAndSettle();
+    for (final dark in [true, false]) {
+      container
+          .read(themeSettingProvider.notifier)
+          .updateState(
+            (s) => s.copyWith(appIconStyle: 'sunset', useDarkIcon: dark),
+          );
+      await tester.pumpAndSettle();
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Image &&
+              widget.image is AssetImage &&
+              (widget.image as AssetImage).assetName ==
+                  BrandIcons.asset('sunset', dark),
+        ),
+        findsOneWidget,
+      );
+    }
+  });
 
   test('old configurations keep their dark flag and default to official', () {
     final old = ThemeProps.safeFromJson({'useDarkIcon': true});

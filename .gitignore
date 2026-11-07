@@ -105,5 +105,6 @@ test_*.py
 # Local UI verification deliveries; retain reproducible brand assets only.
 /design/*
 !/design/brand_icons/
-!/RELEASE_NOTES_1.1.2-rc.2.md
-!/RELEASE_READINESS_1.1.2-rc.2.md
+# Release drafts and execution reports stay local.
+/RELEASE_NOTES_*.md
+/RELEASE_READINESS_*.md

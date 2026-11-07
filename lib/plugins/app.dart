@@ -34,6 +34,12 @@ class App {
     return _instance!;
   }
 
+  Future<bool> setNotificationIconStyle(String style) async =>
+      await methodChannel.invokeMethod<bool>('setNotificationIconStyle', {
+        'style': style,
+      }) ??
+      false;
+
   Future<bool?> moveTaskToBack() async {
     return await methodChannel.invokeMethod<bool>('moveTaskToBack');
   }
