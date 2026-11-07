@@ -105,6 +105,7 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
 
   List<Widget> _buildActions() {
     return [
+      ..._buildProfileControls(),
       IconButton(
         onPressed: _updateProfiles,
         icon: const Icon(Icons.sync_rounded),
@@ -165,44 +166,32 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
     ];
   }
 
-  Widget _buildProfileControls() {
+  List<Widget> _buildProfileControls() {
     final scriptOn = ref.watch(
       scriptStateProvider.select((s) => s.realId != null),
     );
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Wrap(
-        spacing: FluxoraSpacing.sm,
-        children: [
-          TextButton.icon(
-            key: const ValueKey('profile-script'),
-            style: TextButton.styleFrom(
-              minimumSize: const Size(48, 48),
-              foregroundColor: scriptOn
-                  ? context.colorScheme.primary
-                  : context.colorScheme.onSurfaceVariant,
-            ),
-            onPressed: () =>
-                showExtend(context, builder: (_, type) => const ScriptsView()),
-            icon: const Icon(Icons.code_rounded),
-            label: Text(appLocalizations.script),
-          ),
-          TextButton.icon(
-            key: const ValueKey('profile-sort'),
-            style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
-            onPressed: () => showSheet(
-              context: context,
-              builder: (_, type) => ReorderableProfilesSheet(
-                type: type,
-                profiles: globalState.config.profiles,
-              ),
-            ),
-            icon: const Icon(Icons.reorder_rounded),
-            label: Text(appLocalizations.sort),
-          ),
-        ],
+    return [
+      IconButton(
+        key: const ValueKey('profile-script'),
+        tooltip: appLocalizations.script,
+        color: scriptOn ? context.colorScheme.primary : null,
+        icon: const Icon(Icons.code_rounded),
+        onPressed: () =>
+            showExtend(context, builder: (_, type) => const ScriptsView()),
       ),
-    );
+      IconButton(
+        key: const ValueKey('profile-sort'),
+        tooltip: appLocalizations.sort,
+        icon: const Icon(Icons.reorder_rounded),
+        onPressed: () => showSheet(
+          context: context,
+          builder: (_, type) => ReorderableProfilesSheet(
+            type: type,
+            profiles: globalState.config.profiles,
+          ),
+        ),
+      ),
+    ];
   }
 
   Widget _buildFAB() {
@@ -231,10 +220,6 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
       actions: _buildActions(),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: _buildProfileControls(),
-          ),
           Expanded(
             child: Consumer(
               builder: (_, ref, _) {
@@ -309,6 +294,7 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
                               groupValue:
                                   profilesSelectorState.currentProfileId,
                               onChanged: (profileId) {
+                                if (ref.read(isRestartingCoreProvider)) return;
                                 ref
                                         .read(currentProfileIdProvider.notifier)
                                         .value =

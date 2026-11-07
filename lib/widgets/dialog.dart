@@ -51,7 +51,13 @@ class CommonDialog extends ConsumerWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  EmojiText(title),
+                  Expanded(
+                    child: EmojiText(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                   const SizedBox(width: 8),
                   titleTrailing!,
                 ],

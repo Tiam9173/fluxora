@@ -502,6 +502,14 @@ _ThemeProps _$ThemePropsFromJson(Map<String, dynamic> json) => _ThemeProps(
         unknownValue: FluxoraSurfaceStyle.classic,
       ) ??
       FluxoraSurfaceStyle.hybrid,
+  motionStyle:
+      $enumDecodeNullable(
+        _$FluxoraMotionStyleEnumMap,
+        json['motionStyle'],
+        unknownValue: FluxoraMotionStyle.system,
+      ) ??
+      FluxoraMotionStyle.system,
+  glassIntensity: (json['glassIntensity'] as num?)?.toDouble() ?? .55,
   useHarmonyFont: json['useHarmonyFont'] as bool? ?? false,
   invertTrayIcon: json['invertTrayIcon'] as bool? ?? false,
 );
@@ -519,6 +527,8 @@ Map<String, dynamic> _$ThemePropsToJson(_ThemeProps instance) =>
       'appIconStyle': instance.appIconStyle,
       'notificationIconStyle': instance.notificationIconStyle,
       'surfaceStyle': _$FluxoraSurfaceStyleEnumMap[instance.surfaceStyle]!,
+      'motionStyle': _$FluxoraMotionStyleEnumMap[instance.motionStyle]!,
+      'glassIntensity': instance.glassIntensity,
       'useHarmonyFont': instance.useHarmonyFont,
       'invertTrayIcon': instance.invertTrayIcon,
     };
@@ -551,6 +561,12 @@ const _$FluxoraSurfaceStyleEnumMap = {
   FluxoraSurfaceStyle.classic: 'classic',
   FluxoraSurfaceStyle.hybrid: 'hybrid',
   FluxoraSurfaceStyle.reduced: 'reduced',
+};
+
+const _$FluxoraMotionStyleEnumMap = {
+  FluxoraMotionStyle.system: 'system',
+  FluxoraMotionStyle.fluid: 'fluid',
+  FluxoraMotionStyle.off: 'off',
 };
 
 _ScriptProps _$ScriptPropsFromJson(Map<String, dynamic> json) => _ScriptProps(

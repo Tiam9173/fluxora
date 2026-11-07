@@ -38,7 +38,6 @@ String? decodeActionResultData(String raw) {
 }
 
 class ClashLib extends ClashHandlerInterface with AndroidClashInterface {
-
   // 内核跑在同一进程里，没有独立进程可观察；保持原有行为。
   @override
   bool get hasLiveProcess => true;
@@ -48,16 +47,6 @@ class ClashLib extends ClashHandlerInterface with AndroidClashInterface {
   final receiverPort = ReceivePort();
 
   ClashLib._internal() {
-    _initService();
-  }
-
-  @override
-  preload() {
-    return _canSendCompleter.future;
-  }
-
-  Future<void> _initService() async {
-    _registerMainPort(receiverPort.sendPort);
     receiverPort.listen((message) {
       if (message is SendPort) {
         if (_canSendCompleter.isCompleted) {
@@ -70,6 +59,14 @@ class ClashLib extends ClashHandlerInterface with AndroidClashInterface {
         handleResult(ActionResult.fromJson(json.decode(message)));
       }
     });
+    _initService();
+  }
+
+  @override
+  preload() => _canSendCompleter.future;
+
+  Future<void> _initService() async {
+    _registerMainPort(receiverPort.sendPort);
     final alreadyRunning = await service?.isServiceEngineRunning() ?? false;
     if (alreadyRunning) {
       await service?.reconnectIpc();
@@ -82,11 +79,14 @@ class ClashLib extends ClashHandlerInterface with AndroidClashInterface {
 
   Future<void> _waitForIpc() async {
     for (var attempt = 0; attempt < 3; attempt++) {
-      final connected = await _canSendCompleter.future
-          .timeout(const Duration(seconds: 2), onTimeout: () => false);
+      final connected = await _canSendCompleter.future.timeout(
+        const Duration(seconds: 2),
+        onTimeout: () => false,
+      );
       if (connected) return;
-      commonPrint.log('ClashLib: IPC attempt ${attempt + 1}/3 failed, retrying...');
-      _canSendCompleter = Completer();
+      commonPrint.log(
+        'ClashLib: IPC attempt ${attempt + 1}/3 failed, retrying...',
+      );
       await service?.reconnectIpc();
     }
     commonPrint.log('ClashLib: IPC failed after 3 attempts');
@@ -100,6 +100,22 @@ class ClashLib extends ClashHandlerInterface with AndroidClashInterface {
   factory ClashLib() {
     _instance ??= ClashLib._internal();
     return _instance!;
+  }
+
+  /// A closed SendPort silently drops messages; rebind before a profile apply.
+  Future<void> refreshIpc() async {
+    sendPort = null;
+    if (_canSendCompleter.isCompleted) _canSendCompleter = Completer();
+    _registerMainPort(receiverPort.sendPort);
+    if (await service?.isServiceEngineRunning() == true) {
+      await service?.reconnectIpc();
+      await _waitForIpc();
+    } else {
+      await _initService();
+    }
+    if (sendPort == null) {
+      throw StateError('Unable to reconnect to the VPN service');
+    }
   }
 
   @override
@@ -273,14 +289,17 @@ class ClashLibHandler {
     return DateTime.fromMillisecondsSinceEpoch(int.parse(runTimeString));
   }
 
-  Future<Map<String, dynamic>> getConfig(String id, {String? ageSecretKey}) async {
+  Future<Map<String, dynamic>> getConfig(
+    String id, {
+    String? ageSecretKey,
+  }) async {
     final path = await appPath.getProfilePath(id);
-    final params = {
-      'path': path,
-      'age-secret-key': ageSecretKey ?? '',
-    };
+    final params = {'path': path, 'age-secret-key': ageSecretKey ?? ''};
     return using((arena) {
-      final pathChar = json.encode(params).toNativeUtf8(allocator: arena).cast<Char>();
+      final pathChar = json
+          .encode(params)
+          .toNativeUtf8(allocator: arena)
+          .cast<Char>();
       final configRaw = clashFFI.getConfig(pathChar);
       if (configRaw == nullptr) return <String, dynamic>{};
       try {

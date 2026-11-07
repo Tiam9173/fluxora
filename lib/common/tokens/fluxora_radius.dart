@@ -39,10 +39,8 @@ abstract final class FluxoraRadius {
 
   /// Cards, panels, containers.
   ///
-  /// Set to [lg] (16) by the D4.6 decision — the earlier [md] (12) was too tight
-  /// against the existing 20/18 radii used by `CommonCard` and the call sites
-  /// that still pass an explicit radius.
-  static const card = lg;
+  /// Broad surfaces use [xl]; dense controls retain their smaller tokens.
+  static const card = xl;
 
   /// Buttons. Material 3 buttons default to `StadiumBorder` (a pill) and no
   /// button theme overrides that shape, so [full] is the honest alias for the
@@ -116,7 +114,7 @@ abstract final class FluxoraRadius {
   static const xlAll = BorderRadius.all(Radius.circular(xl));
   static const fullAll = BorderRadius.all(Radius.circular(full));
 
-  static const cardAll = lgAll;
+  static const cardAll = xlAll;
   static const buttonAll = fullAll;
   static const dialogAll = xlAll;
   static const sheetAll = BorderRadius.all(Radius.circular(sheet));
@@ -124,9 +122,7 @@ abstract final class FluxoraRadius {
   static const fabAll = BorderRadius.all(Radius.circular(fab));
 
   /// Top-only rounding, used by sheets and anchored panels.
-  static const sheetTop = BorderRadius.vertical(
-    top: Radius.circular(sheet),
-  );
+  static const sheetTop = BorderRadius.vertical(top: Radius.circular(sheet));
 
   /// Vertical rounding used by grouped list blocks.
   static const groupTop = BorderRadius.vertical(top: Radius.circular(card));

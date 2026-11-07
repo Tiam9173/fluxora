@@ -437,6 +437,10 @@ abstract class ThemeProps with _$ThemeProps {
     @JsonKey(unknownEnumValue: FluxoraSurfaceStyle.classic)
     @Default(FluxoraSurfaceStyle.hybrid)
     FluxoraSurfaceStyle surfaceStyle,
+    @JsonKey(unknownEnumValue: FluxoraMotionStyle.system)
+    @Default(FluxoraMotionStyle.system)
+    FluxoraMotionStyle motionStyle,
+    @Default(.55) double glassIntensity,
     @Default(false) bool useHarmonyFont,
     @Default(false) bool invertTrayIcon,
   }) = _ThemeProps;

@@ -179,12 +179,7 @@ class ProxyCard extends StatelessWidget {
       }
 
       if (isUnlock) {
-        appController.updateCurrentSelectedMap(groupName, '');
-        // Unlocking must not leave the group on whatever the core last picked:
-        // a `url-test` group only re-evaluates on its own interval (often
-        // 300 s), so without this the node the user just released stays in
-        // place for minutes. Pick the fastest measured node right away.
-        await appController.selectFastestForGroup(groupName);
+        appController.changeProxyDebounce(groupName, '');
         return;
       }
 
@@ -443,6 +438,34 @@ class _ProxyComputedMarkIcon extends StatelessWidget {
           color: Theme.of(context).colorScheme.onSecondaryContainer,
         ),
       ),
+    );
+  }
+}
+
+class GroupSelectionControl extends ConsumerWidget {
+  const GroupSelectionControl({super.key, required this.group});
+  final Group group;
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!group.type.isComputedSelected) return const SizedBox.shrink();
+    final locked =
+        ref.watch(selectedMapProvider)[group.name]?.isNotEmpty == true;
+    final chinese = Localizations.localeOf(context).languageCode == 'zh';
+    return IconButton(
+      key: ValueKey('group-auto-${group.name}'),
+      tooltip: locked
+          ? (chinese ? '已锁定 · 恢复自动选择' : 'Locked · resume automatic selection')
+          : (chinese ? '自动选择 · 锁定当前节点' : 'Automatic · lock current node'),
+      color: locked
+          ? context.colorScheme.primary
+          : context.colorScheme.onSurfaceVariant,
+      icon: Icon(locked ? Icons.lock_rounded : Icons.autorenew_rounded),
+      onPressed: group.realNow.isEmpty
+          ? null
+          : () => globalState.appController.changeProxyDebounce(
+              group.name,
+              locked ? '' : group.realNow,
+            ),
     );
   }
 }

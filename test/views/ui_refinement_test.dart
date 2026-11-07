@@ -26,6 +26,7 @@ import 'package:fluxora/manager/app_manager.dart';
 import 'package:fluxora/models/models.dart';
 import 'package:fluxora/pages/home.dart';
 import 'package:fluxora/providers/providers.dart';
+import 'package:fluxora/plugins/vpn.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/services/system_proxy_readback.dart';
 import 'package:fluxora/views/theme.dart';
@@ -40,6 +41,8 @@ import 'package:fluxora/views/dashboard/widgets/start_button.dart';
 import 'package:fluxora/views/tools.dart';
 import 'package:fluxora/views/profiles/profiles.dart';
 import 'package:fluxora/views/proxies/proxies.dart';
+import 'package:fluxora/views/proxies/list.dart';
+import 'package:fluxora/views/proxies/notification_switch_card.dart';
 import 'package:fluxora/widgets/widgets.dart';
 
 import '../support/recording_app_controller.dart';
@@ -65,6 +68,14 @@ class _VisualController extends RecordingAppController {
     : super(context, bindingRef);
   final WidgetRef bindingRef;
   Completer<void>? operation;
+  Completer<void>? proxyReply;
+  @override
+  Future<void> changeProxy({
+    required String groupName,
+    required String proxyName,
+  }) =>
+      proxyReply?.future ??
+      super.changeProxy(groupName: groupName, proxyName: proxyName);
   @override
   Future<void> updateStatus(bool isStart) {
     operation = Completer<void>();
@@ -79,6 +90,13 @@ class _VisualController extends RecordingAppController {
 }
 
 class _VisualCore implements ClashHandlerInterface {
+  Completer<Result>? configRead;
+  @override
+  Future<Result> getConfig(String path, {String? ageSecretKey}) {
+    return configRead?.future ??
+        Future.value(Result.success(<String, dynamic>{}));
+  }
+
   @override
   Future<String> getMemory() async => '0';
   @override
@@ -199,9 +217,7 @@ void main() {
         container: container,
         child: Consumer(
           builder: (context, ref, _) {
-            final style = ref.watch(
-              themeSettingProvider.select((s) => s.surfaceStyle),
-            );
+            final appearance = ref.watch(themeSettingProvider);
             return MaterialApp(
               navigatorKey: globalState.navigatorKey,
               builder: (context, child) => MediaQuery(
@@ -220,7 +236,9 @@ void main() {
                   fontFamily: 'HarmonyOS_Sans',
                   colorScheme: ref.watch(genColorSchemeProvider(brightness)),
                 ),
-                style,
+                appearance.surfaceStyle,
+                motionStyle: appearance.motionStyle,
+                glassIntensity: appearance.glassIntensity,
               ),
               locale: const Locale('zh', 'CN'),
               localizationsDelegates: const [
@@ -297,6 +315,303 @@ void main() {
     }
     return container;
   }
+
+  for (final expanded in [false, true]) {
+    testWidgets(
+      'many strategy groups remain reachable above the dock expanded=$expanded',
+      (tester) async {
+        final groups = [
+          for (var i = 0; i < 24; i++)
+            Group(
+              type: i.isEven ? GroupType.URLTest : GroupType.Selector,
+              name: '策略组 $i',
+              now: '节点 $i',
+              all: [Proxy(name: '节点 $i', type: 'VLESS')],
+            ),
+        ];
+        final container = await show(
+          tester,
+          size: const Size(320, 740),
+          textScale: 2,
+          page: PageLabel.proxies,
+          reduce: true,
+          groups: groups,
+        );
+        container
+            .read(proxiesStyleSettingProvider.notifier)
+            .updateState((s) => s.copyWith(type: ProxiesType.list));
+        final profile = container.read(currentProfileProvider)!;
+        container
+            .read(profilesProvider.notifier)
+            .setProfile(
+              profile.copyWith(
+                unfoldSet: expanded ? groups.map((g) => g.name).toSet() : {},
+              ),
+            );
+        await tester.pumpAndSettle();
+        final scrollable = find
+            .descendant(
+              of: find.byType(ProxiesListView),
+              matching: find.byType(Scrollable),
+            )
+            .first;
+        final position = tester.state<ScrollableState>(scrollable).position;
+        position.jumpTo(position.maxScrollExtent);
+        await tester.pumpAndSettle();
+        final last = find.byKey(const ValueKey('header_策略组 23'));
+        expect(last, findsOneWidget);
+        final dockTop = tester.getTopLeft(find.byType(AuroraBottomNavBar)).dy;
+        expect(tester.getBottomRight(last).dy, lessThanOrEqualTo(dockTop));
+        if (expanded) {
+          final node = find.byKey(const ValueKey('策略组 23.节点 23'));
+          expect(tester.getBottomRight(node).dy, lessThanOrEqualTo(dockTop));
+        }
+        expect(tester.takeException(), isNull);
+        await capture(tester, 'groups-last-expanded-$expanded');
+        await tester.tap(find.byKey(const ValueKey('toggle-group-策略组 23')));
+        await tester.pumpAndSettle();
+        expect(container.read(unfoldSetProvider).contains('策略组 23'), !expanded);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  testWidgets(
+    'connection node opens the shared picker and subscriptions without toggling VPN',
+    (tester) async {
+      final container = await show(
+        tester,
+        reduce: true,
+        groups: [
+          Group(
+            type: GroupType.Selector,
+            name: '节点选择',
+            all: const [Proxy(name: '东京 · 高速线路 01', type: 'VLESS')],
+          ),
+        ],
+      );
+      await tester.tap(find.byKey(const ValueKey('connection-node-picker')));
+      await tester.pumpAndSettle();
+      expect(find.byType(SwitchCard), findsOneWidget);
+      expect(
+        (globalState.appController as _VisualController).operation,
+        isNull,
+      );
+      await capture(tester, 'home-node-picker');
+      await tester.tap(find.byKey(const ValueKey('switch-card-profiles')));
+      await tester.pumpAndSettle();
+      expect(container.read(currentPageLabelProvider), PageLabel.profiles);
+      expect(find.byType(SwitchCard), findsNothing);
+      expect(
+        (globalState.appController as _VisualController).operation,
+        isNull,
+      );
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 1));
+    },
+  );
+
+  testWidgets(
+    'custom options opens immediately with retryable failure and no global loading strip',
+    (tester) async {
+      final core = clashCore.clashInterface as _VisualCore;
+      core.configRead = Completer<Result>();
+      addTearDown(() => core.configRead = null);
+      final container = await show(tester, page: PageLabel.proxies);
+      await tester.runAsync(() async {
+        await tester.tap(find.byTooltip(appLocalizations.custom));
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+      });
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump(const Duration(milliseconds: 300));
+      await capture(tester, 'custom-options-before-load');
+      expect(
+        find.text('正在读取配置选项'),
+        findsOneWidget,
+        reason: tester
+            .widgetList<Text>(find.byType(Text))
+            .map((w) => w.data)
+            .join(' | '),
+      );
+      expect(container.read(loadingProvider), isFalse);
+      await capture(tester, 'custom-options-loading');
+      core.configRead!.complete(Result.error('离线测试：读取失败'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('options-retry')), findsOneWidget);
+      await capture(tester, 'custom-options-error');
+      core.configRead = Completer<Result>()
+        ..complete(
+          Result.success(<String, dynamic>{
+            'proxy-groups': [
+              {'name': '测试分组'},
+            ],
+            'rule': [],
+          }),
+        );
+      await tester.tap(find.byKey(const ValueKey('options-retry')));
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 40)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('测试分组'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'a rejected picker selection stays open and preserves the previous node',
+    (tester) async {
+      final container = await show(
+        tester,
+        reduce: true,
+        dashboardWidgets: [DashboardWidget.startButton],
+        groups: [
+          Group(
+            type: GroupType.URLTest,
+            name: '节点选择',
+            now: '东京 · 高速线路 01',
+            all: const [
+              Proxy(name: '东京 · 高速线路 01', type: 'VLESS'),
+              Proxy(name: '新加坡线路', type: 'Trojan'),
+            ],
+          ),
+        ],
+      );
+      final controller = globalState.appController as _VisualController;
+      controller.proxyReply = Completer<void>();
+      await tester.tap(find.byKey(const ValueKey('connection-node-picker')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('新加坡线路'));
+      await tester.pump();
+      expect(
+        tester
+            .widget<IconButton>(
+              find.byKey(const ValueKey('switch-card-profiles')),
+            )
+            .onPressed,
+        isNull,
+      );
+      controller.proxyReply!.completeError(StateError('离线测试：内核拒绝选择'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('内核拒绝选择'), findsOneWidget);
+      expect(container.read(selectedMapProvider)['节点选择'], '东京 · 高速线路 01');
+      expect(find.byType(SwitchCard), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await capture(tester, 'node-picker-error');
+    },
+  );
+
+  testWidgets(
+    'material and motion controls stay independent and persist in the existing settings',
+    (tester) async {
+      final container = await show(tester, page: PageLabel.tools);
+      await tester.tap(find.text(appLocalizations.theme).first);
+      await tester.pumpAndSettle();
+      final sliderFinder = find.byKey(const ValueKey('glass-intensity'));
+      await tester.ensureVisible(sliderFinder);
+      final slider = tester.widget<Slider>(sliderFinder);
+      slider.onChanged!(.9);
+      await tester.pump();
+      expect(container.read(themeSettingProvider).glassIntensity, .55);
+      slider.onChangeEnd!(.9);
+      await tester.pumpAndSettle();
+      expect(container.read(themeSettingProvider).glassIntensity, .9);
+      await tester.ensureVisible(find.byKey(const ValueKey('motion-fluid')));
+      await tester.tap(find.byKey(const ValueKey('motion-fluid')));
+      await tester.pumpAndSettle();
+      expect(
+        container.read(themeSettingProvider).motionStyle,
+        FluxoraMotionStyle.fluid,
+      );
+      await capture(tester, 'custom-material-motion');
+      await tester.tap(find.byKey(const ValueKey('motion-off')));
+      await tester.pumpAndSettle();
+      expect(
+        FluxoraMotion.ofContext(
+          tester.element(find.byType(ThemeView)),
+        ).reduceMotion,
+        isTrue,
+      );
+      expect(
+        container.read(themeSettingProvider).surfaceStyle,
+        FluxoraSurfaceStyle.hybrid,
+      );
+    },
+  );
+
+  testWidgets(
+    'notification subscription action navigates without stopping the service',
+    (tester) async {
+      final container = await show(
+        tester,
+        reduce: true,
+        dashboardWidgets: [DashboardWidget.startButton],
+      );
+      const channel = MethodChannel('vpn');
+      final calls = <String>[];
+      var pending = '';
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async {
+            calls.add(call.method);
+            return switch (call.method) {
+              'isCardOnlyLaunch' => false,
+              'consumePendingNotificationAction' => pending,
+              _ => null,
+            };
+          });
+      addTearDown(
+        () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, null),
+      );
+      final listener = Vpn();
+      await tester.pump();
+      pending = 'profiles';
+      await listener.consumePendingNotificationAction();
+      await tester.pumpAndSettle();
+      expect(container.read(currentPageLabelProvider), PageLabel.profiles);
+      expect(calls, isNot(contains('stop')));
+      expect(calls, isNot(contains('stopVpn')));
+      expect(
+        (globalState.appController as _VisualController).operation,
+        isNull,
+      );
+    },
+  );
+
+  testWidgets('Classic app bar uses the existing scrolled-under surface role', (
+    tester,
+  ) async {
+    final container = await show(tester, page: PageLabel.tools, reduce: true);
+    container
+        .read(themeSettingProvider.notifier)
+        .updateState(
+          (s) => s.copyWith(surfaceStyle: FluxoraSurfaceStyle.classic),
+        );
+    await tester.pumpAndSettle();
+    final bar = find
+        .descendant(of: find.byType(ToolsView), matching: find.byType(AppBar))
+        .first;
+    Color? painted() => tester
+        .widget<Material>(
+          find.descendant(of: bar, matching: find.byType(Material)).first,
+        )
+        .color;
+    final scheme = Theme.of(tester.element(bar)).colorScheme;
+    expect(painted(), scheme.surface);
+    await capture(tester, 'classic-toolbar-rest');
+    final scroll = find
+        .descendant(
+          of: find.byType(ToolsView),
+          matching: find.byType(Scrollable),
+        )
+        .first;
+    await tester.drag(scroll, const Offset(0, -500));
+    await tester.pumpAndSettle();
+    expect(painted(), scheme.surfaceContainer);
+    await capture(tester, 'classic-toolbar-scrolled');
+    expect(tester.takeException(), isNull);
+  });
 
   for (final brightness in Brightness.values) {
     for (final size in [const Size(390, 844), const Size(1280, 900)]) {
@@ -816,7 +1131,6 @@ void main() {
     ) async {
       await show(tester, size: size, empty: true, reduce: true, textScale: 2);
       expect(tester.takeException(), isNull);
-      expect(find.byType(BackdropFilter), findsNothing);
       await capture(tester, 'empty-${size.width.toInt()}');
       await tester.pumpWidget(const SizedBox());
       await tester.pump(const Duration(seconds: 1));

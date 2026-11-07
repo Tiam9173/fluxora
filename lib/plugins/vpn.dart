@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:fluxora/clash/clash.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/models/models.dart';
+import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/views/proxies/common.dart';
 import 'package:fluxora/views/proxies/notification_switch_card.dart';
@@ -38,7 +39,6 @@ class Vpn {
   static final Vpn _instance = Vpn._internal();
   final MethodChannel methodChannel = const MethodChannel('vpn');
 
-
   /// Notification buttons are drawn by Android, so their labels have to be
   /// handed over: string resources follow the system language, not the in-app
   /// one.
@@ -59,14 +59,18 @@ class Vpn {
         await Future.delayed(const Duration(milliseconds: 250));
       }
     }
-    commonPrint.log('setNotificationLabels: gave up, localizations never ready');
+    commonPrint.log(
+      'setNotificationLabels: gave up, localizations never ready',
+    );
   }
 
   Future<void> consumePendingNotificationAction() async {
     // Checked before the navigator: in card-only mode the root is replaced, so
     // there is never a navigator to wait for.
     try {
-      final cardOnly = await methodChannel.invokeMethod<bool>('isCardOnlyLaunch');
+      final cardOnly = await methodChannel.invokeMethod<bool>(
+        'isCardOnlyLaunch',
+      );
       if (cardOnly == true) {
         globalState.cardOnlyMode.value = true;
         return;
@@ -78,13 +82,17 @@ class Vpn {
       if (globalState.navigatorKey.currentContext != null) {
         String? action;
         try {
-          action = await methodChannel
-              .invokeMethod<String>('consumePendingNotificationAction');
+          action = await methodChannel.invokeMethod<String>(
+            'consumePendingNotificationAction',
+          );
         } catch (e) {
           commonPrint.log('consumePendingNotificationAction failed: $e');
         }
         // Re-read after the await: the navigator may have been replaced.
         final context = globalState.navigatorKey.currentContext;
+        if (action == 'profiles' && context != null) {
+          globalState.appController.toPage(PageLabel.profiles);
+        }
         if (action == 'switch' && context != null && _shouldShowSwitchCard()) {
           // ignore: use_build_context_synchronously
           showNotificationSwitchCard(context);
@@ -143,7 +151,8 @@ class Vpn {
         case 'notificationSwitch':
           // A card-only launch replaces the whole tree, so there is no dialog to
           // show: flip the root instead.
-          if (await methodChannel.invokeMethod<bool>('isCardOnlyLaunch') == true) {
+          if (await methodChannel.invokeMethod<bool>('isCardOnlyLaunch') ==
+              true) {
             globalState.cardOnlyMode.value = true;
             break;
           }
@@ -165,6 +174,11 @@ class Vpn {
             // The context was re-read after the retry loop, so it is current.
             // ignore: use_build_context_synchronously
             showNotificationSwitchCard(context);
+          }
+          break;
+        case 'notificationProfiles':
+          if (globalState.navigatorKey.currentContext != null) {
+            globalState.appController.toPage(PageLabel.profiles);
           }
           break;
         case 'notificationReset':
@@ -228,9 +242,7 @@ class Vpn {
   }
 
   Future<List<String>> getLocalGateways() async {
-    return await methodChannel.invokeListMethod<String>(
-          'getLocalGateways',
-        ) ??
+    return await methodChannel.invokeListMethod<String>('getLocalGateways') ??
         const [];
   }
 

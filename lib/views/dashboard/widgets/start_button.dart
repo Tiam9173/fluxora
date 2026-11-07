@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluxora/views/profiles/add_profile.dart';
+import 'package:fluxora/views/proxies/notification_switch_card.dart';
 
 /// How the connection Hero should be presented for the current core state.
 ///
@@ -442,12 +443,31 @@ class _StartButtonState extends ConsumerState<StartButton> {
                           ),
                           const SizedBox(width: FluxoraSpacing.sm),
                           Expanded(
-                            child: EmojiText(
-                              selectedName,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: context.textTheme.bodyMedium?.copyWith(
-                                color: scheme.onSurface,
+                            child: InkWell(
+                              key: const ValueKey('connection-node-picker'),
+                              borderRadius: FluxoraRadius.smAll,
+                              onTap: () => showNotificationSwitchCard(context),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: EmojiText(
+                                        selectedName,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: context.textTheme.bodyMedium
+                                            ?.copyWith(color: scheme.onSurface),
+                                      ),
+                                    ),
+                                    const Icon(
+                                      Icons.expand_more_rounded,
+                                      size: 18,
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),

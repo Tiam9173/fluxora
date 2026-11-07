@@ -119,7 +119,7 @@ void main() {
   }
 
   group('mobile page switch', () {
-    testWidgets('a switch cross-fades: both pages exist mid-transition', (
+    testWidgets('horizontal switching keeps both pages during the transition', (
       tester,
     ) async {
       final c = await pumpHome(tester, mobile: true);
@@ -131,13 +131,13 @@ void main() {
       expect(
         find.text('page-A'),
         findsOneWidget,
-        reason: 'the outgoing page is still fading out',
+        reason: 'the outgoing page is still sliding out',
       );
       expect(find.text('page-B'), findsOneWidget);
       expect(
         tester.hasRunningAnimations,
         isTrue,
-        reason: 'the cross-fade is in flight',
+        reason: 'the horizontal transition is in flight',
       );
 
       await tester.pumpAndSettle();
@@ -145,47 +145,23 @@ void main() {
       expect(find.text('page-B'), findsOneWidget);
     });
 
-    testWidgets('the entering page carries the 4 px Aurora lift', (
-      tester,
-    ) async {
-      // §10.2: an entering element is offset by `enterOffset` and settles to 0.
-      // Read through the widget the transition actually builds, not a constant.
-      final c = await pumpHome(tester, mobile: true);
+    testWidgets(
+      'the entering page travels horizontally without a vertical lift',
+      (tester) async {
+        final c = await pumpHome(tester, mobile: true);
 
-      goTo(c, PageLabel.profiles);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 60));
+        goTo(c, PageLabel.profiles);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 60));
 
-      final slides = tester.widgetList<SlideTransition>(
-        find.ancestor(
-          of: find.text('page-B'),
-          matching: find.byType(SlideTransition),
-        ),
-      );
-      expect(slides, isNotEmpty, reason: 'the page enters with a slide');
+        final incoming = tester.getTopLeft(find.text('page-B'));
+        expect(incoming.dx, greaterThan(0));
+        expect(incoming.dy, tester.getTopLeft(find.text('page-A')).dy);
 
-      final dy = slides.first.position.value.dy;
-      expect(dy, greaterThan(0.0), reason: 'still lifted at 60 ms');
-      expect(
-        dy,
-        lessThanOrEqualTo(4.0),
-        reason: 'never more than the 4 px token',
-      );
-
-      await tester.pumpAndSettle();
-      final settled = tester
-          .widgetList<SlideTransition>(
-            find.ancestor(
-              of: find.text('page-B'),
-              matching: find.byType(SlideTransition),
-            ),
-          )
-          .first
-          .position
-          .value
-          .dy;
-      expect(settled, 0.0);
-    });
+        await tester.pumpAndSettle();
+        expect(tester.getTopLeft(find.text('page-B')).dx, 0);
+      },
+    );
 
     testWidgets('reduced motion shows the new page in the first frame', (
       tester,

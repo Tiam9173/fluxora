@@ -80,7 +80,9 @@ List<Group> computeHideTimeout({
       selectedMap[group.name] ?? '',
     );
     final visible = group.all.where((proxy) {
-      if (proxy.name == selectedName) return true;
+      if (proxy.name == selectedName || proxy.name == selectedMap[group.name]) {
+        return true;
+      }
       final state = resolved.putIfAbsent(
         proxy.name,
         () => _getProxyCardState(

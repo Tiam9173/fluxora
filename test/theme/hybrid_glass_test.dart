@@ -57,6 +57,23 @@ void main() {
     expect(fluxoraMaterialTheme(base, FluxoraSurfaceStyle.classic), same(base));
   });
 
+  test(
+    'motion and glass preferences round trip and invalid strength is bounded',
+    () {
+      for (final motion in FluxoraMotionStyle.values) {
+        final props = ThemeProps(motionStyle: motion, glassIntensity: .8);
+        expect(ThemeProps.fromJson(jsonDecode(jsonEncode(props))), props);
+      }
+      expect(
+        ThemeProps.fromJson({'motionStyle': 'future'}).motionStyle,
+        FluxoraMotionStyle.system,
+      );
+      expect(const FluxoraMaterial(glassIntensity: -2).strength, 0);
+      expect(const FluxoraMaterial(glassIntensity: 4).strength, 1);
+      expect(FluxoraMaterial(glassIntensity: double.nan).strength, .55);
+    },
+  );
+
   test('pure black canvas is preserved', () {
     final base = ThemeData.dark().copyWith(
       colorScheme: ThemeData.dark().colorScheme.copyWith(surface: Colors.black),
@@ -154,6 +171,23 @@ void main() {
     );
   });
 
+  testWidgets('system motion reduction leaves material choice independent', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      const GlassSurface(blur: true, child: Text('material')),
+      media: const MediaQueryData(disableAnimations: true),
+    );
+    expect(find.byType(BackdropFilter), findsOneWidget);
+    expect(
+      FluxoraMotion.ofContext(
+        tester.element(find.text('material')),
+      ).reduceMotion,
+      isTrue,
+    );
+  });
+
   testWidgets('painted glass keeps its dark fill beneath the sheen', (
     tester,
   ) async {
@@ -189,7 +223,6 @@ void main() {
   });
 
   for (final media in [
-    const MediaQueryData(disableAnimations: true),
     const MediaQueryData(highContrast: true),
     const MediaQueryData(accessibleNavigation: true),
   ]) {

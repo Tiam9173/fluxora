@@ -175,14 +175,17 @@ void main() {
   // continuous rotation; §10.5 requires the reduced-motion path to remove the
   // motion entirely rather than speed it up.
   group('Hero entrance honours the motion tokens', () {
-    testWidgets('low-effects material shows the card at rest immediately', (
-      tester,
-    ) async {
-      await pumpHero(tester, reduce: false, lowEffects: true);
-      final entrance = heroEntrance(tester);
-      expect(entrance.opacity, 1.0);
-      expect(entrance.dy, 0.0);
-    });
+    testWidgets(
+      'low-effects material preserves motion unless explicitly reduced',
+      (tester) async {
+        await pumpHero(tester, reduce: false, lowEffects: true);
+        final entrance = heroEntrance(tester);
+        expect(entrance.opacity, 0.0);
+        expect(entrance.dy, FluxoraMotion.enterOffset.dy);
+        await tester.pumpAndSettle();
+        expect(heroEntrance(tester).opacity, 1.0);
+      },
+    );
 
     testWidgets('reduced motion shows the card at rest on the first frame', (
       tester,

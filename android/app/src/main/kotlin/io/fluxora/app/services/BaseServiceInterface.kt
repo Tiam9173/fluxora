@@ -204,14 +204,6 @@ suspend fun Service.createFluxoraNotificationBuilder(
             PendingIntent.getActivity(this@createFluxoraNotificationBuilder, 0, intent, flags)
         }
 
-        val largeIconBitmap = runCatching {
-            val drawable = packageManager.getActivityIcon(targetComponent)
-            val bitmap = android.graphics.Bitmap.createBitmap(128, 128, android.graphics.Bitmap.Config.ARGB_8888)
-            drawable.setBounds(0, 0, bitmap.width, bitmap.height)
-            drawable.draw(android.graphics.Canvas(bitmap))
-            bitmap
-        }.getOrNull()
-
         val channelId = when {
             isSuspended -> GlobalState.NOTIFICATION_CHANNEL_SUSPENDED
             isHighPriority -> GlobalState.NOTIFICATION_CHANNEL_HIGH
@@ -221,9 +213,6 @@ suspend fun Service.createFluxoraNotificationBuilder(
 
         NotificationCompat.Builder(this@createFluxoraNotificationBuilder, channelId).apply {
             setSmallIcon(NotificationIconTheme.smallIcon(this@createFluxoraNotificationBuilder))
-            if (largeIconBitmap != null) {
-                setLargeIcon(largeIconBitmap)
-            }
             setContentTitle(getString(R.string.fluxora))
             setContentIntent(pendingIntent)
             setCategory(NotificationCompat.CATEGORY_SERVICE)

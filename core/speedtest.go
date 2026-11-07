@@ -15,6 +15,10 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/metacubex/mihomo/component/proxydialer"
+	"github.com/metacubex/mihomo/listener/inner"
+	"github.com/metacubex/mihomo/tunnel"
 )
 
 // 测速跑在内核里，走 mihomo 的 dialer——这样测出来的数字是**经过代理**的真实
@@ -298,14 +302,15 @@ type speedCounter struct {
 	halfwaySet   int32
 }
 
-func newSpeedClient() *http.Client {
-	// 内核自己的 dialer 已经处理了出站选择，这里只需要一个够快的 transport。
+func newSpeedClient(outbound string) *http.Client {
 	return &http.Client{
 		Transport: &http.Transport{
-			DialContext: (&net.Dialer{
-				Timeout:   10 * time.Second,
-				KeepAlive: 30 * time.Second,
-			}).DialContext,
+			DialContext: func(ctx context.Context, network, address string) (net.Conn, error) {
+				if outbound != "" {
+					return proxydialer.NewByName(outbound, tunnel.Tunnel).DialContext(ctx, network, address)
+				}
+				return inner.HandleTcp(tunnel.Tunnel, address, "")
+			},
 			TLSClientConfig:     &tls.Config{InsecureSkipVerify: false},
 			MaxIdleConns:        speedTestStreams * 2,
 			MaxIdleConnsPerHost: speedTestStreams * 2,
@@ -344,6 +349,10 @@ func handleSpeedTest(action *Action, result ActionResult) {
 		result.success("busy")
 		return
 	}
+	// Clear the previous result before acknowledging a new run.
+	speedTestMu.Lock()
+	speedTestState = SpeedTestProgress{Phase: speedTestPhaseLat}
+	speedTestMu.Unlock()
 	result.success("started")
 	params := SpeedTestParams{}
 	if raw, ok := action.Data.(string); ok && raw != "" {
@@ -360,7 +369,8 @@ func handleSpeedTest(action *Action, result ActionResult) {
 			speedTestMu.Unlock()
 		}
 
-		client := newSpeedClient()
+		client := newSpeedClient(params.Outbound)
+		defer client.CloseIdleConnections()
 		ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 		defer cancel()
 
@@ -420,12 +430,13 @@ func handleSpeedTest(action *Action, result ActionResult) {
 		if err != nil && up == 0 {
 			// 上传失败不该把整轮结果作废：延迟和下载已经测到了，照样给结论。
 			report(SpeedTestProgress{
-				Phase:      speedTestPhaseDone,
+				Phase:      speedTestPhaseFailed,
 				LatencyMs:  median(latencies),
 				JitterMs:   jitter(latencies),
 				DownMbps:   down,
 				UpMbps:     0,
-				Percent:    100,
+				Percent:    50,
+				Error:      fmt.Sprintf("Upload failed: %v", err),
 				ProxyUsed:  true,
 				ServerName: speedTestName,
 			})

@@ -563,6 +563,8 @@ class ApplicationState extends ConsumerState<Application>
                   ),
                 ),
                 themeProps.surfaceStyle,
+                motionStyle: themeProps.motionStyle,
+                glassIntensity: themeProps.glassIntensity,
               ),
               darkTheme: fluxoraMaterialTheme(
                 ThemeData(
@@ -717,6 +719,8 @@ class ApplicationState extends ConsumerState<Application>
                   ),
                 ),
                 themeProps.surfaceStyle,
+                motionStyle: themeProps.motionStyle,
+                glassIntensity: themeProps.glassIntensity,
               ),
               home: child!,
             );

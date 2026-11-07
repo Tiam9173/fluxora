@@ -97,24 +97,21 @@ void main() {
     );
   }
 
-  /// The page host that wraps the current page, anchored on the page text
-  /// rather than `find.byType` (the nav bar brings its own animated widgets).
-  Duration pageSwitcherDuration(WidgetTester tester) {
-    final host = tester.widget<KeptPageView>(
-      find
-          .ancestor(
-            of: find.text('page-dashboard'),
-            matching: find.byType(KeptPageView),
-          )
-          .first,
-    );
-    return host.duration;
-  }
-
-  testWidgets('reduce motion removes the page cross-fade', (tester) async {
+  testWidgets('reduce motion jumps directly to the selected horizontal page', (
+    tester,
+  ) async {
     await pumpHome(tester, reduce: true);
-
-    expect(pageSwitcherDuration(tester), Duration.zero);
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(HomePage)),
+    );
+    container.read(currentPageLabelProvider.notifier).value =
+        PageLabel.profiles;
+    await tester.pump();
+    final host = tester.widget<PageView>(
+      find.byKey(const ValueKey('main-page-view')),
+    );
+    expect(host.controller!.page, 1);
+    expect(host.scrollDirection, Axis.horizontal);
   });
 
   testWidgets('without reduce motion the transition keeps the token duration', (
@@ -122,9 +119,19 @@ void main() {
   ) async {
     await pumpHome(tester, reduce: false);
 
-    // Pinned to the token, not to a literal: the value is whatever
-    // `FluxoraMotion.base` currently is.
-    expect(pageSwitcherDuration(tester), FluxoraMotion.base);
-    expect(pageSwitcherDuration(tester), isNot(Duration.zero));
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(HomePage)),
+    );
+    container.read(currentPageLabelProvider.notifier).value =
+        PageLabel.profiles;
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 40));
+    final host = tester.widget<PageView>(
+      find.byKey(const ValueKey('main-page-view')),
+    );
+    expect(host.controller!.page, inExclusiveRange(0, 1));
+    await tester.pumpAndSettle();
+    expect(host.controller!.page, 1);
+    expect(host.physics, isA<PageScrollPhysics>());
   });
 }

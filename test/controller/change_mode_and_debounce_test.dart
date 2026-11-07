@@ -40,15 +40,15 @@ void main() {
   const dedicated = '🔗 链式代理';
 
   Group group(String name, String now) => Group(
-        type: GroupType.Selector,
-        name: name,
-        now: now,
-        all: [
-          Proxy(name: oldNode, type: 'vless'),
-          Proxy(name: newNode, type: 'vless'),
-          Proxy(name: dedicated, type: 'selector'),
-        ],
-      );
+    type: GroupType.Selector,
+    name: name,
+    now: now,
+    all: [
+      Proxy(name: oldNode, type: 'vless'),
+      Proxy(name: newNode, type: 'vless'),
+      Proxy(name: dedicated, type: 'selector'),
+    ],
+  );
 
   setUp(() async {
     fake = _FakeClashCore();
@@ -138,6 +138,17 @@ void main() {
 
   // ── changeProxyDebounce ──────────────────────────────────────────────────
 
+  testWidgets('a native error string rejects the optimistic node selection', (
+    tester,
+  ) async {
+    final controller = await pump(tester, selected: {groupName: oldNode});
+    fake.nativeError = true;
+    selectFromCard(controller, groupName, newNode);
+    await tester.pump(const Duration(milliseconds: 120));
+    await tester.pump();
+    expect(selectedMap()[groupName], oldNode);
+  });
+
   testWidgets('debounced select — core rejects, the optimistic write reverts', (
     tester,
   ) async {
@@ -178,24 +189,22 @@ void main() {
     expect(selectedMap()[groupName], newNode);
   });
 
-  // ── url-test groups must not be locked by a tap ──────────────────────────
-
-  testWidgets('a tap on a url-test group switches it without locking it', (
+  testWidgets('a manual url-test selection is explicitly persisted as a lock', (
     tester,
   ) async {
     final controller = await pump(tester, selected: {groupName: oldNode});
     // The group the proxies page would show for 自动选择.
     controller.readBack = () => [
-          Group(
-            type: GroupType.URLTest,
-            name: groupName,
-            now: oldNode,
-            all: [
-              Proxy(name: oldNode, type: 'vless'),
-              Proxy(name: newNode, type: 'vless'),
-            ],
-          ),
-        ];
+      Group(
+        type: GroupType.URLTest,
+        name: groupName,
+        now: oldNode,
+        all: [
+          Proxy(name: oldNode, type: 'vless'),
+          Proxy(name: newNode, type: 'vless'),
+        ],
+      ),
+    ];
     await controller.updateGroups();
     fake.acceptAll = true;
 
@@ -210,25 +219,26 @@ void main() {
     );
     expect(
       selectedMap()[groupName],
-      isNot(newNode),
-      reason: 'persisting the pick would lock the group and stop auto-select',
+      newNode,
+      reason:
+          'native Set is a persistent override, so the UI must expose its lock',
     );
   });
 
   // ── auto-select: jump to the fastest measured node ───────────────────────
 
   Group urlTestGroup(String now) => Group(
-        type: GroupType.URLTest,
-        name: groupName,
-        now: now,
-        all: [
-          Proxy(name: oldNode, type: 'vless'),
-          Proxy(name: newNode, type: 'vless'),
-          Proxy(name: 'Slow', type: 'vless'),
-        ],
-      );
+    type: GroupType.URLTest,
+    name: groupName,
+    now: now,
+    all: [
+      Proxy(name: oldNode, type: 'vless'),
+      Proxy(name: newNode, type: 'vless'),
+      Proxy(name: 'Slow', type: 'vless'),
+    ],
+  );
 
-  testWidgets('an unlocked url-test group jumps to the fastest node', (
+  testWidgets('an unlocked url-test group lets the native health policy select', (
     tester,
   ) async {
     final controller = await pump(tester);
@@ -245,8 +255,9 @@ void main() {
 
     expect(
       fake.changes,
-      contains((groupName, newNode)),
-      reason: 'the core only re-tests on its interval; we already know the winner',
+      contains((groupName, '')),
+      reason:
+          'clearing ForceSet resumes native health/tolerance instead of relocking',
     );
   });
 
@@ -304,6 +315,7 @@ void main() {
 /// Core double: only the methods these paths reach are real.
 class _FakeClashCore implements ClashHandlerInterface {
   bool acceptAll = true;
+  bool nativeError = false;
   final Set<String> reject = <String>{};
   final List<String> changeProxyCalls = <String>[];
   final List<(String, String)> changes = <(String, String)>[];
@@ -313,6 +325,7 @@ class _FakeClashCore implements ClashHandlerInterface {
     final name = changeProxyParams.groupName;
     changeProxyCalls.add(name);
     changes.add((name, changeProxyParams.proxyName));
+    if (nativeError) return 'proxy not exist';
     if (!acceptAll || reject.contains(name)) {
       throw StateError('core rejected $name');
     }
@@ -349,7 +362,9 @@ class _TestController extends AppController {
   List<Group> Function() readBack = () => const [];
 
   @override
-  Future<void> updateGroups({List<ExternalProvider>? preloadedProviders}) async {
+  Future<void> updateGroups({
+    List<ExternalProvider>? preloadedProviders,
+  }) async {
     ref.read(groupsProvider.notifier).value = readBack();
   }
 }

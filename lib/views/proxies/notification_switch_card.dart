@@ -6,6 +6,7 @@ import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/models/chain_proxy.dart';
 import 'package:fluxora/views/proxies/common.dart';
+import 'card.dart';
 import 'package:fluxora/widgets/widgets.dart';
 
 /// Compact "switch" card: the proxy page in miniature.
@@ -15,7 +16,14 @@ import 'package:fluxora/widgets/widgets.dart';
 /// reads, and the delay test is the same `delayTest` call, so a number shown
 /// here is the number shown there.
 void showNotificationSwitchCard(BuildContext context) {
-  globalState.showCommonDialog(child: const SwitchCard());
+  globalState.showCommonDialog(
+    child: SwitchCard(
+      onOpenProfiles: () {
+        globalState.navigatorKey.currentState?.pop();
+        globalState.appController.toPage(PageLabel.profiles);
+      },
+    ),
+  );
 }
 
 /// A row above the group list for values that are not nodes: following the main
@@ -41,6 +49,7 @@ class SwitchCard extends ConsumerStatefulWidget {
     this.excludeNames = const {},
     this.title,
     this.specialOptions = const [],
+    this.onOpenProfiles,
   });
 
   /// Called once a node has been picked, so the host can dismiss itself.
@@ -61,6 +70,7 @@ class SwitchCard extends ConsumerStatefulWidget {
 
   /// Rows shown above the subscription/group list.
   final List<SwitchCardSpecialOption> specialOptions;
+  final VoidCallback? onOpenProfiles;
 
   @override
   ConsumerState<SwitchCard> createState() => _SwitchCardState();
@@ -70,6 +80,8 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
   String? _groupName;
   bool _showProfiles = false;
   bool _testing = false;
+  bool _selecting = false;
+  String? _selectionError;
 
   @override
   Widget build(BuildContext context) {
@@ -95,30 +107,43 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
         (visibleGroups.isEmpty ? null : visibleGroups.first);
 
     return CommonDialog(
+      maxWidth: 440,
       title: widget.title ?? appLocalizations.switchProxy,
-      titleTrailing: IconButton(
-        visualDensity: VisualDensity.compact,
-        onPressed: currentGroup == null || _testing
-            ? null
-            : () async {
-                setState(() => _testing = true);
-                try {
-                  await delayTest(
-                    currentGroup.all,
-                    testUrl: currentGroup.testUrl ?? defaultTestUrl,
-                    groupName: currentGroup.name,
-                  );
-                } finally {
-                  if (mounted) setState(() => _testing = false);
-                }
-              },
-        icon: _testing
-            ? const SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : const Icon(Icons.refresh_rounded, size: 20),
+      titleTrailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (widget.onOpenProfiles != null && widget.onSelect == null)
+            IconButton(
+              key: const ValueKey('switch-card-profiles'),
+              tooltip: appLocalizations.profiles,
+              onPressed: _selecting ? null : widget.onOpenProfiles,
+              icon: const Icon(Icons.folder_open_outlined),
+            ),
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            onPressed: currentGroup == null || _testing || _selecting
+                ? null
+                : () async {
+                    setState(() => _testing = true);
+                    try {
+                      await delayTest(
+                        currentGroup.all,
+                        testUrl: currentGroup.testUrl ?? defaultTestUrl,
+                        groupName: currentGroup.name,
+                      );
+                    } finally {
+                      if (mounted) setState(() => _testing = false);
+                    }
+                  },
+            icon: _testing || _selecting
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.refresh_rounded, size: 20),
+          ),
+        ],
       ),
       actions: [
         TextButton(
@@ -262,6 +287,30 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
                 ],
               ),
             ),
+          if (currentGroup != null &&
+              currentGroup.type.isComputedSelected &&
+              widget.onSelect == null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Row(
+                children: [
+                  GroupSelectionControl(group: currentGroup),
+                  Expanded(
+                    child: Text(
+                      selectedMap[currentGroup.name]?.isNotEmpty == true
+                          ? (Localizations.localeOf(context).languageCode ==
+                                    'zh'
+                                ? '手动锁定 · 点击恢复自动'
+                                : 'Manual lock · resume automatic')
+                          : (currentGroup.type == GroupType.Fallback
+                                ? 'Fallback'
+                                : 'URL test'),
+                      style: context.textTheme.bodySmall,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           Divider(height: 1, color: colorScheme.outlineVariant),
           // Level 2 — groups of the current subscription.
           SizedBox(
@@ -309,6 +358,14 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
             ),
           ),
           Divider(height: 1, color: colorScheme.outlineVariant),
+          if (_selectionError != null)
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Text(
+                _selectionError!,
+                style: TextStyle(color: colorScheme.error),
+              ),
+            ),
           // Level 3 — nodes.
           Flexible(
             child: currentGroup == null
@@ -346,12 +403,11 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
                               selectedMap[currentGroup.name] == proxy.name ||
                               (selectedMap[currentGroup.name] == null &&
                                   currentGroup.now == proxy.name);
-                          // url-test / fallback / relay pick their node themselves,
-                          // so tapping one would be undone by the core a moment
-                          // later. Shown, but not selectable.
+                          // Computed groups accept explicit locks; Relay/LoadBalance do not.
                           final selectable =
-                              widget.onSelect != null ||
-                              !currentGroup.type.isComputedSelected;
+                              currentGroup.type == GroupType.Selector ||
+                              currentGroup.type.isComputedSelected ||
+                              widget.onSelect != null;
                           // Resolve the same way delayTest does: it stores results
                           // under getRealTestUrl(...), so looking them up by the
                           // raw group URL never matched and every row stayed blank.
@@ -361,26 +417,51 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
                               );
                           final delay = delayMap[delayUrl]?[proxy.name];
                           return InkWell(
-                            onTap: selectable
+                            onTap: selectable && !_selecting
                                 ? () async {
-                                    final handler = widget.onSelect;
-                                    if (handler != null) {
-                                      handler(proxy.name, currentGroup.name);
-                                    } else {
-                                      // 必须等切换真正发出去再关卡片：卡片模式关掉
-                                      // 就 finishAndRemoveTask，进程可能随之结束，
-                                      // 没发完的请求会连同引擎一起消失 —— 表现就是
-                                      // "点了节点但没切换"。
-                                      // 用非防抖的版本：防抖会延后执行，而卡片关掉
-                                      // 后进程可能就没了，延后的那次调用永远不会发生。
-                                      await globalState.appController
-                                          .changeProxy(
-                                            groupName: currentGroup.name,
-                                            proxyName: proxy.name,
-                                          );
+                                    final profileId = ref.read(
+                                      currentProfileIdProvider,
+                                    );
+                                    setState(() {
+                                      _selecting = true;
+                                      _selectionError = null;
+                                    });
+                                    try {
+                                      final handler = widget.onSelect;
+                                      if (handler != null) {
+                                        handler(proxy.name, currentGroup.name);
+                                      } else {
+                                        await globalState.appController
+                                            .changeProxy(
+                                              groupName: currentGroup.name,
+                                              proxyName: proxy.name,
+                                            );
+                                        if (globalState
+                                                .config
+                                                .currentProfileId ==
+                                            profileId) {
+                                          globalState.appController
+                                              .updateCurrentSelectedMap(
+                                                currentGroup.name,
+                                                proxy.name,
+                                              );
+                                          globalState.appController
+                                              .updateGroupsDebounce();
+                                        }
+                                      }
+                                      if (mounted) widget.onFinished?.call();
+                                    } catch (error) {
+                                      if (mounted) {
+                                        setState(
+                                          () => _selectionError = error
+                                              .toString(),
+                                        );
+                                      }
+                                    } finally {
+                                      if (mounted) {
+                                        setState(() => _selecting = false);
+                                      }
                                     }
-                                    setState(() {});
-                                    widget.onFinished?.call();
                                   }
                                 : null,
                             child: Padding(

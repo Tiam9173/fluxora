@@ -2,8 +2,32 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/widgets/widgets.dart';
+import 'package:fluxora/enum/enum.dart';
 
 void main() {
+  testWidgets(
+    'every configured delay animation runs with low-effects material',
+    (tester) async {
+      for (final type in DelayAnimationType.values) {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: ThemeData(
+              extensions: const [
+                FluxoraMaterial(style: FluxoraSurfaceStyle.reduced),
+              ],
+            ),
+            home: DelayAnimation(type: type, size: 24, color: Colors.indigo),
+          ),
+        );
+        await tester.pump(const Duration(milliseconds: 50));
+        expect(find.byIcon(Icons.hourglass_top_rounded), findsNothing);
+        if (type != DelayAnimationType.none) {
+          expect(tester.hasRunningAnimations, isTrue, reason: type.name);
+        }
+        await tester.pumpWidget(const SizedBox());
+      }
+    },
+  );
   Future<void> chart(
     WidgetTester tester,
     List<Point> points, {
@@ -131,13 +155,16 @@ void main() {
   );
 
   testWidgets(
-    'low-effects material suppresses shared transitions and delay loops',
+    'explicit motion off suppresses transitions independently of material',
     (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: ThemeData(
             extensions: const [
-              FluxoraMaterial(style: FluxoraSurfaceStyle.reduced),
+              FluxoraMaterial(
+                style: FluxoraSurfaceStyle.reduced,
+                motionStyle: FluxoraMotionStyle.off,
+              ),
             ],
           ),
           home: Builder(

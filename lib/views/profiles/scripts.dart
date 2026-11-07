@@ -22,10 +22,6 @@ import 'package:fluxora/widgets/text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-bool _isExtractingCustomOptions = false;
-const Duration _kMinLoadingDuration = Duration(seconds: 1);
-const Duration _kCachedMinLoadingDuration = Duration(milliseconds: 500);
-
 (Map<String, bool>, Map<String, String>) _processScriptData(
   Map<String, dynamic> data,
   Script script,
@@ -63,46 +59,97 @@ Future<void> showScriptCustomOptions(
   WidgetRef ref, {
   required Script script,
 }) async {
-  if (_isExtractingCustomOptions) return;
-  _isExtractingCustomOptions = true;
-  try {
-    await globalState.appController.safeRun(
-      silence: false,
-      needLoading: true,
-      () async {
-        final stopwatch = Stopwatch()..start();
+  await showExtend(
+    context,
+    builder: (_, type) => _OptionsLoader(
+      type: type,
+      load: () async {
         final content = await script.readContent();
-        final cached = JavaScriptRuntimeManager.getCachedOptions(content);
-        final data = cached ??
+        final data =
+            JavaScriptRuntimeManager.getCachedOptions(content) ??
             await JavaScriptRuntimeManager.extractScriptOptions(content);
         final (options, icons) = _processScriptData(data, script);
+        return _ScriptCustomOptionsSheet(
+          type: type,
+          script: script,
+          initialOptions: options,
+          icons: icons,
+        );
+      },
+    ),
+  );
+}
 
-        final targetDuration = cached != null
-            ? _kCachedMinLoadingDuration
-            : _kMinLoadingDuration;
-        final remaining =
-            targetDuration.inMilliseconds - stopwatch.elapsedMilliseconds;
-        if (remaining > 0) {
-          await Future.delayed(Duration(milliseconds: remaining));
-        }
+class _OptionsLoader extends StatefulWidget {
+  const _OptionsLoader({required this.type, required this.load});
+  final SheetType type;
+  final Future<Widget> Function() load;
+  @override
+  State<_OptionsLoader> createState() => _OptionsLoaderState();
+}
 
-        if (!context.mounted) return;
+class _OptionsLoaderState extends State<_OptionsLoader> {
+  late Future<Widget> _future;
+  @override
+  void initState() {
+    super.initState();
+    _future = widget.load().timeout(const Duration(seconds: 8));
+  }
 
-        showExtend(
-          context,
-          builder: (_, type) {
-            return _ScriptCustomOptionsSheet(
-              type: type,
-              script: script,
-              initialOptions: options,
-              icons: icons,
-            );
-          },
+  @override
+  Widget build(BuildContext context) {
+    final chinese = Localizations.localeOf(context).languageCode == 'zh';
+    return FutureBuilder<Widget>(
+      future: _future,
+      builder: (context, snapshot) {
+        if (snapshot.hasData) return snapshot.data!;
+        return AdaptiveSheetScaffold(
+          type: widget.type,
+          title: appLocalizations.custom,
+          body: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (!snapshot.hasError)
+                    const CircularProgressIndicator()
+                  else
+                    const Icon(Icons.error_outline_rounded, size: 32),
+                  const SizedBox(height: 16),
+                  Text(
+                    snapshot.hasError
+                        ? (chinese ? '读取选项失败' : 'Unable to load options')
+                        : (chinese
+                              ? '正在读取配置选项'
+                              : 'Loading configuration options'),
+                  ),
+                  if (snapshot.hasError) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      snapshot.error.toString(),
+                      textAlign: TextAlign.center,
+                      style: context.textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 16),
+                    OutlinedButton.icon(
+                      key: const ValueKey('options-retry'),
+                      onPressed: () => setState(() {
+                        _future = widget.load().timeout(
+                          const Duration(seconds: 8),
+                        );
+                      }),
+                      icon: const Icon(Icons.refresh_rounded),
+                      label: Text(appLocalizations.retry),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
         );
       },
     );
-  } finally {
-    _isExtractingCustomOptions = false;
   }
 }
 
@@ -141,13 +188,10 @@ class _ScriptsViewState extends ConsumerState<ScriptsView> {
   }
 
   Future<void> _handleSyncScript(String id) async {
-    await globalState.appController.safeRun(
-      silence: false,
-      () async {
-        await ref.read(scriptStateProvider.notifier).syncScript(id);
-        globalState.showNotifier(appLocalizations.success);
-      },
-    );
+    await globalState.appController.safeRun(silence: false, () async {
+      await ref.read(scriptStateProvider.notifier).syncScript(id);
+      globalState.showNotifier(appLocalizations.success);
+    });
   }
 
   Future<void> _handleCustomOptions(Script script) async {
@@ -222,9 +266,13 @@ class _ScriptsViewState extends ConsumerState<ScriptsView> {
                       value: isSelected,
                       onChanged: (value) {
                         if (value) {
-                          ref.read(scriptStateProvider.notifier).setId(script.id);
+                          ref
+                              .read(scriptStateProvider.notifier)
+                              .setId(script.id);
                         } else if (isSelected) {
-                          ref.read(scriptStateProvider.notifier).setId(script.id);
+                          ref
+                              .read(scriptStateProvider.notifier)
+                              .setId(script.id);
                         }
                       },
                     ),
@@ -347,7 +395,13 @@ class _ScriptsViewState extends ConsumerState<ScriptsView> {
       message: TextSpan(text: appLocalizations.saveChanges),
     );
     if (res == true && mounted) {
-      _handleEditorSave(context, title, content, script: script, url: script?.url);
+      _handleEditorSave(
+        context,
+        title,
+        content,
+        script: script,
+        url: script?.url,
+      );
     } else {
       return true;
     }
@@ -386,7 +440,13 @@ class _ScriptsViewState extends ConsumerState<ScriptsView> {
           final scriptToSave = script != null
               ? script.copyWith(url: importedUrl)
               : null;
-          _handleEditorSave(context, title, content, script: scriptToSave, url: importedUrl);
+          _handleEditorSave(
+            context,
+            title,
+            content,
+            script: scriptToSave,
+            url: importedUrl,
+          );
         },
         onPop: (context, title, content) {
           return _handleEditorPop(context, title, content, raw, script: script);
@@ -498,9 +558,7 @@ class _ScriptsViewState extends ConsumerState<ScriptsView> {
 class _ScriptSettingsSheet extends ConsumerWidget {
   final SheetType type;
 
-  const _ScriptSettingsSheet({
-    required this.type,
-  });
+  const _ScriptSettingsSheet({required this.type});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -521,17 +579,24 @@ class _ScriptSettingsSheet extends ConsumerWidget {
                   child: CommonCard(
                     type: CommonCardType.filled,
                     child: ListTile(
-                      contentPadding: const EdgeInsets.only(left: 16, right: 16),
+                      contentPadding: const EdgeInsets.only(
+                        left: 16,
+                        right: 16,
+                      ),
                       title: EmojiText(profile.label ?? profile.id),
                       trailing: Switch(
                         value: profile.useScriptOverride,
                         onChanged: (value) async {
-                          ref.read(profilesProvider.notifier).updateProfile(
-                            profile.id,
-                            (p) => p.copyWith(useScriptOverride: value),
-                          );
+                          ref
+                              .read(profilesProvider.notifier)
+                              .updateProfile(
+                                profile.id,
+                                (p) => p.copyWith(useScriptOverride: value),
+                              );
                           if (isCurrentProfile) {
-                            await globalState.appController.applyProfile(silence: true);
+                            await globalState.appController.applyProfile(
+                              silence: true,
+                            );
                           }
                         },
                       ),
@@ -631,13 +696,11 @@ class __ScriptCustomOptionsSheetState
     _dirty = false;
     if (mounted) setState(() => _isSaving = true);
     try {
-      final applyFuture = ref.read(scriptStateProvider).currentId == widget.script.id
+      final applyFuture =
+          ref.read(scriptStateProvider).currentId == widget.script.id
           ? globalState.appController.applyProfile(silence: true)
           : Future.value();
-      await Future.wait([
-        applyFuture,
-        Future.delayed(_kMinLoadingDuration),
-      ]);
+      await Future.wait([applyFuture]);
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);
@@ -665,8 +728,7 @@ class __ScriptCustomOptionsSheetState
             child: Text(appLocalizations.cancel),
           ),
           FilledButton(
-            onPressed: () =>
-                globalState.navigatorKey.currentState?.pop(true),
+            onPressed: () => globalState.navigatorKey.currentState?.pop(true),
             child: Text(appLocalizations.save),
           ),
         ],
@@ -719,7 +781,10 @@ class __ScriptCustomOptionsSheetState
                       )
                     : RepaintBoundary(
                         child: ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 16,
+                          ),
                           itemCount: keys.length,
                           itemBuilder: (_, index) {
                             final key = keys[index];
@@ -731,10 +796,15 @@ class __ScriptCustomOptionsSheetState
                                 child: CommonCard(
                                   type: CommonCardType.filled,
                                   child: ListTile(
-                                    contentPadding:
-                                        const EdgeInsets.only(left: 16, right: 16),
+                                    contentPadding: const EdgeInsets.only(
+                                      left: 16,
+                                      right: 16,
+                                    ),
                                     leading: _isValidIconUrl(iconUrl)
-                                        ? CommonTargetIcon(src: iconUrl!, size: 24)
+                                        ? CommonTargetIcon(
+                                            src: iconUrl!,
+                                            size: 24,
+                                          )
                                         : const Icon(Icons.alt_route),
                                     title: Text(key),
                                     trailing: Switch(
@@ -749,7 +819,7 @@ class __ScriptCustomOptionsSheetState
                             );
                           },
                         ),
-                    ),
+                      ),
               ),
             ],
           ),
@@ -764,53 +834,38 @@ Future<void> showGroupSwitchOptions(
   WidgetRef ref, {
   required String profileId,
 }) async {
-  await globalState.appController.safeRun(
-    silence: false,
-    needLoading: true,
-    () async {
-      final stopwatch = Stopwatch()..start();
-      final rawConfig = await globalState.getProfileConfig(profileId);
-      final rules = rawConfig['rules'] as List? ?? [];
-      final proxyGroups = rawConfig['proxy-groups'] as List? ?? [];
-      final mode = ref.read(patchClashConfigProvider).mode;
-      String? matchTarget;
-      for (final rule in rules) {
-        if (rule is String) {
+  final mode = ref.read(patchClashConfigProvider).mode;
+  await showExtend(
+    context,
+    builder: (_, type) => _OptionsLoader(
+      type: type,
+      load: () async {
+        final rawConfig = await globalState.getProfileConfig(profileId);
+        final rules = rawConfig['rules'] as List? ?? [];
+        final proxyGroups = rawConfig['proxy-groups'] as List? ?? [];
+        String? matchTarget;
+        for (final rule in rules) {
+          if (rule is! String) continue;
           final parsed = ParsedRule.parseString(rule);
           if (parsed.ruleAction == RuleAction.MATCH &&
-              parsed.ruleTarget != null &&
-              parsed.ruleTarget!.isNotEmpty) {
+              parsed.ruleTarget?.isNotEmpty == true) {
             matchTarget = parsed.ruleTarget;
             break;
           }
         }
-      }
-
-      final remaining =
-          _kMinLoadingDuration.inMilliseconds -
-          stopwatch.elapsedMilliseconds;
-      if (remaining > 0) {
-        await Future.delayed(Duration(milliseconds: remaining));
-      }
-
-      if (!context.mounted) return;
-
-      showExtend(
-        context,
-        builder: (_, type) {
-          return _GroupSwitchOptionsSheet(
-            type: type,
-            profileId: profileId,
-            matchTarget: matchTarget,
-            mode: mode,
-            groupNames: [
-              for (final g in proxyGroups)
-                if (g is Map && g['name'] is String) g['name'] as String,
-            ],
-          );
-        },
-      );
-    },
+        return _GroupSwitchOptionsSheet(
+          type: type,
+          profileId: profileId,
+          matchTarget: matchTarget,
+          mode: mode,
+          groupNames: [
+            for (final group in proxyGroups)
+              if (group is Map && group['name'] is String)
+                group['name'] as String,
+          ],
+        );
+      },
+    ),
   );
 }
 
@@ -845,14 +900,13 @@ class _GroupSwitchOptionsSheetState
   @override
   void initState() {
     super.initState();
-    final profile = ref.read(currentProfileProvider);
+    final profile = ref.read(profilesProvider).getProfile(widget.profileId);
     final groupSwitches = profile?.groupSwitches ?? {};
     final isGlobalMode = widget.mode == Mode.global;
 
     _options = {
       for (final name in widget.groupNames)
-        if (isGlobalMode || name != 'GLOBAL')
-          name: groupSwitches[name] ?? true,
+        if (isGlobalMode || name != 'GLOBAL') name: groupSwitches[name] ?? true,
     };
     _originalOptions = Map<String, bool>.from(_options);
     _lockedGroups = _computeLockedGroups();
@@ -898,8 +952,7 @@ class _GroupSwitchOptionsSheetState
             child: Text(appLocalizations.cancel),
           ),
           FilledButton(
-            onPressed: () =>
-                globalState.navigatorKey.currentState?.pop(true),
+            onPressed: () => globalState.navigatorKey.currentState?.pop(true),
             child: Text(appLocalizations.save),
           ),
         ],
@@ -927,10 +980,12 @@ class _GroupSwitchOptionsSheetState
         for (final name in widget.groupNames) name: _options[name] ?? true,
       };
 
-      ref.read(profilesProvider.notifier).updateProfile(
-        widget.profileId,
-        (state) => state.copyWith(groupSwitches: validOptions),
-      );
+      ref
+          .read(profilesProvider.notifier)
+          .updateProfile(
+            widget.profileId,
+            (state) => state.copyWith(groupSwitches: validOptions),
+          );
 
       final patchConfig = ref.read(patchClashConfigProvider);
       final rawConfig = await globalState.patchRawConfig(
@@ -947,10 +1002,12 @@ class _GroupSwitchOptionsSheetState
       );
 
       if (message.isNotEmpty) {
-        ref.read(profilesProvider.notifier).updateProfile(
-          widget.profileId,
-          (state) => state.copyWith(groupSwitches: _originalOptions),
-        );
+        ref
+            .read(profilesProvider.notifier)
+            .updateProfile(
+              widget.profileId,
+              (state) => state.copyWith(groupSwitches: _originalOptions),
+            );
         if (mounted) {
           await globalState.showMessage(
             message: TextSpan(
@@ -962,13 +1019,8 @@ class _GroupSwitchOptionsSheetState
         return;
       }
 
-      final applyFuture = globalState.appController.applyProfile(
-        silence: true,
-      );
-      await Future.wait([
-        applyFuture,
-        Future.delayed(_kMinLoadingDuration),
-      ]);
+      final applyFuture = globalState.appController.applyProfile(silence: true);
+      await Future.wait([applyFuture]);
 
       _dirty = false;
       _originalOptions = Map<String, bool>.from(validOptions);
@@ -1023,9 +1075,7 @@ class _GroupSwitchOptionsSheetState
                             final locked = _lockedGroups.contains(key);
                             return RepaintBoundary(
                               child: Container(
-                                margin: const EdgeInsets.symmetric(
-                                  vertical: 4,
-                                ),
+                                margin: const EdgeInsets.symmetric(vertical: 4),
                                 child: CommonCard(
                                   type: CommonCardType.filled,
                                   child: ListTile(

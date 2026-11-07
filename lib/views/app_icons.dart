@@ -359,6 +359,7 @@ class NotificationIconsItem extends ConsumerStatefulWidget {
 
 class _NotificationIconsItemState extends ConsumerState<NotificationIconsItem> {
   bool _busy = false;
+  String? _pendingStyle;
   String? _error;
 
   Future<void> _select(String style) async {
@@ -368,6 +369,7 @@ class _NotificationIconsItemState extends ConsumerState<NotificationIconsItem> {
     );
     setState(() {
       _busy = true;
+      _pendingStyle = style;
       _error = null;
     });
     try {
@@ -423,21 +425,25 @@ class _NotificationIconsItemState extends ConsumerState<NotificationIconsItem> {
                   showCheckmark: false,
                   backgroundColor: scheme.surfaceContainerHigh,
                   selectedColor: scheme.primaryContainer,
-                  avatar: SvgPicture.asset(
-                    'assets/images/notification_${item.key}.svg',
-                    width: 24,
-                    height: 24,
-                    colorFilter: ColorFilter.mode(
-                      scheme.onSurface,
-                      BlendMode.srcIn,
-                    ),
-                  ),
+                  avatar: _busy && _pendingStyle == item.key
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : SvgPicture.asset(
+                          'assets/images/notification_${item.key}.svg',
+                          width: 24,
+                          height: 24,
+                          colorFilter: ColorFilter.mode(
+                            scheme.onSurface,
+                            BlendMode.srcIn,
+                          ),
+                        ),
                   label: Text(chinese ? item.value.$1 : item.value.$2),
                   onSelected: _busy ? null : (_) => _select(item.key),
                 ),
             ],
           ),
-          if (_busy) const LinearProgressIndicator(),
           if (_error != null)
             Text(_error!, style: TextStyle(color: scheme.error)),
         ],

@@ -70,6 +70,13 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
         !hasScriptCustom && ref.read(currentProfileIdProvider) != null;
     final hasCustom = hasScriptCustom || hasGroupCustom;
     return [
+      IconButton(
+        icon: const Icon(Icons.folder_open_outlined),
+        tooltip:
+            ref.watch(currentProfileProvider)?.label ??
+            appLocalizations.profiles,
+        onPressed: () => globalState.appController.toPage(PageLabel.profiles),
+      ),
       if (_isTab)
         IconButton(
           onPressed: () {
@@ -165,6 +172,18 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
                           state.copyWith(showHiddenItems: !showHiddenItems),
                     );
               },
+            ),
+            PopupMenuItemData(
+              icon: ref.watch(proxiesStyleSettingProvider).hideTimeoutProxies
+                  ? Icons.filter_alt_rounded
+                  : Icons.filter_alt_outlined,
+              label: appLocalizations.hideTimeoutProxies,
+              onPressed: () => ref
+                  .read(proxiesStyleSettingProvider.notifier)
+                  .updateState(
+                    (s) =>
+                        s.copyWith(hideTimeoutProxies: !s.hideTimeoutProxies),
+                  ),
             ),
             PopupMenuItemData(
               icon: Icons.alt_route,
@@ -316,41 +335,37 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
       actions: _buildActions(),
       title: appLocalizations.proxies,
       searchState: AppBarSearchState(onSearch: _onSearch),
-      body: switch (hasGroups) {
-        false => FluxoraEmptyState(
-          icon: Icons.hub_outlined,
-          title: appLocalizations.noProxy,
-          action: FilledButton.icon(
-            onPressed: () =>
-                globalState.appController.toPage(PageLabel.profiles),
-            icon: const Icon(Icons.folder_open_outlined),
-            label: Text(appLocalizations.profiles),
-          ),
-        ),
-        true => Column(
-          children: [
-            ListTile(
-              dense: true,
-              leading: const Icon(Icons.folder_open_outlined, size: 20),
-              title: Text(
-                ref.watch(currentProfileProvider)?.label ??
-                    ref.watch(currentProfileProvider)?.id ??
-                    appLocalizations.profiles,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+      body: ref.watch(isRestartingCoreProvider)
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(
+                    Localizations.localeOf(context).languageCode == 'zh'
+                        ? '正在应用配置'
+                        : 'Applying configuration',
+                  ),
+                ],
               ),
-              trailing: const Icon(Icons.chevron_right, size: 20),
-              onTap: () => globalState.appController.toPage(PageLabel.profiles),
-            ),
-            Expanded(
-              child: switch (proxiesType) {
+            )
+          : switch (hasGroups) {
+              false => FluxoraEmptyState(
+                icon: Icons.hub_outlined,
+                title: appLocalizations.noProxy,
+                action: FilledButton.icon(
+                  onPressed: () =>
+                      globalState.appController.toPage(PageLabel.profiles),
+                  icon: const Icon(Icons.folder_open_outlined),
+                  label: Text(appLocalizations.profiles),
+                ),
+              ),
+              true => switch (proxiesType) {
                 ProxiesType.tab => ProxiesTabView(key: _proxiesTabKey),
                 ProxiesType.list => const ProxiesListView(),
               },
-            ),
-          ],
-        ),
-      },
+            },
     );
   }
 }

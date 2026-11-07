@@ -29,10 +29,6 @@ class MainActivity : FlutterActivity() {
         private const val MAIN_ENGINE_ID = "fluxora_main_engine"
     }
 
-    /// 本实例是不是用透明主题创建的。窗口主题只能在 onCreate 之前定，所以
-    /// 已经是不透明窗口的实例无法变成透明的，只能换一个实例。
-    private var usesCardTheme = false
-
     private fun isTvDevice(context: Context): Boolean {
         val uiModeManager = context.getSystemService(Context.UI_MODE_SERVICE) as? UiModeManager
         if (uiModeManager?.currentModeType == Configuration.UI_MODE_TYPE_TELEVISION) {
@@ -42,12 +38,6 @@ class MainActivity : FlutterActivity() {
         return packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
                 || packageManager.hasSystemFeature(PackageManager.FEATURE_TELEVISION)
     }
-
-    /// True when the notification's switch button launched us only to show the
-    /// card. The window then has to be translucent, so the launcher shows
-    /// around it instead of the app.
-    private fun isCardOnlyLaunch(intent: Intent?): Boolean =
-        intent?.getBooleanExtra(EXTRA_SHOW_SWITCH_CARD, false) == true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // 窗口始终透明：正常模式下 Flutter 根节点自己画不透明背景，看起来
@@ -60,19 +50,13 @@ class MainActivity : FlutterActivity() {
             android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT)
         )
         val isEngineCached = FlutterEngineCache.getInstance().contains(MAIN_ENGINE_ID)
-        usesCardTheme = isCardOnlyLaunch(intent)
-        if (usesCardTheme) {
-            // 卡片必须用真正半透明的主题：`setFormat(TRANSLUCENT)` 只改像素
-            // 格式，主题里的 windowIsTranslucent 才是系统合成时是否保留下层
-            // 的依据。少了它，卡片周围就是纯黑。
-            setTheme(R.style.TransparentTheme)
-        } else if (isTvDevice(this) || isEngineCached) {
+        if (isTvDevice(this) || isEngineCached) {
             setTheme(R.style.NormalTheme)
         } else {
             installSplashScreen()
         }
         super.onCreate(savedInstanceState)
-        handleSwitchCardIntent(intent, isColdStart = true)
+        handleSwitchCardIntent(intent)
     }
 
     override fun onStop() {
@@ -89,28 +73,25 @@ class MainActivity : FlutterActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        handleSwitchCardIntent(intent, isColdStart = false)
+        handleSwitchCardIntent(intent)
     }
 
     /// The notification's switch button launches this activity with an extra.
     /// It is consumed here rather than forwarded from the service, because the
     /// card needs a live UI — and the service has no way to know whether one
     /// exists.
-    private fun handleSwitchCardIntent(intent: Intent?, isColdStart: Boolean) {
-        if (intent?.getBooleanExtra(EXTRA_SHOW_SWITCH_CARD, false) != true) return
-
-        // 当前实例用的是不透明主题（App 之前就被打开过），换一个透明实例来
-        // 显示卡片：窗口属性改不了，只能重建。引擎是缓存的，Dart 状态不受影响。
-        if (!usesCardTheme) {
-            val relaunch = Intent(this, MainActivity::class.java).apply {
-                putExtra(EXTRA_SHOW_SWITCH_CARD, true)
-                addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
+    private fun handleSwitchCardIntent(intent: Intent?) {
+        if (intent?.getBooleanExtra("open_profiles", false) == true) {
+            intent.removeExtra("open_profiles")
+            GlobalState.pendingNotificationAction = "profiles"
+            GlobalState.flutterEngine?.dartExecutor?.binaryMessenger?.let {
+                MethodChannel(it, "vpn").invokeMethod("notificationProfiles", null)
             }
-            startActivity(relaunch)
-            finish()
             return
         }
+        if (intent?.getBooleanExtra(EXTRA_SHOW_SWITCH_CARD, false) != true) return
 
+        // Keep the current activity/engine attached; Dart opens an in-app sheet.
         intent.removeExtra(EXTRA_SHOW_SWITCH_CARD)
         // Recorded rather than posted on a timer: on a cold start the engine is
         // still booting and a fixed delay either fires too early (no handler
@@ -232,7 +213,7 @@ class MainActivity : FlutterActivity() {
         // engine itself is cached and stays alive on purpose (fast relaunch);
         // only the service engine is torn down, and only when no session is
         // starting or running (see `handleTryDestroy`).
-        if (GlobalState.flutterEngine === flutterEngine) {
+        if (GlobalState.currentActivity === this && GlobalState.flutterEngine === flutterEngine) {
             GlobalState.flutterEngine = null
         }
         GlobalState.handleTryDestroy()

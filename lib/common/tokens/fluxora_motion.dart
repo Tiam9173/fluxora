@@ -22,8 +22,8 @@ import 'fluxora_material.dart';
 ///
 /// ── reduced-motion (§10.5, mandatory) ──────────────────────────────────────
 ///
-/// Widget callers use [FluxoraMotion.ofContext] to combine OS accessibility
-/// with the existing low-effects material setting. Pure callers can resolve
+/// Widget callers use [FluxoraMotion.ofContext] to resolve the user's motion
+/// preference independently of material. Pure callers can resolve
 /// a [FluxoraMotionSet] from a plain `bool`:
 ///
 /// ```dart
@@ -109,12 +109,16 @@ abstract final class FluxoraMotion {
   static Offset resolveOffset(Offset offset, {required bool reduceMotion}) =>
       reduceMotion ? Offset.zero : offset;
 
-  /// OS accessibility and the existing low-effects material share one policy.
-  static FluxoraMotionSet ofContext(BuildContext context) => of(
-    reduceMotion:
-        MediaQuery.disableAnimationsOf(context) ||
-        FluxoraMaterial.of(context).style == FluxoraSurfaceStyle.reduced,
-  );
+  static FluxoraMotionSet ofContext(BuildContext context) {
+    final style = FluxoraMaterial.of(context).motionStyle;
+    return FluxoraMotionSet(
+      reduceMotion:
+          style == FluxoraMotionStyle.off ||
+          (style == FluxoraMotionStyle.system &&
+              MediaQuery.disableAnimationsOf(context)),
+      expressive: style == FluxoraMotionStyle.fluid,
+    );
+  }
 
   /// Resolved set for a given preference — the ergonomic entry point.
   static FluxoraMotionSet of({required bool reduceMotion}) =>
@@ -130,8 +134,9 @@ abstract final class FluxoraMotion {
 class FluxoraMotionSet {
   /// Whether the OS-level "reduce motion" accessibility setting is on.
   final bool reduceMotion;
+  final bool expressive;
 
-  const FluxoraMotionSet({required this.reduceMotion});
+  const FluxoraMotionSet({required this.reduceMotion, this.expressive = false});
 
   /// Standard motion.
   static const full = FluxoraMotionSet(reduceMotion: false);
@@ -144,9 +149,21 @@ class FluxoraMotionSet {
 
   // ── Durations ────────────────────────────────────────────────────────────
 
-  Duration get fast => reduceMotion ? Duration.zero : FluxoraMotion.fast;
-  Duration get base => reduceMotion ? Duration.zero : FluxoraMotion.base;
-  Duration get slow => reduceMotion ? Duration.zero : FluxoraMotion.slow;
+  Duration get fast => reduceMotion
+      ? Duration.zero
+      : expressive
+      ? const Duration(milliseconds: 160)
+      : FluxoraMotion.fast;
+  Duration get base => reduceMotion
+      ? Duration.zero
+      : expressive
+      ? const Duration(milliseconds: 260)
+      : FluxoraMotion.base;
+  Duration get slow => reduceMotion
+      ? Duration.zero
+      : expressive
+      ? const Duration(milliseconds: 400)
+      : FluxoraMotion.slow;
 
   // ── Curves ───────────────────────────────────────────────────────────────
 
@@ -157,8 +174,11 @@ class FluxoraMotionSet {
 
   // ── Enter / exit displacement ────────────────────────────────────────────
 
-  Offset get enterOffset =>
-      reduceMotion ? Offset.zero : FluxoraMotion.enterOffset;
+  Offset get enterOffset => reduceMotion
+      ? Offset.zero
+      : expressive
+      ? const Offset(0, 8)
+      : FluxoraMotion.enterOffset;
   Offset get exitOffset =>
       reduceMotion ? Offset.zero : FluxoraMotion.exitOffset;
 

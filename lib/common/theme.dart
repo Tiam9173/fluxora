@@ -49,9 +49,29 @@ class CommonTheme {
 }
 
 /// Extends the current theme; Classic returns the original theme unchanged.
-ThemeData fluxoraMaterialTheme(ThemeData base, FluxoraSurfaceStyle style) {
-  if (style == FluxoraSurfaceStyle.classic) return base;
-  final material = FluxoraMaterial(style: style);
+ThemeData fluxoraMaterialTheme(
+  ThemeData base,
+  FluxoraSurfaceStyle style, {
+  FluxoraMotionStyle motionStyle = FluxoraMotionStyle.system,
+  double glassIntensity = .55,
+}) {
+  if (style == FluxoraSurfaceStyle.classic &&
+      motionStyle == FluxoraMotionStyle.system) {
+    return base;
+  }
+  final material = FluxoraMaterial(
+    style: style,
+    motionStyle: motionStyle,
+    glassIntensity: glassIntensity,
+  );
+  if (style == FluxoraSurfaceStyle.classic) {
+    return base.copyWith(
+      extensions: [
+        ...base.extensions.values.where((e) => e is! FluxoraMaterial),
+        material,
+      ],
+    );
+  }
   final original = base.colorScheme;
   final scheme = original.surface == Colors.black
       ? original

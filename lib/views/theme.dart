@@ -64,6 +64,7 @@ class ThemeView extends ConsumerWidget {
       children: [
         _ThemeModeItem(),
         const _SurfaceStyleItem(),
+        const _EffectsItem(),
         if (brightness == Brightness.dark) _PrueBlackItem(),
       ],
     );
@@ -120,6 +121,77 @@ class ThemeView extends ConsumerWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _EffectsItem extends ConsumerStatefulWidget {
+  const _EffectsItem();
+  @override
+  ConsumerState<_EffectsItem> createState() => _EffectsItemState();
+}
+
+class _EffectsItemState extends ConsumerState<_EffectsItem> {
+  double? _draft;
+  @override
+  Widget build(BuildContext context) {
+    final props = ref.watch(themeSettingProvider);
+    final chinese = Localizations.localeOf(context).languageCode == 'zh';
+    void motion(FluxoraMotionStyle style) => ref
+        .read(themeSettingProvider.notifier)
+        .updateState((s) => s.copyWith(motionStyle: style));
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (props.surfaceStyle == FluxoraSurfaceStyle.hybrid) ...[
+            Text(
+              chinese ? '玻璃质感' : 'Glass intensity',
+              style: context.textTheme.titleSmall,
+            ),
+            Slider(
+              key: const ValueKey('glass-intensity'),
+              value:
+                  _draft ??
+                  FluxoraMaterial(
+                    glassIntensity: props.glassIntensity,
+                  ).strength,
+              divisions: 10,
+              label: '${((_draft ?? props.glassIntensity) * 100).round()}%',
+              onChanged: (value) => setState(() => _draft = value),
+              onChangeEnd: (value) {
+                ref
+                    .read(themeSettingProvider.notifier)
+                    .updateState((s) => s.copyWith(glassIntensity: value));
+                setState(() => _draft = null);
+              },
+            ),
+          ],
+          Text(
+            chinese ? '界面动效' : 'Motion',
+            style: context.textTheme.titleSmall,
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final entry in [
+                (FluxoraMotionStyle.system, chinese ? '跟随系统' : 'System'),
+                (FluxoraMotionStyle.fluid, chinese ? '流畅' : 'Fluid'),
+                (FluxoraMotionStyle.off, chinese ? '关闭' : 'Off'),
+              ])
+                ChoiceChip(
+                  key: ValueKey('motion-${entry.$1.name}'),
+                  label: Text(entry.$2),
+                  selected: props.motionStyle == entry.$1,
+                  onSelected: (_) => motion(entry.$1),
+                ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

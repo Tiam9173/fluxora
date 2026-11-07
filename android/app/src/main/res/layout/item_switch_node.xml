@@ -3,6 +3,8 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
+    android:minHeight="56dp"
+    android:background="@drawable/bg_switch_node"
     android:gravity="center_vertical"
     android:paddingStart="16dp"
     android:paddingEnd="16dp"
@@ -17,13 +19,13 @@
         android:maxLines="1"
         android:ellipsize="end"
         android:textColor="@color/switch_card_text"
-        android:textSize="13sp" />
+        android:textSize="14sp" />
 
     <TextView
         android:id="@+id/node_delay"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
-        android:textSize="11sp"
+        android:textSize="12sp"
         android:textColor="@color/switch_card_sub" />
 </LinearLayout>

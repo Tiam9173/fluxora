@@ -84,7 +84,12 @@ class ClashCore {
     if (!await homeDir.exists()) {
       await homeDir.create(recursive: true);
     }
-    const geoFileNameList = [mmdbFileName, geoSiteFileName, asnFileName, bundleMRSFileName];
+    const geoFileNameList = [
+      mmdbFileName,
+      geoSiteFileName,
+      asnFileName,
+      bundleMRSFileName,
+    ];
     try {
       for (final geoFileName in geoFileNameList) {
         final geoFile = File(join(homePath, geoFileName));
@@ -138,6 +143,12 @@ class ClashCore {
     return await clashInterface.setupConfig(setupParams);
   }
 
+  Future<void> refreshProfileTransport() async {
+    if (clashInterface case final ClashLib bridge) {
+      await bridge.refreshIpc().timeout(const Duration(seconds: 8));
+    }
+  }
+
   Future<List<Group>> getProxiesGroups({
     List<ExternalProvider>? preloadedProviders,
   }) async {
@@ -182,27 +193,32 @@ class ClashCore {
           return false;
         }),
       ];
-      final groupsRaw = groupNames.map((groupName) {
-        final proxyData = allProxies[groupName] as Map?;
-        if (proxyData == null) return null;
-        final group = Map<String, dynamic>.from(
-          proxyData.cast<String, dynamic>(),
-        );
-        group['all'] = ((group['all'] ?? []) as List)
-            .map((name) {
-              final p = allProxies[name];
-              return p is Map ? Map<String, dynamic>.from(p) : null;
-            })
-            .whereType<Map<String, dynamic>>()
-            .toList();
-        return group;
-      }).whereType<Map<String, dynamic>>().toList();
+      final groupsRaw = groupNames
+          .map((groupName) {
+            final proxyData = allProxies[groupName] as Map?;
+            if (proxyData == null) return null;
+            final group = Map<String, dynamic>.from(
+              proxyData.cast<String, dynamic>(),
+            );
+            group['all'] = ((group['all'] ?? []) as List)
+                .map((name) {
+                  final p = allProxies[name];
+                  return p is Map ? Map<String, dynamic>.from(p) : null;
+                })
+                .whereType<Map<String, dynamic>>()
+                .toList();
+            return group;
+          })
+          .whereType<Map<String, dynamic>>()
+          .toList();
       return groupsRaw.map((e) => Group.fromJson(e)).toList();
     });
   }
 
   FutureOr<String> changeProxy(ChangeProxyParams changeProxyParams) async {
-    return await clashInterface.changeProxy(changeProxyParams);
+    final error = await clashInterface.changeProxy(changeProxyParams);
+    if (error.isNotEmpty) throw StateError(error);
+    return error;
   }
 
   Future<Mode> getMode() async {
@@ -320,9 +336,15 @@ class ClashCore {
     }
   }
 
-  Future<Map<String, dynamic>> getConfig(String id, {String? ageSecretKey}) async {
+  Future<Map<String, dynamic>> getConfig(
+    String id, {
+    String? ageSecretKey,
+  }) async {
     final profilePath = await appPath.getProfilePath(id);
-    final res = await clashInterface.getConfig(profilePath, ageSecretKey: ageSecretKey);
+    final res = await clashInterface.getConfig(
+      profilePath,
+      ageSecretKey: ageSecretKey,
+    );
     if (res.isSuccess) {
       final data = res.data;
       if (data is Map<String, dynamic>) {
@@ -454,53 +476,34 @@ class ClashCore {
     clashCoreForget(clashInterface.clearLogs(), 'clearLogs');
   }
 
-  /// 触发内核测速。进度通过消息通道回来，不走返回值。
-  ///
-  /// 只有 libclash 这条路径能发通用 action；桌面走 HTTP 服务的实现没有这个
-  /// 入口，所以这里显式判断，而不是假设一定有。
-  /// 拉一次测速进度。内核把最近一帧存在内存里，这里取回来解析。
+  /// Read the running service's last frame without starting a core on open.
   Future<SpeedTestProgress> speedTestStatus() async {
+    if (!clashInterface.hasLiveProcess) return const SpeedTestProgress();
     final raw = await speedTestStatusRaw();
-    try {
-      // invokeAction 的返回是 ActionResult 信封：
-      //   {"id":..,"method":"speedTestStatus","data":"{\"phase\":..}"}
-      // 真正的进度是里面那层字符串，要再解一次。之前直接拿外层当进度解析，
-      // 字段全对不上，于是永远显示 0。
-      dynamic decoded = jsonDecode(raw);
-      if (decoded is Map && decoded['data'] is String) {
-        decoded = jsonDecode(decoded['data'] as String);
-      }
-      return SpeedTestProgress.fromJson(decoded);
-    } catch (_) {
-      return const SpeedTestProgress();
-    }
+    return SpeedTestProgress.fromJson(jsonDecode(raw));
   }
 
-  /// 原始返回串。排查"到底是没分发到、还是解析错了"时，原样显示它最快。
-  Future<String> speedTestStatusRaw() async {
-    // clashInterface 的实际类型是 ClashLib，不是 ClashLibHandler——后者只是
-    // 另一层 FFI 包装。之前按 ClashLibHandler 判断，永远为假，整个调用被跳过。
-    if (clashInterface is! ClashLib) {
-      return 'not-lib-handler';
-    }
-    return ClashLibHandler().invokeAction(
-      jsonEncode({
-        'id': DateTime.now().microsecondsSinceEpoch.toString(),
-        'method': 'speedTestStatus',
-        'data': '',
-      }),
+  Future<String> speedTestStatusRaw() {
+    return clashInterface.invoke<String>(
+      method: ActionMethod.speedTestStatus,
+      data: '',
+      timeout: const Duration(seconds: 3),
+      onTimeout: () => throw TimeoutException('Speed test status timed out'),
     );
   }
 
-  Future<void> speedTest() async {
-    if (clashInterface is ClashLib) {
-      await ClashLibHandler().invokeAction(
-        jsonEncode({
-          'id': DateTime.now().microsecondsSinceEpoch.toString(),
-          'method': 'speedTest',
-          'data': '',
-        }),
-      );
+  Future<void> speedTest({String outbound = ''}) async {
+    if (!clashInterface.hasLiveProcess) {
+      throw StateError('Start the service before running a speed test');
+    }
+    final result = await clashInterface.invoke<String>(
+      method: ActionMethod.speedTest,
+      data: jsonEncode({'outbound': outbound}),
+      timeout: const Duration(seconds: 5),
+      onTimeout: () => throw TimeoutException('Speed test did not start'),
+    );
+    if (result != 'started' && result != 'busy') {
+      throw StateError(result.isEmpty ? 'Speed test unavailable' : result);
     }
   }
 

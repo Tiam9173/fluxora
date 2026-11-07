@@ -131,30 +131,14 @@ class AppController {
     debouncer.call(FunctionTag.savePreferences, savePreferences);
   }
 
-  /// Whether a group remembers the user's pick across refreshes.
-  ///
-  /// `url-test` / `fallback` groups choose their own node. Persisting a tap
-  /// into `selectedMap` turns it into a lock that `updateGroups` re-imposes on
-  /// **every** refresh, so the group can never auto-switch again — the
-  /// reported "自动选择要么很慢，要么没反应". Those groups get a one-shot switch
-  /// instead; only `select` groups (and groups we cannot resolve) keep the
-  /// previous behaviour.
-  bool _groupRemembersSelection(String groupName) {
-    for (final group in _ref.read(groupsProvider)) {
-      if (group.name == groupName) return !group.type.isComputedSelected;
-    }
-    return true;
-  }
-
   void changeProxyDebounce(String groupName, String proxyName) {
     // The optimistic write used to live in the caller (`card.dart`), which made
     // it impossible to undo here: by the time the debounced call ran, the
     // previous value was already gone. Owning both halves keeps them together.
-    final persists = _groupRemembersSelection(groupName);
-    final previous = persists
-        ? (_ref.read(currentProfileProvider)?.selectedMap[groupName] ?? '')
-        : '';
-    if (persists) updateCurrentSelectedMap(groupName, proxyName);
+    final previous =
+        _ref.read(currentProfileProvider)?.selectedMap[groupName] ?? '';
+    // Native URLTest/Fallback Set is a manual lock; an empty name restores auto.
+    updateCurrentSelectedMap(groupName, proxyName);
     debouncer.call(
       FunctionTag.changeProxy,
       (String groupName, String proxyName) async {
@@ -169,7 +153,8 @@ class AppController {
           commonPrint.log(
             'changeProxyDebounce: failed to select $proxyName in $groupName: $e',
           );
-          if (persists) updateCurrentSelectedMap(groupName, previous);
+          updateCurrentSelectedMap(groupName, previous);
+          globalState.showNotifier(e.toString());
         }
       },
       args: [groupName, proxyName],
@@ -1168,7 +1153,11 @@ class AppController {
           clashCoreForget(clashCore.flushDnsCache(), 'profile DNS cleanup');
         }
         final prevProfileId = previousProfileId;
+        _ref.read(isRestartingCoreProvider.notifier).state = true;
         try {
+          if (prevProfileId != _ref.read(currentProfileIdProvider)) {
+            await clashCore.refreshProfileTransport();
+          }
           await _applyProfile();
         } catch (err) {
           await _reportProfileSwitchFailure(
@@ -1176,6 +1165,8 @@ class AppController {
             restoreProfileId: prevProfileId,
             error: err,
           );
+        } finally {
+          _ref.read(isRestartingCoreProvider.notifier).state = false;
         }
       }
       _ref.read(logsProvider.notifier).value = FixedList(maxLength);
@@ -1464,21 +1455,17 @@ class AppController {
               }
             }
           } else if (newGroup.type.isComputedSelected) {
-            final lockedProxyName = selectedMap[newGroup.name];
-            if (lockedProxyName != null &&
-                lockedProxyName.isNotEmpty &&
-                lockedProxyName != newGroup.now) {
-              if (newGroup.all.any((p) => p.name == lockedProxyName)) {
-                Future.microtask(
-                  () => clashCore.changeProxy(
-                    ChangeProxyParams(
-                      groupName: newGroup.name,
-                      proxyName: lockedProxyName,
-                    ),
-                  ),
-                );
-              } else {
-                selectedMap.remove(newGroup.name);
+            final nativeLock = newGroup.fixed;
+            if (nativeLock != null) {
+              final validLock = newGroup.all.any((p) => p.name == nativeLock)
+                  ? nativeLock
+                  : '';
+              if ((selectedMap[newGroup.name] ?? '') != validLock) {
+                if (validLock.isEmpty) {
+                  selectedMap.remove(newGroup.name);
+                } else {
+                  selectedMap[newGroup.name] = validLock;
+                }
                 hasChanged = true;
               }
             }
@@ -1563,19 +1550,7 @@ class AppController {
     await preferences.saveConfig(globalState.config);
   }
 
-  /// Moves a `url-test` group onto its fastest **measured** node.
-  ///
-  /// mihomo only re-evaluates such a group on its own `interval` (commonly
-  /// 300 s), so after a speed test — or right after the user unlocks a group —
-  /// the selection can sit on a slow node for minutes. We already have the
-  /// numbers, so pick the winner ourselves; the core accepts the change and
-  /// its next scheduled test will simply agree.
-  ///
-  /// Deliberately narrow:
-  /// * only `url-test` — `fallback` is "first healthy", `load-balance` has no
-  ///   single winner, and `select` is the user's own choice;
-  /// * never touches a group the user has locked;
-  /// * does nothing when no node has a usable measurement.
+  /// Resume native URLTest selection after a probe, preserving explicit locks.
   Future<void> selectFastestForGroup(String groupName) async {
     if (groupName.isEmpty) return;
 
@@ -1591,28 +1566,12 @@ class AppController {
     final locked = _ref.read(selectedMapProvider)[groupName];
     if (locked != null && locked.isNotEmpty) return;
 
-    String? fastest;
-    var best = 0;
-    for (final proxy in group.all) {
-      final value = _ref.read(
-        getDelayProvider(proxyName: proxy.name, testUrl: group.testUrl),
-      );
-      // `null` = never tested, `<= 0` = the failure sentinel. Neither can win.
-      if (value == null || value <= 0) continue;
-      if (fastest == null || value < best) {
-        fastest = proxy.name;
-        best = value;
-      }
-    }
-
-    if (fastest == null || fastest == group.now) return;
-
     try {
-      await changeProxy(groupName: groupName, proxyName: fastest);
-      await updateGroups();
-      commonPrint.log(
-        'selectFastestForGroup($groupName): switched to $fastest (${best}ms)',
+      // Clear the native override and let URLTest use its health checks/tolerance.
+      await clashCore.changeProxy(
+        ChangeProxyParams(groupName: groupName, proxyName: ''),
       );
+      await updateGroups();
     } catch (e) {
       commonPrint.log('selectFastestForGroup($groupName) failed: $e');
     }
@@ -1626,9 +1585,9 @@ class AppController {
       ChangeProxyParams(groupName: groupName, proxyName: proxyName),
     );
     if (_ref.read(appSettingProvider).closeConnections) {
-      clashCore.closeConnections();
+      clashCoreForget(clashCore.closeConnections(), 'node connections cleanup');
     }
-    await clashCore.flushDnsCache();
+    clashCoreForget(clashCore.flushDnsCache(), 'node DNS cleanup');
     addCheckIp();
     detectionState.startCheck(immediate: true);
   }
@@ -1988,8 +1947,14 @@ class AppController {
     }
   }
 
-  /// 触发一次内核测速。进度通过消息通道回来（见 SpeedTestService）。
-  Future<void> speedTest() => clashCore.speedTest();
+  /// Measure the currently selected group through the running core.
+  Future<void> speedTest() => clashCore.speedTest(
+    outbound: switch (_ref.read(patchClashConfigProvider).mode) {
+      Mode.direct => UsedProxy.DIRECT.name,
+      Mode.global => UsedProxy.GLOBAL.name,
+      Mode.rule => getCurrentGroupName() ?? '',
+    },
+  );
 
   /// 内核看门狗：内核意外退出后自动拉起。
   ///

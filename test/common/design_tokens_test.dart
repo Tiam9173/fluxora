@@ -251,7 +251,7 @@ void main() {
     });
 
     test('semantic aliases point at the documented rung', () {
-      expect(FluxoraRadius.card, FluxoraRadius.lg);
+      expect(FluxoraRadius.card, FluxoraRadius.xl);
       expect(FluxoraRadius.button, FluxoraRadius.full);
       expect(FluxoraRadius.chip, FluxoraRadius.lg);
       expect(FluxoraRadius.dialog, FluxoraRadius.xl);
@@ -267,7 +267,11 @@ void main() {
       // whole app shares, so they stay off it on purpose — see the token docs.
       expect(FluxoraRadius.sheet, 28.0, reason: 'bottom sheet surface');
       expect(FluxoraRadius.field, 18.0, reason: 'inputDecorationTheme borders');
-      expect(FluxoraRadius.fab, 20.0, reason: 'floatingActionButtonTheme shape');
+      expect(
+        FluxoraRadius.fab,
+        20.0,
+        reason: 'floatingActionButtonTheme shape',
+      );
     });
 
     test('field and inputCompact are different roles, not duplicates', () {
@@ -327,8 +331,14 @@ void main() {
     });
 
     test('section sits between body and title, which is why it exists', () {
-      expect(FluxoraFontSize.section, greaterThan(FluxoraTypography.body.fontSize!));
-      expect(FluxoraFontSize.section, lessThan(FluxoraTypography.title.fontSize!));
+      expect(
+        FluxoraFontSize.section,
+        greaterThan(FluxoraTypography.body.fontSize!),
+      );
+      expect(
+        FluxoraFontSize.section,
+        lessThan(FluxoraTypography.title.fontSize!),
+      );
     });
 
     test('the sizes stay off the six-level ladder on purpose', () {
@@ -341,42 +351,45 @@ void main() {
     });
   });
 
-  group('FluxoraColorSet.selectionTint — one definition for three navigations', () {
-    const primary = Color(0xFF006A62);
+  group(
+    'FluxoraColorSet.selectionTint — one definition for three navigations',
+    () {
+      const primary = Color(0xFF006A62);
 
-    test('light keeps 20 % and dark keeps 26 %', () {
-      // These two numbers were duplicated across the desktop rail, the mobile
-      // bottom bar and the TV bar; if one drifts the navigations stop matching.
-      expect(
-        FluxoraColorSet.selectionTint(primary, Brightness.light).a,
-        closeTo(0.20, 0.005),
-      );
-      expect(
-        FluxoraColorSet.selectionTint(primary, Brightness.dark).a,
-        closeTo(0.26, 0.005),
-      );
-    });
-
-    test('the base colour is passed through untouched', () {
-      for (final brightness in [Brightness.light, Brightness.dark]) {
-        final tint = FluxoraColorSet.selectionTint(primary, brightness);
-        expect(tint.r, primary.r);
-        expect(tint.g, primary.g);
-        expect(tint.b, primary.b);
-      }
-    });
-
-    test('the result is translucent, not opaque', () {
-      // A regression to a plain `primary` would paint a solid block instead of
-      // a wash and would also change the label contrast underneath.
-      for (final brightness in [Brightness.light, Brightness.dark]) {
+      test('light keeps 20 % and dark keeps 26 %', () {
+        // These two numbers were duplicated across the desktop rail, the mobile
+        // bottom bar and the TV bar; if one drifts the navigations stop matching.
         expect(
-          FluxoraColorSet.selectionTint(primary, brightness).a,
-          lessThan(1.0),
+          FluxoraColorSet.selectionTint(primary, Brightness.light).a,
+          closeTo(0.20, 0.005),
         );
-      }
-    });
-  });
+        expect(
+          FluxoraColorSet.selectionTint(primary, Brightness.dark).a,
+          closeTo(0.26, 0.005),
+        );
+      });
+
+      test('the base colour is passed through untouched', () {
+        for (final brightness in [Brightness.light, Brightness.dark]) {
+          final tint = FluxoraColorSet.selectionTint(primary, brightness);
+          expect(tint.r, primary.r);
+          expect(tint.g, primary.g);
+          expect(tint.b, primary.b);
+        }
+      });
+
+      test('the result is translucent, not opaque', () {
+        // A regression to a plain `primary` would paint a solid block instead of
+        // a wash and would also change the label contrast underneath.
+        for (final brightness in [Brightness.light, Brightness.dark]) {
+          expect(
+            FluxoraColorSet.selectionTint(primary, brightness).a,
+            lessThan(1.0),
+          );
+        }
+      });
+    },
+  );
   group('FluxoraElevation — the rung the navigation bars use', () {
     test('semantic aliases point at the documented level', () {
       expect(FluxoraElevation.menu, FluxoraElevation.level3);

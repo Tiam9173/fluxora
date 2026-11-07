@@ -304,6 +304,8 @@ enum ActionMethod {
   getMode,
   parseExternalProviderContent,
   getCoreStatus,
+  speedTest,
+  speedTestStatus,
 
   ///Android,
   setState,

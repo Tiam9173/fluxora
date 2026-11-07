@@ -10,6 +10,7 @@ import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'widget_preview.dart';
 
 final customDashboardTitleProvider =
     StateNotifierProvider<CustomDashboardTitleNotifier, String?>((ref) {
@@ -77,15 +78,11 @@ int dashboardColumnCount(double viewWidth) =>
 
 /// The grid span a dashboard item actually takes.
 ///
-/// The start/stop control is the page's primary status and has to own a whole
-/// row. Its enum entry hardcodes `crossAxisCellCount: 8`, which is a full row
-/// only while the grid has 8 columns — above ~640 px [dashboardColumnCount]
-/// grows (16 columns at 1200 px), so the Hero silently shrank to half a row and
-/// shared it with a metric card. Everything else keeps the span it declares.
+/// Keep the connection card full-width on phones and compact on desktop.
 GridItem dashboardGridItemFor(GridItem item, int columns) {
   if (!identical(item, DashboardWidget.startButton.widget)) return item;
   return GridItem(
-    crossAxisCellCount: columns,
+    crossAxisCellCount: min(columns, 8),
     mainAxisCellCount: item.mainAxisCellCount,
     isDeletable: item.isDeletable,
     child: item.child,
@@ -392,6 +389,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
         dashboardGridItemFor(item.widget, columns),
     ];
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       _addedWidgetsNotifier.value = DashboardWidget.values
           .where(
             (item) =>
@@ -471,29 +469,65 @@ class _AddDashboardWidgetModal extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final chinese = Localizations.localeOf(context).languageCode == 'zh';
-    return ListView.separated(
-      shrinkWrap: true,
-      padding: const EdgeInsets.all(FluxoraSpacing.lg),
-      itemCount: items.length,
-      separatorBuilder: (_, _) => const SizedBox(height: FluxoraSpacing.sm),
-      itemBuilder: (context, index) {
-        final item = items[index];
-        final type = DashboardWidget.getDashboardWidget(item)!;
-        return CommonCard(
-          key: ValueKey('catalog-${type.name}'),
-          onPressed: () => onAdd(item),
-          child: ListTile(
-            leading: ExcludeSemantics(child: Icon(type.icon)),
-            title: Text(type.title),
-            subtitle: Text(
-              item.crossAxisCellCount > 4
-                  ? (chinese ? '宽幅' : 'Wide')
-                  : (chinese ? '紧凑' : 'Compact'),
+    return LayoutBuilder(
+      builder: (context, constraints) => GridView.builder(
+        shrinkWrap: true,
+        padding: const EdgeInsets.all(FluxoraSpacing.lg),
+        itemCount: items.length,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: max(1, (constraints.maxWidth / 300).floor()),
+          mainAxisExtent: MediaQuery.textScalerOf(context).scale(16) > 22
+              ? 280
+              : 208,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+        ),
+        itemBuilder: (context, index) {
+          final item = items[index];
+          final type = DashboardWidget.getDashboardWidget(item)!;
+          return CommonCard(
+            key: ValueKey('catalog-${type.name}'),
+            onPressed: () => onAdd(item),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(child: DashboardWidgetPreview(type: type)),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              type.title,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: context.textTheme.titleSmall,
+                            ),
+                            Text(
+                              item.crossAxisCellCount > 4
+                                  ? (chinese ? '外观预览 · 宽幅' : 'Preview · wide')
+                                  : (chinese
+                                        ? '外观预览 · 紧凑'
+                                        : 'Preview · compact'),
+                              style: context.textTheme.labelSmall,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.add_circle_outline_rounded),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            trailing: const ExcludeSemantics(child: Icon(Icons.add_rounded)),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }

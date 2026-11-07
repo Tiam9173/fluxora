@@ -7,12 +7,9 @@ import 'package:fluxora/views/dashboard/widgets/speed_test_card.dart';
 /// Phase 00.6-F10 — `SpeedTestCard`'s reduced-motion contract.
 ///
 /// The arc follows the supplied reading over 320 ms; the numeric reading is
-/// immediate. OS reduced motion and low-effects material suppress the arc tween.
+/// immediate. Motion off and the default OS preference suppress the arc tween.
 ///
-/// The card is reachable in a VM test because `speedTestStatus()` degrades
-/// safely: `speedTestStatusRaw()` returns `'not-lib-handler'` when the native
-/// lib is absent, `jsonDecode` throws, and the catch returns a default
-/// `SpeedTestProgress` — so no bridge call, timer or watchdog is left pending.
+/// Opening the card without a running core reads no native status or network.
 ///
 /// What is asserted is the *resolved* `TweenAnimationBuilder.duration` on the
 /// live widget, not a source string: that value is exactly what decides whether
@@ -31,6 +28,7 @@ void main() {
     WidgetTester tester, {
     required bool disableAnimations,
     bool lowEffects = false,
+    FluxoraMotionStyle motionStyle = FluxoraMotionStyle.system,
   }) async {
     tester.binding.platformDispatcher.accessibilityFeaturesTestValue =
         FakeAccessibilityFeatures(disableAnimations: disableAnimations);
@@ -39,9 +37,11 @@ void main() {
     );
     await tester.pumpWidget(
       MaterialApp(
+        themeAnimationDuration: Duration.zero,
         theme: ThemeData(
           extensions: [
             FluxoraMaterial(
+              motionStyle: motionStyle,
               style: lowEffects
                   ? FluxoraSurfaceStyle.reduced
                   : FluxoraSurfaceStyle.classic,
@@ -71,12 +71,12 @@ void main() {
     expect(headlineTweenDuration(tester), const Duration(milliseconds: 320));
   });
 
-  testWidgets('low-effects material settles without scheduled frames', (
+  testWidgets('low-effects material keeps the chosen arc motion', (
     tester,
   ) async {
     await pumpCard(tester, disableAnimations: false, lowEffects: true);
     await tester.pumpAndSettle();
-    expect(headlineTweenDuration(tester), Duration.zero);
+    expect(headlineTweenDuration(tester), const Duration(milliseconds: 320));
     expect(tester.binding.hasScheduledFrame, isFalse);
   });
 
@@ -94,7 +94,7 @@ void main() {
 
     expect(find.byType(SpeedTestCard), findsOneWidget);
     // The card's own title proves the tree built past the tween.
-    expect(find.text(appLocalizations.networkSpeed), findsOneWidget);
+    expect(find.byKey(const ValueKey('speed-test-start')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -115,6 +115,23 @@ void main() {
     // Same widget type and position, only the MediaQuery flag differs, so the
     // State survives and `build` re-reads `MediaQuery.disableAnimations`.
     await pumpCard(tester, disableAnimations: true);
+    expect(headlineTweenDuration(tester), Duration.zero);
+  });
+
+  testWidgets('explicit fluid motion and off work independently of the OS', (
+    tester,
+  ) async {
+    await pumpCard(
+      tester,
+      disableAnimations: true,
+      motionStyle: FluxoraMotionStyle.fluid,
+    );
+    expect(headlineTweenDuration(tester), const Duration(milliseconds: 400));
+    await pumpCard(
+      tester,
+      disableAnimations: false,
+      motionStyle: FluxoraMotionStyle.off,
+    );
     expect(headlineTweenDuration(tester), Duration.zero);
   });
 }

@@ -26,6 +26,9 @@ class _SpeedTestCardState extends State<SpeedTestCard> {
   SpeedTestProgress _progress = const SpeedTestProgress();
   bool _running = false;
   bool _gotFrame = false;
+  bool _pollInFlight = false;
+  int _generation = 0;
+  int _sampleIndex = 0;
 
   /// 曲线只画最近这些帧：300ms 一帧，40 帧约 12 秒，正好覆盖一轮测速。
   static const _historyLimit = 40;
@@ -47,27 +50,46 @@ class _SpeedTestCardState extends State<SpeedTestCard> {
   /// 这时才需要继续轮询。
   Future<void> _syncOnce() async {
     if (!mounted) return;
-    final p = await clashCore.speedTestStatus();
-    if (!mounted) return;
-    _applyProgress(p);
-    if (p.isRunning) _startPolling();
+    final generation = _generation;
+    try {
+      final p = await clashCore.speedTestStatus();
+      if (!mounted || generation != _generation) return;
+      _applyProgress(p);
+      if (p.isRunning) _startPolling();
+    } catch (error) {
+      if (mounted && generation == _generation) {
+        _applyProgress(SpeedTestProgress(phase: 'failed', error: '$error'));
+      }
+    }
   }
 
   void _startPolling() {
     _poll?.cancel();
     _poll = Timer.periodic(const Duration(milliseconds: 300), (_) async {
-      if (!mounted) return;
-      final p = await clashCore.speedTestStatus();
-      if (!mounted) return;
-      _applyProgress(p);
-      if (p.isDone || p.isFailed || !p.isRunning) {
-        _poll?.cancel();
-        _poll = null;
+      if (!mounted || _pollInFlight) return;
+      final generation = _generation;
+      _pollInFlight = true;
+      try {
+        final p = await clashCore.speedTestStatus();
+        if (!mounted || generation != _generation) return;
+        _applyProgress(p);
+        if (p.isDone || p.isFailed || (!p.isRunning && _gotFrame)) {
+          _poll?.cancel();
+          _poll = null;
+        }
+      } catch (error) {
+        if (mounted && generation == _generation) {
+          _poll?.cancel();
+          _applyProgress(SpeedTestProgress(phase: 'failed', error: '$error'));
+        }
+      } finally {
+        _pollInFlight = false;
       }
     });
   }
 
   void _applyProgress(SpeedTestProgress p) {
+    if (_running && !_gotFrame && p.phase == 'idle') return;
     if (p.phase != 'idle') {
       _gotFrame = true;
       _watchdog?.cancel();
@@ -77,9 +99,10 @@ class _SpeedTestCardState extends State<SpeedTestCard> {
       if (p.headlineMbps > _peak) _peak = p.headlineMbps;
       _scale = _scaleFor(_peak);
       if (p.isRunning && p.headlineMbps > 0) {
-        _history.add(Point(_history.length.toDouble(), p.headlineMbps));
+        _history.add(Point((_sampleIndex++).toDouble(), p.headlineMbps));
         if (_history.length > _historyLimit) _history.removeAt(0);
       }
+      if (p.isRunning) _running = true;
       if (p.isDone || p.isFailed) _running = false;
     });
   }
@@ -92,10 +115,13 @@ class _SpeedTestCardState extends State<SpeedTestCard> {
   }
 
   Future<void> _start() async {
+    if (_running) return;
+    final generation = ++_generation;
     setState(() {
       _running = true;
       _gotFrame = false;
       _history.clear();
+      _sampleIndex = 0;
       _peak = 0;
       _scale = 100;
       _progress = const SpeedTestProgress(phase: 'latency');
@@ -103,7 +129,9 @@ class _SpeedTestCardState extends State<SpeedTestCard> {
     // 12 秒：选源要查出口位置、拉服务器列表、探节点、拉 32KB 验证，3 秒会误报。
     _watchdog?.cancel();
     _watchdog = Timer(const Duration(seconds: 12), () {
-      if (!mounted || _gotFrame) return;
+      if (!mounted || _gotFrame || generation != _generation) return;
+      _poll?.cancel();
+      _poll = null;
       setState(() {
         _running = false;
         _progress = const SpeedTestProgress(
@@ -117,7 +145,7 @@ class _SpeedTestCardState extends State<SpeedTestCard> {
     try {
       await globalState.appController.speedTest();
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || generation != _generation) return;
       _poll?.cancel();
       _poll = null;
       setState(() {
@@ -134,14 +162,6 @@ class _SpeedTestCardState extends State<SpeedTestCard> {
       if (peak <= b) return b;
     }
     return buckets.last;
-  }
-
-  static String _scaleLabel(double scale) {
-    if (scale >= 1000) {
-      final g = scale / 1000;
-      return '${g == g.roundToDouble() ? g.toInt() : g}G';
-    }
-    return '${scale.toInt()}M';
   }
 
   /// 低于 1 Mbps 用 Kbps，避免出现 "0.35 Mbps" 这种读数。
@@ -178,9 +198,9 @@ class _SpeedTestCardState extends State<SpeedTestCard> {
 
   Future<void> _copy() async {
     final p = _progress;
-    final where = globalState.isStart
-        ? appLocalizations.viaProxy
-        : appLocalizations.viaDirect;
+    final where = Localizations.localeOf(context).languageCode == 'zh'
+        ? '内核路由'
+        : 'Core routing';
     final text = [
       'Fluxora',
       '${appLocalizations.stLatency} ${p.latencyMs}ms · '
@@ -206,175 +226,223 @@ class _SpeedTestCardState extends State<SpeedTestCard> {
     final scheme = context.colorScheme;
     final p = _progress;
     final target = p.headlineMbps;
-    // 系统开了「减少动画」时补间必须归零（项目规范 §10.5）。
     final motion = FluxoraMotion.ofContext(context);
-
+    final measured = _gotFrame && (p.headlineMbps > 0 || p.isDone);
+    final chinese = Localizations.localeOf(context).languageCode == 'zh';
+    final screen = MediaQuery.of(context);
     return Dialog(
-      backgroundColor: scheme.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(FluxoraRadius.xl),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
+      insetPadding: const EdgeInsets.all(16),
+      backgroundColor: FluxoraMaterial.of(context).enabled
+          ? Colors.transparent
+          : scheme.surface,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 520,
+          maxHeight: (screen.size.height - screen.viewInsets.vertical - 48)
+              .clamp(120, 760),
+        ),
+        child: GlassSurface(
+          radius: FluxoraRadius.dialog,
+          floating: true,
+          blur: true,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(
-                  child: Text(
-                    appLocalizations.networkSpeed,
-                    style: context.textTheme.titleMedium,
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.close),
-                  tooltip: appLocalizations.close,
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            TweenAnimationBuilder<double>(
-              tween: Tween<double>(end: target),
-              duration: motion.slow,
-              curve: FluxoraMotion.standard,
-              builder: (context, value, _) {
-                return SizedBox(
-                  width: 180,
-                  height: 180,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      CustomPaint(
-                        size: const Size(180, 180),
-                        painter: _ArcPainter(
-                          progress: (value / _scale).clamp(0.0, 1.0),
-                          color: scheme.primary,
-                          track: scheme.onSurfaceVariant.withValues(
-                            alpha: 0.18,
-                          ),
+                Row(
+                  children: [
+                    if (screen.textScaler.scale(1) < 1.6) ...[
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: scheme.primaryContainer,
+                          borderRadius: FluxoraRadius.lgAll,
+                        ),
+                        child: Icon(
+                          Icons.speed_rounded,
+                          color: scheme.onPrimaryContainer,
                         ),
                       ),
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            _fmt(target),
-                            style: context.textTheme.displaySmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: scheme.primary,
-                              fontFeatures: const [
-                                FontFeature.tabularFigures(),
-                              ],
-                            ),
-                          ),
-                          Text(
-                            '${_unitFor(target)} / ${_scaleLabel(_scale)}',
-                            style: context.textTheme.bodySmall,
-                          ),
-                        ],
-                      ),
+                      const SizedBox(width: 12),
                     ],
+                    Expanded(
+                      child: Text(
+                        chinese ? '网络测速' : 'Speed test',
+                        style: context.textTheme.titleLarge,
+                      ),
+                    ),
+                    IconButton(
+                      key: const ValueKey('speed-test-close'),
+                      onPressed: () => Navigator.of(context).pop(),
+                      tooltip: _running
+                          ? (chinese ? '关闭面板，测速继续' : 'Close; test continues')
+                          : appLocalizations.close,
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                TweenAnimationBuilder<double>(
+                  tween: Tween<double>(end: target),
+                  duration: motion.slow,
+                  curve: FluxoraMotion.standard,
+                  builder: (context, value, _) => SizedBox(
+                    width: 196,
+                    height: 196,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        CustomPaint(
+                          size: const Size(196, 196),
+                          painter: _ArcPainter(
+                            progress: (value / _scale).clamp(0, 1),
+                            color: scheme.primary,
+                            track: scheme.outlineVariant.withValues(alpha: .5),
+                          ),
+                        ),
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              measured ? _fmt(target) : '—',
+                              style: context.textTheme.displaySmall?.copyWith(
+                                color: scheme.primary,
+                                fontWeight: FontWeight.w600,
+                                fontFeatures: const [
+                                  FontFeature.tabularFigures(),
+                                ],
+                              ),
+                            ),
+                            Text(
+                              measured
+                                  ? _unitFor(target)
+                                  : appLocalizations.networkSpeed,
+                              style: context.textTheme.labelLarge,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                );
-              },
-            ),
-            const SizedBox(height: 6),
-            _PhaseDots(phase: p.phase),
-            if (_phaseText.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  _phaseText,
-                  style: context.textTheme.labelSmall?.copyWith(
+                ),
+                _PhaseDots(phase: p.phase),
+                const SizedBox(height: 8),
+                Text(
+                  _phaseText.isEmpty ? (chinese ? '就绪' : 'Ready') : _phaseText,
+                  style: context.textTheme.bodySmall?.copyWith(
                     color: scheme.onSurfaceVariant,
                   ),
                 ),
-              ),
-            const SizedBox(height: 12),
-            // 测速过程的形状：能看出稳不稳、有没有掉速。
-            SizedBox(
-              height: 56,
-              child: RepaintBoundary(
-                child: _history.length < 2
-                    ? const SizedBox.shrink()
-                    : LineChart(
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    for (final metric in [
+                      (
+                        Icons.speed_rounded,
+                        p.latencyMs > 0 ? '${p.latencyMs}' : '—',
+                        'ms',
+                      ),
+                      (
+                        Icons.south_rounded,
+                        measured ? _fmt(p.downMbps) : '—',
+                        _unitFor(p.downMbps),
+                      ),
+                      (
+                        Icons.north_rounded,
+                        p.upMbps > 0 || p.isDone ? _fmt(p.upMbps) : '—',
+                        _unitFor(p.upMbps),
+                      ),
+                    ])
+                      Expanded(
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 3),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 12,
+                            horizontal: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: scheme.surfaceContainerHigh,
+                            borderRadius: FluxoraRadius.lgAll,
+                          ),
+                          child: _stat(
+                            context,
+                            metric.$1,
+                            metric.$2,
+                            metric.$3,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                if (_history.length >= 2) ...[
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: 64,
+                    child: RepaintBoundary(
+                      child: LineChart(
                         points: List.of(_history),
                         color: scheme.primary,
                         gradient: true,
                       ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _stat(
-                  context,
-                  Icons.speed,
-                  '${p.latencyMs}',
-                  'ms',
-                  sub: p.jitterMs > 0 ? '±${p.jitterMs}ms' : null,
-                ),
-                _stat(
-                  context,
-                  Icons.arrow_downward,
-                  _fmt(p.downMbps),
-                  _unitFor(p.downMbps),
-                ),
-                _stat(
-                  context,
-                  Icons.arrow_upward,
-                  _fmt(p.upMbps),
-                  _unitFor(p.upMbps),
-                ),
-              ],
-            ),
-            if (p.serverName.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  '${p.serverName} · '
-                  '${globalState.isStart ? appLocalizations.viaProxy : appLocalizations.viaDirect}',
-                  style: context.textTheme.labelSmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-            if (p.isFailed && p.error != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 10),
-                child: Text(
-                  p.error!,
-                  style: context.textTheme.bodySmall?.copyWith(
-                    color: scheme.error,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: FilledButton(
-                    onPressed: _running ? null : _start,
-                    child: Text(
-                      p.isDone || p.isFailed
-                          ? appLocalizations.retry
-                          : appLocalizations.start,
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                TextButton.icon(
-                  onPressed: p.isDone ? _copy : null,
-                  icon: const Icon(Icons.copy, size: 18),
-                  label: Text(appLocalizations.stCopy),
+                ],
+                const SizedBox(height: 12),
+                if (p.serverName.isNotEmpty)
+                  Text(
+                    '${p.serverName} · ${chinese ? '内核路由' : 'Core routing'}',
+                    textAlign: TextAlign.center,
+                    style: context.textTheme.bodySmall,
+                  ),
+                if (p.isFailed && p.error != null) ...[
+                  const SizedBox(height: 12),
+                  Semantics(
+                    liveRegion: true,
+                    child: Text(
+                      p.error!,
+                      textAlign: TextAlign.center,
+                      style: context.textTheme.bodyMedium?.copyWith(
+                        color: scheme.error,
+                      ),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.center,
+                  children: [
+                    FilledButton.icon(
+                      key: const ValueKey('speed-test-start'),
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(160, 48),
+                      ),
+                      onPressed: _running ? null : _start,
+                      icon: Icon(
+                        _running
+                            ? Icons.hourglass_top_rounded
+                            : Icons.play_arrow_rounded,
+                      ),
+                      label: Text(
+                        _running
+                            ? (chinese ? '测速中' : 'Testing')
+                            : p.isDone || p.isFailed
+                            ? appLocalizations.retry
+                            : appLocalizations.start,
+                      ),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: p.isDone ? _copy : null,
+                      icon: const Icon(Icons.copy_rounded, size: 18),
+                      label: Text(appLocalizations.stCopy),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -460,7 +528,7 @@ class _ArcPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_ArcPainter old) =>
-      old.progress != progress || old.color != color;
+      old.progress != progress || old.color != color || old.track != track;
 }
 
 /// 延迟 → 下载 → 上传 三个点，当前阶段高亮。

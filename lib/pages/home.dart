@@ -218,7 +218,7 @@ class _HomePageState extends State<HomePage> {
                   final navigationView = navigationItem.builder(context);
                   return KeepScope(
                     key: ValueKey(navigationItem.label),
-                    keep: navigationItem.keep,
+                    keep: isMobile || navigationItem.keep,
                     child: isMobile
                         ? navigationView
                         : Navigator(
@@ -290,7 +290,7 @@ class _HomePageViewState extends ConsumerState<_HomePageView> {
   @override
   initState() {
     super.initState();
-    _currentPageIndex = _pageIndex;
+    _currentPageIndex = _pageIndex < 0 ? 0 : _pageIndex;
     _pageController = PageController(initialPage: _currentPageIndex);
     _pageLabelSubscription = ref.listenManual(currentPageLabelProvider, (
       prev,
@@ -305,7 +305,11 @@ class _HomePageViewState extends ConsumerState<_HomePageView> {
   @override
   void didUpdateWidget(covariant _HomePageView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.navigationItems.length != widget.navigationItems.length) {
+    if (oldWidget.navigationItems.length != widget.navigationItems.length ||
+        oldWidget.navigationItems.asMap().entries.any(
+          (entry) =>
+              entry.value.label != widget.navigationItems[entry.key].label,
+        )) {
       _updatePageController();
     }
   }
@@ -334,16 +338,22 @@ class _HomePageViewState extends ConsumerState<_HomePageView> {
       FocusManager.instance.primaryFocus?.unfocus();
     }
 
-    if (ref.read(isMobileViewProvider)) {
-      if (_currentPageIndex != index) {
-        setState(() {
-          _currentPageIndex = index;
-        });
-      }
-      return;
+    if (_currentPageIndex == index) return;
+    setState(() => _currentPageIndex = index);
+    if (!_pageController.hasClients) return;
+    final motion = FluxoraMotion.ofContext(context);
+    if (ignoreAnimateTo ||
+        !ref.read(isMobileViewProvider) ||
+        motion.reduceMotion ||
+        ((_pageController.page ?? index) - index).abs() > 1.1) {
+      _pageController.jumpToPage(index);
+    } else {
+      await _pageController.animateToPage(
+        index,
+        duration: motion.base,
+        curve: motion.standard,
+      );
     }
-
-    _pageController.jumpToPage(index);
   }
 
   void _updatePageController() {
@@ -360,32 +370,35 @@ class _HomePageViewState extends ConsumerState<_HomePageView> {
 
   @override
   Widget build(BuildContext context) {
-    if (ref.watch(isMobileViewProvider)) {
-      final index = _pageIndex < 0 ? 0 : _pageIndex;
-      // Cached pages switch instantly when accessibility or low-effects mode requests it.
-      final motion = FluxoraMotion.ofContext(context);
-      // `KeptPageView` rather than `AnimatedSwitcher`: the switcher disposed the
-      // outgoing page when its fade ended, so every mobile switch threw away
-      // that page's `State` (scroll position, in-page selections, form text) and
-      // the next visit re-ran `initState` — which for the real pages means real
-      // work. The replacement keeps visited pages mounted and inert, and keeps
-      // the Aurora transition: `base` fade + the 4 px `enterOffset` lift,
-      // both collapsing to zero under reduced motion.
-      return KeptPageView(
-        index: index,
-        pageBuilder: widget.pageBuilder,
-        duration: motion.base,
-        inCurve: motion.enter,
-        outCurve: motion.exit,
-        enterOffset: motion.enterOffset,
-      );
-    }
+    final mobile = ref.watch(isMobileViewProvider);
     return PageView.builder(
+      key: const ValueKey('main-page-view'),
       controller: _pageController,
-      physics: const NeverScrollableScrollPhysics(),
+      physics: mobile
+          ? const PageScrollPhysics()
+          : const NeverScrollableScrollPhysics(),
+      onPageChanged: (index) {
+        if (_currentPageIndex != index) {
+          setState(() => _currentPageIndex = index);
+        }
+        final page = widget.navigationItems[index].label;
+        if (ref.read(currentPageLabelProvider) != page) {
+          globalState.appController.toPage(page);
+        }
+      },
       itemCount: widget.navigationItems.length,
+      findChildIndexCallback: (key) {
+        final index = widget.navigationItems.indexWhere(
+          (item) => ValueKey(item.label) == key,
+        );
+        return index < 0 ? null : index;
+      },
       itemBuilder: (context, index) {
-        return widget.pageBuilder(context, index);
+        return TickerMode(
+          key: ValueKey(widget.navigationItems[index].label),
+          enabled: _currentPageIndex == index,
+          child: widget.pageBuilder(context, index),
+        );
       },
     );
   }

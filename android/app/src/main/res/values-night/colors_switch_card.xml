@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="switch_card_bg">#F21E1E1E</color>
+    <color name="switch_card_bg">#FA181C2B</color>
+    <color name="switch_card_bg_end">#FF22243A</color>
+    <color name="switch_card_border">#607E81B2</color>
+    <color name="switch_card_selected">#FF36314F</color>
     <color name="switch_card_text">#FFEDEDED</color>
     <color name="switch_card_sub">#FF9E9E9E</color>
 </resources>

@@ -20,7 +20,6 @@ class ProxiesAdvancedSettings extends ConsumerWidget {
           const _HealthCheckTimeoutItem(),
           const _DelayAnimationItem(),
           const _SyncDelayAnimationItem(),
-          const _HideTimeoutProxiesItem(),
         ],
       ),
     );
@@ -70,13 +69,11 @@ class _NodeExclusionDialog extends ConsumerStatefulWidget {
   final String currentValue;
   final String? Function(String?)? validator;
 
-  const _NodeExclusionDialog({
-    required this.currentValue,
-    this.validator,
-  });
+  const _NodeExclusionDialog({required this.currentValue, this.validator});
 
   @override
-  ConsumerState<_NodeExclusionDialog> createState() => _NodeExclusionDialogState();
+  ConsumerState<_NodeExclusionDialog> createState() =>
+      _NodeExclusionDialogState();
 }
 
 class _NodeExclusionDialogState extends ConsumerState<_NodeExclusionDialog> {
@@ -167,7 +164,9 @@ class _ConcurrencyLimitItem extends ConsumerWidget {
         textBuilder: (value) => _getDisplayText(value, context),
         onChanged: (value) {
           if (value != null) {
-            ref.read(proxiesStyleSettingProvider.notifier).updateState(
+            ref
+                .read(proxiesStyleSettingProvider.notifier)
+                .updateState(
                   (state) => state.copyWith(concurrencyLimit: value),
                 );
           }
@@ -212,38 +211,6 @@ class _HealthCheckTimeoutItem extends ConsumerWidget {
   }
 }
 
-/// RC.9 — hide the proxies whose last delay test timed out.
-///
-/// Purely a display preference stored in [ProxiesStyle]; it is applied by
-/// `visibleGroupsState` and therefore only affects the proxies page.
-class _HideTimeoutProxiesItem extends ConsumerWidget {
-  const _HideTimeoutProxiesItem();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final hideTimeoutProxies = ref.watch(
-      proxiesStyleSettingProvider.select((state) => state.hideTimeoutProxies),
-    );
-
-    return ListItem(
-      leading: const Icon(Icons.visibility_off_outlined),
-      title: Text(appLocalizations.hideTimeoutProxies),
-      subtitle: Text(appLocalizations.hideTimeoutProxiesDesc),
-      trailing: Switch(
-        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        value: hideTimeoutProxies,
-        onChanged: (value) {
-          ref
-              .read(proxiesStyleSettingProvider.notifier)
-              .updateState(
-                (state) => state.copyWith(hideTimeoutProxies: value),
-              );
-        },
-      ),
-    );
-  }
-}
-
 class _SyncDelayAnimationItem extends ConsumerWidget {
   const _SyncDelayAnimationItem();
 
@@ -262,7 +229,9 @@ class _SyncDelayAnimationItem extends ConsumerWidget {
         onChanged: (bool value) async {
           ref
               .read(proxiesStyleSettingProvider.notifier)
-              .updateState((state) => state.copyWith(syncDelayAnimation: value));
+              .updateState(
+                (state) => state.copyWith(syncDelayAnimation: value),
+              );
         },
       ),
     );
@@ -271,7 +240,6 @@ class _SyncDelayAnimationItem extends ConsumerWidget {
 
 class _DelayAnimationItem extends ConsumerWidget {
   const _DelayAnimationItem();
-
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

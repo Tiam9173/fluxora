@@ -37,7 +37,7 @@ void main() {
       expect(dashboardColumnCount(1920), 24);
     });
 
-    test('the start control owns a whole row at every width', () {
+    test('the start control is full-width on mobile and capped on desktop', () {
       for (final width in [320.0, 601.0, 840.0, 1200.0, 1920.0]) {
         final columns = dashboardColumnCount(width);
         final hero = dashboardGridItemFor(
@@ -47,19 +47,14 @@ void main() {
 
         expect(
           hero.crossAxisCellCount,
-          columns,
-          reason:
-              'at $width px the grid has $columns columns; the Hero must take '
-              'all of them',
+          columns > 8 ? 8 : columns,
+          reason: 'at $width px keep the connection panel compact and readable',
         );
       }
     });
 
     test('the start control stays non-deletable after the span rewrite', () {
-      final hero = dashboardGridItemFor(
-        DashboardWidget.startButton.widget,
-        16,
-      );
+      final hero = dashboardGridItemFor(DashboardWidget.startButton.widget, 16);
 
       expect(hero.isDeletable, isFalse);
       expect(

@@ -26,8 +26,8 @@
     <application
         android:name=".FluxoraApplication"
         android:hardwareAccelerated="true"
-        android:icon="@mipmap/ic_launcher_light"
-        android:roundIcon="@mipmap/ic_launcher_round_light"
+        android:icon="@mipmap/brand_official_light"
+        android:roundIcon="@mipmap/brand_official_light"
         android:label="@string/fluxora"
         android:banner="@drawable/tv_banner"
         android:networkSecurityConfig="@xml/network_security_config"

@@ -160,7 +160,7 @@ void main() {
       },
     );
   }
-  testWidgets('live automatic group still refuses manual proxy switching', (
+  testWidgets('live automatic groups expose manual node selection', (
     tester,
   ) async {
     await open(tester, picking: false);
@@ -169,6 +169,6 @@ void main() {
           .ancestor(of: find.text('Tokyo node'), matching: find.byType(InkWell))
           .first,
     );
-    expect(row.onTap, isNull);
+    expect(row.onTap, isNotNull);
   });
 }

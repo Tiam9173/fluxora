@@ -147,6 +147,14 @@ void main() {
     await tester.ensureVisible(outline);
     await tester.tap(outline);
     await tester.pump();
+    expect(find.byType(LinearProgressIndicator), findsNothing);
+    expect(
+      find.descendant(
+        of: outline,
+        matching: find.byType(CircularProgressIndicator),
+      ),
+      findsOneWidget,
+    );
     await tester.pumpWidget(const SizedBox());
     await tester.runAsync(() async {
       pending.complete(true);

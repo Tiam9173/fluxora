@@ -18,20 +18,24 @@ void main() {
     }
   });
 
-  test('the hero owns a whole row at every width', () {
-    for (final width in const [372.0, 601.0, 840.0, 1200.0, 1920.0]) {
-      final columns = dashboardColumnCount(width);
-      final hero = dashboardGridItemFor(
-        DashboardWidget.startButton.widget,
-        columns,
-      );
-      expect(
-        hero.crossAxisCellCount,
-        columns,
-        reason: 'the start control must not share its row at $width',
-      );
-    }
-  });
+  test(
+    'the connection control is full-width on phones and compact on desktop',
+    () {
+      for (final width in const [372.0, 601.0, 840.0, 1200.0, 1920.0]) {
+        final columns = dashboardColumnCount(width);
+        final hero = dashboardGridItemFor(
+          DashboardWidget.startButton.widget,
+          columns,
+        );
+        expect(
+          hero.crossAxisCellCount,
+          columns > 8 ? 8 : columns,
+          reason:
+              'keep the connection control readable without stretching at $width',
+        );
+      }
+    },
+  );
 
   // Registered, not fixed: the floor of 8 columns exists so the 8-cell hero owns
   // a row, but at the 372 px window minimum the content area is only

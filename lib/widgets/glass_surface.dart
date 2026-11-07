@@ -51,8 +51,8 @@ class GlassSurface extends StatelessWidget {
         borderRadius: rounded,
         child: BackdropFilter(
           filter: ui.ImageFilter.blur(
-            sigmaX: FluxoraMaterial.blurSigma,
-            sigmaY: FluxoraMaterial.blurSigma,
+            sigmaX: material.sigma,
+            sigmaY: material.sigma,
           ),
           child: surface,
         ),

@@ -405,6 +405,7 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
                     tabs: [
                       for (final group in groups)
                         Tab(
+                          height: 56,
                           child: Padding(
                             padding: globalState.isAndroidTV
                                 ? const EdgeInsets.symmetric(
@@ -412,7 +413,14 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
                                     vertical: 6,
                                   )
                                 : EdgeInsets.zero,
-                            child: EmojiText(group.name),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                EmojiText(group.name),
+                                if (group.type.isComputedSelected)
+                                  GroupSelectionControl(group: group),
+                              ],
+                            ),
                           ),
                         ),
                     ],

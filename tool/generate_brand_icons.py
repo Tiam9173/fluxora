@@ -132,8 +132,8 @@ def sources():
     for folder in ['values', 'values-night']:
         styles = RES / folder / 'styles.xml'
         text = styles.read_text(encoding='utf-8')
-        icon = '@mipmap/ic_launcher' if folder.endswith('night') else '@mipmap/ic_launcher_light'
-        text = re.sub(r'@drawable/(splash_text_(light|dark)|ic_brand_splash)', icon, text)
+        icon = '@mipmap/brand_official_dark' if folder.endswith('night') else '@mipmap/brand_official_light'
+        text = re.sub(r'(<item name="windowSplashScreenAnimatedIcon">).*?(</item>)', lambda match: match[1] + icon + match[2], text)
         write(styles, text)
     write(RES / 'drawable-night/ic_tile.xml', vector(24))
     write(RES / 'drawable/ic_launcher_monochrome.xml', vector(108))
@@ -307,7 +307,7 @@ def check():
     assert len(notification_hashes) == 3
     for folder in ['values', 'values-night']:
         styles = (RES / folder / 'styles.xml').read_text(encoding='utf-8')
-        assert 'splash_text_' not in styles and '@mipmap/ic_launcher' in styles
+        assert 'splash_text_' not in styles and '@mipmap/brand_official_' in styles
     inventory = json.loads((OUT / 'inventory.json').read_text(encoding='utf-8'))
     assert all(hashlib.sha256((ROOT / p).read_bytes()).hexdigest() == h for p,h in inventory.items())
     print('PASS: 16 distinct master-matched exports, adaptive padding, 7-size ICOs, monochrome alpha, aliases, hashes.')

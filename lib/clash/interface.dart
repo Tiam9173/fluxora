@@ -307,6 +307,9 @@ abstract class ClashHandlerInterface with ClashInterface {
     return invoke<String>(
       method: ActionMethod.changeProxy,
       data: json.encode(changeProxyParams),
+      timeout: const Duration(seconds: 10),
+      onTimeout: () =>
+          throw TimeoutException('Core did not acknowledge node selection'),
     );
   }
 

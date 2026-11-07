@@ -13,6 +13,8 @@ import 'package:fluxora/models/models.dart';
 import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/l10n/l10n.dart';
+import 'package:fluxora/manager/clash_manager.dart';
+import 'package:fluxora/views/proxies/proxies.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:yaml/yaml.dart';
 // ignore: depend_on_referenced_packages
@@ -30,9 +32,20 @@ class _Paths extends Fake
 }
 
 class _Core extends Fake implements ClashHandlerInterface {
+  @override
+  Future<bool> setState(CoreState state) async => true;
   String node = 'A-node';
   bool rejectB = false;
   int emptyReads = 0;
+  String groupType = 'Selector';
+  String? nativeLock;
+  final changes = <ChangeProxyParams>[];
+  @override
+  Future<String> changeProxy(ChangeProxyParams params) async {
+    changes.add(params);
+    return '';
+  }
+
   final flush = Completer<bool>();
   @override
   Future<bool> forceGc({bool forceFreeOSMemory = false}) async => true;
@@ -81,7 +94,8 @@ class _Core extends Fake implements ClashHandlerInterface {
       },
       'Select': {
         'name': 'Select',
-        'type': 'Selector',
+        'type': groupType,
+        if (nativeLock != null) 'fixed': nativeLock,
         'now': node,
         'all': [node],
       },
@@ -92,6 +106,18 @@ class _Core extends Fake implements ClashHandlerInterface {
 
 class _Controller extends AppController {
   _Controller(super.context, super.ref);
+  Future<void>? lastChange;
+  @override
+  Future<void> handleChangeProfile({
+    bool hardRestart = false,
+    required String? previousProfileId,
+  }) {
+    return lastChange = super.handleChangeProfile(
+      hardRestart: hardRestart,
+      previousProfileId: previousProfileId,
+    );
+  }
+
   @override
   void addCheckIpNumDebounce() {}
   @override
@@ -103,7 +129,7 @@ void main() {
   late _Core core;
   late ClashHandlerInterface original;
   late WidgetRef ref;
-  late AppController controller;
+  late _Controller controller;
   const profiles = [
     Profile(
       id: 'switch-A',
@@ -163,6 +189,87 @@ rules: ['MATCH,Select']
     System.platformOverride = null;
   });
 
+  testWidgets(
+    'profile selection through the live manager refreshes the scoped proxy page',
+    (tester) async {
+      final container = await tester.runAsync(() async => ProviderContainer());
+      addTearDown(container!.dispose);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            navigatorKey: globalState.navigatorKey,
+            home: ClashManager(
+              child: Consumer(
+                builder: (context, r, _) {
+                  globalState.measure = Measure.of(context, 1);
+                  ref = r;
+                  controller = _Controller(context, ref);
+                  globalState.appController = controller;
+                  return ProviderScope(
+                    overrides: [queryProvider.overrideWith(() => Query())],
+                    child: const ProxiesView(),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.runAsync(() => controller.applyProfile(silence: true));
+      await tester.pumpAndSettle();
+      expect(find.text('A-node'), findsWidgets);
+      await tester.runAsync(() async {
+        container.read(currentProfileIdProvider.notifier).value =
+            profiles.last.id;
+        container.read(needSetupProvider);
+        expect(controller.lastChange, isNotNull);
+        await controller.lastChange!.timeout(const Duration(seconds: 3));
+      });
+      await tester.pumpAndSettle();
+      expect(core.node, 'B-node');
+      expect(find.text('B-node'), findsWidgets);
+      expect(find.text('A-node'), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 3));
+    },
+  );
+
+  testWidgets(
+    'automatic groups reflect native locks and release without reasserting stale choices',
+    (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            navigatorKey: globalState.navigatorKey,
+            home: Consumer(
+              builder: (context, r, _) {
+                ref = r;
+                controller = _Controller(context, ref);
+                globalState.appController = controller;
+                return const SizedBox();
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.runAsync(() async {
+        await controller.applyProfile(silence: true);
+        for (final type in ['URLTest', 'Fallback']) {
+          core.groupType = type;
+          core.nativeLock = core.node;
+          await controller.updateGroups();
+          expect(ref.read(selectedMapProvider)['Select'], core.node);
+          core.nativeLock = '';
+          await controller.updateGroups();
+          expect(ref.read(selectedMapProvider).containsKey('Select'), isFalse);
+        }
+        expect(core.changes, isEmpty);
+      });
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 3));
+    },
+  );
   testWidgets(
     'switch publishes B nodes even when old DNS flush never answers',
     (tester) async {
