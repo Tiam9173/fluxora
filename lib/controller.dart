@@ -260,7 +260,9 @@ class AppController {
           ], !keepVpnService);
           break;
         } catch (e) {
-          commonPrint.log('restartCore: start attempt ${attempt + 1} failed: $e');
+          commonPrint.log(
+            'restartCore: start attempt ${attempt + 1} failed: $e',
+          );
           if (attempt == 2) rethrow;
           await Future.delayed(const Duration(milliseconds: 400));
         }
@@ -519,15 +521,14 @@ class AppController {
   Future<bool> _shouldUpdateDashboardTick() async {
     if (!system.isDesktop) {
       final lifecycleState = WidgetsBinding.instance.lifecycleState;
-      return lifecycleState == null || lifecycleState == AppLifecycleState.resumed;
+      return lifecycleState == null ||
+          lifecycleState == AppLifecycleState.resumed;
     }
 
     final bucket = DateTime.now().millisecondsSinceEpoch ~/ 500;
     if (_tickAllowedBucket == bucket) return _tickAllowed;
 
-    final isPinned = _ref.read(
-      windowSettingProvider.select((s) => s.isPinned),
-    );
+    final isPinned = _ref.read(windowSettingProvider.select((s) => s.isPinned));
     var allowed = true;
     if (!isPinned) {
       if (await window?.isVisible == false) {
@@ -613,7 +614,9 @@ class AppController {
     final cleared = config.copyWith(
       scriptProps: const ScriptProps(),
       profiles: config.profiles
-          .map((profile) => profile.copyWith(overrideData: const OverrideData()))
+          .map(
+            (profile) => profile.copyWith(overrideData: const OverrideData()),
+          )
           .toList(),
     );
     globalState.config = cleared;
@@ -922,9 +925,7 @@ class AppController {
   /// 监听回环地址供 App 自己用。
   Future<bool> _forceLoopbackController() async {
     try {
-      final prefs = await Preferences()
-          .sharedPreferencesCompleter
-          .future
+      final prefs = await Preferences().sharedPreferencesCompleter.future
           .timeout(const Duration(milliseconds: 300), onTimeout: () => null);
       return prefs?.getBool('force_loopback_controller') ?? true;
     } catch (e) {
@@ -1142,7 +1143,10 @@ class AppController {
     });
   }
 
-  Future<void> handleChangeProfile({bool hardRestart = false}) {
+  Future<void> handleChangeProfile({
+    bool hardRestart = false,
+    required String? previousProfileId,
+  }) {
     return _coreLifecycleLock.synchronized(() async {
       if (hardRestart) {
         _ref.read(isRestartingCoreProvider.notifier).state = true;
@@ -1156,10 +1160,14 @@ class AppController {
         }
       } else {
         if (system.isAndroid) {
-          clashCore.closeConnections();
-          await clashCore.flushDnsCache();
+          // Best-effort cleanup must not hold the lifecycle lock before apply/start.
+          clashCoreForget(
+            clashCore.closeConnections(),
+            'profile connections cleanup',
+          );
+          clashCoreForget(clashCore.flushDnsCache(), 'profile DNS cleanup');
         }
-        final prevProfileId = _ref.read(currentProfileIdProvider);
+        final prevProfileId = previousProfileId;
         try {
           await _applyProfile();
         } catch (err) {
@@ -1215,8 +1223,7 @@ class AppController {
       title: appLocalizations.switchProfileFailed,
       message: TextSpan(
         children: [
-          if (failedLabel case final label?)
-            TextSpan(text: '"$label"\n'),
+          if (failedLabel case final label?) TextSpan(text: '"$label"\n'),
           TextSpan(text: reason),
           TextSpan(text: '\n\n'),
           if (restored)
@@ -1379,7 +1386,6 @@ class AppController {
         : const Duration(seconds: 3);
     if (currentGroups.isNotEmpty) {
       commonPrint.log('updateGroups error: $e');
-      return;
     }
 
     if (_updateGroupsRetryCount >= maxRetryRounds) {
@@ -1785,9 +1791,9 @@ class AppController {
       }
     }),
     TeardownStep('reliability-stats', () async {
-      await chainProxyManager
-          .flushReliabilityStats()
-          .timeout(const Duration(seconds: 2));
+      await chainProxyManager.flushReliabilityStats().timeout(
+        const Duration(seconds: 2),
+      );
     }),
     TeardownStep('core-shutdown', () async {
       // Bounded on purpose. `shutdown()` waits for the core isolate to answer
@@ -1812,9 +1818,9 @@ class AppController {
       if (!system.isWindows) return;
       // B2 — `stopHelperService` keeps its own ownership gate; nothing here
       // widens it. 6 s: IPC <=2 s + 4x500 ms SCM poll.
-      final outcome = await Windows()
-          .stopHelperService()
-          .timeout(const Duration(seconds: 6));
+      final outcome = await Windows().stopHelperService().timeout(
+        const Duration(seconds: 6),
+      );
       if (outcome != HelperStopOutcome.stopped) {
         commonPrint.log(
           'Helper service not confirmed stopped on exit: ${outcome.name}',
@@ -2533,8 +2539,7 @@ class AppController {
   ///   the failures so the rule stays total, and so it matches the profile page,
   ///   where 0 is the "test in flight" sentinel and must not float to the top.
   /// * anything else — a measured value, ordered by magnitude.
-  static int _delayRank(int? value) =>
-      value == null ? 2 : (value <= 0 ? 1 : 0);
+  static int _delayRank(int? value) => value == null ? 2 : (value <= 0 ? 1 : 0);
 
   /// Sorts by delay. [descending] reverses the **measured** values only.
   ///
@@ -2878,10 +2883,7 @@ class AppController {
         );
         // The core kept the old node; leaving the new one on screen would show
         // a selection that does not exist.
-        updateCurrentSelectedMap(
-          entry.key,
-          previousSelected[entry.key] ?? '',
-        );
+        updateCurrentSelectedMap(entry.key, previousSelected[entry.key] ?? '');
       }
     }
 

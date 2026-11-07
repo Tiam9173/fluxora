@@ -38,6 +38,7 @@ class _ClashContainerState extends ConsumerState<ClashManager>
           globalState.appController
               .handleChangeProfile(
                 hardRestart: system.isDesktop && profileChanged,
+                previousProfileId: prev?.a,
               )
               .catchError((Object error, StackTrace stackTrace) {
                 commonPrint.log('Profile change failed: $error');

@@ -269,7 +269,9 @@ abstract class ClashHandlerInterface with ClashInterface {
       method: ActionMethod.getConfig,
       data: json.encode(params),
       timeout: const Duration(seconds: 60),
-      defaultValue: Result.success(<String, dynamic>{}),
+      onTimeout: () => throw TimeoutException(
+        'Core did not return subscription configuration',
+      ),
     );
     return res;
   }
@@ -281,6 +283,9 @@ abstract class ClashHandlerInterface with ClashInterface {
       method: ActionMethod.setupConfig,
       data: data,
       timeout: const Duration(seconds: 60),
+      onTimeout: () => throw TimeoutException(
+        'Core did not acknowledge configuration setup',
+      ),
     );
   }
 
