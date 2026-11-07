@@ -12,6 +12,7 @@ import android.widget.BaseAdapter
 import android.widget.LinearLayout
 import android.widget.ListView
 import android.widget.TextView
+import io.fluxora.app.services.NotificationComponentCache
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -105,7 +106,7 @@ class SwitchCardActivity : Activity() {
             // 改成：先把 App 拉起来，等卡片真正让位（onPause）再关自己。
             runCatching {
                 startActivity(Intent(Intent.ACTION_MAIN).apply {
-                    component = io.fluxora.app.services.NotificationComponentCache.get(this@SwitchCardActivity)
+                    component = NotificationComponentCache.get(this@SwitchCardActivity)
                     addCategory(Intent.CATEGORY_LAUNCHER)
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
                     putExtra("open_profiles", true)
