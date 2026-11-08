@@ -35,6 +35,11 @@ class AuroraBottomNavBar extends ConsumerWidget {
     final scheme = Theme.of(context).colorScheme;
     final motion = FluxoraMotion.ofContext(context);
     final material = FluxoraMaterial.of(context);
+    final pearl =
+        material.isObsidian &&
+        material.blurEnabled &&
+        scheme.brightness == Brightness.light;
+    final lensHighlight = pearl ? Colors.white : scheme.onSurface;
     final enableHapticFeedback = ref.watch(
       appSettingProvider.select((state) => state.enableNavBarHapticFeedback),
     );
@@ -130,11 +135,11 @@ class AuroraBottomNavBar extends ConsumerWidget {
                                         begin: Alignment.topLeft,
                                         end: Alignment.bottomRight,
                                         colors: [
-                                          scheme.onSurface.withValues(
-                                            alpha: .13,
+                                          lensHighlight.withValues(
+                                            alpha: pearl ? .9 : .13,
                                           ),
-                                          scheme.onSurface.withValues(
-                                            alpha: .035,
+                                          lensHighlight.withValues(
+                                            alpha: pearl ? .35 : .035,
                                           ),
                                         ],
                                       )
@@ -143,8 +148,8 @@ class AuroraBottomNavBar extends ConsumerWidget {
                                   FluxoraRadius.xl,
                                 ),
                                 border: Border.all(
-                                  color: scheme.onSurface.withValues(
-                                    alpha: .16,
+                                  color: lensHighlight.withValues(
+                                    alpha: pearl ? .95 : .16,
                                   ),
                                 ),
                               ),

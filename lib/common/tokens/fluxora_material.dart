@@ -69,6 +69,27 @@ class FluxoraMaterial extends ThemeExtension<FluxoraMaterial> {
         : .08 + .08 * strength,
   );
 
+  /// Colour and depth for content panels; optical filters belong to overlays.
+  LinearGradient panelGradient(ColorScheme scheme) {
+    final dark = scheme.brightness == Brightness.dark;
+    return LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [
+        Color.alphaBlend(
+          Colors.white.withValues(alpha: dark ? .055 : .92),
+          scheme.surfaceContainer,
+        ),
+        scheme.surfaceContainerLow,
+        Color.alphaBlend(
+          scheme.primary.withValues(alpha: dark ? .075 : .035),
+          scheme.surfaceContainerLow,
+        ),
+      ],
+      stops: const [0, .48, 1],
+    );
+  }
+
   LinearGradient sheen(ColorScheme scheme) => liquid
       ? LinearGradient(
           begin: Alignment.topLeft,

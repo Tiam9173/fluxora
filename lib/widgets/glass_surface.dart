@@ -29,26 +29,38 @@ class GlassSurface extends StatelessWidget {
     final rounded = BorderRadius.circular(radius);
     final hasBlur = _GlassBlurScope.maybeOf(context);
     final useBlur = blur && material.blurEnabled && !hasBlur;
+    final panel = material.isObsidian && material.blurEnabled && !useBlur;
     Widget surface = DecoratedBox(
       decoration: BoxDecoration(
         color: material.liquid && useBlur
             ? Colors.transparent
             : material.fill(scheme, floating: floating),
         borderRadius: rounded,
-        boxShadow: floating && material.blurEnabled
+        // A shadow inside the lens darkens its transparent centre into grey.
+        boxShadow: floating && material.blurEnabled && !useBlur
             ? FluxoraElevation.of(scheme.brightness).menu
             : null,
       ),
       // BoxDecoration's gradient replaces its color; paint the fill separately.
       child: DecoratedBox(
         decoration: BoxDecoration(
-          gradient: material.blurEnabled ? material.sheen(scheme) : null,
+          gradient: panel
+              ? material.panelGradient(scheme)
+              : material.blurEnabled
+              ? material.sheen(scheme)
+              : null,
           borderRadius: rounded,
           border: border ? Border.all(color: material.border(scheme)) : null,
         ),
         child: _GlassBlurScope(hasBlur: hasBlur || useBlur, child: child),
       ),
     );
+    if (panel) {
+      surface = CustomPaint(
+        foregroundPainter: _PanelRim(radius, scheme.brightness),
+        child: surface,
+      );
+    }
     if (useBlur) {
       surface = ClipRRect(
         borderRadius: rounded,
@@ -72,6 +84,39 @@ class GlassSurface extends StatelessWidget {
     }
     return surface;
   }
+}
+
+class _PanelRim extends CustomPainter {
+  const _PanelRim(this.radius, this.brightness);
+  final double radius;
+  final Brightness brightness;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+    final bounds = Offset.zero & size;
+    final dark = brightness == Brightness.dark;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(bounds.deflate(.6), Radius.circular(radius)),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.2
+        ..shader = LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withValues(alpha: dark ? .28 : .95),
+            Colors.white.withValues(alpha: dark ? .025 : .2),
+            const Color(0xFF8492DA).withValues(alpha: dark ? .17 : .18),
+          ],
+          stops: const [0, .46, 1],
+        ).createShader(bounds),
+    );
+  }
+
+  @override
+  bool shouldRepaint(_PanelRim old) =>
+      radius != old.radius || brightness != old.brightness;
 }
 
 class _GlassBlurScope extends InheritedWidget {
@@ -98,16 +143,18 @@ class GlassCanvas extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: material.blurEnabled && scheme.surface != Colors.black
             ? material.isObsidian
-                  ? RadialGradient(
-                      center: const Alignment(.7, -.9),
-                      radius: 1.4,
+                  ? LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
                       colors: [
                         Color.alphaBlend(
-                          scheme.primary.withValues(alpha: .10),
+                          scheme.primary.withValues(alpha: .07),
                           scheme.surface,
                         ),
                         scheme.surface,
+                        scheme.surface,
                       ],
+                      stops: const [0, .38, 1],
                     )
                   : LinearGradient(
                       begin: Alignment.topLeft,

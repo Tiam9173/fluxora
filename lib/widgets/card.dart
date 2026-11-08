@@ -167,6 +167,12 @@ class CommonCard extends StatelessWidget {
 
   Color? getBackgroundColor(BuildContext context, Set<WidgetState> states) {
     final colorScheme = context.colorScheme;
+    final material = FluxoraMaterial.of(context);
+    if (material.isObsidian && material.blurEnabled) {
+      return isSelected
+          ? colorScheme.primary.withValues(alpha: .12)
+          : Colors.transparent;
+    }
     if (type == CommonCardType.filled) {
       if (isSelected) {
         return FluxoraMaterial.of(context).enabled
@@ -188,6 +194,7 @@ class CommonCard extends StatelessWidget {
     // Align the default with the design-system card radius (D4.6: card = lg = 16)
     // instead of the legacy 20, so CommonCard and FluxoraCard share one corner
     // language. Call sites that pass an explicit radius keep their own value.
+    final material = FluxoraMaterial.of(context);
     final actualRadius = radius ?? FluxoraRadius.card;
     var childWidget = child;
 
@@ -237,7 +244,8 @@ class CommonCard extends StatelessWidget {
       onPressed: onPressed,
       child: childWidget,
     );
-    if (type != CommonCardType.filled && FluxoraMaterial.of(context).enabled) {
+    if (material.enabled &&
+        (type != CommonCardType.filled || material.isObsidian)) {
       card = GlassSurface(radius: actualRadius, border: false, child: card);
     }
 

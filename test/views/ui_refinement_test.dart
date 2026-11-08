@@ -172,6 +172,7 @@ void main() {
     List<DashboardWidget>? dashboardWidgets,
     List<Group> groups = const [],
     FluxoraVisualStyle visualStyle = FluxoraVisualStyle.fluxora,
+    FluxoraSurfaceStyle surfaceStyle = FluxoraSurfaceStyle.hybrid,
   }) async {
     final morePage = [
       PageLabel.connections,
@@ -191,7 +192,11 @@ void main() {
             dashboardWidgets ?? defaultAndroidDashboardWidgets,
         desktopDashboardWidgets: dashboardWidgets ?? defaultDashboardWidgets,
       ),
-      themeProps: ThemeProps(useHarmonyFont: true, visualStyle: visualStyle),
+      themeProps: ThemeProps(
+        useHarmonyFont: true,
+        visualStyle: visualStyle,
+        surfaceStyle: surfaceStyle,
+      ),
       profiles: empty
           ? []
           : const [
@@ -527,6 +532,7 @@ void main() {
             brightness: brightness,
             size: size,
             visualStyle: FluxoraVisualStyle.obsidian,
+            surfaceStyle: FluxoraSurfaceStyle.liquid,
             dashboardWidgets: [
               DashboardWidget.startButton,
               DashboardWidget.networkSpeed,
@@ -580,6 +586,58 @@ void main() {
   }
 
   for (final brightness in Brightness.values) {
+    testWidgets(
+      'obsidian reference surfaces across lists and menus $brightness',
+      (tester) async {
+        for (final page in [
+          PageLabel.dashboard,
+          PageLabel.proxies,
+          PageLabel.profiles,
+          PageLabel.tools,
+        ]) {
+          await show(
+            tester,
+            brightness: brightness,
+            page: page,
+            visualStyle: FluxoraVisualStyle.obsidian,
+            surfaceStyle: FluxoraSurfaceStyle.liquid,
+            groups: [
+              Group(
+                type: GroupType.Selector,
+                name: '节点选择',
+                all: const [
+                  Proxy(name: '东京 · 高速线路 01', type: 'VLESS'),
+                  Proxy(name: '新加坡 · 长名称节点用于验证窄屏显示 02', type: 'Trojan'),
+                  Proxy(name: '法兰克福 03', type: 'Shadowsocks'),
+                ],
+              ),
+            ],
+          );
+          await capture(tester, 'reference-${page.name}-${brightness.name}');
+          if (page == PageLabel.dashboard) {
+            expect(find.byType(StartButton), findsOneWidget);
+            await tester.tap(
+              find.byKey(const ValueKey('connection-node-picker')),
+            );
+            await tester.pump();
+            await tester.pump(const Duration(milliseconds: 500));
+            await capture(tester, 'reference-node-menu-${brightness.name}');
+            Navigator.of(tester.element(find.byType(SwitchCard))).pop();
+            await tester.pump();
+            await tester.pump(const Duration(milliseconds: 500));
+          }
+          if (page == PageLabel.proxies) {
+            await tester.tap(find.byTooltip(appLocalizations.more).first);
+            await tester.pumpAndSettle();
+            await capture(tester, 'reference-proxy-menu-${brightness.name}');
+          }
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox());
+          await tester.pump(const Duration(seconds: 1));
+        }
+      },
+    );
+
     testWidgets(
       'compact locked computed nodes keep names and latency readable $brightness',
       (tester) async {
@@ -854,6 +912,7 @@ void main() {
             PageLabel.dashboard;
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 500));
+        await tester.pump(const Duration(milliseconds: 350));
         await capture(tester, 'liquid-home-${brightness.name}');
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox());

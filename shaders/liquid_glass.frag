@@ -51,8 +51,8 @@ void main() {
   float luminance = dot(linear, vec3(0.2126, 0.7152, 0.0722));
   if (u_dark > 0.5 && luminance > 0.10) {
     linear *= 0.10 / luminance;
-  } else if (u_dark < 0.5 && luminance < 0.70 - 0.16 * u_clarity) {
-    linear = mix(linear, vec3(1.0), clamp((0.70 - 0.16 * u_clarity - luminance) / max(1.0 - luminance, 0.001), 0.0, 1.0));
+  } else if (u_dark < 0.5 && luminance < 0.86 - 0.08 * u_clarity) {
+    linear = mix(linear, vec3(1.0), clamp((0.86 - 0.08 * u_clarity - luminance) / max(1.0 - luminance, 0.001), 0.0, 1.0));
   }
   rgb = pow(linear, vec3(1.0 / 2.2));
   float glint = pow(rim, 3.0) * (0.5 + 0.5 * dot(normal, normalize(vec2(-0.6, -0.8))));

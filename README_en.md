@@ -36,9 +36,9 @@ On Windows, run the installer or extract the portable ZIP and open `Fluxora.exe`
 
 ## The 1.1.2 candidate interface
 
-The existing Flutter application and state management now support Classic, Hybrid Glass and reduced-effects materials, light / dark / system appearance, custom accent colours and Android dynamic colour. The desktop sidebar switches between 208px labelled navigation and a 68px icon rail. Mobile uses compact floating navigation. Dashboard widgets can be added, reordered and removed while preserving the primary connection control.
+The existing Flutter application and state management support Classic, Frosted Glass, Liquid Glass and reduced-effects materials, with an optional Obsidian Glass theme, light / dark / system appearance, custom accent colours and Android dynamic colour. The desktop sidebar switches between 208px labelled navigation and a 68px icon rail. Mobile uses floating glass navigation. Dashboard widgets can be added, reordered and removed while preserving the primary connection control.
 
-Motion follows actual state and the system reduced-motion preference. Dense lists retain solid surfaces. These implementations are not a claim of performance certification on every device.
+Lens strength, clarity, motion style and intensity have separate controls. Live refraction requires a renderer with Shader Filter support; other backends use a compatible effect. Cards and lists share surface highlights without adding a backdrop filter to every node. Motion follows actual state, and System mode respects the system reduced-motion preference. These implementations are not a claim of performance certification on every device.
 
 
 ### Brand icons

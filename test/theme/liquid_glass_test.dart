@@ -11,6 +11,53 @@ import '../support/render_capture.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  testWidgets('light floating glass keeps a white canvas clear', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(
+          extensions: const [
+            FluxoraMaterial(style: FluxoraSurfaceStyle.liquid),
+          ],
+        ),
+        home: const RepaintBoundary(
+          key: ValueKey('white-lens'),
+          child: ColoredBox(
+            color: Colors.white,
+            child: Center(
+              child: GlassSurface(
+                floating: true,
+                blur: true,
+                child: SizedBox(width: 280, height: 74),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final boundary = tester.renderObject<RenderRepaintBoundary>(
+      find.byKey(const ValueKey('white-lens')),
+    );
+    await tester.runAsync(() async {
+      final image = await boundary.toImage();
+      try {
+        final pixels = (await image.toByteData())!;
+        final centre =
+            (image.width * (image.height ~/ 2) + image.width ~/ 2) * 4;
+        for (var channel = 0; channel < 3; channel++) {
+          expect(
+            pixels.getUint8(centre + channel),
+            greaterThanOrEqualTo(235),
+            reason: 'The floating shadow must not dirty the transparent centre',
+          );
+        }
+      } finally {
+        image.dispose();
+      }
+    });
+  });
   test('clarity persists independently and older settings remain readable', () {
     const props = ThemeProps(
       surfaceStyle: FluxoraSurfaceStyle.liquid,

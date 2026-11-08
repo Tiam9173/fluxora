@@ -81,7 +81,7 @@ ThemeData fluxoraMaterialTheme(
     );
   }
   final original = base.colorScheme;
-  final scheme = original.surface == Colors.black
+  final scheme = original.surface == Colors.black || material.isObsidian
       ? original
       : original.copyWith(
           surfaceContainerLow: Color.alphaBlend(
@@ -141,6 +141,25 @@ ThemeData fluxoraMaterialTheme(
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: (base.filledButtonTheme.style ?? const ButtonStyle()).copyWith(
+        backgroundBuilder: material.isObsidian && material.blurEnabled
+            ? (context, states, child) => DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: states.contains(WidgetState.disabled)
+                      ? null
+                      : LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.white.withValues(alpha: .18),
+                            Colors.transparent,
+                            Colors.black.withValues(alpha: .08),
+                          ],
+                          stops: const [0, .45, 1],
+                        ),
+                ),
+                child: child,
+              )
+            : null,
         side: WidgetStateProperty.resolveWith(
           (states) => states.contains(WidgetState.disabled)
               ? null
@@ -256,14 +275,14 @@ ColorScheme fluxoraSchemeFromSeed({
 ColorScheme _obsidianScheme(ColorScheme scheme) {
   final dark = scheme.brightness == Brightness.dark;
   return scheme.copyWith(
-    surface: Color(dark ? 0xFF0A0B11 : 0xFFF2F3F8),
-    surfaceDim: Color(dark ? 0xFF08090E : 0xFFDADEEA),
+    surface: Color(dark ? 0xFF08090F : 0xFFF4F6FC),
+    surfaceDim: Color(dark ? 0xFF06070C : 0xFFE4E8F2),
     surfaceBright: Color(dark ? 0xFF2A2D3D : 0xFFF9FAFE),
     surfaceContainerLowest: Color(dark ? 0xFF101118 : 0xFFFFFFFF),
-    surfaceContainerLow: Color(dark ? 0xFF171923 : 0xFFF9FAFE),
-    surfaceContainer: Color(dark ? 0xFF1C1E2A : 0xFFF0F2FA),
-    surfaceContainerHigh: Color(dark ? 0xFF262938 : 0xFFE9ECF6),
-    surfaceContainerHighest: Color(dark ? 0xFF32364A : 0xFFDFE4F1),
+    surfaceContainerLow: Color(dark ? 0xFF14151E : 0xFFFCFDFF),
+    surfaceContainer: Color(dark ? 0xFF1A1C29 : 0xFFF5F7FD),
+    surfaceContainerHigh: Color(dark ? 0xFF232638 : 0xFFEEF2FC),
+    surfaceContainerHighest: Color(dark ? 0xFF30344A : 0xFFE6ECF8),
     onSurface: Color(dark ? 0xFFF2F3FA : 0xFF181B29),
     onSurfaceVariant: Color(dark ? 0xFFBFC3D4 : 0xFF535B72),
     outline: Color(dark ? 0xFF777C92 : 0xFF717A92),

@@ -148,17 +148,32 @@ void main() {
     ),
   };
 
+  void expectOnlyPreviewBlur() {
+    final previewFilters = find
+        .descendant(
+          of: find.byKey(const ValueKey('glass-preview')),
+          matching: find.byType(BackdropFilter),
+        )
+        .evaluate()
+        .toSet();
+    expect(previewFilters.length, lessThanOrEqualTo(1));
+    expect(
+      find
+          .byType(BackdropFilter)
+          .evaluate()
+          .where((e) => !previewFilters.contains(e)),
+      isEmpty,
+      reason: 'Only the bounded material preview may filter the backdrop',
+    );
+  }
+
   for (final entry in pages.entries) {
     for (final brightness in Brightness.values) {
       for (final size in [const Size(1200, 800), const Size(360, 780)]) {
         testWidgets('${entry.key} $brightness at $size', (tester) async {
           await pump(tester, entry.value(), brightness: brightness, size: size);
           expect(tester.takeException(), isNull);
-          expect(
-            find.byType(BackdropFilter),
-            findsNothing,
-            reason: 'Content pages must never blur each card or row',
-          );
+          expectOnlyPreviewBlur();
           if (const bool.fromEnvironment('GLASS_CAPTURE') &&
               size.width == 1200) {
             await _capture(tester, '${entry.key}-${brightness.name}');
@@ -235,7 +250,7 @@ void main() {
       tester.view.physicalSize = const Size(640, 700);
       await tester.pump(const Duration(milliseconds: 250));
       expect(tester.takeException(), isNull);
-      expect(find.byType(BackdropFilter), findsNothing);
+      expectOnlyPreviewBlur();
       if (const bool.fromEnvironment('GLASS_CAPTURE')) {
         tester.view.physicalSize = const Size(1200, 800);
         await tester.pump(const Duration(milliseconds: 250));

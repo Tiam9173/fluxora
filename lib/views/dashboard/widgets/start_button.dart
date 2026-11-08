@@ -343,21 +343,31 @@ class _StartButtonState extends ConsumerState<StartButton> {
                   color: scheme.surfaceContainerHigh,
                   gradient: material.blurEnabled
                       ? material.isObsidian
-                            ? RadialGradient(
-                                center: const Alignment(.15, -1),
-                                radius: 1.45,
+                            ? LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                                 colors: [
                                   Color.alphaBlend(
-                                    const Color(0xFF6474DC).withValues(
+                                    const Color(0xFF6478FF).withValues(
                                       alpha:
                                           scheme.brightness == Brightness.dark
-                                          ? .55
-                                          : .14,
+                                          ? .40
+                                          : .18,
                                     ),
                                     scheme.surfaceContainerHigh,
                                   ),
+                                  Color.alphaBlend(
+                                    const Color(0xFF6174D6).withValues(
+                                      alpha:
+                                          scheme.brightness == Brightness.dark
+                                          ? .26
+                                          : .10,
+                                    ),
+                                    scheme.surfaceContainer,
+                                  ),
                                   scheme.surfaceContainer,
                                 ],
+                                stops: const [0, .48, 1],
                               )
                             : LinearGradient(
                                 begin: Alignment.topLeft,
@@ -382,6 +392,19 @@ class _StartButtonState extends ConsumerState<StartButton> {
                               )
                       : null,
                 ),
+                foregroundDecoration:
+                    material.isObsidian && material.blurEnabled
+                    ? BoxDecoration(
+                        borderRadius: FluxoraRadius.cardAll,
+                        border: Border.all(
+                          color: Colors.white.withValues(
+                            alpha: scheme.brightness == Brightness.dark
+                                ? .25
+                                : .9,
+                          ),
+                        ),
+                      )
+                    : null,
                 child: Padding(
                   padding: const EdgeInsets.all(FluxoraSpacing.lg),
                   child: Column(

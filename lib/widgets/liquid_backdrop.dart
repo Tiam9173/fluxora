@@ -80,12 +80,12 @@ class _LiquidBackdropState extends State<LiquidBackdrop> {
           child: DecoratedBox(
             decoration: BoxDecoration(
               // A compatibility lens needs more tint than the adaptive shader.
-              color: scheme.surfaceContainer.withValues(
+              color: (dark ? scheme.surfaceContainer : Colors.white).withValues(
                 alpha: _shader != null
                     ? .30 - .22 * widget.clarity
                     : (dark
                           ? .84 - .06 * widget.clarity
-                          : .90 - .04 * widget.clarity),
+                          : .80 - .10 * widget.clarity),
               ),
             ),
             child: widget.child,
