@@ -352,7 +352,7 @@ class _StartButtonState extends ConsumerState<StartButton> {
                                       alpha:
                                           scheme.brightness == Brightness.dark
                                           ? .40
-                                          : .18,
+                                          : .12,
                                     ),
                                     scheme.surfaceContainerHigh,
                                   ),
@@ -361,7 +361,7 @@ class _StartButtonState extends ConsumerState<StartButton> {
                                       alpha:
                                           scheme.brightness == Brightness.dark
                                           ? .26
-                                          : .10,
+                                          : .04,
                                     ),
                                     scheme.surfaceContainer,
                                   ),

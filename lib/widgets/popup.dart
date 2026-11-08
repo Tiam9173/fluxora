@@ -443,10 +443,18 @@ class _CommonPopupMenuState extends State<CommonPopupMenu> {
 
   @override
   Widget build(BuildContext context) {
+    final material = FluxoraMaterial.of(context);
     return IntrinsicWidth(
       child: Card(
-        elevation: 12,
-        color: FluxoraMaterial.of(context).enabled
+        elevation: material.enabled
+            ? FluxoraElevation.menu
+            : FluxoraElevation.overlay,
+        shadowColor:
+            material.enabled &&
+                context.colorScheme.brightness == Brightness.light
+            ? context.colorScheme.primary.withValues(alpha: .18)
+            : null,
+        color: material.enabled
             ? Colors.transparent
             : context.colorScheme.surfaceContainer,
         clipBehavior: Clip.antiAlias,

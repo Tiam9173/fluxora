@@ -27,6 +27,8 @@ import 'package:fluxora/common/theme.dart';
 import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/l10n/l10n.dart';
 import 'package:fluxora/manager/app_manager.dart';
+import 'package:fluxora/manager/chain_proxy_manager.dart';
+import 'package:fluxora/providers/chain_proxy.dart';
 import 'package:fluxora/models/models.dart';
 import 'package:fluxora/pages/home.dart';
 import 'package:fluxora/pages/editor.dart';
@@ -75,6 +77,12 @@ class _VisualController extends RecordingAppController {
   Completer<void>? operation;
   Completer<void>? proxyReply;
   @override
+  Future<void> updateGroups({
+    List<ExternalProvider>? preloadedProviders,
+  }) async {
+    // UI scenarios supply their group snapshot; no runtime readback is started.
+  }
+  @override
   Future<void> changeProxy({
     required String groupName,
     required String proxyName,
@@ -111,6 +119,15 @@ class _VisualCore implements ClashHandlerInterface {
   @override
   dynamic noSuchMethod(Invocation invocation) => throw StateError(
     'Unexpected core call in UI test: ${invocation.memberName}',
+  );
+}
+
+class _VisualChainManager extends ChangeNotifier implements ChainProxyManager {
+  @override
+  ChainProxyConfig get config => const ChainProxyConfig();
+  @override
+  dynamic noSuchMethod(Invocation invocation) => throw StateError(
+    'Unexpected chain call in UI test: ${invocation.memberName}',
   );
 }
 
@@ -153,6 +170,9 @@ void main() {
     await (FontLoader(
       'MaterialIcons',
     )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
+    await (FontLoader(
+      FontFamily.twEmoji.value,
+    )..addFont(rootBundle.load('assets/fonts/Twemoji.Mozilla.ttf'))).load();
   });
   tearDownAll(() {
     clashCore.clashInterface = originalCore;
@@ -224,6 +244,7 @@ void main() {
     );
     final container = ProviderContainer(
       overrides: [
+        chainProxyConfigProvider.overrideWith((ref) => _VisualChainManager()),
         startButtonSelectorStateProvider.overrideWith(
           (ref) => StartButtonSelectorState(isInit: true, hasProfile: !empty),
         ),
@@ -687,6 +708,204 @@ void main() {
       },
     );
   }
+
+  for (final brightness in Brightness.values) {
+    testWidgets('node card layout gallery $brightness', (tester) async {
+      const nodes = [
+        Proxy(name: '香港 · 家宽住宅 IP 01', type: 'AnyTLS'),
+        Proxy(name: '台湾 · 住宅线路 02', type: 'AnyTLS'),
+        Proxy(name: '东京 · 低延迟线路 03', type: 'VLESS'),
+        Proxy(name: '新加坡 · 备用线路 04', type: 'Trojan'),
+        Proxy(name: '剩余流量：280.18 GB · 已用 19.82 GB', type: 'Shadowsocks'),
+        Proxy(name: '到期：2027年01月01日', type: 'AnyTLS'),
+        Proxy(name: '🇭🇰', type: 'AnyTLS'),
+        Proxy(name: '洛杉矶 · 长名称节点用于验证内容截断 08', type: 'Hysteria2'),
+        Proxy(name: '法兰克福 · 高速线路 09', type: 'VLESS'),
+      ];
+      final container = await show(
+        tester,
+        brightness: brightness,
+        page: PageLabel.proxies,
+        visualStyle: FluxoraVisualStyle.obsidian,
+        surfaceStyle: FluxoraSurfaceStyle.liquid,
+        groups: [
+          Group(
+            type: GroupType.URLTest,
+            name: '自动选择',
+            now: nodes.first.name,
+            all: nodes,
+          ),
+        ],
+      );
+      final url = globalState.appController.getRealTestUrl(
+        container.read(getRealTestUrlProvider()),
+      );
+      for (var i = 0; i < nodes.length; i++) {
+        container
+            .read(delayDataSourceProvider.notifier)
+            .setDelay(
+              Delay(
+                url: url,
+                name: nodes[i].name,
+                value: [88, 383, -1, 0, 245, 382, 149, 1201, 251][i],
+              ),
+            );
+      }
+      for (final layout in ProxiesLayout.values) {
+        for (final cardType in ProxyCardType.values) {
+          container
+              .read(proxiesStyleSettingProvider.notifier)
+              .updateState(
+                (s) => s.copyWith(layout: layout, cardType: cardType),
+              );
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 500));
+          expect(tester.takeException(), isNull, reason: '$layout $cardType');
+          await capture(
+            tester,
+            'nodes-${brightness.name}-${layout.name}-${cardType.name}',
+          );
+        }
+      }
+      // Automatic selection gets its own marker, never the manual-lock mark.
+      expect(find.byTooltip('自动选中'), findsWidgets);
+      expect(find.byTooltip('已锁定 · 再次点击恢复自动'), findsNothing);
+      (globalState.appController as _VisualController).proxyReply =
+          Completer<void>()..complete();
+      await tester.tap(find.byType(FluxoraProxyTile).first);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(container.read(selectedMapProvider)['自动选择'], nodes.first.name);
+      container
+          .read(proxiesStyleSettingProvider.notifier)
+          .updateState(
+            (s) => s.copyWith(
+              layout: ProxiesLayout.tight,
+              cardType: ProxyCardType.min,
+            ),
+          );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.byTooltip('已锁定 · 再次点击恢复自动'), findsOneWidget);
+      expect(find.text('88 ms'), findsWidgets);
+      expect(find.text('AnyTLS'), findsWidgets);
+      await capture(tester, 'nodes-${brightness.name}-locked-tight');
+      container
+          .read(proxiesStyleSettingProvider.notifier)
+          .updateState((s) => s.copyWith(type: ProxiesType.list));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(tester.takeException(), isNull);
+      await capture(tester, 'nodes-${brightness.name}-list-locked');
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 1));
+      for (final size in [const Size(320, 780), const Size(1280, 850)]) {
+        final scene = await show(
+          tester,
+          size: size,
+          textScale: size.width < 400 ? 1.4 : 1,
+          brightness: brightness,
+          page: PageLabel.proxies,
+          visualStyle: FluxoraVisualStyle.obsidian,
+          surfaceStyle: FluxoraSurfaceStyle.liquid,
+          groups: [
+            Group(
+              type: GroupType.URLTest,
+              name: '自动选择',
+              now: nodes.first.name,
+              all: nodes,
+            ),
+          ],
+        );
+        scene
+            .read(proxiesStyleSettingProvider.notifier)
+            .updateState((s) => s.copyWith(layout: ProxiesLayout.tight));
+        final testUrl = globalState.appController.getRealTestUrl(
+          scene.read(getRealTestUrlProvider()),
+        );
+        for (final node in nodes) {
+          scene
+              .read(delayDataSourceProvider.notifier)
+              .setDelay(Delay(url: testUrl, name: node.name, value: 383));
+        }
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
+        expect(tester.takeException(), isNull);
+        if (size.width == 320) expect(scene.read(getProxiesColumnsProvider), 2);
+        await capture(tester, 'nodes-${brightness.name}-${size.width.toInt()}');
+        scene
+            .read(themeSettingProvider.notifier)
+            .updateState(
+              (s) => s.copyWith(
+                visualStyle: FluxoraVisualStyle.fluxora,
+                surfaceStyle: FluxoraSurfaceStyle.classic,
+              ),
+            );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
+        await capture(
+          tester,
+          'nodes-classic-${brightness.name}-${size.width.toInt()}',
+        );
+        await tester.pumpWidget(const SizedBox());
+        await tester.pump(const Duration(seconds: 1));
+      }
+    });
+  }
+
+  testWidgets('node display settings preview follows size and layout choices', (
+    tester,
+  ) async {
+    final container = await show(
+      tester,
+      page: PageLabel.proxies,
+      visualStyle: FluxoraVisualStyle.obsidian,
+      surfaceStyle: FluxoraSurfaceStyle.liquid,
+      groups: [
+        Group(
+          type: GroupType.Selector,
+          name: '节点选择',
+          all: const [Proxy(name: '香港 · 住宅线路 01', type: 'VLESS')],
+        ),
+      ],
+    );
+    await tester.tap(find.byTooltip(appLocalizations.more).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(appLocalizations.settings));
+    await tester.pumpAndSettle();
+    final preview = find.byKey(const ValueKey('proxy-card-preview'));
+    expect(preview, findsOneWidget);
+    await capture(tester, 'nodes-settings-preview-default');
+    await tester.tap(find.text(appLocalizations.min).first);
+    await tester.pumpAndSettle();
+    expect(
+      container.read(proxiesStyleSettingProvider).cardType,
+      ProxyCardType.min,
+    );
+    expect(
+      tester
+          .widget<FluxoraProxyTile>(
+            find
+                .descendant(
+                  of: preview,
+                  matching: find.byType(FluxoraProxyTile),
+                )
+                .first,
+          )
+          .nameMaxLines,
+      1,
+    );
+    await tester.ensureVisible(preview);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(appLocalizations.tight).first);
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(of: preview, matching: find.byType(FluxoraProxyTile)),
+      findsNWidgets(3),
+    );
+    await capture(tester, 'nodes-settings-preview-min');
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets(
     'connection node opens the shared picker and subscriptions without toggling VPN',

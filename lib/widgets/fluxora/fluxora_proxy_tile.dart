@@ -5,32 +5,9 @@ import 'package:fluxora/widgets/fluxora/fluxora_status.dart';
 import 'package:fluxora/widgets/text.dart';
 import 'package:flutter/material.dart';
 
-/// A reusable proxy / node row for the future Proxy page.
-///
-/// Information hierarchy (`D4.5` spec):
-///
-/// ```text
-/// Node Name
-/// ├── Status
-/// ├── Protocol / Type
-/// ├── Latency
-/// └── optional traffic / metadata
-/// ```
-///
-/// Composed from [FluxoraCard] + [FluxoraStatus] + [FluxoraLatencyBadge] so the
-/// visual language stays in one place. This is a **presentational** widget: it
-/// takes plain values and never reads a provider, so the existing Proxy page is
-/// untouched and can migrate incrementally.
-///
-/// ```dart
-/// FluxoraProxyTile(
-///   name: '🇭🇰 Hong Kong 01',
-///   protocol: 'Trojan',
-///   status: FluxoraStatusKind.connected,
-///   delay: 42,
-///   onTap: () => select(proxy),
-/// );
-/// ```
+/// A node card with a stable name block and a shared metadata baseline.
+/// Selection and lock marks belong to the name; latency keeps the full width
+/// below it. Node selection does not imply that the VPN is connected.
 class FluxoraProxyTile extends StatelessWidget {
   const FluxoraProxyTile({
     super.key,
@@ -58,7 +35,7 @@ class FluxoraProxyTile extends StatelessWidget {
   /// Node name. Emoji are rendered through `EmojiText`.
   final String name;
 
-  /// Protocol / type, e.g. `Trojan`. Doubles as the [FluxoraStatus] label.
+  /// Protocol / type, e.g. `Trojan`.
   final String? protocol;
 
   final FluxoraStatusKind status;
@@ -96,8 +73,7 @@ class FluxoraProxyTile extends StatelessWidget {
   final bool showStatus;
   final bool showLatency;
 
-  /// Tightens padding and steps the name down from `title` to `body` for dense
-  /// lists.
+  /// Tightens padding for dense lists.
   final bool compact;
 
   /// Pins the tile to an exact height.
@@ -127,19 +103,25 @@ class FluxoraProxyTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = context.colorScheme;
-    final hasSecondary =
-        showStatus || showLatency || traffic != null || description != null;
-    final nameStyle =
-        (compact ? FluxoraTypography.body : FluxoraTypography.title).copyWith(
-          // A touch heavier than body weight: node names are the primary label
-          // and sit next to dense status text, so the hierarchy needs the help.
-          fontWeight: FontWeight.w600,
-          color: selected ? colorScheme.primary : colorScheme.onSurface,
-        );
-
+    final scheme = context.colorScheme;
+    final chinese = Localizations.localeOf(context).languageCode == 'zh';
+    final nameStyle = FluxoraTypography.body.copyWith(
+      height: 1.3,
+      fontWeight: FontWeight.w500,
+      color: scheme.onSurface,
+    );
+    final metadata = [
+      if (showStatus && protocol?.isNotEmpty == true) protocol!,
+      ?traffic,
+    ].join(' · ');
+    final marks = <Widget>[
+      ?nameTrailing,
+      ?trailing,
+      if (selected && nameTrailing == null && trailing == null)
+        Icon(Icons.check_circle_rounded, size: 15, color: scheme.primary),
+    ];
     final card = FluxoraCard(
-      // Dense rows stay opaque and never request per-row backdrop filters.
+      radius: FluxoraRadius.lg,
       filled: FluxoraMaterial.of(context).enabled,
       selected: selected,
       onTap: onTap,
@@ -148,138 +130,112 @@ class FluxoraProxyTile extends StatelessWidget {
       padding:
           padding ??
           EdgeInsets.symmetric(
-            horizontal: compact ? FluxoraSpacing.md : FluxoraSpacing.lg,
-            vertical: compact ? FluxoraSpacing.sm : FluxoraSpacing.md,
+            horizontal: FluxoraSpacing.md,
+            vertical: compact ? 6 : FluxoraSpacing.md,
           ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Selected marker: a short accent tick on the leading edge. Fixed
-          // height on purpose — the tile's height is fixed by the list's
-          // itemExtent, so the marker must not grow the row.
-          if (selected) ...[
-            Container(
-              width: 3,
-              height: 20,
-              decoration: BoxDecoration(
-                color: colorScheme.primary,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(width: FluxoraSpacing.sm),
-          ],
-          if (leading != null) ...[
-            leading!,
-            const SizedBox(width: FluxoraSpacing.md),
-          ],
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Fixed name area, `nameMaxLines` lines tall, whether or not
-                // the name actually wraps.
-                //
-                // Letting the name take its natural height made two cards in
-                // the same row look different: a long name pushed the status
-                // row down, a short one left it high, so the row read as
-                // "these cards are not the same size" even though the boxes
-                // were identical. Bettbox reserves the same way
-                // (`measure.bodyMediumHeight * maxLines`); this is the
-                // text-scaler-aware equivalent so it holds at 2.0× too.
-                SizedBox(
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (leading != null) ...[leading!, const SizedBox(width: 6)],
+              Expanded(
+                child: SizedBox(
                   height: _nameAreaHeight(context, nameStyle),
                   child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: EmojiText(
-                            name,
-                            maxLines: nameMaxLines,
-                            overflow: TextOverflow.ellipsis,
-                            style: nameStyle,
-                          ),
-                        ),
-                        if (nameTrailing != null) ...[
-                          const SizedBox(width: 4),
-                          nameTrailing!,
-                        ],
-                      ],
+                    alignment: AlignmentDirectional.topStart,
+                    child: Tooltip(
+                      message: name,
+                      child: EmojiText(
+                        name,
+                        maxLines: nameMaxLines,
+                        overflow: TextOverflow.ellipsis,
+                        style: nameStyle,
+                      ),
                     ),
                   ),
                 ),
-                if (description != null) ...[
-                  const SizedBox(height: FluxoraSpacing.xxs),
-                  description!,
-                ],
-                if (hasSecondary) ...[
-                  const SizedBox(height: FluxoraSpacing.xs),
-                  // One line, always. The proxy list gives this tile a fixed
-                  // height (`getItemHeight`), which budgets exactly **one**
-                  // secondary line; the old `Wrap` took a second line whenever
-                  // status + latency did not fit, and the row overflowed —
-                  // measured at 320 px, 2.0× text, protocol
-                  // `VLESS-Reality-Vision` (and again at 3.0× / in `min` cards).
-                  //
-                  // The status label is the part that yields: it is secondary
-                  // information, while the latency badge is the reason the user
-                  // is looking at the row.
-                  LayoutBuilder(
-                    builder: (context, constraints) => Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (showStatus && constraints.maxWidth >= 112)
-                          Flexible(
-                            child: FluxoraStatus(
-                              status: status,
-                              label: protocol,
-                            ),
-                          ),
-                        if (showLatency) ...[
-                          // `sm`, not `md`: at 3-column width the row has ~1.5 dp
-                          // of slack left after both children shrink, and the
-                          // wider gap was exactly what tipped it over.
-                          if (showStatus && constraints.maxWidth >= 112)
-                            const SizedBox(width: FluxoraSpacing.sm),
-                          // Keep latency legible in compact cards; protocol yields first.
-                          Flexible(
-                            flex: 2,
-                            child:
-                                latencySlot ??
-                                FluxoraLatencyBadge(delay: delay),
-                          ),
-                        ],
-                        if (traffic != null) ...[
-                          const SizedBox(width: FluxoraSpacing.md),
-                          Flexible(
-                            child: Text(
-                              traffic!,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: FluxoraTypography.caption.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ],
-              ],
-            ),
+              ),
+              if (marks.isNotEmpty) ...[const SizedBox(width: 6), ...marks],
+            ],
           ),
-          if (trailing != null) ...[
-            const SizedBox(width: FluxoraSpacing.md),
-            trailing!,
+          if (description != null) ...[const SizedBox(height: 2), description!],
+          if (metadata.isNotEmpty || showLatency) ...[
+            const SizedBox(height: 6),
+            LayoutBuilder(
+              builder: (context, constraints) => Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Expanded(
+                    child: metadata.isEmpty
+                        ? const SizedBox.shrink()
+                        : Row(
+                            children: [
+                              FluxoraStatus(
+                                status: status,
+                                showLabel: false,
+                                dotSize: 6,
+                                semanticLabel: switch (status) {
+                                  FluxoraStatusKind.connected =>
+                                    chinese ? '延迟测试已响应' : 'Probe responded',
+                                  FluxoraStatusKind.connecting =>
+                                    chinese ? '正在测试延迟' : 'Testing latency',
+                                  FluxoraStatusKind.error =>
+                                    chinese ? '延迟测试失败' : 'Latency test failed',
+                                  FluxoraStatusKind.warning =>
+                                    chinese ? '延迟较高' : 'High latency',
+                                  _ =>
+                                    chinese ? '尚未测试延迟' : 'Latency not tested',
+                                },
+                              ),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Tooltip(
+                                  message: metadata,
+                                  child: EmojiText(
+                                    metadata,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: FluxoraTypography.caption.copyWith(
+                                      color: scheme.onSurfaceVariant,
+                                      letterSpacing: 0,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                  ),
+                  if (showLatency) ...[
+                    if (metadata.isNotEmpty) const SizedBox(width: 4),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth:
+                            constraints.maxWidth * (metadata.isEmpty ? 1 : .64),
+                      ),
+                      child:
+                          latencySlot ??
+                          FluxoraLatencyBadge(
+                            delay: delay,
+                            dense: true,
+                            tintBackground: false,
+                          ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ],
         ],
       ),
     );
-
-    if (height == null) return card;
-    return SizedBox(height: height, child: card);
+    final content = height == null
+        ? card
+        : SizedBox(height: height, child: card);
+    return Semantics(selected: selected, child: content);
   }
 }

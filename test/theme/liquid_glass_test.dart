@@ -70,114 +70,127 @@ void main() {
     expect(props.copyWith(glassClarity: .7).glassIntensity, .4);
   });
   for (final dark in [false, true]) {
-    testWidgets(
-      'live glass stays bounded, interactive and reversible, dark=$dark',
-      (tester) async {
-        tester.view.physicalSize = const Size(360, 220);
-        tester.view.devicePixelRatio = 1;
-        addTearDown(tester.view.resetPhysicalSize);
-        addTearDown(tester.view.resetDevicePixelRatio);
-        var taps = 0;
-        Widget scene(double strength, {bool reduced = false}) => MaterialApp(
-          theme: ThemeData(
-            brightness: dark ? Brightness.dark : Brightness.light,
-            extensions: [
-              FluxoraMaterial(
-                style: reduced
-                    ? FluxoraSurfaceStyle.reduced
-                    : FluxoraSurfaceStyle.liquid,
-                glassIntensity: strength,
-              ),
-            ],
-          ),
-          home: Center(
-            child: RepaintBoundary(
-              key: const ValueKey('scene'),
-              child: SizedBox(
-                width: 360,
-                height: 220,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    for (var index = 0; index < 30; index++)
-                      Positioned(
-                        left: index * 12,
-                        top: 0,
-                        bottom: 0,
-                        width: 12,
-                        child: ColoredBox(
-                          color: index.isEven
-                              ? const Color(0xFF4771B8)
-                              : const Color(0xFF794BB8),
-                        ),
+    testWidgets('live glass stays bounded, interactive and reversible, dark=$dark', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(360, 220);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      var taps = 0;
+      Widget scene(double strength, {bool reduced = false}) => MaterialApp(
+        theme: ThemeData(
+          brightness: dark ? Brightness.dark : Brightness.light,
+          extensions: [
+            FluxoraMaterial(
+              style: reduced
+                  ? FluxoraSurfaceStyle.reduced
+                  : FluxoraSurfaceStyle.liquid,
+              glassIntensity: strength,
+            ),
+          ],
+        ),
+        home: Center(
+          child: RepaintBoundary(
+            key: const ValueKey('scene'),
+            child: SizedBox(
+              width: 360,
+              height: 220,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  for (var index = 0; index < 30; index++)
+                    Positioned(
+                      left: index * 12,
+                      top: 0,
+                      bottom: 0,
+                      width: 12,
+                      child: ColoredBox(
+                        color: index.isEven
+                            ? const Color(0xFF4771B8)
+                            : const Color(0xFF794BB8),
                       ),
-                    Center(
-                      child: GlassSurface(
-                        radius: 30,
-                        floating: true,
-                        blur: true,
-                        child: SizedBox(
-                          width: 280,
-                          height: 74,
-                          child: TextButton(
-                            onPressed: () => taps++,
-                            child: const Text('Select'),
-                          ),
+                    ),
+                  Center(
+                    child: GlassSurface(
+                      radius: 30,
+                      floating: true,
+                      blur: true,
+                      child: SizedBox(
+                        width: 280,
+                        height: 74,
+                        child: TextButton(
+                          onPressed: () => taps++,
+                          child: const Text('Select'),
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
-        );
-        await tester.pumpWidget(scene(0));
-        await tester.pumpAndSettle();
-        expect(find.byType(LiquidBackdrop), findsOneWidget);
-        final filter = tester.allRenderObjects
-            .whereType<RenderBackdropFilter>()
-            .single;
-        expect(filter.size, const Size(280, 74));
-        final initialFilter = filter.filterConfig.filter;
-        final backend = LiquidBackdrop.supportsRefraction
-            ? 'impeller'
-            : 'compatible';
-        await captureFlutterFrame(
-          tester,
-          find.byKey(const ValueKey('scene')),
-          'build/liquid_glass/captures/strength-0-${dark ? 'dark' : 'light'}-$backend.png',
-        );
-        await tester.pumpWidget(scene(1));
-        await tester.pumpAndSettle();
-        expect(filter.filterConfig.filter, isNot(initialFilter));
-        await captureFlutterFrame(
-          tester,
-          find.byKey(const ValueKey('scene')),
-          'build/liquid_glass/captures/strength-1-${dark ? 'dark' : 'light'}-$backend.png',
-        );
-        final press = await tester.startGesture(
-          tester.getCenter(find.text('Select')),
-        );
-        await tester.pump(const Duration(milliseconds: 90));
-        await press.up();
-        await tester.pumpAndSettle();
-        expect(taps, 1);
-        expect(
-          tester.hasRunningAnimations,
-          isFalse,
-          reason: 'glass is idle after interaction',
-        );
-        await tester.pumpWidget(scene(1, reduced: true));
-        await tester.pumpAndSettle();
-        expect(find.byType(LiquidBackdrop), findsNothing);
-        expect(
-          tester.allRenderObjects.whereType<RenderBackdropFilter>(),
-          isEmpty,
-        );
-        expect(tester.takeException(), isNull);
-      },
-    );
+        ),
+      );
+      await tester.pumpWidget(scene(0));
+      await tester.pumpAndSettle();
+      expect(find.byType(LiquidBackdrop), findsOneWidget);
+      final filter = tester.allRenderObjects
+          .whereType<RenderBackdropFilter>()
+          .single;
+      expect(filter.size, const Size(280, 74));
+      final initialFilter = filter.filterConfig.filter;
+      final backend = LiquidBackdrop.supportsRefraction
+          ? 'impeller'
+          : 'compatible';
+      await captureFlutterFrame(
+        tester,
+        find.byKey(const ValueKey('scene')),
+        'build/liquid_glass/captures/strength-0-${dark ? 'dark' : 'light'}-$backend.png',
+      );
+      await tester.pumpWidget(scene(1));
+      await tester.pumpAndSettle();
+      expect(filter.filterConfig.filter, isNot(initialFilter));
+      await captureFlutterFrame(
+        tester,
+        find.byKey(const ValueKey('scene')),
+        'build/liquid_glass/captures/strength-1-${dark ? 'dark' : 'light'}-$backend.png',
+      );
+      await tester.pumpWidget(scene(.5));
+      await tester.pumpAndSettle();
+      final resting = filter.filterConfig.filter;
+      final press = await tester.startGesture(
+        tester.getCenter(find.text('Select')),
+      );
+      await tester.pump(const Duration(milliseconds: 90));
+      await tester.pump(const Duration(milliseconds: 90));
+      expect(
+        filter.filterConfig.filter,
+        isNot(resting),
+        reason: 'pressing changes the lens, not only its opacity',
+      );
+      await captureFlutterFrame(
+        tester,
+        find.byKey(const ValueKey('scene')),
+        'build/liquid_glass/captures/pressed-${dark ? 'dark' : 'light'}-$backend.png',
+      );
+      await press.up();
+      await tester.pumpAndSettle();
+      expect(taps, 1);
+      expect(
+        tester.hasRunningAnimations,
+        isFalse,
+        reason: 'glass is idle after interaction',
+      );
+      await tester.pumpWidget(scene(1, reduced: true));
+      await tester.pumpAndSettle();
+      expect(find.byType(LiquidBackdrop), findsNothing);
+      expect(
+        tester.allRenderObjects.whereType<RenderBackdropFilter>(),
+        isEmpty,
+      );
+      expect(tester.takeException(), isNull);
+    });
   }
 
   testWidgets('shader bends actual image samples at its curved rim', (

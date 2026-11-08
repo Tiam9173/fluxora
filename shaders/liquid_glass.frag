@@ -35,7 +35,7 @@ void main() {
   vec2 refracted = (uv - 0.5) / (1.0 + 0.035 * u_strength) + 0.5
       - normal * rim * u_strength * 14.0 * pixelsPerUnit / u_size;
   // Keep background text from competing with the navigation labels.
-  vec2 spread = vec2((3.2 - 1.4 * u_clarity) * pixelsPerUnit) / u_size;
+  vec2 spread = vec2((5.8 - 3.6 * u_clarity) * pixelsPerUnit) / u_size;
   vec4 color = sampleBackdrop(refracted) * 0.25
       + sampleBackdrop(refracted + vec2(spread.x, 0.0)) * 0.125
       + sampleBackdrop(refracted - vec2(spread.x, 0.0)) * 0.125
@@ -56,6 +56,9 @@ void main() {
   }
   rgb = pow(linear, vec3(1.0 / 2.2));
   float glint = pow(rim, 3.0) * (0.5 + 0.5 * dot(normal, normalize(vec2(-0.6, -0.8))));
+  if (u_dark < 0.5) {
+    rgb = mix(rgb, vec3(0.50, 0.63, 0.83), pow(rim, 2.0) * (1.0 - glint) * 0.055);
+  }
   rgb = mix(rgb, vec3(1.0), glint * (0.08 + 0.16 * u_strength));
   fragColor = vec4(rgb * color.a, color.a);
 }

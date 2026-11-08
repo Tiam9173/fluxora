@@ -957,11 +957,13 @@ class Utils {
 
   int getProxiesColumns(double viewWidth, ProxiesLayout proxiesLayout) {
     final columns = max((viewWidth / 300).ceil(), 2);
-    return switch (proxiesLayout) {
+    final preferred = switch (proxiesLayout) {
       ProxiesLayout.tight => columns + 1,
       ProxiesLayout.standard => columns,
       ProxiesLayout.loose => columns - 1,
     };
+    // 32dp page insets and 8dp gaps leave at least 104dp per node card.
+    return min(preferred, max(1, ((viewWidth - 24) / 112).floor()));
   }
 
   int getProfilesColumns(double viewWidth) {

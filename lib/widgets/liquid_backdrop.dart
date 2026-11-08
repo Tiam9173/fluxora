@@ -71,25 +71,18 @@ class _LiquidBackdropState extends State<LiquidBackdrop> {
         tween: Tween(end: _pressed ? 1 : 0),
         duration: motion.fast,
         curve: Curves.easeOutCubic,
-        child: _LensFilter(
-          radius: widget.radius,
-          strength: widget.strength,
-          clarity: widget.clarity,
-          shader: _shader,
-          scheme: scheme,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              // A compatibility lens needs more tint than the adaptive shader.
-              color: (dark ? scheme.surfaceContainer : Colors.white).withValues(
-                alpha: _shader != null
-                    ? .30 - .22 * widget.clarity
-                    : (dark
-                          ? .84 - .06 * widget.clarity
-                          : .80 - .10 * widget.clarity),
-              ),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            // A compatibility lens needs more tint than the adaptive shader.
+            color: (dark ? scheme.surfaceContainer : Colors.white).withValues(
+              alpha: _shader != null
+                  ? (dark ? .30 : .38) - .22 * widget.clarity
+                  : (dark
+                        ? .84 - .06 * widget.clarity
+                        : .80 - .10 * widget.clarity),
             ),
-            child: widget.child,
           ),
+          child: widget.child,
         ),
         builder: (context, pressure, child) => Transform.scale(
           scale: motion.reduceMotion
@@ -103,7 +96,19 @@ class _LiquidBackdropState extends State<LiquidBackdrop> {
               pressure,
               dark,
             ),
-            child: child,
+            child: _LensFilter(
+              radius: widget.radius,
+              strength:
+                  (widget.strength +
+                          (motion.reduceMotion
+                              ? 0
+                              : pressure * .22 * motion.intensity))
+                      .clamp(0, 1),
+              clarity: widget.clarity,
+              shader: _shader,
+              scheme: scheme,
+              child: child!,
+            ),
           ),
         ),
       ),
@@ -200,8 +205,8 @@ class _RenderLensFilter extends RenderBackdropFilter {
           filterQuality: FilterQuality.medium,
         ),
         inner: ui.ImageFilter.blur(
-          sigmaX: .6 + strength,
-          sigmaY: .6 + strength,
+          sigmaX: 2 + 6 * (1 - clarity),
+          sigmaY: 2 + 6 * (1 - clarity),
         ),
       );
     }
@@ -225,16 +230,24 @@ class _GlassRim extends CustomPainter {
       shape,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.4
+        ..strokeWidth = dark ? 1.4 : 1.6
         ..shader = LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Colors.white.withValues(alpha: .48 + .18 * strength),
-            const Color(0xFF8EA8FA).withValues(alpha: .12),
-            Colors.white.withValues(alpha: dark ? .08 : .7),
-          ],
-          stops: const [0, .55, 1],
+          colors: dark
+              ? [
+                  Colors.white.withValues(alpha: .48 + .18 * strength),
+                  const Color(0xFF8EA8FA).withValues(alpha: .12),
+                  Colors.white.withValues(alpha: .08),
+                ]
+              : [
+                  Colors.white,
+                  const Color(0xFF9DB7EB).withValues(alpha: .42),
+                  Colors.white.withValues(alpha: .16),
+                  const Color(0xFF9DB7EB).withValues(alpha: .20),
+                  Colors.white.withValues(alpha: .95),
+                ],
+          stops: dark ? const [0, .55, 1] : const [0, .22, .5, .78, 1],
         ).createShader(bounds),
     );
     final focus = light ?? Offset(size.width * .2, 0);
@@ -243,11 +256,14 @@ class _GlassRim extends CustomPainter {
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1 + pressure
-        ..shader =
-            ui.Gradient.radial(focus, size.shortestSide * (1.3 + pressure), [
-              Colors.white.withValues(alpha: .25 + pressure * .3),
-              Colors.white.withValues(alpha: 0),
-            ]),
+        ..shader = ui.Gradient.radial(
+          focus,
+          size.shortestSide * (1.3 + pressure),
+          [
+            Colors.white.withValues(alpha: (dark ? .25 : .55) + pressure * .3),
+            Colors.white.withValues(alpha: 0),
+          ],
+        ),
     );
   }
 

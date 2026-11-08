@@ -139,7 +139,7 @@ class FluxoraLatencyBadge extends StatelessWidget {
 
     final pill = Container(
       padding: EdgeInsets.symmetric(
-        horizontal: FluxoraSpacing.sm,
+        horizontal: tintBackground ? FluxoraSpacing.sm : 0,
         vertical: dense ? 0 : FluxoraSpacing.xxs,
       ),
       decoration: BoxDecoration(
@@ -150,13 +150,17 @@ class FluxoraLatencyBadge extends StatelessWidget {
         _text,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: FluxoraTypography.numericLabel.copyWith(
-          color: color,
-          height: dense ? 1.0 : null,
-          // Digits keep a fixed width so a badge does not jitter as the value
-          // changes between "9 ms" and "10 ms" during a delay test.
-          fontFeatures: const [FontFeature.tabularFigures()],
-        ),
+        style:
+            (tier == FluxoraLatencyTier.timeout
+                    ? FluxoraTypography.label
+                    : FluxoraTypography.numericLabel)
+                .copyWith(
+                  color: color,
+                  height: dense ? 1.0 : null,
+                  // Digits keep a fixed width so a badge does not jitter as the value
+                  // changes between "9 ms" and "10 ms" during a delay test.
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
       ),
     );
 

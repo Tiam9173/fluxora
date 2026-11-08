@@ -33,6 +33,7 @@ class FluxoraCard extends StatelessWidget {
     this.info,
     this.semanticLabel,
     this.enterAnimated = false,
+    this.radius,
   });
 
   /// Card content.
@@ -79,13 +80,15 @@ class FluxoraCard extends StatelessWidget {
 
   /// Reuses [CommonCard]'s fade+scale entrance.
   final bool enterAnimated;
+  final double? radius;
 
   @override
   Widget build(BuildContext context) {
+    final actualRadius = radius ?? FluxoraRadius.card;
     // `CommonCard.padding` is declared but never applied inside its `build`,
     // so the inset is applied here rather than passed through.
     Widget card = CommonCard(
-      radius: FluxoraRadius.card,
+      radius: actualRadius,
       type: filled ? CommonCardType.filled : CommonCardType.plain,
       isSelected: selected,
       onPressed: onTap,
@@ -104,7 +107,7 @@ class FluxoraCard extends StatelessWidget {
       card = Container(
         padding: const EdgeInsets.all(1),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(FluxoraRadius.card + 1),
+          borderRadius: BorderRadius.circular(actualRadius + 1),
           border: Border.all(
             color: context.colorScheme.primary.withValues(alpha: 0.4),
           ),

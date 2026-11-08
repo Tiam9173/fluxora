@@ -8,6 +8,7 @@ import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'common.dart';
 
 class ProxiesSetting extends StatelessWidget {
   const ProxiesSetting({super.key});
@@ -276,6 +277,67 @@ class ProxiesSetting extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Consumer(
+              builder: (context, ref, _) {
+                final style = ref.watch(proxiesStyleSettingProvider);
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      Localizations.localeOf(context).languageCode == 'zh'
+                          ? '卡片预览'
+                          : 'Card preview',
+                      style: context.textTheme.labelLarge,
+                    ),
+                    const SizedBox(height: 12),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final columns = utils.getProxiesColumns(
+                          constraints.maxWidth + 32,
+                          style.layout,
+                        );
+                        return Row(
+                          key: const ValueKey('proxy-card-preview'),
+                          children: [
+                            for (var index = 0; index < columns; index++) ...[
+                              if (index > 0) const SizedBox(width: 8),
+                              Expanded(
+                                child: SizedBox(
+                                  height: getItemHeight(style.cardType),
+                                  child: FluxoraProxyTile(
+                                    name:
+                                        Localizations.localeOf(
+                                              context,
+                                            ).languageCode ==
+                                            'zh'
+                                        ? '节点名称 · 0${index + 1}'
+                                        : 'Node · 0${index + 1}',
+                                    protocol: 'VLESS',
+                                    compact: true,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 6,
+                                    ),
+                                    selected: index == 0,
+                                    nameMaxLines:
+                                        style.cardType == ProxyCardType.min
+                                        ? 1
+                                        : 2,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        );
+                      },
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
           ..._buildStyleSetting(),
           ..._buildSortSetting(),
           ..._buildLayoutSetting(),
@@ -320,13 +382,13 @@ class ProxiesSetting extends StatelessWidget {
                           label: Text(appLocalizations.reset),
                           onPressed: () async {
                             final res = await globalState.showMessage(
-                              message: TextSpan(text: appLocalizations.resetTip),
+                              message: TextSpan(
+                                text: appLocalizations.resetTip,
+                              ),
                             );
                             if (res != true) return;
-                            final iconMap = globalState
-                                .config
-                                .proxiesStyle
-                                .iconMap;
+                            final iconMap =
+                                globalState.config.proxiesStyle.iconMap;
                             ref
                                 .read(proxiesStyleSettingProvider.notifier)
                                 .updateState(

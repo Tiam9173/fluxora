@@ -225,7 +225,9 @@ ColorScheme fluxoraSchemeFromSeed({
 }) {
   final fluxora = FluxoraColorSet.of(brightness);
   final seeded = ColorScheme.fromSeed(
-    seedColor: seed,
+    seedColor: visualStyle == FluxoraVisualStyle.obsidian && !followSeed
+        ? const Color(0xFF526AE6)
+        : seed,
     brightness: brightness,
     dynamicSchemeVariant: variant,
   );

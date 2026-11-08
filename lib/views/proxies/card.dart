@@ -77,58 +77,60 @@ class ProxyCard extends StatelessWidget {
   /// otherwise. Non-testable nodes (REJECT / PASS / REMATCH) render nothing.
   Widget _buildLatencySlot(BuildContext context) {
     return SizedBox(
-      height: measure.labelSmallHeight + 4,
-      child: Consumer(
-        builder: (_, ref, _) {
-          final delay = ref.watch(
-            getDelayProvider(proxyName: proxy.name, testUrl: testUrl),
-          );
-          final delayAnimation = ref.watch(
-            proxiesStyleSettingProvider.select((s) => s.delayAnimation),
-          );
-
-          if (_isNonTestableProxy) {
-            return const SizedBox(height: 0, width: 0);
-          }
-
-          if (delay == 0) {
-            return SizedBox(
-              height: measure.labelSmallHeight,
-              width: measure.labelSmallHeight,
-              child: delayAnimation == DelayAnimationType.none
-                  ? const CircularProgressIndicator(strokeWidth: 2)
-                  : _buildDelayAnimation(
-                      delayAnimation,
-                      measure.labelSmallHeight,
-                      context.colorScheme.primary,
-                    ),
+      height: measure.labelSmallHeight + 8,
+      child: Align(
+        alignment: AlignmentDirectional.centerEnd,
+        widthFactor: 1,
+        child: Consumer(
+          builder: (_, ref, _) {
+            final delay = ref.watch(
+              getDelayProvider(proxyName: proxy.name, testUrl: testUrl),
             );
-          }
-
-          if (delay == null) {
-            return SizedBox(
-              height: measure.labelSmallHeight,
-              width: measure.labelSmallHeight,
-              child: IconButton(
-                icon: const Icon(Icons.bolt),
-                iconSize: measure.labelSmallHeight,
-                padding: EdgeInsets.zero,
-                tooltip: appLocalizations.startTest,
-                onPressed: _handleTestCurrentDelay,
-              ),
+            final delayAnimation = ref.watch(
+              proxiesStyleSettingProvider.select((s) => s.delayAnimation),
             );
-          }
 
-          // D4.7: the raw `Text` + `utils.getDelayColor` pair is replaced by the
-          // Fluxora latency badge, so the 600ms legacy threshold and the
-          // hardcoded Colors.red/green/amber are gone. `dense` keeps the badge
-          // 12px tall so the list's fixed item extent is unchanged.
-          return FluxoraLatencyBadge(
-            delay: delay,
-            dense: true,
-            onTap: _handleTestCurrentDelay,
-          );
-        },
+            if (_isNonTestableProxy) {
+              return const SizedBox(height: 0, width: 0);
+            }
+
+            if (delay == 0) {
+              return SizedBox(
+                height: measure.labelSmallHeight,
+                width: measure.labelSmallHeight,
+                child: delayAnimation == DelayAnimationType.none
+                    ? const CircularProgressIndicator(strokeWidth: 2)
+                    : _buildDelayAnimation(
+                        delayAnimation,
+                        measure.labelSmallHeight,
+                        context.colorScheme.primary,
+                      ),
+              );
+            }
+
+            if (delay == null) {
+              return SizedBox(
+                height: measure.labelSmallHeight + 8,
+                width: 28,
+                child: IconButton(
+                  icon: const Icon(Icons.network_ping_rounded),
+                  iconSize: 16,
+                  padding: EdgeInsets.zero,
+                  tooltip: appLocalizations.startTest,
+                  onPressed: _handleTestCurrentDelay,
+                ),
+              );
+            }
+
+            return FluxoraLatencyBadge(
+              delay: delay,
+              dense: true,
+              tintBackground: false,
+              timeoutLabel: appLocalizations.timeoutLabel,
+              onTap: _handleTestCurrentDelay,
+            );
+          },
+        ),
       ),
     );
   }
@@ -158,7 +160,7 @@ class ProxyCard extends StatelessWidget {
     );
   }
 
-  bool _isComputedMatch(WidgetRef ref) {
+  bool _isPinnedProxy(WidgetRef ref) {
     return ref.watch(
       getProxyNameProvider(groupName).select((name) => name == proxy.name),
     );
@@ -311,26 +313,27 @@ class ProxyCard extends StatelessWidget {
     return Consumer(
       builder: (_, ref, child) {
         final isSelected = _isSelectedProxy(ref);
-        final isComputedMatch =
-            groupType.isComputedSelected && _isComputedMatch(ref);
+        final isLocked = groupType.isComputedSelected && _isPinnedProxy(ref);
+        final latencyTier = ref.watch(
+          getDelayProvider(
+            proxyName: proxy.name,
+            testUrl: testUrl,
+          ).select(FluxoraLatencyBadge.tierOf),
+        );
         final subGroupIcon = _subGroupIcon(ref);
 
-        // D4.7: the card body is now a FluxoraProxyTile.
-        //
-        // * `getItemHeight()` is deliberately untouched, so `itemExtentBuilder`
-        //   stays correct by construction — the parent SizedBox bounds the tile.
-        // * `padding` reproduces the previous horizontal 12px inset with **no**
-        //   vertical inset, keeping the same available content height.
-        // * `latencySlot` carries the original test affordances (testing
-        //   spinner / tap-to-test bolt / badge), so nothing is lost.
+        // Keep the existing list extent and callbacks; only the presentation changes.
         return FluxoraProxyTile(
           name: proxy.name,
           protocol: proxy.type,
-          status: isSelected
-              ? FluxoraStatusKind.connected
-              : (_isNonTestableProxy
-                    ? FluxoraStatusKind.disconnected
-                    : FluxoraStatusKind.unknown),
+          status: switch (latencyTier) {
+            FluxoraLatencyTier.good => FluxoraStatusKind.connected,
+            FluxoraLatencyTier.testing => FluxoraStatusKind.connecting,
+            FluxoraLatencyTier.fair => FluxoraStatusKind.warning,
+            FluxoraLatencyTier.poor ||
+            FluxoraLatencyTier.timeout => FluxoraStatusKind.error,
+            FluxoraLatencyTier.untested => FluxoraStatusKind.unknown,
+          },
           selected: isSelected,
           compact: true,
           // `min` cards only ever showed one line; the wider types showed two.
@@ -342,21 +345,35 @@ class ProxyCard extends StatelessWidget {
             proxyName: proxy.name,
             profileId: globalState.config.currentProfileId,
           ),
-          padding: const EdgeInsets.symmetric(horizontal: FluxoraSpacing.md),
+          padding: const EdgeInsets.symmetric(
+            horizontal: FluxoraSpacing.sm,
+            vertical: 6,
+          ),
           leading: subGroupIcon.isEmpty
               ? null
               : CommonTargetIcon(
                   src: subGroupIcon,
                   size: measure.bodyMediumHeight,
                 ),
-          nameTrailing: isComputedMatch
+          nameTrailing: isLocked
               ? Tooltip(
                   message: Localizations.localeOf(context).languageCode == 'zh'
                       ? '已锁定 · 再次点击恢复自动'
                       : 'Locked · tap again to resume automatic selection',
                   child: Icon(
                     Icons.lock_rounded,
-                    size: 13,
+                    size: 14,
+                    color: context.colorScheme.primary,
+                  ),
+                )
+              : groupType.isComputedSelected && isSelected
+              ? Tooltip(
+                  message: Localizations.localeOf(context).languageCode == 'zh'
+                      ? '自动选中'
+                      : 'Automatically selected',
+                  child: Icon(
+                    Icons.autorenew_rounded,
+                    size: 14,
                     color: context.colorScheme.primary,
                   ),
                 )

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluxora/widgets/fluxora/fluxora_latency_badge.dart';
 import 'package:fluxora/widgets/fluxora/fluxora_proxy_tile.dart';
+import 'package:fluxora/widgets/fluxora/fluxora_status.dart';
 
 /// The locked-card layout.
 ///
@@ -71,5 +73,43 @@ void main() {
       findsOneWidget,
       reason: 'locking a node must not cost the row its latency',
     );
+  });
+
+  testWidgets('locked card keeps its status dot and metadata baseline', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      host(
+        const FluxoraProxyTile(
+          name: 'Hong Kong residential 01',
+          protocol: 'AnyTLS',
+          delay: 383,
+          compact: true,
+          selected: true,
+          status: FluxoraStatusKind.warning,
+          nameMaxLines: 2,
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          nameTrailing: Icon(Icons.lock_rounded, size: 14),
+          latencySlot: FluxoraLatencyBadge(
+            delay: 383,
+            dense: true,
+            tintBackground: false,
+          ),
+        ),
+      ),
+    );
+
+    final protocol = tester.renderObject<RenderParagraph>(find.text('AnyTLS'));
+    final latency = tester.renderObject<RenderParagraph>(find.text('383 ms'));
+    double baseline(RenderParagraph paragraph) =>
+        paragraph.localToGlobal(Offset.zero).dy +
+        paragraph.getDryBaseline(
+          paragraph.constraints,
+          TextBaseline.alphabetic,
+        )!;
+    expect(baseline(protocol), closeTo(baseline(latency), .5));
+    expect(find.byType(FluxoraStatus), findsOneWidget);
+    expect(find.byIcon(Icons.lock_rounded), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }
