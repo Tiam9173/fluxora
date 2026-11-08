@@ -126,7 +126,9 @@ class AdaptiveSheetScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final material = FluxoraMaterial.of(context);
-    final backgroundColor = material.enabled
+    final backgroundColor = material.isObsidian
+        ? context.colorScheme.surface
+        : material.enabled
         ? material.fill(context.colorScheme, floating: true)
         : context.colorScheme.surface;
     final bottomSheet = type == SheetType.bottomSheet;

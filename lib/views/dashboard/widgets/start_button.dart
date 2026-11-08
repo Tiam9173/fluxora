@@ -261,6 +261,7 @@ class _StartButtonState extends ConsumerState<StartButton> {
           final readOut = isIdleState ? '' : hero.value;
 
           final scheme = context.colorScheme;
+          final material = FluxoraMaterial.of(context);
           final action = canPress
               ? _handleStart
               : hasNoProfile
@@ -335,28 +336,50 @@ class _StartButtonState extends ConsumerState<StartButton> {
                             context,
                             FluxoraStatusKind.connected,
                           ).withValues(alpha: .4)
+                        : material.isObsidian && material.blurEnabled
+                        ? material.border(scheme)
                         : Colors.transparent,
                   ),
                   color: scheme.surfaceContainerHigh,
-                  gradient: FluxoraMaterial.of(context).blurEnabled
-                      ? LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Color.alphaBlend(
-                              FluxoraColors.flowViolet.withValues(
-                                alpha: scheme.brightness == Brightness.light
-                                    ? .10
-                                    : .22,
-                              ),
-                              scheme.surfaceContainer,
-                            ),
-                            Color.alphaBlend(
-                              FluxoraColors.auroraBlue.withValues(alpha: .06),
-                              scheme.surfaceContainer,
-                            ),
-                          ],
-                        )
+                  gradient: material.blurEnabled
+                      ? material.isObsidian
+                            ? RadialGradient(
+                                center: const Alignment(.15, -1),
+                                radius: 1.45,
+                                colors: [
+                                  Color.alphaBlend(
+                                    const Color(0xFF6474DC).withValues(
+                                      alpha:
+                                          scheme.brightness == Brightness.dark
+                                          ? .55
+                                          : .14,
+                                    ),
+                                    scheme.surfaceContainerHigh,
+                                  ),
+                                  scheme.surfaceContainer,
+                                ],
+                              )
+                            : LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Color.alphaBlend(
+                                    FluxoraColors.flowViolet.withValues(
+                                      alpha:
+                                          scheme.brightness == Brightness.light
+                                          ? .10
+                                          : .22,
+                                    ),
+                                    scheme.surfaceContainer,
+                                  ),
+                                  Color.alphaBlend(
+                                    FluxoraColors.auroraBlue.withValues(
+                                      alpha: .06,
+                                    ),
+                                    scheme.surfaceContainer,
+                                  ),
+                                ],
+                              )
                       : null,
                 ),
                 child: Padding(

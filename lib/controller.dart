@@ -2891,10 +2891,15 @@ class AppController {
     });
   }
 
-  Future<void> handleAddOrUpdate(WidgetRef ref, [Rule? rule]) async {
+  Future<void> handleAddOrUpdate(
+    WidgetRef ref, [
+    Rule? rule,
+    String? profileId,
+  ]) async {
     final res = await globalState.showCommonDialog<Rule>(
       child: AddRuleDialog(
         rule: rule,
+        profileId: profileId,
         snippet: ref.read(
           profileOverrideStateProvider.select((state) => state.snippet!),
         ),

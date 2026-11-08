@@ -875,6 +875,7 @@ ColorScheme genColorScheme(
     // 否则"换了颜色"只有按钮和文字动，画布、卡片、分隔线、选中态全是原来的，
     // 用户看到的就是"怎么换都没啥大变化"。
     followSeed: source != ColorSource.fluxora,
+    visualStyle: ref.watch(themeSettingProvider.select((s) => s.visualStyle)),
   );
 }
 

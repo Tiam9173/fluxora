@@ -32,20 +32,21 @@ class _MemoryInfoState extends State<MemoryInfo> {
 
     // Get immediately on first open, otherwise delay 1000ms
     if (_lastMemoryValue.value == 0) {
-      _retryUpdateMemory();
+      _initTimer = Timer(Duration.zero, _retryUpdateMemory);
     } else {
       // Has cached value, delay
       _initTimer = Timer(const Duration(milliseconds: 1000), _updateMemory);
     }
   }
 
+  int _initialAttempts = 0;
+
   Future<void> _retryUpdateMemory() async {
-    for (int i = 0; i < 5; i++) {
-      if (!mounted) return;
-      await _updateMemory();
-      if (_memoryValue.value > 0) break;
-      await Future.delayed(const Duration(milliseconds: 500));
-    }
+    if (!mounted) return;
+    if (!TickerMode.valuesOf(context).enabled) return;
+    await _updateMemory();
+    if (!mounted || _memoryValue.value > 0 || ++_initialAttempts >= 5) return;
+    _initTimer = Timer(const Duration(milliseconds: 500), _retryUpdateMemory);
   }
 
   @override
@@ -57,6 +58,7 @@ class _MemoryInfoState extends State<MemoryInfo> {
 
   Future<void> _updateMemory() async {
     if (!mounted) return;
+    if (!TickerMode.valuesOf(context).enabled) return;
     if (_isUpdating) return;
     _isUpdating = true;
 
@@ -190,16 +192,14 @@ class _MemoryInfoState extends State<MemoryInfo> {
                       children: [
                         Text(
                           _memoryValue.showValue,
-                          style: context.textTheme.bodyMedium?.toLight.adjustSize(
-                            1,
-                          ),
+                          style: context.textTheme.bodyMedium?.toLight
+                              .adjustSize(1),
                         ),
                         const SizedBox(width: 8),
                         Text(
                           _memoryValue.showUnit,
-                          style: context.textTheme.bodyMedium?.toLight.adjustSize(
-                            1,
-                          ),
+                          style: context.textTheme.bodyMedium?.toLight
+                              .adjustSize(1),
                         ),
                       ],
                     ),

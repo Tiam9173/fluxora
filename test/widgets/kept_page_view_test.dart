@@ -24,7 +24,6 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
   }
 
-
   setUp(() => log = _Log());
 
   Widget host({
@@ -32,10 +31,12 @@ void main() {
     required List<String> tags,
     Duration duration = FluxoraMotion.slow,
     Offset enterOffset = FluxoraMotion.enterOffset,
+    bool stableKeys = false,
   }) {
     return MaterialApp(
       home: Scaffold(
         body: KeptPageView(
+          pageKeys: stableKeys ? tags : null,
           index: index,
           duration: duration,
           inCurve: FluxoraMotion.enter,
@@ -48,6 +49,32 @@ void main() {
   }
 
   group('laziness', () {
+    testWidgets('responsive navigation changes retain state by page identity', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        host(index: 0, tags: const ['a', 'b', 'c'], stableKeys: true),
+      );
+      await settle(tester);
+      await tester.tap(find.text('page-a'));
+      await tester.pump();
+      await tester.pumpWidget(
+        host(index: 2, tags: const ['a', 'b', 'c'], stableKeys: true),
+      );
+      await settle(tester);
+      await tester.pumpWidget(
+        host(index: 1, tags: const ['a', 'c'], stableKeys: true),
+      );
+      await settle(tester);
+      expect(find.text('page-c'), findsOneWidget);
+      expect(log.inits, ['a', 'c']);
+      await tester.pumpWidget(
+        host(index: 0, tags: const ['a', 'c'], stableKeys: true),
+      );
+      await settle(tester);
+      expect(find.text('page-a:1'), findsOneWidget);
+      expect(log.disposes, isEmpty);
+    });
     testWidgets('only the first page is built', (tester) async {
       await tester.pumpWidget(host(index: 0, tags: const ['a', 'b', 'c']));
       await settle(tester);
@@ -60,7 +87,9 @@ void main() {
       );
     });
 
-    testWidgets('a page is built on its first visit, not before', (tester) async {
+    testWidgets('a page is built on its first visit, not before', (
+      tester,
+    ) async {
       await tester.pumpWidget(host(index: 0, tags: const ['a', 'b']));
       await settle(tester);
       expect(log.inits, ['a']);
@@ -341,7 +370,8 @@ void main() {
 class _Log {
   final List<String> inits = <String>[];
   final List<String> disposes = <String>[];
-  final Map<String, AnimationController> controllers = <String, AnimationController>{};
+  final Map<String, AnimationController> controllers =
+      <String, AnimationController>{};
   final Map<String, int> taps = <String, int>{};
 
   AnimationController? controllerOf(String tag) => controllers[tag];
@@ -389,7 +419,9 @@ class _ProbeState extends State<_Probe> with SingleTickerProviderStateMixin {
         setState(() => _count++);
       },
       child: Center(
-        child: Text(_count == 0 ? 'page-${widget.tag}' : 'page-${widget.tag}:$_count'),
+        child: Text(
+          _count == 0 ? 'page-${widget.tag}' : 'page-${widget.tag}:$_count',
+        ),
       ),
     );
   }

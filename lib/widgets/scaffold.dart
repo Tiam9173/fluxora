@@ -225,6 +225,8 @@ class CommonScaffoldState extends State<CommonScaffold> {
                 : appLocalizations.selectedCountTitle(
                     '${_appBarState.value.editState?.editCount ?? 0}',
                   ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           );
   }
 
@@ -254,7 +256,7 @@ class CommonScaffoldState extends State<CommonScaffold> {
           tooltip: appLocalizations.search,
         ),
       ...actions,
-    ]);
+    ], space: MediaQuery.sizeOf(context).width < 360 ? 0 : null);
   }
 
   Widget _buildAppBarWrap(Widget child) {
@@ -302,6 +304,9 @@ class CommonScaffoldState extends State<CommonScaffold> {
                   return _buildAppBarWrap(
                     AppBar(
                       centerTitle: widget.centerTitle ?? false,
+                      titleSpacing: MediaQuery.sizeOf(context).width < 360
+                          ? 8
+                          : null,
                       // Aurora paints the toolbar with a palette role, so the
                       // surface-tint overlay has to be off.
                       //
@@ -323,11 +328,13 @@ class CommonScaffoldState extends State<CommonScaffold> {
                       // (native `Card`, dialogs) is still an open decision.
                       surfaceTintColor: Colors.transparent,
                       flexibleSpace: FluxoraMaterial.of(context).enabled
-                          ? const GlassSurface(
-                              radius: 0,
-                              border: false,
-                              child: SizedBox.expand(),
-                            )
+                          ? FluxoraMaterial.of(context).isObsidian
+                                ? const GlassCanvas(child: SizedBox.expand())
+                                : const GlassSurface(
+                                    radius: 0,
+                                    border: false,
+                                    child: SizedBox.expand(),
+                                  )
                           : null,
                       backgroundColor: FluxoraMaterial.of(context).enabled
                           ? Colors.transparent

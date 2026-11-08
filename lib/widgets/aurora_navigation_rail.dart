@@ -137,9 +137,7 @@ class _AuroraRailItemState extends State<_AuroraRailItem> {
     final scheme = Theme.of(context).colorScheme;
     final brightness = scheme.brightness;
     final selected = widget.selected;
-    final accent = brightness == Brightness.dark
-        ? FluxoraColors.dark.tertiary
-        : FluxoraColors.light.tertiary;
+    final accent = scheme.primary;
 
     final tint = FluxoraColorSet.selectionTint(accent, brightness);
     final hoverWash = scheme.onSurface.withValues(
@@ -155,9 +153,15 @@ class _AuroraRailItemState extends State<_AuroraRailItem> {
         : (_hovered ? hoverWash : Colors.transparent);
 
     final icon = ExcludeSemantics(
-      child: IconTheme.merge(
-        data: IconThemeData(size: 22, color: iconColor),
-        child: widget.destination.icon,
+      child: AnimatedScale(
+        scale: selected
+            ? 1 + .1 * FluxoraMotion.ofContext(context).intensity
+            : 1,
+        duration: FluxoraMotion.ofContext(context).fast,
+        child: IconTheme.merge(
+          data: IconThemeData(size: 22, color: iconColor),
+          child: widget.destination.icon,
+        ),
       ),
     );
 

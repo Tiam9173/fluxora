@@ -85,7 +85,7 @@ class FluxoraService : Service(), BaseServiceInterface {
             .setContentTitle(title)
             .setContentText(content)
             .setStyle(null)
-            .build()
+            .buildFluxoraNotification(this@FluxoraService)
 
         if (!hasStartedForeground) {
             this.startForeground(notification, useSpecialType = !isSuspended)

@@ -2183,7 +2183,7 @@ final class GenColorSchemeProvider
   }
 }
 
-String _$genColorSchemeHash() => r'386af77f3aaf7c1a6eca7ad4c91a6167c9241f55';
+String _$genColorSchemeHash() => r'3ec64574ba51f8f74691766c879365619bd9f1ac';
 
 /// Builds the app's [ColorScheme] for [brightness].
 ///

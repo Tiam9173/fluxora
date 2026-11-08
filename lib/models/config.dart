@@ -441,6 +441,11 @@ abstract class ThemeProps with _$ThemeProps {
     @Default(FluxoraMotionStyle.system)
     FluxoraMotionStyle motionStyle,
     @Default(.55) double glassIntensity,
+    @Default(.5) double motionIntensity,
+    @Default(true) bool launchAnimation,
+    @JsonKey(unknownEnumValue: FluxoraVisualStyle.fluxora)
+    @Default(FluxoraVisualStyle.fluxora)
+    FluxoraVisualStyle visualStyle,
     @Default(false) bool useHarmonyFont,
     @Default(false) bool invertTrayIcon,
   }) = _ThemeProps;

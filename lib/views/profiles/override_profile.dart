@@ -20,11 +20,24 @@ class _OverrideProfileViewState extends State<OverrideProfileView> {
   final _controller = ScrollController();
   double _currentMaxWidth = 0;
 
+  bool _loading = false;
+  Object? _loadError;
+
   void _initState(WidgetRef ref) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(Duration(milliseconds: 300), () async {
-        final rawConfig = await globalState.getProfileConfig(widget.profileId);
-        final snippet = ClashConfigSnippet.fromJson(rawConfig);
+    if (_loading) return;
+    _loading = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        final snippet = await globalState
+            .getProfileRuleSnippet(
+              widget.profileId,
+              appliedGroups:
+                  ref.read(currentProfileIdProvider) == widget.profileId
+                  ? ref.read(groupsProvider)
+                  : null,
+            )
+            .timeout(const Duration(seconds: 8));
+        if (!mounted) return;
         final overrideData = ref.read(
           getProfileOverrideDataProvider(widget.profileId),
         );
@@ -43,8 +56,16 @@ class _OverrideProfileViewState extends State<OverrideProfileView> {
                 overrideData: newOverrideData,
               ),
             );
-      });
+      } catch (error) {
+        if (mounted) setState(() => _loadError = error);
+      }
     });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   void _handleSave(WidgetRef ref, OverrideData overrideData) {
@@ -83,6 +104,22 @@ class _OverrideProfileViewState extends State<OverrideProfileView> {
   }
 
   Widget _buildContent() {
+    if (_loadError != null) {
+      return Center(
+        child: FilledButton.tonalIcon(
+          icon: const Icon(Icons.refresh_rounded),
+          label: Text(
+            Localizations.localeOf(context).languageCode == 'zh'
+                ? '读取规则失败 · 重试'
+                : 'Could not load rules · Retry',
+          ),
+          onPressed: () => setState(() {
+            _loadError = null;
+            _loading = false;
+          }),
+        ),
+      );
+    }
     return Consumer(
       builder: (_, ref, child) {
         final isInit = ref.watch(
@@ -92,10 +129,7 @@ class _OverrideProfileViewState extends State<OverrideProfileView> {
         );
         if (!isInit) {
           return Center(
-            child: SyncedLoading(
-              size: 40,
-              child: CircularProgressIndicator(),
-            ),
+            child: SyncedLoading(size: 40, child: CircularProgressIndicator()),
           );
         }
         return FadeBox(
@@ -246,7 +280,11 @@ class _OverrideProfileViewState extends State<OverrideProfileView> {
                         if (rule == null) {
                           return;
                         }
-                        globalState.appController.handleAddOrUpdate(ref, rule);
+                        globalState.appController.handleAddOrUpdate(
+                          ref,
+                          rule,
+                          widget.profileId,
+                        );
                       },
                       icon: Icon(Icons.edit),
                     ),
@@ -261,7 +299,9 @@ class _OverrideProfileViewState extends State<OverrideProfileView> {
                 editState: AppBarEditState(
                   editCount: editCount,
                   onExit: () {
-                    ref.read(profileOverrideStateProvider.notifier).updateState(
+                    ref
+                        .read(profileOverrideStateProvider.notifier)
+                        .updateState(
                           (state) => state.copyWith(selectedRules: {}),
                         );
                   },
@@ -374,7 +414,11 @@ class RuleTitle extends ConsumerWidget {
             !isEdit
                 ? FilledButton.tonal(
                     onPressed: () {
-                      globalState.appController.handleAddOrUpdate(ref);
+                      globalState.appController.handleAddOrUpdate(
+                        ref,
+                        null,
+                        profileId,
+                      );
                     },
                     child: Text(appLocalizations.add),
                   )
@@ -576,17 +620,23 @@ class RuleContent extends ConsumerWidget {
   }
 }
 
-class AddRuleDialog extends StatefulWidget {
+class AddRuleDialog extends ConsumerStatefulWidget {
   final ClashConfigSnippet snippet;
   final Rule? rule;
+  final String? profileId;
 
-  const AddRuleDialog({super.key, required this.snippet, this.rule});
+  const AddRuleDialog({
+    super.key,
+    required this.snippet,
+    this.rule,
+    this.profileId,
+  });
 
   @override
-  State<AddRuleDialog> createState() => _AddRuleDialogState();
+  ConsumerState<AddRuleDialog> createState() => _AddRuleDialogState();
 }
 
-class _AddRuleDialogState extends State<AddRuleDialog> {
+class _AddRuleDialogState extends ConsumerState<AddRuleDialog> {
   late RuleAction _ruleAction;
   final _ruleTargetController = TextEditingController();
   final _contentController = TextEditingController();
@@ -686,6 +736,20 @@ class _AddRuleDialogState extends State<AddRuleDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final activeId = ref.watch(currentProfileIdProvider);
+    final liveGroups = ref.watch(groupsProvider);
+    final targetItems =
+        widget.profileId != null &&
+            widget.profileId == activeId &&
+            liveGroups.isNotEmpty
+        ? [
+            for (final name in {
+              ...liveGroups.map((g) => g.name),
+              ...RuleTarget.values.map((v) => v.name),
+            })
+              DropdownMenuEntry(value: name, label: name),
+          ]
+        : _targetItems;
     return CommonDialog(
       title: appLocalizations.addRule,
       actions: [
@@ -746,11 +810,10 @@ class _AddRuleDialogState extends State<AddRuleDialog> {
                               return OutlinedButton(
                                 style: _tvPickerStyle,
                                 onPressed: () async {
-                                  final selected =
-                                      await globalState.showCommonDialog<String>(
+                                  final selected = await globalState
+                                      .showCommonDialog<String>(
                                         child: OptionsDialog<String>(
-                                          title:
-                                              appLocalizations.ruleProviders,
+                                          title: appLocalizations.ruleProviders,
                                           options: _ruleProviderItems
                                               .map((e) => e.value)
                                               .toList(),
@@ -826,8 +889,8 @@ class _AddRuleDialogState extends State<AddRuleDialog> {
                               return OutlinedButton(
                                 style: _tvPickerStyle,
                                 onPressed: () async {
-                                  final selected =
-                                      await globalState.showCommonDialog<String>(
+                                  final selected = await globalState
+                                      .showCommonDialog<String>(
                                         child: OptionsDialog<String>(
                                           title: appLocalizations.subRule,
                                           options: _subRuleItems
@@ -884,11 +947,11 @@ class _AddRuleDialogState extends State<AddRuleDialog> {
                               return OutlinedButton(
                                 style: _tvPickerStyle,
                                 onPressed: () async {
-                                  final selected =
-                                      await globalState.showCommonDialog<String>(
+                                  final selected = await globalState
+                                      .showCommonDialog<String>(
                                         child: OptionsDialog<String>(
                                           title: appLocalizations.ruleTarget,
-                                          options: _targetItems
+                                          options: targetItems
                                               .map((e) => e.value)
                                               .toList(),
                                           textBuilder: (item) => item,
@@ -923,7 +986,7 @@ class _AddRuleDialogState extends State<AddRuleDialog> {
                               menuHeight: 250,
                               enableFilter: false,
                               enableSearch: false,
-                              dropdownMenuEntries: _targetItems,
+                              dropdownMenuEntries: targetItems,
                               errorText: filed.errorText,
                             );
                           },

@@ -6,6 +6,8 @@ import 'package:fluxora/common/common.dart';
 import 'package:fluxora/l10n/l10n.dart';
 import 'package:fluxora/models/models.dart';
 import 'package:fluxora/state.dart';
+import 'package:fluxora/providers/providers.dart';
+import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/views/profiles/override_profile.dart';
 
 /// Phase 01-D4.2 — regression guards for `AddRuleDialog`.
@@ -28,6 +30,55 @@ import 'package:fluxora/views/profiles/override_profile.dart';
 ///   · The Android TV branch (`globalState.isAndroidTV`), which needs a real
 ///     Android TV target.
 void main() {
+  testWidgets(
+    'active rule targets track live script groups while the dialog stays open',
+    (tester) async {
+      final old = globalState.config;
+      addTearDown(() => globalState.config = old);
+      globalState.config = const Config(
+        themeProps: ThemeProps(),
+        currentProfileId: 'live-rules',
+        profiles: [
+          Profile(
+            id: 'live-rules',
+            label: 'Fixture',
+            autoUpdateDuration: Duration(days: 1),
+          ),
+        ],
+      );
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: AddRuleDialog(
+              profileId: 'live-rules',
+              snippet: ClashConfigSnippet(),
+            ),
+          ),
+        ),
+      );
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(AddRuleDialog)),
+      );
+      container.read(groupsProvider.notifier).value = [
+        const Group(type: GroupType.Selector, name: 'Script target A'),
+      ];
+      await tester.pump();
+      List<String> targets() => tester
+          .widgetList<DropdownMenu<String>>(find.byType(DropdownMenu<String>))
+          .expand((menu) => menu.dropdownMenuEntries.map((item) => item.label))
+          .toList();
+      expect(targets(), contains('Script target A'));
+      container.read(groupsProvider.notifier).value = [
+        const Group(type: GroupType.Selector, name: 'Script target B'),
+      ];
+      await tester.pump();
+      expect(targets(), contains('Script target B'));
+      expect(targets(), isNot(contains('Script target A')));
+      container.read(currentProfileIdProvider.notifier).value = null;
+      await tester.pump();
+      expect(targets(), isNot(contains('Script target B')));
+    },
+  );
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
     await AppLocalizations.load(const Locale('zh', 'CN'));

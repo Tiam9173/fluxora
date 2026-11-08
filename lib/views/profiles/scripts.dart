@@ -841,8 +841,12 @@ Future<void> showGroupSwitchOptions(
       type: type,
       load: () async {
         final rawConfig = await globalState.getProfileConfig(profileId);
-        final rules = rawConfig['rules'] as List? ?? [];
-        final proxyGroups = rawConfig['proxy-groups'] as List? ?? [];
+        final evaluated = await globalState.handleEvaluate(
+          rawConfig,
+          profile: globalState.config.profiles.getProfile(profileId),
+        );
+        final rules = evaluated['rules'] as List? ?? [];
+        final proxyGroups = evaluated['proxy-groups'] as List? ?? [];
         String? matchTarget;
         for (final rule in rules) {
           if (rule is! String) continue;

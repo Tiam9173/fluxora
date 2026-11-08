@@ -129,10 +129,10 @@ def sources():
     for style in ['flow', 'plain', 'outline']:
         write(RES / f'drawable/ic_notification_{style}.xml', vector(24, style))
         write(ASSETS / f'notification_{style}.svg', svg(status_paths(style)))
-    for folder in ['values', 'values-night']:
+    for folder in ['values', 'values-night', 'values-v27', 'values-night-v27']:
         styles = RES / folder / 'styles.xml'
         text = styles.read_text(encoding='utf-8')
-        icon = '@mipmap/brand_official_dark' if folder.endswith('night') else '@mipmap/brand_official_light'
+        icon = '@mipmap/brand_official_dark' if 'night' in folder else '@mipmap/brand_official_light'
         text = re.sub(r'(<item name="windowSplashScreenAnimatedIcon">).*?(</item>)', lambda match: match[1] + icon + match[2], text)
         write(styles, text)
     write(RES / 'drawable-night/ic_tile.xml', vector(24))
@@ -305,7 +305,7 @@ def check():
         notification_hashes.add(hashlib.sha256(path.read_bytes()).hexdigest())
         ET.parse(ASSETS / f'notification_{style}.svg')
     assert len(notification_hashes) == 3
-    for folder in ['values', 'values-night']:
+    for folder in ['values', 'values-night', 'values-v27', 'values-night-v27']:
         styles = (RES / folder / 'styles.xml').read_text(encoding='utf-8')
         assert 'splash_text_' not in styles and '@mipmap/brand_official_' in styles
     inventory = json.loads((OUT / 'inventory.json').read_text(encoding='utf-8'))

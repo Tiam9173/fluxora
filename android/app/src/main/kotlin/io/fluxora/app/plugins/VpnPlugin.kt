@@ -42,6 +42,9 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import java.util.concurrent.atomic.AtomicLong
 import java.net.InetSocketAddress
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.ConcurrentHashMap
@@ -67,6 +70,8 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     @Volatile
     private var quickResponseEnabled = false
     private var quickResponseJob: Job? = null
+    private val notificationIconMutex = Mutex()
+    private val notificationIconGeneration = AtomicLong()
     private var lastNetworkType: Int? = null
     private var lastDns = ""
 
@@ -595,16 +600,17 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     }
 
     fun updateNotificationIcon() {
+        val generation = notificationIconGeneration.incrementAndGet()
         scope.launch {
-            runCatching {
-                val context = FluxoraApplication.getAppContext()
-                val notificationManager = context.getSystemService(android.app.NotificationManager::class.java)
-                notificationManager?.cancel(GlobalState.NOTIFICATION_ID)
-                (fluxoraService as? FluxoraService)?.resetNotificationBuilder()
-                (fluxoraService as? FluxoraVpnService)?.resetNotificationBuilder()
-                fluxoraService?.startForeground()
-            }.onFailure {
-                android.util.Log.e("VpnPlugin", "updateNotificationIcon error: ${it.message}")
+            notificationIconMutex.withLock {
+                if (generation != notificationIconGeneration.get()) return@withLock
+                runCatching {
+                    (fluxoraService as? FluxoraService)?.resetNotificationBuilder()
+                    (fluxoraService as? FluxoraVpnService)?.resetNotificationBuilder()
+                    fluxoraService?.startForeground()
+                }.onFailure {
+                    android.util.Log.e("VpnPlugin", "updateNotificationIcon error: ${it.message}")
+                }
             }
         }
     }

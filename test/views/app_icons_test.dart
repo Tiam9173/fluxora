@@ -147,6 +147,7 @@ void main() {
     await tester.ensureVisible(outline);
     await tester.tap(outline);
     await tester.pump();
+    expect(tester.widget<ChoiceChip>(outline).selected, isTrue);
     expect(find.byType(LinearProgressIndicator), findsNothing);
     expect(
       find.descendant(

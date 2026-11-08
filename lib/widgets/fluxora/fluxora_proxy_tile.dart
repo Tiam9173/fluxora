@@ -45,6 +45,7 @@ class FluxoraProxyTile extends StatelessWidget {
     this.onLongPress,
     this.leading,
     this.trailing,
+    this.nameTrailing,
     this.latencySlot,
     this.showStatus = true,
     this.showLatency = true,
@@ -83,6 +84,7 @@ class FluxoraProxyTile extends StatelessWidget {
 
   /// Optional trailing slot (e.g. a selection tick).
   final Widget? trailing;
+  final Widget? nameTrailing;
 
   /// Replaces the built-in [FluxoraLatencyBadge].
   ///
@@ -190,11 +192,21 @@ class FluxoraProxyTile extends StatelessWidget {
                   height: _nameAreaHeight(context, nameStyle),
                   child: Align(
                     alignment: Alignment.centerLeft,
-                    child: EmojiText(
-                      name,
-                      maxLines: nameMaxLines,
-                      overflow: TextOverflow.ellipsis,
-                      style: nameStyle,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: EmojiText(
+                            name,
+                            maxLines: nameMaxLines,
+                            overflow: TextOverflow.ellipsis,
+                            style: nameStyle,
+                          ),
+                        ),
+                        if (nameTrailing != null) ...[
+                          const SizedBox(width: 4),
+                          nameTrailing!,
+                        ],
+                      ],
                     ),
                   ),
                 ),
@@ -214,50 +226,46 @@ class FluxoraProxyTile extends StatelessWidget {
                   // The status label is the part that yields: it is secondary
                   // information, while the latency badge is the reason the user
                   // is looking at the row.
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (showStatus)
-                        Flexible(
-                          child: FluxoraStatus(status: status, label: protocol),
-                        ),
-                      if (showLatency) ...[
-                        // `sm`, not `md`: at 3-column width the row has ~1.5 dp
-                        // of slack left after both children shrink, and the
-                        // wider gap was exactly what tipped it over.
-                        if (showStatus)
-                          const SizedBox(width: FluxoraSpacing.sm),
-                        // The badge used to take its intrinsic width, so on a
-                        // narrow card (a three-column phone grid is ~104 dp) the
-                        // row overflowed even with no extra decoration — and
-                        // adding the lock mark as `trailing` stole another
-                        // ~24 dp, pushing the latency clean out of view. That is
-                        // the reported "锁定后看不到延迟". Flexible + scale-down
-                        // keeps it on screen at any width.
-                        Flexible(
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.centerLeft,
+                  LayoutBuilder(
+                    builder: (context, constraints) => Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (showStatus && constraints.maxWidth >= 112)
+                          Flexible(
+                            child: FluxoraStatus(
+                              status: status,
+                              label: protocol,
+                            ),
+                          ),
+                        if (showLatency) ...[
+                          // `sm`, not `md`: at 3-column width the row has ~1.5 dp
+                          // of slack left after both children shrink, and the
+                          // wider gap was exactly what tipped it over.
+                          if (showStatus && constraints.maxWidth >= 112)
+                            const SizedBox(width: FluxoraSpacing.sm),
+                          // Keep latency legible in compact cards; protocol yields first.
+                          Flexible(
+                            flex: 2,
                             child:
                                 latencySlot ??
                                 FluxoraLatencyBadge(delay: delay),
                           ),
-                        ),
-                      ],
-                      if (traffic != null) ...[
-                        const SizedBox(width: FluxoraSpacing.md),
-                        Flexible(
-                          child: Text(
-                            traffic!,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: FluxoraTypography.caption.copyWith(
-                              color: colorScheme.onSurfaceVariant,
+                        ],
+                        if (traffic != null) ...[
+                          const SizedBox(width: FluxoraSpacing.md),
+                          Flexible(
+                            child: Text(
+                              traffic!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: FluxoraTypography.caption.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
                             ),
                           ),
-                        ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ],
               ],

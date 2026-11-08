@@ -85,21 +85,33 @@ class GlassCanvas extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         gradient: material.blurEnabled && scheme.surface != Colors.black
-            ? LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color.alphaBlend(
-                    scheme.tertiary.withValues(alpha: .055),
-                    scheme.surface,
-                  ),
-                  scheme.surface,
-                  Color.alphaBlend(
-                    scheme.primary.withValues(alpha: .035),
-                    scheme.surface,
-                  ),
-                ],
-              )
+            ? material.isObsidian
+                  ? RadialGradient(
+                      center: const Alignment(.7, -.9),
+                      radius: 1.4,
+                      colors: [
+                        Color.alphaBlend(
+                          scheme.primary.withValues(alpha: .10),
+                          scheme.surface,
+                        ),
+                        scheme.surface,
+                      ],
+                    )
+                  : LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color.alphaBlend(
+                          scheme.tertiary.withValues(alpha: .055),
+                          scheme.surface,
+                        ),
+                        scheme.surface,
+                        Color.alphaBlend(
+                          scheme.primary.withValues(alpha: .035),
+                          scheme.surface,
+                        ),
+                      ],
+                    )
             : null,
         color: scheme.surface,
       ),

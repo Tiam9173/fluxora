@@ -449,7 +449,8 @@ class _CodeForgeState extends State<CodeForge> with TickerProviderStateMixin {
   final ValueNotifier<Offset> _offsetNotifier = ValueNotifier(Offset(0, 0));
   final ValueNotifier<Offset?> _lspActionOffsetNotifier = ValueNotifier(null);
   final ValueNotifier<int> _scrollbarLineNumberIndicator = ValueNotifier(1);
-  final _isMobile = Platform.isAndroid || Platform.isIOS;
+  bool get _isMobile => defaultTargetPlatform == TargetPlatform.android ||
+      defaultTargetPlatform == TargetPlatform.iOS;
   final _suggScrollController = ScrollController();
   final _actionScrollController = ScrollController();
   final Map<String, String> _suggestionDetailsCache = {};
@@ -468,9 +469,11 @@ class _CodeForgeState extends State<CodeForge> with TickerProviderStateMixin {
   double _startPinchDistance = 0;
   double _pinchScale = 1;
   Offset _panZoomFocal = Offset.zero;
+  Offset _pinchFocal = Offset.zero;
   final ValueNotifier<Matrix4> _pinchTransform = ValueNotifier(
     Matrix4.identity(),
   );
+  final ValueNotifier<bool> _pinchActive = ValueNotifier(false);
 
   /// item 6 4 — the zoom [Listener]'s own box: the gesture area is the whole
   /// editor (the field itself is content-sized and would cover only the top
@@ -1194,6 +1197,7 @@ class _CodeForgeState extends State<CodeForge> with TickerProviderStateMixin {
     if (_ownsVerticalScrollController) _vscrollController.dispose();
     if (_ownsController) _controller.dispose();
     _pinchTransform.dispose();
+    _pinchActive.dispose();
     super.dispose();
   }
 
@@ -1845,7 +1849,7 @@ class _CodeForgeState extends State<CodeForge> with TickerProviderStateMixin {
   }
 
   void _handleZoomPointerSignal(PointerSignalEvent event) {
-    if (_isMobile || !widget.enablePinchZoom || !_zoomArmed) return;
+    if (!widget.enablePinchZoom || !_zoomArmed) return;
     if (event is! PointerScrollEvent || event.scrollDelta.dy == 0) return;
     final keyboard = HardwareKeyboard.instance;
     if (!keyboard.isControlPressed && !keyboard.isMetaPressed) return;
@@ -1884,10 +1888,10 @@ class _CodeForgeState extends State<CodeForge> with TickerProviderStateMixin {
   }
 
   void _handlePanZoomUpdate(PointerPanZoomUpdateEvent event) {
-    if (event.pointer != _panZoomPointer || _pinchPointer1 != null) return;
+    if (event.pointer != _panZoomPointer || _zoomTouches.length >= 2) return;
     if (_startPinchDistance == 0) {
       if ((event.scale - 1).abs() < kEditorPanZoomSlop) return;
-      _beginPinch(_panZoomFocal, event.scale);
+      _beginPinch(_panZoomFocal, 1);
     }
     _updatePinch(event.scale);
   }
@@ -1903,8 +1907,10 @@ class _CodeForgeState extends State<CodeForge> with TickerProviderStateMixin {
       a == b ? 1.0 : max(1.0, (a - b).distance);
 
   void _beginPinch(Offset focal, double start) {
-    _pinchPointer1 = _zoomTouches.keys.first;
-    _pinchPointer2 = _zoomTouches.keys.elementAt(1);
+    _pinchActive.value = true;
+    _pinchPointer1 = _zoomTouches.keys.firstOrNull ?? -1;
+    _pinchPointer2 = _zoomTouches.keys.skip(1).firstOrNull ?? -2;
+    _pinchFocal = focal;
     _startPinchDistance = start;
     _pinchScale = 1;
     // `focal` is already in the zoom listener's local coordinates; the matrix
@@ -1922,12 +1928,11 @@ class _CodeForgeState extends State<CodeForge> with TickerProviderStateMixin {
     final scale = target / widget.zoom;
     if (scale == _pinchScale) return;
     _pinchScale = scale;
-    final points = _zoomTouches.values.toList();
-    final focal = (points[0] + points[1]) / 2;
-    _pinchTransform.value = focalZoomMatrix(focal, scale);
+    _pinchTransform.value = focalZoomMatrix(_pinchFocal, scale);
   }
 
   void _finishPinch() {
+    _pinchActive.value = false;
     final committed = clampEditorZoom(widget.zoom * _pinchScale);
     _pinchPointer1 = null;
     _pinchPointer2 = null;
@@ -1938,7 +1943,20 @@ class _CodeForgeState extends State<CodeForge> with TickerProviderStateMixin {
     // A gesture that ends where it started (or that never got past a bound)
     // reports nothing — same contract as the wheel path.
     if (committed != widget.zoom) {
+      final ratio = committed / widget.zoom;
+      final vertical = _vscrollController.hasClients
+          ? (_vscrollController.offset + _pinchFocal.dy) * ratio -
+                _pinchFocal.dy
+          : null;
       widget.onZoomEnd?.call(committed);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || vertical == null || !_vscrollController.hasClients)
+          return;
+        final position = _vscrollController.position;
+        _vscrollController.jumpTo(
+          vertical.clamp(position.minScrollExtent, position.maxScrollExtent),
+        );
+      });
     }
   }
 
@@ -2040,14 +2058,17 @@ class _CodeForgeState extends State<CodeForge> with TickerProviderStateMixin {
                                     setState(() => _isHovering = false);
                                   }
                                 },
-                                child: ValueListenableBuilder(
-                                  valueListenable: _selectionActiveNotifier,
-                                  builder: (context, selVal, child) {
+                                child: ListenableBuilder(
+                                  listenable: Listenable.merge([_selectionActiveNotifier, _pinchActive]),
+                                  builder: (context, child) {
+                                    final selVal = _selectionActiveNotifier.value || _pinchActive.value;
                                     return ValueListenableBuilder<Matrix4>(
                                       valueListenable: _pinchTransform,
-                                      builder: (_, transform, child) => transform.isIdentity()
-                                          ? child!
-                                          : Transform(transform: transform, child: child),
+                                      builder: (_, transform, child) => Transform(
+                                        transform: transform,
+                                        transformHitTests: false,
+                                        child: RepaintBoundary(child: child!),
+                                      ),
                                       child: Listener(
                                         key: _zoomAreaKey,
                                         onPointerDown: _handleZoomPointerDown,
@@ -5666,7 +5687,7 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
   }
 
   set textStyle(TextStyle? style) {
-    if (identical(style, _textStyle)) return;
+    if (style == _textStyle) return;
     _textStyle = style;
 
     final fontSize = style?.fontSize ?? 14.0;
@@ -12170,8 +12191,34 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
     }
   }
 
+  final Set<int> _touchPointers = {};
+  bool _multiTouch = false;
+
   @override
   void handleEvent(PointerEvent event, covariant BoxHitTestEntry entry) {
+    if (event.kind == PointerDeviceKind.touch) {
+      if (event is PointerDownEvent) {
+        _touchPointers.add(event.pointer);
+        if (_touchPointers.length > 1) {
+          _multiTouch = true;
+          _selectionTimer?.cancel();
+          _dragStartOffset = null;
+          _onetap.onTap = null;
+          _dtap.onDoubleTap = null;
+          _draggingCHandle = _draggingStartHandle = _draggingEndHandle = false;
+          _selectionActive = selectionActiveNotifier.value = false;
+          _showBubble = false;
+        }
+      }
+      if (event is PointerUpEvent || event is PointerCancelEvent) {
+        _touchPointers.remove(event.pointer);
+        if (_multiTouch) {
+          if (_touchPointers.isEmpty) _multiTouch = false;
+          return;
+        }
+      }
+      if (_multiTouch) return;
+    }
     final localPosition = event.localPosition;
     final clickY =
         localPosition.dy + vscrollController.offset - (innerPadding?.top ?? 0);

@@ -1,6 +1,10 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:ui' as ui;
+import 'package:code_forge/code_forge.dart' show RustLib, CodeForge;
+// ignore: depend_on_referenced_packages
+import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated_io.dart'
+    show ExternalLibrary;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -25,6 +29,7 @@ import 'package:fluxora/l10n/l10n.dart';
 import 'package:fluxora/manager/app_manager.dart';
 import 'package:fluxora/models/models.dart';
 import 'package:fluxora/pages/home.dart';
+import 'package:fluxora/pages/editor.dart';
 import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/plugins/vpn.dart';
 import 'package:fluxora/state.dart';
@@ -115,6 +120,14 @@ void main() {
   late PathProviderPlatform originalPaths;
   late String? originalReadbackPlatform;
   setUpAll(() async {
+    final library = File(
+      'build/windows/x64/plugins/code_forge/cargokit_build/x86_64-pc-windows-msvc/release/code_forge.dll',
+    );
+    if (library.existsSync()) {
+      await RustLib.init(
+        externalLibrary: ExternalLibrary.open(library.absolute.path),
+      );
+    }
     originalReadbackPlatform = SystemProxyReadbackService.platformOverride;
     SystemProxyReadbackService.platformOverride = 'ui-fixture';
     originalPaths = PathProviderPlatform.instance;
@@ -158,6 +171,7 @@ void main() {
     PageLabel page = PageLabel.dashboard,
     List<DashboardWidget>? dashboardWidgets,
     List<Group> groups = const [],
+    FluxoraVisualStyle visualStyle = FluxoraVisualStyle.fluxora,
   }) async {
     final morePage = [
       PageLabel.connections,
@@ -177,7 +191,7 @@ void main() {
             dashboardWidgets ?? defaultAndroidDashboardWidgets,
         desktopDashboardWidgets: dashboardWidgets ?? defaultDashboardWidgets,
       ),
-      themeProps: const ThemeProps(useHarmonyFont: true),
+      themeProps: ThemeProps(useHarmonyFont: true, visualStyle: visualStyle),
       profiles: empty
           ? []
           : const [
@@ -239,6 +253,8 @@ void main() {
                 appearance.surfaceStyle,
                 motionStyle: appearance.motionStyle,
                 glassIntensity: appearance.glassIntensity,
+                motionIntensity: appearance.motionIntensity,
+                visualStyle: appearance.visualStyle,
               ),
               locale: const Locale('zh', 'CN'),
               localizationsDelegates: const [
@@ -316,6 +332,94 @@ void main() {
     return container;
   }
 
+  testWidgets(
+    'picker locates the current node without changing it with motion off',
+    (tester) async {
+      final group = Group(
+        type: GroupType.Selector,
+        name: '节点选择',
+        now: '节点 55',
+        all: [for (var i = 0; i < 60; i++) Proxy(name: '节点 $i', type: 'VLESS')],
+      );
+      final container = await show(tester, reduce: true, groups: [group]);
+      final profile = container.read(currentProfileProvider)!;
+      container
+          .read(profilesProvider.notifier)
+          .setProfile(profile.copyWith(selectedMap: {'节点选择': '节点 55'}));
+      await tester.pump();
+      showNotificationSwitchCard(tester.element(find.byType(HomePage)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('switch-card-locate')));
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(
+          of: find.byType(SwitchCard),
+          matching: find.text('节点 55'),
+        ),
+        findsOneWidget,
+      );
+      expect(container.read(selectedMapProvider)['节点选择'], '节点 55');
+      expect(tester.takeException(), isNull);
+      await capture(tester, 'switch-card-located');
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 1));
+    },
+  );
+
+  for (final brightness in Brightness.values) {
+    testWidgets(
+      'script editor font controls preview and commit without editing content $brightness',
+      (tester) async {
+        await show(
+          tester,
+          brightness: brightness,
+          dashboardWidgets: [DashboardWidget.startButton],
+        );
+        final content = List.generate(
+          160,
+          (i) => 'const route$i = { name: "Singapore $i", port: 443 };',
+        ).join('\n');
+        Navigator.of(tester.element(find.byType(HomePage))).push(
+          MaterialPageRoute(
+            builder: (_) => EditorPage(
+              title: '路由脚本.js',
+              content: content,
+              languages: const [Language.javaScript],
+            ),
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
+        await capture(tester, 'editor-script-${brightness.name}');
+        await tester.tap(find.byTooltip(appLocalizations.more).last);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
+        await tester.tap(find.textContaining('字体大小').first);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
+        final slider = find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.byType(Slider),
+        );
+        await tester.drag(slider, const Offset(35, 0));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
+        await capture(tester, 'editor-font-${brightness.name}');
+        await tester.tap(find.text(appLocalizations.confirm));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
+        if (find.byType(CodeForge).evaluate().isNotEmpty) {
+          final editor = tester.widget<CodeForge>(find.byType(CodeForge));
+          expect(editor.zoom, greaterThan(1));
+          expect(editor.controller!.text, content);
+        }
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox());
+        await tester.pump(const Duration(seconds: 1));
+      },
+    );
+  }
+
   for (final expanded in [false, true]) {
     testWidgets(
       'many strategy groups remain reachable above the dock expanded=$expanded',
@@ -372,6 +476,155 @@ void main() {
         await tester.pumpAndSettle();
         expect(container.read(unfoldSetProvider).contains('策略组 23'), !expanded);
         expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  testWidgets(
+    'navigation lens moves continuously to a tapped nonadjacent tab',
+    (tester) async {
+      final container = await show(
+        tester,
+        visualStyle: FluxoraVisualStyle.obsidian,
+        dashboardWidgets: [DashboardWidget.startButton],
+      );
+      final lens = find.byKey(const ValueKey('aurora-dock-lens'));
+      final before = tester.getCenter(lens).dx;
+      await capture(tester, 'motion-lens/000');
+      await tester.tap(
+        find
+            .descendant(
+              of: find.byType(AuroraBottomNavBar),
+              matching: find.byType(InkWell),
+            )
+            .last,
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 40));
+      final middle = tester.getCenter(lens).dx;
+      expect(middle, greaterThan(before));
+      await capture(tester, 'motion-lens/001');
+      for (var i = 2; i <= 8; i++) {
+        await tester.pump(const Duration(milliseconds: 40));
+        await capture(tester, 'motion-lens/${i.toString().padLeft(3, '0')}');
+      }
+      expect(tester.getCenter(lens).dx, greaterThan(middle));
+      expect(container.read(currentPageLabelProvider), PageLabel.tools);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 1));
+    },
+  );
+
+  for (final brightness in Brightness.values) {
+    for (final size in [const Size(390, 844), const Size(1280, 850)]) {
+      testWidgets(
+        'obsidian theme covers home, navigation and settings $brightness $size',
+        (tester) async {
+          final container = await show(
+            tester,
+            brightness: brightness,
+            size: size,
+            visualStyle: FluxoraVisualStyle.obsidian,
+            dashboardWidgets: [
+              DashboardWidget.startButton,
+              DashboardWidget.networkSpeed,
+              DashboardWidget.trafficUsage,
+            ],
+          );
+          expect(
+            FluxoraMaterial.of(
+              tester.element(find.byType(HomePage)),
+            ).isObsidian,
+            isTrue,
+          );
+          final suffix = size.width > 1000 ? '-desktop' : '';
+          await capture(tester, 'obsidian-home-${brightness.name}$suffix');
+          container.read(currentPageLabelProvider.notifier).value =
+              PageLabel.tools;
+          await tester.pumpAndSettle();
+          await capture(tester, 'obsidian-settings-${brightness.name}$suffix');
+          await tester.tap(find.text(appLocalizations.theme).first);
+          await tester.pumpAndSettle();
+          expect(find.byKey(const ValueKey('visual-obsidian')), findsOneWidget);
+          await capture(tester, 'obsidian-theme-${brightness.name}$suffix');
+          await tester.tap(find.byKey(const ValueKey('visual-obsidian')));
+          await tester.pumpAndSettle();
+          expect(
+            container.read(themeSettingProvider).themeMode,
+            ThemeMode.system,
+          );
+          await tester.tap(find.byKey(const ValueKey('visual-fluxora')));
+          await tester.pumpAndSettle();
+          expect(
+            container.read(themeSettingProvider).visualStyle,
+            FluxoraVisualStyle.fluxora,
+          );
+          await tester.tap(find.byKey(const ValueKey('visual-obsidian')));
+          await tester.pumpAndSettle();
+          expect(
+            container.read(themeSettingProvider).visualStyle,
+            FluxoraVisualStyle.obsidian,
+          );
+          expect(
+            container.read(themeSettingProvider).themeMode,
+            ThemeMode.dark,
+          );
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox());
+          await tester.pump(const Duration(seconds: 1));
+        },
+      );
+    }
+  }
+
+  for (final brightness in Brightness.values) {
+    testWidgets(
+      'compact locked computed nodes keep names and latency readable $brightness',
+      (tester) async {
+        const name = '新加坡 · 专线连接 01';
+        final container = await show(
+          tester,
+          brightness: brightness,
+          size: const Size(320, 740),
+          page: PageLabel.proxies,
+          reduce: true,
+          groups: [
+            Group(
+              type: GroupType.URLTest,
+              name: '自动选择',
+              now: name,
+              all: const [
+                Proxy(name: name, type: 'VLESS'),
+                Proxy(name: '东京 · 高速线路 02', type: 'Trojan'),
+                Proxy(name: '法兰克福 03', type: 'Shadowsocks'),
+              ],
+            ),
+          ],
+        );
+        container
+            .read(proxiesStyleSettingProvider.notifier)
+            .updateState(
+              (s) => s.copyWith(
+                cardType: ProxyCardType.min,
+                layout: ProxiesLayout.tight,
+              ),
+            );
+        final profile = container.read(currentProfileProvider)!;
+        container
+            .read(profilesProvider.notifier)
+            .setProfile(profile.copyWith(selectedMap: {'自动选择': name}));
+        final url = globalState.appController.getRealTestUrl(
+          container.read(getRealTestUrlProvider()),
+        );
+        container
+            .read(delayDataSourceProvider.notifier)
+            .setDelay(Delay(url: url, name: name, value: 88));
+        await tester.pumpAndSettle();
+        expect(find.text('88 ms'), findsOneWidget);
+        expect(find.byIcon(Icons.lock_rounded), findsWidgets);
+        expect(tester.takeException(), isNull);
+        await capture(tester, 'compact-locked-${brightness.name}');
       },
     );
   }

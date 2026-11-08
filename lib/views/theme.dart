@@ -8,6 +8,7 @@ import 'package:fluxora/common/common.dart';
 import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/models/selector.dart';
 import 'package:fluxora/views/app_icons.dart';
+import 'package:fluxora/widgets/fluxora/fluxora_launch_reveal.dart';
 import 'package:fluxora/providers/config.dart';
 import 'package:fluxora/providers/state.dart';
 import 'package:fluxora/state.dart';
@@ -84,6 +85,8 @@ class ThemeView extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const _ThemePreview(),
+                  const SizedBox(height: 16),
+                  const _VisualStylePicker(),
                   const SizedBox(height: 20),
                   if (constraints.maxWidth >= 760)
                     Row(
@@ -125,6 +128,143 @@ class ThemeView extends ConsumerWidget {
   }
 }
 
+class _VisualStylePicker extends ConsumerWidget {
+  const _VisualStylePicker();
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final props = ref.watch(themeSettingProvider);
+    final chinese = Localizations.localeOf(context).languageCode == 'zh';
+    return Row(
+      children: [
+        for (final style in FluxoraVisualStyle.values) ...[
+          if (style.index > 0) const SizedBox(width: 12),
+          Expanded(
+            child: Semantics(
+              selected: props.visualStyle == style,
+              button: true,
+              child: InkWell(
+                key: ValueKey('visual-${style.name}'),
+                borderRadius: FluxoraRadius.cardAll,
+                onTap: () {
+                  if (props.visualStyle == style) return;
+                  ref
+                      .read(themeSettingProvider.notifier)
+                      .updateState(
+                        (s) => s.copyWith(
+                          visualStyle: style,
+                          themeMode: style == FluxoraVisualStyle.obsidian
+                              ? ThemeMode.dark
+                              : s.themeMode,
+                          colorSource: style == FluxoraVisualStyle.obsidian
+                              ? ColorSource.fluxora
+                              : s.colorSource,
+                          surfaceStyle:
+                              s.surfaceStyle == FluxoraSurfaceStyle.reduced
+                              ? s.surfaceStyle
+                              : FluxoraSurfaceStyle.hybrid,
+                        ),
+                      );
+                },
+                child: AnimatedContainer(
+                  duration: FluxoraMotion.ofContext(context).fast,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    borderRadius: FluxoraRadius.cardAll,
+                    color: context.colorScheme.surfaceContainerLow,
+                    border: Border.all(
+                      color: props.visualStyle == style
+                          ? context.colorScheme.primary
+                          : context.colorScheme.outlineVariant,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Container(
+                        height: 72,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          borderRadius: FluxoraRadius.mdAll,
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: style == FluxoraVisualStyle.obsidian
+                                ? const [
+                                    Color(0xFF12141F),
+                                    Color(0xFF343D78),
+                                    Color(0xFF0A0B11),
+                                  ]
+                                : const [
+                                    Color(0xFFE9EDFF),
+                                    Color(0xFFCDD6FA),
+                                    Color(0xFFF8FAFF),
+                                  ],
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: style == FluxoraVisualStyle.obsidian
+                                    ? const Color(0xFF7987ED)
+                                    : const Color(0xFF5F6BD3),
+                              ),
+                              child: const Icon(
+                                Icons.power_settings_new_rounded,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    height: 5,
+                                    width: 45,
+                                    color: style == FluxoraVisualStyle.obsidian
+                                        ? Colors.white70
+                                        : const Color(0xFF4D5578),
+                                  ),
+                                  const SizedBox(height: 7),
+                                  Container(
+                                    height: 4,
+                                    color: style == FluxoraVisualStyle.obsidian
+                                        ? Colors.white24
+                                        : const Color(0xFF9AA4C6),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        style == FluxoraVisualStyle.obsidian
+                            ? (chinese ? '曜石玻璃' : 'Obsidian glass')
+                            : 'Fluxora',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: context.textTheme.titleSmall,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
 class _EffectsItem extends ConsumerStatefulWidget {
   const _EffectsItem();
   @override
@@ -133,6 +273,7 @@ class _EffectsItem extends ConsumerStatefulWidget {
 
 class _EffectsItemState extends ConsumerState<_EffectsItem> {
   double? _draft;
+  double? _motionDraft;
   @override
   Widget build(BuildContext context) {
     final props = ref.watch(themeSettingProvider);
@@ -180,6 +321,7 @@ class _EffectsItemState extends ConsumerState<_EffectsItem> {
               for (final entry in [
                 (FluxoraMotionStyle.system, chinese ? '跟随系统' : 'System'),
                 (FluxoraMotionStyle.fluid, chinese ? '流畅' : 'Fluid'),
+                (FluxoraMotionStyle.depth, chinese ? '景深' : 'Depth'),
                 (FluxoraMotionStyle.off, chinese ? '关闭' : 'Off'),
               ])
                 ChoiceChip(
@@ -189,6 +331,61 @@ class _EffectsItemState extends ConsumerState<_EffectsItem> {
                   onSelected: (_) => motion(entry.$1),
                 ),
             ],
+          ),
+          if (props.motionStyle != FluxoraMotionStyle.off) ...[
+            const SizedBox(height: 16),
+            Text(
+              chinese ? '动效强度' : 'Motion intensity',
+              style: context.textTheme.titleSmall,
+            ),
+            Slider(
+              key: const ValueKey('motion-intensity'),
+              value:
+                  _motionDraft ??
+                  FluxoraMaterial(
+                    motionIntensity: props.motionIntensity,
+                  ).motionAmount,
+              divisions: 10,
+              label:
+                  '${((_motionDraft ?? props.motionIntensity) * 100).round()}%',
+              onChanged: (value) => setState(() => _motionDraft = value),
+              onChangeEnd: (value) {
+                ref
+                    .read(themeSettingProvider.notifier)
+                    .updateState((s) => s.copyWith(motionIntensity: value));
+                setState(() => _motionDraft = null);
+              },
+            ),
+          ],
+          SwitchListTile.adaptive(
+            contentPadding: EdgeInsets.zero,
+            title: Text(chinese ? '开屏动画' : 'Launch animation'),
+            value: props.launchAnimation,
+            onChanged: (value) => ref
+                .read(themeSettingProvider.notifier)
+                .updateState((s) => s.copyWith(launchAnimation: value)),
+          ),
+          TextButton.icon(
+            icon: const Icon(Icons.play_arrow_rounded),
+            label: Text(chinese ? '预览开屏' : 'Preview launch'),
+            onPressed: () => showDialog<void>(
+              context: context,
+              builder: (_) => Dialog(
+                clipBehavior: Clip.antiAlias,
+                child: SizedBox(
+                  width: 360,
+                  height: 460,
+                  child: FluxoraLaunchReveal(
+                    child: Center(
+                      child: TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: Text(appLocalizations.confirm),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),

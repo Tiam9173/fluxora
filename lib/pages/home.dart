@@ -283,7 +283,6 @@ class _HomePageView extends ConsumerStatefulWidget {
 }
 
 class _HomePageViewState extends ConsumerState<_HomePageView> {
-  late PageController _pageController;
   late final ProviderSubscription<PageLabel> _pageLabelSubscription;
   int _currentPageIndex = 0;
 
@@ -291,7 +290,6 @@ class _HomePageViewState extends ConsumerState<_HomePageView> {
   initState() {
     super.initState();
     _currentPageIndex = _pageIndex < 0 ? 0 : _pageIndex;
-    _pageController = PageController(initialPage: _currentPageIndex);
     _pageLabelSubscription = ref.listenManual(currentPageLabelProvider, (
       prev,
       next,
@@ -320,10 +318,7 @@ class _HomePageViewState extends ConsumerState<_HomePageView> {
     );
   }
 
-  Future<void> _toPage(
-    PageLabel pageLabel, [
-    bool ignoreAnimateTo = false,
-  ]) async {
+  Future<void> _toPage(PageLabel pageLabel) async {
     if (!mounted) {
       return;
     }
@@ -340,60 +335,65 @@ class _HomePageViewState extends ConsumerState<_HomePageView> {
 
     if (_currentPageIndex == index) return;
     setState(() => _currentPageIndex = index);
-    if (!_pageController.hasClients) return;
-    final motion = FluxoraMotion.ofContext(context);
-    if (ignoreAnimateTo ||
-        !ref.read(isMobileViewProvider) ||
-        motion.reduceMotion ||
-        ((_pageController.page ?? index) - index).abs() > 1.1) {
-      _pageController.jumpToPage(index);
-    } else {
-      await _pageController.animateToPage(
-        index,
-        duration: motion.base,
-        curve: motion.standard,
-      );
-    }
   }
 
   void _updatePageController() {
     final pageLabel = ref.read(currentPageLabelProvider);
-    _toPage(pageLabel, true);
+    final index = widget.navigationItems.indexWhere(
+      (item) => item.label == pageLabel,
+    );
+    _currentPageIndex = index < 0 ? 0 : index;
+    if (index < 0 && widget.navigationItems.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted ||
+            ref.read(currentPageLabelProvider) != pageLabel ||
+            widget.navigationItems.isEmpty) {
+          return;
+        }
+        if (widget.navigationItems.every((item) => item.label != pageLabel)) {
+          ref.read(currentPageLabelProvider.notifier).value =
+              widget.navigationItems.first.label;
+        }
+      });
+    }
   }
 
   @override
   void dispose() {
     _pageLabelSubscription.close();
-    _pageController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (widget.navigationItems.isEmpty) return const SizedBox.shrink();
     final mobile = ref.watch(isMobileViewProvider);
-    return PageView.builder(
+    final motion = FluxoraMotion.ofContext(context);
+    final material = FluxoraMaterial.of(context);
+    return KeptPageView(
       key: const ValueKey('main-page-view'),
-      controller: _pageController,
-      physics: mobile
-          ? const PageScrollPhysics()
-          : const NeverScrollableScrollPhysics(),
-      onPageChanged: (index) {
-        if (_currentPageIndex != index) {
-          setState(() => _currentPageIndex = index);
-        }
-        final page = widget.navigationItems[index].label;
-        if (ref.read(currentPageLabelProvider) != page) {
-          globalState.appController.toPage(page);
-        }
-      },
-      itemCount: widget.navigationItems.length,
-      findChildIndexCallback: (key) {
-        final index = widget.navigationItems.indexWhere(
-          (item) => ValueKey(item.label) == key,
-        );
-        return index < 0 ? null : index;
-      },
-      itemBuilder: (context, index) {
+      pageKeys: widget.navigationItems.map((item) => item.label).toList(),
+      index: _currentPageIndex,
+      duration: motion.base,
+      inCurve: motion.standard,
+      outCurve: motion.exit,
+      enterOffset: Offset.zero,
+      horizontal: true,
+      depth: material.motionStyle == FluxoraMotionStyle.depth,
+      intensity: material.motionAmount,
+      pageCount: widget.navigationItems.length,
+      onIndexChanged: !mobile
+          ? null
+          : (index) {
+              if (_currentPageIndex != index) {
+                setState(() => _currentPageIndex = index);
+              }
+              final page = widget.navigationItems[index].label;
+              if (ref.read(currentPageLabelProvider) != page) {
+                globalState.appController.toPage(page);
+              }
+            },
+      pageBuilder: (context, index) {
         return TickerMode(
           key: ValueKey(widget.navigationItems[index].label),
           enabled: _currentPageIndex == index,

@@ -31,7 +31,10 @@ class AuroraBottomNavBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (navigationItems.isEmpty) return const SizedBox.shrink();
     final scheme = Theme.of(context).colorScheme;
+    final motion = FluxoraMotion.ofContext(context);
+    final material = FluxoraMaterial.of(context);
     final enableHapticFeedback = ref.watch(
       appSettingProvider.select((state) => state.enableNavBarHapticFeedback),
     );
@@ -87,20 +90,89 @@ class AuroraBottomNavBar extends ConsumerWidget {
                   horizontal: FluxoraSpacing.xs,
                   vertical: FluxoraSpacing.xs,
                 ),
-                child: Row(
-                  children: [
-                    for (var index = 0; index < navigationItems.length; index++)
-                      Expanded(
-                        child: _AuroraDockItem(
-                          icon: _iconOf(navigationItems[index].icon),
-                          label: Intl.message(
-                            navigationItems[index].label.name,
+                child: LayoutBuilder(
+                  builder: (context, constraints) => Stack(
+                    children: [
+                      Positioned.fill(
+                        child: AnimatedAlign(
+                          key: const ValueKey('aurora-dock-indicator'),
+                          alignment: AlignmentDirectional(
+                            navigationItems.length == 1
+                                ? 0
+                                : -1 +
+                                      2 *
+                                          selectedIndex.clamp(
+                                            0,
+                                            navigationItems.length - 1,
+                                          ) /
+                                          (navigationItems.length - 1),
+                            0,
                           ),
-                          selected: index == selectedIndex,
-                          onTap: () => handleTabChange(index),
+                          duration: motion.base,
+                          curve: motion.expressive
+                              ? Curves.easeOutBack
+                              : motion.standard,
+                          child: SizedBox(
+                            key: const ValueKey('aurora-dock-lens'),
+                            width:
+                                constraints.maxWidth / navigationItems.length,
+                            height: double.infinity,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: scheme.onSurface.withValues(
+                                  alpha: scheme.brightness == Brightness.dark
+                                      ? .09
+                                      : .06,
+                                ),
+                                gradient:
+                                    material.isObsidian && material.blurEnabled
+                                    ? LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [
+                                          scheme.onSurface.withValues(
+                                            alpha: .13,
+                                          ),
+                                          scheme.onSurface.withValues(
+                                            alpha: .035,
+                                          ),
+                                        ],
+                                      )
+                                    : null,
+                                borderRadius: BorderRadius.circular(
+                                  FluxoraRadius.xl,
+                                ),
+                                border: Border.all(
+                                  color: scheme.onSurface.withValues(
+                                    alpha: .16,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                  ],
+                      Row(
+                        children: [
+                          for (
+                            var index = 0;
+                            index < navigationItems.length;
+                            index++
+                          )
+                            Expanded(
+                              child: _AuroraDockItem(
+                                icon: _iconOf(navigationItems[index].icon),
+                                label: Intl.message(
+                                  navigationItems[index].label.name,
+                                ),
+                                selected: index == selectedIndex,
+                                onTap: () => handleTabChange(index),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -138,9 +210,6 @@ class _AuroraDockItemState extends State<_AuroraDockItem> {
     final brightness = scheme.brightness;
     final selected = widget.selected;
 
-    final tint = scheme.onSurface.withValues(
-      alpha: brightness == Brightness.dark ? .09 : .06,
-    );
     final hoverWash = scheme.onSurface.withValues(
       alpha: brightness == Brightness.dark ? 0.06 : 0.05,
     );
@@ -158,17 +227,13 @@ class _AuroraDockItemState extends State<_AuroraDockItem> {
         ),
         child: Material(
           animationDuration: FluxoraMotion.ofContext(context).base,
-          color: selected ? tint : (_hovered ? hoverWash : Colors.transparent),
+          color: _hovered ? hoverWash : Colors.transparent,
           clipBehavior: Clip.antiAlias,
           shape: RoundedRectangleBorder(
             borderRadius: radius,
             side: _focused
                 ? BorderSide(color: scheme.primary, width: 2)
-                : BorderSide(
-                    color: selected
-                        ? scheme.onSurface.withValues(alpha: .16)
-                        : Colors.transparent,
-                  ),
+                : BorderSide.none,
           ),
           child: InkWell(
             onTap: widget.onTap,
@@ -192,7 +257,14 @@ class _AuroraDockItemState extends State<_AuroraDockItem> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   ExcludeSemantics(
-                    child: Icon(widget.icon, size: 22, color: iconColor),
+                    child: AnimatedScale(
+                      scale: selected
+                          ? 1 + .1 * FluxoraMotion.ofContext(context).intensity
+                          : 1,
+                      duration: FluxoraMotion.ofContext(context).fast,
+                      curve: Curves.easeOutCubic,
+                      child: Icon(widget.icon, size: 22, color: iconColor),
+                    ),
                   ),
                   const SizedBox(height: FluxoraSpacing.xs),
                   // P8-2B F-3 — the `Semantics(label:)` above is the

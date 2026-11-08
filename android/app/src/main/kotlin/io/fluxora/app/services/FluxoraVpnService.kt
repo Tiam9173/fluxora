@@ -239,7 +239,7 @@ class FluxoraVpnService : VpnService(), BaseServiceInterface {
                     .setContentTitle(getString(R.string.core_connected))
                     .setContentText(getString(R.string.service_running))
             }
-            val notification = builder.setStyle(null).build()
+            val notification = builder.setStyle(null).buildFluxoraNotification(this@FluxoraVpnService)
             startForeground(notification, useSpecialType = !GlobalState.isSmartStopped)
             hasStartedForeground = true
         }.onFailure { Log.e(TAG, "flashNotification failed: ${it.message}") }
@@ -282,7 +282,7 @@ class FluxoraVpnService : VpnService(), BaseServiceInterface {
             // Keep the decorated style: clearing it made the custom views
             // collapse back into "big view for both states".
             .setStyle(null)
-            .build()
+            .buildFluxoraNotification(this@FluxoraVpnService)
 
         val isFirstTime = !hasStartedForeground
         if (isFirstTime) {
@@ -342,7 +342,7 @@ class FluxoraVpnService : VpnService(), BaseServiceInterface {
             // No custom views: their buttons never dispatched. The stock action
             // row is what actually works, so the notification stays plain.
             .setStyle(null)
-            .build()
+            .buildFluxoraNotification(this@FluxoraVpnService)
 
         if (!hasStartedForeground) {
             hasStartedForeground = true

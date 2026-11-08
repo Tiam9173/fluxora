@@ -1837,6 +1837,28 @@ class GlobalState {
     }
   }
 
+  /// Rule targets follow script output; editable subscription rules stay intact.
+  Future<ClashConfigSnippet> getProfileRuleSnippet(
+    String profileId, {
+    List<Group>? appliedGroups,
+  }) async {
+    final raw = await getProfileConfig(profileId);
+    final original = ClashConfigSnippet.fromJson(raw);
+    if (appliedGroups != null && appliedGroups.isNotEmpty) {
+      return original.copyWith(
+        proxyGroups: [
+          for (final group in appliedGroups)
+            ProxyGroup(name: group.name, type: group.type),
+        ],
+      );
+    }
+    final evaluated = await handleEvaluate(
+      raw,
+      profile: config.profiles.getProfile(profileId),
+    );
+    return ClashConfigSnippet.fromJson(evaluated).copyWith(rule: original.rule);
+  }
+
   Future<Map<String, dynamic>> getProfileConfig(
     String profileId, {
     bool applyNodeOverrides = true,

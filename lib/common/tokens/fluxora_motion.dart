@@ -17,9 +17,6 @@ import 'fluxora_material.dart';
 /// Flow"); [emphasis] `easeInOutCubic` for connection / node switches;
 /// [enter] / [exit] add a small ±4 px vertical offset.
 ///
-/// §10.4 forbids large scale changes (>1.1×), high-frequency flashing,
-/// continuous rotation, large particle fields and decorative-only motion.
-///
 /// ── reduced-motion (§10.5, mandatory) ──────────────────────────────────────
 ///
 /// Widget callers use [FluxoraMotion.ofContext] to resolve the user's motion
@@ -110,13 +107,17 @@ abstract final class FluxoraMotion {
       reduceMotion ? Offset.zero : offset;
 
   static FluxoraMotionSet ofContext(BuildContext context) {
-    final style = FluxoraMaterial.of(context).motionStyle;
+    final material = FluxoraMaterial.of(context);
+    final style = material.motionStyle;
     return FluxoraMotionSet(
       reduceMotion:
           style == FluxoraMotionStyle.off ||
           (style == FluxoraMotionStyle.system &&
               MediaQuery.disableAnimationsOf(context)),
-      expressive: style == FluxoraMotionStyle.fluid,
+      expressive:
+          style == FluxoraMotionStyle.fluid ||
+          style == FluxoraMotionStyle.depth,
+      intensity: material.motionAmount,
     );
   }
 
@@ -135,8 +136,13 @@ class FluxoraMotionSet {
   /// Whether the OS-level "reduce motion" accessibility setting is on.
   final bool reduceMotion;
   final bool expressive;
+  final double intensity;
 
-  const FluxoraMotionSet({required this.reduceMotion, this.expressive = false});
+  const FluxoraMotionSet({
+    required this.reduceMotion,
+    this.expressive = false,
+    this.intensity = .5,
+  });
 
   /// Standard motion.
   static const full = FluxoraMotionSet(reduceMotion: false);
@@ -149,21 +155,25 @@ class FluxoraMotionSet {
 
   // ── Durations ────────────────────────────────────────────────────────────
 
+  Duration _scale(Duration duration) => Duration(
+    microseconds: (duration.inMicroseconds * (.7 + .6 * intensity)).round(),
+  );
+
   Duration get fast => reduceMotion
       ? Duration.zero
-      : expressive
-      ? const Duration(milliseconds: 160)
-      : FluxoraMotion.fast;
+      : _scale(
+          expressive ? const Duration(milliseconds: 160) : FluxoraMotion.fast,
+        );
   Duration get base => reduceMotion
       ? Duration.zero
-      : expressive
-      ? const Duration(milliseconds: 260)
-      : FluxoraMotion.base;
+      : _scale(
+          expressive ? const Duration(milliseconds: 260) : FluxoraMotion.base,
+        );
   Duration get slow => reduceMotion
       ? Duration.zero
-      : expressive
-      ? const Duration(milliseconds: 400)
-      : FluxoraMotion.slow;
+      : _scale(
+          expressive ? const Duration(milliseconds: 400) : FluxoraMotion.slow,
+        );
 
   // ── Curves ───────────────────────────────────────────────────────────────
 
@@ -177,7 +187,7 @@ class FluxoraMotionSet {
   Offset get enterOffset => reduceMotion
       ? Offset.zero
       : expressive
-      ? const Offset(0, 8)
+      ? Offset(0, 4 + 8 * intensity)
       : FluxoraMotion.enterOffset;
   Offset get exitOffset =>
       reduceMotion ? Offset.zero : FluxoraMotion.exitOffset;

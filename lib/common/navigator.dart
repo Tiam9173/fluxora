@@ -15,7 +15,6 @@ class BaseNavigator {
         CommonDesktopRoute(
           builder: (context) => child,
           maintainState: maintainState,
-          reduceMotion: FluxoraMotion.ofContext(context).reduceMotion,
         ),
       );
     }
@@ -23,7 +22,6 @@ class BaseNavigator {
       _CleanCupertinoPageRoute(
         builder: (context) => child,
         maintainState: maintainState,
-        reduceMotion: FluxoraMotion.ofContext(context).reduceMotion,
       ),
     );
   }
@@ -40,12 +38,38 @@ class _CleanCupertinoPageRoute<T> extends CupertinoPageRoute<T> {
   }) : super(allowSnapshotting: false);
 
   final bool reduceMotion;
+  FluxoraMotionSet get _motion => reduceMotion
+      ? FluxoraMotionSet.reduced
+      : navigator == null
+      ? FluxoraMotionSet.full
+      : FluxoraMotion.ofContext(navigator!.context);
   @override
-  Duration get transitionDuration =>
-      reduceMotion ? Duration.zero : super.transitionDuration;
+  Duration get transitionDuration => _motion.base;
   @override
-  Duration get reverseTransitionDuration =>
-      reduceMotion ? Duration.zero : super.reverseTransitionDuration;
+  Duration get reverseTransitionDuration => _motion.fast;
+
+  @override
+  bool didPop(T? result) {
+    controller?.reverseDuration = _motion.fast;
+    return super.didPop(result);
+  }
+
+  @override
+  Widget buildTransitions(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    final reduced =
+        reduceMotion || FluxoraMotion.ofContext(context).reduceMotion;
+    return super.buildTransitions(
+      context,
+      reduced ? kAlwaysCompleteAnimation : animation,
+      reduced ? kAlwaysDismissedAnimation : secondaryAnimation,
+      child,
+    );
+  }
 
   @override
   Color? get barrierColor => null;
@@ -61,6 +85,11 @@ class CommonDesktopRoute<T> extends PageRoute<T> {
   });
 
   final bool reduceMotion;
+  FluxoraMotionSet get _motion => reduceMotion
+      ? FluxoraMotionSet.reduced
+      : navigator == null
+      ? FluxoraMotionSet.full
+      : FluxoraMotion.ofContext(navigator!.context);
 
   @override
   final bool maintainState;
@@ -81,20 +110,24 @@ class CommonDesktopRoute<T> extends PageRoute<T> {
     return Semantics(
       scopesRoute: true,
       explicitChildNodes: true,
-      child: reduceMotion || FluxoraMotion.ofContext(context).reduceMotion
-          ? result
-          : FadeTransition(
-              opacity: animation.drive(CurveTween(curve: FluxoraMotion.enter)),
-              child: result,
-            ),
+      child: FadeTransition(
+        opacity: reduceMotion || FluxoraMotion.ofContext(context).reduceMotion
+            ? kAlwaysCompleteAnimation
+            : animation.drive(CurveTween(curve: FluxoraMotion.enter)),
+        child: result,
+      ),
     );
   }
 
   @override
-  Duration get transitionDuration =>
-      reduceMotion ? Duration.zero : FluxoraMotion.base;
+  Duration get transitionDuration => _motion.base;
 
   @override
-  Duration get reverseTransitionDuration =>
-      reduceMotion ? Duration.zero : FluxoraMotion.fast;
+  Duration get reverseTransitionDuration => _motion.fast;
+
+  @override
+  bool didPop(T? result) {
+    controller?.reverseDuration = _motion.fast;
+    return super.didPop(result);
+  }
 }

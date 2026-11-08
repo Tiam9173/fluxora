@@ -85,106 +85,180 @@ void main() {
     });
   });
 
-  group('gestures through the real widget', () {
-    double? committed;
+  group(
+    'gestures through the real widget',
+    () {
+      double? committed;
 
-    Future<void> pumpEditor(WidgetTester tester, {double zoom = 1}) async {
-      if (!hasRustLib) {
-        markTestSkipped('no prebuilt code_forge.dll — run a desktop build first');
-        return;
-      }
-      committed = null;
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SizedBox(
-              width: 400,
-              height: 400,
-              child: CodeForge(
-                controller: CodeForgeController(),
-                zoom: zoom,
-                onZoomEnd: (value) => committed = value,
+      Future<void> pumpEditor(WidgetTester tester, {double zoom = 1}) async {
+        if (!hasRustLib) {
+          markTestSkipped(
+            'no prebuilt code_forge.dll — run a desktop build first',
+          );
+          return;
+        }
+        committed = null;
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: SizedBox(
+                width: 400,
+                height: 400,
+                child: CodeForge(
+                  controller: CodeForgeController(),
+                  zoom: zoom,
+                  onZoomEnd: (value) => committed = value,
+                ),
               ),
             ),
           ),
-        ),
+        );
+        await tester.pump();
+      }
+
+      Offset centerOf(WidgetTester tester) =>
+          tester.getCenter(find.byType(CodeForge));
+
+      testWidgets('ctrl + wheel up commits a zoom-in', (tester) async {
+        await pumpEditor(tester);
+        final pointer = TestPointer(1, PointerDeviceKind.mouse);
+        await tester.sendEventToBinding(pointer.hover(centerOf(tester)));
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+        await tester.sendEventToBinding(pointer.scroll(const Offset(0, -20)));
+        await tester.pump();
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+
+        expect(committed, closeTo(1.1, 1e-9));
+      });
+
+      testWidgets('ctrl + wheel down commits a zoom-out', (tester) async {
+        await pumpEditor(tester, zoom: 1.2);
+        final pointer = TestPointer(1, PointerDeviceKind.mouse);
+        await tester.sendEventToBinding(pointer.hover(centerOf(tester)));
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+        await tester.sendEventToBinding(pointer.scroll(const Offset(0, 20)));
+        await tester.pump();
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+
+        expect(committed, closeTo(1.2 / 1.1, 1e-9));
+      });
+
+      testWidgets('a plain wheel is not a zoom', (tester) async {
+        await pumpEditor(tester);
+        final pointer = TestPointer(1, PointerDeviceKind.mouse);
+        await tester.sendEventToBinding(pointer.hover(centerOf(tester)));
+        await tester.sendEventToBinding(pointer.scroll(const Offset(0, -20)));
+        await tester.pump();
+
+        expect(committed, isNull);
+      });
+
+      testWidgets('two fingers spreading commit a zoom-in', (tester) async {
+        await pumpEditor(tester);
+        final center = centerOf(tester);
+        final p1 = await tester.startGesture(center.translate(-20, 0));
+        final p2 = await tester.startGesture(center.translate(20, 0));
+        await tester.pump();
+        await p1.moveTo(center.translate(-70, 0));
+        await p2.moveTo(center.translate(70, 0));
+        await tester.pump();
+        await p1.up();
+        await p2.up();
+        await tester.pump(kDoubleTapTimeout);
+
+        // 40 → 140 apart is 3.5×, clamped to the shared maximum.
+        expect(committed, kEditorMaxZoom);
+      });
+
+      testWidgets('a gesture at the upper bound commits nothing', (
+        tester,
+      ) async {
+        await pumpEditor(tester, zoom: kEditorMaxZoom);
+        final center = centerOf(tester);
+        final p1 = await tester.startGesture(center.translate(-20, 0));
+        final p2 = await tester.startGesture(center.translate(20, 0));
+        await tester.pump();
+        await p1.moveTo(center.translate(-70, 0));
+        await p2.moveTo(center.translate(70, 0));
+        await tester.pump();
+        await p1.up();
+        await p2.up();
+        await tester.pump(kDoubleTapTimeout);
+
+        expect(committed, isNull);
+      });
+      testWidgets(
+        'trackpad pinch supports successive scale updates without touch pointers',
+        (tester) async {
+          await pumpEditor(tester);
+          final center = tester
+              .getTopLeft(find.byType(CodeForge))
+              .translate(180, 12);
+          final pointer = TestPointer(7, PointerDeviceKind.trackpad);
+          await tester.sendEventToBinding(pointer.panZoomStart(center));
+          await tester.sendEventToBinding(
+            pointer.panZoomUpdate(center, scale: 1.15),
+          );
+          await tester.sendEventToBinding(
+            pointer.panZoomUpdate(center, scale: 1.6),
+          );
+          await tester.sendEventToBinding(pointer.panZoomEnd());
+          await tester.pump();
+          expect(committed, closeTo(kEditorMaxZoom, .001));
+          expect(tester.takeException(), isNull);
+        },
       );
-      await tester.pump();
-    }
 
-    Offset centerOf(WidgetTester tester) =>
-        tester.getCenter(find.byType(CodeForge));
-
-    testWidgets('ctrl + wheel up commits a zoom-in', (tester) async {
-      await pumpEditor(tester);
-      final pointer = TestPointer(1, PointerDeviceKind.mouse);
-      await tester.sendEventToBinding(pointer.hover(centerOf(tester)));
-      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
-      await tester.sendEventToBinding(pointer.scroll(const Offset(0, -20)));
-      await tester.pump();
-      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
-
-      expect(committed, closeTo(1.1, 1e-9));
-    });
-
-    testWidgets('ctrl + wheel down commits a zoom-out', (tester) async {
-      await pumpEditor(tester, zoom: 1.2);
-      final pointer = TestPointer(1, PointerDeviceKind.mouse);
-      await tester.sendEventToBinding(pointer.hover(centerOf(tester)));
-      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
-      await tester.sendEventToBinding(pointer.scroll(const Offset(0, 20)));
-      await tester.pump();
-      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
-
-      expect(committed, closeTo(1.2 / 1.1, 1e-9));
-    });
-
-    testWidgets('a plain wheel is not a zoom', (tester) async {
-      await pumpEditor(tester);
-      final pointer = TestPointer(1, PointerDeviceKind.mouse);
-      await tester.sendEventToBinding(pointer.hover(centerOf(tester)));
-      await tester.sendEventToBinding(pointer.scroll(const Offset(0, -20)));
-      await tester.pump();
-
-      expect(committed, isNull);
-    });
-
-    testWidgets('two fingers spreading commit a zoom-in', (tester) async {
-      await pumpEditor(tester);
-      final center = centerOf(tester);
-      final p1 = await tester.startGesture(center.translate(-20, 0));
-      final p2 = await tester.startGesture(center.translate(20, 0));
-      await tester.pump();
-      await p1.moveTo(center.translate(-70, 0));
-      await p2.moveTo(center.translate(70, 0));
-      await tester.pump();
-      await p1.up();
-      await p2.up();
-      await tester.pump(kDoubleTapTimeout);
-
-      // 40 → 140 apart is 3.5×, clamped to the shared maximum.
-      expect(committed, kEditorMaxZoom);
-    });
-
-    testWidgets('a gesture at the upper bound commits nothing', (tester) async {
-      await pumpEditor(tester, zoom: kEditorMaxZoom);
-      final center = centerOf(tester);
-      final p1 = await tester.startGesture(center.translate(-20, 0));
-      final p2 = await tester.startGesture(center.translate(20, 0));
-      await tester.pump();
-      await p1.moveTo(center.translate(-70, 0));
-      await p2.moveTo(center.translate(70, 0));
-      await tester.pump();
-      await p1.up();
-      await p2.up();
-      await tester.pump(kDoubleTapTimeout);
-
-      expect(committed, isNull);
-    });
-  }, skip: hasRustLib
-      ? null
-      // The editor needs the prebuilt native library; without it the
-      // CodeForge widget cannot build at all. Skipping keeps CI honest
-      // (it reports a skip, not a pass) instead of failing every run.
-      : 'no prebuilt code_forge library — run a desktop build first');
+      testWidgets(
+        'mobile pinch keeps the viewport mounted and leaves the caret unchanged',
+        (tester) async {
+          await pumpEditor(tester);
+          final editor = tester.widget<CodeForge>(find.byType(CodeForge));
+          editor.controller!.text =
+              'function main(config) { return config; }\n// Fluxora';
+          await tester.pump();
+          await tester.tapAt(const Offset(125, 10));
+          await tester.pump();
+          final firstOffset = editor.controller!.selection.extentOffset;
+          expect(firstOffset, greaterThan(0));
+          await tester.tapAt(const Offset(200, 10));
+          await tester.pump();
+          expect(
+            editor.controller!.selection.extentOffset,
+            greaterThan(firstOffset),
+          );
+          final selection = editor.controller!.selection;
+          final viewport = tester.state(find.byType(TwoDimensionalScrollable));
+          final center = tester
+              .getTopLeft(find.byType(CodeForge))
+              .translate(180, 12);
+          final p1 = await tester.startGesture(center.translate(-35, 0));
+          final p2 = await tester.startGesture(center.translate(35, 0));
+          await p1.moveTo(center.translate(-65, 0));
+          await p2.moveTo(center.translate(65, 0));
+          await tester.pump();
+          expect(
+            tester.state(find.byType(TwoDimensionalScrollable)),
+            same(viewport),
+          );
+          await p1.up();
+          await p2.up();
+          await tester.pump(kDoubleTapTimeout);
+          expect(
+            tester.state(find.byType(TwoDimensionalScrollable)),
+            same(viewport),
+          );
+          expect(editor.controller!.selection, selection);
+          expect(editor.controller!.text, contains('return config'));
+        },
+        variant: TargetPlatformVariant.only(TargetPlatform.android),
+      );
+    },
+    skip: hasRustLib
+        ? null
+        // The editor needs the prebuilt native library; without it the
+        // CodeForge widget cannot build at all. Skipping keeps CI honest
+        // (it reports a skip, not a pass) instead of failing every run.
+        : 'no prebuilt code_forge library — run a desktop build first',
+  );
 }

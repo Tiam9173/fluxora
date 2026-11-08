@@ -14,8 +14,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:re_highlight/languages/javascript.dart';
 import 'package:re_highlight/languages/yaml.dart';
-import 'package:re_highlight/re_highlight.dart'
-    show HASH_COMMENT_MODE, Mode;
+import 'package:re_highlight/re_highlight.dart' show HASH_COMMENT_MODE, Mode;
 import 'package:re_highlight/styles/atom-one-dark.dart';
 import 'package:re_highlight/styles/atom-one-light.dart';
 
@@ -25,7 +24,6 @@ const int _kLargeEditableLineThresholdMobile = 5800;
 const int _kLargeEditableLineThresholdDesktop = 5800;
 
 const Duration _kFindFocusDelay = Duration(milliseconds: 500);
-const Duration _kMinBusyDuration = Duration(milliseconds: 600);
 
 /// item 6 (Bettbox 1.19.4) — YAML with a comment rule that only fires at the
 /// start of a token.
@@ -134,6 +132,49 @@ class _EditorPageState extends ConsumerState<EditorPage> {
   /// `textStyle`, so every metric follows the text.
   double _zoom = 1;
 
+  Future<void> _chooseFontSize() async {
+    var draft = _zoom;
+    final chinese = Localizations.localeOf(context).languageCode == 'zh';
+    final result = await showDialog<double>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, update) => AlertDialog(
+          title: Text(chinese ? '字体大小' : 'Font size'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${(draft * 100).round()}%',
+                style: context.textTheme.headlineSmall,
+              ),
+              Slider(
+                value: draft,
+                min: kEditorMinZoom,
+                max: kEditorMaxZoom,
+                onChanged: (value) => update(() => draft = value),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => update(() => draft = 1),
+              child: Text(chinese ? '重置' : 'Reset'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(appLocalizations.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(draft),
+              child: Text(appLocalizations.confirm),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (mounted && result != null) _handleZoomEnd(result);
+  }
+
   void _handleZoomEnd(double zoom) {
     if (!mounted) return;
     setState(() => _zoom = zoom);
@@ -205,7 +246,9 @@ class _EditorPageState extends ConsumerState<EditorPage> {
       _undoController = UndoRedoController();
       _hasRustBackend = true;
     } catch (e) {
-      commonPrint.log('CodeForgeController init failed, using fallback editor: $e');
+      commonPrint.log(
+        'CodeForgeController init failed, using fallback editor: $e',
+      );
       _hasRustBackend = false;
       _fallbackTextController = TextEditingController(text: widget.content);
     }
@@ -215,13 +258,7 @@ class _EditorPageState extends ConsumerState<EditorPage> {
       _removePasteHandler = clipboardExt.addHandler(_handleNativePaste);
     }
 
-    final loadingStopwatch = Stopwatch()..start();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final elapsed = loadingStopwatch.elapsedMilliseconds;
-      final remaining = _kMinBusyDuration.inMilliseconds - elapsed;
-      if (remaining > 0) {
-        await Future.delayed(Duration(milliseconds: remaining));
-      }
       if (mounted) setState(() => _isLoading = false);
       if (widget.delayedFocus) {
         Future.delayed(_kFindFocusDelay, () {
@@ -313,15 +350,9 @@ class _EditorPageState extends ConsumerState<EditorPage> {
     _setBusy(true);
     await SchedulerBinding.instance.endOfFrame;
     if (!mounted) return;
-    final stopwatch = Stopwatch()..start();
     try {
       await task();
     } finally {
-      final remaining =
-          _kMinBusyDuration.inMilliseconds - stopwatch.elapsedMilliseconds;
-      if (remaining > 0) {
-        await Future.delayed(Duration(milliseconds: remaining));
-      }
       if (mounted) _setBusy(false);
     }
   }
@@ -406,6 +437,12 @@ class _EditorPageState extends ConsumerState<EditorPage> {
     final canReplace =
         !readOnly && !_disableSyntaxHighlight && _languageMode() != null;
     final menuItems = <PopupMenuItemData>[
+      PopupMenuItemData(
+        icon: Icons.text_fields_rounded,
+        label:
+            '${Localizations.localeOf(context).languageCode == 'zh' ? '字体大小' : 'Font size'} · ${(_zoom * 100).round()}%',
+        onPressed: _chooseFontSize,
+      ),
       PopupMenuItemData(
         icon: Icons.search,
         label: appLocalizations.search,
@@ -573,50 +610,46 @@ class _EditorPageState extends ConsumerState<EditorPage> {
                         ],
                       ),
                     ),
-                  _wrapTitleController(
-                    () {
-                      final isNewScript = widget.isNew || widget.title.isEmpty;
-                      final currentContent = _hasRustBackend && _controller != null
-                          ? _controller!.text
-                          : _fallbackTextController.text;
-                      final canSave =
-                          !_isLoading &&
-                          (isNewScript ||
-                              currentContent != widget.content ||
-                              _titleController.text != widget.title);
-                      return IconButton(
-                        focusNode: _saveButtonFocusNode,
-                        style: globalState.isAndroidTV
-                            ? ButtonStyle(
-                                backgroundColor:
-                                    WidgetStateProperty.resolveWith((states) {
-                                      if (states.contains(
-                                        WidgetState.focused,
-                                      )) {
-                                        return context.colorScheme.primary
-                                            .withValues(alpha: 0.2);
-                                      }
-                                      return null;
-                                    }),
-                                side: WidgetStateBorderSide.resolveWith((
-                                  states,
-                                ) {
-                                  if (states.contains(WidgetState.focused)) {
-                                    return BorderSide(
-                                      color: context.colorScheme.primary,
-                                      width: 2,
-                                    );
-                                  }
-                                  return null;
-                                }),
-                              )
-                            : null,
-                        onPressed: canSave ? () => _handleSave(context) : null,
-                        tooltip: appLocalizations.save,
-                        icon: const Icon(Icons.save_sharp),
-                      );
-                    },
-                  ),
+                _wrapTitleController(() {
+                  final isNewScript = widget.isNew || widget.title.isEmpty;
+                  final currentContent = _hasRustBackend && _controller != null
+                      ? _controller!.text
+                      : _fallbackTextController.text;
+                  final canSave =
+                      !_isLoading &&
+                      (isNewScript ||
+                          currentContent != widget.content ||
+                          _titleController.text != widget.title);
+                  return IconButton(
+                    focusNode: _saveButtonFocusNode,
+                    style: globalState.isAndroidTV
+                        ? ButtonStyle(
+                            backgroundColor: WidgetStateProperty.resolveWith((
+                              states,
+                            ) {
+                              if (states.contains(WidgetState.focused)) {
+                                return context.colorScheme.primary.withValues(
+                                  alpha: 0.2,
+                                );
+                              }
+                              return null;
+                            }),
+                            side: WidgetStateBorderSide.resolveWith((states) {
+                              if (states.contains(WidgetState.focused)) {
+                                return BorderSide(
+                                  color: context.colorScheme.primary,
+                                  width: 2,
+                                );
+                              }
+                              return null;
+                            }),
+                          )
+                        : null,
+                    onPressed: canSave ? () => _handleSave(context) : null,
+                    tooltip: appLocalizations.save,
+                    icon: const Icon(Icons.save_sharp),
+                  );
+                }),
                 if (widget.supportRemoteDownload && !readOnly)
                   IconButton(
                     onPressed: _isLoading ? null : _handleImport,
@@ -678,7 +711,8 @@ class _EditorPageState extends ConsumerState<EditorPage> {
                         textStyle: TextStyle(
                           fontFamily: FontFamily.jetBrainsMono.value,
                           fontSize:
-                              (context.textTheme.bodyLarge?.fontSize?.ap ?? 14) *
+                              (context.textTheme.bodyLarge?.fontSize?.ap ??
+                                  14) *
                               _zoom,
                         ),
                         innerPadding: const EdgeInsets.only(right: 16),
@@ -713,7 +747,8 @@ class _EditorPageState extends ConsumerState<EditorPage> {
                         style: TextStyle(
                           fontFamily: FontFamily.jetBrainsMono.value,
                           fontSize:
-                              (context.textTheme.bodyLarge?.fontSize?.ap ?? 14) *
+                              (context.textTheme.bodyLarge?.fontSize?.ap ??
+                                  14) *
                               _zoom,
                         ),
                         decoration: const InputDecoration(
@@ -1160,7 +1195,6 @@ class _CodeForgeControllerListenable extends Listenable {
   void removeListener(VoidCallback listener) =>
       _controller.removeListener(listener);
 }
-
 
 class _ImportOptionsDialog extends StatefulWidget {
   const _ImportOptionsDialog();

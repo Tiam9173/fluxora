@@ -77,11 +77,18 @@ class SwitchCard extends ConsumerStatefulWidget {
 }
 
 class _SwitchCardState extends ConsumerState<SwitchCard> {
+  final _nodesController = ScrollController();
   String? _groupName;
   bool _showProfiles = false;
   bool _testing = false;
   bool _selecting = false;
   String? _selectionError;
+
+  @override
+  void dispose() {
+    _nodesController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -105,6 +112,21 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
             )
             .firstOrNull ??
         (visibleGroups.isEmpty ? null : visibleGroups.first);
+    final visible =
+        currentGroup?.all
+            .where((p) => !widget.excludeNames.contains(p.name))
+            .where(
+              (p) =>
+                  widget.onSelect == null ||
+                  ChainProxyConfig.isSelectableProxy(
+                    name: p.name,
+                    type: p.type,
+                  ),
+            )
+            .toList() ??
+        [];
+    final rowHeight =
+        12 + MediaQuery.textScalerOf(context).scale(16).clamp(36.0, 96.0);
 
     return CommonDialog(
       maxWidth: 440,
@@ -112,6 +134,44 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
       titleTrailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          IconButton(
+            key: const ValueKey('switch-card-locate'),
+            tooltip: Localizations.localeOf(context).languageCode == 'zh'
+                ? '定位当前节点'
+                : 'Locate current node',
+            icon: const Icon(Icons.my_location_rounded, size: 20),
+            onPressed: currentGroup == null
+                ? null
+                : () {
+                    final selected =
+                        selectedMap[currentGroup.name]?.getSafeValue(
+                          currentGroup.now ?? '',
+                        ) ??
+                        currentGroup.now ??
+                        '';
+                    final index = visible.indexWhere(
+                      (node) => node.name == selected,
+                    );
+                    if (index < 0 || !_nodesController.hasClients) return;
+                    final position = _nodesController.position;
+                    final target =
+                        (index * rowHeight - position.viewportDimension / 3)
+                            .clamp(
+                              position.minScrollExtent,
+                              position.maxScrollExtent,
+                            );
+                    final motion = FluxoraMotion.ofContext(context);
+                    if (motion.reduceMotion) {
+                      _nodesController.jumpTo(target);
+                      return;
+                    }
+                    _nodesController.animateTo(
+                      target,
+                      duration: motion.base,
+                      curve: Curves.easeOutCubic,
+                    );
+                  },
+          ),
           if (widget.onOpenProfiles != null && widget.onSelect == null)
             IconButton(
               key: const ValueKey('switch-card-profiles'),
@@ -382,18 +442,9 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
                   )
                 : Builder(
                     builder: (context) {
-                      final visible = currentGroup.all
-                          .where((p) => !widget.excludeNames.contains(p.name))
-                          .where(
-                            (p) =>
-                                widget.onSelect == null ||
-                                ChainProxyConfig.isSelectableProxy(
-                                  name: p.name,
-                                  type: p.type,
-                                ),
-                          )
-                          .toList();
                       return ListView.builder(
+                        controller: _nodesController,
+                        itemExtent: rowHeight,
                         shrinkWrap: true,
                         padding: const EdgeInsets.symmetric(vertical: 4),
                         itemCount: visible.length,

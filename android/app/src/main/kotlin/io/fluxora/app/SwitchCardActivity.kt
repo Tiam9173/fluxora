@@ -117,6 +117,7 @@ class SwitchCardActivity : Activity() {
             }
         }
         findViewById<TextView>(R.id.btn_test).setOnClickListener { testAll() }
+        findViewById<TextView>(R.id.btn_locate).setOnClickListener { locateSelectedNode() }
 
         readEndpoint()
         loadNodes()
@@ -280,6 +281,17 @@ class SwitchCardActivity : Activity() {
                 "${group.name} · 已锁定，点击恢复自动"
             else -> "${group.name} · ${group.nodes.size} 个节点"
         }
+    }
+
+    private fun locateSelectedNode() {
+        val position = nodes.indexOfFirst { it.selected }
+        if (position < 0) {
+            statusView.text = "当前分组暂无选中节点"
+            return
+        }
+        val list = findViewById<ListView>(R.id.node_list)
+        list.smoothScrollToPositionFromTop(position, list.height / 3, 280)
+        list.announceForAccessibility(nodes[position].name)
     }
 
     /// 分组切换用一排横向 chips：节点会同时出现在多个组里，平铺展开必然重复。

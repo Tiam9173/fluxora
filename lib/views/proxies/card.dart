@@ -77,7 +77,7 @@ class ProxyCard extends StatelessWidget {
   /// otherwise. Non-testable nodes (REJECT / PASS / REMATCH) render nothing.
   Widget _buildLatencySlot(BuildContext context) {
     return SizedBox(
-      height: measure.labelSmallHeight,
+      height: measure.labelSmallHeight + 4,
       child: Consumer(
         builder: (_, ref, _) {
           final delay = ref.watch(
@@ -349,7 +349,18 @@ class ProxyCard extends StatelessWidget {
                   src: subGroupIcon,
                   size: measure.bodyMediumHeight,
                 ),
-          trailing: isComputedMatch ? const _ProxyComputedMarkIcon() : null,
+          nameTrailing: isComputedMatch
+              ? Tooltip(
+                  message: Localizations.localeOf(context).languageCode == 'zh'
+                      ? '已锁定 · 再次点击恢复自动'
+                      : 'Locked · tap again to resume automatic selection',
+                  child: Icon(
+                    Icons.lock_rounded,
+                    size: 13,
+                    color: context.colorScheme.primary,
+                  ),
+                )
+              : null,
           description: isExpand
               ? SizedBox(
                   height: measure.labelSmallHeight,
@@ -413,30 +424,6 @@ class _ProxyMetaTag extends StatelessWidget {
       style: FluxoraTypography.label.copyWith(
         height: 1,
         color: colorScheme.onSurfaceVariant,
-      ),
-    );
-  }
-}
-
-class _ProxyComputedMarkIcon extends StatelessWidget {
-  const _ProxyComputedMarkIcon();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      alignment: Alignment.topRight,
-      margin: const EdgeInsets.all(FluxoraSpacing.sm),
-      child: Container(
-        padding: const EdgeInsets.all(FluxoraSpacing.xs),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Theme.of(context).colorScheme.secondaryContainer,
-        ),
-        child: Icon(
-          Icons.lock_outline,
-          size: 18,
-          color: Theme.of(context).colorScheme.onSecondaryContainer,
-        ),
       ),
     );
   }

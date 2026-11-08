@@ -179,6 +179,11 @@ private inline fun forwardToApp(name: String, block: () -> Unit) {
     }
 }
 
+fun NotificationCompat.Builder.buildFluxoraNotification(context: Context): Notification =
+    setSmallIcon(NotificationIconTheme.smallIcon(context))
+        .setLargeIcon(null as android.graphics.Bitmap?)
+        .build()
+
 suspend fun Service.createFluxoraNotificationBuilder(
     isSuspended: Boolean = GlobalState.isSmartStopped,
     isHighPriority: Boolean = GlobalState.isNotificationHighPriority
@@ -213,6 +218,7 @@ suspend fun Service.createFluxoraNotificationBuilder(
 
         NotificationCompat.Builder(this@createFluxoraNotificationBuilder, channelId).apply {
             setSmallIcon(NotificationIconTheme.smallIcon(this@createFluxoraNotificationBuilder))
+            setLargeIcon(null as android.graphics.Bitmap?)
             setContentTitle(getString(R.string.fluxora))
             setContentIntent(pendingIntent)
             setCategory(NotificationCompat.CATEGORY_SERVICE)
@@ -220,7 +226,8 @@ suspend fun Service.createFluxoraNotificationBuilder(
                 foregroundServiceBehavior = FOREGROUND_SERVICE_IMMEDIATE
             }
             setOngoing(true)
-            setShowWhen(true)
+            setShowWhen(false)
+            setColor(android.graphics.Color.rgb(101, 115, 245))
             setOnlyAlertOnce(true)
             setPriority(priority)
 

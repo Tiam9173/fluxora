@@ -107,11 +107,9 @@ void main() {
     container.read(currentPageLabelProvider.notifier).value =
         PageLabel.profiles;
     await tester.pump();
-    final host = tester.widget<PageView>(
-      find.byKey(const ValueKey('main-page-view')),
-    );
-    expect(host.controller!.page, 1);
-    expect(host.scrollDirection, Axis.horizontal);
+    expect(find.text('page-profiles'), findsOneWidget);
+    expect(find.text('page-dashboard'), findsNothing);
+    expect(tester.hasRunningAnimations, isFalse);
   });
 
   testWidgets('without reduce motion the transition keeps the token duration', (
@@ -126,12 +124,12 @@ void main() {
         PageLabel.profiles;
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 40));
-    final host = tester.widget<PageView>(
-      find.byKey(const ValueKey('main-page-view')),
-    );
-    expect(host.controller!.page, inExclusiveRange(0, 1));
+    final host = tester.widget<KeptPageView>(find.byType(KeptPageView));
+    expect(host.duration, FluxoraMotion.base);
+    expect(host.horizontal, isTrue);
+    expect(tester.getTopLeft(find.text('page-profiles')).dx, greaterThan(0));
     await tester.pumpAndSettle();
-    expect(host.controller!.page, 1);
-    expect(host.physics, isA<PageScrollPhysics>());
+    expect(find.text('page-dashboard'), findsNothing);
+    expect(tester.getTopLeft(find.text('page-profiles')).dx, 0);
   });
 }

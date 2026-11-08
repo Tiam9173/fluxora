@@ -10,6 +10,7 @@ import 'package:fluxora/models/models.dart';
 import 'package:fluxora/pages/home.dart';
 import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
+import 'package:fluxora/controller.dart';
 
 /// Phase 04.2 — page transitions and navigation switching.
 ///
@@ -47,10 +48,21 @@ void main() {
       label: PageLabel.profiles,
       builder: (_) => _CountedPage(tag: 'B', counters: counters),
     ),
+    NavigationItem(
+      icon: const Icon(Icons.hub),
+      label: PageLabel.proxies,
+      builder: (_) => _CountedPage(tag: 'C', counters: counters),
+    ),
+    NavigationItem(
+      icon: const Icon(Icons.tune),
+      label: PageLabel.tools,
+      builder: (_) => _CountedPage(tag: 'D', counters: counters),
+    ),
   ];
 
-  Widget seedGlobals(Widget child) => Builder(
-    builder: (ctx) {
+  Widget seedGlobals(Widget child) => Consumer(
+    builder: (ctx, ref, _) {
+      globalState.appController = AppController(ctx, ref);
       globalState.theme = CommonTheme.of(ctx, 1.0);
       globalState.measure = Measure.of(ctx, 1.0);
       return child;
@@ -119,6 +131,41 @@ void main() {
   }
 
   group('mobile page switch', () {
+    testWidgets(
+      'nonadjacent selection animates directly without mounting skipped pages',
+      (tester) async {
+        final c = await pumpHome(tester, mobile: true);
+        goTo(c, PageLabel.tools);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 60));
+        expect(find.text('page-A'), findsOneWidget);
+        expect(find.text('page-D'), findsOneWidget);
+        expect(tester.getTopLeft(find.text('page-D')).dx, greaterThan(0));
+        expect(counters.inits['B'], isNull);
+        expect(counters.inits['C'], isNull);
+        await tester.pumpAndSettle();
+        expect(find.text('page-D'), findsOneWidget);
+        expect(find.text('page-A'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'horizontal drag navigates and a short cancelled drag retains selection',
+      (tester) async {
+        final c = await pumpHome(tester, mobile: true);
+        await tester.dragFrom(const Offset(340, 380), const Offset(-290, 0));
+        await tester.pumpAndSettle();
+        expect(c.read(currentPageLabelProvider), PageLabel.profiles);
+        expect(find.text('page-B'), findsOneWidget);
+        final gesture = await tester.startGesture(const Offset(240, 380));
+        await gesture.moveBy(const Offset(-35, 0));
+        await tester.pump(const Duration(milliseconds: 200));
+        await gesture.up();
+        await tester.pumpAndSettle();
+        expect(c.read(currentPageLabelProvider), PageLabel.profiles);
+        expect(find.text('page-B'), findsOneWidget);
+      },
+    );
     testWidgets('horizontal switching keeps both pages during the transition', (
       tester,
     ) async {

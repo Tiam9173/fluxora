@@ -1,31 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// A lazily-built, keep-alive page host with the Aurora cross-fade.
-///
-/// Replaces the `AnimatedSwitcher` that used to host the mobile pages. That
-/// widget destroys the outgoing child as soon as its fade finishes, so every
-/// switch threw the page's `State` away — scroll position, in-page selections
-/// and form text — and the next visit re-ran `initState` (which, for the real
-/// pages, means real work: dashboard cards call `SystemProxyReadbackService`
-/// and `ClashHandlerInterface.getMemory`).
-///
-/// What this does instead:
-///
-/// * **Lazy** — a page is only built the first time it is selected. Nothing is
-///   built ahead of time, so the cost stays at "one page per visited tab".
-/// * **Kept** — once built, a page's element stays in the tree. Hidden pages are
-///   wrapped in [Offstage], which skips layout, painting, hit-testing and
-///   semantics but keeps the `State` alive.
-/// * **Inert** — hidden pages also get `TickerMode(enabled: false)`, so a
-///   page's own animations stop instead of running behind the visible one.
-///   That is the part a naive `IndexedStack` gets wrong.
-/// * **Same transition** — the incoming page fades in with the 4 px Aurora
-///   lift; the outgoing one fades out. Both durations/curves/offsets come from
-///   `FluxoraMotionSet`, so reduced motion collapses them to zero and the switch
-///   is a single frame.
-///
-/// The page index is stable: children are keyed by their own index, so a
-/// `pageBuilder` that is re-created on every parent build never remounts a page.
+/// Lazily retains visited pages and pauses hidden tickers, focus and semantics.
+/// Horizontal mode transitions directly to any tab and supports touch scrubbing.
+/// Other callers retain their existing fade and offset transitions.
 class KeptPageView extends StatefulWidget {
   const KeptPageView({
     super.key,
@@ -35,6 +12,12 @@ class KeptPageView extends StatefulWidget {
     required this.inCurve,
     required this.outCurve,
     required this.enterOffset,
+    this.horizontal = false,
+    this.depth = false,
+    this.intensity = .5,
+    this.pageCount,
+    this.onIndexChanged,
+    this.pageKeys,
   });
 
   /// The page that should be visible.
@@ -51,6 +34,12 @@ class KeptPageView extends StatefulWidget {
   /// The §10.2 lift applied to the entering page; [Offset.zero] under reduced
   /// motion.
   final Offset enterOffset;
+  final bool horizontal;
+  final bool depth;
+  final double intensity;
+  final int? pageCount;
+  final ValueChanged<int>? onIndexChanged;
+  final List<Object>? pageKeys;
 
   @override
   State<KeptPageView> createState() => _KeptPageViewState();
@@ -69,6 +58,12 @@ class _KeptPageViewState extends State<KeptPageView>
 
   late int _current;
   int? _leaving;
+  double _direction = 1;
+  bool _dragging = false;
+  int? _dragOrigin;
+
+  double get _readingDirection =>
+      Directionality.of(context) == TextDirection.rtl ? -1 : 1;
 
   late CurvedAnimation _in;
   late CurvedAnimation _out;
@@ -102,7 +97,7 @@ class _KeptPageViewState extends State<KeptPageView>
   void _onStatus(AnimationStatus status) {
     // Once the cross-fade has finished the outgoing page can go off-stage: it
     // stays mounted (state kept) but stops costing a paint.
-    if (status == AnimationStatus.completed && _leaving != null) {
+    if (status == AnimationStatus.completed && _leaving != null && !_dragging) {
       setState(() => _leaving = null);
     }
   }
@@ -110,6 +105,25 @@ class _KeptPageViewState extends State<KeptPageView>
   @override
   void didUpdateWidget(covariant KeptPageView oldWidget) {
     super.didUpdateWidget(oldWidget);
+    final before = oldWidget.pageKeys, after = widget.pageKeys;
+    if (before != null &&
+        after != null &&
+        (before.length != after.length ||
+            before.asMap().entries.any((e) => e.value != after[e.key]))) {
+      final kept = <int>{
+        for (final index in _built)
+          if (index < before.length && after.contains(before[index]))
+            after.indexOf(before[index]),
+      };
+      _built
+        ..clear()
+        ..addAll(kept)
+        ..add(widget.index);
+      _current = widget.index;
+      _leaving = null;
+      _dragging = false;
+      _controller.value = 1;
+    }
 
     if (oldWidget.enterOffset != widget.enterOffset ||
         oldWidget.inCurve != widget.inCurve ||
@@ -126,7 +140,10 @@ class _KeptPageViewState extends State<KeptPageView>
       _controller.value = 1;
       _leaving = null;
     }
-    if (widget.index != _current) {
+    if (widget.index != _current &&
+        (!_dragging || oldWidget.index != widget.index)) {
+      _dragging = false;
+      _direction = (widget.index > _current ? 1 : -1) * _readingDirection;
       _leaving = _current;
       _current = widget.index;
       _built.add(_current);
@@ -137,7 +154,12 @@ class _KeptPageViewState extends State<KeptPageView>
         _controller.value = 1;
         _leaving = null;
       } else {
-        _controller.forward(from: 0);
+        _controller.value = 0;
+        if (widget.horizontal) {
+          _controller.animateTo(1, curve: widget.inCurve);
+        } else {
+          _controller.forward();
+        }
       }
     }
   }
@@ -169,23 +191,59 @@ class _KeptPageViewState extends State<KeptPageView>
     final visible = isCurrent || isLeaving;
 
     return KeyedSubtree(
-      key: ValueKey<int>(index),
+      key: ValueKey<Object>(widget.pageKeys?[index] ?? index),
       child: Offstage(
-        // Hidden pages keep their element (state) but skip layout, painting,
-        // hit-testing and semantics.
+        // Hidden pages retain state without painting or receiving input.
         offstage: !visible,
         child: TickerMode(
           // A hidden page must not keep animating behind the visible one.
           enabled: isCurrent,
           child: IgnorePointer(
             ignoring: !isCurrent,
-            child: FadeTransition(
-              opacity: isCurrent
-                  ? _in
-                  : (isLeaving ? _fadeOut : kAlwaysCompleteAnimation),
-              child: SlideTransition(
-                position: isCurrent ? _slide : _noSlide,
-                child: widget.pageBuilder(context, index),
+            child: ExcludeFocus(
+              excluding: !isCurrent,
+              child: ExcludeSemantics(
+                excluding: !isCurrent,
+                child: FadeTransition(
+                  opacity: isCurrent
+                      ? (widget.horizontal && !widget.depth
+                            ? kAlwaysCompleteAnimation
+                            : _in)
+                      : (isLeaving ? _fadeOut : kAlwaysCompleteAnimation),
+                  child: SlideTransition(
+                    position: isCurrent && !widget.horizontal
+                        ? _slide
+                        : _noSlide,
+                    child: LayoutBuilder(
+                      builder: (context, constraints) => AnimatedBuilder(
+                        animation: _controller,
+                        child: RepaintBoundary(
+                          child: widget.pageBuilder(context, index),
+                        ),
+                        builder: (context, child) {
+                          final progress = widget.horizontal
+                              ? _controller.value
+                              : _in.value;
+                          final dx = !widget.horizontal
+                              ? 0.0
+                              : constraints.maxWidth *
+                                    _direction *
+                                    (isCurrent ? 1 - progress : -progress);
+                          final scale = widget.depth && widget.horizontal
+                              ? 1 -
+                                    (isCurrent ? 1 - progress : progress) *
+                                        .035 *
+                                        widget.intensity
+                              : 1.0;
+                          return Transform.translate(
+                            offset: Offset(dx, 0),
+                            child: Transform.scale(scale: scale, child: child),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
@@ -207,6 +265,69 @@ class _KeptPageViewState extends State<KeptPageView>
       _slot(context, _current),
     ];
 
-    return Stack(fit: StackFit.expand, children: children);
+    return GestureDetector(
+      onHorizontalDragStart: widget.onIndexChanged == null
+          ? null
+          : (_) {
+              _dragOrigin = _current;
+            },
+      onHorizontalDragUpdate: widget.onIndexChanged == null
+          ? null
+          : (details) {
+              final width = context.size?.width ?? 0;
+              if (width == 0) return;
+              if (!_dragging) {
+                if (_controller.isAnimating) return;
+                final origin = _dragOrigin ?? _current;
+                final step = details.delta.dx * _readingDirection < 0 ? 1 : -1;
+                final target = origin + step;
+                if (target < 0 || target >= (widget.pageCount ?? 0)) return;
+                setState(() {
+                  _dragging = true;
+                  _leaving = origin;
+                  _current = target;
+                  _built.add(target);
+                  _direction = step * _readingDirection;
+                  _controller.value = 0;
+                });
+              }
+              _controller.value =
+                  (_controller.value - details.delta.dx * _direction / width)
+                      .clamp(0, 1);
+            },
+      onHorizontalDragEnd: widget.onIndexChanged == null
+          ? null
+          : (details) {
+              _finishDrag(details.primaryVelocity ?? 0);
+            },
+      onHorizontalDragCancel: widget.onIndexChanged == null
+          ? null
+          : () => _finishDrag(0, cancel: true),
+      child: ClipRect(
+        child: Stack(fit: StackFit.expand, children: children),
+      ),
+    );
+  }
+
+  Future<void> _finishDrag(double velocity, {bool cancel = false}) async {
+    if (!_dragging) return;
+    final origin = _dragOrigin;
+    final target = _current;
+    final complete =
+        !cancel && (_controller.value > .28 || velocity * _direction < -450);
+    if (complete) {
+      _dragging = false;
+      widget.onIndexChanged?.call(target);
+      if (mounted) _controller.animateTo(1, curve: widget.inCurve);
+    } else {
+      await _controller.animateBack(0, curve: widget.outCurve);
+      if (!mounted || !_dragging || _current != target) return;
+      setState(() {
+        _dragging = false;
+        _current = origin ?? widget.index;
+        _leaving = null;
+        _controller.value = 1;
+      });
+    }
   }
 }

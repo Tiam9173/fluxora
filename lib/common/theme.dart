@@ -54,15 +54,21 @@ ThemeData fluxoraMaterialTheme(
   FluxoraSurfaceStyle style, {
   FluxoraMotionStyle motionStyle = FluxoraMotionStyle.system,
   double glassIntensity = .55,
+  double motionIntensity = .5,
+  FluxoraVisualStyle visualStyle = FluxoraVisualStyle.fluxora,
 }) {
   if (style == FluxoraSurfaceStyle.classic &&
-      motionStyle == FluxoraMotionStyle.system) {
+      motionStyle == FluxoraMotionStyle.system &&
+      motionIntensity == .5 &&
+      visualStyle == FluxoraVisualStyle.fluxora) {
     return base;
   }
   final material = FluxoraMaterial(
     style: style,
     motionStyle: motionStyle,
     glassIntensity: glassIntensity,
+    motionIntensity: motionIntensity,
+    visualStyle: visualStyle,
   );
   if (style == FluxoraSurfaceStyle.classic) {
     return base.copyWith(
@@ -194,6 +200,7 @@ ColorScheme fluxoraSchemeFromSeed({
   required Color seed,
   required DynamicSchemeVariant variant,
   bool followSeed = false,
+  FluxoraVisualStyle visualStyle = FluxoraVisualStyle.fluxora,
 }) {
   final fluxora = FluxoraColorSet.of(brightness);
   final seeded = ColorScheme.fromSeed(
@@ -209,10 +216,16 @@ ColorScheme fluxoraSchemeFromSeed({
   // roles in *both* modes — a red seed must not turn "failed" into something
   // that reads as the accent colour.
   if (followSeed) {
-    return seeded.copyWith(error: fluxora.error, onError: fluxora.onError);
+    final scheme = seeded.copyWith(
+      error: fluxora.error,
+      onError: fluxora.onError,
+    );
+    return visualStyle == FluxoraVisualStyle.obsidian
+        ? _obsidianScheme(scheme)
+        : scheme;
   }
 
-  return seeded.copyWith(
+  final scheme = seeded.copyWith(
     // Page canvas. The app shell paints `Material(color: colorScheme.surface)`
     // (`lib/pages/home.dart`), and `scaffoldBackgroundColor` also defaults to
     // `surface` — so D4.2's "Background" (#F6F9FB / #0C1222) belongs here.
@@ -232,6 +245,27 @@ ColorScheme fluxoraSchemeFromSeed({
     // they stay seed-derived (tracked as 01-B2 follow-up).
     error: fluxora.error,
     onError: fluxora.onError,
+  );
+  return visualStyle == FluxoraVisualStyle.obsidian
+      ? _obsidianScheme(scheme)
+      : scheme;
+}
+
+ColorScheme _obsidianScheme(ColorScheme scheme) {
+  final dark = scheme.brightness == Brightness.dark;
+  return scheme.copyWith(
+    surface: Color(dark ? 0xFF0A0B11 : 0xFFF2F3F8),
+    surfaceDim: Color(dark ? 0xFF08090E : 0xFFDADEEA),
+    surfaceBright: Color(dark ? 0xFF2A2D3D : 0xFFF9FAFE),
+    surfaceContainerLowest: Color(dark ? 0xFF101118 : 0xFFFFFFFF),
+    surfaceContainerLow: Color(dark ? 0xFF171923 : 0xFFF9FAFE),
+    surfaceContainer: Color(dark ? 0xFF1C1E2A : 0xFFF0F2FA),
+    surfaceContainerHigh: Color(dark ? 0xFF262938 : 0xFFE9ECF6),
+    surfaceContainerHighest: Color(dark ? 0xFF32364A : 0xFFDFE4F1),
+    onSurface: Color(dark ? 0xFFF2F3FA : 0xFF181B29),
+    onSurfaceVariant: Color(dark ? 0xFFBFC3D4 : 0xFF535B72),
+    outline: Color(dark ? 0xFF777C92 : 0xFF717A92),
+    outlineVariant: Color(dark ? 0xFF3B3E50 : 0xFFC8CDDE),
   );
 }
 

@@ -367,6 +367,7 @@ class _NotificationIconsItemState extends ConsumerState<NotificationIconsItem> {
     final previous = BrandIcons.normalizeNotification(
       ref.read(themeSettingProvider).notificationIconStyle,
     );
+    if (_busy || previous == style) return;
     setState(() {
       _busy = true;
       _pendingStyle = style;
@@ -393,7 +394,12 @@ class _NotificationIconsItemState extends ConsumerState<NotificationIconsItem> {
       } catch (_) {}
       if (mounted) setState(() => _error = error.toString());
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _pendingStyle = null;
+        });
+      }
     }
   }
 
@@ -421,24 +427,30 @@ class _NotificationIconsItemState extends ConsumerState<NotificationIconsItem> {
               for (final item in BrandIcons.notificationStyles.entries)
                 ChoiceChip(
                   key: ValueKey('notification-icon-${item.key}'),
-                  selected: style == item.key,
+                  selected: (_pendingStyle ?? style) == item.key,
                   showCheckmark: false,
                   backgroundColor: scheme.surfaceContainerHigh,
                   selectedColor: scheme.primaryContainer,
-                  avatar: _busy && _pendingStyle == item.key
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : SvgPicture.asset(
-                          'assets/images/notification_${item.key}.svg',
-                          width: 24,
-                          height: 24,
-                          colorFilter: ColorFilter.mode(
-                            scheme.onSurface,
-                            BlendMode.srcIn,
-                          ),
-                        ),
+                  avatar: SizedBox.square(
+                    dimension: 24,
+                    child: AnimatedSwitcher(
+                      duration: FluxoraMotion.ofContext(context).fast,
+                      child: _busy && _pendingStyle == item.key
+                          ? const SizedBox.square(
+                              dimension: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : SvgPicture.asset(
+                              'assets/images/notification_${item.key}.svg',
+                              width: 24,
+                              height: 24,
+                              colorFilter: ColorFilter.mode(
+                                scheme.onSurface,
+                                BlendMode.srcIn,
+                              ),
+                            ),
+                    ),
+                  ),
                   label: Text(chinese ? item.value.$1 : item.value.$2),
                   onSelected: _busy ? null : (_) => _select(item.key),
                 ),

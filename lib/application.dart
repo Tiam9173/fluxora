@@ -22,6 +22,7 @@ import 'controller.dart';
 import 'pages/pages.dart';
 import 'package:fluxora/plugins/vpn.dart';
 import 'package:fluxora/views/proxies/notification_switch_card.dart';
+import 'package:fluxora/widgets/fluxora/fluxora_launch_reveal.dart';
 import 'package:flutter/services.dart';
 
 /// P2.6-D: error boundary for fire-and-forget background tasks.
@@ -309,7 +310,27 @@ class ApplicationState extends ConsumerState<Application>
             final locale = ref.watch(
               appSettingProvider.select((state) => state.locale),
             );
-            final themeProps = ref.watch(themeSettingProvider);
+            // Native icon preferences must not restart the app's theme transition.
+            ref.watch(
+              themeSettingProvider.select(
+                (props) => (
+                  props.primaryColor,
+                  props.themeMode,
+                  props.schemeVariant,
+                  props.colorSource,
+                  props.pureBlack,
+                  props.textScale,
+                  props.surfaceStyle,
+                  props.motionStyle,
+                  props.glassIntensity,
+                  props.motionIntensity,
+                  props.visualStyle,
+                  props.useHarmonyFont,
+                  props.launchAnimation,
+                ),
+              ),
+            );
+            final themeProps = ref.read(themeSettingProvider);
             final fontFamily = themeProps.useHarmonyFont
                 ? 'HarmonyOS_Sans'
                 : null;
@@ -388,7 +409,7 @@ class ApplicationState extends ConsumerState<Application>
                             enabled: enabled,
                             child: AppEnvManager(
                               // 这里已经在 MaterialApp 之下，`Theme.of` 拿到的是
-                              // 解析后的主题；通知栏大图标据此选深/浅版本。
+                              // 解析后的主题；单色通知图标的着色由 Android 管理。
                               child: _NotificationIconSync(
                                 child: _buildApp(
                                   AppSidebarContainer(
@@ -565,6 +586,8 @@ class ApplicationState extends ConsumerState<Application>
                 themeProps.surfaceStyle,
                 motionStyle: themeProps.motionStyle,
                 glassIntensity: themeProps.glassIntensity,
+                motionIntensity: themeProps.motionIntensity,
+                visualStyle: themeProps.visualStyle,
               ),
               darkTheme: fluxoraMaterialTheme(
                 ThemeData(
@@ -721,8 +744,13 @@ class ApplicationState extends ConsumerState<Application>
                 themeProps.surfaceStyle,
                 motionStyle: themeProps.motionStyle,
                 glassIntensity: themeProps.glassIntensity,
+                motionIntensity: themeProps.motionIntensity,
+                visualStyle: themeProps.visualStyle,
               ),
-              home: child!,
+              home: FluxoraLaunchReveal(
+                enabled: themeProps.launchAnimation,
+                child: child!,
+              ),
             );
           },
           child: const HomePage(),
@@ -748,8 +776,7 @@ class ApplicationState extends ConsumerState<Application>
 
 /// 把解析后的主题亮度同步给原生层（仅 Android）。
 ///
-/// 通知栏的大图标有深/浅两个版本，之前由桌面启动图标的手动开关决定，所以
-/// 无论界面是深色还是浅色，通知里始终是同一个图标。
+/// 保留原生外观兼容接口；通知始终使用单色 F，不附加彩色大图标。
 class _NotificationIconSync extends StatefulWidget {
   const _NotificationIconSync({required this.child});
 
