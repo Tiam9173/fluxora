@@ -54,6 +54,7 @@ ThemeData fluxoraMaterialTheme(
   FluxoraSurfaceStyle style, {
   FluxoraMotionStyle motionStyle = FluxoraMotionStyle.system,
   double glassIntensity = .55,
+  double glassClarity = .5,
   double motionIntensity = .5,
   FluxoraVisualStyle visualStyle = FluxoraVisualStyle.fluxora,
 }) {
@@ -67,6 +68,7 @@ ThemeData fluxoraMaterialTheme(
     style: style,
     motionStyle: motionStyle,
     glassIntensity: glassIntensity,
+    glassClarity: glassClarity,
     motionIntensity: motionIntensity,
     visualStyle: visualStyle,
   );

@@ -158,7 +158,18 @@ void main() {
       final scheme = schemeOf(tester);
 
       expect(
-        pillOf(tester, labelOf(PageLabel.dashboard)).color,
+        (tester
+                    .widget<DecoratedBox>(
+                      find
+                          .descendant(
+                            of: find.byKey(const ValueKey('aurora-dock-lens')),
+                            matching: find.byType(DecoratedBox),
+                          )
+                          .first,
+                    )
+                    .decoration
+                as BoxDecoration)
+            .color,
         scheme.onSurface.withValues(alpha: .06),
       );
       expect(

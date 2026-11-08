@@ -9,6 +9,7 @@ import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/models/selector.dart';
 import 'package:fluxora/views/app_icons.dart';
 import 'package:fluxora/widgets/fluxora/fluxora_launch_reveal.dart';
+import 'package:fluxora/widgets/liquid_backdrop.dart';
 import 'package:fluxora/providers/config.dart';
 import 'package:fluxora/providers/state.dart';
 import 'package:fluxora/state.dart';
@@ -161,7 +162,9 @@ class _VisualStylePicker extends ConsumerWidget {
                           surfaceStyle:
                               s.surfaceStyle == FluxoraSurfaceStyle.reduced
                               ? s.surfaceStyle
-                              : FluxoraSurfaceStyle.hybrid,
+                              : style == FluxoraVisualStyle.obsidian
+                              ? FluxoraSurfaceStyle.liquid
+                              : s.surfaceStyle,
                         ),
                       );
                 },
@@ -273,6 +276,7 @@ class _EffectsItem extends ConsumerStatefulWidget {
 
 class _EffectsItemState extends ConsumerState<_EffectsItem> {
   double? _draft;
+  double? _clarityDraft;
   double? _motionDraft;
   @override
   Widget build(BuildContext context) {
@@ -286,11 +290,43 @@ class _EffectsItemState extends ConsumerState<_EffectsItem> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (props.surfaceStyle == FluxoraSurfaceStyle.hybrid) ...[
+          if (props.surfaceStyle == FluxoraSurfaceStyle.hybrid ||
+              props.surfaceStyle == FluxoraSurfaceStyle.liquid) ...[
+            Theme(
+              data: Theme.of(context).copyWith(
+                extensions: [
+                  ...Theme.of(
+                    context,
+                  ).extensions.values.where((e) => e is! FluxoraMaterial),
+                  FluxoraMaterial.of(context).copyWith(
+                    glassIntensity: _draft ?? props.glassIntensity,
+                    glassClarity: _clarityDraft ?? props.glassClarity,
+                  ),
+                ],
+              ),
+              child: const _GlassPreview(),
+            ),
+            const SizedBox(height: 12),
             Text(
-              chinese ? '玻璃质感' : 'Glass intensity',
+              props.surfaceStyle == FluxoraSurfaceStyle.liquid
+                  ? (chinese ? '透镜强度' : 'Lens strength')
+                  : (chinese ? '磨砂强度' : 'Frost strength'),
               style: context.textTheme.titleSmall,
             ),
+            Text(
+              props.surfaceStyle == FluxoraSurfaceStyle.liquid
+                  ? (chinese
+                        ? '调节背景折射与边缘厚度'
+                        : 'Background lensing and edge depth')
+                  : (chinese ? '调节模糊、填充与高光' : 'Blur, tint and highlights'),
+              style: context.textTheme.bodySmall,
+            ),
+            if (props.surfaceStyle == FluxoraSurfaceStyle.liquid &&
+                !LiquidBackdrop.supportsRefraction)
+              Text(
+                chinese ? '此设备使用兼容透镜' : 'Compatible lens on this device',
+                style: context.textTheme.bodySmall,
+              ),
             Slider(
               key: const ValueKey('glass-intensity'),
               value:
@@ -308,6 +344,29 @@ class _EffectsItemState extends ConsumerState<_EffectsItem> {
                 setState(() => _draft = null);
               },
             ),
+            if (props.surfaceStyle == FluxoraSurfaceStyle.liquid) ...[
+              const SizedBox(height: 12),
+              Text(
+                chinese ? '通透度' : 'Clarity',
+                style: context.textTheme.titleSmall,
+              ),
+              Slider(
+                key: const ValueKey('glass-clarity'),
+                value:
+                    _clarityDraft ??
+                    FluxoraMaterial(glassClarity: props.glassClarity).clarity,
+                divisions: 10,
+                label:
+                    '${((_clarityDraft ?? props.glassClarity) * 100).round()}%',
+                onChanged: (value) => setState(() => _clarityDraft = value),
+                onChangeEnd: (value) {
+                  ref
+                      .read(themeSettingProvider.notifier)
+                      .updateState((s) => s.copyWith(glassClarity: value));
+                  setState(() => _clarityDraft = null);
+                },
+              ),
+            ],
           ],
           Text(
             chinese ? '界面动效' : 'Motion',
@@ -391,6 +450,113 @@ class _EffectsItemState extends ConsumerState<_EffectsItem> {
       ),
     );
   }
+}
+
+class _GlassPreview extends StatefulWidget {
+  const _GlassPreview();
+  @override
+  State<_GlassPreview> createState() => _GlassPreviewState();
+}
+
+class _GlassPreviewState extends State<_GlassPreview> {
+  double _position = .5;
+  @override
+  Widget build(BuildContext context) => ClipRRect(
+    borderRadius: FluxoraRadius.cardAll,
+    child: SizedBox(
+      key: const ValueKey('glass-preview'),
+      height: 130,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final travel = (constraints.maxWidth - 156).clamp(
+            1.0,
+            double.infinity,
+          );
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      context.colorScheme.primaryContainer,
+                      context.colorScheme.tertiaryContainer,
+                      context.colorScheme.secondaryContainer,
+                    ],
+                  ),
+                ),
+              ),
+              for (var index = 0; index < 10; index++)
+                Positioned(
+                  left: index * constraints.maxWidth / 9,
+                  top: 0,
+                  bottom: 0,
+                  child: ColoredBox(
+                    color: context.colorScheme.onSurface.withValues(alpha: .15),
+                    child: const SizedBox(width: 2),
+                  ),
+                ),
+              Align(
+                alignment: Alignment.topLeft,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Text('FLUX / 01', style: context.textTheme.labelSmall),
+                ),
+              ),
+              Positioned(
+                left: travel * _position,
+                top: 32,
+                child: GestureDetector(
+                  onHorizontalDragUpdate: (event) => setState(
+                    () => _position = (_position + event.delta.dx / travel)
+                        .clamp(0, 1),
+                  ),
+                  child: GlassSurface(
+                    radius: 28,
+                    floating: true,
+                    blur: true,
+                    child: SizedBox(
+                      width: 156,
+                      height: 64,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.blur_on_rounded,
+                            color: context.colorScheme.onSurface,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Fluxora',
+                            style: context.textTheme.labelLarge?.copyWith(
+                              color: context.colorScheme.onSurface,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    Localizations.localeOf(context).languageCode == 'zh'
+                        ? '左右拖动预览'
+                        : 'Drag to preview',
+                    style: context.textTheme.labelSmall,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    ),
+  );
 }
 
 class _ThemePanel extends StatelessWidget {
@@ -484,7 +650,8 @@ class _SurfaceStyleItem extends ConsumerWidget {
     final chinese = Localizations.localeOf(context).languageCode == 'zh';
     final names = {
       FluxoraSurfaceStyle.classic: chinese ? '经典' : 'Classic',
-      FluxoraSurfaceStyle.hybrid: 'Hybrid Glass',
+      FluxoraSurfaceStyle.hybrid: chinese ? '磨砂玻璃' : 'Frosted glass',
+      FluxoraSurfaceStyle.liquid: chinese ? '液态玻璃' : 'Liquid glass',
       FluxoraSurfaceStyle.reduced: chinese ? '轻量 · 无模糊' : 'Reduced effects',
     };
     return ItemCard(

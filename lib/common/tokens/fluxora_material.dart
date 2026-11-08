@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// Persisted visual material only; never controls application behaviour.
-enum FluxoraSurfaceStyle { classic, hybrid, reduced }
+enum FluxoraSurfaceStyle { classic, hybrid, liquid, reduced }
 
 enum FluxoraMotionStyle { system, fluid, depth, off }
 
@@ -14,6 +14,7 @@ class FluxoraMaterial extends ThemeExtension<FluxoraMaterial> {
     this.style = FluxoraSurfaceStyle.classic,
     this.motionStyle = FluxoraMotionStyle.system,
     this.glassIntensity = .55,
+    this.glassClarity = .5,
     this.motionIntensity = .5,
     this.visualStyle = FluxoraVisualStyle.fluxora,
   });
@@ -21,6 +22,8 @@ class FluxoraMaterial extends ThemeExtension<FluxoraMaterial> {
   final FluxoraSurfaceStyle style;
   final FluxoraMotionStyle motionStyle;
   final double glassIntensity;
+  final double glassClarity;
+  double get clarity => glassClarity.isFinite ? glassClarity.clamp(0, 1) : .5;
   final double motionIntensity;
   final FluxoraVisualStyle visualStyle;
   bool get isObsidian => visualStyle == FluxoraVisualStyle.obsidian;
@@ -31,7 +34,8 @@ class FluxoraMaterial extends ThemeExtension<FluxoraMaterial> {
   double get sigma => 4 + 12 * strength;
   static const blurSigma = 10.0;
   bool get enabled => style != FluxoraSurfaceStyle.classic;
-  bool get blurEnabled => style == FluxoraSurfaceStyle.hybrid;
+  bool get liquid => style == FluxoraSurfaceStyle.liquid;
+  bool get blurEnabled => style == FluxoraSurfaceStyle.hybrid || liquid;
 
   static FluxoraMaterial of(BuildContext context) {
     final material =
@@ -65,7 +69,18 @@ class FluxoraMaterial extends ThemeExtension<FluxoraMaterial> {
         : .08 + .08 * strength,
   );
 
-  LinearGradient sheen(ColorScheme scheme) => isObsidian
+  LinearGradient sheen(ColorScheme scheme) => liquid
+      ? LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withValues(alpha: .12),
+            Colors.transparent,
+            scheme.primary.withValues(alpha: .02),
+          ],
+          stops: const [0, .18, 1],
+        )
+      : isObsidian
       ? LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -99,12 +114,14 @@ class FluxoraMaterial extends ThemeExtension<FluxoraMaterial> {
     FluxoraSurfaceStyle? style,
     FluxoraMotionStyle? motionStyle,
     double? glassIntensity,
+    double? glassClarity,
     double? motionIntensity,
     FluxoraVisualStyle? visualStyle,
   }) => FluxoraMaterial(
     style: style ?? this.style,
     motionStyle: motionStyle ?? this.motionStyle,
     glassIntensity: glassIntensity ?? this.glassIntensity,
+    glassClarity: glassClarity ?? this.glassClarity,
     motionIntensity: motionIntensity ?? this.motionIntensity,
     visualStyle: visualStyle ?? this.visualStyle,
   );

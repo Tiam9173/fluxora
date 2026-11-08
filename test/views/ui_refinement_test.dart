@@ -253,6 +253,7 @@ void main() {
                 appearance.surfaceStyle,
                 motionStyle: appearance.motionStyle,
                 glassIntensity: appearance.glassIntensity,
+                glassClarity: appearance.glassClarity,
                 motionIntensity: appearance.motionIntensity,
                 visualStyle: appearance.visualStyle,
               ),
@@ -792,6 +793,74 @@ void main() {
       );
     },
   );
+
+  for (final brightness in Brightness.values) {
+    testWidgets(
+      'liquid material preview is visible, draggable and can be disabled $brightness',
+      (tester) async {
+        final container = await show(
+          tester,
+          brightness: brightness,
+          page: PageLabel.tools,
+          visualStyle: FluxoraVisualStyle.obsidian,
+        );
+        await tester.tap(find.text(appLocalizations.theme).first);
+        await tester.pumpAndSettle();
+        final liquid = find.byKey(const ValueKey('surface-style-liquid'));
+        await tester.ensureVisible(liquid);
+        await tester.tap(liquid);
+        await tester.pumpAndSettle();
+        expect(
+          container.read(themeSettingProvider).surfaceStyle,
+          FluxoraSurfaceStyle.liquid,
+        );
+        final clarityFinder = find.byKey(const ValueKey('glass-clarity'));
+        await tester.ensureVisible(clarityFinder);
+        final clarity = tester.widget<Slider>(clarityFinder);
+        clarity.onChanged!(.9);
+        await tester.pump();
+        expect(container.read(themeSettingProvider).glassClarity, .5);
+        clarity.onChangeEnd!(.9);
+        await tester.pumpAndSettle();
+        expect(container.read(themeSettingProvider).glassClarity, .9);
+        expect(container.read(themeSettingProvider).glassIntensity, .55);
+        final preview = find.byKey(const ValueKey('glass-preview'));
+        await tester.ensureVisible(preview);
+        await tester.pumpAndSettle();
+        await capture(tester, 'liquid-theme-${brightness.name}');
+        final glass = find
+            .descendant(of: preview, matching: find.byType(GlassSurface))
+            .first;
+        final before = tester.getCenter(glass).dx;
+        await tester.drag(glass, const Offset(36, 0));
+        await tester.pumpAndSettle();
+        expect(tester.getCenter(glass).dx, greaterThan(before));
+        await capture(tester, 'liquid-theme-dragged-${brightness.name}');
+        final classic = find.byKey(const ValueKey('surface-style-classic'));
+        await tester.ensureVisible(classic);
+        await tester.tap(classic);
+        await tester.pumpAndSettle();
+        expect(
+          container.read(themeSettingProvider).surfaceStyle,
+          FluxoraSurfaceStyle.classic,
+        );
+        container
+            .read(themeSettingProvider.notifier)
+            .updateState(
+              (s) => s.copyWith(surfaceStyle: FluxoraSurfaceStyle.liquid),
+            );
+        globalState.navigatorKey.currentState!.pop();
+        container.read(currentPageLabelProvider.notifier).value =
+            PageLabel.dashboard;
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
+        await capture(tester, 'liquid-home-${brightness.name}');
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox());
+        await tester.pump(const Duration(seconds: 1));
+      },
+    );
+  }
 
   testWidgets(
     'notification subscription action navigates without stopping the service',

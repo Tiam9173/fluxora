@@ -441,6 +441,7 @@ abstract class ThemeProps with _$ThemeProps {
     @Default(FluxoraMotionStyle.system)
     FluxoraMotionStyle motionStyle,
     @Default(.55) double glassIntensity,
+    @Default(.5) double glassClarity,
     @Default(.5) double motionIntensity,
     @Default(true) bool launchAnimation,
     @JsonKey(unknownEnumValue: FluxoraVisualStyle.fluxora)

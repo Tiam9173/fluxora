@@ -231,7 +231,7 @@ void main() {
       ).colorScheme;
 
       // The pill is the first `Material` inside the rail; its colour must be the
-      // shared tint over the existing violet brand token.
+      // shared tint over the user's active accent.
       final pill = tester
           .widgetList<Material>(
             find.descendant(
@@ -243,10 +243,7 @@ void main() {
 
       expect(
         pill.color,
-        FluxoraColorSet.selectionTint(
-          FluxoraColors.dark.tertiary,
-          scheme.brightness,
-        ),
+        FluxoraColorSet.selectionTint(scheme.primary, scheme.brightness),
       );
       expect(
         pill.shape,
@@ -286,7 +283,7 @@ void main() {
       final selectedIcon = items[0].icon.icon!;
       expect(
         IconTheme.of(tester.element(find.byIcon(selectedIcon))).color,
-        FluxoraColors.dark.tertiary,
+        scheme.primary,
       );
 
       // Unselected icon: the muted role.

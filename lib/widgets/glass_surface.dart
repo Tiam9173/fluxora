@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import '../common/tokens/tokens.dart';
+import 'liquid_backdrop.dart';
 
 /// A static sheen by default. Only bounded floating surfaces request blur.
 class GlassSurface extends StatelessWidget {
@@ -30,7 +31,9 @@ class GlassSurface extends StatelessWidget {
     final useBlur = blur && material.blurEnabled && !hasBlur;
     Widget surface = DecoratedBox(
       decoration: BoxDecoration(
-        color: material.fill(scheme, floating: floating),
+        color: material.liquid && useBlur
+            ? Colors.transparent
+            : material.fill(scheme, floating: floating),
         borderRadius: rounded,
         boxShadow: floating && material.blurEnabled
             ? FluxoraElevation.of(scheme.brightness).menu
@@ -49,13 +52,22 @@ class GlassSurface extends StatelessWidget {
     if (useBlur) {
       surface = ClipRRect(
         borderRadius: rounded,
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(
-            sigmaX: material.sigma,
-            sigmaY: material.sigma,
-          ),
-          child: surface,
-        ),
+        child: material.liquid
+            ? ClipRect(
+                child: LiquidBackdrop(
+                  radius: radius,
+                  strength: material.strength,
+                  clarity: material.clarity,
+                  child: surface,
+                ),
+              )
+            : BackdropFilter(
+                filter: ui.ImageFilter.blur(
+                  sigmaX: material.sigma,
+                  sigmaY: material.sigma,
+                ),
+                child: surface,
+              ),
       );
     }
     return surface;

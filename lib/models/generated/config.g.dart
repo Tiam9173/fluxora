@@ -510,6 +510,7 @@ _ThemeProps _$ThemePropsFromJson(Map<String, dynamic> json) => _ThemeProps(
       ) ??
       FluxoraMotionStyle.system,
   glassIntensity: (json['glassIntensity'] as num?)?.toDouble() ?? .55,
+  glassClarity: (json['glassClarity'] as num?)?.toDouble() ?? .5,
   motionIntensity: (json['motionIntensity'] as num?)?.toDouble() ?? .5,
   launchAnimation: json['launchAnimation'] as bool? ?? true,
   visualStyle:
@@ -538,6 +539,7 @@ Map<String, dynamic> _$ThemePropsToJson(_ThemeProps instance) =>
       'surfaceStyle': _$FluxoraSurfaceStyleEnumMap[instance.surfaceStyle]!,
       'motionStyle': _$FluxoraMotionStyleEnumMap[instance.motionStyle]!,
       'glassIntensity': instance.glassIntensity,
+      'glassClarity': instance.glassClarity,
       'motionIntensity': instance.motionIntensity,
       'launchAnimation': instance.launchAnimation,
       'visualStyle': _$FluxoraVisualStyleEnumMap[instance.visualStyle]!,
@@ -572,6 +574,7 @@ const _$ColorSourceEnumMap = {
 const _$FluxoraSurfaceStyleEnumMap = {
   FluxoraSurfaceStyle.classic: 'classic',
   FluxoraSurfaceStyle.hybrid: 'hybrid',
+  FluxoraSurfaceStyle.liquid: 'liquid',
   FluxoraSurfaceStyle.reduced: 'reduced',
 };
 
