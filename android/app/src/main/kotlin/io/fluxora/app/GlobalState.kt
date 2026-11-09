@@ -33,6 +33,14 @@ enum class RunState {
     STOP
 }
 
+data class NotificationDetails(
+    val profileName: String,
+    val nodeName: String,
+    val showProfile: Boolean,
+    val showNode: Boolean,
+    val showSpeed: Boolean
+)
+
 object GlobalState {
     val runLock = ReentrantLock()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -82,22 +90,20 @@ object GlobalState {
     var isStopping = false
 
     @Volatile
-    var currentProfileName: String = ""
+    var notificationDetails: NotificationDetails? = null
         set(value) {
-            if (field != value) {
-                field = value
+            val previous = field
+            field = value
+            if (previous?.profileName != value?.profileName ||
+                previous?.showSpeed != value?.showSpeed
+            ) {
                 requestTileUpdate()
             }
         }
 
-    @Volatile
-    var isSpeedNotificationEnabled: Boolean = false
-        set(value) {
-            if (field != value) {
-                field = value
-                requestTileUpdate()
-            }
-        }
+    val currentProfileName: String get() = notificationDetails?.profileName.orEmpty()
+    val isSpeedNotificationEnabled: Boolean get() = notificationDetails?.showSpeed == true
+
 
     @Volatile
     var isNotificationHighPriority: Boolean = false

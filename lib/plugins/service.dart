@@ -100,17 +100,6 @@ class Service {
     return await methodChannel.invokeMethod<bool>('status') ?? false;
   }
 
-  Future<void> updateNotificationSpeed(String profileName, String speedInfo) async {
-    await methodChannel.invokeMethod<void>('updateNotificationSpeed', {
-      'profileName': profileName,
-      'speedInfo': speedInfo,
-    });
-  }
-
-  Future<void> restoreNotification() async {
-    await methodChannel.invokeMethod<void>('restoreNotification');
-  }
-
   Future<bool?> setHighPriorityNotification(bool enabled) async {
     return await methodChannel.invokeMethod<bool>('setHighPriorityNotification', {
       'enabled': enabled,

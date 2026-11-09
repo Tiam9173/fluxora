@@ -1,6 +1,5 @@
 package io.fluxora.app.services
 
-import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -11,9 +10,7 @@ import android.os.Binder
 import android.os.Build
 import android.os.IBinder
 import android.os.Parcel
-import android.os.PowerManager
 import android.util.Log
-import androidx.core.app.NotificationCompat
 import io.fluxora.app.GlobalState
 import io.fluxora.app.extensions.getIpv4RouteAddress
 import io.fluxora.app.extensions.getIpv6RouteAddress
@@ -34,23 +31,9 @@ class FluxoraVpnService : VpnService(), BaseServiceInterface {
     @Volatile
     private var isStopped = false
 
-    @Volatile
-    private var hasStartedForeground = false
-
+    private val foregroundNotification = ForegroundNotification(this) { isStopped }
     private var unlockReceiver: BroadcastReceiver? = null
     private val fairMemoryHelper = FairMemoryHelper(TAG)
-    
-    @Volatile
-    private var isSpeedNotificationEnabled = false
-
-    @Volatile
-    private var lastNotificationText: String? = null
-
-    @Volatile
-    private var pendingSpeedProfile: String? = null
-
-    @Volatile
-    private var pendingSpeedInfo: String? = null
 
     private var notificationActionReceiver: BroadcastReceiver? = null
 
@@ -73,8 +56,6 @@ class FluxoraVpnService : VpnService(), BaseServiceInterface {
                         GlobalState.getCurrentVPNPlugin()?.notifyScreenStateChanged(true)
                     }
                 }
-                lastNotificationText = null
-                resetNotificationBuilder()
                 CoroutineScope(Dispatchers.Main).launch {
                     startForeground()
                 }
@@ -169,32 +150,11 @@ class FluxoraVpnService : VpnService(), BaseServiceInterface {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         // Notification action buttons (stop / switch / reset / speed test).
         if (handleNotificationAction(intent)) return START_NOT_STICKY
-        if (intent?.action == "UPDATE_NOTIFICATION_SPEED") {
-            val profileName = intent.getStringExtra("profileName") ?: ""
-            val speedInfo = intent.getStringExtra("speedInfo") ?: ""
-            isSpeedNotificationEnabled = true
-            if (!GlobalState.isSmartStopped && hasStartedForeground) {
-                CoroutineScope(Dispatchers.Main).launch {
-                    updateNotificationSpeed(profileName, speedInfo)
-                }
-            }
-        } else if (intent?.action == "RESTORE_NOTIFICATION") {
-            isSpeedNotificationEnabled = false
-            pendingSpeedProfile = null
-            pendingSpeedInfo = null
-            if (hasStartedForeground) {
-                CoroutineScope(Dispatchers.Main).launch {
-                    startForeground()
-                }
-            }
-        }
         return START_STICKY
     }
     override fun stop() {
         if (isStopped) return
         isStopped = true
-        hasStartedForeground = false
-        lastNotificationText = null
 
         runCatching {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -212,140 +172,12 @@ class FluxoraVpnService : VpnService(), BaseServiceInterface {
         stopSelf()
     }
 
-    /// Drops the notification and posts it again.
-    ///
-    /// A reset restarts the core in well under a second, which is invisible in
-    /// the shade — the row just keeps counting. Cancelling and re-posting makes
-    /// the work visible, which is the only feedback the user gets from outside
-    /// the app.
-    suspend fun flashNotification() {
-        val manager = getSystemService(android.app.NotificationManager::class.java)
-        runCatching { manager?.cancel(GlobalState.NOTIFICATION_ID) }
-        hasStartedForeground = false
-        lastNotificationText = null
-        cachedBuilder = null
-        kotlinx.coroutines.delay(700)
-        runCatching {
-            // Re-post what was there, not a generic line: the row should look
-            // untouched, only briefly absent. Falling back to the service text
-            // made the reset look like it had turned the speed readout off.
-            val builder = createFluxoraNotificationBuilder()
-            val profile = pendingSpeedProfile
-            val info = pendingSpeedInfo
-            if (profile != null && info != null) {
-                builder.setContentTitle(profile).setContentText(info)
-            } else {
-                builder
-                    .setContentTitle(getString(R.string.core_connected))
-                    .setContentText(getString(R.string.service_running))
-            }
-            val notification = builder.setStyle(null).buildFluxoraNotification(this@FluxoraVpnService)
-            startForeground(notification, useSpecialType = !GlobalState.isSmartStopped)
-            hasStartedForeground = true
-        }.onFailure { Log.e(TAG, "flashNotification failed: ${it.message}") }
-    }
+    suspend fun flashNotification() = foregroundNotification.flash()
 
-    @Volatile
-    private var cachedBuilder: NotificationCompat.Builder? = null
+    override suspend fun startForeground() = foregroundNotification.update(force = true)
 
-    fun resetNotificationBuilder() {
-        cachedBuilder = null
-    }
-
-    private suspend fun notificationBuilder(): NotificationCompat.Builder {
-        if (cachedBuilder == null) {
-            cachedBuilder = createFluxoraNotificationBuilder()
-        }
-        return cachedBuilder!!
-    }
-
-    @SuppressLint("ForegroundServiceType")
-    override suspend fun startForeground() {
-        val isSuspended = GlobalState.isSmartStopped
-        val isHighPriority = GlobalState.isNotificationHighPriority
-        ensureNotificationChannel(isSuspended, isHighPriority)
-        val builder = createFluxoraNotificationBuilder(isSuspended, isHighPriority)
-        val profile = pendingSpeedProfile
-        val speed = pendingSpeedInfo
-        val showSpeed = !isSuspended && GlobalState.isSpeedNotificationEnabled &&
-            profile != null && speed != null
-        val title = when {
-            showSpeed -> profile
-            isSuspended -> getString(R.string.core_suspended)
-            else -> getString(R.string.core_connected)
-        }
-        val content = when {
-            showSpeed -> speed
-            isSuspended -> getString(R.string.smart_auto_stop_service_running)
-            else -> getString(R.string.service_running)
-        }
-        val notification = builder
-            .setContentTitle(title)
-            .setContentText(content)
-            .buildFluxoraNotification(this@FluxoraVpnService)
-
-        this.startForeground(notification, useSpecialType = !isSuspended)
-        hasStartedForeground = true
-        lastNotificationText = if (showSpeed) "$title\n$content" else null
-    }
-
-    /// Applies a profile rename/switch to the live notification without
-    /// waiting for the next speed tick. The speed loop reads the profile name
-    /// from native GlobalState, so this also keeps it from being overwritten
-    /// by the service isolate's stale Config snapshot.
-    internal suspend fun updateNotificationProfile(profileName: String) {
-        pendingSpeedProfile = profileName
-        if (GlobalState.isSmartStopped ||
-            !GlobalState.isSpeedNotificationEnabled
-        ) {
-            return
-        }
-        val speed = pendingSpeedInfo ?: return
-        lastNotificationText = null
-        updateNotificationSpeed(profileName, speed)
-    }
-
-    @SuppressLint("ForegroundServiceType")
-    internal suspend fun updateNotificationSpeed(profileName: String, speedInfo: String) {
-        pendingSpeedProfile = profileName
-        pendingSpeedInfo = speedInfo
-
-        val powerManager = getSystemService(Context.POWER_SERVICE) as? PowerManager
-        if (powerManager?.isInteractive == false) {
-            return
-        }
-
-        if (GlobalState.isSmartStopped) {
-            return
-        }
-
-        val combinedText = "$profileName\n$speedInfo"
-        if (combinedText == lastNotificationText) {
-            return
-        }
-        lastNotificationText = combinedText
-
-        val builder = notificationBuilder()
-        val notification = builder
-            .setContentTitle(profileName)
-            .setContentText(speedInfo)
-            // No custom views: their buttons never dispatched. The stock action
-            // row is what actually works, so the notification stays plain.
-            .setStyle(null)
-            .buildFluxoraNotification(this@FluxoraVpnService)
-
-        if (!hasStartedForeground) {
-            hasStartedForeground = true
-            runCatching {
-                this.startForeground(notification, useSpecialType = !GlobalState.isSmartStopped)
-            }.onFailure { Log.e(TAG, "updateNotificationSpeed startForeground error: ${it.message}") }
-        } else {
-            runCatching {
-                getSystemService(android.app.NotificationManager::class.java)
-                    ?.notify(GlobalState.NOTIFICATION_ID, notification)
-            }.onFailure { Log.e(TAG, "updateNotificationSpeed notify error: ${it.message}") }
-        }
-    }
+    override suspend fun updateNotificationSpeed(speedInfo: String) =
+        foregroundNotification.update(speedInfo = speedInfo)
 
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)

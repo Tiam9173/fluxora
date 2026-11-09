@@ -13,6 +13,7 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.PowerManager
 import androidx.core.app.NotificationCompat
 import io.fluxora.app.GlobalState
 import io.fluxora.app.R
@@ -26,11 +27,15 @@ import kotlinx.coroutines.withContext
 import android.content.Intent
 
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 interface BaseServiceInterface {
     suspend fun start(options: VpnOptions): Int
     fun stop()
     suspend fun startForeground()
+    suspend fun updateNotificationSpeed(speedInfo: String)
 }
 
 /// Builds the expanded (big) notification view with all four action buttons.
@@ -179,10 +184,103 @@ private inline fun forwardToApp(name: String, block: () -> Unit) {
     }
 }
 
-fun NotificationCompat.Builder.buildFluxoraNotification(context: Context): Notification =
-    setSmallIcon(NotificationIconTheme.smallIcon(context))
-        .setLargeIcon(null as android.graphics.Bitmap?)
-        .build()
+internal class ForegroundNotification(
+    private val service: Service,
+    private val isStopped: () -> Boolean
+) {
+    private val lock = Mutex()
+    private var builder: NotificationCompat.Builder? = null
+    private var channel: Pair<Boolean, Boolean>? = null
+    private var speed: String? = null
+    private var previous: Content? = null
+    private var flashing = false
+
+    private data class Content(val title: String, val lines: List<String>, val icon: Int)
+
+    suspend fun update(speedInfo: String? = null, force: Boolean = false) {
+        lock.withLock {
+            if (isStopped() || flashing) return
+            if (speedInfo != null) {
+                if (builder == null || GlobalState.isSmartStopped ||
+                    !GlobalState.isSpeedNotificationEnabled
+                ) return
+                val power = service.getSystemService(PowerManager::class.java)
+                if (power?.isInteractive == false) return
+                speed = speedInfo
+            }
+
+            val suspended = GlobalState.isSmartStopped
+            val highPriority = GlobalState.isNotificationHighPriority
+            val channelKey = suspended to highPriority
+            val channelChanged = channel != channelKey
+            val notificationBuilder = if (force || channelChanged) {
+                service.ensureNotificationChannel(suspended, highPriority)
+                service.createFluxoraNotificationBuilder(suspended, highPriority)
+            } else {
+                builder ?: return
+            }
+            if (isStopped()) return
+
+            val details = GlobalState.notificationDetails
+            if (suspended || details?.showSpeed != true) speed = null
+            val profile = details?.profileName?.takeIf { details.showProfile && it.isNotBlank() }
+            val node = details?.nodeName?.takeIf { details.showNode && it.isNotBlank() }
+            val status = service.getString(
+                if (suspended) R.string.core_suspended else R.string.core_connected
+            )
+            val lines = buildList {
+                if (profile != null && suspended) add(status)
+                if (node != null && !suspended) add(service.getString(R.string.notification_selected_node, node))
+                speed?.takeIf { it.isNotBlank() }?.let(::add)
+                if (isEmpty()) {
+                    add(service.getString(
+                        if (suspended) R.string.smart_auto_stop_service_running else R.string.service_running
+                    ))
+                }
+            }
+            val content = Content(profile ?: status, lines, NotificationIconTheme.smallIcon(service))
+            if (!force && !channelChanged && content == previous) return
+
+            val notification = notificationBuilder
+                .setSmallIcon(content.icon)
+                .setContentTitle(content.title)
+                .setContentText(if (node != null && !suspended) lines.asReversed().joinToString("  ·  ") else lines.joinToString("  ·  "))
+                .setStyle(
+                    if (node != null && !suspended) {
+                        NotificationCompat.BigTextStyle().bigText(lines.joinToString("\n"))
+                    } else null
+                )
+                .build()
+
+            if (builder == null || channel?.first != suspended) {
+                if (!service.startForeground(notification, useSpecialType = !suspended)) return
+            } else {
+                service.getSystemService(NotificationManager::class.java)
+                    ?.notify(GlobalState.NOTIFICATION_ID, notification)
+            }
+            builder = notificationBuilder
+            channel = channelKey
+            previous = content
+        }
+    }
+
+    suspend fun flash() {
+        lock.withLock {
+            if (isStopped() || flashing) return
+            flashing = true
+            runCatching {
+                service.getSystemService(NotificationManager::class.java)?.cancel(GlobalState.NOTIFICATION_ID)
+            }
+            builder = null
+        }
+        try {
+            delay(700)
+        } finally {
+            lock.withLock { flashing = false }
+        }
+        update(force = true)
+    }
+}
 
 suspend fun Service.createFluxoraNotificationBuilder(
     isSuspended: Boolean = GlobalState.isSmartStopped,
@@ -217,8 +315,7 @@ suspend fun Service.createFluxoraNotificationBuilder(
         val priority = if (isSuspended || isHighPriority) NotificationCompat.PRIORITY_HIGH else NotificationCompat.PRIORITY_LOW
 
         NotificationCompat.Builder(this@createFluxoraNotificationBuilder, channelId).apply {
-            setSmallIcon(NotificationIconTheme.smallIcon(this@createFluxoraNotificationBuilder))
-            setLargeIcon(null as android.graphics.Bitmap?)
+            setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
             setContentTitle(getString(R.string.fluxora))
             setContentIntent(pendingIntent)
             setCategory(NotificationCompat.CATEGORY_SERVICE)
@@ -238,7 +335,6 @@ suspend fun Service.createFluxoraNotificationBuilder(
             // The intents target *this* service class, so the buttons reach the
             // instance that built the notification (VpnService or plain
             // service) and land in its onStartCommand.
-            val serviceClass = this@createFluxoraNotificationBuilder::class.java
             // Broadcasts, not getService: service intents from a notification
             // never reached onStartCommand here, while the getActivity one
             // (switch) did. ownbox uses broadcasts for these same buttons.
@@ -313,7 +409,7 @@ fun Service.ensureNotificationChannel(
 }
 
 @SuppressLint("ForegroundServiceType")
-fun Service.startForeground(notification: Notification, useSpecialType: Boolean = true) {
+fun Service.startForeground(notification: Notification, useSpecialType: Boolean = true): Boolean {
     ensureNotificationChannel(GlobalState.isSmartStopped, GlobalState.isNotificationHighPriority)
 
     val type = if (Build.VERSION.SDK_INT >= 34 && useSpecialType && !GlobalState.isSmartStopped) {
@@ -322,20 +418,18 @@ fun Service.startForeground(notification: Notification, useSpecialType: Boolean 
         0
     }
 
-    runCatching {
+    return runCatching {
         if (type != 0) {
             startForeground(GlobalState.NOTIFICATION_ID, notification, type)
         } else {
             startForeground(GlobalState.NOTIFICATION_ID, notification)
         }
-    }.onFailure {
-        android.util.Log.e("BaseServiceInterface", "startForeground failed: ${it.message}")
-        runCatching {
-            startForeground(GlobalState.NOTIFICATION_ID, notification)
-        }.onFailure { fallbackErr ->
-            android.util.Log.e("BaseServiceInterface", "startForeground fallback failed: ${fallbackErr.message}")
-        }
-    }
+    }.recoverCatching { error ->
+        android.util.Log.e("BaseServiceInterface", "startForeground failed: ${error.message}")
+        startForeground(GlobalState.NOTIFICATION_ID, notification)
+    }.onFailure { error ->
+        android.util.Log.e("BaseServiceInterface", "startForeground fallback failed: ${error.message}")
+    }.isSuccess
 }
 
 /// Registers the notification action receiver at runtime.

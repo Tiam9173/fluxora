@@ -5,6 +5,7 @@ import 'package:fluxora/common/brand_icons.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/manager/window_manager.dart';
+import 'package:fluxora/models/models.dart';
 import 'package:fluxora/plugins/app.dart';
 import 'package:fluxora/plugins/vpn.dart';
 import 'package:fluxora/providers/providers.dart';
@@ -15,6 +16,53 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+final notificationDetailsProvider = Provider((ref) {
+  final profile = ref.watch(currentProfileProvider);
+  final settings = ref.watch(
+    vpnSettingProvider.select(
+      (s) => (
+        showProfile: s.notificationShowProfile,
+        showNode: s.notificationShowNode,
+        showSpeed: s.networkSpeedNotification,
+      ),
+    ),
+  );
+  var nodeName = '';
+  if (settings.showNode && profile != null) {
+    final mode = ref.watch(patchClashConfigProvider.select((s) => s.mode));
+    if (mode != Mode.direct) {
+      final groups = ref.watch(groupsProvider);
+      final groupName = mode == Mode.global
+          ? GroupName.GLOBAL.name
+          : profile.currentGroupName;
+      var group =
+          groups.getGroup(groupName ?? '') ??
+          groups
+              .where(
+                (group) =>
+                    group.hidden != true && group.name != GroupName.GLOBAL.name,
+              )
+              .firstOrNull;
+      final visited = <String>{};
+      while (group != null && visited.add(group.name)) {
+        final selected = group.getCurrentSelectedName(
+          profile.selectedMap[group.name] ?? '',
+        );
+        if (!group.all.any((proxy) => proxy.name == selected)) break;
+        group = groups.getGroup(selected);
+        if (group == null) nodeName = selected;
+      }
+    }
+  }
+  return (
+    profileName: profile?.label ?? profile?.id ?? '',
+    nodeName: nodeName,
+    showProfile: settings.showProfile,
+    showNode: settings.showNode,
+    showSpeed: settings.showSpeed,
+  );
+});
 
 class AppStateManager extends ConsumerStatefulWidget {
   final Widget child;
@@ -32,28 +80,6 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
   Timer? _missedUpdateCheckTimer;
   DateTime? _lastMissedUpdateCheck;
   late final VoidCallback _dashboardTickListener;
-  String? _lastNotificationProfile;
-
-  /// Keeps the native notification/tile title on the same profile as the UI.
-  ///
-  /// The VPN service runs in a separate isolate with its own Config snapshot;
-  /// changing `currentProfileId` here never reaches it. Pushing the label into
-  /// native GlobalState is what makes the next speed tick use the new name.
-  void _syncNotificationProfile() {
-    if (!system.isAndroid) return;
-    final config = globalState.config;
-    var name = 'Fluxora';
-    for (final profile in config.profiles) {
-      if (profile.id == config.currentProfileId) {
-        name = profile.label ?? profile.id;
-        break;
-      }
-    }
-    if (name == _lastNotificationProfile) return;
-    _lastNotificationProfile = name;
-    Vpn().setNotificationProfile(name);
-  }
-
   static const _missedUpdateCheckDelay = Duration(seconds: 5);
   static const _missedUpdateCheckThrottle = Duration(seconds: 60);
 
@@ -86,6 +112,17 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
       }
     });
     if (system.isAndroid) {
+      ref.listenManual(notificationDetailsProvider, (_, details) {
+        unawaited(
+          Vpn().setNotificationDetails(
+            profileName: details.profileName,
+            nodeName: details.nodeName,
+            showProfile: details.showProfile,
+            showNode: details.showNode,
+            showSpeed: details.showSpeed,
+          ),
+        );
+      }, fireImmediately: true);
       ref.listenManual(
         themeSettingProvider.select((s) => s.notificationIconStyle),
         (prev, next) {
@@ -102,11 +139,9 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
     ref.listenManual(configStateProvider, (prev, next) {
       if (prev != next) {
         globalState.appController.savePreferencesDebounce();
-        _syncNotificationProfile();
       }
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _syncNotificationProfile();
       _updateDashboardRefreshState();
       detectionState.tryStartCheck();
       mediaUnlockState.tryStartCheck();

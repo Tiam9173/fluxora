@@ -344,6 +344,10 @@ class ProxyCard extends StatelessWidget {
             context,
             proxyName: proxy.name,
             profileId: globalState.config.currentProfileId,
+            protocol: proxy.type,
+            delay: ref.read(
+              getDelayProvider(proxyName: proxy.name, testUrl: testUrl),
+            ),
           ),
           padding: const EdgeInsets.symmetric(
             horizontal: FluxoraSpacing.sm,

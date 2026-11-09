@@ -15,6 +15,7 @@ import android.widget.Toast
 import androidx.core.content.getSystemService
 import io.fluxora.app.FluxoraApplication
 import io.fluxora.app.GlobalState
+import io.fluxora.app.NotificationDetails
 import io.fluxora.app.RunState
 import io.fluxora.core.Core
 import io.fluxora.app.extensions.awaitResult
@@ -70,8 +71,8 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     @Volatile
     private var quickResponseEnabled = false
     private var quickResponseJob: Job? = null
-    private val notificationIconMutex = Mutex()
-    private val notificationIconGeneration = AtomicLong()
+    private val notificationRefreshMutex = Mutex()
+    private val notificationGeneration = AtomicLong()
     private var lastNetworkType: Int? = null
     private var lastDns = ""
 
@@ -224,22 +225,29 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             }
 
             "updateNotificationSpeed" -> {
-                handleUpdateNotificationSpeed(
-                    call.argument<String>("profileName") ?: "",
-                    call.argument<String>("speedInfo") ?: ""
-                )
-                result.success(true)
+                updateNotificationSpeed(call.argument<String>("speedInfo").orEmpty())
+                result.success(null)
             }
 
-            "setNotificationProfile" -> {
-                handleSetNotificationProfile(
-                    call.argument<String>("profileName") ?: ""
+            "setNotificationDetails" -> {
+                val details = NotificationDetails(
+                    call.argument<String>("profileName").orEmpty(),
+                    call.argument<String>("nodeName").orEmpty(),
+                    call.argument<Boolean>("showProfile") ?: true,
+                    call.argument<Boolean>("showNode") ?: false,
+                    call.argument<Boolean>("showSpeed") ?: true
                 )
-                result.success(true)
+                val previous = GlobalState.notificationDetails
+                val initial = call.argument<Boolean>("initial") == true
+                if ((!initial || previous == null) && details != previous) {
+                    GlobalState.notificationDetails = details
+                    refreshForegroundNotification()
+                }
+                result.success(null)
             }
 
-            "getNotificationProfileName" -> {
-                result.success(GlobalState.currentProfileName)
+            "getNotificationSpeedEnabled" -> {
+                result.success(GlobalState.isSpeedNotificationEnabled && !GlobalState.isSmartStopped)
             }
 
             "flashNotification" -> {
@@ -599,52 +607,21 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         }
     }
 
-    fun updateNotificationIcon() {
-        val generation = notificationIconGeneration.incrementAndGet()
+    fun refreshForegroundNotification() {
+        val generation = notificationGeneration.incrementAndGet()
         scope.launch {
-            notificationIconMutex.withLock {
-                if (generation != notificationIconGeneration.get()) return@withLock
-                runCatching {
-                    (fluxoraService as? FluxoraService)?.resetNotificationBuilder()
-                    (fluxoraService as? FluxoraVpnService)?.resetNotificationBuilder()
-                    startForeground()
-                }.onFailure {
-                    android.util.Log.e("VpnPlugin", "updateNotificationIcon error: ${it.message}")
-                }
+            notificationRefreshMutex.withLock {
+                if (generation != notificationGeneration.get()) return@withLock
+                startForeground()
             }
         }
     }
 
-    fun handleSetNotificationProfile(profileName: String) {
-        if (profileName.isEmpty()) return
-        GlobalState.currentProfileName = profileName
-        scope.launch {
+    private fun updateNotificationSpeed(speedInfo: String) {
+        if (!GlobalState.isSpeedNotificationEnabled) return
+        scope.launch(Dispatchers.Main.immediate) {
             runCatching {
-                (fluxoraService as? FluxoraVpnService)
-                    ?.updateNotificationProfile(profileName)
-            }.onFailure {
-                android.util.Log.e(
-                    "VpnPlugin",
-                    "setNotificationProfile error: ${it.message}"
-                )
-            }
-        }
-    }
-
-    fun handleUpdateNotificationSpeed(profileName: String, speedInfo: String) {
-        if (profileName != GlobalState.currentProfileName ||
-            !GlobalState.isSpeedNotificationEnabled
-        ) {
-            GlobalState.currentProfileName = profileName
-            GlobalState.isSpeedNotificationEnabled = true
-        }
-        updateNotificationSpeed(profileName, speedInfo)
-    }
-
-    fun updateNotificationSpeed(profileName: String, speedInfo: String) {
-        scope.launch {
-            runCatching {
-                (fluxoraService as? FluxoraVpnService)?.updateNotificationSpeed(profileName, speedInfo)
+                fluxoraService?.updateNotificationSpeed(speedInfo)
             }.onFailure {
                 android.util.Log.e("VpnPlugin", "updateNotificationSpeed error: ${it.message}")
             }
@@ -653,8 +630,6 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
     fun setHighPriorityNotification(enabled: Boolean) {
         GlobalState.isNotificationHighPriority = enabled
-        (fluxoraService as? FluxoraService)?.resetNotificationBuilder()
-        (fluxoraService as? FluxoraVpnService)?.resetNotificationBuilder()
         if (GlobalState.currentRunState == RunState.START) {
             scope.launch {
                 startForeground()
@@ -895,8 +870,6 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         suspendModule = null
         Core.stopTun()
         Core.suspended(true)
-        (fluxoraService as? FluxoraService)?.resetNotificationBuilder()
-        (fluxoraService as? FluxoraVpnService)?.resetNotificationBuilder()
         scope.launch {
             startForeground()
         }
@@ -925,9 +898,7 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             if (!startAllowed) return@launch
 
             Core.suspended(false)
-            (fluxoraService as? FluxoraService)?.resetNotificationBuilder()
-            (fluxoraService as? FluxoraVpnService)?.resetNotificationBuilder()
-            performStartCore(options, retry = false, notifyOnFailure = false)
+                    performStartCore(options, retry = false, notifyOnFailure = false)
             withContext(Dispatchers.Main) {
                 Toast.makeText(FluxoraApplication.getAppContext(), "Fluxora Connected", Toast.LENGTH_SHORT).show()
             }

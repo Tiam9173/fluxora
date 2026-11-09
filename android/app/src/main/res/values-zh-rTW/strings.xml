@@ -4,4 +4,5 @@
     <string name="service_running">服務正在運行中</string>
     <string name="core_suspended">已暫停</string>
     <string name="smart_auto_stop_service_running">智能啟停運行中</string>
+    <string name="notification_selected_node">已選節點：%1$s</string>
 </resources>

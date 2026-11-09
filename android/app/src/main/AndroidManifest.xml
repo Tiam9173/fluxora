@@ -44,8 +44,8 @@
             android:theme="@style/SwitchCardTheme" />
         <activity
             android:name="io.fluxora.app.MainActivity"
-            android:icon="@mipmap/ic_launcher_light"
-            android:roundIcon="@mipmap/ic_launcher_round_light"
+            android:icon="@mipmap/brand_official_light"
+            android:roundIcon="@mipmap/brand_official_light"
             android:label="@string/fluxora"
             android:alwaysRetainTaskState="true"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode|colorMode"
@@ -87,8 +87,8 @@
             android:name="io.fluxora.app.MainActivityLight"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_light"
-            android:roundIcon="@mipmap/ic_launcher_round_light"
+            android:icon="@mipmap/brand_official_light"
+            android:roundIcon="@mipmap/brand_official_light"
             android:label="@string/fluxora"
             android:targetActivity="io.fluxora.app.MainActivity">
             <intent-filter>
@@ -116,8 +116,8 @@
             android:name="io.fluxora.app.MainActivityDark"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher"
-            android:roundIcon="@mipmap/ic_launcher_round"
+            android:icon="@mipmap/brand_official_dark"
+            android:roundIcon="@mipmap/brand_official_dark"
             android:label="@string/fluxora"
             android:targetActivity="io.fluxora.app.MainActivity">
             <intent-filter>

@@ -100,28 +100,6 @@ class ServicePlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 GlobalState.destroyServiceEngine()
                 result.success(true)
             }
-            "updateNotificationSpeed" -> {
-                VpnPlugin.handleUpdateNotificationSpeed(
-                    call.argument<String>("profileName") ?: "",
-                    call.argument<String>("speedInfo") ?: ""
-                )
-                result.success(true)
-            }
-            "restoreNotification" -> {
-                val context = io.fluxora.app.FluxoraApplication.getAppContext()
-                if (context != null) {
-                    GlobalState.isSpeedNotificationEnabled = false
-
-                    val intent = android.content.Intent(
-                        context, 
-                        io.fluxora.app.services.FluxoraVpnService::class.java
-                    ).apply {
-                        action = "RESTORE_NOTIFICATION"
-                    }
-                    runCatching { context.startService(intent) }
-                }
-                result.success(true)
-            }
             "setHighPriorityNotification" -> {
                 val enabled = call.argument<Boolean>("enabled") ?: false
                 VpnPlugin.setHighPriorityNotification(enabled)

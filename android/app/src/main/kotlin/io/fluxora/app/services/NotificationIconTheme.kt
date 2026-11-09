@@ -1,6 +1,9 @@
 package io.fluxora.app.services
 
+import android.app.NotificationManager
 import android.content.Context
+import android.os.Build
+import io.fluxora.app.GlobalState
 import io.fluxora.app.R
 
 object NotificationIconTheme {
@@ -14,6 +17,16 @@ object NotificationIconTheme {
             "Unable to save notification icon"
         }
         return true
+    }
+
+    @Suppress("DEPRECATION")
+    fun postedIconDiffers(context: Context): Boolean {
+        val manager = context.getSystemService(NotificationManager::class.java) ?: return false
+        val notification = manager.activeNotifications
+            .firstOrNull { it.id == GlobalState.NOTIFICATION_ID && it.tag == null }
+            ?.notification ?: return false
+        val posted = if (Build.VERSION.SDK_INT >= 28) notification.smallIcon?.resId else notification.icon
+        return posted != smallIcon(context)
     }
 
     fun smallIcon(context: Context): Int = when (

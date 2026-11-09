@@ -497,33 +497,41 @@ int _notificationSpeedSeq = 0;
 /// setting, so toggling the switch takes effect without a restart.
 void _startNotificationSpeedLoop(ClashLibHandler clashLibHandler) {
   _notificationSpeedTimer?.cancel();
+  final config = globalState.config;
+  final settings = config.vpnProps;
+  final profile = config.profiles
+      .where((profile) => profile.id == config.currentProfileId)
+      .firstOrNull;
+  unawaited(
+    vpn?.setNotificationDetails(
+      profileName: profile?.label ?? profile?.id ?? '',
+      showProfile: settings.notificationShowProfile,
+      showNode: settings.notificationShowNode,
+      showSpeed: settings.networkSpeedNotification,
+      initial: true,
+    ),
+  );
+
+  var updating = false;
   _notificationSpeedTimer = Timer.periodic(const Duration(seconds: 1), (
-    _,
+    timer,
   ) async {
-    if (!globalState.config.vpnProps.networkSpeedNotification) return;
+    if (updating) return;
+    updating = true;
     try {
+      if (await vpn?.getNotificationSpeedEnabled() != true || !timer.isActive) {
+        return;
+      }
       final raw = await clashLibHandler.invokeActionData(
         '{"id": "serviceSpeed${_notificationSpeedSeq++}", "method": "getTraffic"}',
       );
-      if (raw == null || raw.isEmpty) return;
+      if (raw == null || raw.isEmpty || !timer.isActive) return;
       final traffic = Traffic.fromMap(json.decode(raw));
-      // The service isolate's Config is a snapshot from service start; after
-      // the user switches subscriptions it still points at the old profile.
-      // Native GlobalState is updated by the UI isolate on every switch, so
-      // prefer it and only fall back to the snapshot for cold service starts.
-      var profileName = await vpn?.getNotificationProfileName() ?? '';
-      if (profileName.isEmpty) {
-        profileName = 'Fluxora';
-        for (final profile in globalState.config.profiles) {
-          if (profile.id == globalState.config.currentProfileId) {
-            profileName = profile.label ?? profileName;
-            break;
-          }
-        }
-      }
-      await vpn?.updateNotificationSpeed(profileName, traffic.toSpeedText());
+      await vpn?.updateNotificationSpeed(traffic.toSpeedText());
     } catch (e) {
       commonPrint.log('Service speed notification update failed: $e');
+    } finally {
+      updating = false;
     }
   });
 }

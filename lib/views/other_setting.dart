@@ -542,30 +542,60 @@ class HighPriorityNotificationItem extends ConsumerWidget {
   }
 }
 
-class NetworkSpeedNotificationItem extends ConsumerWidget {
-  const NetworkSpeedNotificationItem({super.key});
+class NotificationContentSection extends ConsumerWidget {
+  const NotificationContentSection({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final networkSpeedNotification = ref.watch(
-      vpnSettingProvider.select((state) => state.networkSpeedNotification),
-    );
-    return ListItem.switchItem(
-      title: Text(appLocalizations.networkSpeedNotification),
-      subtitle: Text(appLocalizations.networkSpeedNotificationDesc),
-      delegate: SwitchDelegate(
-        value: networkSpeedNotification,
-        onChanged: (bool value) async {
-          ref
-              .read(vpnSettingProvider.notifier)
-              .updateState(
-                (state) => state.copyWith(networkSpeedNotification: value),
-              );
-          if (!value && system.isAndroid) {
-            await service?.restoreNotification();
-          }
-        },
-      ),
+    final settings = ref.watch(vpnSettingProvider);
+    final notifier = ref.read(vpnSettingProvider.notifier);
+    final locale = Localizations.localeOf(context);
+    String label(String zh, String zhTw, String en) =>
+        locale.languageCode != 'zh'
+        ? en
+        : locale.countryCode == 'TW' || locale.scriptCode == 'Hant'
+        ? zhTw
+        : zh;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ListItem.switchItem(
+          title: Text(
+            label('通知栏显示订阅', '通知列顯示訂閱', 'Show subscription in notification'),
+          ),
+          delegate: SwitchDelegate(
+            value: settings.notificationShowProfile,
+            onChanged: (value) => notifier.updateState(
+              (s) => s.copyWith(notificationShowProfile: value),
+            ),
+          ),
+        ),
+        ListItem.switchItem(
+          title: Text(
+            label(
+              '通知栏显示当前节点',
+              '通知列顯示目前節點',
+              'Show selected node in notification',
+            ),
+          ),
+          delegate: SwitchDelegate(
+            value: settings.notificationShowNode,
+            onChanged: (value) => notifier.updateState(
+              (s) => s.copyWith(notificationShowNode: value),
+            ),
+          ),
+        ),
+        ListItem.switchItem(
+          title: Text(appLocalizations.networkSpeedNotification),
+          delegate: SwitchDelegate(
+            value: settings.networkSpeedNotification,
+            onChanged: (value) => notifier.updateState(
+              (s) => s.copyWith(networkSpeedNotification: value),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -796,7 +826,7 @@ class OtherSettingView extends ConsumerWidget {
       const LoopbackProtectionSection(),
       const DisableQuicSection(),
       if (system.isAndroid) const HighPriorityNotificationItem(),
-      if (system.isAndroid) const NetworkSpeedNotificationItem(),
+      if (system.isAndroid) const NotificationContentSection(),
       if (!system.isAndroid) const TraySection(),
       if (system.isWindows) const HighPriorityItem(),
       if (system.isWindows) const NetworkFixItem(),

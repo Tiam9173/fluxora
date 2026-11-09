@@ -1,26 +1,19 @@
 package io.fluxora.app.services
 
-import android.annotation.SuppressLint
 import android.app.Service
 import android.content.Intent
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
-import android.text.SpannableString
-import android.text.Spanned
-import android.text.style.RelativeSizeSpan
-import androidx.core.app.NotificationCompat
 import io.fluxora.app.GlobalState
-import io.fluxora.app.R
 import io.fluxora.app.models.VpnOptions
 
 class FluxoraService : Service(), BaseServiceInterface {
 
-    @Volatile
-    private var cachedBuilder: NotificationCompat.Builder? = null
     private val binder = LocalBinder()
     @Volatile
-    private var hasStartedForeground = false
+    private var isStopped = false
+    private val foregroundNotification = ForegroundNotification(this) { isStopped }
 
     private val fairMemoryHelper = FairMemoryHelper("FluxoraService")
 
@@ -40,7 +33,8 @@ class FluxoraService : Service(), BaseServiceInterface {
     override suspend fun start(options: VpnOptions) = 0
 
     override fun stop() {
-        hasStartedForeground = false
+        if (isStopped) return
+        isStopped = true
 
         runCatching {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -58,42 +52,10 @@ class FluxoraService : Service(), BaseServiceInterface {
         stopSelf()
     }
 
-    fun resetNotificationBuilder() {
-        cachedBuilder = null
-    }
+    override suspend fun startForeground() = foregroundNotification.update(force = true)
 
-    private suspend fun notificationBuilder() =
-        cachedBuilder ?: createFluxoraNotificationBuilder().also { cachedBuilder = it }
-
-    @SuppressLint("ForegroundServiceType")
-    override suspend fun startForeground() {
-        val isSuspended = GlobalState.isSmartStopped
-        val isHighPriority = GlobalState.isNotificationHighPriority
-        ensureNotificationChannel(isSuspended, isHighPriority)
-        val title: String
-        val content: String
-        if (isSuspended) {
-            title = getString(R.string.core_suspended)
-            content = getString(R.string.smart_auto_stop_service_running)
-        } else {
-            title = getString(R.string.core_connected)
-            content = getString(R.string.service_running)
-        }
-
-        val builder = createFluxoraNotificationBuilder(isSuspended, isHighPriority)
-        val notification = builder
-            .setContentTitle(title)
-            .setContentText(content)
-            .setStyle(null)
-            .buildFluxoraNotification(this@FluxoraService)
-
-        if (!hasStartedForeground) {
-            this.startForeground(notification, useSpecialType = !isSuspended)
-            hasStartedForeground = true
-        } else {
-            getSystemService(android.app.NotificationManager::class.java)?.notify(GlobalState.NOTIFICATION_ID, notification)
-        }
-    }
+    override suspend fun updateNotificationSpeed(speedInfo: String) =
+        foregroundNotification.update(speedInfo = speedInfo)
 
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)

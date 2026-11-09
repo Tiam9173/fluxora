@@ -1,4 +1,5 @@
 import 'package:fluxora/widgets/dialog.dart';
+import 'package:fluxora/widgets/fluxora/fluxora_latency_badge.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluxora/common/common.dart';
@@ -15,10 +16,261 @@ Future<void> showNodeDetailsDialog(
   BuildContext context, {
   required String proxyName,
   String? profileId,
+  String? protocol,
+  int? delay,
 }) async {
+  final config = _readNodeDetails(proxyName, profileId);
+  await showDialog(
+    context: context,
+    builder: (ctx) => FutureBuilder(
+      future: config,
+      builder: (ctx, snapshot) {
+        final loaded = snapshot.connectionState == ConnectionState.done;
+        final overriddenFields = profileId == null || !loaded
+            ? const <String>{}
+            : NodeOverrideStore.instance
+                      .overridesFor(profileId, proxyName)
+                      ?.keys
+                      .toSet() ??
+                  const <String>{};
+        final hasOverride = overriddenFields.isNotEmpty;
+        final theme = Theme.of(ctx);
+        final colors = theme.colorScheme;
+        final data = snapshot.data;
+        final type = protocol ?? data?['type']?.toString();
+        final endpoint = [
+          if (data?['server'] case final Object server)
+            MapEntry('server', server),
+          if (data?['port'] case final Object port) MapEntry('port', port),
+        ];
+        final parameters = [
+          if (data != null)
+            for (final entry in data.entries)
+              if (!const {
+                    'name',
+                    'type',
+                    'server',
+                    'port',
+                  }.contains(entry.key) &&
+                  entry.value != null)
+                MapEntry(entry.key, entry.value as Object),
+        ];
+
+        Widget field(MapEntry<String, Object> entry, [String? label]) {
+          final modified = overriddenFields.contains(entry.key);
+          final caption = Text(
+            label ?? entry.key,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: modified ? colors.tertiary : colors.onSurfaceVariant,
+              fontWeight: modified ? FontWeight.w600 : null,
+            ),
+          );
+          final value = SelectableText(
+            _displayField(entry.key, entry.value).toString(),
+            style: theme.textTheme.bodyMedium,
+          );
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: FluxoraSpacing.xs),
+            child: entry.key == 'server'
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      caption,
+                      const SizedBox(height: FluxoraSpacing.xs),
+                      value,
+                    ],
+                  )
+                : Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(flex: 2, child: caption),
+                      const SizedBox(width: FluxoraSpacing.sm),
+                      Expanded(flex: 3, child: value),
+                    ],
+                  ),
+          );
+        }
+
+        return GlassAlertDialog(
+          scrollable: true,
+          title: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: colors.primaryContainer,
+                  borderRadius: BorderRadius.circular(FluxoraRadius.card),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(FluxoraSpacing.sm),
+                  child: Icon(
+                    Icons.hub_outlined,
+                    color: colors.onPrimaryContainer,
+                  ),
+                ),
+              ),
+              const SizedBox(width: FluxoraSpacing.sm),
+              Expanded(
+                child: Tooltip(
+                  message: proxyName,
+                  child: Text(
+                    proxyName,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: SizedBox(
+            width: 380,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (type != null || delay != null || hasOverride) ...[
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: FluxoraSpacing.sm,
+                    runSpacing: FluxoraSpacing.xs,
+                    children: [
+                      if (type != null)
+                        Text(
+                          type,
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: colors.onSurfaceVariant,
+                          ),
+                        ),
+                      if (delay != null)
+                        Semantics(
+                          label: appLocalizations.delay,
+                          child: FluxoraLatencyBadge(
+                            delay: delay,
+                            timeoutLabel: appLocalizations.timeoutLabel,
+                          ),
+                        ),
+                      if (hasOverride)
+                        Text(
+                          appLocalizations.nodeDetailModified,
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: colors.tertiary,
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: FluxoraSpacing.sm),
+                ],
+                if (!loaded)
+                  const LinearProgressIndicator()
+                else if (data == null)
+                  Text(
+                    appLocalizations.nodeDetailMissing,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colors.onSurfaceVariant,
+                    ),
+                  ),
+                if (endpoint.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: FluxoraSpacing.sm,
+                      vertical: FluxoraSpacing.xs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colors.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(FluxoraRadius.card),
+                    ),
+                    child: Column(
+                      children: [
+                        for (final entry in endpoint)
+                          field(
+                            entry,
+                            entry.key == 'server'
+                                ? appLocalizations.serverAddress
+                                : appLocalizations.port,
+                          ),
+                      ],
+                    ),
+                  ),
+                if (parameters.isNotEmpty)
+                  ExpansionTile(
+                    tilePadding: EdgeInsets.zero,
+                    shape: const Border(),
+                    collapsedShape: const Border(),
+                    title: Text(appLocalizations.advancedSettings),
+                    children: [for (final entry in parameters) field(entry)],
+                  ),
+              ],
+            ),
+          ),
+          actions: [
+            if (data != null)
+              IconButton(
+                tooltip: appLocalizations.nodeDetailCopyConfig,
+                icon: const Icon(Icons.copy_outlined),
+                onPressed: () async {
+                  await Clipboard.setData(
+                    ClipboardData(
+                      text: data.entries
+                          .map((e) => '${e.key}: ${e.value}')
+                          .join('\n'),
+                    ),
+                  );
+                  if (!ctx.mounted) return;
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    SnackBar(content: Text(appLocalizations.nodeDetailCopied)),
+                  );
+                },
+              ),
+            if (hasOverride && profileId != null)
+              TextButton(
+                onPressed: () async {
+                  await NodeOverrideStore.instance.clear(profileId, proxyName);
+                  if (!ctx.mounted) return;
+                  Navigator.of(ctx).pop();
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(appLocalizations.nodeDetailRestored),
+                    ),
+                  );
+                },
+                child: Text(appLocalizations.nodeDetailRestore),
+              ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(appLocalizations.nodeDetailClose),
+            ),
+            if (data != null && profileId != null)
+              FilledButton(
+                onPressed: () async {
+                  final changed = await showNodeEditDialog(
+                    ctx,
+                    proxyName: proxyName,
+                    profileId: profileId,
+                    raw: data,
+                  );
+                  if (!changed || !ctx.mounted) return;
+                  Navigator.of(ctx).pop();
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(appLocalizations.nodeDetailSaved)),
+                  );
+                },
+                child: Text(appLocalizations.nodeDetailEdit),
+              ),
+          ],
+        );
+      },
+    ),
+  );
+}
+
+Future<Map<String, dynamic>?> _readNodeDetails(
+  String proxyName,
+  String? profileId,
+) async {
+  if (profileId == null) return null;
   Map<String, dynamic>? raw;
   try {
-    if (profileId == null) throw StateError('no active profile');
     final configMap = await globalState.getProfileConfig(profileId);
     final proxies = configMap['proxies'];
     if (proxies is List) {
@@ -54,185 +306,19 @@ Future<void> showNodeDetailsDialog(
   } catch (e) {
     commonPrint.log('showNodeDetailsDialog: $e');
   }
-
-  // 先读覆盖层，再做 mounted 检查：中间不再有 await，context 不会跨异步间隙。
   await NodeOverrideStore.instance.ensureLoaded();
-  if (!context.mounted) return;
+  return raw;
+}
 
-  // 覆盖状态在打开时取一次：这个面板显示的是**叠加之后**的配置，不看一眼
-  // 覆盖层，用户没法知道自己看到的是订阅原样还是自己改过的。
-  final hasOverride = profileId != null &&
-      NodeOverrideStore.instance.hasOverride(profileId, proxyName);
-  final overriddenFields = profileId == null
-      ? const <String>{}
-      : (NodeOverrideStore.instance.overridesFor(profileId, proxyName)?.keys
-              .toSet() ??
-          const <String>{});
-
-  await showDialog(
-    context: context,
-    builder: (ctx) {
-      final colors = Theme.of(ctx).colorScheme;
-      final entries = <MapEntry<String, String>>[];
-      if (raw != null) {
-        for (final e in raw.entries) {
-          if (e.key == 'name') continue;
-          final value = e.value;
-          if (value == null) continue;
-          final text = value is Map || value is List
-              ? value.toString()
-              : value.toString();
-          entries.add(MapEntry(
-            e.key,
-            _isSecret(e.key) ? _mask(text) : text,
-          ));
-        }
-      }
-
-      return GlassAlertDialog(
-        title: Row(
-          children: [
-            Expanded(
-              child: Row(
-                children: [
-                  Flexible(
-                    child: Text(
-                      proxyName,
-                      style: const TextStyle(fontSize: 15),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  if (hasOverride) ...[
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: colors.tertiaryContainer,
-                        borderRadius: BorderRadius.circular(FluxoraRadius.badge),
-                      ),
-                      child: Text(
-                        appLocalizations.nodeDetailModified,
-                        style: TextStyle(
-                          fontSize: FluxoraFontSize.micro,
-                          color: colors.onTertiaryContainer,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            if (raw != null && profileId != null)
-              IconButton(
-                tooltip: appLocalizations.nodeDetailEdit,
-                icon: const Icon(Icons.edit_outlined, size: 18),
-                onPressed: () async {
-                  // 闭包里不会保留 null 提升，取一份非空引用。
-                  final data = raw;
-                  if (data == null) return;
-                  final changed = await showNodeEditDialog(
-                    ctx,
-                    proxyName: proxyName,
-                    profileId: profileId,
-                    raw: data,
-                  );
-                  if (changed && ctx.mounted) {
-                    Navigator.of(ctx).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(appLocalizations.nodeDetailSaved),
-                      ),
-                    );
-                  }
-                },
-              ),
-            IconButton(
-              tooltip: appLocalizations.nodeDetailCopyConfig,
-              icon: const Icon(Icons.copy_all_outlined, size: 18),
-              onPressed: () {
-                final text = raw == null
-                    ? ''
-                    : raw.entries
-                        .map((e) => '${e.key}: ${e.value}')
-                        .join('\n');
-                Clipboard.setData(ClipboardData(text: text));
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  SnackBar(content: Text(appLocalizations.nodeDetailCopied)),
-                );
-              },
-            ),
-          ],
-        ),
-        content: SizedBox(
-          width: 380,
-          child: SingleChildScrollView(
-            child: raw == null
-                ? Text(
-                    appLocalizations.nodeDetailMissing,
-                    style: TextStyle(fontSize: FluxoraFontSize.compact, color: colors.outline),
-                  )
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      for (final e in entries)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 3),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              SizedBox(
-                                width: 96,
-                                child: Text(
-                                  e.key,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: overriddenFields.contains(e.key)
-                                        ? colors.tertiary
-                                        : colors.outline,
-                                    fontWeight: overriddenFields.contains(e.key)
-                                        ? FontWeight.w600
-                                        : FontWeight.w400,
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                child: SelectableText(
-                                  e.value,
-                                  style: const TextStyle(fontSize: 12),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
-          ),
-        ),
-        actions: [
-          if (hasOverride)
-            TextButton(
-              onPressed: () async {
-                await NodeOverrideStore.instance.clear(profileId, proxyName);
-                if (!ctx.mounted) return;
-                Navigator.of(ctx).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(appLocalizations.nodeDetailRestored)),
-                );
-              },
-              child: Text(appLocalizations.nodeDetailRestore),
-            ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(appLocalizations.nodeDetailClose),
-          ),
-        ],
-      );
-    },
-  );
+Object? _displayField(String key, Object? value) {
+  if (_isSecret(key)) return _mask(value.toString());
+  return switch (value) {
+    Map() => value.map(
+      (key, value) => MapEntry(key, _displayField('$key', value)),
+    ),
+    List() => [for (final item in value) _displayField('', item)],
+    _ => value,
+  };
 }
 
 bool _isSecret(String key) {
@@ -248,10 +334,10 @@ bool _isSecret(String key) {
       k == 'auth-str';
 }
 
-/// 只露头尾各两位，中间用点：能认出"是哪个密码"，又不会把整串摆在屏幕上。
+/// 只露头尾各两位，中间用星号：能认出"是哪个密码"，又不会把整串摆在屏幕上。
 String _mask(String value) {
-  if (value.length <= 4) return '••••';
-  return '${value.substring(0, 2)}••••${value.substring(value.length - 2)}';
+  if (value.length <= 4) return '****';
+  return '${value.substring(0, 2)}****${value.substring(value.length - 2)}';
 }
 
 /// 编辑节点参数。

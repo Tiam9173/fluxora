@@ -266,40 +266,34 @@ class Vpn {
     return await methodChannel.invokeMethod<bool>('status') ?? false;
   }
 
-  Future<void> updateNotificationSpeed(
-    String profileName,
-    String speedInfo,
-  ) async {
-    await methodChannel.invokeMethod<void>('updateNotificationSpeed', {
-      'profileName': profileName,
-      'speedInfo': speedInfo,
-    });
-  }
+  Future<void> updateNotificationSpeed(String speedInfo) => methodChannel
+      .invokeMethod<void>('updateNotificationSpeed', {'speedInfo': speedInfo});
 
-  /// Keeps the native notification title in sync with the profile the user is
-  /// actually using. The service isolate has its own Config snapshot, so
-  /// without this the notification keeps showing the profile it was started
-  /// with after a subscription switch.
-  Future<void> setNotificationProfile(String profileName) async {
+  Future<void> setNotificationDetails({
+    required String profileName,
+    String nodeName = '',
+    required bool showProfile,
+    required bool showNode,
+    required bool showSpeed,
+    bool initial = false,
+  }) async {
     try {
-      await methodChannel.invokeMethod<void>('setNotificationProfile', {
+      await methodChannel.invokeMethod<void>('setNotificationDetails', {
         'profileName': profileName,
+        'nodeName': nodeName,
+        'showProfile': showProfile,
+        'showNode': showNode,
+        'showSpeed': showSpeed,
+        'initial': initial,
       });
     } catch (e) {
-      commonPrint.log('setNotificationProfile failed: $e');
+      commonPrint.log('setNotificationDetails failed: $e');
     }
   }
 
-  Future<String?> getNotificationProfileName() async {
-    try {
-      return await methodChannel.invokeMethod<String>(
-        'getNotificationProfileName',
-      );
-    } catch (e) {
-      commonPrint.log('getNotificationProfileName failed: $e');
-      return null;
-    }
-  }
+  Future<bool> getNotificationSpeedEnabled() async =>
+      await methodChannel.invokeMethod<bool>('getNotificationSpeedEnabled') ??
+      false;
 
   void addListener(VpnListener listener) => _listeners.add(listener);
 

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'dart:async';
 import 'dart:ui' as ui;
 import 'package:code_forge/code_forge.dart' show RustLib, CodeForge;
@@ -22,6 +23,7 @@ import 'package:fluxora/views/views.dart'
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/common/brand_icons.dart';
+import 'package:fluxora/common/node_overrides.dart';
 import 'package:fluxora/clash/clash.dart';
 import 'package:fluxora/clash/interface.dart';
 import 'package:fluxora/common/theme.dart';
@@ -48,6 +50,7 @@ import 'package:fluxora/views/dashboard/widgets/traffic_usage.dart';
 import 'package:fluxora/views/dashboard/widgets/start_button.dart';
 import 'package:fluxora/views/tools.dart';
 import 'package:fluxora/views/profiles/profiles.dart';
+import 'package:fluxora/views/other_setting.dart';
 import 'package:fluxora/views/proxies/proxies.dart';
 import 'package:fluxora/views/proxies/list.dart';
 import 'package:fluxora/views/proxies/notification_switch_card.dart';
@@ -168,6 +171,8 @@ void main() {
     );
     SharedPreferences.setMockInitialValues({});
     await preferences.sharedPreferencesCompleter.future;
+    await appPath.getProfilePath('visual-fixture');
+    await NodeOverrideStore.instance.ensureLoaded();
     await AppLocalizations.load(const Locale('zh', 'CN'));
     await (FontLoader(
       'MaterialIcons',
@@ -359,6 +364,146 @@ void main() {
       expect(find.byType(expected), findsOneWidget);
     }
     return container;
+  }
+
+  testWidgets('notification content switches are independent', (tester) async {
+    const node = '东京 · 高速线路 01';
+    final container = await show(
+      tester,
+      size: const Size(360, 760),
+      groups: const [
+        Group(
+          type: GroupType.Selector,
+          name: '节点选择',
+          all: [Proxy(name: node, type: 'VLESS')],
+        ),
+      ],
+    );
+    final route = globalState.navigatorKey.currentState!.push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => const Scaffold(
+          body: SingleChildScrollView(child: NotificationContentSection()),
+        ),
+      ),
+    );
+    unawaited(route);
+    await tester.pumpAndSettle();
+
+    final initial = container.read(notificationDetailsProvider);
+    expect(initial.showProfile, isTrue);
+    expect(initial.showNode, isFalse);
+    expect(initial.showSpeed, isTrue);
+    expect(initial.nodeName, isEmpty);
+    await tester.tap(find.text('通知栏显示当前节点'));
+    await tester.tap(find.text(appLocalizations.networkSpeedNotification));
+    await tester.tap(find.text('通知栏显示订阅'));
+    await tester.pumpAndSettle();
+
+    final selected = container.read(notificationDetailsProvider);
+    expect(selected.showProfile, isFalse);
+    expect(selected.showNode, isTrue);
+    expect(selected.showSpeed, isFalse);
+    expect(selected.nodeName, node);
+    final restored = VpnProps.fromJson(
+      jsonDecode(jsonEncode(container.read(vpnSettingProvider)))
+          as Map<String, dynamic>,
+    );
+    expect(restored.notificationShowProfile, isFalse);
+    expect(restored.notificationShowNode, isTrue);
+    expect(restored.networkSpeedNotification, isFalse);
+    expect(VpnProps.fromJson({}).notificationShowProfile, isTrue);
+    expect(VpnProps.fromJson({}).notificationShowNode, isFalse);
+    await capture(tester, 'notification-content-options');
+
+    container
+        .read(patchClashConfigProvider.notifier)
+        .updateState((s) => s.copyWith(mode: Mode.direct));
+    await tester.pump();
+    expect(container.read(notificationDetailsProvider).nodeName, isEmpty);
+    expect(tester.takeException(), isNull);
+  });
+
+  for (final brightness in Brightness.values) {
+    testWidgets('node details from long press $brightness', (tester) async {
+      const name = '东京 · 高速线路 01';
+      final narrow = brightness == Brightness.light;
+      final container = await show(
+        tester,
+        brightness: brightness,
+        size: narrow ? const Size(340, 690) : const Size(390, 844),
+        textScale: narrow ? 1.2 : 1,
+        page: PageLabel.proxies,
+        reduce: true,
+        surfaceStyle: FluxoraSurfaceStyle.liquid,
+        groups: const [
+          Group(
+            type: GroupType.Selector,
+            name: '节点选择',
+            all: [Proxy(name: name, type: 'VLESS')],
+          ),
+        ],
+      );
+      final url = globalState.appController.getRealTestUrl(
+        container.read(getRealTestUrlProvider()),
+      );
+      container
+          .read(delayDataSourceProvider.notifier)
+          .setDelay(Delay(url: url, name: name, value: 88));
+      final core = clashCore.clashInterface as _VisualCore;
+      core.configRead = Completer<Result>()
+        ..complete(
+          Result.success(<String, dynamic>{
+            'proxies': [
+              {
+                'name': name,
+                'type': 'VLESS',
+                'server': 'edge-routing-tokyo.example.invalid',
+                'port': 443,
+                'tls': true,
+                'reality-opts': {'private-key': 'abcdefghijklmxyz'},
+              },
+            ],
+          }),
+        );
+      addTearDown(() => core.configRead = null);
+      await tester.pumpAndSettle();
+      await tester.longPress(find.text(name));
+      await tester.pump(const Duration(milliseconds: 300));
+      final dialog = find.byType(GlassAlertDialog);
+      expect(dialog, findsOneWidget);
+      final loading = find.descendant(
+        of: dialog,
+        matching: find.byType(LinearProgressIndicator),
+      );
+      for (var i = 0; i < 15 && loading.evaluate().isNotEmpty; i++) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 30)),
+        );
+        await tester.pump();
+      }
+      expect(loading, findsNothing);
+      Finder inDialog(Finder child) =>
+          find.descendant(of: dialog, matching: child);
+      expect(dialog, findsOneWidget);
+      expect(inDialog(find.text('VLESS')), findsOneWidget);
+      expect(inDialog(find.text('88 ms')), findsOneWidget);
+      expect(
+        inDialog(find.text('edge-routing-tokyo.example.invalid')),
+        findsOneWidget,
+      );
+      expect(inDialog(find.text('reality-opts')), findsNothing);
+      await capture(tester, 'node-details-${brightness.name}');
+      await tester.tap(inDialog(find.text(appLocalizations.advancedSettings)));
+      await tester.pumpAndSettle();
+      expect(inDialog(find.text('reality-opts')), findsOneWidget);
+      expect(inDialog(find.textContaining('ab****yz')), findsOneWidget);
+      expect(inDialog(find.textContaining('abcdefghijklmxyz')), findsNothing);
+      await capture(tester, 'node-details-expanded-${brightness.name}');
+      await tester.tap(inDialog(find.text(appLocalizations.nodeDetailClose)));
+      await tester.pumpAndSettle();
+      expect(dialog, findsNothing);
+      expect(tester.takeException(), isNull);
+    });
   }
 
   testWidgets(

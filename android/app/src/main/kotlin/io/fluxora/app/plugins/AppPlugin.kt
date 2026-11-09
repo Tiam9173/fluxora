@@ -249,7 +249,7 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
                         call.argument<String>("style") ?: "official",
                         call.argument<Boolean>("useDarkIcon") ?: false)
                     io.fluxora.app.services.NotificationComponentCache.invalidate()
-                    VpnPlugin.updateNotificationIcon()
+                    VpnPlugin.refreshForegroundNotification()
                     true
                 }.onSuccess { result.success(it) }
                     .onFailure { result.error("ICON_CHANGE_FAILED", it.message, null) }
@@ -260,7 +260,9 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
                     val changed = io.fluxora.app.services.NotificationIconTheme.setStyle(
                         context, call.argument<String>("style") ?: "flow"
                     )
-                    if (changed) VpnPlugin.updateNotificationIcon()
+                    if (changed || io.fluxora.app.services.NotificationIconTheme.postedIconDiffers(context)) {
+                        VpnPlugin.refreshForegroundNotification()
+                    }
                     true
                 }.onSuccess { result.success(it) }
                     .onFailure { result.error("NOTIFICATION_ICON_FAILED", it.message, null) }
@@ -273,7 +275,7 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
             "setNotificationDarkIcon" -> {
                 io.fluxora.app.services.NotificationIconTheme.isDark =
                     call.argument<Boolean>("isDark") ?: false
-                VpnPlugin.updateNotificationIcon()
+                VpnPlugin.refreshForegroundNotification()
                 result.success(true)
             }
             "hasPackageListPermission" -> {

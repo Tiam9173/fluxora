@@ -149,6 +149,7 @@ class FluxoraProxyTile extends StatelessWidget {
                     alignment: AlignmentDirectional.topStart,
                     child: Tooltip(
                       message: name,
+                      triggerMode: TooltipTriggerMode.manual,
                       child: EmojiText(
                         name,
                         maxLines: nameMaxLines,

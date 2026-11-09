@@ -285,6 +285,8 @@ abstract class VpnProps with _$VpnProps {
     @Default(false) bool disableQuic,
     @Default(false) bool highPriorityNotification,
     @Default(true) bool networkSpeedNotification,
+    @Default(true) bool notificationShowProfile,
+    @Default(false) bool notificationShowNode,
     @Default(false) bool excludeChina,
 
     /// item 6 (Bettbox 1.19.3) — reject loopback traffic aimed at our own
