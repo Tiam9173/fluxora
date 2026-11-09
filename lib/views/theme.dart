@@ -527,23 +527,31 @@ class _GlassPreviewState extends State<_GlassPreview> {
                   ),
                 ),
               ),
-              for (var index = 0; index < 10; index++)
+              for (var index = 0; index < 5; index++)
                 Positioned(
-                  left: index * constraints.maxWidth / 9,
-                  top: 0,
-                  bottom: 0,
-                  child: ColoredBox(
-                    color: context.colorScheme.onSurface.withValues(alpha: .32),
-                    child: const SizedBox(width: 2),
+                  left: constraints.maxWidth * (index + 1) / 6,
+                  top: -24,
+                  bottom: -24,
+                  child: Transform.rotate(
+                    angle: .32,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                          colors: [
+                            Colors.white.withValues(alpha: .05),
+                            Colors.white.withValues(
+                              alpha: index.isEven ? .42 : .22,
+                            ),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: SizedBox(width: index.isEven ? 13 : 22),
+                    ),
                   ),
                 ),
-              Align(
-                alignment: Alignment.topLeft,
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Text('FLUX / 01', style: context.textTheme.labelSmall),
-                ),
-              ),
               Positioned(
                 left: travel * _position,
                 top: 32,

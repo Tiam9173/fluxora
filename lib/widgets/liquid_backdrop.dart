@@ -78,8 +78,8 @@ class _LiquidBackdropState extends State<LiquidBackdrop> {
               alpha: _shader != null
                   ? (dark ? .30 : .38) - .22 * widget.clarity
                   : (dark
-                        ? .84 - .06 * widget.clarity
-                        : .80 - .10 * widget.clarity),
+                        ? .76 - .12 * widget.clarity
+                        : .79 - .20 * widget.clarity),
             ),
           ),
           child: widget.child,
@@ -180,38 +180,23 @@ class _RenderLensFilter extends RenderBackdropFilter {
 
   void _updateFilter() {
     final effect = shader;
-    final sigma = 1.5 + 8 * (1 - clarity);
-    final blur = ui.ImageFilter.blur(sigmaX: sigma, sigmaY: sigma);
-    if (effect != null && !size.isEmpty) {
-      effect
-        ..setFloat(2, size.width)
-        ..setFloat(3, size.height)
-        ..setFloat(4, radius)
-        ..setFloat(5, strength)
-        ..setFloat(6, scheme.brightness == Brightness.dark ? 1 : 0)
-        ..setFloat(7, scheme.surface.r)
-        ..setFloat(8, scheme.surface.g)
-        ..setFloat(9, scheme.surface.b)
-        ..setFloat(10, clarity);
-      filter = ui.ImageFilter.compose(
-        outer: ui.ImageFilter.shader(effect),
-        inner: blur,
-      );
-    } else {
-      final center = size.center(Offset.zero);
-      final magnification = 1 + .035 * strength;
-      final matrix = Matrix4.identity()
-        ..translateByDouble(center.dx, center.dy, 0, 1)
-        ..scaleByDouble(magnification, magnification, 1, 1)
-        ..translateByDouble(-center.dx, -center.dy, 0, 1);
-      filter = ui.ImageFilter.compose(
-        outer: ui.ImageFilter.matrix(
-          matrix.storage,
-          filterQuality: FilterQuality.medium,
-        ),
-        inner: blur,
-      );
+    if (effect == null || size.isEmpty) {
+      final sigma = 2 + 8 * (1 - clarity) + 2 * strength;
+      filter = ui.ImageFilter.blur(sigmaX: sigma, sigmaY: sigma);
+      return;
     }
+    effect
+      ..setFloat(2, size.width)
+      ..setFloat(3, size.height)
+      ..setFloat(4, radius)
+      ..setFloat(5, strength)
+      ..setFloat(6, scheme.brightness == Brightness.dark ? 1 : 0)
+      ..setFloat(7, scheme.surface.r)
+      ..setFloat(8, scheme.surface.g)
+      ..setFloat(9, scheme.surface.b)
+      ..setFloat(10, clarity);
+    // A preceding blur can change the shader input bounds on Impeller.
+    filter = ui.ImageFilter.shader(effect);
   }
 }
 
@@ -232,13 +217,13 @@ class _GlassRim extends CustomPainter {
       shape,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = dark ? 1.4 : 1.6
+        ..strokeWidth = dark ? 1.0 : 1.25
         ..shader = LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: dark
               ? [
-                  Colors.white.withValues(alpha: .48 + .18 * strength),
+                  Colors.white.withValues(alpha: .34 + .16 * strength),
                   const Color(0xFF8EA8FA).withValues(alpha: .12),
                   Colors.white.withValues(alpha: .08),
                 ]
@@ -257,12 +242,12 @@ class _GlassRim extends CustomPainter {
       shape.deflate(1.8),
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1 + pressure
+        ..strokeWidth = .65 + pressure
         ..shader = ui.Gradient.radial(
           focus,
           size.shortestSide * (1.3 + pressure),
           [
-            Colors.white.withValues(alpha: (dark ? .25 : .55) + pressure * .3),
+            Colors.white.withValues(alpha: (dark ? .16 : .40) + pressure * .3),
             Colors.white.withValues(alpha: 0),
           ],
         ),

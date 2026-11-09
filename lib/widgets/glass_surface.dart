@@ -75,15 +75,13 @@ class GlassSurface extends StatelessWidget {
       surface = ClipRRect(
         borderRadius: rounded,
         child: material.liquid
-            ? ClipRect(
-                child: LiquidBackdrop(
-                  radius: radius,
-                  strength: material.strength,
-                  clarity: readable
-                      ? material.clarity.clamp(0, .35)
-                      : material.clarity,
-                  child: surface,
-                ),
+            ? LiquidBackdrop(
+                radius: radius,
+                strength: material.strength,
+                clarity: readable
+                    ? material.clarity.clamp(0, .35)
+                    : material.clarity,
+                child: surface,
               )
             : BackdropFilter(
                 filter: ui.ImageFilter.blur(

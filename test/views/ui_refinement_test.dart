@@ -1333,6 +1333,49 @@ void main() {
   });
 
   for (final brightness in Brightness.values) {
+    testWidgets('overflowing group tabs leave room for picker $brightness', (
+      tester,
+    ) async {
+      final groups = [
+        for (var i = 0; i < 7; i++)
+          Group(
+            name: '策略组 $i',
+            type: GroupType.Selector,
+            all: [Proxy(name: '节点 $i', type: 'VLESS')],
+          ),
+      ];
+      await show(
+        tester,
+        size: const Size(340, 760),
+        brightness: brightness,
+        page: PageLabel.proxies,
+        groups: groups,
+        surfaceStyle: FluxoraSurfaceStyle.liquid,
+      );
+      await tester.pumpAndSettle();
+      final picker = find.byKey(const ValueKey('proxy-group-picker'));
+      final tabs = find.byType(TabBar);
+      expect(picker, findsOneWidget);
+      expect(
+        tester.getRect(tabs).right,
+        lessThanOrEqualTo(tester.getRect(picker).left),
+      );
+      await capture(tester, 'proxy-group-picker-${brightness.name}');
+      await tester.tap(picker);
+      await tester.pumpAndSettle();
+      final sheet = find.byType(AdaptiveSheetScaffold);
+      final lastGroup = find.descendant(
+        of: sheet,
+        matching: find.text(groups.last.name),
+      );
+      await tester.tap(lastGroup);
+      await tester.pumpAndSettle();
+      expect(find.text('节点 6'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  for (final brightness in Brightness.values) {
     testWidgets(
       'liquid material preview is visible, draggable and can be disabled $brightness',
       (tester) async {
@@ -1374,6 +1417,18 @@ void main() {
         await tester.pumpAndSettle();
         expect(tester.getCenter(glass).dx, greaterThan(before));
         await capture(tester, 'liquid-theme-dragged-${brightness.name}');
+        final scroll = find
+            .ancestor(of: preview, matching: find.byType(Scrollable))
+            .first;
+        final position = tester.state<ScrollableState>(scroll).position;
+        final viewportTop = tester.getTopLeft(scroll).dy;
+        position.jumpTo(
+          position.pixels + tester.getTopLeft(preview).dy - viewportTop + 58,
+        );
+        await tester.pumpAndSettle();
+        expect(tester.getTopLeft(preview).dy, lessThan(viewportTop));
+        expect(tester.getBottomLeft(preview).dy, greaterThan(viewportTop));
+        await capture(tester, 'liquid-theme-clipped-${brightness.name}');
         final classic = find.byKey(const ValueKey('surface-style-classic'));
         await tester.ensureVisible(classic);
         await tester.tap(classic);

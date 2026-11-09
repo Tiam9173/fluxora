@@ -64,6 +64,7 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
   @override
   void dispose() {
     _destroyTabController();
+    _hasMoreButtonNotifier.dispose();
     super.dispose();
   }
 
@@ -87,6 +88,8 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
       builder: (_, ref, _) {
         final isMobileView = ref.watch(isMobileViewProvider);
         return IconButton(
+          key: const ValueKey('proxy-group-picker'),
+          tooltip: appLocalizations.proxyGroup,
           onPressed: _showMoreMenu,
           icon: isMobileView
               ? const Icon(Icons.expand_more)
@@ -357,101 +360,80 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
       children: [
         NotificationListener<ScrollMetricsNotification>(
           onNotification: (scrollNotification) {
+            final reserved = _hasMoreButtonNotifier.value ? 48.0 : 0.0;
             _hasMoreButtonNotifier.value =
-                scrollNotification.metrics.maxScrollExtent > 0;
+                scrollNotification.metrics.maxScrollExtent > reserved + .5;
             return false;
           },
           child: ValueListenableBuilder(
             valueListenable: _hasMoreButtonNotifier,
             builder: (_, value, child) {
-              return Stack(
-                alignment: AlignmentDirectional.centerStart,
+              return Row(
                 children: [
-                  TabBar(
-                    controller: _tabController,
-                    // `TabBar` calls `animateTo` before `onTap`, so the index has
-                    // already moved by the time this runs; the guard only covers
-                    // the case where the page cannot follow — see
-                    // `_snapPageIfTheControllerCannotFollow`.
-                    onTap: (_) => _snapPageIfTheControllerCannotFollow(),
-                    // The switch duration comes from the controller
-                    // (`_switchDuration`), so reduced motion is handled there and
-                    // both the strip and the page move together.
-                    padding: EdgeInsets.only(
-                      left: 16,
-                      right: globalState.isAndroidTV ? 48 : (value ? 48 : 0),
-                    ),
-                    dividerColor: Colors.transparent,
-                    isScrollable: true,
-                    tabAlignment: TabAlignment.start,
-                    overlayColor: globalState.isAndroidTV
-                        ? null
-                        : const WidgetStatePropertyAll(Colors.transparent),
-                    indicator: globalState.isAndroidTV
-                        ? BoxDecoration(
-                            color: context.colorScheme.primaryContainer,
-                            borderRadius: BorderRadius.circular(
-                              FluxoraRadius.sm,
-                            ),
-                          )
-                        : null,
-                    indicatorColor: globalState.isAndroidTV
-                        ? Colors.transparent
-                        : context.colorScheme.primary,
-                    labelColor: globalState.isAndroidTV
-                        ? context.colorScheme.onPrimaryContainer
-                        : context.colorScheme.primary,
-                    unselectedLabelColor: context.colorScheme.onSurfaceVariant,
-                    tabs: [
-                      for (final group in groups)
-                        Tab(
-                          height: 56,
-                          child: Padding(
-                            padding: globalState.isAndroidTV
-                                ? const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
-                                  )
-                                : EdgeInsets.zero,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                EmojiText(group.name),
-                                if (group.type.isComputedSelected)
-                                  GroupSelectionControl(group: group),
-                              ],
+                  Expanded(
+                    child: TabBar(
+                      controller: _tabController,
+                      // `TabBar` calls `animateTo` before `onTap`, so the index has
+                      // already moved by the time this runs; the guard only covers
+                      // the case where the page cannot follow — see
+                      // `_snapPageIfTheControllerCannotFollow`.
+                      onTap: (_) => _snapPageIfTheControllerCannotFollow(),
+                      // The switch duration comes from the controller
+                      // (`_switchDuration`), so reduced motion is handled there and
+                      // both the strip and the page move together.
+                      padding: const EdgeInsetsDirectional.only(start: 16),
+                      dividerColor: Colors.transparent,
+                      isScrollable: true,
+                      tabAlignment: TabAlignment.start,
+                      overlayColor: globalState.isAndroidTV
+                          ? null
+                          : const WidgetStatePropertyAll(Colors.transparent),
+                      indicator: globalState.isAndroidTV
+                          ? BoxDecoration(
+                              color: context.colorScheme.primaryContainer,
+                              borderRadius: BorderRadius.circular(
+                                FluxoraRadius.sm,
+                              ),
+                            )
+                          : null,
+                      indicatorColor: globalState.isAndroidTV
+                          ? Colors.transparent
+                          : context.colorScheme.primary,
+                      labelColor: globalState.isAndroidTV
+                          ? context.colorScheme.onPrimaryContainer
+                          : context.colorScheme.primary,
+                      unselectedLabelColor:
+                          context.colorScheme.onSurfaceVariant,
+                      tabs: [
+                        for (final group in groups)
+                          Tab(
+                            height: 56,
+                            child: Padding(
+                              padding: globalState.isAndroidTV
+                                  ? const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    )
+                                  : EdgeInsets.zero,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  EmojiText(group.name),
+                                  if (group.type.isComputedSelected)
+                                    GroupSelectionControl(group: group),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
-                  if (globalState.isAndroidTV)
-                    Positioned(
-                      right: 0,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [_buildDelayTestButton(), if (value) child!],
-                      ),
-                    )
-                  else if (value)
-                    Positioned(right: 0, child: child!),
+                  if (globalState.isAndroidTV) _buildDelayTestButton(),
+                  if (value) child!,
                 ],
               );
             },
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: [
-                    context.colorScheme.surface.opacity10,
-                    context.colorScheme.surface,
-                  ],
-                  stops: const [0.0, 0.1],
-                ),
-              ),
-              child: _buildMoreButton(),
-            ),
+            child: SizedBox(width: 48, child: _buildMoreButton()),
           ),
         ),
         Expanded(
