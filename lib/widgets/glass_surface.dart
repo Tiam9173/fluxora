@@ -13,6 +13,7 @@ class GlassSurface extends StatelessWidget {
     this.floating = false,
     this.blur = false,
     this.border = true,
+    this.readable = false,
   });
 
   final Widget child;
@@ -20,6 +21,7 @@ class GlassSurface extends StatelessWidget {
   final bool floating;
   final bool blur;
   final bool border;
+  final bool readable;
 
   @override
   Widget build(BuildContext context) {
@@ -29,12 +31,18 @@ class GlassSurface extends StatelessWidget {
     final rounded = BorderRadius.circular(radius);
     final hasBlur = _GlassBlurScope.maybeOf(context);
     final useBlur = blur && material.blurEnabled && !hasBlur;
-    final panel = material.isObsidian && material.blurEnabled && !useBlur;
+    final fill = material.fill(scheme, floating: floating);
+    final panel =
+        (material.isObsidian || material.liquid) &&
+        material.blurEnabled &&
+        !useBlur;
     Widget surface = DecoratedBox(
       decoration: BoxDecoration(
         color: material.liquid && useBlur
             ? Colors.transparent
-            : material.fill(scheme, floating: floating),
+            : useBlur
+            ? fill.withValues(alpha: .83 - .12 * material.strength)
+            : fill,
         borderRadius: rounded,
         // A shadow inside the lens darkens its transparent centre into grey.
         boxShadow: floating && material.blurEnabled && !useBlur
@@ -50,7 +58,9 @@ class GlassSurface extends StatelessWidget {
               ? material.sheen(scheme)
               : null,
           borderRadius: rounded,
-          border: border ? Border.all(color: material.border(scheme)) : null,
+          border: border && !(material.liquid && useBlur)
+              ? Border.all(color: material.border(scheme))
+              : null,
         ),
         child: _GlassBlurScope(hasBlur: hasBlur || useBlur, child: child),
       ),
@@ -69,7 +79,9 @@ class GlassSurface extends StatelessWidget {
                 child: LiquidBackdrop(
                   radius: radius,
                   strength: material.strength,
-                  clarity: material.clarity,
+                  clarity: readable
+                      ? material.clarity.clamp(0, .35)
+                      : material.clarity,
                   child: surface,
                 ),
               )

@@ -168,7 +168,7 @@ class CommonCard extends StatelessWidget {
   Color? getBackgroundColor(BuildContext context, Set<WidgetState> states) {
     final colorScheme = context.colorScheme;
     final material = FluxoraMaterial.of(context);
-    if (material.isObsidian && material.blurEnabled) {
+    if ((material.isObsidian || material.liquid) && material.blurEnabled) {
       return isSelected
           ? colorScheme.primary.withValues(alpha: .12)
           : Colors.transparent;
@@ -245,7 +245,9 @@ class CommonCard extends StatelessWidget {
       child: childWidget,
     );
     if (material.enabled &&
-        (type != CommonCardType.filled || material.isObsidian)) {
+        (type != CommonCardType.filled ||
+            material.isObsidian ||
+            material.liquid)) {
       card = GlassSurface(radius: actualRadius, border: false, child: card);
     }
 

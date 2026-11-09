@@ -81,6 +81,7 @@ void main() {
     Size size = const Size(390, 844),
     double textScale = 1,
     Brightness brightness = Brightness.dark,
+    FluxoraVisualStyle visualStyle = FluxoraVisualStyle.fluxora,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
@@ -108,6 +109,7 @@ void main() {
                 ),
               ),
               FluxoraSurfaceStyle.hybrid,
+              visualStyle: visualStyle,
             ),
             builder: (context, child) => MediaQuery(
               data: MediaQuery.of(
@@ -192,6 +194,33 @@ void main() {
       },
     );
   }
+
+  testWidgets(
+    'Obsidian speed panel clips button sheen and only offers real results',
+    (tester) async {
+      await show(tester, visualStyle: FluxoraVisualStyle.obsidian);
+      final start = find.byKey(const ValueKey('speed-test-start'));
+      final sheen = find.descendant(
+        of: start,
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is DecoratedBox &&
+              widget.decoration is ShapeDecoration &&
+              (widget.decoration as ShapeDecoration).shape is StadiumBorder,
+        ),
+      );
+      expect(sheen, findsOneWidget);
+      expect(find.text(appLocalizations.stCopy), findsNothing);
+      await capture(tester, 'obsidian-idle');
+      await tester.tap(start);
+      await tester.pump();
+      core.frame = {'phase': 'done', 'downMbps': 86.4, 'latencyMs': 42};
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+      expect(find.text(appLocalizations.stCopy), findsOneWidget);
+      await capture(tester, 'obsidian-results');
+    },
+  );
 
   testWidgets(
     'reopened running test polls serially and rolling chart keeps increasing',

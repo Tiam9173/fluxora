@@ -6,7 +6,6 @@ import 'package:fluxora/common/common.dart';
 import 'package:fluxora/controller.dart';
 import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/models/models.dart';
-import 'package:fluxora/providers/config.dart';
 import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
 
@@ -62,6 +61,37 @@ void main() {
   /// Node `n<i>` gets latency `(i * 7) % 400 + 3` — a non-monotonic mapping, so
   /// a list that is merely "already in order" cannot pass by accident.
   int latencyOf(int i) => (i * 7) % 400 + 3;
+
+  testWidgets(
+    'startup timeouts preserve known latency until a reliable update',
+    (tester) async {
+      await pump(tester);
+      final savedStart = globalState.startTime;
+      addTearDown(() => globalState.startTime = savedStart);
+      globalState.startTime = DateTime.now();
+      final measured = Delay(url: testUrl, name: 'n0', value: 42);
+      final timeout = measured.copyWith(value: -1);
+      int? latency() => ref.read(delayDataSourceProvider)[testUrl]?['n0'];
+
+      controller.setDelay(measured);
+      controller.setDelay(timeout, background: true);
+      controller.setDelay(timeout, startup: true);
+      expect(latency(), 42);
+      controller.setDelay(timeout.copyWith(name: 'n1'), background: true);
+      expect(ref.read(delayDataSourceProvider)[testUrl]?['n1'], -1);
+      controller.setDelay(measured.copyWith(value: 68), background: true);
+      expect(latency(), 68);
+      controller.setDelay(timeout);
+      expect(latency(), -1);
+
+      controller.setDelay(measured);
+      globalState.startTime = DateTime.now().subtract(
+        const Duration(minutes: 1),
+      );
+      controller.setDelay(timeout, background: true);
+      expect(latency(), -1);
+    },
+  );
 
   Future<List<String>> sortedNames(WidgetTester tester, int count) async {
     await pump(tester);

@@ -3,6 +3,7 @@ import 'package:fluxora/common/common.dart';
 import 'package:fluxora/plugins/app.dart';
 import 'package:fluxora/providers/config.dart';
 import 'package:fluxora/state.dart';
+import 'package:fluxora/widgets/app_brand_icon.dart';
 import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -21,15 +22,14 @@ class AppIconsItem extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final props = ref.watch(themeSettingProvider);
+    final hasCustom = ref.watch(customAppIconProvider).asData?.value != null;
     return ListTile(
-      leading: Image.asset(
-        BrandIcons.asset(props.appIconStyle, props.useDarkIcon),
-        width: 40,
-        height: 40,
-      ),
+      leading: const AppBrandIcon(size: 40),
       title: Text(appIconsTitle(context)),
       subtitle: Text(
-        BrandIcons.label(props.appIconStyle, chinese: _chinese(context)),
+        hasCustom
+            ? (_chinese(context) ? '自定义' : 'Custom')
+            : BrandIcons.label(props.appIconStyle, chinese: _chinese(context)),
       ),
       trailing: const Icon(Icons.chevron_right),
       onTap: () => showExtend(
@@ -55,6 +55,7 @@ class _AppIconsViewState extends ConsumerState<AppIconsView> {
   late String _style;
   late bool _dark;
   bool _busy = false;
+  bool _customBusy = false;
   bool _systemKnown = !system.isAndroid;
   String? _error;
 
@@ -156,11 +157,33 @@ class _AppIconsViewState extends ConsumerState<AppIconsView> {
     }
   }
 
+  Future<void> _editCustomIcon({bool remove = false}) async {
+    setState(() => _customBusy = true);
+    final controller = ref.read(customAppIconProvider.notifier);
+    try {
+      await (remove ? controller.clear() : controller.pick());
+    } catch (_) {
+      if (mounted) {
+        context.showNotifier(
+          _chinese(context)
+              ? (remove ? '无法移除图标' : '无法导入图标，请选择 2 MB 以内的图片')
+              : (remove
+                    ? 'Could not remove the icon'
+                    : 'Choose a readable image under 2 MB'),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _customBusy = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final chinese = _chinese(context);
     String tr(String zh, String en) => chinese ? zh : en;
     final props = ref.watch(themeSettingProvider);
+    final custom = ref.watch(customAppIconProvider);
+    final hasCustom = custom.asData?.value != null;
     final scheme = Theme.of(context).colorScheme;
     final currentStyle = BrandIcons.normalize(props.appIconStyle);
     final changed = currentStyle != _style || props.useDarkIcon != _dark;
@@ -170,6 +193,62 @@ class _AppIconsViewState extends ConsumerState<AppIconsView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          CommonCard(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const AppBrandIcon(size: 42),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          tr('自定义应用内图标', 'Custom in-app icon'),
+                          style: context.textTheme.titleMedium,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    tr(
+                      '用于关于、主题预览及桌面侧栏。',
+                      'Shown in About, theme previews and the desktop sidebar.',
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      OutlinedButton.icon(
+                        key: const ValueKey('import-app-icon'),
+                        onPressed: _customBusy || custom.isLoading
+                            ? null
+                            : _editCustomIcon,
+                        icon: const Icon(Icons.add_photo_alternate_outlined),
+                        label: Text(
+                          hasCustom
+                              ? tr('更换图片', 'Replace image')
+                              : tr('导入图片', 'Import image'),
+                        ),
+                      ),
+                      if (hasCustom)
+                        TextButton(
+                          key: const ValueKey('remove-app-icon'),
+                          onPressed: _customBusy
+                              ? null
+                              : () => _editCustomIcon(remove: true),
+                          child: Text(tr('恢复预设', 'Use preset')),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
           Text(
             '${_systemKnown ? tr('当前', 'Current') : tr('上次保存', 'Last saved')}: ${BrandIcons.label(currentStyle, chinese: chinese)} · $mode',
             style: Theme.of(context).textTheme.titleMedium,

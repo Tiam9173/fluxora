@@ -90,7 +90,11 @@ double getItemHeight(ProxyCardType proxyCardType) {
   };
 }
 
-Future<void> proxyDelayTest(Proxy proxy, [String? testUrl]) async {
+Future<void> proxyDelayTest(
+  Proxy proxy, {
+  String? testUrl,
+  bool startup = false,
+}) async {
   if (_isNonTestableProxy(proxy)) return;
   try {
     final appController = globalState.appController;
@@ -101,27 +105,33 @@ Future<void> proxyDelayTest(Proxy proxy, [String? testUrl]) async {
     if (state.proxyName.isEmpty) {
       return;
     }
-    await _testProxyDelay(DelayTestTarget(name: state.proxyName, url: url));
+    await _testProxyDelay(
+      DelayTestTarget(name: state.proxyName, url: url),
+      startup: startup,
+    );
     appController.addSortNum();
   } catch (e) {
     commonPrint.log('proxyDelayTest failed for ${proxy.name}: $e');
   }
 }
 
-Future<Delay> _testProxyDelay(DelayTestTarget target) {
-  return _delayTestRequestPool.run(target, () async {
-    final appController = globalState.appController;
+Future<void> _testProxyDelay(
+  DelayTestTarget target, {
+  bool startup = false,
+}) async {
+  final appController = globalState.appController;
+  if (!startup) {
     appController.setDelay(Delay(url: target.url, name: target.name, value: 0));
+  }
+  final delay = await _delayTestRequestPool.run(target, () async {
     try {
       final delay = await clashCore.getDelay(target.url, target.name);
-      appController.setDelay(delay);
-      return delay;
+      return delay.copyWith(url: target.url, name: target.name);
     } catch (e) {
-      final failDelay = Delay(url: target.url, name: target.name, value: -1);
-      appController.setDelay(failDelay);
-      return failDelay;
+      return Delay(url: target.url, name: target.name, value: -1);
     }
   });
+  appController.setDelay(delay, startup: startup);
 }
 
 /// B4: delegates to the single shared rule ([ChainProxyConfig.isSelectableProxy])

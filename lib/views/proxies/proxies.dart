@@ -5,7 +5,6 @@ import 'package:fluxora/models/config.dart';
 import 'package:fluxora/models/widget.dart';
 import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
-import 'package:fluxora/views/proxies/notification_switch_card.dart';
 import 'package:fluxora/views/proxies/list.dart';
 import 'package:fluxora/views/proxies/providers.dart';
 import 'package:fluxora/widgets/widgets.dart';
@@ -49,7 +48,7 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
   bool _hasProviders = false;
   bool _isTab = false;
 
-  List<Widget> _buildActions() {
+  List<Widget> _buildActions({required bool hasGroups}) {
     final chinese = Localizations.localeOf(context).languageCode == 'zh';
     final showHiddenItems = ref.watch(
       proxiesStyleSettingProvider.select((state) => state.showHiddenItems),
@@ -67,17 +66,10 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
     );
     final hasScriptCustom = scriptOn && compatible && profileOverride;
     final hasGroupCustom =
-        !hasScriptCustom && ref.read(currentProfileIdProvider) != null;
+        !hasScriptCustom && ref.watch(currentProfileIdProvider) != null;
     final hasCustom = hasScriptCustom || hasGroupCustom;
     return [
-      IconButton(
-        icon: const Icon(Icons.folder_open_outlined),
-        tooltip:
-            ref.watch(currentProfileProvider)?.label ??
-            appLocalizations.profiles,
-        onPressed: () => globalState.appController.toPage(PageLabel.profiles),
-      ),
-      if (_isTab)
+      if (hasGroups && _isTab)
         IconButton(
           onPressed: () {
             _proxiesTabKey.currentState?.scrollToGroupSelected();
@@ -103,15 +95,6 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
         },
         popup: CommonPopupMenu(
           items: [
-            // The compact switch card is what the notification's switch button
-            // opens; reachable here too so it does not depend on the OS
-            // notification being present (and so it can be used on desktop).
-            PopupMenuItemData(
-              icon: Icons.swap_horiz_rounded,
-              label: appLocalizations.switchProxy,
-              section: chinese ? '节点操作' : 'Node controls',
-              onPressed: () => showNotificationSwitchCard(context),
-            ),
             PopupMenuItemData(
               icon: Icons.tune,
               label: appLocalizations.settings,
@@ -159,32 +142,35 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
                 );
               },
             ),
-            PopupMenuItemData(
-              icon: showHiddenItems
-                  ? Icons.radio_button_checked
-                  : Icons.radio_button_unchecked,
-              label: appLocalizations.showHiddenItems,
-              onPressed: () {
-                ref
+            if (hasGroups || showHiddenItems)
+              PopupMenuItemData(
+                icon: showHiddenItems
+                    ? Icons.radio_button_checked
+                    : Icons.radio_button_unchecked,
+                label: appLocalizations.showHiddenItems,
+                onPressed: () {
+                  ref
+                      .read(proxiesStyleSettingProvider.notifier)
+                      .updateState(
+                        (state) =>
+                            state.copyWith(showHiddenItems: !showHiddenItems),
+                      );
+                },
+              ),
+            if (hasGroups ||
+                ref.watch(proxiesStyleSettingProvider).hideTimeoutProxies)
+              PopupMenuItemData(
+                icon: ref.watch(proxiesStyleSettingProvider).hideTimeoutProxies
+                    ? Icons.filter_alt_rounded
+                    : Icons.filter_alt_outlined,
+                label: appLocalizations.hideTimeoutProxies,
+                onPressed: () => ref
                     .read(proxiesStyleSettingProvider.notifier)
                     .updateState(
-                      (state) =>
-                          state.copyWith(showHiddenItems: !showHiddenItems),
-                    );
-              },
-            ),
-            PopupMenuItemData(
-              icon: ref.watch(proxiesStyleSettingProvider).hideTimeoutProxies
-                  ? Icons.filter_alt_rounded
-                  : Icons.filter_alt_outlined,
-              label: appLocalizations.hideTimeoutProxies,
-              onPressed: () => ref
-                  .read(proxiesStyleSettingProvider.notifier)
-                  .updateState(
-                    (s) =>
-                        s.copyWith(hideTimeoutProxies: !s.hideTimeoutProxies),
-                  ),
-            ),
+                      (s) =>
+                          s.copyWith(hideTimeoutProxies: !s.hideTimeoutProxies),
+                    ),
+              ),
             PopupMenuItemData(
               icon: Icons.alt_route,
               label: appLocalizations.chainProxy,
@@ -330,12 +316,13 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
       groupsProvider.select((state) => state.isNotEmpty),
     );
     ref.watch(appSettingProvider.select((state) => state.locale));
+    final applying = ref.watch(isRestartingCoreProvider);
     return CommonScaffold(
-      floatingActionButton: _buildFAB(),
-      actions: _buildActions(),
+      floatingActionButton: hasGroups && !applying ? _buildFAB() : null,
+      actions: _buildActions(hasGroups: hasGroups && !applying),
       title: appLocalizations.proxies,
       searchState: AppBarSearchState(onSearch: _onSearch),
-      body: ref.watch(isRestartingCoreProvider)
+      body: applying
           ? Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,

@@ -8,6 +8,7 @@ import 'scaffold.dart';
 import 'side_sheet.dart';
 import 'text.dart';
 import 'pop_scope.dart';
+import 'glass_surface.dart';
 
 @immutable
 class SheetProps {
@@ -53,12 +54,23 @@ Future<T?> showSheet<T>({
   SheetProps props = const SheetProps(),
 }) {
   final isMobile = globalState.appState.viewMode == ViewMode.mobile;
+  final material = FluxoraMaterial.of(context);
   return switch (isMobile) {
     true => showModalBottomSheet<T>(
       context: context,
       isScrollControlled: props.isScrollControlled,
+      backgroundColor: material.liquid ? Colors.transparent : null,
       builder: (_) {
-        return SafeArea(child: builder(context, SheetType.bottomSheet));
+        final child = SafeArea(child: builder(context, SheetType.bottomSheet));
+        return material.liquid
+            ? GlassSurface(
+                radius: FluxoraRadius.sheet,
+                blur: true,
+                floating: true,
+                readable: true,
+                child: Material(type: MaterialType.transparency, child: child),
+              )
+            : child;
       },
       sheetAnimationStyle: AnimationStyle(
         duration: FluxoraMotion.ofContext(context).base,
@@ -75,7 +87,8 @@ Future<T?> showSheet<T>({
       constraints: BoxConstraints(maxWidth: props.maxWidth ?? 360),
       filter:
           props.blur &&
-              FluxoraMaterial.of(context).style != FluxoraSurfaceStyle.reduced
+              !material.liquid &&
+              material.style != FluxoraSurfaceStyle.reduced
           ? commonFilter
           : null,
       builder: (_) {
@@ -91,6 +104,7 @@ Future<T?> showExtend<T>(
   ExtendProps props = const ExtendProps(),
 }) {
   final isMobile = globalState.appState.viewMode == ViewMode.mobile;
+  final material = FluxoraMaterial.of(context);
   return switch (isMobile || props.forceFull) {
     true => BaseNavigator.push(context, builder(context, SheetType.page)),
     false => showModalSideSheet<T>(
@@ -99,7 +113,8 @@ Future<T?> showExtend<T>(
       constraints: BoxConstraints(maxWidth: props.maxWidth ?? 360),
       filter:
           props.blur &&
-              FluxoraMaterial.of(context).style != FluxoraSurfaceStyle.reduced
+              !material.liquid &&
+              material.style != FluxoraSurfaceStyle.reduced
           ? commonFilter
           : null,
       builder: (context) {
@@ -126,7 +141,10 @@ class AdaptiveSheetScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final material = FluxoraMaterial.of(context);
-    final backgroundColor = material.isObsidian
+    final glassOverlay = material.liquid && type != SheetType.page;
+    final backgroundColor = glassOverlay
+        ? Colors.transparent
+        : material.isObsidian
         ? context.colorScheme.surface
         : material.enabled
         ? material.fill(context.colorScheme, floating: true)
@@ -134,7 +152,7 @@ class AdaptiveSheetScaffold extends StatelessWidget {
     final bottomSheet = type == SheetType.bottomSheet;
     final sideSheet = type == SheetType.sideSheet;
     final appBar = AppBar(
-      forceMaterialTransparency: bottomSheet ? true : false,
+      forceMaterialTransparency: bottomSheet || glassOverlay,
       automaticallyImplyLeading: bottomSheet
           ? false
           : actions.isEmpty && sideSheet

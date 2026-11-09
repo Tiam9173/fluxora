@@ -115,7 +115,12 @@ class _SideSheetState extends State<SideSheet> {
           : GlassSurface(
               radius: 0,
               floating: true,
-              child: widget.builder(context),
+              blur: material.liquid,
+              readable: true,
+              child: Material(
+                type: MaterialType.transparency,
+                child: widget.builder(context),
+              ),
             ),
     );
 
@@ -559,7 +564,11 @@ class ModalSideSheetRoute<T> extends PopupRoute<T> {
           final colorScheme = Theme.of(context).colorScheme;
           return _ModalSideSheet<T>(
             route: this,
-            backgroundColor: backgroundColor ?? colorScheme.surface,
+            backgroundColor:
+                backgroundColor ??
+                (FluxoraMaterial.of(context).liquid
+                    ? null
+                    : colorScheme.surface),
             elevation: elevation ?? 0,
             shape: shape,
             clipBehavior: clipBehavior,

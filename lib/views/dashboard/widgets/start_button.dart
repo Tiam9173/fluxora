@@ -95,7 +95,7 @@ class _StartButtonState extends ConsumerState<StartButton> {
   Future<void> _handleRestartCore() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => GlassAlertDialog(
         title: Text(appLocalizations.restartCore),
         content: Text(appLocalizations.restartCoreTip),
         actions: [

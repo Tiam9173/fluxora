@@ -6,7 +6,53 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:fluxora/state.dart';
+import '../common/tokens/tokens.dart';
+import 'glass_surface.dart';
 import 'text.dart';
+
+class GlassAlertDialog extends AlertDialog {
+  const GlassAlertDialog({
+    super.key,
+    super.title,
+    super.content,
+    super.actions,
+    super.contentPadding,
+    super.backgroundColor,
+    super.scrollable,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final dialog = super.build(context);
+    // Reuse the SDK's title, focus, scrolling and action layout.
+    if (!FluxoraMaterial.of(context).liquid ||
+        backgroundColor != null ||
+        dialog is! Dialog ||
+        dialog.child == null) {
+      return dialog;
+    }
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+      elevation: FluxoraElevation.menu,
+      insetPadding: dialog.insetPadding,
+      insetAnimationDuration: FluxoraMotion.ofContext(context).fast,
+      alignment: dialog.alignment,
+      constraints: dialog.constraints,
+      semanticsRole: dialog.semanticsRole,
+      shape: const RoundedRectangleBorder(
+        borderRadius: FluxoraRadius.dialogAll,
+      ),
+      child: GlassSurface(
+        radius: FluxoraRadius.dialog,
+        floating: true,
+        blur: true,
+        readable: true,
+        child: Material(type: MaterialType.transparency, child: dialog.child),
+      ),
+    );
+  }
+}
 
 class CommonDialog extends ConsumerWidget {
   final String title;
@@ -44,7 +90,7 @@ class CommonDialog extends ConsumerWidget {
               if (ModalRoute.of(context)?.isCurrent != true) return;
               Navigator.of(context).pop();
             },
-      child: AlertDialog(
+      child: GlassAlertDialog(
         title: titleTrailing == null
             ? EmojiText(title)
             : Row(

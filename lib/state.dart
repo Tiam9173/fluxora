@@ -603,9 +603,12 @@ class GlobalState {
     if (state == null) return null;
     final context = state.context;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final liquid = FluxoraMaterial.of(context).liquid;
     return await showGeneralDialog<T>(
       context: context,
-      barrierColor: isDark ? const Color(0xCC000000) : const Color(0x99000000),
+      barrierColor: Colors.black.withValues(
+        alpha: liquid ? (isDark ? .42 : .27) : (isDark ? .8 : .6),
+      ),
       barrierDismissible: dismissible,
       barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
       transitionDuration: FluxoraMotion.ofContext(context).base,

@@ -6,8 +6,10 @@ import 'dart:ui' as ui;
 
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/enum/enum.dart';
+import 'package:fluxora/models/common.dart';
 import 'package:fluxora/models/selector.dart';
 import 'package:fluxora/views/app_icons.dart';
+import 'package:fluxora/widgets/app_brand_icon.dart';
 import 'package:fluxora/widgets/fluxora/fluxora_launch_reveal.dart';
 import 'package:fluxora/widgets/liquid_backdrop.dart';
 import 'package:fluxora/providers/config.dart';
@@ -278,6 +280,7 @@ class _EffectsItemState extends ConsumerState<_EffectsItem> {
   double? _draft;
   double? _clarityDraft;
   double? _motionDraft;
+  int _previewTab = 0;
   @override
   Widget build(BuildContext context) {
     final props = ref.watch(themeSettingProvider);
@@ -290,23 +293,24 @@ class _EffectsItemState extends ConsumerState<_EffectsItem> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Theme(
+            data: Theme.of(context).copyWith(
+              extensions: [
+                ...Theme.of(
+                  context,
+                ).extensions.values.where((e) => e is! FluxoraMaterial),
+                FluxoraMaterial.of(context).copyWith(
+                  style: props.surfaceStyle,
+                  glassIntensity: _draft ?? props.glassIntensity,
+                  glassClarity: _clarityDraft ?? props.glassClarity,
+                ),
+              ],
+            ),
+            child: const _GlassPreview(),
+          ),
+          const SizedBox(height: 12),
           if (props.surfaceStyle == FluxoraSurfaceStyle.hybrid ||
               props.surfaceStyle == FluxoraSurfaceStyle.liquid) ...[
-            Theme(
-              data: Theme.of(context).copyWith(
-                extensions: [
-                  ...Theme.of(
-                    context,
-                  ).extensions.values.where((e) => e is! FluxoraMaterial),
-                  FluxoraMaterial.of(context).copyWith(
-                    glassIntensity: _draft ?? props.glassIntensity,
-                    glassClarity: _clarityDraft ?? props.glassClarity,
-                  ),
-                ],
-              ),
-              child: const _GlassPreview(),
-            ),
-            const SizedBox(height: 12),
             Text(
               props.surfaceStyle == FluxoraSurfaceStyle.liquid
                   ? (chinese ? '透镜强度' : 'Lens strength')
@@ -416,6 +420,37 @@ class _EffectsItemState extends ConsumerState<_EffectsItem> {
               },
             ),
           ],
+          if (props.surfaceStyle == FluxoraSurfaceStyle.liquid)
+            Theme(
+              data: Theme.of(context).copyWith(
+                extensions: [
+                  ...Theme.of(context).extensions.values.where(
+                    (extension) => extension is! FluxoraMaterial,
+                  ),
+                  FluxoraMaterial.of(context).copyWith(
+                    motionStyle: props.motionStyle,
+                    motionIntensity: _motionDraft ?? props.motionIntensity,
+                  ),
+                ],
+              ),
+              child: AuroraBottomNavBar(
+                key: const ValueKey('motion-preview'),
+                navigationItems: [
+                  for (final entry in const [
+                    (PageLabel.dashboard, Icons.space_dashboard_outlined),
+                    (PageLabel.proxies, Icons.hub_outlined),
+                    (PageLabel.tools, Icons.tune_rounded),
+                  ])
+                    NavigationItem(
+                      icon: Icon(entry.$2),
+                      label: entry.$1,
+                      builder: (_) => const SizedBox.shrink(),
+                    ),
+                ],
+                selectedIndex: _previewTab,
+                onTabChange: (index) => setState(() => _previewTab = index),
+              ),
+            ),
           SwitchListTile.adaptive(
             contentPadding: EdgeInsets.zero,
             title: Text(chinese ? '开屏动画' : 'Launch animation'),
@@ -479,8 +514,14 @@ class _GlassPreviewState extends State<_GlassPreview> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      context.colorScheme.primaryContainer,
-                      context.colorScheme.tertiaryContainer,
+                      Color.alphaBlend(
+                        context.colorScheme.primary.withValues(alpha: .34),
+                        context.colorScheme.primaryContainer,
+                      ),
+                      Color.alphaBlend(
+                        context.colorScheme.tertiary.withValues(alpha: .25),
+                        context.colorScheme.tertiaryContainer,
+                      ),
                       context.colorScheme.secondaryContainer,
                     ],
                   ),
@@ -492,7 +533,7 @@ class _GlassPreviewState extends State<_GlassPreview> {
                   top: 0,
                   bottom: 0,
                   child: ColoredBox(
-                    color: context.colorScheme.onSurface.withValues(alpha: .15),
+                    color: context.colorScheme.onSurface.withValues(alpha: .32),
                     child: const SizedBox(width: 2),
                   ),
                 ),
@@ -515,25 +556,31 @@ class _GlassPreviewState extends State<_GlassPreview> {
                     radius: 28,
                     floating: true,
                     blur: true,
-                    child: SizedBox(
-                      width: 156,
-                      height: 64,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.blur_on_rounded,
-                            color: context.colorScheme.onSurface,
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            'Fluxora',
-                            style: context.textTheme.labelLarge?.copyWith(
+                    child: Material(
+                      type: FluxoraMaterial.of(context).enabled
+                          ? MaterialType.transparency
+                          : MaterialType.canvas,
+                      borderRadius: BorderRadius.circular(28),
+                      child: SizedBox(
+                        width: 156,
+                        height: 64,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.layers_outlined,
                               color: context.colorScheme.onSurface,
-                              fontWeight: FontWeight.w600,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 10),
+                            Text(
+                              'Fluxora',
+                              style: context.textTheme.labelLarge?.copyWith(
+                                color: context.colorScheme.onSurface,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -580,11 +627,10 @@ class _ThemePanel extends StatelessWidget {
   );
 }
 
-class _ThemePreview extends ConsumerWidget {
+class _ThemePreview extends StatelessWidget {
   const _ThemePreview();
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final props = ref.watch(themeSettingProvider);
+  Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final chinese = Localizations.localeOf(context).languageCode == 'zh';
     return CommonCard(
@@ -595,11 +641,7 @@ class _ThemePreview extends ConsumerWidget {
           runSpacing: 16,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            Image.asset(
-              BrandIcons.asset(props.appIconStyle, props.useDarkIcon),
-              width: 64,
-              height: 64,
-            ),
+            const AppBrandIcon(size: 64),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -831,13 +873,17 @@ class _PrimaryColorItemState extends ConsumerState<_PrimaryColorItem> {
     final res = await globalState.showCommonDialog<int>(
       child: _PaletteDialog(),
     );
-    if (res == null) {
+    if (res == null || !mounted) {
       return;
     }
-    final isExists = ref.read(
-      themeSettingProvider.select((state) => state.primaryColors.contains(res)),
-    );
-    if (isExists && mounted) {
+    final isExists =
+        ref.read(
+          themeSettingProvider.select(
+            (state) => state.primaryColors.contains(res),
+          ),
+        ) ||
+        BrandIcons.paletteSeeds.containsValue(res);
+    if (isExists) {
       context.showNotifier(
         appLocalizations.existsTip(appLocalizations.colorSchemes),
       );
@@ -898,6 +944,14 @@ class _PrimaryColorItemState extends ConsumerState<_PrimaryColorItem> {
     final primaryColors = [null, ...vm4.b];
     final schemeVariant = vm4.c;
     final isEquals = vm4.d;
+    final chinese = Localizations.localeOf(context).languageCode == 'zh';
+
+    void select(int? color) {
+      setState(() => _removablePrimaryColor = null);
+      ref
+          .read(themeSettingProvider.notifier)
+          .updateState((state) => state.copyWith(primaryColor: color));
+    }
 
     return CommonPopScope(
       onPop: () {
@@ -942,81 +996,108 @@ class _PrimaryColorItemState extends ConsumerState<_PrimaryColorItem> {
         ], space: 8),
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
-          child: LayoutBuilder(
-            builder: (_, constraints) {
-              final columns = _calcColumns(constraints.maxWidth);
-              final itemWidth =
-                  (constraints.maxWidth - (columns - 1) * 16) / columns;
-              return Wrap(
-                spacing: 16,
-                runSpacing: 16,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Wrap(
+                spacing: FluxoraSpacing.sm,
+                runSpacing: FluxoraSpacing.xs,
                 children: [
-                  for (final color in primaryColors)
-                    Container(
-                      clipBehavior: Clip.none,
-                      width: itemWidth,
-                      height: itemWidth,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        clipBehavior: Clip.none,
-                        children: [
-                          EffectGestureDetector(
-                            child: ColorSchemeBox(
-                              isSelected: color == primaryColor,
-                              primaryColor: color != null ? Color(color) : null,
-                              onPressed: () {
-                                setState(() {
-                                  _removablePrimaryColor = null;
-                                });
-                                ref
-                                    .read(themeSettingProvider.notifier)
-                                    .updateState(
-                                      (state) =>
-                                          state.copyWith(primaryColor: color),
-                                    );
-                              },
-                            ),
-                            onLongPress: () {
-                              setState(() {
-                                _removablePrimaryColor = color;
-                              });
-                            },
-                          ),
-                          if (_removablePrimaryColor != null &&
-                              _removablePrimaryColor == color)
-                            Container(
-                              color: Colors.white.opacity0,
-                              padding: EdgeInsets.all(FluxoraSpacing.sm),
-                              child: IconButton.filledTonal(
-                                onPressed: _handleDel,
-                                padding: EdgeInsets.all(FluxoraSpacing.md),
-                                iconSize: 30,
-                                icon: Icon(
-                                  color: context.colorScheme.primary,
-                                  Icons.delete,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  if (_removablePrimaryColor == null)
-                    Container(
-                      width: itemWidth,
-                      height: itemWidth,
-                      padding: EdgeInsets.all(FluxoraSpacing.xs),
-                      child: IconButton.filledTonal(
-                        onPressed: _handleAdd,
-                        iconSize: 32,
-                        icon: Icon(
-                          color: context.colorScheme.primary,
-                          Icons.add,
+                  for (final preset in BrandIcons.paletteSeeds.entries)
+                    ChoiceChip(
+                      key: ValueKey('icon-palette-${preset.key}'),
+                      avatar: Image.asset(
+                        BrandIcons.asset(
+                          preset.key,
+                          Theme.of(context).brightness == Brightness.dark,
                         ),
+                        width: 22,
+                        height: 22,
+                        excludeFromSemantics: true,
                       ),
+                      label: Text(
+                        BrandIcons.label(preset.key, chinese: chinese),
+                      ),
+                      selected: preset.value == primaryColor,
+                      onSelected: (_) => select(preset.value),
                     ),
                 ],
-              );
-            },
+              ),
+              const SizedBox(height: FluxoraSpacing.lg),
+              Text(
+                chinese ? '已保存配色' : 'Saved colours',
+                style: context.textTheme.titleSmall,
+              ),
+              const SizedBox(height: FluxoraSpacing.sm),
+              LayoutBuilder(
+                builder: (_, constraints) {
+                  final columns = _calcColumns(constraints.maxWidth);
+                  final itemWidth =
+                      (constraints.maxWidth - (columns - 1) * 16) / columns;
+                  return Wrap(
+                    spacing: 16,
+                    runSpacing: 16,
+                    children: [
+                      for (final color in primaryColors)
+                        Container(
+                          clipBehavior: Clip.none,
+                          width: itemWidth,
+                          height: itemWidth,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            clipBehavior: Clip.none,
+                            children: [
+                              EffectGestureDetector(
+                                child: ColorSchemeBox(
+                                  isSelected: color == primaryColor,
+                                  primaryColor: color != null
+                                      ? Color(color)
+                                      : null,
+                                  onPressed: () => select(color),
+                                ),
+                                onLongPress: () {
+                                  setState(() {
+                                    _removablePrimaryColor = color;
+                                  });
+                                },
+                              ),
+                              if (_removablePrimaryColor != null &&
+                                  _removablePrimaryColor == color)
+                                Container(
+                                  color: Colors.white.opacity0,
+                                  padding: EdgeInsets.all(FluxoraSpacing.sm),
+                                  child: IconButton.filledTonal(
+                                    onPressed: _handleDel,
+                                    padding: EdgeInsets.all(FluxoraSpacing.md),
+                                    iconSize: 30,
+                                    icon: Icon(
+                                      color: context.colorScheme.primary,
+                                      Icons.delete,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      if (_removablePrimaryColor == null)
+                        Container(
+                          width: itemWidth,
+                          height: itemWidth,
+                          padding: EdgeInsets.all(FluxoraSpacing.xs),
+                          child: IconButton.filledTonal(
+                            onPressed: _handleAdd,
+                            iconSize: 32,
+                            icon: Icon(
+                              color: context.colorScheme.primary,
+                              Icons.add,
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
+            ],
           ),
         ),
       ),

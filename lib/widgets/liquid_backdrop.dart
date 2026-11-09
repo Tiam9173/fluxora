@@ -180,6 +180,8 @@ class _RenderLensFilter extends RenderBackdropFilter {
 
   void _updateFilter() {
     final effect = shader;
+    final sigma = 1.5 + 8 * (1 - clarity);
+    final blur = ui.ImageFilter.blur(sigmaX: sigma, sigmaY: sigma);
     if (effect != null && !size.isEmpty) {
       effect
         ..setFloat(2, size.width)
@@ -191,7 +193,10 @@ class _RenderLensFilter extends RenderBackdropFilter {
         ..setFloat(8, scheme.surface.g)
         ..setFloat(9, scheme.surface.b)
         ..setFloat(10, clarity);
-      filter = ui.ImageFilter.shader(effect);
+      filter = ui.ImageFilter.compose(
+        outer: ui.ImageFilter.shader(effect),
+        inner: blur,
+      );
     } else {
       final center = size.center(Offset.zero);
       final magnification = 1 + .035 * strength;
@@ -204,10 +209,7 @@ class _RenderLensFilter extends RenderBackdropFilter {
           matrix.storage,
           filterQuality: FilterQuality.medium,
         ),
-        inner: ui.ImageFilter.blur(
-          sigmaX: 2 + 6 * (1 - clarity),
-          sigmaY: 2 + 6 * (1 - clarity),
-        ),
+        inner: blur,
       );
     }
   }

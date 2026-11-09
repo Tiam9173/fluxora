@@ -261,9 +261,16 @@ class AppController {
     return _coreLifecycleLock.synchronized(() => _updateStatus(isStart));
   }
 
+  bool _isStarting = false;
+
   Future<void> _updateStatus(bool isStart) async {
     if (isStart) {
-      await _fastStart();
+      _isStarting = true;
+      try {
+        await _fastStart();
+      } finally {
+        _isStarting = false;
+      }
       if (globalState.isStart && !_ref.read(runTimeProvider.notifier).isStart) {
         _ref.read(runTimeProvider.notifier).value = 0;
       }
@@ -824,7 +831,7 @@ class AppController {
         }
       }
       if (target == null) return;
-      await proxyDelayTest(target);
+      await proxyDelayTest(target, testUrl: group.testUrl, startup: true);
     } catch (e) {
       commonPrint.log('Auto delay test after start failed: $e');
     }
@@ -2285,8 +2292,19 @@ class AppController {
     return false;
   }
 
-  void setDelay(Delay delay) {
-    _ref.read(delayDataSourceProvider.notifier).setDelay(delay);
+  void setDelay(Delay delay, {bool background = false, bool startup = false}) {
+    final startedAt = globalState.startTime;
+    // A health check can complete just after the tunnel comes up.
+    final settling =
+        _isStarting ||
+        (startedAt != null &&
+            DateTime.now().difference(startedAt) < httpTimeoutDuration * 2);
+    _ref
+        .read(delayDataSourceProvider.notifier)
+        .setDelay(
+          delay,
+          keepPreviousSuccess: startup || (background && settling),
+        );
   }
 
   int? getTrayProxyDelay({required String proxyName, String? testUrl}) {

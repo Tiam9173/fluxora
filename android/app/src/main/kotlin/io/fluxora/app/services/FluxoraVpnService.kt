@@ -264,39 +264,29 @@ class FluxoraVpnService : VpnService(), BaseServiceInterface {
         val isSuspended = GlobalState.isSmartStopped
         val isHighPriority = GlobalState.isNotificationHighPriority
         ensureNotificationChannel(isSuspended, isHighPriority)
-        val title: String
-        val content: String
-        if (isSuspended) {
-            title = getString(R.string.core_suspended)
-            content = getString(R.string.smart_auto_stop_service_running)
-        } else {
-            title = getString(R.string.core_connected)
-            content = getString(R.string.service_running)
-        }
-
-        lastNotificationText = null
         val builder = createFluxoraNotificationBuilder(isSuspended, isHighPriority)
+        val profile = pendingSpeedProfile
+        val speed = pendingSpeedInfo
+        val showSpeed = !isSuspended && GlobalState.isSpeedNotificationEnabled &&
+            profile != null && speed != null
+        val title = when {
+            showSpeed -> profile
+            isSuspended -> getString(R.string.core_suspended)
+            else -> getString(R.string.core_connected)
+        }
+        val content = when {
+            showSpeed -> speed
+            isSuspended -> getString(R.string.smart_auto_stop_service_running)
+            else -> getString(R.string.service_running)
+        }
         val notification = builder
             .setContentTitle(title)
             .setContentText(content)
-            // Keep the decorated style: clearing it made the custom views
-            // collapse back into "big view for both states".
-            .setStyle(null)
             .buildFluxoraNotification(this@FluxoraVpnService)
 
-        val isFirstTime = !hasStartedForeground
-        if (isFirstTime) {
-            hasStartedForeground = true
-        }
-
-        val pendingProfile = pendingSpeedProfile
-        val pendingSpeed = pendingSpeedInfo
-        if (!isSuspended && GlobalState.isSpeedNotificationEnabled && pendingProfile != null && pendingSpeed != null) {
-            updateNotificationSpeed(pendingProfile, pendingSpeed)
-            return
-        }
-
         this.startForeground(notification, useSpecialType = !isSuspended)
+        hasStartedForeground = true
+        lastNotificationText = if (showSpeed) "$title\n$content" else null
     }
 
     /// Applies a profile rename/switch to the live notification without

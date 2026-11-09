@@ -257,8 +257,10 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
             "setNotificationIconStyle" -> {
                 runCatching {
                     val context = FluxoraApplication.getAppContext()
-                    io.fluxora.app.services.NotificationIconTheme.setStyle(context, call.argument<String>("style") ?: "flow")
-                    VpnPlugin.updateNotificationIcon()
+                    val changed = io.fluxora.app.services.NotificationIconTheme.setStyle(
+                        context, call.argument<String>("style") ?: "flow"
+                    )
+                    if (changed) VpnPlugin.updateNotificationIcon()
                     true
                 }.onSuccess { result.success(it) }
                     .onFailure { result.error("NOTIFICATION_ICON_FAILED", it.message, null) }

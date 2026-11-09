@@ -433,11 +433,12 @@ class _SpeedTestCardState extends State<SpeedTestCard> {
                             : appLocalizations.start,
                       ),
                     ),
-                    OutlinedButton.icon(
-                      onPressed: p.isDone ? _copy : null,
-                      icon: const Icon(Icons.copy_rounded, size: 18),
-                      label: Text(appLocalizations.stCopy),
-                    ),
+                    if (p.isDone)
+                      OutlinedButton.icon(
+                        onPressed: _copy,
+                        icon: const Icon(Icons.copy_rounded, size: 18),
+                        label: Text(appLocalizations.stCopy),
+                      ),
                   ],
                 ),
               ],

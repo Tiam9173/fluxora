@@ -315,7 +315,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
       builder: (ctx) {
         return StatefulBuilder(
           builder: (context, setDlgState) {
-            return AlertDialog(
+            return GlassAlertDialog(
               title: Text(
                 appLocalizations.warpStr13,
                 style: TextStyle(fontWeight: FontWeight.bold),
@@ -418,7 +418,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
 
             final reachable = results.where((r) => r.ok).take(8).toList();
 
-            return AlertDialog(
+            return GlassAlertDialog(
               title: Text(appLocalizations.warpStr33),
               content: SizedBox(
                 width: 320,
@@ -522,7 +522,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
     showDialog(
       context: context,
       builder: (ctx) {
-        return AlertDialog(
+        return GlassAlertDialog(
           title: const Text('优选 IP (Clean IP)'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -611,7 +611,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
     showDialog(
       context: context,
       builder: (ctx) {
-        return AlertDialog(
+        return GlassAlertDialog(
           title: Text(appLocalizations.warpStr80),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -690,7 +690,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
     final ctrl = TextEditingController(text: config.licenseKey);
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => GlassAlertDialog(
         title: Text(appLocalizations.warpStr85),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -753,7 +753,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
   void _showKeyDetailsDialog(WarpConfig config) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => GlassAlertDialog(
         title: Text(appLocalizations.warpStr15),
         content: SingleChildScrollView(
           child: Column(
@@ -1532,7 +1532,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
     showDialog(
       context: context,
       builder: (ctx) {
-        return AlertDialog(
+        return GlassAlertDialog(
           title: Text(appLocalizations.warpStr87),
           content: SingleChildScrollView(
             child: Column(

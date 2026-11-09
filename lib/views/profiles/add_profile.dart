@@ -195,7 +195,7 @@ class AddProfileView extends StatelessWidget {
     final nameCtrl = TextEditingController(text: appLocalizations.customNodesDefaultName);
     final confirmed = await showDialog<bool>(
       context: ctx,
-      builder: (dialogCtx) => AlertDialog(
+      builder: (dialogCtx) => GlassAlertDialog(
         title: Row(
           children: [
             const Icon(Icons.playlist_add_rounded, color: Colors.blueAccent),

@@ -1,3 +1,4 @@
+import 'package:fluxora/widgets/dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluxora/common/common.dart';
@@ -88,7 +89,7 @@ Future<void> showNodeDetailsDialog(
         }
       }
 
-      return AlertDialog(
+      return GlassAlertDialog(
         title: Row(
           children: [
             Expanded(
@@ -276,7 +277,7 @@ Future<bool> showNodeEditDialog(
 
   final saved = await showDialog<bool>(
     context: context,
-    builder: (ctx) => AlertDialog(
+    builder: (ctx) => GlassAlertDialog(
       title: Text(appLocalizations.nodeDetailEditTitle(proxyName), style: const TextStyle(fontSize: 15)),
       content: SizedBox(
         width: 380,

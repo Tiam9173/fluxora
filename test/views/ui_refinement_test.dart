@@ -21,6 +21,7 @@ import 'package:fluxora/views/views.dart'
     show RequestsConnectionsView, LogsView, ResourcesView, ScriptsView;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fluxora/common/common.dart';
+import 'package:fluxora/common/brand_icons.dart';
 import 'package:fluxora/clash/clash.dart';
 import 'package:fluxora/clash/interface.dart';
 import 'package:fluxora/common/theme.dart';
@@ -51,6 +52,7 @@ import 'package:fluxora/views/proxies/proxies.dart';
 import 'package:fluxora/views/proxies/list.dart';
 import 'package:fluxora/views/proxies/notification_switch_card.dart';
 import 'package:fluxora/widgets/widgets.dart';
+import 'package:fluxora/widgets/liquid_backdrop.dart';
 
 import '../support/recording_app_controller.dart';
 import '../support/render_capture.dart';
@@ -393,6 +395,42 @@ void main() {
     },
   );
 
+  testWidgets('liquid dock stretches under drag and switches on release', (
+    tester,
+  ) async {
+    final container = await show(
+      tester,
+      surfaceStyle: FluxoraSurfaceStyle.liquid,
+      visualStyle: FluxoraVisualStyle.obsidian,
+      dashboardWidgets: [DashboardWidget.startButton],
+    );
+    final lens = find.byKey(const ValueKey('aurora-dock-lens'));
+    final rest = tester.getRect(lens);
+    final drag = await tester.startGesture(rest.center);
+    await drag.moveBy(const Offset(42, 0));
+    await drag.moveBy(const Offset(105, 0));
+    await tester.pump();
+    expect(tester.getRect(lens).width, greaterThan(rest.width));
+    expect(tester.getCenter(lens).dx, greaterThan(rest.center.dx + 80));
+    expect(container.read(currentPageLabelProvider), PageLabel.dashboard);
+    await capture(tester, 'liquid-dock-drag');
+    await drag.cancel();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(tester.getRect(lens), rest);
+    final nextDrag = await tester.startGesture(rest.center);
+    await nextDrag.moveBy(const Offset(42, 0));
+    await nextDrag.moveBy(const Offset(120, 0));
+    await nextDrag.up();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(container.read(currentPageLabelProvider), PageLabel.profiles);
+    expect(tester.getSize(lens).width, rest.width);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 1));
+  });
+
   for (final brightness in Brightness.values) {
     testWidgets(
       'script editor font controls preview and commit without editing content $brightness',
@@ -425,7 +463,7 @@ void main() {
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 500));
         final slider = find.descendant(
-          of: find.byType(AlertDialog),
+          of: find.bySubtype<AlertDialog>(),
           matching: find.byType(Slider),
         );
         await tester.drag(slider, const Offset(35, 0));
@@ -642,14 +680,30 @@ void main() {
             );
             await tester.pump();
             await tester.pump(const Duration(milliseconds: 500));
+            expect(
+              find.descendant(
+                of: find.byType(SwitchCard),
+                matching: find.byType(LiquidBackdrop),
+              ),
+              findsOneWidget,
+            );
             await capture(tester, 'reference-node-menu-${brightness.name}');
             Navigator.of(tester.element(find.byType(SwitchCard))).pop();
             await tester.pump();
             await tester.pump(const Duration(milliseconds: 500));
           }
           if (page == PageLabel.proxies) {
+            expect(
+              find.descendant(
+                of: find.byType(AppBar),
+                matching: find.byIcon(Icons.folder_open_outlined),
+              ),
+              findsNothing,
+            );
             await tester.tap(find.byTooltip(appLocalizations.more).first);
             await tester.pumpAndSettle();
+            expect(find.text(appLocalizations.switchProxy), findsNothing);
+            expect(find.text(appLocalizations.settings), findsOneWidget);
             await capture(tester, 'reference-proxy-menu-${brightness.name}');
           }
           expect(tester.takeException(), isNull);
@@ -875,6 +929,10 @@ void main() {
     await tester.pumpAndSettle();
     final preview = find.byKey(const ValueKey('proxy-card-preview'));
     expect(preview, findsOneWidget);
+    expect(
+      find.ancestor(of: preview, matching: find.byType(LiquidBackdrop)),
+      findsOneWidget,
+    );
     await capture(tester, 'nodes-settings-preview-default');
     await tester.tap(find.text(appLocalizations.min).first);
     await tester.pumpAndSettle();
@@ -1070,6 +1128,64 @@ void main() {
       );
     },
   );
+
+  testWidgets('all four materials preview their real surface', (tester) async {
+    final container = await show(
+      tester,
+      brightness: Brightness.light,
+      page: PageLabel.tools,
+    );
+    await tester.tap(find.text(appLocalizations.theme).first);
+    await tester.pumpAndSettle();
+    final preview = find.byKey(const ValueKey('glass-preview'));
+    for (final style in FluxoraSurfaceStyle.values) {
+      final choice = find.byKey(ValueKey('surface-style-${style.name}'));
+      await tester.ensureVisible(choice);
+      await tester.tap(choice);
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(preview);
+      await tester.pumpAndSettle();
+      expect(container.read(themeSettingProvider).surfaceStyle, style);
+      expect(
+        find.descendant(of: preview, matching: find.byType(LiquidBackdrop)),
+        style == FluxoraSurfaceStyle.liquid ? findsOneWidget : findsNothing,
+      );
+      expect(
+        find.descendant(of: preview, matching: find.byType(BackdropFilter)),
+        style == FluxoraSurfaceStyle.hybrid ? findsOneWidget : findsNothing,
+      );
+      await capture(tester, 'material-${style.name}-light');
+    }
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('icon palettes apply without replacing saved custom colours', (
+    tester,
+  ) async {
+    globalState.accentColor = FluxoraColors.brandSeed;
+    final container = await show(tester, page: PageLabel.tools);
+    const saved = 0xFFAB391C;
+    container
+        .read(themeSettingProvider.notifier)
+        .updateState(
+          (p) => p.copyWith(
+            colorSource: ColorSource.custom,
+            primaryColors: [saved],
+          ),
+        );
+    await tester.tap(find.text(appLocalizations.theme).first);
+    await tester.pumpAndSettle();
+    final sunset = find.byKey(const ValueKey('icon-palette-sunset'));
+    await tester.ensureVisible(sunset);
+    await tester.tap(sunset);
+    await tester.pumpAndSettle();
+    final props = container.read(themeSettingProvider);
+    expect(props.primaryColor, BrandIcons.paletteSeeds['sunset']);
+    expect(props.primaryColors, [saved]);
+    expect(tester.widget<ChoiceChip>(sunset).selected, isTrue);
+    await capture(tester, 'icon-inspired-palettes');
+    expect(tester.takeException(), isNull);
+  });
 
   for (final brightness in Brightness.values) {
     testWidgets(
@@ -1618,7 +1734,8 @@ void main() {
       await capture(tester, 'proxies-populated-${brightness.name}');
       await tester.tap(find.byTooltip(appLocalizations.more).first);
       await tester.pumpAndSettle();
-      expect(find.text('节点操作'), findsOneWidget);
+      expect(find.text('显示与筛选'), findsOneWidget);
+      expect(find.text(appLocalizations.switchProxy), findsNothing);
       expect(find.text('路由工具'), findsOneWidget);
       await capture(tester, 'proxy-actions-${brightness.name}');
       final beforeHidden = ProviderScope.containerOf(

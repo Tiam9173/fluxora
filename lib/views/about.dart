@@ -1,10 +1,10 @@
-import 'package:fluxora/common/brand_icons.dart';
 import 'dart:async';
 
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/providers/config.dart';
 import 'package:fluxora/state.dart';
+import 'package:fluxora/widgets/app_brand_icon.dart';
 import 'package:fluxora/widgets/card.dart';
 import 'package:fluxora/widgets/list.dart';
 import 'package:flutter/material.dart';
@@ -169,16 +169,9 @@ class AboutView extends StatelessWidget {
                     spacing: 16,
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.all(FluxoraSpacing.md),
-                        child: Image.asset(
-                          BrandIcons.asset(
-                            ref.watch(themeSettingProvider).appIconStyle,
-                            ref.watch(themeSettingProvider).useDarkIcon,
-                          ),
-                          width: 48,
-                          height: 48,
-                        ),
+                      const Padding(
+                        padding: EdgeInsets.all(FluxoraSpacing.md),
+                        child: AppBrandIcon(size: 48),
                       ),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

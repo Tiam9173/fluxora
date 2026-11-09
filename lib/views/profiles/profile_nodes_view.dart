@@ -123,7 +123,7 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
     showDialog(
       context: context,
       builder: (ctx) {
-        return AlertDialog(
+        return GlassAlertDialog(
           title: Row(
             children: [
               const Icon(Icons.link_rounded, color: Colors.blueAccent),
@@ -538,7 +538,7 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
     };
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
+      builder: (dialogContext) => GlassAlertDialog(
         title: Text(appLocalizations.nodeDeleteDuplicates),
         content: Text(
           '${appLocalizations.nodeDuplicatesFound(groups.length)}\n'
@@ -571,7 +571,7 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
     }
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
+      builder: (dialogContext) => GlassAlertDialog(
         title: Text(appLocalizations.nodeCleanUnavailable),
         content: Text(
           appLocalizations.nodeCleanUnavailableConfirm(names.length),
@@ -1475,7 +1475,7 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    return GlassAlertDialog(
       title: Row(
         children: [
           const Icon(Icons.edit_note_rounded, color: Colors.blueAccent),

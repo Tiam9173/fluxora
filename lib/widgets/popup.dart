@@ -465,6 +465,7 @@ class _CommonPopupMenuState extends State<CommonPopupMenu> {
           radius: FluxoraRadius.md,
           floating: true,
           blur: true,
+          readable: true,
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,

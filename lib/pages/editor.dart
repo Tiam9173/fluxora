@@ -138,7 +138,7 @@ class _EditorPageState extends ConsumerState<EditorPage> {
     final result = await showDialog<double>(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, update) => AlertDialog(
+        builder: (context, update) => GlassAlertDialog(
           title: Text(chinese ? '字体大小' : 'Font size'),
           content: Column(
             mainAxisSize: MainAxisSize.min,

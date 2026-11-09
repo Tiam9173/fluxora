@@ -248,24 +248,8 @@ final mainIsolate = 'FluxoraMainIsolate';
 
 final serviceIsolate = 'FluxoraServiceIsolate';
 
-/// The 7 Fluxora theme presets (`D4_BRAND_PROPOSAL.md` §四).
-///
-/// Ordered along the colour wheel — cyan-green → blue → teal-blue → violet →
-/// mint → amber → neutral. [defaultPrimaryColor] (Flux) is first and is the
-/// default selection.
-///
-/// Raw ARGB values are kept here rather than referencing `FluxoraColors` so
-/// this stays a compile-time `const` list (the token constants are `Color`
-/// objects, whose `value`/`toARGB32()` is not const).
-const defaultPrimaryColors = [
-  0xFF7C75FF, // 1. Flux      — violet (default)
-  0xFF4C8DFF, // 2. Aurora    — aurora blue
-  0xFF29D6C7, // 3. Cyan      — mark detail
-  0xFF0E9AA7, // 4. Ocean     — calm teal-blue
-  0xFF34D399, // 5. Mint      — fresh mint
-  0xFFF59E0B, // 6. Amber     — warm amber
-  0xFF334155, // 7. Graphite  — neutral slate
-];
+/// User-saved colours. Examples are shipped separately in BrandIcons.
+const defaultPrimaryColors = <int>[];
 
 const scriptTemplate = '''
 const main = (config) => {

@@ -6,10 +6,14 @@ import io.fluxora.app.R
 object NotificationIconTheme {
     @Volatile var isDark: Boolean = false
 
-    fun setStyle(context: Context, style: String) {
+    fun setStyle(context: Context, style: String): Boolean {
         require(style in listOf("flow", "plain", "outline")) { "Unknown notification icon" }
-        check(context.getSharedPreferences("fluxora_brand", Context.MODE_PRIVATE).edit()
-            .putString("notification_style", style).commit()) { "Unable to save notification icon" }
+        val prefs = context.getSharedPreferences("fluxora_brand", Context.MODE_PRIVATE)
+        if (prefs.getString("notification_style", "flow") == style) return false
+        check(prefs.edit().putString("notification_style", style).commit()) {
+            "Unable to save notification icon"
+        }
+        return true
     }
 
     fun smallIcon(context: Context): Int = when (

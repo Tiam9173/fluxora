@@ -144,7 +144,7 @@ void main() {
   testWidgets('builds through the production entry point', (tester) async {
     await openDialog(tester, rule: Rule.value('DOMAIN,example.com,DIRECT'));
 
-    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.bySubtype<AlertDialog>(), findsOneWidget);
     expect(find.text(appLocalizations.confirm), findsOneWidget);
   });
 
@@ -163,7 +163,7 @@ void main() {
     // silently doing nothing.
     expect(find.text(message), findsOneWidget);
     // Validation blocked the pop.
-    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.bySubtype<AlertDialog>(), findsOneWidget);
   });
 
   testWidgets('valid sub-rule submits and pops with the rule', (tester) async {
@@ -177,7 +177,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text(message), findsNothing);
-    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.bySubtype<AlertDialog>(), findsNothing);
     final rule = result();
     expect(rule, isNotNull);
     expect(rule!.value, contains('sub-a'));
@@ -195,6 +195,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text(message), findsOneWidget);
-    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.bySubtype<AlertDialog>(), findsOneWidget);
   });
 }

@@ -607,7 +607,7 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 runCatching {
                     (fluxoraService as? FluxoraService)?.resetNotificationBuilder()
                     (fluxoraService as? FluxoraVpnService)?.resetNotificationBuilder()
-                    fluxoraService?.startForeground()
+                    startForeground()
                 }.onFailure {
                     android.util.Log.e("VpnPlugin", "updateNotificationIcon error: ${it.message}")
                 }

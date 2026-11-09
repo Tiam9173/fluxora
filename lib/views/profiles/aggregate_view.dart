@@ -4,6 +4,7 @@ import 'package:fluxora/common/common.dart';
 import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/models/models.dart';
 import 'package:fluxora/state.dart';
+import 'package:fluxora/widgets/dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -162,7 +163,7 @@ class _AggregateViewState extends State<AggregateView> {
     await showDialog<void>(
       context: context,
       builder: (dialogContext) {
-        return AlertDialog(
+        return GlassAlertDialog(
           title: Text(
             aggregate == null
                 ? appLocalizations.aggregateNew
@@ -226,7 +227,7 @@ class _AggregateViewState extends State<AggregateView> {
     if (aggregate == null) return;
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
+      builder: (dialogContext) => GlassAlertDialog(
         title: Text(appLocalizations.aggregateDelete),
         content: Text(aggregate.name),
         actions: [
@@ -393,7 +394,7 @@ class _AggregateViewState extends State<AggregateView> {
     await showDialog<void>(
       context: context,
       builder: (dialogContext) {
-        return AlertDialog(
+        return GlassAlertDialog(
           title: Text(appLocalizations.aggregateOverride),
           content: TextField(
             controller: controller,
@@ -883,7 +884,7 @@ class _AggregateViewState extends State<AggregateView> {
       await showDialog<void>(
         context: context,
         builder: (dialogContext) {
-          return AlertDialog(
+          return GlassAlertDialog(
             title: Text(appLocalizations.aggregatePreviewTitle),
             content: SizedBox(
               width: double.maxFinite,

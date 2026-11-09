@@ -472,6 +472,16 @@ abstract class ThemeProps with _$ThemeProps {
         val.toUnsigned(32) == legacyDefaultPrimaryColor;
   }
 
+  static const _oldPaletteExamples = [
+    0xFF7C75FF,
+    0xFF4C8DFF,
+    0xFF29D6C7,
+    0xFF0E9AA7,
+    0xFF34D399,
+    0xFFF59E0B,
+    0xFF334155,
+  ];
+
   /// Back-fills and normalizes `colorSource` and `primaryColor` for legacy configs,
   /// **without ever overwriting a colour the user picked themselves**.
   ///
@@ -501,15 +511,29 @@ abstract class ThemeProps with _$ThemeProps {
 
     final rawColors = migrated['primaryColors'];
     if (rawColors is List) {
+      final oldExamples = rawColors.take(_oldPaletteExamples.length).toList();
+      final hasDefaultPrefix = intListEquality.equals(
+        oldExamples.whereType<int>().toList(),
+        _oldPaletteExamples,
+      );
+      // An exact prefix distinguishes the shipped examples from a curated list.
+      final saved = hasDefaultPrefix
+          ? [
+              if (migrated['colorSource'] == ColorSource.custom.name &&
+                  _oldPaletteExamples.contains(rawPrimary))
+                rawPrimary,
+              ...rawColors.skip(_oldPaletteExamples.length),
+            ]
+          : rawColors;
       bool hasLegacy = false;
-      final newColors = rawColors.map((c) {
+      final newColors = saved.map((c) {
         if (_isLegacyPrimaryColor(c)) {
           hasLegacy = true;
           return defaultPrimaryColor;
         }
         return c;
       }).toList();
-      if (hasLegacy) {
+      if (hasLegacy || hasDefaultPrefix) {
         migrated['primaryColors'] = newColors;
       }
     }

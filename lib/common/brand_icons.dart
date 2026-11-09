@@ -11,6 +11,18 @@ abstract final class BrandIcons {
     'blue_night': ('蓝夜', 'Blue night'),
   };
 
+  // Sampled from the gradient and orbit accents in the bundled icon artwork.
+  static const paletteSeeds = {
+    'official': 0xFF007AD2,
+    'classic': 0xFF0146CA,
+    'aqua': 0xFF0195B0,
+    'premium': 0xFFE746C1,
+    'speed': 0xFF6E44DC,
+    'sky': 0xFF78C2F8,
+    'sunset': 0xFFF36D69,
+    'blue_night': 0xFF01316C,
+  };
+
   static const notificationStyles = {
     'flow': ('轨道 F', 'Orbit F'),
     'plain': ('极简 F', 'Minimal F'),

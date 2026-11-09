@@ -1,16 +1,11 @@
 import 'dart:async';
-import 'dart:io';
-
-import 'package:file_picker/file_picker.dart';
-
 import 'package:fluxora/common/common.dart';
-import 'package:fluxora/common/brand_icons.dart';
 import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
+import 'package:fluxora/widgets/app_brand_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 import 'package:window_ext/window_ext.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -409,84 +404,26 @@ class _WindowHeaderState extends ConsumerState<WindowHeader> {
   }
 }
 
-final sidebarIconPathProvider =
-    StateNotifierProvider<SidebarIconPathNotifier, String?>((ref) {
-      return SidebarIconPathNotifier();
-    });
-
-class SidebarIconPathNotifier extends StateNotifier<String?> {
-  SidebarIconPathNotifier() : super(null) {
-    _init();
-  }
-
-  Future<void> _init() async {
-    final prefs = await preferences.sharedPreferencesCompleter.future;
-    state = prefs?.getString(customSidebarIconKey);
-  }
-
-  Future<void> updatePath(String? path) async {
-    state = path;
-    final prefs = await preferences.sharedPreferencesCompleter.future;
-    if (path == null) {
-      prefs?.remove(customSidebarIconKey);
-    } else {
-      prefs?.setString(customSidebarIconKey, path);
-    }
-  }
-}
-
 class AppIcon extends ConsumerWidget {
   const AppIcon({super.key});
 
-  Future<void> _handlePickImage(BuildContext context, WidgetRef ref) async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.image);
-
-    if (result != null && result.files.single.path != null) {
-      final path = result.files.single.path!;
-      final file = File(path);
-      final size = await file.length();
-      if (size > 1024 * 1024) {
-        if (context.mounted) {
-          globalState.showNotifier('Image size exceeds 1MB');
-        }
-        return;
-      }
-      ref.read(sidebarIconPathProvider.notifier).updatePath(path);
-    }
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final iconProps = ref.watch(themeSettingProvider);
-    final brandAsset = BrandIcons.asset(
-      iconProps.appIconStyle,
-      iconProps.useDarkIcon,
-    );
-    final customIconPath = ref.watch(sidebarIconPathProvider);
-
-    Widget icon;
-    if (customIconPath != null && customIconPath.isNotEmpty) {
-      icon = ClipOval(
-        child: Image.file(
-          File(customIconPath),
-          width: 32,
-          height: 32,
-          fit: BoxFit.cover,
-          cacheWidth: 64,
-          cacheHeight: 64,
-          errorBuilder: (_, _, _) {
-            // Fallback if file load fails
-            return Image.asset(brandAsset, fit: BoxFit.contain);
-          },
-        ),
-      );
-    } else {
-      icon = Image.asset(brandAsset, fit: BoxFit.contain);
-    }
-
     return GestureDetector(
-      onLongPress: () => _handlePickImage(context, ref),
-      child: SizedBox(width: 40, height: 40, child: icon),
+      onLongPress: () async {
+        try {
+          await ref.read(customAppIconProvider.notifier).pick();
+        } catch (_) {
+          if (context.mounted) {
+            final chinese =
+                Localizations.localeOf(context).languageCode == 'zh';
+            context.showNotifier(
+              chinese ? '无法导入图标' : 'Could not import the icon',
+            );
+          }
+        }
+      },
+      child: const AppBrandIcon(size: 40),
     );
   }
 }

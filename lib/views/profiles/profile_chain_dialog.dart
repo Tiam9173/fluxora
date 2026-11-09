@@ -173,7 +173,7 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
             final options = _candidateProxies
                 .where((n) => keyword.isEmpty || n.toLowerCase().contains(keyword.toLowerCase()))
                 .toList();
-            return AlertDialog(
+            return GlassAlertDialog(
               title: Row(
                 children: [
                   Expanded(child: Text(title, style: const TextStyle(fontSize: 16))),
@@ -265,7 +265,7 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
   void _showSectionHelp(String title, String body) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => GlassAlertDialog(
         title: Text(title),
         content: Text(body, style: const TextStyle(fontSize: 13)),
         actions: [
@@ -283,7 +283,7 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
     final colorScheme = context.colorScheme;
     final profileName = widget.profile.label ?? widget.profile.id;
 
-    return AlertDialog(
+    return GlassAlertDialog(
       title: Row(
         children: [
           const Icon(Icons.alt_route_rounded, color: Colors.indigoAccent),

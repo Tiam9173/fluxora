@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:fluxora/common/brand_icons.dart';
 import 'package:fluxora/common/constant.dart';
 import 'package:fluxora/common/preferences.dart';
@@ -11,6 +12,7 @@ import 'package:fluxora/providers/config.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/views/app_icons.dart';
 import 'package:fluxora/views/about.dart';
+import 'package:fluxora/widgets/app_brand_icon.dart';
 import 'package:fluxora/l10n/l10n.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter/material.dart';
@@ -18,6 +20,35 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../support/render_capture.dart';
+
+class _IconPicker extends FilePicker {
+  String? path;
+
+  @override
+  Future<FilePickerResult?> pickFiles({
+    String? dialogTitle,
+    String? initialDirectory,
+    FileType type = FileType.any,
+    List<String>? allowedExtensions,
+    Function(FilePickerStatus)? onFileLoading,
+    bool allowCompression = true,
+    int compressionQuality = 30,
+    bool allowMultiple = false,
+    bool withData = false,
+    bool withReadStream = false,
+    bool lockParentWindow = false,
+    bool readSequential = false,
+  }) async {
+    final selected = path;
+    return selected == null
+        ? null
+        : FilePickerResult([
+            PlatformFile(name: 'selected', size: 0, path: selected),
+          ]);
+  }
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -29,6 +60,9 @@ void main() {
 
   setUpAll(() async {
     await AppLocalizations.load(const Locale('en'));
+    await (FontLoader(
+      'MaterialIcons',
+    )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
     SharedPreferences.setMockInitialValues({});
     await preferences.sharedPreferencesCompleter.future;
   });
@@ -60,17 +94,24 @@ void main() {
   Future<ProviderContainer> show(
     WidgetTester tester, {
     double scale = 1,
+    ProviderContainer? scope,
   }) async {
-    final container = ProviderContainer();
+    final container = scope ?? ProviderContainer();
     addTearDown(container.dispose);
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
         child: MaterialApp(
-          theme: ThemeData.dark(),
+          theme: ThemeData(
+            brightness: Brightness.dark,
+            fontFamily: 'HarmonyOS_Sans',
+          ),
           home: MediaQuery(
             data: MediaQueryData(textScaler: TextScaler.linear(scale)),
-            child: const Scaffold(body: AppIconsView()),
+            child: const RepaintBoundary(
+              key: ValueKey('icon-settings-capture'),
+              child: Scaffold(body: AppIconsView()),
+            ),
           ),
         ),
       ),
@@ -88,6 +129,67 @@ void main() {
     });
     await tester.pumpAndSettle();
   }
+
+  testWidgets('custom icon validates input, persists and restores the preset', (
+    tester,
+  ) async {
+    final files = _IconPicker()..path = BrandIcons.asset('sunset', false);
+    FilePicker.platform = files;
+    final imported = await tester.runAsync(() async {
+      final storeContainer = ProviderContainer();
+      try {
+        await storeContainer.read(customAppIconProvider.future);
+        final icons = storeContainer.read(customAppIconProvider.notifier);
+        await icons.pick();
+        final imported = storeContainer
+            .read(customAppIconProvider)
+            .asData
+            ?.value;
+        files.path = 'pubspec.yaml';
+        await expectLater(icons.pick(), throwsA(anything));
+        expect(
+          storeContainer.read(customAppIconProvider).asData?.value,
+          imported,
+        );
+        return imported;
+      } finally {
+        storeContainer.dispose();
+      }
+    });
+    expect(imported, isNotNull);
+    final container = ProviderContainer();
+    final restored = await tester.runAsync(
+      () => container.read(customAppIconProvider.future),
+    );
+    expect(restored, imported);
+    await show(tester, scope: container);
+    expect(find.byKey(const ValueKey('remove-app-icon')), findsOneWidget);
+    expect(
+      find.byWidgetPredicate((w) => w is Image && w.image is MemoryImage),
+      findsOneWidget,
+    );
+    if (const bool.fromEnvironment('AURORA_CAPTURE')) {
+      await tester.runAsync(() async {
+        for (final element in tester.elementList(find.byType(Image))) {
+          await precacheImage((element.widget as Image).image, element);
+        }
+      });
+      await tester.pump();
+      await captureFlutterFrame(
+        tester,
+        find.byKey(const ValueKey('icon-settings-capture')),
+        'build/aurora_refresh/captures/custom-app-icon.png',
+      );
+    }
+
+    await tester.runAsync(() async {
+      await tester.tap(find.byKey(const ValueKey('remove-app-icon')));
+      await Future<void>.delayed(Duration.zero);
+    });
+    await tester.pumpAndSettle();
+    expect(store.containsKey(customSidebarIconKey), isFalse);
+    expect(container.read(customAppIconProvider).asData?.value, isNull);
+  });
 
   test(
     'notification styles round-trip without changing app or page appearance',

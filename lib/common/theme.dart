@@ -142,23 +142,36 @@ ThemeData fluxoraMaterialTheme(
     filledButtonTheme: FilledButtonThemeData(
       style: (base.filledButtonTheme.style ?? const ButtonStyle()).copyWith(
         backgroundBuilder: material.isObsidian && material.blurEnabled
-            ? (context, states, child) => DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: states.contains(WidgetState.disabled)
-                      ? null
-                      : LinearGradient(
+            ? (context, states, child) {
+                if (states.contains(WidgetState.disabled)) {
+                  return child ?? const SizedBox.shrink();
+                }
+                return Builder(
+                  builder: (context) {
+                    final shape = context
+                        .findAncestorWidgetOfExactType<Material>()
+                        ?.shape;
+                    return DecoratedBox(
+                      decoration: ShapeDecoration(
+                        shape: shape is OutlinedBorder
+                            ? shape.copyWith(side: BorderSide.none)
+                            : shape ?? const StadiumBorder(),
+                        gradient: const LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [
-                            Colors.white.withValues(alpha: .18),
+                            Color(0x2EFFFFFF),
                             Colors.transparent,
-                            Colors.black.withValues(alpha: .08),
+                            Color(0x14000000),
                           ],
-                          stops: const [0, .45, 1],
+                          stops: [0, .45, 1],
                         ),
-                ),
-                child: child,
-              )
+                      ),
+                      child: child,
+                    );
+                  },
+                );
+              }
             : null,
         side: WidgetStateProperty.resolveWith(
           (states) => states.contains(WidgetState.disabled)

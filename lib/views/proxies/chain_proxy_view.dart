@@ -299,7 +299,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
   void _clearInvalidProxies() async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => GlassAlertDialog(
         title: Text(appLocalizations.clearInvalidProxies),
         content: Text(appLocalizations.confirmClearInvalid),
         actions: [
@@ -1721,7 +1721,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
       trailing: Switch(value: value, onChanged: onChanged),
       onTap: () => showDialog(
         context: context,
-        builder: (ctx) => AlertDialog(
+        builder: (ctx) => GlassAlertDialog(
           title: Text(title),
           content: Text(description, style: const TextStyle(fontSize: 13)),
           actions: [
@@ -2362,7 +2362,7 @@ class _QuickImportDialogState extends State<_QuickImportDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    return GlassAlertDialog(
       title: Text(appLocalizations.quickImport),
       content: SizedBox(
         width: MediaQuery.of(context).size.width.clamp(0.0, 480.0),
@@ -2515,7 +2515,7 @@ class _EditLandingProxyDialogState extends State<_EditLandingProxyDialog> {
   @override
   Widget build(BuildContext context) {
     final statusColors = FluxoraColorSet.of(Theme.of(context).brightness);
-    return AlertDialog(
+    return GlassAlertDialog(
       title: Text(
         widget.proxy == null
             ? appLocalizations.addLandingProxy
@@ -2981,7 +2981,7 @@ class _ProxyHealthReportDialog extends ConsumerWidget {
     final report = chainProxyManager.getHealthReport(proxy.id);
     final statusColors = FluxoraColorSet.of(Theme.of(context).brightness);
 
-    return AlertDialog(
+    return GlassAlertDialog(
       title: Row(
         children: [
           const Icon(Icons.verified_user_outlined, color: Colors.blue),

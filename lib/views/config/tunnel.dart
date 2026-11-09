@@ -122,7 +122,7 @@ class _TunnelDialogState extends State<_TunnelDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    return GlassAlertDialog(
       title: Text(
         widget.tunnel == null
             ? appLocalizations.addTunnel

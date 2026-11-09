@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'glass_surface.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' show Intl;
 
 import '../common/common.dart';
 import '../models/common.dart';
@@ -10,7 +10,7 @@ import '../providers/config.dart';
 
 /// Stable, labelled destinations in a restrained floating capsule.
 /// Selection uses a neutral glass highlight; keyboard focus keeps its own ring.
-class AuroraBottomNavBar extends ConsumerWidget {
+class AuroraBottomNavBar extends ConsumerStatefulWidget {
   const AuroraBottomNavBar({
     super.key,
     required this.navigationItems,
@@ -24,13 +24,22 @@ class AuroraBottomNavBar extends ConsumerWidget {
   final int selectedIndex;
   final ValueChanged<int> onTabChange;
 
+  @override
+  ConsumerState<AuroraBottomNavBar> createState() => _AuroraBottomNavBarState();
+}
+
+class _AuroraBottomNavBarState extends ConsumerState<AuroraBottomNavBar> {
+  double? _dragIndex;
+
   IconData _iconOf(Widget iconWidget) {
     if (iconWidget is Icon) return iconWidget.icon ?? Icons.home;
     return Icons.home;
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    final navigationItems = widget.navigationItems;
+    final selectedIndex = widget.selectedIndex;
     if (navigationItems.isEmpty) return const SizedBox.shrink();
     final scheme = Theme.of(context).colorScheme;
     final motion = FluxoraMotion.ofContext(context);
@@ -48,7 +57,145 @@ class AuroraBottomNavBar extends ConsumerWidget {
       if (system.isAndroid && enableHapticFeedback) {
         HapticFeedback.selectionClick();
       }
-      onTabChange(index);
+      widget.onTabChange(index);
+    }
+
+    final lensMaterial = material.liquid
+        ? GlassSurface(
+            radius: FluxoraRadius.sheet,
+            blur: true,
+            child: ColoredBox(color: scheme.primary.withValues(alpha: .11)),
+          )
+        : DecoratedBox(
+            decoration: BoxDecoration(
+              color: scheme.onSurface.withValues(
+                alpha: scheme.brightness == Brightness.dark ? .09 : .06,
+              ),
+              gradient: material.isObsidian && material.blurEnabled
+                  ? LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        lensHighlight.withValues(alpha: pearl ? .9 : .13),
+                        lensHighlight.withValues(alpha: pearl ? .35 : .035),
+                      ],
+                    )
+                  : null,
+              borderRadius: BorderRadius.circular(FluxoraRadius.xl),
+              border: Border.all(
+                color: lensHighlight.withValues(alpha: pearl ? .95 : .16),
+              ),
+            ),
+          );
+
+    Widget buildTabs(BuildContext context, BoxConstraints constraints) {
+      final count = navigationItems.length;
+      final width = constraints.maxWidth;
+      final itemWidth = width / count;
+      final selected = selectedIndex.clamp(0, count - 1).toDouble();
+      final dragging = _dragIndex != null;
+      final target = (_dragIndex ?? selected).clamp(0.0, count - 1.0);
+      final canDrag = material.liquid && count > 1 && itemWidth > 0;
+
+      void drag(Offset position) {
+        final x = Directionality.of(context) == TextDirection.rtl
+            ? width - position.dx
+            : position.dx;
+        setState(
+          () => _dragIndex = (x / itemWidth - .5).clamp(0.0, count - 1.0),
+        );
+      }
+
+      void cancelDrag() {
+        if (_dragIndex != null) setState(() => _dragIndex = null);
+      }
+
+      return Listener(
+        onPointerCancel: (_) => cancelDrag(),
+        child: GestureDetector(
+          onHorizontalDragStart: canDrag
+              ? (details) => drag(details.localPosition)
+              : null,
+          onHorizontalDragUpdate: canDrag
+              ? (details) => drag(details.localPosition)
+              : null,
+          onHorizontalDragCancel: canDrag ? cancelDrag : null,
+          onHorizontalDragEnd: canDrag
+              ? (_) {
+                  final destination = _dragIndex
+                      ?.clamp(0.0, count - 1.0)
+                      .round();
+                  cancelDrag();
+                  if (destination != null && destination != selectedIndex) {
+                    handleTabChange(destination);
+                  }
+                }
+              : null,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: TweenAnimationBuilder<double>(
+                    key: const ValueKey('aurora-dock-indicator'),
+                    tween: Tween(end: target),
+                    duration: dragging ? Duration.zero : motion.base,
+                    curve: material.liquid || motion.expressive
+                        ? Curves.easeOutBack
+                        : motion.standard,
+                    child: lensMaterial,
+                    builder: (context, position, lens) {
+                      final stretch = material.liquid && !motion.reduceMotion
+                          ? motion.intensity *
+                                (dragging
+                                    ? .32
+                                    : .42 *
+                                          (target - position).abs().clamp(0, 1))
+                          : 0.0;
+                      final lensWidth = (itemWidth * (1 + stretch)).clamp(
+                        0.0,
+                        width,
+                      );
+                      final center = ((position + .5) * itemWidth).clamp(
+                        lensWidth / 2,
+                        width - lensWidth / 2,
+                      );
+                      final travel = width - lensWidth;
+                      return Align(
+                        alignment: AlignmentDirectional(
+                          travel <= 0
+                              ? 0
+                              : 2 * (center - lensWidth / 2) / travel - 1,
+                          0,
+                        ),
+                        child: SizedBox(
+                          key: const ValueKey('aurora-dock-lens'),
+                          width: lensWidth,
+                          height: double.infinity,
+                          child: lens,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  for (var index = 0; index < count; index++)
+                    Expanded(
+                      child: _AuroraDockItem(
+                        icon: _iconOf(navigationItems[index].icon),
+                        label: Intl.message(navigationItems[index].label.name),
+                        selected: index == selectedIndex,
+                        emphasized: index == target.round(),
+                        onTap: () => handleTabChange(index),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
     return RepaintBoundary(
@@ -63,124 +210,44 @@ class AuroraBottomNavBar extends ConsumerWidget {
             right: FluxoraSpacing.lg,
             top: FluxoraSpacing.sm,
           ),
-          child: GlassSurface(
-            radius: FluxoraRadius.sheet,
-            floating: true,
-            blur: true,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: FluxoraMaterial.of(context).enabled
-                    ? Colors.transparent
-                    : scheme.surfaceContainer,
-                borderRadius: BorderRadius.circular(FluxoraRadius.sheet),
-                border: FluxoraMaterial.of(context).enabled
-                    ? null
-                    : Border.all(
-                        color: scheme.outlineVariant.withValues(
-                          alpha: scheme.brightness == Brightness.light
-                              ? 0.45
-                              : 0.3,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: GlassSurface(
+                    radius: FluxoraRadius.sheet,
+                    floating: true,
+                    blur: true,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: material.enabled
+                            ? null
+                            : scheme.surfaceContainer,
+                        borderRadius: BorderRadius.circular(
+                          FluxoraRadius.sheet,
                         ),
-                        width: 1,
-                      ),
-                // It is a floating surface above scrolling content, i.e. the
-                // `menu` rung (§8.1 / §8.2). The ladder already encodes "soft in
-                // light, faint in dark", so the widget does not invent numbers.
-                boxShadow: FluxoraMaterial.of(context).enabled
-                    ? null
-                    : FluxoraElevation.of(scheme.brightness).menu,
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: FluxoraSpacing.xs,
-                  vertical: FluxoraSpacing.xs,
-                ),
-                child: LayoutBuilder(
-                  builder: (context, constraints) => Stack(
-                    children: [
-                      Positioned.fill(
-                        child: AnimatedAlign(
-                          key: const ValueKey('aurora-dock-indicator'),
-                          alignment: AlignmentDirectional(
-                            navigationItems.length == 1
-                                ? 0
-                                : -1 +
-                                      2 *
-                                          selectedIndex.clamp(
-                                            0,
-                                            navigationItems.length - 1,
-                                          ) /
-                                          (navigationItems.length - 1),
-                            0,
-                          ),
-                          duration: motion.base,
-                          curve: motion.expressive
-                              ? Curves.easeOutBack
-                              : motion.standard,
-                          child: SizedBox(
-                            key: const ValueKey('aurora-dock-lens'),
-                            width:
-                                constraints.maxWidth / navigationItems.length,
-                            height: double.infinity,
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                color: scheme.onSurface.withValues(
-                                  alpha: scheme.brightness == Brightness.dark
-                                      ? .09
-                                      : .06,
-                                ),
-                                gradient:
-                                    material.isObsidian && material.blurEnabled
-                                    ? LinearGradient(
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                        colors: [
-                                          lensHighlight.withValues(
-                                            alpha: pearl ? .9 : .13,
-                                          ),
-                                          lensHighlight.withValues(
-                                            alpha: pearl ? .35 : .035,
-                                          ),
-                                        ],
-                                      )
-                                    : null,
-                                borderRadius: BorderRadius.circular(
-                                  FluxoraRadius.xl,
-                                ),
-                                border: Border.all(
-                                  color: lensHighlight.withValues(
-                                    alpha: pearl ? .95 : .16,
-                                  ),
+                        border: material.enabled
+                            ? null
+                            : Border.all(
+                                color: scheme.outlineVariant.withValues(
+                                  alpha: scheme.brightness == Brightness.light
+                                      ? .45
+                                      : .3,
                                 ),
                               ),
-                            ),
-                          ),
-                        ),
+                        boxShadow: material.enabled
+                            ? null
+                            : FluxoraElevation.of(scheme.brightness).menu,
                       ),
-                      Row(
-                        children: [
-                          for (
-                            var index = 0;
-                            index < navigationItems.length;
-                            index++
-                          )
-                            Expanded(
-                              child: _AuroraDockItem(
-                                icon: _iconOf(navigationItems[index].icon),
-                                label: Intl.message(
-                                  navigationItems[index].label.name,
-                                ),
-                                selected: index == selectedIndex,
-                                onTap: () => handleTabChange(index),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
-            ),
+              Padding(
+                padding: const EdgeInsets.all(FluxoraSpacing.xs),
+                child: LayoutBuilder(builder: buildTabs),
+              ),
+            ],
           ),
         ),
       ),
@@ -193,12 +260,14 @@ class _AuroraDockItem extends StatefulWidget {
     required this.icon,
     required this.label,
     required this.selected,
+    required this.emphasized,
     required this.onTap,
   });
 
   final IconData icon;
   final String label;
   final bool selected;
+  final bool emphasized;
   final VoidCallback onTap;
 
   @override
@@ -218,9 +287,11 @@ class _AuroraDockItemState extends State<_AuroraDockItem> {
     final hoverWash = scheme.onSurface.withValues(
       alpha: brightness == Brightness.dark ? 0.06 : 0.05,
     );
-    final iconColor = selected ? scheme.onSurface : scheme.onSurfaceVariant;
-    final labelColor = selected ? scheme.onSurface : scheme.onSurfaceVariant;
+    final foreground = widget.emphasized
+        ? scheme.onSurface
+        : scheme.onSurfaceVariant;
     final radius = BorderRadius.circular(FluxoraRadius.xl);
+    final motion = FluxoraMotion.ofContext(context);
 
     return Semantics(
       button: true,
@@ -231,7 +302,7 @@ class _AuroraDockItemState extends State<_AuroraDockItem> {
           minHeight: AuroraBottomNavBar.itemHeight,
         ),
         child: Material(
-          animationDuration: FluxoraMotion.ofContext(context).base,
+          animationDuration: motion.base,
           color: _hovered ? hoverWash : Colors.transparent,
           clipBehavior: Clip.antiAlias,
           shape: RoundedRectangleBorder(
@@ -252,7 +323,6 @@ class _AuroraDockItemState extends State<_AuroraDockItem> {
             // vibration should not turn off the touch response.
             splashColor: scheme.primary.withValues(alpha: 0.10),
             child: Padding(
-              key: selected ? const ValueKey('aurora-dock-selection') : null,
               padding: const EdgeInsets.symmetric(
                 horizontal: FluxoraSpacing.xxs,
                 vertical: FluxoraSpacing.xxs,
@@ -263,12 +333,19 @@ class _AuroraDockItemState extends State<_AuroraDockItem> {
                 children: [
                   ExcludeSemantics(
                     child: AnimatedScale(
-                      scale: selected
-                          ? 1 + .1 * FluxoraMotion.ofContext(context).intensity
+                      scale: widget.emphasized && !motion.reduceMotion
+                          ? 1 + .1 * motion.intensity
                           : 1,
-                      duration: FluxoraMotion.ofContext(context).fast,
+                      duration: motion.fast,
                       curve: Curves.easeOutCubic,
-                      child: Icon(widget.icon, size: 22, color: iconColor),
+                      child: Icon(
+                        widget.icon,
+                        key: selected
+                            ? const ValueKey('aurora-dock-selection')
+                            : null,
+                        size: 22,
+                        color: foreground,
+                      ),
                     ),
                   ),
                   const SizedBox(height: FluxoraSpacing.xs),
@@ -290,7 +367,7 @@ class _AuroraDockItemState extends State<_AuroraDockItem> {
                                 fontWeight: selected
                                     ? FontWeight.w600
                                     : FontWeight.w500,
-                                color: labelColor,
+                                color: foreground,
                                 letterSpacing: 0,
                               ),
                     ),

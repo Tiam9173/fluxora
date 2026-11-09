@@ -67,7 +67,7 @@ class ProxyCard extends StatelessWidget {
 
   void _handleTestCurrentDelay() {
     if (_isNonTestableProxy) return;
-    proxyDelayTest(proxy, testUrl);
+    proxyDelayTest(proxy, testUrl: testUrl);
   }
 
   /// The latency slot handed to [FluxoraProxyTile].

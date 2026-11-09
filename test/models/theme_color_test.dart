@@ -11,6 +11,32 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('ThemeProps Migration Tests', () {
+    test('only the original example prefix is replaced', () {
+      const examples = [
+        0xFF7C75FF,
+        0xFF4C8DFF,
+        0xFF29D6C7,
+        0xFF0E9AA7,
+        0xFF34D399,
+        0xFFF59E0B,
+        0xFF334155,
+      ];
+      const saved = 0xFFE93461;
+      final theme = ThemeProps.safeFromJson({
+        'colorSource': 'custom',
+        'primaryColor': examples[3],
+        'primaryColors': [...examples, saved],
+      });
+      expect(theme.primaryColor, examples[3]);
+      expect(theme.primaryColors, [examples[3], saved]);
+      expect(
+        ThemeProps.safeFromJson({
+          'primaryColors': [examples[1], saved],
+        }).primaryColors,
+        [examples[1], saved],
+      );
+      expect(const ThemeProps().primaryColors, isEmpty);
+    });
     test('Empty / null JSON falls back to defaultThemeProps with fluxora', () {
       final theme = ThemeProps.safeFromJson(null);
       expect(theme.colorSource, ColorSource.fluxora);
