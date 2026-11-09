@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui' as ui;
 
 import 'package:file_picker/file_picker.dart';
 import 'package:fluxora/common/brand_icons.dart';
@@ -102,6 +103,10 @@ void main() {
       UncontrolledProviderScope(
         container: container,
         child: MaterialApp(
+          builder: (_, child) => RepaintBoundary(
+            key: const ValueKey('icon-overlay-capture'),
+            child: child,
+          ),
           theme: ThemeData(
             brightness: Brightness.dark,
             fontFamily: 'HarmonyOS_Sans',
@@ -208,6 +213,59 @@ void main() {
       }
     },
   );
+
+  testWidgets('import crops the artwork before sending it to the launcher', (
+    tester,
+  ) async {
+    System.platformOverride = 'android';
+    FilePicker.platform = _IconPicker()
+      ..path = BrandIcons.asset('sunset', false);
+    final container = ProviderContainer();
+    await tester.runAsync(() => container.read(customAppIconProvider.future));
+    await show(tester, scale: 1.5, scope: container);
+    final import = find.byKey(const ValueKey('import-app-icon'));
+    await tester.ensureVisible(import);
+    await tester.runAsync(() async {
+      await tester.tap(import);
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+    });
+    await tester.pumpAndSettle();
+    expect(find.text('Crop icon'), findsOneWidget);
+    final zoom = find.byType(Slider).first;
+    await tester.ensureVisible(zoom);
+    await tester.tapAt(tester.getCenter(zoom) + const Offset(30, 0));
+    await tester.pumpAndSettle();
+    expect(find.byType(Slider), findsNWidgets(3));
+    if (const bool.fromEnvironment('AURORA_CAPTURE')) {
+      await captureFlutterFrame(
+        tester,
+        find.byKey(const ValueKey('icon-overlay-capture')),
+        'build/aurora_refresh/captures/app-icon-crop.png',
+      );
+    }
+    await tester.runAsync(() async {
+      await tester.tap(find.text('Save'));
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+    });
+    await tester.pumpAndSettle();
+    final bytes = container.read(customAppIconProvider).asData?.value;
+    expect(bytes, isNotNull);
+    final size = await tester.runAsync(() async {
+      final codec = await ui.instantiateImageCodec(bytes!);
+      final image = (await codec.getNextFrame()).image;
+      final size = (image.width, image.height);
+      image.dispose();
+      codec.dispose();
+      return size;
+    });
+    expect(size?.$1, size?.$2);
+    final pin = find.byKey(const ValueKey('pin-custom-icon'));
+    await tester.ensureVisible(pin);
+    await tester.tap(pin);
+    await tester.pumpAndSettle();
+    expect(calls.last.method, 'syncCustomShortcut');
+    expect(calls.last.arguments, {'bytes': bytes, 'pin': true});
+  });
 
   testWidgets('notification selection updates native icon and saved choice', (
     tester,

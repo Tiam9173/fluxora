@@ -149,6 +149,14 @@ class App {
     return result ?? false;
   }
 
+  Future<bool> syncCustomShortcut(Uint8List? bytes, {bool pin = false}) async {
+    return await methodChannel.invokeMethod<bool>('syncCustomShortcut', {
+          'bytes': bytes,
+          'pin': pin,
+        }) ??
+        false;
+  }
+
   Future<Map<String, dynamic>> getLauncherIcon() async {
     return await methodChannel.invokeMapMethod<String, dynamic>(
           'getLauncherIcon',

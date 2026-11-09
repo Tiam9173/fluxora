@@ -412,7 +412,7 @@ class AppIcon extends ConsumerWidget {
     return GestureDetector(
       onLongPress: () async {
         try {
-          await ref.read(customAppIconProvider.notifier).pick();
+          await ref.read(customAppIconProvider.notifier).pick(context: context);
         } catch (_) {
           if (context.mounted) {
             final chinese =

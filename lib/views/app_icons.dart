@@ -160,8 +160,13 @@ class _AppIconsViewState extends ConsumerState<AppIconsView> {
   Future<void> _editCustomIcon({bool remove = false}) async {
     setState(() => _customBusy = true);
     final controller = ref.read(customAppIconProvider.notifier);
+    final before = ref.read(customAppIconProvider).asData?.value;
     try {
-      await (remove ? controller.clear() : controller.pick());
+      await (remove ? controller.clear() : controller.pick(context: context));
+      if (mounted && system.isAndroid) {
+        final after = ref.read(customAppIconProvider).asData?.value;
+        if (!identical(before, after)) await _syncCustomShortcut(after);
+      }
     } catch (_) {
       if (mounted) {
         context.showNotifier(
@@ -174,6 +179,22 @@ class _AppIconsViewState extends ConsumerState<AppIconsView> {
       }
     } finally {
       if (mounted) setState(() => _customBusy = false);
+    }
+  }
+
+  Future<void> _syncCustomShortcut(Uint8List? bytes, {bool pin = false}) async {
+    final chinese = _chinese(context);
+    try {
+      if (await app.syncCustomShortcut(bytes, pin: pin)) return;
+    } catch (_) {
+      // The launcher may reject a request independently of the saved artwork.
+    }
+    if (mounted) {
+      context.showNotifier(
+        chinese
+            ? '桌面启动器未接受快捷方式请求'
+            : 'The launcher declined the shortcut request',
+      );
     }
   }
 
@@ -205,7 +226,7 @@ class _AppIconsViewState extends ConsumerState<AppIconsView> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          tr('自定义应用内图标', 'Custom in-app icon'),
+                          tr('自定义图标', 'Custom icon'),
                           style: context.textTheme.titleMedium,
                         ),
                       ),
@@ -213,10 +234,15 @@ class _AppIconsViewState extends ConsumerState<AppIconsView> {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    tr(
-                      '用于关于、主题预览及桌面侧栏。',
-                      'Shown in About, theme previews and the desktop sidebar.',
-                    ),
+                    system.isAndroid
+                        ? tr(
+                            '应用内显示，也可添加到桌面快捷方式。',
+                            'Shown in the app and available as a home screen shortcut.',
+                          )
+                        : tr(
+                            '用于关于、主题预览及桌面侧栏。',
+                            'Shown in About, theme previews and the desktop sidebar.',
+                          ),
                   ),
                   const SizedBox(height: 8),
                   Wrap(
@@ -241,6 +267,26 @@ class _AppIconsViewState extends ConsumerState<AppIconsView> {
                               ? null
                               : () => _editCustomIcon(remove: true),
                           child: Text(tr('恢复预设', 'Use preset')),
+                        ),
+                      if (system.isAndroid && hasCustom)
+                        OutlinedButton.icon(
+                          key: const ValueKey('pin-custom-icon'),
+                          onPressed: _customBusy
+                              ? null
+                              : () async {
+                                  setState(() => _customBusy = true);
+                                  await _syncCustomShortcut(
+                                    custom.asData?.value,
+                                    pin: true,
+                                  );
+                                  if (mounted) {
+                                    setState(() => _customBusy = false);
+                                  }
+                                },
+                          icon: const Icon(Icons.add_to_home_screen),
+                          label: Text(
+                            tr('添加桌面快捷方式', 'Add home screen shortcut'),
+                          ),
                         ),
                     ],
                   ),
@@ -495,7 +541,7 @@ class _NotificationIconsItemState extends ConsumerState<NotificationIconsItem> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            chinese ? '通知栏图标' : 'Notification icon',
+            chinese ? '通知小图标' : 'Notification small icon',
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 12),

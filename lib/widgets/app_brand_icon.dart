@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -9,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluxora/common/brand_icons.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/providers/config.dart';
+import 'package:fluxora/widgets/app_icon_crop.dart';
 import 'package:synchronized/synchronized.dart';
 
 final customAppIconProvider = AsyncNotifierProvider<CustomAppIcon, Uint8List?>(
@@ -37,7 +39,7 @@ class CustomAppIcon extends AsyncNotifier<Uint8List?> {
     }
   }
 
-  Future<void> pick() => _writes.synchronized(() async {
+  Future<void> pick({BuildContext? context}) => _writes.synchronized(() async {
     if (state.isLoading) await future;
     final result = await FilePicker.platform.pickFiles(
       type: FileType.image,
@@ -45,7 +47,38 @@ class CustomAppIcon extends AsyncNotifier<Uint8List?> {
     );
     final path = result?.files.single.path;
     if (path == null) return;
-    final icon = await _readIcon(path);
+    final image = await _decodeIcon(path, context == null ? 192 : 1536);
+    final Uint8List icon;
+    try {
+      if (context == null) {
+        icon = await _encodeIcon(image);
+      } else {
+        if (!context.mounted) return;
+        final crop = await showAppIconCrop(context, image);
+        if (crop == null) return;
+        final edge = math.min(192, math.max(1, crop.width.floor()));
+        final recorder = ui.PictureRecorder();
+        Canvas(recorder).drawImageRect(
+          image,
+          crop,
+          Rect.fromLTWH(0, 0, edge.toDouble(), edge.toDouble()),
+          Paint()..filterQuality = FilterQuality.medium,
+        );
+        final picture = recorder.endRecording();
+        try {
+          final cropped = await picture.toImage(edge, edge);
+          try {
+            icon = await _encodeIcon(cropped);
+          } finally {
+            cropped.dispose();
+          }
+        } finally {
+          picture.dispose();
+        }
+      }
+    } finally {
+      image.dispose();
+    }
     final prefs = await preferences.sharedPreferencesCompleter.future;
     if (prefs == null ||
         !await prefs.setString(
@@ -67,6 +100,20 @@ class CustomAppIcon extends AsyncNotifier<Uint8List?> {
   });
 
   Future<Uint8List> _readIcon(String path) async {
+    final image = await _decodeIcon(path, 192);
+    try {
+      return await _encodeIcon(image);
+    } finally {
+      image.dispose();
+    }
+  }
+
+  Future<Uint8List> _encodeIcon(ui.Image image) async {
+    final data = await image.toByteData(format: ui.ImageByteFormat.png);
+    return data!.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+  }
+
+  Future<ui.Image> _decodeIcon(String path, int maxEdge) async {
     final file = await File(path).open();
     final Uint8List bytes;
     try {
@@ -86,22 +133,13 @@ class CustomAppIcon extends AsyncNotifier<Uint8List?> {
         }
         final landscape = descriptor.width >= descriptor.height;
         final codec = await descriptor.instantiateCodec(
-          targetWidth: landscape && descriptor.width > 192 ? 192 : null,
-          targetHeight: !landscape && descriptor.height > 192 ? 192 : null,
+          targetWidth: landscape && descriptor.width > maxEdge ? maxEdge : null,
+          targetHeight: !landscape && descriptor.height > maxEdge
+              ? maxEdge
+              : null,
         );
         try {
-          final frame = await codec.getNextFrame();
-          try {
-            final data = await frame.image.toByteData(
-              format: ui.ImageByteFormat.png,
-            );
-            return data!.buffer.asUint8List(
-              data.offsetInBytes,
-              data.lengthInBytes,
-            );
-          } finally {
-            frame.image.dispose();
-          }
+          return (await codec.getNextFrame()).image;
         } finally {
           codec.dispose();
         }

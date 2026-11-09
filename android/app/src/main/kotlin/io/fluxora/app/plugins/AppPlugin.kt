@@ -9,6 +9,8 @@ import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.ComponentInfo
 import android.content.pm.PackageManager
+import android.content.pm.ShortcutInfo
+import android.content.pm.ShortcutManager
 import android.net.VpnService
 import android.os.Build
 import android.provider.Settings
@@ -48,8 +50,10 @@ import java.util.concurrent.ConcurrentHashMap
 import android.content.res.Configuration
 import android.net.Uri
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
+import android.graphics.drawable.Icon
 
 class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware {
 
@@ -179,6 +183,37 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
         return nightModeFlags == Configuration.UI_MODE_NIGHT_YES
     }
 
+    private fun syncCustomShortcut(bytes: ByteArray?, pin: Boolean): Boolean {
+        val context = FluxoraApplication.getAppContext()
+        val manager = context.getSystemService<ShortcutManager>() ?: return false
+        val id = "custom-app-icon"
+        val pinned = manager.pinnedShortcuts.any { it.id == id }
+        if (!pinned && !pin) return true
+        if (!pinned && !manager.isRequestPinShortcutSupported) return false
+        val icon = if (bytes == null) {
+            Icon.createWithResource(context, R.mipmap.brand_official_light)
+        } else {
+            require(bytes.size <= 165000) { "Invalid shortcut icon size" }
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+            require(bounds.outWidth in 1..192 && bounds.outHeight in 1..192) {
+                "Invalid shortcut icon dimensions"
+            }
+            val bitmap = requireNotNull(BitmapFactory.decodeByteArray(bytes, 0, bytes.size))
+            Icon.createWithBitmap(bitmap)
+        }
+        val shortcut = ShortcutInfo.Builder(context, id)
+            .setShortLabel(context.getString(R.string.fluxora))
+            .setIcon(icon)
+            .setIntent(Intent(Intent.ACTION_MAIN)
+                .addCategory(Intent.CATEGORY_LAUNCHER)
+                .setPackage(context.packageName)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED))
+            .build()
+        return if (pinned) manager.updateShortcuts(listOf(shortcut))
+            else manager.requestPinShortcut(shortcut, null)
+    }
+
     private fun isAndroidTV(): Boolean {
         val uiMode = FluxoraApplication.getAppContext().resources.configuration.uiMode
         return (uiMode and Configuration.UI_MODE_TYPE_MASK) == Configuration.UI_MODE_TYPE_TELEVISION
@@ -253,6 +288,15 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
                     true
                 }.onSuccess { result.success(it) }
                     .onFailure { result.error("ICON_CHANGE_FAILED", it.message, null) }
+            }
+            "syncCustomShortcut" -> {
+                runCatching {
+                    syncCustomShortcut(
+                        call.argument<ByteArray>("bytes"),
+                        call.argument<Boolean>("pin") == true
+                    )
+                }.onSuccess { result.success(it) }
+                    .onFailure { result.error("SHORTCUT_ICON_FAILED", it.message, null) }
             }
             "setNotificationIconStyle" -> {
                 runCatching {
