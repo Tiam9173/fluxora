@@ -72,8 +72,6 @@
 - 路由拓扑预览：直观查看各跳的连通性与延迟分布
 - 可按订阅单独启用，并支持显式多前置链路
 
-> 链式代理当前**没有自动故障切换（auto Failover）**。候选池与手动切换不等于自动回退。
-
 ### Cloudflare WARP
 
 - 内置 WARP 出口，生成独立的「🛡️ WARP 出口」策略组，可与任意代理组组合使用
@@ -98,8 +96,6 @@
 - 日志、请求记录、连接诊断
 - 可选 IP 风险情报（默认关闭）
 
-> 超时只表示这一次探测失败，不能据此断定节点完全不可用；风险评分也不构成匿名性或安全保证。
-
 ### 界面与个性化
 
 - 首页组件可添加、排序、移除，连接主操作始终保留
@@ -120,10 +116,6 @@
 - **Android**：在打包图标之间切换 launcher alias；启动器刷新、通知与磁贴仍需真机验收。
 - **桌面端**：保存应用内标记，系统安装图标随构建更新，暂不支持运行时更换。
 - **通知 / 托盘 / 快捷磁贴**：使用专用单色标记。
-
-## 产品界面
-
-![Fluxora 首页](snapshots/home.png)
 
 ## 支持平台
 
@@ -156,8 +148,6 @@
 ### Windows
 
 下载 `setup.exe` 安装程序，或解压 `*-windows-amd64-portable.zip` 后直接运行 `Fluxora.exe`。
-
-> Windows 构建当前使用自签名证书，仍可能出现系统信任或 SmartScreen 提示，见 [签名说明](SIGNING-POLICY.md)。
 
 ### Android
 
@@ -222,8 +212,6 @@ flutter analyze
 flutter test
 flutter run            # 或 flutter build windows --release
 ```
-
-CI 当前固定 Flutter 3.47.4（部分 ARM runner 使用工作流指定版本），流程见 [.github/workflows](.github/workflows)。普通源码运行不等于官方签名安装包，Windows 发行构建还会校验 Core / Helper 的文件锚点。
 
 ## 参与贡献
 
