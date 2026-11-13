@@ -407,7 +407,7 @@ class AppSidebarContainer extends ConsumerWidget {
             : (extended
                   ? (chinese ? '收起导航' : 'Collapse navigation')
                   : (chinese ? '展开导航' : 'Expand navigation'));
-        return Row(
+        final layout = Row(
           children: [
             AnimatedContainer(
               key: const ValueKey('desktop-sidebar'),
@@ -593,6 +593,8 @@ class AppSidebarContainer extends ConsumerWidget {
             ),
           ],
         );
+        // The sidebar sits outside the Navigator's overlay.
+        return Overlay.wrap(child: layout);
       },
     );
   }
