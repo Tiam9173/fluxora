@@ -10,25 +10,18 @@ import 'package:fluxora/clash/interface.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/controller.dart';
 import 'package:fluxora/enum/enum.dart';
+import 'package:fluxora/l10n/l10n.dart';
 import 'package:fluxora/manager/chain_proxy_manager.dart';
 import 'package:fluxora/models/models.dart';
 import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
 
-/// Phase 11 — the two remaining optimistic-write paths.
-///
-/// Both have the same shape as D5: write the selection map first, then talk to
-/// the core, and never undo the write when the core refuses.
-///
-/// * `changeProxyDebounce` — the write happens in `card.dart` before the call;
-///   the debounced callback discards its future, so a rejection becomes an
-///   unhandled async error *and* leaves the fake selection in place.
-/// * `changeMode` — writes the selection map per group before `changeProxy`,
-///   then only logs a failure.
-///
 /// Fake Core only. No real core, socket, TUN, DNS, route or system proxy.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(() async {
+    await AppLocalizations.load(const Locale('en'));
+  });
 
   late _FakeClashCore fake;
   late WidgetRef capturedRef;
@@ -128,17 +121,14 @@ void main() {
       capturedRef.read(currentProfileProvider)?.selectedMap ??
       <String, String>{};
 
-  /// Mirrors `card.dart` — the only production caller.
-  ///
-  /// That caller hands the whole job to the controller; the controller writes
-  /// the optimistic selection itself so it can undo it on rejection.
+  /// Exercises the same selection entry point as the node card and tray.
   void selectFromCard(AppController controller, String group, String node) {
-    controller.changeProxyDebounce(group, node);
+    controller.selectProxy(group, node);
   }
 
-  // ── changeProxyDebounce ──────────────────────────────────────────────────
+  // ── Node selection ───────────────────────────────────────────────────────
 
-  testWidgets('a native error string rejects the optimistic node selection', (
+  testWidgets('a native error string preserves the confirmed node', (
     tester,
   ) async {
     final controller = await pump(tester, selected: {groupName: oldNode});
@@ -149,7 +139,7 @@ void main() {
     expect(selectedMap()[groupName], oldNode);
   });
 
-  testWidgets('debounced select — core rejects, the optimistic write reverts', (
+  testWidgets('node selection preserves the previous choice on rejection', (
     tester,
   ) async {
     final controller = await pump(tester, selected: {groupName: oldNode});
@@ -157,12 +147,8 @@ void main() {
 
     selectFromCard(controller, groupName, newNode);
 
-    // The optimistic write is still immediate — that part must not change.
-    expect(
-      selectedMap()[groupName],
-      newNode,
-      reason: 'the UI still updates before the debounce fires',
-    );
+    // A pending request must not overwrite the last confirmed choice.
+    expect(selectedMap()[groupName], oldNode);
 
     await tester.pump(const Duration(milliseconds: 120));
     await tester.pump();
@@ -187,6 +173,40 @@ void main() {
     await tester.pump();
 
     expect(selectedMap()[groupName], newNode);
+  });
+
+  testWidgets(
+    'rapid choices preserve the last confirmed node if the next fails',
+    (tester) async {
+      final controller = await pump(tester, selected: {groupName: oldNode});
+      final first = Completer<void>();
+      fake.beforeChange = (params) async {
+        if (params.proxyName == newNode) await first.future;
+        if (params.proxyName == dedicated) throw StateError('rejected');
+      };
+      controller.readBack = () => [group(groupName, newNode)];
+      selectFromCard(controller, groupName, newNode);
+      selectFromCard(controller, groupName, dedicated);
+      await tester.pump();
+      expect(selectedMap()[groupName], oldNode);
+      first.complete();
+      await tester.pump();
+      expect(fake.changes, [(groupName, newNode), (groupName, dedicated)]);
+      expect(selectedMap()[groupName], newNode);
+    },
+  );
+
+  testWidgets('a successful write without matching readback is not saved', (
+    tester,
+  ) async {
+    final controller = await pump(tester, selected: {groupName: oldNode});
+    fake.confirmSelection = false;
+    await expectLater(
+      controller.changeProxy(groupName: groupName, proxyName: newNode),
+      throwsStateError,
+    );
+    await tester.pump(const Duration(seconds: 1));
+    expect(selectedMap()[groupName], oldNode);
   });
 
   testWidgets('a manual url-test selection is explicitly persisted as a lock', (
@@ -319,9 +339,12 @@ class _FakeClashCore implements ClashHandlerInterface {
   final Set<String> reject = <String>{};
   final List<String> changeProxyCalls = <String>[];
   final List<(String, String)> changes = <(String, String)>[];
+  final Map<String, String> selections = {};
+  bool confirmSelection = true;
+  Future<void> Function(ChangeProxyParams)? beforeChange;
 
   @override
-  FutureOr<String> changeProxy(ChangeProxyParams changeProxyParams) {
+  Future<String> changeProxy(ChangeProxyParams changeProxyParams) async {
     final name = changeProxyParams.groupName;
     changeProxyCalls.add(name);
     changes.add((name, changeProxyParams.proxyName));
@@ -329,8 +352,16 @@ class _FakeClashCore implements ClashHandlerInterface {
     if (!acceptAll || reject.contains(name)) {
       throw StateError('core rejected $name');
     }
+    await beforeChange?.call(changeProxyParams);
+    if (confirmSelection) selections[name] = changeProxyParams.proxyName;
     return '';
   }
+
+  @override
+  Future<Map> getProxies() async => {
+    for (final entry in selections.entries)
+      entry.key: {'now': entry.value, 'fixed': entry.value},
+  };
 
   @override
   Future<bool> closeConnections() async => true;

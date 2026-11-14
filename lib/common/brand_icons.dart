@@ -41,5 +41,5 @@ abstract final class BrandIcons {
   }
 
   static String asset(String style, bool dark) =>
-      'assets/images/brand_${normalize(style)}_${dark ? 'dark' : 'light'}.png';
+      'assets/images/brand/brand_${normalize(style)}_${dark ? 'dark' : 'light'}.webp';
 }

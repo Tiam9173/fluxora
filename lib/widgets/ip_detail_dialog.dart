@@ -85,16 +85,17 @@ class _IpDetailDialogState extends State<_IpDetailDialog> {
   Widget build(BuildContext context) {
     final ipInfo = _ipInfo;
 
-    final flagEmoji = (ipInfo != null && ipInfo.countryCode.isNotEmpty)
-        ? utils.countryCodeToEmoji(ipInfo.countryCode)
-        : '';
+    final countryCode = ipInfo?.flagCountryCode;
+    final flagEmoji = countryCode == null
+        ? ''
+        : utils.countryCodeToEmoji(countryCode);
 
     final countryText = ipInfo != null
         ? [
             if (ipInfo.country != null && ipInfo.country!.isNotEmpty)
               ipInfo.country,
-            if (ipInfo.countryCode.isNotEmpty)
-              ipInfo.countryCode,
+            if (countryCode != null && countryCode != ipInfo.country)
+              countryCode,
           ].join(' · ')
         : '';
 

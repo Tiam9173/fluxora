@@ -112,7 +112,7 @@ void main() {
     expect(tester.hasRunningAnimations, isFalse);
   });
 
-  testWidgets('without reduce motion the transition keeps the token duration', (
+  testWidgets('default tab clicks land in one frame with swipe motion available', (
     tester,
   ) async {
     await pumpHome(tester, reduce: false);
@@ -123,12 +123,10 @@ void main() {
     container.read(currentPageLabelProvider.notifier).value =
         PageLabel.profiles;
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 40));
     final host = tester.widget<KeptPageView>(find.byType(KeptPageView));
     expect(host.duration, FluxoraMotion.base);
     expect(host.horizontal, isTrue);
-    expect(tester.getTopLeft(find.text('page-profiles')).dx, greaterThan(0));
-    await tester.pumpAndSettle();
+    expect(host.animateIndexChanges, isFalse);
     expect(find.text('page-dashboard'), findsNothing);
     expect(tester.getTopLeft(find.text('page-profiles')).dx, 0);
   });

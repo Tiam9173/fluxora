@@ -25,7 +25,7 @@ class UiManager {
       final appVersionFile = File(join(File(uiPath).parent.path, '.ui_app_version'));
       final currentVersion = globalState.packageInfo.version;
 
-      if (await uiDir.exists() && (await uiDir.list().toList()).isNotEmpty) {
+      if (await uiDir.exists() && !await uiDir.list().isEmpty) {
         final deployedVersion = await appVersionFile.exists()
             ? (await appVersionFile.readAsString()).trim()
             : null;
@@ -48,7 +48,10 @@ class UiManager {
 
       final zipData = await rootBundle.load('assets/data/zash.zip');
       
-      final bytes = Uint8List.fromList(zipData.buffer.asUint8List());
+      final bytes = zipData.buffer.asUint8List(
+        zipData.offsetInBytes,
+        zipData.lengthInBytes,
+      );
 
       final tempPath = await appPath.tempPath;
       final tempExtractPath = join(

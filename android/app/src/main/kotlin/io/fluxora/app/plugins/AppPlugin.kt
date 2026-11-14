@@ -61,7 +61,7 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
     private var cachedTaskId: Int? = null
     private lateinit var channel: MethodChannel
     private lateinit var scope: CoroutineScope
-    private var vpnCallBack: (() -> Unit)? = null
+    private var vpnCallBack: ((Boolean) -> Unit)? = null
     private val packages = mutableListOf<Package>()
     private val chinaPackageCache = ConcurrentHashMap<String, Boolean>()
 
@@ -484,22 +484,29 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
         }
     }
 
-    fun requestVpnPermission(callBack: () -> Unit) {
-        vpnCallBack = callBack
-        val intent = runCatching { VpnService.prepare(FluxoraApplication.getAppContext()) }.getOrNull()
-        if (intent != null) {
-            val activity = activityRef?.get()
-            if (activity != null) {
-                runCatching {
-                    activity.startActivityForResult(intent, VPN_PERMISSION_REQUEST_CODE)
-                }.onFailure { e ->
-                    android.util.Log.e("AppPlugin", "startActivityForResult for VPN permission failed: ${e.message}")
-                    vpnCallBack?.invoke()
-                }
-                return
-            }
+    fun requestVpnPermission(callBack: (Boolean) -> Unit) {
+        val intent = try {
+            VpnService.prepare(FluxoraApplication.getAppContext())
+        } catch (e: Exception) {
+            callBack(false)
+            return
         }
-        vpnCallBack?.invoke()
+        if (intent == null) {
+            callBack(true)
+            return
+        }
+        val activity = activityRef?.get()
+        if (activity == null) {
+            callBack(false)
+            return
+        }
+        vpnCallBack = callBack
+        runCatching {
+            activity.startActivityForResult(intent, VPN_PERMISSION_REQUEST_CODE)
+        }.onFailure {
+            vpnCallBack = null
+            callBack(false)
+        }
     }
 
     fun requestNotificationsPermission() {
@@ -588,10 +595,12 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
 
     private fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
         if (!isActivityAttached) return false
-        if (requestCode == VPN_PERMISSION_REQUEST_CODE && resultCode == FlutterActivity.RESULT_OK) {
-            GlobalState.initServiceEngine()
-            vpnCallBack?.invoke()
-        }
+        if (requestCode != VPN_PERMISSION_REQUEST_CODE) return false
+        val granted = resultCode == FlutterActivity.RESULT_OK
+        val callback = vpnCallBack
+        vpnCallBack = null
+        if (granted) GlobalState.initServiceEngine()
+        callback?.invoke(granted)
         return true
     }
 

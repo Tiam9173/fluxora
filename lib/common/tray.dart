@@ -152,8 +152,12 @@ class Tray {
             : appLocalizations.start,
         onClick: (_) async {
           final appController = globalState.appController;
-          await appController.updateStatus(!globalState.isStart);
-          await appController.updateTray(false, false, true);
+          try {
+            await appController.updateStatus(!globalState.isStart);
+            await appController.updateTray(false, false, true);
+          } catch (error) {
+            globalState.showNotifier(error.formatError);
+          }
         },
         checked: false,
       );
@@ -214,14 +218,9 @@ class Tray {
                     ) ==
                     proxy.name,
                 onClick: (_) {
-                  final appController = globalState.appController;
-                  appController.updateCurrentSelectedMap(
+                  globalState.appController.selectProxy(
                     group.name,
                     proxy.name,
-                  );
-                  appController.changeProxy(
-                    groupName: group.name,
-                    proxyName: proxy.name,
                   );
                 },
               ),

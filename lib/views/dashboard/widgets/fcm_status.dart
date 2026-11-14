@@ -46,7 +46,7 @@ class _FcmStatusState extends State<FcmStatus> {
   }
 
   Future<void> _updateFcmStatus() async {
-    if (!mounted) return;
+    if (!mounted || !TickerMode.valuesOf(context).enabled) return;
     if (_isUpdating) return;
     _isUpdating = true;
 
@@ -60,17 +60,21 @@ class _FcmStatusState extends State<FcmStatus> {
             (port == '5228' || port == '5229' || port == '5230');
       }).toList();
 
-      if (fcmConnections.isEmpty) {
-        _fcmStatusNotifier.value = const FcmStatusData(isConnected: false);
-      } else {
-        final longestConnection = fcmConnections.reduce(
-          (a, b) => a.start.isBefore(b.start) ? a : b,
-        );
-        final duration = DateTime.now().difference(longestConnection.start);
-        final minutes = duration.inMinutes;
+      final connected = fcmConnections.isNotEmpty;
+      final minutes = connected
+          ? DateTime.now()
+                .difference(
+                  fcmConnections
+                      .reduce((a, b) => a.start.isBefore(b.start) ? a : b)
+                      .start,
+                )
+                .inMinutes
+          : null;
+      final previous = _fcmStatusNotifier.value;
+      if (previous.isConnected != connected || previous.minutes != minutes) {
         _fcmStatusNotifier.value = FcmStatusData(
           minutes: minutes,
-          isConnected: true,
+          isConnected: connected,
         );
       }
     } catch (e) {
@@ -125,9 +129,10 @@ class _FcmStatusState extends State<FcmStatus> {
                           'FCM',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            color: context.colorScheme.onSurfaceVariant,
-                          ),
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(
+                                color: context.colorScheme.onSurfaceVariant,
+                              ),
                         ),
                       ),
                     ),
@@ -176,9 +181,8 @@ class _FcmStatusState extends State<FcmStatus> {
                       } else {
                         return Text(
                           appLocalizations.noStatusAvailable,
-                          style: context.textTheme.bodyMedium?.toLight.adjustSize(
-                            0,
-                          ),
+                          style: context.textTheme.bodyMedium?.toLight
+                              .adjustSize(0),
                         );
                       }
                     },

@@ -5,6 +5,31 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('proxy rule for app requests', () {
+    test('app requests reject an untrusted HTTPS certificate', () async {
+      final context = SecurityContext()
+        ..useCertificateChain('core/Clash.Meta/test/config/example.org.pem')
+        ..usePrivateKey('core/Clash.Meta/test/config/example.org-key.pem');
+      final server = await HttpServer.bindSecure(
+        InternetAddress.loopbackIPv4,
+        0,
+        context,
+      );
+      addTearDown(() => server.close(force: true));
+      server.listen((request) => request.response.close());
+
+      final client = FluxoraHttpOverrides().createHttpClient(null)
+        ..findProxy = (_) => 'DIRECT';
+      addTearDown(() => client.close(force: true));
+      await expectLater(
+        () async {
+          final response = await client
+              .getUrl(Uri.https('127.0.0.1:${server.port}'));
+          await (await response.close()).drain<void>();
+        },
+        throwsA(isA<HandshakeException>()),
+      );
+    });
+
     test('nothing is proxied before the core is running', () {
       expect(
         FluxoraHttpOverrides.proxyRuleFor(isStart: false, port: 7890),

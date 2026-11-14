@@ -65,7 +65,9 @@ class TrafficUsage extends ConsumerWidget {
         child: Padding(
           padding: baseInfoEdgeInsets.copyWith(top: 0),
           child: ValueListenableBuilder<int>(
-            valueListenable: dashboardRefreshManager.tick1s,
+            valueListenable: TickerMode.valuesOf(context).enabled
+                ? dashboardRefreshManager.tick1s
+                : dashboardRefreshManager.paused,
             builder: (_, _, _) => Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [

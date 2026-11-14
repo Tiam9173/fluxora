@@ -1,4 +1,6 @@
 import 'package:fluxora/common/common.dart';
+import 'package:fluxora/enum/enum.dart';
+import 'package:fluxora/models/models.dart';
 import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/widgets/widgets.dart';
@@ -123,9 +125,10 @@ class _StartButtonState extends ConsumerState<StartButton> {
   bool _isDisabled = false;
   bool? _requestedStart;
 
-  void _handleStart() async {
+  void _handleStart({bool forceStart = false}) async {
     if (_isDisabled) return;
     final isStart = ref.read(runTimeProvider) != null;
+    if (forceStart && isStart) return;
     final newState = !isStart;
     setState(() {
       _isDisabled = true;
@@ -142,7 +145,7 @@ class _StartButtonState extends ConsumerState<StartButton> {
       // a snackbar, and this is the more important of the two — a user who
       // taps "connect" and sees nothing happen has no way to tell a failure
       // from a missed tap.
-      if (mounted) context.showSnackBar('$e');
+      if (mounted) context.showSnackBar(e.formatError);
     } finally {
       if (mounted) {
         setState(() {
@@ -208,37 +211,71 @@ class _StartButtonState extends ConsumerState<StartButton> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(startButtonSelectorStateProvider);
+    final target = ref.watch(connectionTargetProvider);
+    final connectionCheck = ref.watch(connectionCheckProvider);
+    final systemProxyApplied = ref.watch(systemProxyAppliedProvider);
+    final wantsSystemProxy = ref.watch(
+      networkSettingProvider.select((state) => state.systemProxy),
+    );
+    final systemProxyFailed = systemProxyApplied == false && wantsSystemProxy;
+    final systemProxyPending =
+        system.isWindows && wantsSystemProxy && systemProxyApplied == null;
     final isSmartStopped = ref.watch(isSmartStoppedProvider);
-    final canPress =
-        state.isInit && state.hasProfile && !_isDisabled && !isSmartStopped;
-    final hasNoProfile =
-        state.isInit && !state.hasProfile && !_isDisabled && !isSmartStopped;
     final isRestarting = ref.watch(isRestartingCoreProvider);
+    final canPress =
+        state.isInit &&
+        state.hasProfile &&
+        target == null &&
+        !_isDisabled &&
+        !isRestarting &&
+        !isSmartStopped;
+    final hasNoProfile =
+        state.isInit &&
+        !state.hasProfile &&
+        target == null &&
+        !_isDisabled &&
+        !isRestarting &&
+        !isSmartStopped;
     final runTime = ref.watch(runTimeProvider);
     final profile = ref.watch(currentProfileProvider);
     final selectedMap = ref.watch(selectedMapProvider);
-    final selectedName =
-        selectedMap[profile?.currentGroupName] ??
-        profile?.label ??
-        appLocalizations.profiles;
     final mode = ref.watch(patchClashConfigProvider.select((s) => s.mode));
+    final groupName = mode == Mode.global
+        ? GroupName.GLOBAL.name
+        : profile?.currentGroupName;
+    final group = ref.watch(
+      groupsProvider.select(
+        (groups) => groupName == null ? null : groups.getGroup(groupName),
+      ),
+    );
+    final savedNode = selectedMap[groupName] ?? '';
+    final activeNode = group?.realNow ?? '';
+    final displayNode = runTime != null
+        ? activeNode.getSafeValue(savedNode)
+        : savedNode.getSafeValue(activeNode);
+    final selectedName =
+        (mode == Mode.direct ? Intl.message(mode.name) : null) ??
+        displayNode.getSafeValue(profile?.label ?? appLocalizations.profiles);
 
     // item — the Hero's one-shot entrance. Wrapping the scroll content keeps the
     // 1 s tick listener untouched: `_HeroEntrance` passes its child through and
     // never rebuilds it, so per-second updates cost nothing extra.
     return _HeroEntrance(
       child: ValueListenableBuilder<int>(
-        valueListenable: dashboardRefreshManager.tick1s,
+        valueListenable: TickerMode.valuesOf(context).enabled
+            ? dashboardRefreshManager.tick1s
+            : dashboardRefreshManager.paused,
         builder: (_, _, _) {
           final isStart = runTime != null;
           final displayStart = !isSmartStopped && isStart;
           // Busy means initialization or a real operation still awaiting completion.
-          final busy = !state.isInit || _isDisabled || isRestarting;
+          final busy =
+              !state.isInit || target != null || _isDisabled || isRestarting;
 
-          final hero = _isDisabled
+          final hero = _isDisabled || target != null
               ? (
                   kind: FluxoraStatusKind.connecting,
-                  label: _requestedStart == true
+                  label: (target ?? _requestedStart) == true
                       ? appLocalizations.startVpn
                       : appLocalizations.stopVpn,
                   value: '',
@@ -250,6 +287,10 @@ class _StartButtonState extends ConsumerState<StartButton> {
                   isSmartStopped: isSmartStopped,
                   started: displayStart,
                   runTime: runTime,
+                  connectionCheck: systemProxyPending
+                      ? ConnectionCheck.checking
+                      : connectionCheck,
+                  systemProxyFailed: systemProxyFailed,
                 );
 
           // The header names the *control*; `hero.label` names the *state*.
@@ -282,7 +323,14 @@ class _StartButtonState extends ConsumerState<StartButton> {
                 height: 56,
                 child: AnimatedSwitcher(
                   duration: FluxoraMotion.ofContext(context).fast,
-                  child: busy
+                  child: target == true
+                      ? IconButton.outlined(
+                          key: const ValueKey('cancel-connection'),
+                          tooltip: appLocalizations.cancel,
+                          onPressed: globalState.appController.updateStart,
+                          icon: const Icon(Icons.close),
+                        )
+                      : busy
                       ? Padding(
                           key: const ValueKey('connection-pending'),
                           padding: EdgeInsets.all(16),
@@ -429,12 +477,10 @@ class _StartButtonState extends ConsumerState<StartButton> {
                                       const SizedBox(width: FluxoraSpacing.sm),
                                       Flexible(
                                         child: Text(
-                                          Localizations.localeOf(
-                                                    context,
-                                                  ).languageCode ==
-                                                  'zh'
-                                              ? '连接'
-                                              : 'Connection',
+                                          displayStart
+                                              ? appLocalizations
+                                                    .networkDetection
+                                              : appLocalizations.connections,
                                           style: context.textTheme.labelMedium
                                               ?.copyWith(
                                                 color: scheme.onSurfaceVariant,
@@ -492,7 +538,15 @@ class _StartButtonState extends ConsumerState<StartButton> {
                             child: InkWell(
                               key: const ValueKey('connection-node-picker'),
                               borderRadius: FluxoraRadius.smAll,
-                              onTap: () => showNotificationSwitchCard(context),
+                              onTap: busy
+                                  ? null
+                                  : hasNoProfile
+                                  ? _handleShowAddProfile
+                                  : () => showNotificationSwitchCard(
+                                      context,
+                                      onStart: () =>
+                                          _handleStart(forceStart: true),
+                                    ),
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 12,
@@ -508,10 +562,11 @@ class _StartButtonState extends ConsumerState<StartButton> {
                                             ?.copyWith(color: scheme.onSurface),
                                       ),
                                     ),
-                                    const Icon(
-                                      Icons.expand_more_rounded,
-                                      size: 18,
-                                    ),
+                                    if (!busy)
+                                      const Icon(
+                                        Icons.expand_more_rounded,
+                                        size: 18,
+                                      ),
                                   ],
                                 ),
                               ),
@@ -532,11 +587,34 @@ class _StartButtonState extends ConsumerState<StartButton> {
                             SizedBox(
                               width: 48,
                               height: 48,
-                              child: IconButton(
-                                onPressed: busy ? null : _handleRestartCore,
-                                tooltip: appLocalizations.restartCore,
-                                icon: const Icon(Icons.restart_alt, size: 22),
-                              ),
+                              child:
+                                  connectionCheck == ConnectionCheck.limited &&
+                                      !systemProxyFailed &&
+                                      !systemProxyPending
+                                  ? IconButton(
+                                      key: const ValueKey('connection-retry'),
+                                      onPressed: busy
+                                          ? null
+                                          : () => globalState.appController
+                                                .refreshConnectionCheck(
+                                                  immediate: true,
+                                                ),
+                                      tooltip: appLocalizations.retest,
+                                      icon: const Icon(
+                                        Icons.refresh_rounded,
+                                        size: 22,
+                                      ),
+                                    )
+                                  : IconButton(
+                                      onPressed: busy
+                                          ? null
+                                          : _handleRestartCore,
+                                      tooltip: appLocalizations.restartCore,
+                                      icon: const Icon(
+                                        Icons.restart_alt,
+                                        size: 22,
+                                      ),
+                                    ),
                             ),
                         ],
                       ),
@@ -562,6 +640,8 @@ class _StartButtonState extends ConsumerState<StartButton> {
     required bool isSmartStopped,
     required bool started,
     required int? runTime,
+    required ConnectionCheck connectionCheck,
+    required bool systemProxyFailed,
   }) {
     if (!isInit) {
       return (
@@ -592,9 +672,26 @@ class _StartButtonState extends ConsumerState<StartButton> {
       );
     }
     if (started) {
+      if (systemProxyFailed) {
+        return (
+          kind: FluxoraStatusKind.warning,
+          label: appLocalizations.systemProxyMismatchOn,
+          value: _formatRunTime(runTime),
+        );
+      }
       return (
-        kind: FluxoraStatusKind.connected,
-        label: appLocalizations.coreConnected,
+        kind: switch (connectionCheck) {
+          ConnectionCheck.untested => FluxoraStatusKind.unknown,
+          ConnectionCheck.checking => FluxoraStatusKind.connecting,
+          ConnectionCheck.reachable => FluxoraStatusKind.connected,
+          ConnectionCheck.limited => FluxoraStatusKind.warning,
+        },
+        label: switch (connectionCheck) {
+          ConnectionCheck.untested => appLocalizations.serviceRunning,
+          ConnectionCheck.checking => appLocalizations.checking,
+          ConnectionCheck.reachable => appLocalizations.healthHealthy,
+          ConnectionCheck.limited => appLocalizations.checkError,
+        },
         value: _formatRunTime(runTime),
       );
     }

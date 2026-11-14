@@ -11,6 +11,7 @@ import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.os.Build
 import android.os.IBinder
+import android.os.ParcelFileDescriptor
 import android.widget.Toast
 import androidx.core.content.getSystemService
 import io.fluxora.app.FluxoraApplication
@@ -61,6 +62,8 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     @Volatile
     private var isBind = false
     private val isBinding = AtomicBoolean(false)
+    private var startRequested = false
+    private var startInProgress = false
 
     private var job = SupervisorJob()
     private var scope = CoroutineScope(Dispatchers.Default + job as kotlin.coroutines.CoroutineContext)
@@ -99,6 +102,10 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 is FluxoraService.LocalBinder -> service.getService()
                 else -> throw Exception("invalid binder")
             }
+            if (options == null) {
+                handleStop(force = true)
+                return
+            }
             handleStartService()
         }
 
@@ -106,11 +113,9 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             isBind = false
             isBinding.set(false)
             fluxoraService = null
-            if (GlobalState.currentRunState == RunState.START) {
-                android.util.Log.w("VpnPlugin", "Service unexpectedly disconnected while running, syncing state")
-                GlobalState.updateRunState(RunState.STOP)
-                ServicePlugin.notifyVpnStartFailed()
-                ServicePlugin.notifyRunStateChanged(RunState.STOP)
+            if (options != null) {
+                android.util.Log.w("VpnPlugin", "Service unexpectedly disconnected, stopping session")
+                reportStartFailure()
             }
         }
     }
@@ -291,7 +296,7 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 result.success(true)
             }
         "status" -> {
-                result.success(GlobalState.currentRunState == RunState.START)
+                result.success(getStatus())
             }
 
             else -> {
@@ -433,22 +438,40 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     }
 
     fun handleStart(options: VpnOptions): Boolean {
-        onUpdateNetwork()
-        if (options.enable != this.options?.enable) {
-            this.fluxoraService = null
+        GlobalState.runLock.withLock {
+            if (GlobalState.isCurrentlyStopping()) return false
+            if (getStatus() || startRequested || startInProgress || isBinding.get()) return true
+            startRequested = true
+            if (options.enable != this.options?.enable) fluxoraService = null
+            this.options = options
+            GlobalState.updateRunState(RunState.PENDING)
         }
-        this.options = options
+        onUpdateNetwork()
         when (options.enable) {
-            true -> handleStartVpn()
+            true -> handleStartVpn(options)
             false -> handleStartService()
         }
         return true
     }
 
-    private fun handleStartVpn() {
-        GlobalState.getCurrentAppPlugin()?.requestVpnPermission {
-            handleStartService()
+    private fun handleStartVpn(requestedOptions: VpnOptions) {
+        val appPlugin = GlobalState.getCurrentAppPlugin()
+        if (appPlugin == null) {
+            val granted = runCatching {
+                android.net.VpnService.prepare(FluxoraApplication.getAppContext()) == null
+            }.getOrDefault(false)
+            if (granted) handleStartService() else reportStartFailure()
+            return
         }
+        appPlugin.requestVpnPermission { granted ->
+            if (options !== requestedOptions) return@requestVpnPermission
+            if (granted) handleStartService() else reportStartFailure()
+        }
+    }
+
+    private fun reportStartFailure() {
+        handleStop(force = true)
+        ServicePlugin.notifyVpnStartFailed()
     }
 
     fun requestGc() {
@@ -659,27 +682,9 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         
         scope.launch {
             try {
-                if (options?.enable == true) {
-                    val prepareIntent = try {
-                        android.net.VpnService.prepare(FluxoraApplication.getAppContext())
-                    } catch (e: Exception) {
-                        null
-                    }
-
-                    if (prepareIntent != null) {
-                        android.util.Log.w("VpnPlugin", "VPN permission required before start")
-                        GlobalState.updateRunState(RunState.STOP)
-                        withContext(Dispatchers.Main) {
-                            GlobalState.getCurrentAppPlugin()?.requestVpnPermission {
-                                handleStartService()
-                            }
-                        }
-                        return@launch
-                    }
-                }
-
                 val currentOptions = options
                 val startAllowed = GlobalState.runLock.withLock {
+                    if (startInProgress || GlobalState.isCurrentlyStopping()) return@withLock false
                     if (GlobalState.currentRunState == RunState.START) {
                         android.util.Log.d("VpnPlugin", "Service already running, refreshing notification")
                         scope.launch { startForeground() }
@@ -690,29 +695,30 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                         GlobalState.updateRunState(RunState.STOP)
                         return@withLock false
                     }
-                    GlobalState.updateRunState(RunState.START)
+                    startInProgress = true
+                    GlobalState.updateRunState(RunState.PENDING)
                     lastStartForegroundParams = null
                     true
                 }
 
                 if (!startAllowed || currentOptions == null) return@launch
 
-                performStartCore(currentOptions, retry = true, notifyOnFailure = true)
+                performStartCore(currentOptions, retry = true)
             } catch (e: Exception) {
                 android.util.Log.e("VpnPlugin", "Fatal error in start flow: ${e.message}")
-                GlobalState.updateRunState(RunState.STOP)
+                reportStartFailure()
             }
         }
     }
 
     private suspend fun performStartCore(
         currentOptions: VpnOptions,
-        retry: Boolean,
-        notifyOnFailure: Boolean
-    ) {
-        var fd: Int? = 0
+        retry: Boolean
+    ): Boolean {
+        val service = fluxoraService
+        var fd: Int? = null
         try {
-            fd = fluxoraService?.start(currentOptions)
+            fd = service?.start(currentOptions)
         } catch (e: Exception) {
             android.util.Log.e("VpnPlugin", "First start attempt failed: ${e.message}")
         }
@@ -722,49 +728,43 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 android.util.Log.w("VpnPlugin", "VPN establish failed, retrying...")
                 delay(300)
                 try {
-                    fd = fluxoraService?.start(currentOptions)
+                    if (options !== currentOptions) return false
+                    fd = service?.start(currentOptions)
                 } catch (e: Exception) {
                     android.util.Log.e("VpnPlugin", "Retry start failed: ${e.message}")
                 }
             }
         }
 
-        if (fd == null || (currentOptions.enable && fd <= 0)) {
-            android.util.Log.e("VpnPlugin", "VPN start failed after all attempts")
-            GlobalState.runLock.withLock { GlobalState.updateRunState(RunState.STOP) }
-            if (notifyOnFailure) {
-                ServicePlugin.notifyVpnStartFailed()
+        val started = GlobalState.runLock.withLock {
+            if (options !== currentOptions || GlobalState.currentRunState != RunState.PENDING) {
+                fd?.takeIf { it > 0 }?.let { ParcelFileDescriptor.adoptFd(it).close() }
+                return false
             }
-            return
-        }
+            val tunnelFd = fd ?: return@withLock false
+            if ((currentOptions.enable && tunnelFd <= 0) || !Core.startTun(
+                    fd = tunnelFd,
+                    protect = this@VpnPlugin::protect,
+                    resolverProcess = this@VpnPlugin::resolverProcess,
+                )) return@withLock false
 
-        val canStart = GlobalState.runLock.withLock {
-            if (GlobalState.currentRunState != RunState.START) {
-                fluxoraService?.stop()
-                false
-            } else true
-        }
-        if (!canStart) return
-
-        io.fluxora.core.Core.startTun(
-            fd = fd ?: 0,
-            protect = this@VpnPlugin::protect,
-            resolverProcess = this@VpnPlugin::resolverProcess,
-        )
-
-        GlobalState.runLock.withLock {
-            if (GlobalState.currentRunState != RunState.START) {
-                Core.stopTun()
-                return@withLock
-            }
+            startRequested = false
+            startInProgress = false
+            GlobalState.updateRunState(RunState.START)
             scope.launch { startForeground() }
             if (currentOptions.dozeSuspend) {
                 suspendModule?.uninstall()
                 suspendModule = SuspendModule(FluxoraApplication.getAppContext())
                 suspendModule?.install()
             }
+            true
+        }
+        if (!started) {
+            reportStartFailure()
+            return false
         }
         onUpdateNetwork()
+        return true
     }
 
     private fun protect(fd: Int): Boolean {
@@ -814,11 +814,17 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         val shouldForceStop: Boolean
         GlobalState.runLock.withLock {
             if (!force && GlobalState.currentRunState == RunState.STOP) return
+            options = null
+            startRequested = false
+            startInProgress = false
+            bindTimeoutJob?.cancel()
+            bindTimeoutJob = null
+            val wasBinding = isBinding.getAndSet(false)
             GlobalState.updateIsStopping(true)
             GlobalState.updateRunState(RunState.STOP)
             ServicePlugin.notifyRunStateChanged(RunState.STOP)
             serviceRef = fluxoraService
-            wasBound = isBind
+            wasBound = isBind || wasBinding
             shouldForceStop = force || fluxoraService == null
         }
 
@@ -882,7 +888,8 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     fun handleSmartResume(options: VpnOptions): Boolean {
         scope.launch {
             val startAllowed = GlobalState.runLock.withLock {
-                if (GlobalState.currentRunState == RunState.START) return@withLock false
+                if (GlobalState.currentRunState == RunState.START || startRequested ||
+                    startInProgress || isBinding.get() || GlobalState.isCurrentlyStopping()) return@withLock false
                 GlobalState.isSmartStopped = false
                 this@VpnPlugin.options = options
 
@@ -891,14 +898,15 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     return@withLock false
                 }
 
-                GlobalState.updateRunState(RunState.START)
+                startInProgress = true
+                GlobalState.updateRunState(RunState.PENDING)
                 lastStartForegroundParams = null
                 true
             }
             if (!startAllowed) return@launch
 
             Core.suspended(false)
-                    performStartCore(options, retry = false, notifyOnFailure = false)
+            if (!performStartCore(options, retry = false)) return@launch
             withContext(Dispatchers.Main) {
                 Toast.makeText(FluxoraApplication.getAppContext(), "Fluxora Connected", Toast.LENGTH_SHORT).show()
             }
@@ -915,11 +923,7 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             delay(10_000L)
             if (isBinding.compareAndSet(true, false)) {
                 android.util.Log.w("VpnPlugin", "bindService timeout (10s), resetting bind state")
-                GlobalState.runLock.withLock {
-                    if (GlobalState.currentRunState == RunState.PENDING) {
-                        GlobalState.updateRunState(RunState.STOP)
-                    }
-                }
+                reportStartFailure()
             }
         }
 
@@ -933,17 +937,21 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 if (options?.enable == true) FluxoraVpnService::class.java else FluxoraService::class.java
             )
             val res = FluxoraApplication.getAppContext().bindService(intent, connection, Context.BIND_AUTO_CREATE)
-            if (!res) {
+            if (res) {
+                isBind = true
+            } else {
                 isBinding.set(false)
                 bindTimeoutJob?.cancel()
                 bindTimeoutJob = null
                 android.util.Log.e("VpnPlugin", "bindService returned false (rejected by system)")
+                reportStartFailure()
             }
         } catch (e: Exception) {
             isBinding.set(false)
             bindTimeoutJob?.cancel()
             bindTimeoutJob = null
             android.util.Log.e("VpnPlugin", "bindService error: ${e.message}")
+            reportStartFailure()
         }
     }
 }

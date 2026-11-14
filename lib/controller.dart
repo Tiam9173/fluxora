@@ -66,8 +66,10 @@ class AppController {
   bool _isUpdatingGroups = false;
   Timer? _updateGroupsRetryTimer;
   int _coreGeneration = 0;
+  final Set<DelayTestTarget> _manualDelayTargets = {};
   final Set<String> _updatingProfileIds = {};
   Timer? _idleGcTimer;
+  int _localIpRequest = 0;
 
   AppController(this.context, WidgetRef ref) : _ref = ref;
 
@@ -131,40 +133,19 @@ class AppController {
     debouncer.call(FunctionTag.savePreferences, savePreferences);
   }
 
-  void changeProxyDebounce(String groupName, String proxyName) {
-    // The optimistic write used to live in the caller (`card.dart`), which made
-    // it impossible to undo here: by the time the debounced call ran, the
-    // previous value was already gone. Owning both halves keeps them together.
-    final previous =
-        _ref.read(currentProfileProvider)?.selectedMap[groupName] ?? '';
-    // Native URLTest/Fallback Set is a manual lock; an empty name restores auto.
-    updateCurrentSelectedMap(groupName, proxyName);
-    debouncer.call(
-      FunctionTag.changeProxy,
-      (String groupName, String proxyName) async {
-        try {
-          await changeProxy(groupName: groupName, proxyName: proxyName);
-          await updateGroups();
-          addCheckIp();
-        } catch (e) {
-          // The debouncer discards this future, so an escaping error would
-          // become an unhandled async error *and* leave the optimistic
-          // selection on screen. Undo the write, keep the failure diagnosable.
-          commonPrint.log(
-            'changeProxyDebounce: failed to select $proxyName in $groupName: $e',
-          );
-          updateCurrentSelectedMap(groupName, previous);
-          globalState.showNotifier(e.toString());
-        }
-      },
-      args: [groupName, proxyName],
-      duration: const Duration(milliseconds: 50),
-    );
+  void selectProxy(String groupName, String proxyName) {
+    unawaited(changeProxy(groupName: groupName, proxyName: proxyName)
+        .catchError((Object error) {
+      commonPrint.log('Node selection failed: $error');
+      globalState.showNotifier(error.formatError);
+    }));
   }
 
   void _invalidateCoreReads() {
     _coreGeneration++;
     _backgroundLoadVersion++;
+    _connectionCheckGeneration++;
+    _ipRefreshTimer?.cancel();
     _updateGroupsRetryTimer?.cancel();
     _updateGroupsRetryTimer = null;
     _updateGroupsRetryCount = 0;
@@ -228,7 +209,12 @@ class AppController {
     }
     await _initCore();
 
-    final configured = setupConfig ? await _setupCoreConfig() : false;
+    final configured = setupConfig
+        ? await _setupCoreConfig(requireRequestedTun: wasRunning)
+        : false;
+    if (wasRunning && setupConfig && !configured) {
+      throw StateError(appLocalizations.checkOrAddProfile);
+    }
     if (refreshData && configured) {
       await updateGroups();
       await updateProviders();
@@ -252,121 +238,112 @@ class AppController {
           await Future.delayed(const Duration(milliseconds: 400));
         }
       }
+      if (_ref.read(runTimeProvider) == null) {
+        _ref.read(runTimeProvider.notifier).value = 0;
+      }
       _scheduleCheckIpRefresh();
       _backgroundLoad();
     }
   }
 
   Future<void> updateStatus(bool isStart) {
-    return _coreLifecycleLock.synchronized(() => _updateStatus(isStart));
+    final generation = ++_connectionIntent;
+    final cancellation = _cancelStart;
+    if (!isStart && cancellation != null && !cancellation.isCompleted) {
+      cancellation.complete();
+    }
+    _ref.read(connectionTargetProvider.notifier).state = isStart;
+    return _coreLifecycleLock.synchronized(() async {
+      if (generation != _connectionIntent) return;
+      try {
+        await _updateStatus(isStart);
+      } finally {
+        if (generation == _connectionIntent) {
+          _ref.read(connectionTargetProvider.notifier).state = null;
+        }
+      }
+    });
   }
 
+  int _connectionIntent = 0;
+  Completer<void>? _cancelStart;
   bool _isStarting = false;
 
   Future<void> _updateStatus(bool isStart) async {
     if (isStart) {
+      if (globalState.isStart) {
+        if (!_ref.read(runTimeProvider.notifier).isStart) {
+          _ref.read(runTimeProvider.notifier).value = 0;
+        }
+        unawaited(globalState.startUpdateTasks([updateRunTime, updateTraffic]));
+        _scheduleCheckIpRefresh();
+        return;
+      }
       _isStarting = true;
+      final cancellation = Completer<void>();
+      _cancelStart = cancellation;
       try {
-        await _fastStart();
+        await _fastStart(cancellation);
       } finally {
+        _cancelStart = null;
         _isStarting = false;
       }
       if (globalState.isStart && !_ref.read(runTimeProvider.notifier).isStart) {
         _ref.read(runTimeProvider.notifier).value = 0;
       }
     } else {
-      await globalState.handleStop();
-      clashCore.resetTraffic();
-      _ref.read(trafficsProvider.notifier).clear();
-      _ref.read(totalTrafficProvider.notifier).value = Traffic();
-      _ref.read(runTimeProvider.notifier).value = null;
-      addCheckIpNumDebounce();
+      _invalidateCoreReads();
+      _ref.read(connectionCheckProvider.notifier).state = ConnectionCheck.untested;
+      try {
+        await globalState.handleStop();
+      } finally {
+        _ref.read(runTimeProvider.notifier).value = null;
+        clashCore.resetTraffic();
+        _ref.read(trafficsProvider.notifier).clear();
+        _ref.read(totalTrafficProvider.notifier).value = Traffic();
+        addCheckIpNumDebounce();
+      }
     }
   }
 
-  Future<void> _fastStart() async {
-    final currentProfile = _ref.read(currentProfileProvider);
-    if (currentProfile == null) {
-      commonPrint.log('Fast start aborted: No active profile configured.');
-      return;
+  Future<void> _fastStart(Completer<void> cancellation) async {
+    if (_ref.read(currentProfileProvider) == null) {
+      throw StateError(appLocalizations.checkOrAddProfile);
     }
-
-    final patchConfig = _ref.read(patchClashConfigProvider);
-    final isDesktop = system.isDesktop;
-
-    if (isDesktop && patchConfig.tun.enable) {
-      await _quickSetupConfig(enableTun: false);
-
-      if (system.isMacOS) {
-        try {
-          final res = await _requestAdmin(true);
-          if (res.needRestart) {
-            await restartCore();
-            return;
-          }
-          await globalState.handleStart([updateRunTime, updateTraffic]);
-          await updateProviders();
-          if (!res.isError) {
-            Future.microtask(() async {
-              try {
-                await _updateClashConfig();
-              } catch (e) {
-                commonPrint.log('FastStart macOS TUN update failed: $e');
-              }
-              _backgroundLoad();
-            });
-          } else {
-            _backgroundLoad();
-          }
-        } catch (e) {
-          commonPrint.log('FastStart macOS auth error: $e');
-          await globalState.handleStart([updateRunTime, updateTraffic]);
-          await updateProviders();
-          _backgroundLoad();
-        }
-        _scheduleCheckIpRefresh();
-        return;
-      }
-
-      await globalState.handleStart([updateRunTime, updateTraffic]);
-      await updateProviders();
-
-      Future.microtask(() async {
-        try {
-          final res = await _requestAdmin(true);
-          if (res.needRestart) {
-            await restartCore();
-            return;
-          }
-          if (!res.isError) {
-            await _updateClashConfig();
-          }
-        } catch (e) {
-          commonPrint.log('FastStart update config failed: $e');
-        }
-        _backgroundLoad();
-      });
-
-      _scheduleCheckIpRefresh();
-      return;
+    if (!await _setupCoreConfig(requireRequestedTun: true)) {
+      throw StateError(appLocalizations.checkError);
     }
-
-    final setupResult = await _quickSetupConfig();
-    if (setupResult != true) {
-      commonPrint.log('Fast start aborted: setupConfig failed');
-      return;
+    if (cancellation.isCompleted) return;
+    await globalState.handleStart(
+      [updateRunTime, updateTraffic],
+      true,
+      cancellation,
+    );
+    if (cancellation.isCompleted) return;
+    if (_ref.read(runTimeProvider) == null) {
+      _ref.read(runTimeProvider.notifier).value = 0;
     }
-
-    await globalState.handleStart([updateRunTime, updateTraffic]);
-
     _scheduleCheckIpRefresh();
-
-    await updateProviders();
     _backgroundLoad();
   }
 
-  void _scheduleCheckIpRefresh() {
-    Future.delayed(const Duration(seconds: 1), () {
+  Timer? _ipRefreshTimer;
+  int _connectionCheckGeneration = 0;
+
+  void refreshConnectionCheck({bool immediate = false}) =>
+      _scheduleCheckIpRefresh(immediate: immediate);
+
+  void _scheduleCheckIpRefresh({bool immediate = false}) {
+    final generation = ++_connectionCheckGeneration;
+    _ref.read(connectionCheckProvider.notifier).state = ConnectionCheck.untested;
+    _ipRefreshTimer?.cancel();
+    if (!_ref.read(runTimeProvider.notifier).isStart &&
+        _ref.read(connectionTargetProvider) != true) {
+      return;
+    }
+    final delay = immediate ? Duration.zero : const Duration(seconds: 1);
+    _ipRefreshTimer = Timer(delay, () {
+      if (!_ref.read(runTimeProvider.notifier).isStart) return;
       // Restarting the core (and the notification's 重置, which goes through
       // it) changes the exit IP. The old result has to be cleared, not just
       // refreshed: `startCheck()` without `clearPrevious` keeps the previous
@@ -375,7 +352,39 @@ class AppController {
       // there. That is the reported "重置后 IP 检测不会重新获取".
       detectionState.startCheck(immediate: true, clearPrevious: true);
       addCheckIpNumDebounce();
+      unawaited(_checkConnection(generation));
     });
+  }
+
+  Future<void> _checkConnection(int generation) async {
+    final port = effectiveMixedPort;
+    final uri = Uri.tryParse(getRealTestUrl(null));
+    if (port <= 0 || uri == null || uri.scheme != 'https' || uri.host.isEmpty) {
+      return;
+    }
+    _ref.read(connectionCheckProvider.notifier).state = ConnectionCheck.checking;
+    final client = HttpClient()
+      ..badCertificateCallback = null
+      ..connectionTimeout = const Duration(seconds: 5)
+      ..findProxy = (_) => 'PROXY 127.0.0.1:$port';
+    var result = ConnectionCheck.limited;
+    try {
+      final status = await (() async {
+        final request = await client.getUrl(uri);
+        request.followRedirects = false;
+        final response = await request.close();
+        return response.statusCode;
+      })().timeout(const Duration(seconds: 5));
+      if (status >= 200 && status < 300) result = ConnectionCheck.reachable;
+    } catch (error) {
+      commonPrint.log('Connection check failed: ${error.runtimeType}');
+    } finally {
+      client.close(force: true);
+    }
+    if (generation == _connectionCheckGeneration &&
+        _ref.read(runTimeProvider.notifier).isStart) {
+      _ref.read(connectionCheckProvider.notifier).state = result;
+    }
   }
 
   void _backgroundLoad() {
@@ -384,6 +393,11 @@ class AppController {
 
     Future.microtask(() async {
       try {
+        final providers = await clashCore.getExternalProviders();
+        if (version != _backgroundLoadVersion || generation != _coreGeneration) {
+          return;
+        }
+        _ref.read(providersProvider.notifier).value = providers;
         List<Group> groups = [];
         for (var attempt = 0; attempt < 3; attempt++) {
           if (version != _backgroundLoadVersion) return;
@@ -391,7 +405,7 @@ class AppController {
           if (attempt > 0) {
             await Future.delayed(Duration(milliseconds: 200 * attempt));
           }
-          groups = await clashCore.getProxiesGroups();
+          groups = await clashCore.getProxiesGroups(preloadedProviders: providers);
           if (groups.isNotEmpty) break;
         }
         if (version != _backgroundLoadVersion) return;
@@ -410,7 +424,7 @@ class AppController {
     });
   }
 
-  Future<bool> _setupCoreConfig({bool? enableTun}) async {
+  Future<bool> _setupCoreConfig({bool requireRequestedTun = false}) async {
     final currentProfile = _ref.read(currentProfileProvider);
     if (currentProfile == null) {
       return false;
@@ -424,10 +438,13 @@ class AppController {
     await _resolveExternalControllerFallback();
     await currentProfile.checkAndUpdate();
     final patchConfig = _ref.read(patchClashConfigProvider);
-    final targetTun = enableTun ?? patchConfig.tun.enable;
+    final targetTun = patchConfig.tun.enable;
 
     final realTunEnable = await _prepareTun(targetTun);
     if (realTunEnable == null) return false;
+    if (requireRequestedTun && system.isDesktop && targetTun && !realTunEnable) {
+      throw StateError(appLocalizations.tunMismatchOn);
+    }
 
     final realPatchConfig = patchConfig.copyWith.tun(enable: realTunEnable);
     // The setup config is built from the raw patch config, so the session
@@ -467,12 +484,6 @@ class AppController {
       currentProfileProvider.select((state) => state?.profileLastModified),
     );
     return true;
-  }
-
-  Future<bool?> _quickSetupConfig({bool? enableTun}) async {
-    return await safeRun(() async {
-      return await _setupCoreConfig(enableTun: enableTun);
-    }, needLoading: false);
   }
 
   Future<void> updateRunTime() async {
@@ -639,20 +650,16 @@ class AppController {
   }
 
   Future<void> updateLocalIp() async {
-    // localIpProvider is autoDispose: once the intranet card is unmounted the
-    // notifier is gone and writing to it throws, which surfaced as an
-    // uncaught Flutter error every time the dashboard was not on screen.
-    void write(String? value) {
-      try {
-        _ref.read(localIpProvider.notifier).value = value;
-      } catch (e) {
-        commonPrint.log('updateLocalIp: provider disposed, skipped ($e)');
-      }
+    final request = ++_localIpRequest;
+    var address = globalState.appState.localIp ?? '';
+    try {
+      address = await utils.getLocalIpAddress() ?? '';
+    } catch (e) {
+      commonPrint.log('Failed to read local IP: $e');
     }
-
-    write(null);
-    await Future.delayed(commonDuration);
-    write(await utils.getLocalIpAddress());
+    if (request == _localIpRequest && context.mounted) {
+      _ref.read(localIpProvider.notifier).value = address;
+    }
   }
 
   Future<void> updateProfile(Profile profile, {bool validate = true}) async {
@@ -1062,13 +1069,6 @@ class AppController {
 
   Future<void> _applyProfile() async {
     _invalidateCoreReads();
-    // 先留一份旧延迟：以前这里直接清空，等于用户改个设置、切个跳板，代理页
-    // 上所有节点的延迟数字就全没了，得重新测一遍。清空本身是必要的（apply
-    // 期间不该读到旧数据），但 apply 完成后要把「节点还在」的那些放回去。
-    final previousDelays = Map<String, Map<String, int?>>.from(
-      _ref.read(delayDataSourceProvider),
-    );
-    _ref.read(delayDataSourceProvider.notifier).value = {};
     unawaited(clashCore.requestGc());
     // One timing line per apply. Switching a subscription is reported as
     // "loads for a long time"; without numbers the only thing left is guessing
@@ -1087,7 +1087,8 @@ class AppController {
     _ref.read(providersProvider.notifier).value = providers;
     await updateGroups(preloadedProviders: providers);
     final groupsMs = total.elapsedMilliseconds - setupMs - providersMs;
-    _restoreKnownDelays(previousDelays);
+    _pruneRemovedDelays();
+    if (_ref.read(runTimeProvider.notifier).isStart) _scheduleCheckIpRefresh();
     scheduleIdleGc();
     commonPrint.log(
       '[applyProfile] setup=${setupMs}ms providers=${providersMs}ms '
@@ -1095,27 +1096,25 @@ class AppController {
     );
   }
 
-  /// 把 apply 之前测到的延迟放回去，只保留仍然存在的节点。
-  ///
-  /// 判断依据是加载后的分组里出现过的节点名——名字变了、节点被删了，那条
-  /// 延迟自然就不该留着。
-  void _restoreKnownDelays(Map<String, Map<String, int?>> previous) {
-    if (previous.isEmpty) return;
+  void _pruneRemovedDelays() {
+    final delays = _ref.read(delayDataSourceProvider);
+    if (delays.isEmpty) return;
     final names = <String>{
       for (final group in _ref.read(groupsProvider))
         for (final proxy in group.all) proxy.name,
     };
-    if (names.isEmpty) return;
-    final kept = <String, Map<String, int?>>{
-      for (final entry in previous.entries)
-        if (names.contains(entry.key)) entry.key: entry.value,
-    };
-    if (kept.isEmpty) return;
-    // 以新写入的为准：apply 期间可能已经有节点测过速。
-    _ref.read(delayDataSourceProvider.notifier).value = {
-      ...kept,
-      ..._ref.read(delayDataSourceProvider),
-    };
+    _manualDelayTargets.removeWhere((target) => !names.contains(target.name));
+    final retained = <String, Map<String, int?>>{};
+    var removed = false;
+    for (final entry in delays.entries) {
+      final kept = {
+        for (final node in entry.value.entries)
+          if (names.contains(node.key)) node.key: node.value,
+      };
+      removed |= kept.length != entry.value.length;
+      if (kept.isNotEmpty) retained[entry.key] = kept;
+    }
+    if (removed) _ref.read(delayDataSourceProvider.notifier).value = retained;
   }
 
   Future<void> applyProfile({bool silence = false}) {
@@ -1140,6 +1139,10 @@ class AppController {
     required String? previousProfileId,
   }) {
     return _coreLifecycleLock.synchronized(() async {
+      if (previousProfileId != _ref.read(currentProfileIdProvider)) {
+        _manualDelayTargets.clear();
+        _ref.read(delayDataSourceProvider.notifier).value = {};
+      }
       if (hardRestart) {
         _ref.read(isRestartingCoreProvider.notifier).state = true;
         try {
@@ -1560,43 +1563,62 @@ class AppController {
   /// Resume native URLTest selection after a probe, preserving explicit locks.
   Future<void> selectFastestForGroup(String groupName) async {
     if (groupName.isEmpty) return;
-
-    Group? group;
-    for (final g in _ref.read(groupsProvider)) {
-      if (g.name == groupName) {
-        group = g;
-        break;
-      }
-    }
-    if (group == null || group.type != GroupType.URLTest) return;
-
-    final locked = _ref.read(selectedMapProvider)[groupName];
-    if (locked != null && locked.isNotEmpty) return;
-
-    try {
-      // Clear the native override and let URLTest use its health checks/tolerance.
-      await clashCore.changeProxy(
-        ChangeProxyParams(groupName: groupName, proxyName: ''),
+    final profileId = _ref.read(currentProfileIdProvider);
+    await _coreLifecycleLock.synchronized(() async {
+      if (profileId != _ref.read(currentProfileIdProvider)) return;
+      final group = _ref.read(groupsProvider).firstWhereOrNull(
+        (group) => group.name == groupName,
       );
-      await updateGroups();
-    } catch (e) {
-      commonPrint.log('selectFastestForGroup($groupName) failed: $e');
-    }
+      if (group?.type != GroupType.URLTest) return;
+      if (_ref.read(selectedMapProvider)[groupName]?.isNotEmpty == true) return;
+
+      try {
+        await clashCore.changeProxy(
+          ChangeProxyParams(groupName: groupName, proxyName: ''),
+        );
+        await updateGroups();
+      } catch (error) {
+        commonPrint.log('selectFastestForGroup($groupName) failed: $error');
+      }
+    });
   }
 
   Future<void> changeProxy({
     required String groupName,
     required String proxyName,
-  }) async {
-    await clashCore.changeProxy(
-      ChangeProxyParams(groupName: groupName, proxyName: proxyName),
-    );
-    if (_ref.read(appSettingProvider).closeConnections) {
-      clashCoreForget(clashCore.closeConnections(), 'node connections cleanup');
-    }
-    clashCoreForget(clashCore.flushDnsCache(), 'node DNS cleanup');
-    addCheckIp();
-    detectionState.startCheck(immediate: true);
+  }) {
+    final profileId = _ref.read(currentProfileIdProvider);
+    return _coreLifecycleLock.synchronized(() async {
+      if (profileId == null || profileId != _ref.read(currentProfileIdProvider)) {
+        throw StateError(appLocalizations.checkOrAddProfile);
+      }
+      await clashCore.changeProxy(
+        ChangeProxyParams(groupName: groupName, proxyName: proxyName),
+      );
+      if (profileId != _ref.read(currentProfileIdProvider)) {
+        throw StateError(appLocalizations.checkError);
+      }
+      final current = await clashCore.readProxySelection(groupName);
+      if (profileId != _ref.read(currentProfileIdProvider)) {
+        throw StateError(appLocalizations.checkError);
+      }
+      if (current == null ||
+          (current.fixed != null
+              ? current.fixed != proxyName
+              : proxyName.isNotEmpty && current.now != proxyName)) {
+        updateGroupsDebounce();
+        throw StateError(appLocalizations.checkError);
+      }
+      // A startup snapshot may still contain the selection from before this RPC.
+      _backgroundLoadVersion++;
+      updateCurrentSelectedMap(groupName, proxyName);
+      if (_ref.read(appSettingProvider).closeConnections) {
+        clashCoreForget(clashCore.closeConnections(), 'node connections cleanup');
+      }
+      clashCoreForget(clashCore.flushDnsCache(), 'node DNS cleanup');
+      await updateGroups();
+      _scheduleCheckIpRefresh();
+    });
   }
 
   /// Applies a `group -> proxy` map to the core.
@@ -1609,7 +1631,19 @@ class AppController {
   /// exists so a caller that needs to know does not have to re-derive it from a
   /// provider that may be stale.
   Future<bool> changeProxiesBatch(Map<String, String> groupToProxyMap) async {
+    final profileId = _ref.read(currentProfileIdProvider);
+    return _coreLifecycleLock.synchronized(() async {
+      if (profileId != _ref.read(currentProfileIdProvider)) return false;
+      return _changeProxiesBatch(groupToProxyMap, profileId);
+    });
+  }
+
+  Future<bool> _changeProxiesBatch(
+    Map<String, String> groupToProxyMap,
+    String? profileId,
+  ) async {
     if (groupToProxyMap.isEmpty) return true;
+    _backgroundLoadVersion++;
 
     // Snapshot what the optimistic write below is about to overwrite, so a
     // rejected change can be undone one group at a time.
@@ -1630,6 +1664,7 @@ class AppController {
           ChangeProxyParams(groupName: entry.key, proxyName: entry.value),
         );
       } catch (e) {
+        if (profileId != _ref.read(currentProfileIdProvider)) return false;
         allAccepted = false;
         commonPrint.log('Failed to change proxy for group ${entry.key}: $e');
         // The core still holds the old node. Keeping the optimistic value
@@ -1638,13 +1673,14 @@ class AppController {
         // actually changing, which is exactly what did not happen.
         updateCurrentSelectedMap(entry.key, previous[entry.key] ?? '');
       }
+      if (profileId != _ref.read(currentProfileIdProvider)) return false;
     }
 
     await clashCore.closeConnections();
     await clashCore.flushDnsCache();
     await updateGroups();
-    addCheckIp();
-    detectionState.startCheck(immediate: true, clearPrevious: true);
+    if (profileId != _ref.read(currentProfileIdProvider)) return false;
+    _scheduleCheckIpRefresh();
 
     // `updateGroups()` swallows its own failures (`_handleUpdateGroupsError`
     // returns without touching the provider), so returning from it is not
@@ -2135,13 +2171,22 @@ class AppController {
     };
 
     vpn_service.service?.addNativeEventCallback((method, arguments) async {
-      if (method == 'vpnStartFailed') {
-        globalState.showNotifier('Failed, Please try again later');
-        await updateStatus(false);
+      if (method == 'vpnStartFailed' && !_isStarting &&
+          !_ref.read(isRestartingCoreProvider)) {
+        globalState.showNotifier(appLocalizations.networkErrorRetryLater);
       } else if (method == 'runStateChanged') {
         final state = arguments as String?;
-        if (state == 'STOP' && globalState.isStart) {
-          await updateStatus(false);
+        if (state == 'STOP' && !_isStarting &&
+            !_ref.read(isRestartingCoreProvider) &&
+            _ref.read(connectionTargetProvider) == null &&
+            _ref.read(runTimeProvider) != null) {
+          unawaited(_coreLifecycleLock.synchronized(() async {
+            if (!await globalState.isVpnServiceRunning()) {
+              await _updateStatus(false);
+            }
+          }).catchError((Object error) {
+            commonPrint.log('VPN stop synchronization failed: $error');
+          }));
         }
       }
     });
@@ -2208,11 +2253,21 @@ class AppController {
       );
     }
     _ref.read(initProvider.notifier).value = true;
+    if (_localIpRequest == 0 &&
+        _ref.read(dashboardStateProvider).dashboardWidgets.contains(
+          DashboardWidget.intranetIp,
+        )) {
+      unawaited(updateLocalIp());
+    }
   }
 
   Future<void> _initStatus() async {
     if (system.isAndroid) {
-      await globalState.updateStartTime();
+      if (await globalState.isVpnServiceRunning()) {
+        await globalState.updateStartTime();
+      } else {
+        globalState.startTime = null;
+      }
       if (globalState.isStart && _ref.read(runTimeProvider) == null) {
         _ref.read(runTimeProvider.notifier).value = 0;
       }
@@ -2293,6 +2348,13 @@ class AppController {
   }
 
   void setDelay(Delay delay, {bool background = false, bool startup = false}) {
+    final target = DelayTestTarget(name: delay.name, url: delay.url);
+    if (background || startup) {
+      // The core also broadcasts manual probes through the health-check hook.
+      if (_manualDelayTargets.contains(target)) return;
+    } else {
+      _manualDelayTargets.add(target);
+    }
     final startedAt = globalState.startTime;
     // A health check can complete just after the tunnel comes up.
     final settling =
@@ -2746,7 +2808,9 @@ class AppController {
   }
 
   void updateStart() {
-    updateStatus(!_ref.read(runTimeProvider.notifier).isStart);
+    final pending = _ref.read(connectionTargetProvider);
+    unawaited(updateStatus(!(pending ?? _ref.read(runTimeProvider.notifier).isStart))
+        .catchError((Object error) => globalState.showNotifier(error.formatError)));
   }
 
   void updateCurrentSelectedMap(String groupName, String proxyName) {
@@ -2878,8 +2942,12 @@ class AppController {
     updateGroupsDebounce();
     await clashCore.closeConnections();
     await clashCore.flushDnsCache();
-    detectionState.startCheck(immediate: true, clearPrevious: true);
-    addCheckIpNumDebounce();
+    if (_ref.read(runTimeProvider.notifier).isStart) {
+      _scheduleCheckIpRefresh();
+    } else {
+      detectionState.startCheck(immediate: true, clearPrevious: true);
+      addCheckIpNumDebounce();
+    }
   }
 
   void updateAutoLaunch() {

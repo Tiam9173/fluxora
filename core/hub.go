@@ -28,6 +28,7 @@ import (
 	"github.com/metacubex/mihomo/component/updater"
 	"github.com/metacubex/mihomo/config"
 	"github.com/metacubex/mihomo/constant"
+	"github.com/metacubex/mihomo/constant/features"
 	cp "github.com/metacubex/mihomo/constant/provider"
 	"github.com/metacubex/mihomo/hub/executor"
 	"github.com/metacubex/mihomo/listener"
@@ -45,16 +46,11 @@ var (
 	logSubscriber     observable.Subscription[log.Event]
 	ageMutex          sync.Mutex
 
-	// item 6 — buffered log history so the UI can catch up on what happened
-	// before it started listening. Streaming and history share the same
-	// subscription: `handleStartLog` records every event into the ring buffer
-	// *and* pushes it, so there is nothing extra to keep in sync.
 	logHistoryLock sync.RWMutex
 	logHistory     []logEntry
+	logHistoryHead int
 )
 
-/// item 6 — oldest entries are dropped once the buffer is full, so a long
-/// running session cannot grow it without bound.
 const maxLogHistory = 512
 
 type logEntry struct {
@@ -65,10 +61,12 @@ type logEntry struct {
 func recordLogHistory(entry logEntry) {
 	logHistoryLock.Lock()
 	defer logHistoryLock.Unlock()
-	if len(logHistory) >= maxLogHistory {
-		logHistory = logHistory[1:]
+	if len(logHistory) < maxLogHistory {
+		logHistory = append(logHistory, entry)
+		return
 	}
-	logHistory = append(logHistory, entry)
+	logHistory[logHistoryHead] = entry
+	logHistoryHead = (logHistoryHead + 1) % maxLogHistory
 }
 
 /// Serialised for the Dart side. Always returns valid JSON — an empty array on
@@ -76,11 +74,16 @@ func recordLogHistory(entry logEntry) {
 /// break the page that asked for it.
 func handleGetLogs() string {
 	logHistoryLock.RLock()
-	defer logHistoryLock.RUnlock()
 	if len(logHistory) == 0 {
+		logHistoryLock.RUnlock()
 		return "[]"
 	}
-	data, err := json.Marshal(logHistory)
+	entries := make([]logEntry, len(logHistory))
+	n := copy(entries, logHistory[logHistoryHead:])
+	copy(entries[n:], logHistory[:logHistoryHead])
+	logHistoryLock.RUnlock()
+
+	data, err := json.Marshal(entries)
 	if err != nil {
 		return "[]"
 	}
@@ -91,6 +94,7 @@ func handleClearLogs() bool {
 	logHistoryLock.Lock()
 	defer logHistoryLock.Unlock()
 	logHistory = nil
+	logHistoryHead = 0
 	return true
 }
 
@@ -111,8 +115,18 @@ func handleInitClash(paramsString string) bool {
 func handleStartListener() bool {
 	runLock.Lock()
 	defer runLock.Unlock()
+	if currentConfig == nil {
+		return false
+	}
 	isRunning = true
 	updateListeners()
+	general := currentConfig.General
+	if (general.MixedPort > 0 && listener.GetPorts().MixedPort != general.MixedPort) ||
+		(!features.Android && general.Tun.Enable && !listener.GetTunConf().Enable) {
+		isRunning = false
+		listener.StopListener()
+		return false
+	}
 	resolver.ResetConnection()
 	return true
 }

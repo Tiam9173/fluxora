@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import '../common/tokens/tokens.dart';
@@ -25,7 +26,7 @@ class LiquidBackdrop extends StatefulWidget {
 class _LiquidBackdropState extends State<LiquidBackdrop> {
   static Future<ui.FragmentProgram>? _program;
   ui.FragmentShader? _shader;
-  Offset? _light;
+  final _light = ValueNotifier<Offset?>(null);
   bool _pressed = false;
 
   @override
@@ -48,6 +49,7 @@ class _LiquidBackdropState extends State<LiquidBackdrop> {
   @override
   void dispose() {
     _shader?.dispose();
+    _light.dispose();
     super.dispose();
   }
 
@@ -59,12 +61,16 @@ class _LiquidBackdropState extends State<LiquidBackdrop> {
     return Listener(
       onPointerDown: (event) => setState(() {
         _pressed = true;
-        _light = event.localPosition;
+        _light.value = event.localPosition;
       }),
       onPointerMove: (event) {
-        if (_pressed) setState(() => _light = event.localPosition);
+        if (_pressed && !motion.reduceMotion) {
+          _light.value = event.localPosition;
+        }
       },
-      onPointerHover: (event) => setState(() => _light = event.localPosition),
+      onPointerHover: motion.reduceMotion
+          ? null
+          : (event) => _light.value = event.localPosition,
       onPointerUp: (_) => setState(() => _pressed = false),
       onPointerCancel: (_) => setState(() => _pressed = false),
       child: TweenAnimationBuilder<double>(
@@ -84,18 +90,15 @@ class _LiquidBackdropState extends State<LiquidBackdrop> {
           ),
           child: widget.child,
         ),
-        builder: (context, pressure, child) => Transform.scale(
-          scale: motion.reduceMotion
-              ? 1
-              : 1 - pressure * .008 * motion.intensity,
-          child: CustomPaint(
-            foregroundPainter: _GlassRim(
-              widget.radius,
-              widget.strength,
-              _light,
-              pressure,
-              dark,
-            ),
+        builder: (context, pressure, child) => CustomPaint(
+          foregroundPainter: _GlassRim(
+            widget.radius,
+            widget.strength,
+            _light,
+            pressure,
+            dark,
+          ),
+          child: RepaintBoundary(
             child: _LensFilter(
               radius: widget.radius,
               strength:
@@ -201,54 +204,35 @@ class _RenderLensFilter extends RenderBackdropFilter {
 }
 
 class _GlassRim extends CustomPainter {
-  _GlassRim(this.radius, this.strength, this.light, this.pressure, this.dark);
+  _GlassRim(this.radius, this.strength, this.light, this.pressure, this.dark)
+    : super(repaint: light);
   final double radius, strength, pressure;
-  final Offset? light;
+  final ValueListenable<Offset?> light;
   final bool dark;
   @override
   void paint(Canvas canvas, Size size) {
     if (size.isEmpty) return;
     final bounds = Offset.zero & size;
     final shape = RRect.fromRectAndRadius(
-      bounds.deflate(.8),
-      Radius.circular(radius),
+      bounds.deflate(.6),
+      Radius.circular((radius - .6).clamp(0, double.infinity)),
     );
+    final focus = light.value ?? Offset(size.width * .18, 0);
     canvas.drawRRect(
       shape,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = dark ? 1.0 : 1.25
-        ..shader = LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: dark
-              ? [
-                  Colors.white.withValues(alpha: .34 + .16 * strength),
-                  const Color(0xFF8EA8FA).withValues(alpha: .12),
-                  Colors.white.withValues(alpha: .08),
-                ]
-              : [
-                  Colors.white,
-                  const Color(0xFF9DB7EB).withValues(alpha: .42),
-                  Colors.white.withValues(alpha: .16),
-                  const Color(0xFF9DB7EB).withValues(alpha: .20),
-                  Colors.white.withValues(alpha: .95),
-                ],
-          stops: dark ? const [0, .55, 1] : const [0, .22, .5, .78, 1],
-        ).createShader(bounds),
-    );
-    final focus = light ?? Offset(size.width * .2, 0);
-    canvas.drawRRect(
-      shape.deflate(1.8),
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = .65 + pressure
+        ..strokeWidth = 1.2
         ..shader = ui.Gradient.radial(
           focus,
-          size.shortestSide * (1.3 + pressure),
+          size.longestSide * (.82 + .12 * pressure),
           [
-            Colors.white.withValues(alpha: (dark ? .16 : .40) + pressure * .3),
-            Colors.white.withValues(alpha: 0),
+            Colors.white.withValues(
+              alpha: (dark ? .24 : .72) + .10 * strength + .13 * pressure,
+            ),
+            (dark ? Colors.white : const Color(0xFF7585A7)).withValues(
+              alpha: dark ? .11 : .20,
+            ),
           ],
         ),
     );

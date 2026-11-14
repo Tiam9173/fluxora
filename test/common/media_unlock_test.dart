@@ -1,9 +1,90 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/models/models.dart';
+import 'package:fluxora/state.dart';
+
+class _MappedClient extends Fake implements HttpClient {
+  _MappedClient(this.client, this.server, this.hosts, this.nativeFailsTls);
+
+  final HttpClient client;
+  final HttpServer server;
+  final List<String> hosts;
+  final bool nativeFailsTls;
+
+  @override
+  set connectionTimeout(Duration? value) => client.connectionTimeout = value;
+
+  @override
+  set idleTimeout(Duration value) => client.idleTimeout = value;
+
+  @override
+  Future<HttpClientRequest> openUrl(String method, Uri url) async {
+    hosts.add(url.host);
+    final native = url.host == 'android.chat.openai.com';
+    if (native && nativeFailsTls) throw const HandshakeException('fixture');
+    return client.openUrl(
+      method,
+      Uri.http('127.0.0.1:${server.port}', native ? '/native' : url.path),
+    );
+  }
+
+  @override
+  void close({bool force = false}) => client.close(force: force);
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  test(
+    'OpenAI checks the Android TLS endpoint even after a good web trace',
+    () async {
+      final oldConfig = globalState.config;
+      final oldPlatform = System.platformOverride;
+      addTearDown(() {
+        globalState.config = oldConfig;
+        System.platformOverride = oldPlatform;
+      });
+      globalState.config = oldConfig.copyWith(
+        patchClashConfig: oldConfig.patchClashConfig.copyWith(unifiedDelay: false),
+      );
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(() => server.close(force: true));
+      server.listen((request) {
+        if (request.uri.path == '/native') {
+          request.response.statusCode = HttpStatus.forbidden;
+        } else {
+          request.response.write('ip=192.0.2.1\nloc=US\n');
+        }
+        request.response.close();
+      });
+      final hosts = <String>[];
+      Future<MediaUnlockStatus> run(String platform, bool nativeFailsTls) async {
+        hosts.clear();
+        System.platformOverride = platform;
+        final client = FluxoraHttpOverrides().createHttpClient(null)
+          ..findProxy = (_) => 'DIRECT';
+        return HttpOverrides.runZoned(
+          () async {
+            final result = await MediaUnlockChecker().checkPlatform(
+              MediaPlatform.openai,
+            );
+            return result.status;
+          },
+          createHttpClient: (_) =>
+              _MappedClient(client, server, hosts, nativeFailsTls),
+        );
+      }
+
+      expect(await run('android', true), MediaUnlockStatus.failed);
+      expect(hosts, ['chatgpt.com', 'android.chat.openai.com']);
+      expect(await run('android', false), MediaUnlockStatus.unlocked);
+      expect(hosts, ['chatgpt.com', 'android.chat.openai.com']);
+      expect(await run('windows', true), MediaUnlockStatus.unlocked);
+      expect(hosts, ['chatgpt.com']);
+    },
+  );
 
   group('MediaPlatform & Region Tests', () {
     test('MediaPlatform enum count and extensions', () {

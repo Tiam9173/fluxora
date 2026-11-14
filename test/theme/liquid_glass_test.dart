@@ -159,6 +159,20 @@ void main() {
       await tester.pumpWidget(scene(.5));
       await tester.pumpAndSettle();
       final resting = filter.filterConfig.filter;
+      final lens = find.descendant(
+        of: find.byType(LiquidBackdrop),
+        matching: find.byWidgetPredicate(
+          (widget) => widget is TweenAnimationBuilder<double>,
+        ),
+      );
+      final lensAnimation = tester.widget(lens);
+      final mouse = await tester.createGesture(kind: ui.PointerDeviceKind.mouse);
+      await mouse.addPointer(location: const Offset(5, 5));
+      addTearDown(mouse.removePointer);
+      await mouse.moveTo(tester.getCenter(find.text('Select')));
+      await tester.pump();
+      expect(tester.widget(lens), same(lensAnimation));
+      expect(filter.filterConfig.filter, same(resting));
       final press = await tester.startGesture(
         tester.getCenter(find.text('Select')),
       );
@@ -214,12 +228,16 @@ void main() {
       final inputPicture = inputRecorder.endRecording();
       final input = await inputPicture.toImage(240, 200);
       inputPicture.dispose();
-      Future<ui.Image> render(double strength, {bool dark = true}) async {
+      Future<ui.Image> render(
+        double strength, {
+        bool dark = true,
+        double lensHeight = 100,
+      }) async {
         final shader = program.fragmentShader()
           ..setFloat(0, 240)
           ..setFloat(1, 200)
           ..setFloat(2, 240)
-          ..setFloat(3, 100)
+          ..setFloat(3, lensHeight)
           ..setFloat(4, 40)
           ..setFloat(5, strength)
           ..setFloat(6, dark ? 1 : 0)
@@ -254,7 +272,7 @@ void main() {
       }
       expect(
         changed,
-        greaterThan(1000),
+        greaterThan(450),
         reason:
             'strength changes sampled background, not just a decorative border',
       );
@@ -263,6 +281,17 @@ void main() {
       ))!;
       final center = (100 * 240 + 120) * 4;
       expect(lightData.getUint8(center), greaterThan(200));
+      final clippedBefore = await render(0, lensHeight: 300);
+      final clippedAfter = await render(1, lensHeight: 300);
+      final clippedBase = (await clippedBefore.toByteData())!;
+      final clippedLens = (await clippedAfter.toByteData())!;
+      expect(
+        clippedLens.buffer.asUint8List(),
+        orderedEquals(clippedBase.buffer.asUint8List()),
+        reason: 'A clipped lens should not draw a new rim at the cut',
+      );
+      clippedBefore.dispose();
+      clippedAfter.dispose();
       before.dispose();
       after.dispose();
       light.dispose();

@@ -116,17 +116,16 @@ func handleStopTun() {
 	}
 }
 
-func handleStartTun(fd int, callback unsafe.Pointer) {
+func handleStartTun(fd int, callback unsafe.Pointer) bool {
 	handleStopTun()
 	tunLock.Lock()
 	defer tunLock.Unlock()
-	now := time.Now()
-	runTime = &now
 	if fd != 0 {
 		if currentConfig == nil {
 			log.Warnln("[APP] handleStartTun called before setupConfig")
-			handleStopTun()
-			return
+			_ = syscall.Close(fd)
+			releaseObject(callback)
+			return false
 		}
 		handler := &TunHandler{
 			callback: callback,
@@ -139,13 +138,21 @@ func handleStartTun(fd int, callback unsafe.Pointer) {
 			log.Infoln("TUN address: %v", tunListener.Address())
 			handler.listener = tunListener
 		} else {
-			removeTunHook()
 			tunHandler.Store(nil)
+			handler.close()
+			return false
 		}
+	} else {
+		releaseObject(callback)
 	}
+	now := time.Now()
+	runTime = &now
+	return true
 }
 
 func handleGetRunTime() string {
+	tunLock.Lock()
+	defer tunLock.Unlock()
 	if runTime == nil {
 		return ""
 	}
@@ -258,8 +265,7 @@ func quickStart(initParamsChar *C.char, paramsChar *C.char, stateParamsChar *C.c
 
 //export startTUN
 func startTUN(fd C.int, callback unsafe.Pointer) bool {
-	handleStartTun(int(fd), callback)
-	return true
+	return handleStartTun(int(fd), callback)
 }
 
 //export getRunTime

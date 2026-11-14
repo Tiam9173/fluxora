@@ -20,17 +20,20 @@ bool _stackGroupActions(BuildContext context) =>
 /// value is that a stale entry can never be served, and the easy mistake is
 /// forgetting one of these.
 ///
-/// `delayMap` is deliberately included even though it is not a widget field: the
-/// delay sort reads it through `getDelayProvider` while the `Group` instance
-/// stays the same across a delay update, so omitting it would freeze the sort
-/// order the moment a probe returned a new value.
+/// Only delay sorting depends on the current delay snapshot.
 Object groupSliverCacheKey({
   required bool isExpand,
   required ProxiesSortType sortType,
   required int columns,
   required double itemHeight,
   required Object? delayMap,
-}) => (isExpand, sortType, columns, itemHeight, delayMap);
+}) => (
+  isExpand,
+  sortType,
+  columns,
+  itemHeight,
+  isExpand && sortType == ProxiesSortType.delay ? delayMap : null,
+);
 
 class ProxiesListView extends ConsumerWidget {
   const ProxiesListView({super.key});
@@ -51,7 +54,6 @@ class ProxiesListView extends ConsumerWidget {
       columns: state.columns,
       cardType: state.proxyCardType,
       sortType: state.proxiesSortType,
-      sortNum: state.sortNum,
       currentUnfoldSet: state.currentUnfoldSet,
     );
   }
@@ -62,7 +64,6 @@ class _ProxyGroupsList extends ConsumerStatefulWidget {
   final int columns;
   final ProxyCardType cardType;
   final ProxiesSortType sortType;
-  final num sortNum;
   final Set<String> currentUnfoldSet;
 
   const _ProxyGroupsList({
@@ -70,7 +71,6 @@ class _ProxyGroupsList extends ConsumerStatefulWidget {
     required this.columns,
     required this.cardType,
     required this.sortType,
-    required this.sortNum,
     required this.currentUnfoldSet,
   });
 

@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/models/models.dart';
+import 'package:fluxora/plugins/service.dart';
 import 'package:fluxora/state.dart';
 
 void main() {
@@ -11,6 +14,7 @@ void main() {
   bool? mockStatusResult;
   bool shouldThrow = false;
   int methodCallCount = 0;
+  Completer<void>? firstStatus;
 
   setUp(() {
     System.platformOverride = 'android';
@@ -29,18 +33,21 @@ void main() {
     mockStatusResult = null;
     shouldThrow = false;
     methodCallCount = 0;
+    firstStatus = null;
 
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (MethodCall call) async {
-      if (call.method == 'status') {
-        methodCallCount++;
-        if (shouldThrow) {
-          throw PlatformException(code: 'ERROR', message: 'Test Exception');
-        }
-        return mockStatusResult;
-      }
-      return null;
-    });
+          if (call.method == 'startVpn') return true;
+          if (call.method == 'status') {
+            methodCallCount++;
+            if (firstStatus?.isCompleted == false) firstStatus!.complete();
+            if (shouldThrow) {
+              throw PlatformException(code: 'ERROR', message: 'Test Exception');
+            }
+            return mockStatusResult;
+          }
+          return null;
+        });
   });
 
   tearDown(() {
@@ -49,6 +56,33 @@ void main() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, null);
     globalState.stopUpdateTasks();
+  });
+
+  test(
+    'start waits for native readiness after accepting the request',
+    () async {
+      System.platformOverride = 'windows';
+      firstStatus = Completer<void>();
+      var completed = false;
+      final pending = Service()
+          .waitForVpnStart(pollInterval: const Duration(milliseconds: 5))
+          .whenComplete(() => completed = true);
+      await firstStatus!.future;
+      expect(completed, isFalse);
+      mockStatusResult = true;
+      expect(await pending, isTrue);
+      expect(methodCallCount, greaterThan(1));
+    },
+  );
+
+  test('cancellation returns without waiting for native readiness', () async {
+    System.platformOverride = 'windows';
+    firstStatus = Completer<void>();
+    final cancel = Completer<void>();
+    final pending = Service().waitForVpnStart(cancellation: cancel.future);
+    await firstStatus!.future;
+    cancel.complete();
+    expect(await pending, isFalse);
   });
 
   // A. VPN Status true
@@ -128,5 +162,3 @@ void main() {
     expect(globalState.appState.runTime, 100);
   });
 }
-
-

@@ -270,8 +270,10 @@ class ClashLibHandler {
   }
 
   Future<bool> startListener() async {
-    clashFFI.startListener();
-    return true;
+    final result = await invokeAction(
+      '{"id":"startListener","method":"startListener"}',
+    );
+    return (json.decode(result) as Map)['data'] == true;
   }
 
   Future<bool> stopListener() async {

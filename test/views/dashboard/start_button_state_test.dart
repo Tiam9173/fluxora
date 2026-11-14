@@ -97,6 +97,7 @@ void main() {
                 const StartButtonSelectorState(isInit: true, hasProfile: true),
           ),
           isRestartingCoreProvider.overrideWith((ref) => false),
+          systemProxyAppliedProvider.overrideWith((ref) => true),
         ],
         child: MaterialApp(
           theme: ThemeData(
@@ -174,14 +175,15 @@ void main() {
       await tester.tap(find.byType(FluxoraCard));
       await tester.pump();
       expect(find.text(appLocalizations.startVpn), findsOneWidget);
-      expect(find.text(appLocalizations.coreConnected), findsNothing);
+      expect(find.text(appLocalizations.serviceRunning), findsNothing);
       controller.pending!.complete();
       await tester.pumpAndSettle();
       // Completing an operation alone does not prove the core is connected.
-      expect(find.text(appLocalizations.coreConnected), findsNothing);
+      expect(find.text(appLocalizations.serviceRunning), findsNothing);
       controller.bindingRef.read(runTimeProvider.notifier).value = 156000;
       await tester.pumpAndSettle();
-      expect(find.text(appLocalizations.coreConnected), findsOneWidget);
+      expect(find.text(appLocalizations.serviceRunning), findsOneWidget);
+      expect(find.text(appLocalizations.healthHealthy), findsNothing);
       await tester.tap(find.byType(FluxoraCard));
       await tester.pump();
       expect(find.text(appLocalizations.stopVpn), findsOneWidget);

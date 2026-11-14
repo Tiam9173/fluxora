@@ -86,13 +86,28 @@ void main() {
         await tester.tap(find.text('Open'));
         await tester.pumpAndSettle();
         final route = ModalRoute.of(tester.element(find.text('Form')))!;
-        expect(route.transitionDuration, FluxoraMotion.base);
-        expect(route.reverseTransitionDuration, FluxoraMotion.fast);
+        expect(
+          route.transitionDuration,
+          mobile ? FluxoraMotion.base : FluxoraMotion.fast,
+        );
+        expect(
+          route.reverseTransitionDuration,
+          mobile ? FluxoraMotion.fast : Duration.zero,
+        );
         await tester.enterText(find.byType(TextField), 'keep my input');
         await tester.tap(find.text('Detail'));
-        await tester.pump(const Duration(milliseconds: 350));
-        navigator.currentState!.pop();
+        await tester.pumpAndSettle();
+        if (mobile) {
+          await tester.flingFrom(
+            const Offset(3, 300),
+            const Offset(500, 0),
+            1400,
+          );
+        } else {
+          navigator.currentState!.pop();
+        }
         await tester.pump();
+        if (!mobile) expect(find.text('keep my input'), findsOneWidget);
         await tester.pump(const Duration(milliseconds: 350));
         expect(find.text('keep my input'), findsOneWidget);
         expect(inits, 1);

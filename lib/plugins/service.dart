@@ -2,12 +2,14 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:fluxora/common/system.dart';
+import 'package:fluxora/models/core.dart';
 import 'package:fluxora/state.dart';
 import 'package:flutter/services.dart';
 
 import '../clash/lib.dart';
 
-typedef NativeEventCallback = Future<void> Function(String method, dynamic arguments);
+typedef NativeEventCallback =
+    Future<void> Function(String method, dynamic arguments);
 
 class Service {
   static final Service _instance = Service._internal();
@@ -22,14 +24,7 @@ class Service {
   factory Service() => _instance;
 
   Future<dynamic> _handleMethodCall(MethodCall call) async {
-    if (call.method == 'runStateChanged') {
-      final state = call.arguments as String?;
-      if (state == 'STOP') {
-        globalState.startTime = null;
-        globalState.appState = globalState.appState.copyWith(runTime: null);
-      }
-    }
-    for (final callback in _nativeEventCallbacks) {
+    for (final callback in List.of(_nativeEventCallbacks)) {
       await callback(call.method, call.arguments);
     }
   }
@@ -46,11 +41,56 @@ class Service {
 
   Future<bool?> destroy() => methodChannel.invokeMethod<bool>('destroy');
 
-  Future<bool?> startVpn() async {
-    final options = await clashLib?.getAndroidVpnOptions();
-    return await methodChannel.invokeMethod<bool>('startVpn', {
-      'data': json.encode(options),
-    });
+  Future<bool> waitForVpnStart({
+    AndroidVpnOptions? options,
+    Duration timeout = const Duration(seconds: 90),
+    Duration pollInterval = const Duration(milliseconds: 250),
+    Future<void>? cancellation,
+  }) async {
+    final result = Completer<bool>();
+    void fail() {
+      if (!result.isCompleted) result.complete(false);
+    }
+
+    Future<void> onEvent(String method, dynamic arguments) async {
+      if (method == 'vpnStartFailed') fail();
+    }
+
+    addNativeEventCallback(onEvent);
+    final deadline = Timer(timeout, fail);
+    cancellation?.then((_) => fail());
+    try {
+      final optionsRequest = options == null
+          ? clashLib?.getAndroidVpnOptions()
+          : null;
+      final resolved =
+          options ??
+          (optionsRequest == null
+              ? null
+              : await Future.any<AndroidVpnOptions?>([
+                  optionsRequest,
+                  result.future.then((_) => null),
+                ]));
+      if (result.isCompleted) return false;
+      final accepted = methodChannel
+          .invokeMethod<bool>('startVpn', {'data': json.encode(resolved)})
+          .then((value) => value == true);
+      if (!await Future.any([accepted, result.future])) {
+        return false;
+      }
+      while (!result.isCompleted) {
+        final running = await Future.any([getStatus(), result.future]);
+        if (running) return true;
+        await Future.any<void>([
+          Future<void>.delayed(pollInterval),
+          result.future,
+        ]);
+      }
+      return await result.future;
+    } finally {
+      deadline.cancel();
+      removeNativeEventCallback(onEvent);
+    }
   }
 
   Future<bool?> stopVpn() => methodChannel.invokeMethod<bool>('stopVpn');
@@ -80,9 +120,7 @@ class Service {
   }
 
   Future<List<String>> getLocalGateways() async {
-    return await methodChannel.invokeListMethod<String>(
-          'getLocalGateways',
-        ) ??
+    return await methodChannel.invokeListMethod<String>('getLocalGateways') ??
         const [];
   }
 
@@ -93,7 +131,8 @@ class Service {
   }
 
   Future<bool> isServiceEngineRunning() async {
-    return await methodChannel.invokeMethod<bool>('isServiceEngineRunning') ?? false;
+    return await methodChannel.invokeMethod<bool>('isServiceEngineRunning') ??
+        false;
   }
 
   Future<bool> getStatus() async {
@@ -101,12 +140,14 @@ class Service {
   }
 
   Future<bool?> setHighPriorityNotification(bool enabled) async {
-    return await methodChannel.invokeMethod<bool>('setHighPriorityNotification', {
-      'enabled': enabled,
-    });
+    return await methodChannel.invokeMethod<bool>(
+      'setHighPriorityNotification',
+      {'enabled': enabled},
+    );
   }
 
-  Future<bool?> reconnectIpc() => methodChannel.invokeMethod<bool>('reconnectIpc');
+  Future<bool?> reconnectIpc() =>
+      methodChannel.invokeMethod<bool>('reconnectIpc');
 }
 
 Service? get service =>

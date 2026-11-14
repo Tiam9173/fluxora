@@ -310,7 +310,11 @@ class _AppIconsViewState extends ConsumerState<AppIconsView> {
                   child: ChoiceChip(
                     key: ValueKey('icon-mode-$dark'),
                     selected: _dark == dark,
-                    avatar: Image.asset(BrandIcons.asset(_style, dark)),
+                    avatar: Image.asset(
+                      BrandIcons.asset(_style, dark),
+                      cacheWidth: (24 * MediaQuery.devicePixelRatioOf(context))
+                          .ceil(),
+                    ),
                     label: Text(
                       dark ? tr('深色图标', 'Dark icon') : tr('浅色图标', 'Light icon'),
                     ),
@@ -355,6 +359,12 @@ class _AppIconsViewState extends ConsumerState<AppIconsView> {
                                   BrandIcons.asset(style, _dark),
                                   width: 76,
                                   height: 76,
+                                  cacheWidth:
+                                      (76 *
+                                              MediaQuery.devicePixelRatioOf(
+                                                context,
+                                              ))
+                                          .ceil(),
                                   excludeFromSemantics: true,
                                 ),
                                 const SizedBox(height: 8),

@@ -77,10 +77,9 @@ begin
     Result := StripQuotes(Value);
 end;
 
-function HelperServiceState(): Integer;
+function HelperServiceState(const AppDir: String): Integer;
 var
   ImagePath: String;
-  AppDir: String;
   ServiceKey: String;
 begin
   ServiceKey := 'SYSTEM\CurrentControlSet\Services\{{HELPER_SERVICE_NAME}}';
@@ -104,22 +103,18 @@ begin
     Exit;
   end;
 
-  AppDir := ExpandConstant('{app}');
   if (AppDir = '') or (Pos('{', AppDir) > 0) then
   begin
     Result := HS_UNKNOWN;
     Exit;
   end;
 
-  if Pos(Lowercase(AppDir + '\'), Lowercase(ImagePath)) = 1 then
+  if CompareText(ImagePath, ExpandConstant('{commonpf64}\Fluxora\Service\{{HELPER_EXECUTABLE_NAME}}')) = 0 then
+    Result := HS_MANAGED
+  else if Pos(Lowercase(AddBackslash(AppDir)), Lowercase(ImagePath)) = 1 then
     Result := HS_LOCAL
   else
     Result := HS_MANAGED;
-end;
-
-function IsManagedHelperDeployment(): Boolean;
-begin
-  Result := HelperServiceState() = HS_MANAGED;
 end;
 
 procedure ForceKillProcesses(IsUninstall: Boolean);
@@ -140,8 +135,8 @@ begin
     P10-P0-A - only when this machine has no protected deployment. An older
     client in the install directory would answer --exit by stopping the shared
     helper, so the call is skipped rather than trusted. HS_MANAGED never reaches
-    here anyway (InitializeSetup aborts), but the guard is kept explicit. }
-  if (HelperServiceState() <> HS_MANAGED) and
+    here anyway (PrepareToInstall blocks it), but uninstall can still call this. }
+  if (HelperServiceState(ExpandConstant('{app}')) <> HS_MANAGED) and
      FileExists(ExpandConstant('{app}\{{EXECUTABLE_NAME}}')) and
      IsProcessRunning('{{EXECUTABLE_NAME}}') then
   begin
@@ -282,13 +277,13 @@ begin
   end;
 end;
 
-function InitializeSetup(): Boolean;
+function PrepareToInstall(var NeedsRestart: Boolean): String;
 var
   State: Integer;
   ImagePath: String;
 begin
-  Result := True;
-  State := HelperServiceState();
+  Result := '';
+  State := HelperServiceState(WizardDirValue);
 
   if State = HS_MISSING then
   begin
@@ -306,29 +301,24 @@ begin
     // underneath it would leave a privileged service running a file any local
     // user can replace. Refusing is the only answer that does not make it worse.
     ImagePath := HelperServiceImagePath();
-    MsgBox(CustomMessage('LegacyHelperDetected') + #13#10#13#10 + ImagePath,
-      mbError, MB_OK);
+    Result := CustomMessage('LegacyHelperDetected') + #13#10#13#10 + ImagePath;
     Log('P10-P0-A: refusing to install; legacy helper at ' + ImagePath);
-    Result := False;
     Exit;
   end;
 
   if State = HS_MANAGED then
   begin
     ImagePath := HelperServiceImagePath();
-    MsgBox(CustomMessage('ManagedHelperDetected') + #13#10#13#10 + ImagePath,
-      mbError, MB_OK);
+    Result := CustomMessage('ManagedHelperDetected') + #13#10#13#10 + ImagePath;
     Log('P10-P0-A: refusing to install; managed helper at ' + ImagePath);
-    Result := False;
     Exit;
   end;
 
   // HS_UNKNOWN: the key exists but ImagePath could not be read or is empty.
   // Guessing "no service" here is what would let an install proceed against an
   // unknown deployment, so it fails closed with its own message.
-  MsgBox(CustomMessage('HelperStateUnknown'), mbError, MB_OK);
+  Result := CustomMessage('HelperStateUnknown');
   Log('P10-P0-A: refusing to install; helper service state is unreadable');
-  Result := False;
 end;
 
 function InitializeUninstall(): Boolean;
@@ -395,16 +385,16 @@ Name: "chineseSimplified"; MessagesFile: {% if locale.file %}{{ locale.file }}{%
 
 [CustomMessages]
 english.ShuttingDownRunningApp=Shutting down running {{DISPLAY_NAME}}...
-english.ManagedHelperDetected=Fluxora is already installed with a protected helper service, so this package cannot upgrade it safely. Please update from inside the running application instead.%n%nExisting service binary:
-english.HelperStateUnknown=A Fluxora helper service exists but its configuration could not be read, so this installer cannot tell whether replacing it would be safe. Nothing was changed. Please update from inside the running application instead.
+english.ManagedHelperDetected=This installer cannot upgrade the existing protected Fluxora helper service. Setup stopped before copying files.%n%nExisting service binary:
+english.HelperStateUnknown=Setup stopped because it could not read the existing Fluxora helper service configuration. No files were copied.
 english.LegacyHelperDetected=An older Fluxora helper service is registered against a user-writable directory. That layout is unsafe and this installer will not overwrite it.%n%nNothing was changed. To repair it, run this from an administrator prompt, then install again:%n%n    sc stop {{HELPER_SERVICE_NAME}}%n    sc delete {{HELPER_SERVICE_NAME}}%n%nExisting service binary:
 english.RemoveUserDataPrompt=Do you want to remove all user data?%n%nThis will remove:%n• Configuration files%n• Profiles and subscriptions%n• Settings and preferences%n• Registry entries%n%nThis action cannot be undone.
 {% if LOCALES %}
 {% for locale in LOCALES %}
 {% if locale.lang == 'zh' %}
 chineseSimplified.ShuttingDownRunningApp=正在关闭运行中的 {{DISPLAY_NAME}}...
-chineseSimplified.ManagedHelperDetected=本机已存在受保护的 Fluxora 助手服务，此安装包无法安全升级该部署。请在正在运行的应用内完成更新。%n%n现有服务路径：
-chineseSimplified.HelperStateUnknown=检测到 Fluxora 助手服务，但无法读取其配置，因此无法判断替换是否安全。未做任何更改。请在正在运行的应用内完成更新。
+chineseSimplified.ManagedHelperDetected=此安装包无法升级现有的受保护 Fluxora 助手服务。安装程序已停止，尚未复制文件。%n%n现有服务路径：
+chineseSimplified.HelperStateUnknown=安装程序无法读取现有 Fluxora 助手服务的配置，已停止安装。尚未复制文件。
 chineseSimplified.LegacyHelperDetected=检测到旧版 Fluxora 助手服务，其程序位于用户可写目录，该布局不安全，本安装包不会覆盖它。%n%n未做任何更改。如需修复，请以管理员身份运行以下命令后重新安装：%n%n    sc stop {{HELPER_SERVICE_NAME}}%n    sc delete {{HELPER_SERVICE_NAME}}%n%n现有服务路径：
 chineseSimplified.RemoveUserDataPrompt=是否要删除所有用户数据？%n%n这将删除：%n• 配置文件%n• 代理配置与订阅%n• 设置和偏好%n• 注册表记录%n%n此操作无法撤销。
 {% endif %}

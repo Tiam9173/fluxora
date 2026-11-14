@@ -103,4 +103,16 @@ void main() {
 
     expect({first, second}, hasLength(2));
   });
+
+  test('does not reuse an in-flight probe across subscriptions', () async {
+    final pool = DelayTestRequestPool();
+    const first = DelayTestTarget(name: 'node', url: 'url', profileId: 'A');
+    const second = DelayTestTarget(name: 'node', url: 'url', profileId: 'B');
+    final oldResult = Completer<Delay>();
+    final pending = pool.run(first, () => oldResult.future);
+    const fresh = Delay(name: 'node', url: 'url', value: 42);
+    expect(await pool.run(second, () async => fresh), fresh);
+    oldResult.complete(fresh.copyWith(value: -1));
+    expect((await pending).value, -1);
+  });
 }

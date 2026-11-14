@@ -53,7 +53,9 @@ class NetworkSpeedSmall extends ConsumerWidget {
             iconData: Icons.speed_sharp,
           ),
           child: ValueListenableBuilder<int>(
-            valueListenable: dashboardRefreshManager.tick1s,
+            valueListenable: TickerMode.valuesOf(context).enabled
+                ? dashboardRefreshManager.tick1s
+                : dashboardRefreshManager.paused,
             builder: (_, _, _) {
               final traffics = ref.read(trafficsProvider).list;
               final points = _getPoints(traffics);

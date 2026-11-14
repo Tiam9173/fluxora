@@ -436,14 +436,22 @@ class Request {
 
                 if (ipInfo != null) {
                   if (isPrimary) {
-                    primaryInfo = ipInfo;
-                    onUpdate?.call(ipInfo);
+                    final info = ipInfo.withCountryCodeFrom(fallbackInfo);
+                    primaryInfo = info;
+                    onUpdate?.call(info);
                     if (!firstCompleter.isCompleted) {
-                      firstCompleter.complete(Result.success(ipInfo));
+                      firstCompleter.complete(Result.success(info));
                     }
                   } else {
                     fallbackInfo = ipInfo;
-                    if (!firstCompleter.isCompleted) {
+                    final primary = primaryInfo;
+                    if (primary != null) {
+                      final info = primary.withCountryCodeFrom(ipInfo);
+                      if (!identical(info, primary)) {
+                        primaryInfo = info;
+                        onUpdate?.call(info);
+                      }
+                    } else if (!firstCompleter.isCompleted) {
                       onUpdate?.call(ipInfo);
                       firstCompleter.complete(Result.success(ipInfo));
                     }

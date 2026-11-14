@@ -61,10 +61,23 @@ class _AuroraBottomNavBarState extends ConsumerState<AuroraBottomNavBar> {
     }
 
     final lensMaterial = material.liquid
-        ? GlassSurface(
-            radius: FluxoraRadius.sheet,
-            blur: true,
-            child: ColoredBox(color: scheme.primary.withValues(alpha: .11)),
+        ? DecoratedBox(
+            // The dock already samples the background. A second filter here
+            // bends the first lens and makes its edges visible twice.
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(FluxoraRadius.sheet),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withValues(
+                    alpha: scheme.brightness == Brightness.dark ? .13 : .52,
+                  ),
+                  scheme.primary.withValues(alpha: .11),
+                ],
+              ),
+              border: Border.all(color: material.border(scheme)),
+            ),
           )
         : DecoratedBox(
             decoration: BoxDecoration(

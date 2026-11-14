@@ -96,6 +96,7 @@ def icon_cell(pair, dark):
 
 def sources():
     metadata = {}
+    (ASSETS / 'brand').mkdir(exist_ok=True)
     for style in STYLES:
         master = OUT / f'source/{style}_pair.png'
         pair = Image.open(master).convert('RGBA')
@@ -106,7 +107,9 @@ def sources():
         for dark in (False, True):
             variant = f'{style}_{"dark" if dark else "light"}'
             square = icon_cell(pair, dark)
-            square.resize((1024,1024), Image.Resampling.LANCZOS).save(ASSETS / f'brand_{variant}.png')
+            artwork = square.resize((1024,1024), Image.Resampling.LANCZOS)
+            artwork.save(ASSETS / f'brand_{variant}.png')
+            artwork.save(ASSETS / f'brand/brand_{variant}.webp', lossless=True, method=6, exact=True)
             layer = Image.new('RGBA', (432,432))
             layer.paste(square.resize((288,288), Image.Resampling.LANCZOS), (72,72))
             (RES / 'drawable-xxxhdpi').mkdir(parents=True, exist_ok=True)
@@ -268,6 +271,8 @@ def check():
             pair = Image.open(OUT / f'source/{style}_pair.png').convert('RGBA')
             expected = icon_cell(pair, mode == 'dark').resize((1024,1024), Image.Resampling.LANCZOS)
             assert expected.tobytes() == image.tobytes(), 'Export must match the selected master'
+            with Image.open(ASSETS / f'brand/brand_{variant}.webp') as runtime_icon:
+                assert runtime_icon.size == image.size and runtime_icon.tobytes() == image.tobytes(), variant
             fg = Image.open(RES / f'drawable-xxxhdpi/brand_{variant}_foreground.png')
             assert fg.size == (432,432)
             assert fg.getchannel('A').getbbox()[0] >= 72, 'Adaptive foreground must keep its 18dp inset'

@@ -36,15 +36,15 @@ class _ConnectionsCountState extends State<ConnectionsCount> {
   }
 
   Future<void> _updateConnections() async {
-    if (!mounted) return;
+    if (!mounted || !TickerMode.valuesOf(context).enabled) return;
     if (_isUpdating) return;
     _isUpdating = true;
 
     try {
-      final connections = await clashCore.getConnections();
-      if (mounted) {
+      final count = await clashCore.getConnectionCount();
+      if (mounted && _count != count) {
         setState(() {
-          _count = connections.length;
+          _count = count;
         });
       }
     } catch (e) {

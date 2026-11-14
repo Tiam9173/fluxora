@@ -184,6 +184,9 @@ class Build {
     bool compatible = false,
   }) async {
     final isLib = mode == Mode.lib;
+    final mihomoVersion = File(
+      join(_coreDir, 'Clash.Meta', 'VERSION'),
+    ).readAsStringSync().trim();
 
     final items = buildItems.where((element) {
       return element.target == target &&
@@ -238,7 +241,7 @@ class Build {
         'go',
         'build',
         '-trimpath',
-        '-ldflags=-w -s${item.target == Target.android && (item.arch == Arch.arm64 || item.arch == Arch.amd64) ? ' -extldflags "-Wl,-z,max-page-size=16384"' : ''}',
+        '-ldflags=-w -s -X github.com/metacubex/mihomo/constant.Version=$mihomoVersion${item.target == Target.android && (item.arch == Arch.arm64 || item.arch == Arch.amd64) ? ' -extldflags "-Wl,-z,max-page-size=16384"' : ''}',
         '-tags=$buildTags',
         if (isLib) '-buildmode=c-shared',
         '-o',
