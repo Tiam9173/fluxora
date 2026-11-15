@@ -129,7 +129,7 @@ Mihomo(Clash Meta) 코어 위에 Flutter 로 구축했고, 데스크톱과 모�
 
 패키지는 **[GitHub Releases](https://github.com/Tiam9173/fluxora/releases)** 에 `Fluxora-<version>-<platform>` 형식으로 배포됩니다.
 
-현재 정식 버전은 **[v1.1.1](https://github.com/Tiam9173/fluxora/releases/tag/v1.1.1)** 입니다. `dev` 브랜치의 **1.1.2-rc.2 미리보기는 배포 보류 중** 이며, 소스의 버전 표기가 패키지가 이미 배포되었다는 뜻은 아닙니다. 실제 상태와 다운로드는 Releases 를 확인하세요.
+현재 정식 버전은 **[v1.1.2](https://github.com/Tiam9173/fluxora/releases/tag/v1.1.2)** 입니다. 소스의 버전 표기가 패키지가 이미 배포되었다는 뜻은 아닙니다. 실제 상태와 다운로드는 Releases 를 확인하세요.
 
 | 플랫폼 | 제공 형식 | 아키텍처 |
 |---|---|---|

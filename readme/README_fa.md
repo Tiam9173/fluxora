@@ -129,7 +129,7 @@
 
 بسته‌ها در **[GitHub Releases](https://github.com/Tiam9173/fluxora/releases)** با نام `Fluxora-<version>-<platform>` منتشر می‌شوند.
 
-نسخهٔ پایدار کنونی **[v1.1.1](https://github.com/Tiam9173/fluxora/releases/tag/v1.1.1)** است. **پیش‌نمایش 1.1.2-rc.2 در شاخهٔ `dev` متوقف شده**؛ شمارهٔ نسخه در کد به معنای انتشار بسته نیست — وضعیت واقعی و دانلودها را در Releases ببینید.
+نسخهٔ پایدار کنونی **[v1.1.2](https://github.com/Tiam9173/fluxora/releases/tag/v1.1.2)** است. شمارهٔ نسخه در کد به معنای انتشار بسته نیست — وضعیت واقعی و دانلودها را در Releases ببینید.
 
 | پلتفرم | قالب‌ها | معماری‌ها |
 |---|---|---|

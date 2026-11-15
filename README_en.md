@@ -129,7 +129,7 @@ Open **Settings → Theme → App icon**; the icon variant and the page theme ar
 
 Packages are published on **[GitHub Releases](https://github.com/Tiam9173/fluxora/releases)**, named `Fluxora-<version>-<platform>`.
 
-The current stable release is **[v1.1.1](https://github.com/Tiam9173/fluxora/releases/tag/v1.1.1)**. **1.1.2-rc.2 on the `dev` branch is on hold**; the version string in the source tree does not mean a package was published — check Releases for the actual state and downloads.
+The current stable release is **[v1.1.2](https://github.com/Tiam9173/fluxora/releases/tag/v1.1.2)**. The version string in the source tree does not mean a package was published — check Releases for the actual state and downloads.
 
 | Platform | Formats | Architectures |
 |---|---|---|

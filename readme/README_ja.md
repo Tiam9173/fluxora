@@ -129,7 +129,7 @@ Mihomo（Clash Meta）コアの上に Flutter で構築し、デスクトップ�
 
 パッケージは **[GitHub Releases](https://github.com/Tiam9173/fluxora/releases)** で公開され、`Fluxora-<version>-<platform>` という名前で配布されます。
 
-現在の正式版は **[v1.1.1](https://github.com/Tiam9173/fluxora/releases/tag/v1.1.1)** です。`dev` ブランチの **1.1.2-rc.2 プレビュー版は公開を保留中** で、ソース上のバージョン表記はパッケージが公開済みであることを意味しません。最新の状態とダウンロードは Releases を参照してください。
+現在の正式版は **[v1.1.2](https://github.com/Tiam9173/fluxora/releases/tag/v1.1.2)** です。ソース上のバージョン表記はパッケージが公開済みであることを意味しません。最新の状態とダウンロードは Releases を参照してください。
 
 | プラットフォーム | 提供形式 | アーキテクチャ |
 |---|---|---|

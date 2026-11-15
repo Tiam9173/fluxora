@@ -129,7 +129,7 @@
 
 安装包统一发布在 **[GitHub Releases](https://github.com/Tiam9173/fluxora/releases)**，命名格式为 `Fluxora-<version>-<platform>`。
 
-源码中的版本号不代表安装包已经发布——版本状态与下载内容以 Releases 页面为准。
+当前正式版为 **[v1.1.2](https://github.com/Tiam9173/fluxora/releases/tag/v1.1.2)**。源码中的版本号不代表安装包已经发布——版本状态与下载内容以 Releases 页面为准。
 
 | 平台 | 提供格式 | 架构 |
 |---|---|---|
