@@ -2,6 +2,7 @@ import 'package:fluxora/clash/clash.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/models/models.dart';
+import 'package:fluxora/providers/config.dart';
 import 'package:fluxora/state.dart';
 
 import 'package:flutter/foundation.dart';
@@ -38,16 +39,24 @@ final delayTestCoordinator = DelayTestCoordinator();
 class DelayTestTarget {
   final String name;
   final String url;
+  final String? profileId;
 
-  const DelayTestTarget({required this.name, required this.url});
+  const DelayTestTarget({
+    required this.name,
+    required this.url,
+    this.profileId,
+  });
 
   @override
   bool operator ==(Object other) {
-    return other is DelayTestTarget && other.name == name && other.url == url;
+    return other is DelayTestTarget &&
+        other.name == name &&
+        other.url == url &&
+        other.profileId == profileId;
   }
 
   @override
-  int get hashCode => Object.hash(name, url);
+  int get hashCode => Object.hash(name, url, profileId);
 }
 
 class DelayTestRequestPool {
@@ -106,7 +115,11 @@ Future<void> proxyDelayTest(
       return;
     }
     await _testProxyDelay(
-      DelayTestTarget(name: state.proxyName, url: url),
+      DelayTestTarget(
+        name: state.proxyName,
+        url: url,
+        profileId: appController.ref.read(currentProfileIdProvider),
+      ),
       startup: startup,
     );
     appController.addSortNum();
@@ -131,7 +144,9 @@ Future<void> _testProxyDelay(
       return Delay(url: target.url, name: target.name, value: -1);
     }
   });
-  appController.setDelay(delay, startup: startup);
+  if (appController.ref.read(currentProfileIdProvider) == target.profileId) {
+    appController.setDelay(delay, startup: startup);
+  }
 }
 
 /// B4: delegates to the single shared rule ([ChainProxyConfig.isSelectableProxy])
@@ -142,17 +157,6 @@ Future<void> _testProxyDelay(
 bool _isNonTestableProxy(Proxy proxy) =>
     !ChainProxyConfig.isSelectableProxy(name: proxy.name, type: proxy.type);
 
-String? _getProxyType(String proxyName) {
-  final groups = globalState.appController.getCurrentGroups();
-  for (final group in groups) {
-    if (group.name == proxyName) return group.type.name;
-    for (final proxy in group.all) {
-      if (proxy.name == proxyName) return proxy.type;
-    }
-  }
-  return null;
-}
-
 Future<void> delayTest(
   List<Proxy> proxies, {
   String? testUrl,
@@ -161,6 +165,14 @@ Future<void> delayTest(
 }) async {
   Future<void> runTest() async {
     final appController = globalState.appController;
+    final profileId = appController.ref.read(currentProfileIdProvider);
+    final proxyTypes = <String, String>{};
+    for (final group in appController.getCurrentGroups()) {
+      proxyTypes.putIfAbsent(group.name, () => group.type.name);
+      for (final proxy in group.all) {
+        proxyTypes.putIfAbsent(proxy.name, () => proxy.type);
+      }
+    }
     final targets = <DelayTestTarget>{};
     for (final proxy in proxies) {
       if (_isNonTestableProxy(proxy)) {
@@ -175,11 +187,11 @@ Future<void> delayTest(
       if (name.isEmpty ||
           !ChainProxyConfig.isSelectableProxy(
             name: name,
-            type: _getProxyType(name) ?? '',
+            type: proxyTypes[name] ?? '',
           )) {
         continue;
       }
-      targets.add(DelayTestTarget(name: name, url: url));
+      targets.add(DelayTestTarget(name: name, url: url, profileId: profileId));
     }
     final concurrencyLimit = globalState.config.proxiesStyle.concurrencyLimit
         .clamp(1, maxConcurrentDelayTests);
@@ -199,8 +211,10 @@ Future<void> delayTest(
     // Execute tasks in batches
     final batchedTasks = delayTasks.batch(concurrencyLimit);
     for (final batchTasks in batchedTasks) {
+      if (appController.ref.read(currentProfileIdProvider) != profileId) return;
       await Future.wait(batchTasks.map((task) => task()));
     }
+    if (appController.ref.read(currentProfileIdProvider) != profileId) return;
     appController.addSortNum();
     // A `url-test` group would otherwise keep whatever the core picked at its
     // last interval tick, which is what makes "自动选择" feel dead right after

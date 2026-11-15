@@ -503,6 +503,7 @@ class _GlassPreviewState extends State<_GlassPreview> {
       height: 130,
       child: LayoutBuilder(
         builder: (context, constraints) {
+          final scheme = context.colorScheme;
           final travel = (constraints.maxWidth - 156).clamp(
             1.0,
             double.infinity,
@@ -513,45 +514,39 @@ class _GlassPreviewState extends State<_GlassPreview> {
               DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                     colors: [
-                      Color.alphaBlend(
-                        context.colorScheme.primary.withValues(alpha: .34),
-                        context.colorScheme.primaryContainer,
-                      ),
-                      Color.alphaBlend(
-                        context.colorScheme.tertiary.withValues(alpha: .25),
-                        context.colorScheme.tertiaryContainer,
-                      ),
-                      context.colorScheme.secondaryContainer,
+                      scheme.primaryContainer,
+                      scheme.secondaryContainer,
                     ],
                   ),
                 ),
               ),
-              for (var index = 0; index < 5; index++)
-                Positioned(
-                  left: constraints.maxWidth * (index + 1) / 6,
-                  top: -24,
-                  bottom: -24,
-                  child: Transform.rotate(
-                    angle: .32,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                          colors: [
-                            Colors.white.withValues(alpha: .05),
-                            Colors.white.withValues(
-                              alpha: index.isEven ? .42 : .22,
-                            ),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: SizedBox(width: index.isEven ? 13 : 22),
-                    ),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: const Alignment(-.65, -.75),
+                    radius: 1.25,
+                    colors: [
+                      scheme.primary.withValues(alpha: .55),
+                      scheme.primary.withValues(alpha: 0),
+                    ],
                   ),
                 ),
+              ),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: const Alignment(.65, .8),
+                    radius: 1.1,
+                    colors: [
+                      scheme.tertiary.withValues(alpha: .50),
+                      scheme.tertiary.withValues(alpha: 0),
+                    ],
+                  ),
+                ),
+              ),
               Positioned(
                 left: travel * _position,
                 top: 32,
@@ -1021,6 +1016,7 @@ class _PrimaryColorItemState extends ConsumerState<_PrimaryColorItem> {
                         ),
                         width: 22,
                         height: 22,
+                        cacheWidth: (22 * MediaQuery.devicePixelRatioOf(context)).ceil(),
                         excludeFromSemantics: true,
                       ),
                       label: Text(

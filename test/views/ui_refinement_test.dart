@@ -53,6 +53,7 @@ import 'package:fluxora/views/profiles/profiles.dart';
 import 'package:fluxora/views/other_setting.dart';
 import 'package:fluxora/views/proxies/proxies.dart';
 import 'package:fluxora/views/proxies/list.dart';
+import 'package:fluxora/views/proxies/tab.dart' show DelayTestButton;
 import 'package:fluxora/views/proxies/notification_switch_card.dart';
 import 'package:fluxora/widgets/widgets.dart';
 import 'package:fluxora/widgets/liquid_backdrop.dart';
@@ -81,6 +82,16 @@ class _VisualController extends RecordingAppController {
   final WidgetRef bindingRef;
   Completer<void>? operation;
   Completer<void>? proxyReply;
+  bool? requestedStart;
+  int connectionRetries = 0;
+
+  @override
+  void refreshConnectionCheck({bool immediate = false}) {
+    if (immediate) connectionRetries++;
+    bindingRef.read(connectionCheckProvider.notifier).state =
+        ConnectionCheck.checking;
+  }
+
   @override
   Future<void> updateGroups({
     List<ExternalProvider>? preloadedProviders,
@@ -91,13 +102,25 @@ class _VisualController extends RecordingAppController {
   Future<void> changeProxy({
     required String groupName,
     required String proxyName,
-  }) =>
-      proxyReply?.future ??
-      super.changeProxy(groupName: groupName, proxyName: proxyName);
+  }) async {
+    final reply = proxyReply;
+    if (reply == null) {
+      return super.changeProxy(groupName: groupName, proxyName: proxyName);
+    }
+    await reply.future;
+    updateCurrentSelectedMap(groupName, proxyName);
+  }
+
   @override
   Future<void> updateStatus(bool isStart) {
-    operation = Completer<void>();
-    return operation!.future;
+    final pending = Completer<void>();
+    operation = pending;
+    requestedStart = isStart;
+    final target = bindingRef.read(connectionTargetProvider.notifier);
+    target.state = isStart;
+    return pending.future.whenComplete(() {
+      if (identical(operation, pending)) target.state = null;
+    });
   }
 
   @override
@@ -109,6 +132,11 @@ class _VisualController extends RecordingAppController {
 
 class _VisualCore implements ClashHandlerInterface {
   Completer<Result>? configRead;
+  Completer<String>? delayReply;
+
+  @override
+  Future<String> asyncTestDelay(String url, String proxyName) => delayReply!.future;
+
   @override
   Future<Result> getConfig(String path, {String? ageSecretKey}) {
     return configRead?.future ??
@@ -421,6 +449,52 @@ void main() {
     await tester.pump();
     expect(container.read(notificationDetailsProvider).nodeName, isEmpty);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('proxy latency stays visible until a manual retest', (
+    tester,
+  ) async {
+    const name = 'Tokyo 01';
+    await show(
+      tester,
+      brightness: Brightness.dark,
+      size: const Size(390, 844),
+      page: PageLabel.proxies,
+      reduce: true,
+      groups: const [
+        Group(
+          type: GroupType.Selector,
+          name: 'Test group',
+          all: [Proxy(name: name, type: 'VLESS')],
+        ),
+      ],
+    );
+    final controller = globalState.appController;
+    final core = clashCore.clashInterface as _VisualCore;
+    final result = Delay(
+      url: controller.getRealTestUrl(''),
+      name: name,
+      value: 88,
+    );
+    addTearDown(() => core.delayReply = null);
+    core.delayReply = Completer<String>();
+    await tester.tap(find.byType(DelayTestButton));
+    await tester.pump();
+    controller.setDelay(result.copyWith(value: -1), background: true);
+    core.delayReply!.complete(jsonEncode(result));
+    await tester.pumpAndSettle();
+    controller.setDelay(result.copyWith(value: 140), background: true);
+    controller.setDelay(result.copyWith(value: -1), background: true);
+    await tester.pumpAndSettle();
+    expect(find.text('88 ms'), findsOneWidget);
+    await capture(tester, 'delay-manual-stable');
+
+    core.delayReply = Completer<String>();
+    await tester.tap(find.text('88 ms'));
+    core.delayReply!.complete(jsonEncode(result.copyWith(value: -1)));
+    await tester.pumpAndSettle();
+    expect(find.text(appLocalizations.timeoutLabel), findsOneWidget);
+    await capture(tester, 'delay-manual-timeout');
   });
 
   for (final brightness in Brightness.values) {
@@ -1132,6 +1206,18 @@ void main() {
         isNull,
       );
       await capture(tester, 'home-node-picker');
+      final picker = tester.widget<CommonDialog>(find.byType(CommonDialog));
+      container
+          .read(delayDataSourceProvider.notifier)
+          .setDelay(
+            const Delay(url: defaultTestUrl, name: '东京 · 高速线路 01', value: 137),
+          );
+      await tester.pumpAndSettle();
+      expect(find.text('137 ms'), findsOneWidget);
+      expect(
+        tester.widget<CommonDialog>(find.byType(CommonDialog)),
+        same(picker),
+      );
       await tester.tap(find.byKey(const ValueKey('switch-card-profiles')));
       await tester.pumpAndSettle();
       expect(container.read(currentPageLabelProvider), PageLabel.profiles);
@@ -1140,11 +1226,121 @@ void main() {
         (globalState.appController as _VisualController).operation,
         isNull,
       );
+      final page = find.byType(StartButton, skipOffstage: false);
+      final heroTick = find
+          .descendant(
+            of: page,
+            matching: find.byWidgetPredicate(
+              (widget) => widget is ValueListenableBuilder<int>,
+              skipOffstage: false,
+            ),
+            skipOffstage: false,
+          )
+          .first;
+      expect(
+        tester.widget<ValueListenableBuilder<int>>(heroTick).valueListenable,
+        same(dashboardRefreshManager.paused),
+      );
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
       await tester.pump(const Duration(seconds: 1));
     },
   );
+
+  for (final size in [const Size(390, 844), const Size(1280, 900)]) {
+    testWidgets('connection node search and explicit start on $size', (
+      tester,
+    ) async {
+      Future<void> settle() async {
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
+      }
+
+      final container = await show(
+        tester,
+        size: size,
+        brightness: size.width < 600 ? Brightness.dark : Brightness.light,
+        reduce: true,
+        groups: [
+          Group(
+            type: GroupType.Selector,
+            name: '节点选择',
+            now: '东京 · 高速线路 01',
+            all: [
+              const Proxy(name: '东京 · 高速线路 01', type: 'VLESS'),
+              for (var index = 1; index <= 10; index++)
+                Proxy(name: 'Singapore $index', type: 'VLESS'),
+            ],
+          ),
+        ],
+      );
+      final controller = globalState.appController as _VisualController;
+      controller.proxyReply = Completer<void>();
+      await tester.tap(find.byKey(const ValueKey('connection-node-picker')));
+      await settle();
+      final search = find.byKey(const ValueKey('switch-card-search'));
+      final start = find.byKey(const ValueKey('switch-card-start'));
+      final suffix = size.width.toInt();
+      await capture(tester, 'connection-picker-default-$suffix');
+      if (size.width < 600) {
+        tester.view.viewInsets = const FakeViewPadding(bottom: 260);
+        addTearDown(tester.view.resetViewInsets);
+      }
+      await tester.enterText(search, 'absent');
+      await settle();
+      expect(find.text(appLocalizations.nodeNoMatches), findsOneWidget);
+      expect(tester.widget<FilledButton>(start).onPressed, isNull);
+      await capture(tester, 'connection-search-empty-$suffix');
+      tester.view.resetViewInsets();
+      await tester.enterText(search, 'singapore 9');
+      await settle();
+      await tester.tap(find.text('Singapore 9'));
+      await tester.pump();
+      expect(tester.widget<FilledButton>(start).onPressed, isNull);
+      expect(controller.operation, isNull);
+      controller.proxyReply!.complete();
+      await settle();
+      expect(container.read(selectedMapProvider)['节点选择'], 'Singapore 9');
+      expect(controller.operation, isNull);
+      await capture(tester, 'connection-select-and-start-$suffix');
+      await tester.tap(start);
+      await tester.pump();
+      expect(controller.requestedStart, isTrue);
+      expect(container.read(connectionTargetProvider), isTrue);
+      container.read(groupsProvider.notifier).value = [
+        container.read(groupsProvider).single.copyWith(now: 'Singapore 9'),
+      ];
+      container.read(runTimeProvider.notifier).value = 0;
+      controller.operation!.complete();
+      await tester.pump();
+      container.read(connectionCheckProvider.notifier).state =
+          ConnectionCheck.limited;
+      await settle();
+      await capture(tester, 'connection-retry-$suffix');
+      await tester.tap(find.byKey(const ValueKey('connection-retry')));
+      await tester.pump();
+      expect(controller.connectionRetries, 1);
+      expect(find.text(appLocalizations.checking), findsOneWidget);
+      expect(container.read(runTimeProvider), 0);
+      expect(find.byType(SwitchCard), findsNothing);
+      controller.proxyReply = Completer<void>();
+      await tester.tap(find.byKey(const ValueKey('connection-node-picker')));
+      await settle();
+      expect(start, findsNothing);
+      await tester.enterText(search, 'singapore 7');
+      await settle();
+      await tester.tap(find.text('Singapore 7'));
+      await tester.pump();
+      controller.proxyReply!.complete();
+      await settle();
+      expect(find.byType(SwitchCard), findsNothing);
+      expect(container.read(selectedMapProvider)['节点选择'], 'Singapore 7');
+      expect(container.read(runTimeProvider), 0);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 1));
+    });
+  }
 
   testWidgets(
     'custom options opens immediately with retryable failure and no global loading strip',
@@ -1228,7 +1424,7 @@ void main() {
       );
       controller.proxyReply!.completeError(StateError('离线测试：内核拒绝选择'));
       await tester.pumpAndSettle();
-      expect(find.textContaining('内核拒绝选择'), findsOneWidget);
+      expect(find.text('离线测试：内核拒绝选择'), findsOneWidget);
       expect(container.read(selectedMapProvider)['节点选择'], '东京 · 高速线路 01');
       expect(find.byType(SwitchCard), findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -1585,6 +1781,18 @@ void main() {
           );
         }
         await capture(tester, '$screen-home-${brightness.name}');
+        if (size.width >= 1000) {
+          final toggle = find.byKey(const ValueKey('toggle-desktop-sidebar'));
+          await tester.tap(toggle);
+          await tester.pump();
+          expect(
+            tester.getSize(find.byKey(const ValueKey('desktop-sidebar'))).width,
+            AuroraNavigationRail.collapsedWidth,
+          );
+          await capture(tester, 'desktop-home-folded-${brightness.name}');
+          expect(find.byType(StartButton), findsOneWidget);
+          expect(tester.takeException(), isNull);
+        }
         if (size.width < 600) {
           await tester.ensureVisible(find.byType(MemoryInfo));
           await tester.pump(const Duration(milliseconds: 500));
@@ -1605,6 +1813,11 @@ void main() {
           ),
         );
         await tester.pump();
+        expect(find.byType(ToolsView), findsOneWidget);
+        await capture(
+          tester,
+          '$screen-settings-first-frame-${brightness.name}',
+        );
         await tester.pump(const Duration(milliseconds: 500));
         expect(find.byType(ToolsView), findsOneWidget);
         expect(
@@ -1658,8 +1871,14 @@ void main() {
               ? back.first
               : find.byIcon(Icons.close).first,
         );
+        await tester.pump();
+        if (size.width >= 600) {
+          expect(find.byType(ThemeView), findsNothing);
+          expect(find.byType(ToolsView), findsOneWidget);
+        }
         await tester.pumpAndSettle();
         expect(find.byType(ToolsView), findsOneWidget);
+        await capture(tester, '$screen-settings-return-${brightness.name}');
         await tester.pumpWidget(const SizedBox());
         await tester.pump(const Duration(seconds: 1));
       });
@@ -2080,13 +2299,26 @@ void main() {
         await tester.tap(find.byTooltip(appLocalizations.powerSwitch));
         await tester.pump();
         expect(find.text(appLocalizations.startVpn), findsOneWidget);
-        expect(find.text(appLocalizations.coreConnected), findsNothing);
+        expect(find.byKey(const ValueKey('cancel-connection')), findsOneWidget);
+        expect(find.text(appLocalizations.healthHealthy), findsNothing);
         await frames(6);
         container.read(runTimeProvider.notifier).value = 156000;
         controller.operation!.complete();
         await tester.pump();
         await frames(7);
-        expect(find.text(appLocalizations.coreConnected), findsOneWidget);
+        expect(find.text(appLocalizations.serviceRunning), findsOneWidget);
+        container.read(connectionCheckProvider.notifier).state =
+            ConnectionCheck.checking;
+        await frames(2);
+        expect(find.text(appLocalizations.checking), findsOneWidget);
+        container.read(connectionCheckProvider.notifier).state =
+            ConnectionCheck.limited;
+        await frames(2);
+        expect(find.text(appLocalizations.checkError), findsOneWidget);
+        container.read(connectionCheckProvider.notifier).state =
+            ConnectionCheck.reachable;
+        await frames(2);
+        expect(find.text(appLocalizations.healthHealthy), findsOneWidget);
         await tester.tap(find.byTooltip(appLocalizations.powerSwitch));
         await tester.pump();
         expect(find.text(appLocalizations.stopVpn), findsOneWidget);
@@ -2103,10 +2335,7 @@ void main() {
         );
         await tester.pump();
         await frames(4);
-        expect(
-          find.textContaining('Controlled connection failure'),
-          findsOneWidget,
-        );
+        expect(find.text('Controlled connection failure'), findsOneWidget);
         if (size.width < 600) {
           expect(
             tester
@@ -2124,6 +2353,19 @@ void main() {
             reason: 'sidebar content must retain a readable snackbar width',
           );
         }
+        await tester.tap(find.byTooltip(appLocalizations.powerSwitch));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
+        final starting = controller.operation!;
+        await tester.tap(find.byKey(const ValueKey('cancel-connection')));
+        await tester.pump();
+        expect(container.read(connectionTargetProvider), isFalse);
+        starting.complete();
+        controller.operation!.complete();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
+        expect(container.read(connectionTargetProvider), isNull);
+        expect(find.text(appLocalizations.serviceReady), findsOneWidget);
         final navigation = size.width < 600
             ? find.byType(AuroraBottomNavBar)
             : find.byType(AuroraNavigationRail);
@@ -2162,11 +2404,15 @@ void main() {
         for (final result in [
           const NetworkDetectionState(
             isLoading: false,
-            ipInfo: IpInfo(ip: '2001:db8::42', countryCode: 'JP'),
+            ipInfo: IpInfo(ip: '2001:db8::42', countryCode: '', country: '日本'),
           ),
           const NetworkDetectionState(
             isLoading: false,
             ipInfo: IpInfo(ip: '192.0.2.42', countryCode: 'SG'),
+          ),
+          const NetworkDetectionState(
+            isLoading: false,
+            ipInfo: IpInfo(ip: '192.0.2.43', countryCode: 'ZZ'),
           ),
           const NetworkDetectionState(
             isLoading: false,
@@ -2176,6 +2422,11 @@ void main() {
         ]) {
           detectionState.state.value = result;
           await tester.pump();
+          expect(
+            find.text(result.ipInfo?.ip ?? result.errorMessage!),
+            findsOneWidget,
+          );
+          expect(find.byType(FadeThroughBox), findsNothing);
           for (var i = 0; i < 7; i++) {
             await tester.pump(const Duration(milliseconds: 40));
             await capture(
@@ -2187,6 +2438,14 @@ void main() {
             find.text(result.ipInfo?.ip ?? result.errorMessage!),
             findsOneWidget,
           );
+          switch (result.ipInfo?.ip) {
+            case '2001:db8::42':
+              expect(find.text('🇯🇵'), findsOneWidget);
+            case '192.0.2.42':
+              expect(find.text('🇸🇬'), findsOneWidget);
+            default:
+              expect(find.byIcon(Icons.network_check), findsOneWidget);
+          }
         }
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox());

@@ -379,6 +379,7 @@ class _HomePageViewState extends ConsumerState<_HomePageView> {
       outCurve: motion.exit,
       enterOffset: Offset.zero,
       horizontal: true,
+      animateIndexChanges: motion.expressive,
       depth: material.motionStyle == FluxoraMotionStyle.depth,
       intensity: material.motionAmount,
       pageCount: widget.navigationItems.length,
@@ -393,13 +394,7 @@ class _HomePageViewState extends ConsumerState<_HomePageView> {
                 globalState.appController.toPage(page);
               }
             },
-      pageBuilder: (context, index) {
-        return TickerMode(
-          key: ValueKey(widget.navigationItems[index].label),
-          enabled: _currentPageIndex == index,
-          child: widget.pageBuilder(context, index),
-        );
-      },
+      pageBuilder: widget.pageBuilder,
     );
   }
 }

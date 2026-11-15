@@ -19,16 +19,6 @@ class NetworkDetection extends ConsumerStatefulWidget {
 }
 
 class _NetworkDetectionState extends ConsumerState<NetworkDetection> {
-  String _countryCodeToEmoji(String countryCode) {
-    final String code = countryCode.toUpperCase();
-    if (code.length != 2) {
-      return countryCode;
-    }
-    final int firstLetter = code.codeUnitAt(0) - 0x41 + 0x1F1E6;
-    final int secondLetter = code.codeUnitAt(1) - 0x41 + 0x1F1E6;
-    return String.fromCharCode(firstLetter) + String.fromCharCode(secondLetter);
-  }
-
   void _showIpClickBehaviorSettings() {
     final isZh = Localizations.localeOf(context).languageCode == 'zh';
     globalState.showCommonDialog<IpClickBehavior>(
@@ -102,6 +92,7 @@ class _NetworkDetectionState extends ConsumerState<NetworkDetection> {
         valueListenable: detectionState.state,
         builder: (_, state, _) {
           final ipInfo = state.ipInfo;
+          final countryCode = ipInfo?.flagCountryCode;
           final isLoading = state.isLoading;
           return CommonCard(
             onPressed: ipInfo != null
@@ -120,9 +111,10 @@ class _NetworkDetectionState extends ConsumerState<NetworkDetection> {
                   child: Row(
                     mainAxisSize: MainAxisSize.max,
                     children: [
-                      ipInfo != null
+                      countryCode != null
                           ? Text(
-                              _countryCodeToEmoji(ipInfo.countryCode),
+                              utils.countryCodeToEmoji(countryCode),
+                              semanticsLabel: ipInfo?.country ?? countryCode,
                               style: Theme.of(context)
                                   .textTheme
                                   .titleMedium
@@ -175,59 +167,49 @@ class _NetworkDetectionState extends ConsumerState<NetworkDetection> {
                   padding: baseInfoEdgeInsets.copyWith(top: 0),
                   child: SizedBox(
                     height: globalState.measure.bodyMediumHeight + 2,
-                    child: FadeThroughBox(
-                      child: ipInfo != null
-                          ? TooltipText(
-                              key: ValueKey(ipInfo.ip),
-                              text: Text(
-                                ipInfo.ip,
-                                style: context.textTheme.bodyMedium?.toLight
-                                    .adjustSize(1),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            )
-                          : FadeThroughBox(
-                              child: isLoading == false && ipInfo == null
-                                  ? Text(
-                                      key: ValueKey(state.errorMessage),
-                                      state.errorMessage ?? 'timeout',
-                                      style: context.textTheme.bodyMedium
-                                          ?.copyWith(
-                                            color: context.colorScheme.error,
-                                          )
-                                          .adjustSize(1),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    )
-                                  : Container(
-                                      padding: const EdgeInsets.all(2),
-                                      child: Center(
-                                        child: OverflowBox(
-                                          maxWidth: 30,
-                                          maxHeight: 16,
-                                          child:
-                                              FluxoraMotion.ofContext(
-                                                context,
-                                              ).reduceMotion
-                                              ? Icon(
-                                                  Icons.hourglass_top_rounded,
-                                                  size: 16,
-                                                  color: context
-                                                      .colorScheme
-                                                      .primary,
-                                                )
-                                              : SpinKitThreeBounce(
-                                                  color: context
-                                                      .colorScheme
-                                                      .primary,
-                                                  size: 16,
-                                                ),
-                                        ),
-                                      ),
-                                    ),
+                    child: ipInfo != null
+                        ? TooltipText(
+                            key: ValueKey(ipInfo.ip),
+                            text: Text(
+                              ipInfo.ip,
+                              style: context.textTheme.bodyMedium?.toLight
+                                  .adjustSize(1),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                    ),
+                          )
+                        : isLoading == false
+                        ? Text(
+                            key: ValueKey(state.errorMessage),
+                            state.errorMessage ?? 'timeout',
+                            style: context.textTheme.bodyMedium
+                                ?.copyWith(color: context.colorScheme.error)
+                                .adjustSize(1),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          )
+                        : Container(
+                            padding: const EdgeInsets.all(2),
+                            child: Center(
+                              child: OverflowBox(
+                                maxWidth: 30,
+                                maxHeight: 16,
+                                child:
+                                    FluxoraMotion.ofContext(
+                                      context,
+                                    ).reduceMotion
+                                    ? Icon(
+                                        Icons.hourglass_top_rounded,
+                                        size: 16,
+                                        color: context.colorScheme.primary,
+                                      )
+                                    : SpinKitThreeBounce(
+                                        color: context.colorScheme.primary,
+                                        size: 16,
+                                      ),
+                              ),
+                            ),
+                          ),
                   ),
                 ),
               ],

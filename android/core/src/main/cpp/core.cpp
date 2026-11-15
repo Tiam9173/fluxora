@@ -5,10 +5,10 @@
 #include "libclash.h"
 
 extern "C"
-JNIEXPORT void JNICALL
+JNIEXPORT jboolean JNICALL
 Java_io_fluxora_core_Core_startTun(JNIEnv *env, jobject, const jint fd, jobject cb) {
     const auto interface = new_global(cb);
-    startTUN(fd, interface);
+    return startTUN(fd, interface) ? JNI_TRUE : JNI_FALSE;
 }
 
 extern "C"

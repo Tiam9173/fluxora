@@ -84,15 +84,23 @@ class GlassSurface extends StatelessWidget {
                 child: surface,
               )
             : BackdropFilter(
-                filter: ui.ImageFilter.blur(
-                  sigmaX: material.sigma,
-                  sigmaY: material.sigma,
-                ),
+                filter: _blurFilter(material.sigma),
                 child: surface,
               ),
       );
     }
     return surface;
+  }
+
+  static double? _cachedSigma;
+  static ui.ImageFilter? _cachedFilter;
+
+  static ui.ImageFilter _blurFilter(double sigma) {
+    if (_cachedSigma != sigma) {
+      _cachedSigma = sigma;
+      _cachedFilter = ui.ImageFilter.blur(sigmaX: sigma, sigmaY: sigma);
+    }
+    return _cachedFilter!;
   }
 }
 

@@ -308,7 +308,9 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
     );
     // RC.7: the delay sort's direction. A standalone provider so the Freezed
     // `ProxiesTabState` did not have to change.
-    final delayDescending = ref.watch(delaySortDescendingProvider);
+    final delayDescending =
+        sortType == ProxiesSortType.delay &&
+        ref.watch(delaySortDescendingProvider);
 
     if (groups.isEmpty) {
       return FluxoraEmptyState(
@@ -483,8 +485,9 @@ class _ProxyGroupViewState extends ConsumerState<ProxyGroupView> {
     final sortType = widget.sortType;
     final proxies = group.all;
     final testUrl = group.testUrl;
-    final sortNum = widget.sortNum;
-    final delayDescending = widget.delayDescending;
+    final sortNum = sortType == ProxiesSortType.delay ? widget.sortNum : 0;
+    final delayDescending =
+        sortType == ProxiesSortType.delay && widget.delayDescending;
     if (_cachedSortedProxies != null &&
         _lastSortType == sortType &&
         _lastTestUrl == testUrl &&

@@ -37,30 +37,26 @@ class IntranetIP extends ConsumerWidget {
                 child: Consumer(
                   builder: (_, ref, _) {
                     final localIp = ref.watch(localIpProvider);
-                    return FadeThroughBox(
-                      child: localIp != null
-                          ? TooltipText(
-                              text: Text(
-                                localIp.isNotEmpty
-                                    ? localIp
-                                    : appLocalizations.noNetwork,
-                                style: FluxoraTypography.body.copyWith(
-                                  color: context.colorScheme.onSurfaceVariant,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                    return localIp != null
+                        ? TooltipText(
+                            text: Text(
+                              localIp.isNotEmpty
+                                  ? localIp
+                                  : appLocalizations.noNetwork,
+                              style: FluxoraTypography.body.copyWith(
+                                color: context.colorScheme.onSurfaceVariant,
                               ),
-                            )
-                          : Padding(
-                              padding: const EdgeInsets.all(2),
-                              child: AspectRatio(
-                                aspectRatio: 1,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                    );
+                          )
+                        : Padding(
+                            padding: const EdgeInsets.all(2),
+                            child: AspectRatio(
+                              aspectRatio: 1,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          );
                   },
                 ),
               ),
@@ -114,7 +110,9 @@ bool canOpenGateway(String gateway, String networkType) {
   if (o1 == 100 && o2 >= 64 && o2 <= 127) return false;
   if (o1 == 198 && (o2 == 18 || o2 == 19)) return false;
 
-  return (o1 == 192 && o2 == 168) || o1 == 10 || (o1 == 172 && o2 >= 16 && o2 <= 31);
+  return (o1 == 192 && o2 == 168) ||
+      o1 == 10 ||
+      (o1 == 172 && o2 >= 16 && o2 <= 31);
 }
 
 class _LanSettingsBody extends ConsumerStatefulWidget {
@@ -272,14 +270,15 @@ class _LanSettingsBodyState extends ConsumerState<_LanSettingsBody> {
           icon: Icons.router_rounded,
           label: appLocalizations.defaultGateway,
           value: info.gateway.isEmpty ? placeholder : info.gateway,
-          action: info.gateway.isEmpty ||
-                  !canOpenGateway(info.gateway, info.type)
+          action:
+              info.gateway.isEmpty || !canOpenGateway(info.gateway, info.type)
               ? null
               : IconButton(
                   iconSize: 15,
                   visualDensity: VisualDensity.compact,
                   tooltip: appLocalizations.openGateway,
-                  onPressed: () => globalState.openUrl('http://${info.gateway}'),
+                  onPressed: () =>
+                      globalState.openUrl('http://${info.gateway}'),
                   icon: Icon(
                     Icons.open_in_new_rounded,
                     size: 15,
@@ -298,9 +297,8 @@ class _LanSettingsBodyState extends ConsumerState<_LanSettingsBody> {
         // core settings use, so a change here is the change there.
         if (clashConfig.allowLan)
           InkWell(
-            onTap: () => globalState.showCommonDialog(
-              child: const UserAuthDialog(),
-            ),
+            onTap: () =>
+                globalState.showCommonDialog(child: const UserAuthDialog()),
             child: _buildRow(
               icon: Icons.key_rounded,
               label: appLocalizations.userAuth,
@@ -387,7 +385,10 @@ class _LanSettingsBodyState extends ConsumerState<_LanSettingsBody> {
           Expanded(
             child: Text(
               appLocalizations.allowLan,
-              style: const TextStyle(fontSize: FluxoraFontSize.compact, fontWeight: FontWeight.w500),
+              style: const TextStyle(
+                fontSize: FluxoraFontSize.compact,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
           Switch(
@@ -416,6 +417,7 @@ class _LanSettingsBodyState extends ConsumerState<_LanSettingsBody> {
     }
     return Icons.devices_rounded;
   }
+
   Widget _buildRow({
     required IconData icon,
     required String label,

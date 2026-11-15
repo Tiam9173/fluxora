@@ -181,7 +181,7 @@ class ProxyCard extends StatelessWidget {
       }
 
       if (isUnlock) {
-        appController.changeProxyDebounce(groupName, '');
+        appController.selectProxy(groupName, '');
         return;
       }
 
@@ -297,10 +297,7 @@ class ProxyCard extends StatelessWidget {
         return;
       }
 
-      // `changeProxyDebounce` owns the optimistic selection write so it can
-      // undo it when the core refuses. Writing it here as well would put the
-      // value out of the controller's reach.
-      appController.changeProxyDebounce(groupName, nextProxyName);
+      appController.selectProxy(groupName, nextProxyName);
       return;
     }
     globalState.showNotifier(appLocalizations.notSelectedTip);
@@ -470,7 +467,7 @@ class GroupSelectionControl extends ConsumerWidget {
       icon: Icon(locked ? Icons.lock_rounded : Icons.autorenew_rounded),
       onPressed: group.realNow.isEmpty
           ? null
-          : () => globalState.appController.changeProxyDebounce(
+          : () => globalState.appController.selectProxy(
               group.name,
               locked ? '' : group.realNow,
             ),

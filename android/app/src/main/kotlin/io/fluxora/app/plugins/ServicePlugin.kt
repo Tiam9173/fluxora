@@ -91,7 +91,7 @@ class ServicePlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 result.success(true)
             }
             "isServiceEngineRunning" -> result.success(GlobalState.isServiceEngineRunning())
-            "status" -> result.success(GlobalState.currentRunState == RunState.START)
+            "status" -> result.success(VpnPlugin.getStatus())
             "reconnectIpc" -> {
                 GlobalState.reconnectIpc()
                 result.success(true)
@@ -117,8 +117,7 @@ class ServicePlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         }
         runCatching { gson.fromJson(data, VpnOptions::class.java) }
             .onSuccess { options ->
-                VpnPlugin.handleStart(options)
-                result.success(true)
+                result.success(VpnPlugin.handleStart(options))
             }
             .onFailure { result.error("PARSE_ERROR", it.message, null) }
     }

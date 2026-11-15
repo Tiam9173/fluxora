@@ -25,7 +25,8 @@ sunset      日落：紫红/橙金云霞与桃粉晨光。
 blue_night  蓝夜：午夜星空/地平弧线与浅蓝星空/地平弧线。
 
 目录与规格
-assets/images/brand_<style>_<dark|light>.png：16 枚 1024×1024 透明圆角图标，Flutter 实际引用。
+assets/images/brand_<style>_<dark|light>.png：16 枚 1024×1024 透明圆角图标，供原生资源生成。
+assets/images/brand/brand_<style>_<dark|light>.webp：Flutter 使用的无损图标，生成脚本检查与 PNG 逐像素一致。
 source/<style>_pair.png：8 个原始母版，保存生成工具原始输出。
 source/reference.png：品牌风格参考。
 source/prompts.json：生成提示词；source/catalog.json：母版尺寸与 SHA-256。

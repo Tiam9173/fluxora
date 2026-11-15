@@ -108,10 +108,6 @@ install(PROGRAMS "${CLASH_DIR}/FluxoraDevHelperService.exe" DESTINATION "${INSTA
   CONFIGURATIONS Debug
   COMPONENT Runtime)
 
-install(PROGRAMS "${CLASH_DIR}/FluxoraCore.exe" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
-  CONFIGURATIONS Profile;Release
-  COMPONENT Runtime)
-
 install(PROGRAMS "${CLASH_DIR}/FluxoraHelperService.exe" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
   CONFIGURATIONS Profile;Release
   COMPONENT Runtime)

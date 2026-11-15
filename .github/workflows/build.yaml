@@ -27,7 +27,7 @@ on:
           - linux
 
 env:
-  IS_STABLE: ${{ !contains(github.ref, '-') }}
+  APP_ENV: ${{ github.ref_type == 'tag' && startsWith(github.ref_name, 'v') && !contains(github.ref_name, '-') && !contains(github.ref_name, 'pre') && 'stable' || 'pre' }}
   IS_PRERELEASE: ${{ contains(github.ref_name, '-rc.') || contains(github.ref_name, 'pre') }}
   SHOULD_RELEASE: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && (!contains(github.ref, '-') || contains(github.ref_name, '-rc.') || contains(github.ref_name, 'pre')) }}
   SHOULD_SIGN: ${{ (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) || (github.event_name == 'workflow_dispatch' && inputs.release_validation == true) }}
@@ -259,7 +259,7 @@ jobs:
           export APP_VERSION="$version"
           flutter pub get
           dart run build_runner build -d
-          dart setup.dart ${{ matrix.platform }} --arch ${{ matrix.arch }} ${{ env.IS_STABLE == 'true' && '--env stable' || '' }} ${{ matrix.compatible == true && '--compatible' || '' }}
+          dart setup.dart ${{ matrix.platform }} --arch ${{ matrix.arch }} --env "$APP_ENV" ${{ matrix.compatible == true && '--compatible' || '' }}
 
       - name: Restore Signing Certificate (Windows)
         if: matrix.platform == 'windows' && env.SHOULD_SIGN == 'true'
@@ -409,7 +409,7 @@ jobs:
             "--build-name=$version",
             "--dart-define=CORE_SHA256=$coreHash",
             "--dart-define=HELPER_ASSET_SHA256=$env:HELPER_ASSET_SHA256",
-            "--dart-define=APP_ENV=$appEnv",
+            "--dart-define=APP_ENV=$env:APP_ENV",
             "--dart-define=APP_VERSION=$version",
             "--dart-define=APP_ASSET_SUFFIX=windows-$desc-setup.exe"
           )
@@ -472,7 +472,7 @@ jobs:
           fi
           export APP_BUILD_NAME="$version"
           export APP_VERSION="$version"
-          dart windows/packaging/exe/package_windows.dart --arch ${{ matrix.arch }} ${{ matrix.compatible == true && '--compatible' || '' }} --env ${{ env.IS_STABLE == 'true' && 'stable' || 'pre' }}
+          dart windows/packaging/exe/package_windows.dart --arch ${{ matrix.arch }} ${{ matrix.compatible == true && '--compatible' || '' }} --env "$APP_ENV"
 
       - name: Find Installer Path
         if: matrix.platform == 'windows' && env.SHOULD_SIGN == 'true'

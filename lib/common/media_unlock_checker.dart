@@ -106,6 +106,7 @@ class MediaUnlockChecker {
     String domain, {
     Set<String>? unsupportedRegions,
     String? fallbackUrl,
+    String? nativeHost,
   }) async {
     final sw = Stopwatch()..start();
     final dio = _createDio(followRedirects: true);
@@ -154,6 +155,14 @@ class MediaUnlockChecker {
             : MediaUnlockStatus.blocked;
       } else {
         status = MediaUnlockStatus.blocked;
+      }
+
+      if (status == MediaUnlockStatus.unlocked && nativeHost != null) {
+        // An HTTP error still confirms a successful TLS handshake.
+        await dio.head<void>(
+          'https://$nativeHost/',
+          options: Options(followRedirects: false),
+        );
       }
 
       final latency = await _measureLatency(
@@ -1328,6 +1337,7 @@ class MediaUnlockChecker {
         MediaPlatform.openai,
         'chatgpt.com',
         unsupportedRegions: _openaiUnsupportedRegions,
+        nativeHost: system.isAndroid ? 'android.chat.openai.com' : null,
       ),
       MediaPlatform.claude => _checkCloudflareTrace(
         MediaPlatform.claude,

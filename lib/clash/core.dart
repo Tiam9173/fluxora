@@ -221,6 +221,14 @@ class ClashCore {
     return error;
   }
 
+  Future<({String? now, String? fixed})?> readProxySelection(
+    String group,
+  ) async {
+    final proxy = (await clashInterface.getProxies())[group];
+    if (proxy is! Map) return null;
+    return (now: proxy['now'] as String?, fixed: proxy['fixed'] as String?);
+  }
+
   Future<Mode> getMode() async {
     final modeStr = await clashInterface.getMode();
     return Mode.values.firstWhere(
@@ -242,6 +250,12 @@ class ClashCore {
       commonPrint.log('Failed to parse connections: $e');
       return [];
     }
+  }
+
+  Future<int> getConnectionCount() async {
+    final response = await clashInterface.getConnections();
+    if (response.isEmpty) return 0;
+    return (json.decode(response)['connections'] as List?)?.length ?? 0;
   }
 
   void closeConnection(String id) {
@@ -315,9 +329,7 @@ class ClashCore {
     return clashInterface.parseExternalProviderContent(providerName);
   }
 
-  Future<void> startListener() async {
-    await clashInterface.startListener();
-  }
+  Future<bool> startListener() => clashInterface.startListener();
 
   Future<void> stopListener() async {
     await clashInterface.stopListener();

@@ -103,7 +103,9 @@ extension ObjectExtension on Object {
   String get formatErrorLog => _format(isLog: true);
 
   String _format({required bool isLog}) {
-    final errorStr = toString();
+    final errorStr = !isLog && this is StateError
+        ? (this as StateError).message
+        : toString();
     if (errorStr.contains('DioException [bad response]') ||
         errorStr.contains('status code of')) {
       final match = RegExp(r'status code of (\d+)').firstMatch(errorStr);

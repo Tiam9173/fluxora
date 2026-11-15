@@ -33,7 +33,9 @@ void main() {
     });
 
     test('the same delayMap instance still reuses the cache', () {
-      final shared = <String, Object?>{'http://g.co/g': {'A': 100}};
+      final shared = <String, Object?>{
+        'http://g.co/g': {'A': 100},
+      };
       expect(key(delayMap: shared), key(delayMap: shared));
     });
   });
@@ -72,6 +74,19 @@ void main() {
   // distinct instances even when the payload happens to match. A `const {}`
   // would be canonicalised to one instance and could not model this.
   group('groupSliverCacheKey — a delay update invalidates', () {
+    test(
+      'name ordering and collapsed groups reuse their rows after a probe',
+      () {
+        final delays = {
+          'https://example.test': {'A': 120},
+        };
+        expect(
+          key(sortType: ProxiesSortType.name, delayMap: delays),
+          key(sortType: ProxiesSortType.name),
+        );
+        expect(key(isExpand: false, delayMap: delays), key(isExpand: false));
+      },
+    );
     test('a new delayMap instance invalidates even for an equal payload', () {
       expect(
         key(delayMap: Map<String, Object?>.from(const {})),

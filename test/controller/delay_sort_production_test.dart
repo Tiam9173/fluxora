@@ -63,7 +63,7 @@ void main() {
   int latencyOf(int i) => (i * 7) % 400 + 3;
 
   testWidgets(
-    'startup timeouts preserve known latency until a reliable update',
+    'manual latency survives health checks before and after startup',
     (tester) async {
       await pump(tester);
       final savedStart = globalState.startTime;
@@ -73,6 +73,9 @@ void main() {
       final timeout = measured.copyWith(value: -1);
       int? latency() => ref.read(delayDataSourceProvider)[testUrl]?['n0'];
 
+      controller.setDelay(measured.copyWith(value: 0));
+      controller.setDelay(timeout, background: true);
+      expect(latency(), 0);
       controller.setDelay(measured);
       controller.setDelay(timeout, background: true);
       controller.setDelay(timeout, startup: true);
@@ -80,7 +83,8 @@ void main() {
       controller.setDelay(timeout.copyWith(name: 'n1'), background: true);
       expect(ref.read(delayDataSourceProvider)[testUrl]?['n1'], -1);
       controller.setDelay(measured.copyWith(value: 68), background: true);
-      expect(latency(), 68);
+      controller.setDelay(measured.copyWith(value: 72), startup: true);
+      expect(latency(), 42);
       controller.setDelay(timeout);
       expect(latency(), -1);
 
@@ -89,7 +93,17 @@ void main() {
         const Duration(minutes: 1),
       );
       controller.setDelay(timeout, background: true);
+      controller.setDelay(measured.copyWith(value: 91), background: true);
+      expect(latency(), 42);
+      controller.setDelay(timeout);
+      controller.setDelay(measured, background: true);
       expect(latency(), -1);
+
+      final otherUrl = '$testUrl?fixture=1';
+      controller.setDelay(measured.copyWith(url: otherUrl), background: true);
+      expect(ref.read(delayDataSourceProvider)[otherUrl]?['n0'], 42);
+      controller.setDelay(measured.copyWith(name: 'n1'), background: true);
+      expect(ref.read(delayDataSourceProvider)[testUrl]?['n1'], 42);
     },
   );
 

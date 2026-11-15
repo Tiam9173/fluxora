@@ -163,10 +163,12 @@ class AppBrandIcon extends ConsumerWidget {
       themeSettingProvider.select((p) => (p.appIconStyle, p.useDarkIcon)),
     );
     final custom = ref.watch(customAppIconProvider).asData?.value;
+    final cacheSize = (size * MediaQuery.devicePixelRatioOf(context)).ceil();
     Widget fallback() => Image.asset(
       BrandIcons.asset(style, dark),
       width: size,
       height: size,
+      cacheWidth: cacheSize,
       excludeFromSemantics: true,
     );
     if (custom == null) return fallback();
@@ -176,6 +178,7 @@ class AppBrandIcon extends ConsumerWidget {
         custom,
         width: size,
         height: size,
+        cacheWidth: cacheSize,
         fit: BoxFit.contain,
         excludeFromSemantics: true,
         errorBuilder: (_, _, _) => fallback(),

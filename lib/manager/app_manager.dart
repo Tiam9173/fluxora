@@ -396,26 +396,25 @@ class AppSidebarContainer extends ConsumerWidget {
     final showLabel = ref.watch(
       appSettingProvider.select((state) => state.showLabel),
     );
-    final motion = FluxoraMotion.ofContext(context);
     return LayoutBuilder(
       builder: (context, constraints) {
         final canExpand = constraints.maxWidth > maxLaptopWidth;
         final extended = showLabel && canExpand;
+        final sidebarWidth = extended
+            ? AuroraNavigationRail.extendedWidth
+            : AuroraNavigationRail.collapsedWidth;
         final chinese = Localizations.localeOf(context).languageCode == 'zh';
         final toggleLabel = !canExpand
             ? (chinese ? '窗口加宽后可展开导航' : 'Widen the window to expand navigation')
             : (extended
                   ? (chinese ? '收起导航' : 'Collapse navigation')
                   : (chinese ? '展开导航' : 'Expand navigation'));
-        return Row(
+        final layout = Row(
           children: [
-            AnimatedContainer(
+            // Animating this width would relayout every kept page each frame.
+            SizedBox(
               key: const ValueKey('desktop-sidebar'),
-              width: extended
-                  ? AuroraNavigationRail.extendedWidth
-                  : AuroraNavigationRail.collapsedWidth,
-              duration: motion.base,
-              curve: motion.standard,
+              width: sidebarWidth,
               child: Stack(
                 alignment: Alignment.topRight,
                 children: [
@@ -593,6 +592,8 @@ class AppSidebarContainer extends ConsumerWidget {
             ),
           ],
         );
+        // The sidebar sits outside the Navigator's overlay.
+        return Overlay.wrap(child: layout);
       },
     );
   }

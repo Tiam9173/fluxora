@@ -14,6 +14,7 @@ import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/providers/state.dart' as providers_state;
 
 import 'package:fluxora/widgets/dialog.dart';
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' as flutter_riverpod;
@@ -217,8 +218,7 @@ class GlobalState {
       totalTraffic: Traffic(),
       systemUiOverlayStyle: const SystemUiOverlayStyle(),
     );
-    await _initDynamicColor();
-    await init();
+    await Future.wait([_initDynamicColor(), init()]);
   }
 
   Future<String?> _calcCoreSHA256() async {
@@ -404,7 +404,9 @@ class GlobalState {
         await updateStartTime();
         if (startTime != null) {
           appState = appState.copyWith(runTime: 0);
-          await startUpdateTasks([appController.updateTraffic]);
+          if (hasAppController) {
+            await startUpdateTasks([appController.updateTraffic]);
+          }
         }
       } else if (!actuallyRunning && flutterState) {
         appState = appState.copyWith(runTime: null);
@@ -458,26 +460,44 @@ class GlobalState {
   Future<void> handleStart([
     UpdateTasks? tasks,
     bool includeVpnService = true,
+    Completer<void>? cancellation,
   ]) async {
+    final nativeService = includeVpnService ? service : null;
+    try {
+      final started = system.isAndroid && isService
+          ? await clashLibHandler?.startListener()
+          : await clashCore.startListener();
+      if (started != true) throw StateError(appLocalizations.checkError);
+      if (nativeService != null &&
+          !await nativeService.waitForVpnStart(cancellation: cancellation?.future)) {
+        if (cancellation?.isCompleted == true) {
+          await handleStop(includeVpnService);
+          return;
+        }
+        throw StateError(appLocalizations.networkErrorRetryLater);
+      }
+    } catch (error) {
+      try {
+        await handleStop(includeVpnService);
+      } catch (cleanupError) {
+        commonPrint.log('Connection rollback failed: $cleanupError');
+      }
+      rethrow;
+    }
     startTime ??= DateTime.now();
-    if (system.isAndroid && isService) {
-      await clashLibHandler?.startListener();
-    } else {
-      await clashCore.startListener();
+    unawaited(startUpdateTasks(tasks));
+    try {
+      final prefs = await preferences.sharedPreferencesCompleter.future;
+      await prefs?.setBool('is_vpn_running', true);
+      if (system.isAndroid) {
+        await service?.setQuickResponse(config.vpnProps.quickResponse);
+        await service?.setHighPriorityNotification(
+          config.vpnProps.highPriorityNotification,
+        );
+      }
+    } catch (error) {
+      commonPrint.log('Could not save running session settings: $error');
     }
-    if (includeVpnService) {
-      await service?.startVpn();
-    }
-    final prefs = await preferences.sharedPreferencesCompleter.future;
-    await prefs?.setBool('is_vpn_running', true);
-
-    if (system.isAndroid) {
-      await service?.setQuickResponse(config.vpnProps.quickResponse);
-      await service?.setHighPriorityNotification(
-        config.vpnProps.highPriorityNotification,
-      );
-    }
-    await startUpdateTasks(tasks);
 
     // 启动后自动延迟测速（smartDelayLaunch，默认关）。先写一次性标记：
     // UI 进程立刻消费并执行；headless service 没有可展示结果的控制器，
@@ -532,20 +552,23 @@ class GlobalState {
 
   Future handleStop([bool includeVpnService = true]) async {
     startTime = null;
-    if (system.isAndroid && isService) {
-      await clashLibHandler?.stopListener();
-    } else {
-      await clashCore.stopListener();
-    }
-    if (!includeVpnService) {
-      stopUpdateTasks();
-      return;
-    }
-    await service?.stopVpn();
-    final prefs = await preferences.sharedPreferencesCompleter.future;
-    await prefs?.setBool('is_vpn_running', false);
-    if (system.isDesktop) {
-      await prefs?.setBool('is_tun_running', false);
+    stopUpdateTasks();
+    try {
+      if (system.isAndroid && isService) {
+        await clashLibHandler?.stopListener();
+      } else {
+        await clashCore.stopListener();
+      }
+    } finally {
+      if (includeVpnService) {
+        try {
+          await service?.stopVpn();
+        } finally {
+          final prefs = await preferences.sharedPreferencesCompleter.future;
+          await prefs?.setBool('is_vpn_running', false);
+          if (system.isDesktop) await prefs?.setBool('is_tun_running', false);
+        }
+      }
     }
     stopUpdateTasks();
   }
@@ -611,18 +634,16 @@ class GlobalState {
       ),
       barrierDismissible: dismissible,
       barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-      transitionDuration: FluxoraMotion.ofContext(context).base,
+      transitionDuration: FluxoraMotion.ofContext(context).fast,
       pageBuilder: (context, animation, secondaryAnimation) => child,
       transitionBuilder: (context, animation, secondaryAnimation, child) {
-        if (FluxoraMotion.ofContext(context).reduceMotion) return child;
+        // Keep the liquid backdrop out of the fade's intermediate opacity layer.
+        if (liquid || FluxoraMotion.ofContext(context).reduceMotion) return child;
         final curved = animation.drive(CurveTween(curve: FluxoraMotion.enter));
         return RepaintBoundary(
           child: FadeTransition(
             opacity: curved,
-            child: ScaleTransition(
-              scale: curved.drive(Tween<double>(begin: 0.98, end: 1.0)),
-              child: child,
-            ),
+            child: child,
           ),
         );
       },
@@ -1923,6 +1944,7 @@ class DashboardRefreshManager {
   final tick1s = ValueNotifier<int>(0);
   final tick2s = ValueNotifier<int>(0);
   final tick5s = ValueNotifier<int>(0);
+  final ValueListenable<int> paused = ValueNotifier<int>(0);
 
   bool get isRunning => _isRunning;
 

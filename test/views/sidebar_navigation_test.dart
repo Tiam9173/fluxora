@@ -147,7 +147,7 @@ void main() {
   );
 
   testWidgets(
-    'toggle animates 208 to 68, retains selection and content state',
+    'toggle changes width in one frame and retains selection and page state',
     (tester) async {
       final container = await pumpSidebar(tester);
       container.read(currentPageLabelProvider.notifier).value =
@@ -155,10 +155,12 @@ void main() {
       await tester.tap(find.text('count: 0'));
       await tester.pumpAndSettle();
       expect(tester.getSize(getSidebar()).width, 208);
+      final page = find.byType(_PageCounter);
+      expect(tester.getSize(page).width, 992);
       await tester.tap(getToggle());
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 80));
-      expect(tester.getSize(getSidebar()).width, inExclusiveRange(68, 208));
+      expect(tester.getSize(getSidebar()).width, 68);
+      expect(tester.getSize(page).width, 1132);
       expect(tester.takeException(), isNull);
       await tester.pumpAndSettle();
       expect(tester.getSize(getSidebar()).width, 68);
@@ -175,8 +177,9 @@ void main() {
       expect(restored.appSetting.showLabel, isFalse);
       expect(container.read(currentPageLabelProvider), PageLabel.profiles);
       await tester.tap(getToggle());
-      await tester.pumpAndSettle();
+      await tester.pump();
       expect(tester.getSize(getSidebar()).width, 208);
+      expect(tester.getSize(page).width, 992);
       expect(find.text('count: 1'), findsOneWidget);
     },
   );
@@ -228,10 +231,6 @@ void main() {
 
   testWidgets('reduced motion changes width immediately', (tester) async {
     await pumpSidebar(tester, reduce: true);
-    expect(
-      tester.widget<AnimatedContainer>(getSidebar()).duration,
-      Duration.zero,
-    );
     await tester.tap(getToggle());
     await tester.pump();
     expect(tester.getSize(getSidebar()).width, 68);
@@ -279,7 +278,7 @@ void main() {
             format: ui.ImageByteFormat.png,
           );
           final file = File(
-            'design/sidebar_navigation/${brightness.name}_${collapsed ? 'collapsed' : 'expanded'}.png',
+            'build/sidebar_navigation/${brightness.name}_${collapsed ? 'collapsed' : 'expanded'}.png',
           );
           file.parent.createSync(recursive: true);
           file.writeAsBytesSync(bytes!.buffer.asUint8List());

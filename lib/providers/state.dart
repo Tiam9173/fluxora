@@ -69,13 +69,14 @@ List<Group> computeHideTimeout({
   required String defaultTestUrl,
 }) {
   final resolved = <String, ProxyCardState>{};
+  final (groupsByName, nodesByName) = _indexProxies(allGroups);
   final proxyTypes = {
     for (final group in allGroups)
       for (final proxy in group.all) proxy.name: proxy.type.toUpperCase(),
   };
   return groups.map((group) {
     final groupTestUrl = group.testUrl.getSafeValue(defaultTestUrl);
-    final liveGroup = allGroups.getGroup(group.name) ?? group;
+    final liveGroup = groupsByName[group.name] ?? group;
     final selectedName = liveGroup.getCurrentSelectedName(
       selectedMap[group.name] ?? '',
     );
@@ -86,7 +87,8 @@ List<Group> computeHideTimeout({
       final state = resolved.putIfAbsent(
         proxy.name,
         () => _getProxyCardState(
-          allGroups,
+          groupsByName,
+          nodesByName,
           selectedMap,
           ProxyCardState(proxyName: proxy.name),
         ),
@@ -317,9 +319,10 @@ ProxyState proxyState(Ref ref) {
       (state) => VM2(a: state.systemProxy, b: state.bypassDomain),
     ),
   );
-  final mixedPort = ref.watch(
-    patchClashConfigProvider.select((state) => state.mixedPort),
-  );
+  final mixedPort =
+      ref.watch(mixedPortFallbackProvider) ??
+      ref.watch(patchClashConfigProvider.select((state) => state.mixedPort)) ??
+      0;
   return ProxyState(
     isStart: isStart,
     systemProxy: vm2.a,
@@ -331,6 +334,16 @@ ProxyState proxyState(Ref ref) {
 final wakelockStateProvider = StateProvider<bool>((ref) => false);
 
 final isRestartingCoreProvider = StateProvider<bool>((ref) => false);
+
+final connectionTargetProvider = StateProvider<bool?>((ref) => null);
+
+enum ConnectionCheck { untested, checking, reachable, limited }
+
+final connectionCheckProvider = StateProvider<ConnectionCheck>(
+  (ref) => ConnectionCheck.untested,
+);
+
+final systemProxyAppliedProvider = StateProvider<bool?>((ref) => null);
 
 /// P1 ⑥ — the raw core message of the **last successful** setup that carried
 /// rule-provider warnings, or `''` when the config is fully loaded.
@@ -637,26 +650,37 @@ int getProxiesColumns(Ref ref) {
   return utils.getProxiesColumns(viewWidth, proxiesLayout);
 }
 
-ProxyCardState _getProxyCardState(
-  List<Group> groups,
-  SelectedMap selectedMap,
-  ProxyCardState proxyDelayState,
-) {
-  if (proxyDelayState.proxyName.isEmpty) return proxyDelayState;
-  final index = groups.indexWhere(
-    (element) => element.name == proxyDelayState.proxyName,
-  );
-  if (index == -1) {
-    Proxy? proxy;
-    for (final group in groups) {
-      for (final p in group.all) {
-        if (p.name == proxyDelayState.proxyName) {
-          proxy = p;
-          break;
-        }
-      }
-      if (proxy != null) break;
+typedef _ProxyIndex = (Map<String, Group>, Map<String, Proxy>);
+
+_ProxyIndex _indexProxies(List<Group> groups) {
+  final groupsByName = <String, Group>{};
+  final nodesByName = <String, Proxy>{};
+  for (final group in groups) {
+    groupsByName.putIfAbsent(group.name, () => group);
+    for (final proxy in group.all) {
+      nodesByName.putIfAbsent(proxy.name, () => proxy);
     }
+  }
+  return (groupsByName, nodesByName);
+}
+
+final _proxyIndexProvider = Provider.autoDispose<_ProxyIndex>(
+  (ref) => _indexProxies(ref.watch(groupsProvider)),
+);
+
+ProxyCardState _getProxyCardState(
+  Map<String, Group> groups,
+  Map<String, Proxy> nodes,
+  SelectedMap selectedMap,
+  ProxyCardState proxyDelayState, [
+  Set<String>? visited,
+]) {
+  if (proxyDelayState.proxyName.isEmpty) return proxyDelayState;
+  final name = proxyDelayState.proxyName;
+  if (visited != null && !visited.add(name)) return proxyDelayState;
+  final group = groups[name];
+  if (group == null) {
+    final proxy = nodes[name];
     final now = proxy?.now;
     if (proxy != null &&
         proxy.type.toUpperCase() == 'REMATCH' &&
@@ -665,13 +689,14 @@ ProxyCardState _getProxyCardState(
         now != proxyDelayState.proxyName) {
       return _getProxyCardState(
         groups,
+        nodes,
         selectedMap,
         proxyDelayState.copyWith(proxyName: now),
+        visited ?? {name},
       );
     }
     return proxyDelayState;
   }
-  final group = groups[index];
   final currentSelectedName = group.getCurrentSelectedName(
     selectedMap[proxyDelayState.proxyName] ?? '',
   );
@@ -680,20 +705,23 @@ ProxyCardState _getProxyCardState(
   }
   return _getProxyCardState(
     groups,
+    nodes,
     selectedMap,
     proxyDelayState.copyWith(
       proxyName: currentSelectedName,
       testUrl: group.testUrl,
     ),
+    visited ?? {name},
   );
 }
 
 @riverpod
 ProxyCardState getProxyCardState(Ref ref, String proxyName) {
-  final groups = ref.watch(groupsProvider);
+  final (groups, nodes) = ref.watch(_proxyIndexProvider);
   final selectedMap = ref.watch(selectedMapProvider);
   return _getProxyCardState(
     groups,
+    nodes,
     selectedMap,
     ProxyCardState(proxyName: proxyName),
   );

@@ -170,7 +170,12 @@ void main() {
     await show(tester, scope: container);
     expect(find.byKey(const ValueKey('remove-app-icon')), findsOneWidget);
     expect(
-      find.byWidgetPredicate((w) => w is Image && w.image is MemoryImage),
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Image &&
+            widget.image is ResizeImage &&
+            (widget.image as ResizeImage).imageProvider is MemoryImage,
+      ),
       findsOneWidget,
     );
     if (const bool.fromEnvironment('AURORA_CAPTURE')) {
@@ -386,8 +391,9 @@ void main() {
         find.byWidgetPredicate(
           (widget) =>
               widget is Image &&
-              widget.image is AssetImage &&
-              (widget.image as AssetImage).assetName ==
+              widget.image is ResizeImage &&
+              ((widget.image as ResizeImage).imageProvider as AssetImage)
+                      .assetName ==
                   BrandIcons.asset('sunset', dark),
         ),
         findsOneWidget,

@@ -60,7 +60,7 @@ class AuroraNavigationRail extends StatelessWidget {
     this.extended = true,
   });
 
-  /// Icon-only width; the shell animates between these two widths.
+  /// Icon-only width.
   static const double collapsedWidth = 68;
 
   /// Width when labels sit beside the icons.
@@ -96,7 +96,6 @@ class AuroraNavigationRail extends StatelessWidget {
                   child: _AuroraRailItem(
                     destination: destinations[index],
                     selected: index == selectedIndex,
-                    // During width animation keep text out of the narrow frame.
                     extended: extended && constraints.maxWidth >= 120,
                     onTap: () => onDestinationSelected(index),
                   ),

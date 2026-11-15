@@ -47,7 +47,12 @@ void main() {
       ];
       expect(
         visibleNames(
-          run(groups: groups, delayMap: {defaultUrl: {'ok': 120, 'dead': -1}}),
+          run(
+            groups: groups,
+            delayMap: {
+              defaultUrl: {'ok': 120, 'dead': -1},
+            },
+          ),
         ),
         ['ok'],
       );
@@ -59,7 +64,12 @@ void main() {
       ];
       expect(
         visibleNames(
-          run(groups: groups, delayMap: {defaultUrl: {'tested': 80}}),
+          run(
+            groups: groups,
+            delayMap: {
+              defaultUrl: {'tested': 80},
+            },
+          ),
         ),
         ['tested', 'untested'],
       );
@@ -71,7 +81,12 @@ void main() {
       ];
       expect(
         visibleNames(
-          run(groups: groups, delayMap: {defaultUrl: {'testing': 0}}),
+          run(
+            groups: groups,
+            delayMap: {
+              defaultUrl: {'testing': 0},
+            },
+          ),
         ),
         ['testing'],
       );
@@ -85,7 +100,9 @@ void main() {
         visibleNames(
           run(
             groups: groups,
-            delayMap: {defaultUrl: {'dead': -1, 'ok': 40}},
+            delayMap: {
+              defaultUrl: {'dead': -1, 'ok': 40},
+            },
             selectedMap: const {'G': 'dead'},
           ),
         ),
@@ -138,7 +155,12 @@ void main() {
       ];
       expect(
         visibleNames(
-          run(groups: groups, delayMap: {defaultUrl: {'a': -1, 'b': -1}}),
+          run(
+            groups: groups,
+            delayMap: {
+              defaultUrl: {'a': -1, 'b': -1},
+            },
+          ),
         ),
         ['a', 'b'],
       );
@@ -167,6 +189,22 @@ void main() {
           ),
         ),
         ['ok'],
+      );
+    });
+
+    test('a recursive group selection cannot hang timeout filtering', () {
+      final first = mkGroup('first', [mkProxy('second', type: 'Selector')]);
+      final second = mkGroup('second', [mkProxy('first', type: 'Selector')]);
+      final root = mkGroup('root', [mkProxy('first', type: 'Selector')]);
+      expect(
+        visibleNames(
+          run(
+            groups: [root],
+            allGroups: [root, first, second],
+            selectedMap: const {'first': 'second', 'second': 'first'},
+          ),
+        ),
+        ['first'],
       );
     });
   });

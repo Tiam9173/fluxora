@@ -88,3 +88,45 @@ jobs:
 
       - name: Test
         run: flutter test
+
+  connection:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.25.x'
+          cache-dependency-path: core/go.sum
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.4'
+          cache: true
+      - run: flutter pub get
+      - name: Core connection lifecycle
+        working-directory: core
+        env:
+          CGO_ENABLED: '0'
+        run: go test -mod=readonly -tags=with_gvisor ./...
+      - name: Controller and desktop navigation regressions
+        run: >-
+          flutter test
+          test/controller/change_mode_and_debounce_test.dart
+          test/controller/change_proxies_batch_test.dart
+          test/controller/core_watchdog_test.dart
+          test/controller/profile_switch_sync_test.dart
+          test/services/android_vpn_sync_test.dart
+          test/views/dashboard/start_button_state_test.dart
+          test/views/proxies/chain_hop_picker_test.dart
+          test/views/proxies/proxies_group_sort_cache_test.dart
+          test/theme/hybrid_glass_test.dart
+          test/theme/liquid_glass_test.dart
+          test/views/page_transition_test.dart
+          test/views/sidebar_navigation_test.dart
+          test/widgets/kept_page_view_test.dart
+          test/widgets/route_motion_test.dart
+      - name: Connection UI on wide and narrow screens
+        run: flutter test test/views/ui_refinement_test.dart --name 'connection node|rejected picker|motion state and navigation frames|actual home and settings|network result motion'

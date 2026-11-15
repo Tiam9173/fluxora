@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:fluxora/clash/clash.dart';
@@ -231,10 +230,7 @@ class ApplicationState extends ConsumerState<Application>
     return AppStateManager(
       child: ClashManager(
         child: ConnectivityManager(
-          onConnectivityChanged: (results) async {
-            if (!results.contains(ConnectivityResult.vpn)) {
-              clashCore.closeConnections();
-            }
+          onConnectivityChanged: (_) async {
             if (system.isMacOS || system.isLinux) {
               // Wait for DHCP and the default route to settle before moving the
               // managed DNS from the previous network to the new one.
@@ -249,13 +245,17 @@ class ApplicationState extends ConsumerState<Application>
               }
             }
             globalState.appController.updateLocalIp();
-            globalState.appController.addCheckIpNumDebounce();
+            if (globalState.isStart) {
+              globalState.appController.refreshConnectionCheck();
+            } else {
+              globalState.appController.addCheckIpNumDebounce();
+            }
             // item 6 (Bettbox 1.19.5 alignment) — a network change invalidates
             // every DNS answer cached against the previous network, so flush the
             // core cache. Kept last: when the core is idle the underlying invoke
             // only resolves on its 30 s timeout (`common/future.dart:13`), and
             // the local-IP refresh above must not wait on that.
-            await clashCore.flushDnsCache();
+            if (globalState.isStart) await clashCore.flushDnsCache();
           },
           child: child,
         ),

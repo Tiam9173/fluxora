@@ -8,6 +8,8 @@ import 'package:fluxora/enum/enum.dart';
 import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import 'geo_country_code.dart';
+
 part 'generated/common.freezed.dart';
 part 'generated/common.g.dart';
 
@@ -444,6 +446,20 @@ class IpInfo {
     this.continentCode,
   });
 
+  String? get flagCountryCode =>
+      geoCountryCode(countryCode) ?? geoCountryCode(country);
+
+  IpInfo withCountryCodeFrom(IpInfo? fallback) {
+    if (fallback == null ||
+        ip.isEmpty ||
+        ip != fallback.ip ||
+        flagCountryCode != null) {
+      return this;
+    }
+    final code = fallback.flagCountryCode;
+    return code == null ? this : copyWith(countryCode: code);
+  }
+
   static IpInfo fromJson(Map<String, dynamic> json) {
     if (json['ret'] == 'ok' && json['data'] is Map) {
       final data = json['data'] as Map;
@@ -454,7 +470,13 @@ class IpInfo {
         final country = locList.isNotEmpty && locList[0].isNotEmpty
             ? locList[0]
             : null;
-        final countryCode = country == '中国' ? 'CN' : '';
+        final countryCode =
+            geoCountryCode(
+              (data['country_code'] ?? data['countryCode'])?.toString(),
+            ) ??
+            (locList.length > 11 ? geoCountryCode(locList[11]) : null) ??
+            geoCountryCode(country) ??
+            '';
         final province = locList.length > 1 && locList[1].isNotEmpty
             ? locList[1]
             : null;
@@ -494,8 +516,9 @@ class IpInfo {
     final ip = json['ip']?.toString() ?? '';
     if (json['location'] is Map) {
       final loc = json['location'] as Map;
-      final countryCode = loc['country_code']?.toString() ?? '';
-      final country = loc['country_name']?.toString();
+      final countryCode =
+          (loc['country_code'] ?? loc['countryCode'])?.toString() ?? '';
+      final country = (loc['country_name'] ?? loc['country'])?.toString();
       final province = loc['province']?.toString();
       final city = loc['city']?.toString();
       if (ip.isNotEmpty) {

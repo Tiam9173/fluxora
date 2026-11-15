@@ -7,6 +7,7 @@ import 'dart:ui';
 
 import 'package:fluxora/plugins/app.dart';
 import 'package:fluxora/plugins/clipboard_ext.dart';
+import 'package:fluxora/plugins/service.dart' show Service;
 import 'package:fluxora/plugins/tile.dart';
 import 'package:fluxora/plugins/vpn.dart';
 import 'package:fluxora/state.dart';
@@ -380,11 +381,24 @@ Future<void> _service(List<String> flags) async {
       _TileListenerWithService(
         onStart: () async {
           await app.tip(appLocalizations.startVpn);
-          await globalState.handleStart();
+          try {
+            if (!await clashLibHandler.startListener()) {
+              throw StateError(appLocalizations.checkError);
+            }
+            if (!await Service().waitForVpnStart(
+              options: clashLibHandler.getAndroidVpnOptions(),
+            )) {
+              throw StateError(appLocalizations.networkErrorRetryLater);
+            }
+          } catch (error) {
+            await globalState.handleStop();
+            await vpn?.stop();
+            await app.tip(error.formatError);
+          }
         },
         onStop: () async {
           await app.tip(appLocalizations.stopVpn);
-          clashLibHandler.stopListener();
+          await clashLibHandler.stopListener();
           await vpn?.stop();
         },
         onReconnectIpc: () {
@@ -443,6 +457,7 @@ Future<void> _service(List<String> flags) async {
           // headless 引擎没有任何界面，静默 return 等于"磁贴按了没反应"。
           // 至少要让用户知道为什么没起来。
           await app.tip('Quick start failed: no profile selected');
+          await vpn?.stop();
           return;
         }
         final res = await clashLibHandler.quickStart(
@@ -457,7 +472,14 @@ Future<void> _service(List<String> flags) async {
           await vpn?.stop();
           return;
         }
-        await vpn?.start(clashLibHandler.getAndroidVpnOptions());
+        if (!await clashLibHandler.startListener()) {
+          throw StateError(appLocalizations.checkError);
+        }
+        if (!await Service().waitForVpnStart(
+          options: clashLibHandler.getAndroidVpnOptions(),
+        )) {
+          throw StateError(appLocalizations.networkErrorRetryLater);
+        }
         Future.delayed(const Duration(seconds: 2), checkSmartAutoStop);
 
         if (globalState.config.appSetting.openLogs) {
@@ -470,8 +492,6 @@ Future<void> _service(List<String> flags) async {
           );
         }
 
-        clashLibHandler.startListener();
-
         // item 6 — the speed notification is driven from the *service*
         // isolate, the way FlClash does it: the UI isolate is paused once
         // Android backgrounds the app, which is exactly when the notification
@@ -481,6 +501,7 @@ Future<void> _service(List<String> flags) async {
       } catch (e) {
         commonPrint.log('Fatal error during service background start: $e');
         await app.tip('Quick start failed: $e');
+        await clashLibHandler.stopListener();
         await vpn?.stop();
       }
     });
@@ -559,7 +580,6 @@ void _handleMainIpc(ClashLibHandler clashLibHandler) {
     _safeSend(sendPort, message);
   });
 
-  clashLibHandler.startListener();
 }
 
 void _safeSend(SendPort sendPort, dynamic message) {

@@ -13,6 +13,7 @@ class KeptPageView extends StatefulWidget {
     required this.outCurve,
     required this.enterOffset,
     this.horizontal = false,
+    this.animateIndexChanges = true,
     this.depth = false,
     this.intensity = .5,
     this.pageCount,
@@ -35,6 +36,7 @@ class KeptPageView extends StatefulWidget {
   /// motion.
   final Offset enterOffset;
   final bool horizontal;
+  final bool animateIndexChanges;
   final bool depth;
   final double intensity;
   final int? pageCount;
@@ -148,9 +150,8 @@ class _KeptPageViewState extends State<KeptPageView>
       _current = widget.index;
       _built.add(_current);
 
-      if (widget.duration == Duration.zero) {
-        // Reduced motion (or a zero token): land on the final state now. The
-        // outgoing page goes off-stage in the same frame.
+      if (widget.duration == Duration.zero || !widget.animateIndexChanges) {
+        _controller.stop();
         _controller.value = 1;
         _leaving = null;
       } else {
@@ -189,6 +190,8 @@ class _KeptPageViewState extends State<KeptPageView>
     final isCurrent = index == _current;
     final isLeaving = index == _leaving;
     final visible = isCurrent || isLeaving;
+    final transitioning = visible && _leaving != null;
+    final fade = transitioning && (!widget.horizontal || widget.depth);
 
     return KeyedSubtree(
       key: ValueKey<Object>(widget.pageKeys?[index] ?? index),
@@ -205,42 +208,38 @@ class _KeptPageViewState extends State<KeptPageView>
               child: ExcludeSemantics(
                 excluding: !isCurrent,
                 child: FadeTransition(
-                  opacity: isCurrent
-                      ? (widget.horizontal && !widget.depth
-                            ? kAlwaysCompleteAnimation
-                            : _in)
-                      : (isLeaving ? _fadeOut : kAlwaysCompleteAnimation),
+                  opacity: fade
+                      ? (isCurrent ? _in : _fadeOut)
+                      : kAlwaysCompleteAnimation,
                   child: SlideTransition(
-                    position: isCurrent && !widget.horizontal
+                    position: isCurrent && transitioning && !widget.horizontal
                         ? _slide
                         : _noSlide,
-                    child: LayoutBuilder(
-                      builder: (context, constraints) => AnimatedBuilder(
-                        animation: _controller,
-                        child: RepaintBoundary(
-                          child: widget.pageBuilder(context, index),
-                        ),
-                        builder: (context, child) {
-                          final progress = widget.horizontal
-                              ? _controller.value
-                              : _in.value;
-                          final dx = !widget.horizontal
-                              ? 0.0
-                              : constraints.maxWidth *
-                                    _direction *
-                                    (isCurrent ? 1 - progress : -progress);
-                          final scale = widget.depth && widget.horizontal
-                              ? 1 -
-                                    (isCurrent ? 1 - progress : progress) *
-                                        .035 *
-                                        widget.intensity
-                              : 1.0;
-                          return Transform.translate(
-                            offset: Offset(dx, 0),
-                            child: Transform.scale(scale: scale, child: child),
-                          );
-                        },
+                    child: AnimatedBuilder(
+                      animation: widget.horizontal && transitioning
+                          ? _controller
+                          : kAlwaysCompleteAnimation,
+                      child: RepaintBoundary(
+                        child: widget.pageBuilder(context, index),
                       ),
+                      builder: (context, child) {
+                        final progress = _controller.value;
+                        final horizontal = widget.horizontal && transitioning;
+                        final dx = horizontal
+                            ? _direction *
+                                  (isCurrent ? 1 - progress : -progress)
+                            : 0.0;
+                        final scale = widget.depth && horizontal
+                            ? 1 -
+                                  (isCurrent ? 1 - progress : progress) *
+                                      .035 *
+                                      widget.intensity
+                            : 1.0;
+                        return FractionalTranslation(
+                          translation: Offset(dx, 0),
+                          child: Transform.scale(scale: scale, child: child),
+                        );
+                      },
                     ),
                   ),
                 ),

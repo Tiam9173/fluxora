@@ -74,7 +74,6 @@ class PublicIpService {
       createHttpClient: () {
         final client = HttpClient();
         client.connectionTimeout = effectiveTimeout;
-        client.badCertificateCallback = (_, _, _) => true;
         if (proxyPort > 0) {
           client.findProxy = (uri) => 'PROXY 127.0.0.1:$proxyPort';
         }

@@ -49,6 +49,12 @@ class _CleanCupertinoPageRoute<T> extends CupertinoPageRoute<T> {
   Duration get reverseTransitionDuration => _motion.fast;
 
   @override
+  DelegatedTransitionBuilder? get delegatedTransition => null;
+
+  @override
+  bool canTransitionTo(TransitionRoute<dynamic> nextRoute) => false;
+
+  @override
   bool didPop(T? result) {
     controller?.reverseDuration = _motion.fast;
     return super.didPop(result);
@@ -66,7 +72,7 @@ class _CleanCupertinoPageRoute<T> extends CupertinoPageRoute<T> {
     return super.buildTransitions(
       context,
       reduced ? kAlwaysCompleteAnimation : animation,
-      reduced ? kAlwaysDismissedAnimation : secondaryAnimation,
+      kAlwaysDismissedAnimation,
       child,
     );
   }
@@ -120,14 +126,16 @@ class CommonDesktopRoute<T> extends PageRoute<T> {
   }
 
   @override
-  Duration get transitionDuration => _motion.base;
+  Duration get transitionDuration =>
+      _motion.expressive ? _motion.base : _motion.fast;
 
   @override
-  Duration get reverseTransitionDuration => _motion.fast;
+  Duration get reverseTransitionDuration =>
+      _motion.expressive ? _motion.fast : Duration.zero;
 
   @override
   bool didPop(T? result) {
-    controller?.reverseDuration = _motion.fast;
+    controller?.reverseDuration = reverseTransitionDuration;
     return super.didPop(result);
   }
 }

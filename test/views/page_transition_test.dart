@@ -16,8 +16,7 @@ import 'package:fluxora/controller.dart';
 ///
 /// `_HomePageView` is library-private, so the entry point is [HomePage] with two
 /// throwaway pages. That keeps the pumped tree small while still running the
-/// **real** host: the same `AnimatedSwitcher` (mobile) / `PageView` (desktop)
-/// production builds, the same `KeepScope`, and the same dock-height injection.
+/// **real** host with retained pages and dock-height injection.
 ///
 /// Each page is a `StatefulWidget` that counts `initState` / `dispose`, which is
 /// how the "does a switch re-initialise a page" question is answered — the real
@@ -73,6 +72,7 @@ void main() {
     WidgetTester tester, {
     required bool mobile,
     bool reduce = false,
+    bool expressive = false,
   }) async {
     tester.binding.platformDispatcher.accessibilityFeaturesTestValue =
         FakeAccessibilityFeatures(disableAnimations: reduce);
@@ -116,7 +116,18 @@ void main() {
           ),
           isMobileViewProvider.overrideWith((ref) => mobile),
         ],
-        child: MaterialApp(home: seedGlobals(const HomePage())),
+        child: MaterialApp(
+          theme: ThemeData(
+            extensions: [
+              FluxoraMaterial(
+                motionStyle: expressive
+                    ? FluxoraMotionStyle.fluid
+                    : FluxoraMotionStyle.system,
+              ),
+            ],
+          ),
+          home: seedGlobals(const HomePage()),
+        ),
       ),
     );
     await tester.pump();
@@ -132,15 +143,14 @@ void main() {
 
   group('mobile page switch', () {
     testWidgets(
-      'nonadjacent selection animates directly without mounting skipped pages',
+      'default nonadjacent selection lands in one frame without mounting skipped pages',
       (tester) async {
         final c = await pumpHome(tester, mobile: true);
         goTo(c, PageLabel.tools);
         await tester.pump();
-        await tester.pump(const Duration(milliseconds: 60));
-        expect(find.text('page-A'), findsOneWidget);
+        expect(find.text('page-A'), findsNothing);
         expect(find.text('page-D'), findsOneWidget);
-        expect(tester.getTopLeft(find.text('page-D')).dx, greaterThan(0));
+        expect(tester.getTopLeft(find.text('page-D')).dx, 0);
         expect(counters.inits['B'], isNull);
         expect(counters.inits['C'], isNull);
         await tester.pumpAndSettle();
@@ -169,7 +179,7 @@ void main() {
     testWidgets('horizontal switching keeps both pages during the transition', (
       tester,
     ) async {
-      final c = await pumpHome(tester, mobile: true);
+      final c = await pumpHome(tester, mobile: true, expressive: true);
 
       goTo(c, PageLabel.profiles);
       await tester.pump();
@@ -195,7 +205,7 @@ void main() {
     testWidgets(
       'the entering page travels horizontally without a vertical lift',
       (tester) async {
-        final c = await pumpHome(tester, mobile: true);
+        final c = await pumpHome(tester, mobile: true, expressive: true);
 
         goTo(c, PageLabel.profiles);
         await tester.pump();
@@ -325,14 +335,13 @@ void main() {
 
   group('desktop page switch', () {
     testWidgets('switching keeps the outgoing page alive', (tester) async {
-      // `PageView` + `KeepScope`: the desktop path keeps pages mounted, which is
-      // why it does not need a transition to hide a rebuild.
       final c = await pumpHome(tester, mobile: false);
 
       goTo(c, PageLabel.profiles);
-      await tester.pumpAndSettle();
+      await tester.pump();
 
       expect(find.text('page-B'), findsOneWidget);
+      expect(find.text('page-A'), findsNothing);
       expect(
         counters.disposes['A'] ?? 0,
         0,

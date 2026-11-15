@@ -706,7 +706,6 @@ class _DashboardStartSwitch extends ConsumerStatefulWidget {
 
 class _DashboardStartSwitchState extends ConsumerState<_DashboardStartSwitch> {
   bool _isDisabled = false;
-  bool? _optimisticStart;
   FocusNode? _focusNode;
 
   @override
@@ -738,18 +737,17 @@ class _DashboardStartSwitchState extends ConsumerState<_DashboardStartSwitch> {
     final newState = !isStart;
     setState(() {
       _isDisabled = true;
-      _optimisticStart = newState;
     });
 
     try {
       await globalState.appController.updateStatus(newState);
     } catch (e) {
       commonPrint.log('updateStatus failed: $e');
+      if (mounted) context.showSnackBar(e.formatError);
     } finally {
       if (mounted) {
         setState(() {
           _isDisabled = false;
-          _optimisticStart = null;
         });
       }
     }
@@ -759,14 +757,16 @@ class _DashboardStartSwitchState extends ConsumerState<_DashboardStartSwitch> {
   Widget build(BuildContext context) {
     final state = ref.watch(startButtonSelectorStateProvider);
     final isRestarting = ref.watch(isRestartingCoreProvider);
+    final target = ref.watch(connectionTargetProvider);
     final isSmartStopped = ref.watch(isSmartStoppedProvider);
     final runTime = ref.watch(runTimeProvider);
     final isStart = runTime != null;
-    final displayStart = isSmartStopped ? false : (_optimisticStart ?? isStart);
+    final displayStart = !isSmartStopped && isStart;
 
     final canPress =
         state.isInit &&
         state.hasProfile &&
+        target == null &&
         !_isDisabled &&
         !isRestarting &&
         !isSmartStopped;

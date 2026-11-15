@@ -291,12 +291,24 @@ rules: ['MATCH,Select']
       await tester.runAsync(() async {
         await controller.applyProfile(silence: true);
         expect(ref.read(groupsProvider).last.all.single.name, 'A-node');
+        const measured = Delay(
+          url: 'https://example.invalid/delay',
+          name: 'A-node',
+          value: 65,
+        );
+        controller.setDelay(measured);
+        controller.setDelay(measured.copyWith(name: 'removed-node'));
+        await controller.applyProfile(silence: true);
+        controller.setDelay(measured.copyWith(value: -1), background: true);
+        expect(ref.read(delayDataSourceProvider)[measured.url], {'A-node': 65});
+
         ref.read(currentProfileIdProvider.notifier).value = profiles.last.id;
         final change = controller.handleChangeProfile(
           previousProfileId: profiles.first.id,
         );
         await change.timeout(const Duration(seconds: 3));
         expect(ref.read(groupsProvider).last.all.single.name, 'B-node');
+        expect(ref.read(delayDataSourceProvider)[measured.url], isNull);
       });
       await tester.pumpWidget(const SizedBox());
       await tester.pump(const Duration(seconds: 3));

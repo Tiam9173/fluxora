@@ -40,17 +40,22 @@ void main() {
     roundedRectDistance(p + x, halfExtent, radius) - roundedRectDistance(p - x, halfExtent, radius),
     roundedRectDistance(p + y, halfExtent, radius) - roundedRectDistance(p - y, halfExtent, radius)
   ) * 0.25;
-  float rim = exp(-abs(distance) / (3.5 + 7.0 * u_strength));
+  // A clipped capture has no reliable vertical centre for the lens.
+  float coverage = u_size.y / max(u_extent.y * pixelsPerUnit, 1.0);
+  float rim = exp(-abs(distance) / (4.0 + 5.0 * u_strength))
+      * smoothstep(0.82, 0.99, coverage);
   vec2 pixel = pixelsPerUnit / u_size;
-  vec2 refracted = uv - normal * rim * u_strength * 16.0 * pixel;
+  vec2 refracted = uv - normal * rim * u_strength * 8.0 * pixel;
 
   // One pass avoids mismatched blur and refraction bounds while softening text.
-  vec2 spread = (1.25 + 4.75 * (1.0 - u_clarity)) * pixel;
-  vec4 color = sampleBackdrop(refracted) * 0.36;
-  color += sampleBackdrop(refracted + spread) * 0.16;
-  color += sampleBackdrop(refracted - spread) * 0.16;
-  color += sampleBackdrop(refracted + vec2(spread.x, -spread.y)) * 0.16;
-  color += sampleBackdrop(refracted + vec2(-spread.x, spread.y)) * 0.16;
+  vec2 spread = (1.0 + 3.0 * (1.0 - u_clarity)) * pixel;
+  vec2 dx = vec2(spread.x, 0.0);
+  vec2 dy = vec2(0.0, spread.y);
+  vec4 color = sampleBackdrop(refracted) * 0.40;
+  color += sampleBackdrop(refracted + dx) * 0.15;
+  color += sampleBackdrop(refracted - dx) * 0.15;
+  color += sampleBackdrop(refracted + dy) * 0.15;
+  color += sampleBackdrop(refracted - dy) * 0.15;
   vec3 rgb = mix(color.rgb / max(color.a, 0.0001), u_tint, 0.24 - 0.20 * u_clarity);
   // Protect foreground contrast when bright/dark content passes underneath.
   vec3 linear = pow(max(rgb, 0.0), vec3(2.2));
@@ -65,10 +70,5 @@ void main() {
     }
   }
   rgb = pow(linear, vec3(1.0 / 2.2));
-  float glint = pow(rim, 3.0) * (0.5 + 0.5 * dot(normal, normalize(vec2(-0.6, -0.8))));
-  if (u_dark < 0.5) {
-    rgb = mix(rgb, vec3(0.50, 0.63, 0.83), pow(rim, 2.0) * (1.0 - glint) * 0.055);
-  }
-  rgb = mix(rgb, vec3(1.0), glint * (0.08 + 0.16 * u_strength));
   fragColor = vec4(rgb * color.a, color.a);
 }
