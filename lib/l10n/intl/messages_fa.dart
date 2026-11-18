@@ -1333,6 +1333,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "ipRiskMobile": MessageLookupByLibrary.simpleMessage("شبکه موبایل"),
     "ipRiskNativeType": MessageLookupByLibrary.simpleMessage("IP بومی"),
+    "ipRiskNoPublicReport": MessageLookupByLibrary.simpleMessage(
+      "گزارش IPure برای این نشانی بدون مجوز در دسترس نیست.",
+    ),
     "ipRiskNotFlagged": MessageLookupByLibrary.simpleMessage("یافت نشد"),
     "ipRiskOpenReport": MessageLookupByLibrary.simpleMessage(
       "باز کردن گزارش کامل",
@@ -1341,6 +1344,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "IP شما به شخص ثالث ارسال می‌شود (بدون سیاست حفظ حریم خصوصی)",
     ),
     "ipRiskProxy": MessageLookupByLibrary.simpleMessage("پروکسی"),
+    "ipRiskRateLimited": MessageLookupByLibrary.simpleMessage(
+      "تعداد درخواست‌های IPure محدود شده است. بعداً دوباره تلاش کنید.",
+    ),
     "ipRiskRelay": MessageLookupByLibrary.simpleMessage("رله"),
     "ipRiskScenarios": MessageLookupByLibrary.simpleMessage("امتیاز سناریوها"),
     "ipRiskScore": MessageLookupByLibrary.simpleMessage("امتیاز خلوص منبع"),
@@ -2199,7 +2205,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "smartSuspect": MessageLookupByLibrary.simpleMessage(
       "احتمالاً در دسترس نیست",
     ),
-    "snellVersion": MessageLookupByLibrary.simpleMessage("نسخه Snell (۱-۴)"),
+    "snellVersion": MessageLookupByLibrary.simpleMessage("نسخه Snell"),
     "sniHint": MessageLookupByLibrary.simpleMessage(
       "خالی بگذارید تا با آدرس سرور یکسان شود",
     ),

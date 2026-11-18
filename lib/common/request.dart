@@ -342,6 +342,8 @@ class Request {
     CancelToken? cancelToken,
     Duration? timeout, {
     void Function(IpInfo info)? onUpdate,
+    bool preferIpv6 = false,
+    bool direct = false,
   }) async {
     final effectiveTimeout = timeout ?? const Duration(seconds: 5);
 
@@ -355,6 +357,7 @@ class Request {
       createHttpClient: () {
         final client = HttpClient();
         client.autoUncompress = false;
+        if (direct) client.findProxy = (_) => 'DIRECT';
         return client;
       },
     );
@@ -362,11 +365,27 @@ class Request {
     final Completer<Result<IpInfo?>> firstCompleter = Completer();
     IpInfo? primaryInfo;
     IpInfo? fallbackInfo;
+    IpInfo? publishedInfo;
     int completedCount = 0;
     Timer? cleanupTimer;
     var sawTimeout = false;
     var sawConnectionError = false;
     lastIpFailureReason = null;
+
+    IpInfo? preferredInfo() {
+      final primary = primaryInfo;
+      final fallback = fallbackInfo;
+      if (preferIpv6 &&
+          fallback != null &&
+          InternetAddress.tryParse(fallback.ip)?.type ==
+              InternetAddressType.IPv6 &&
+          (primary == null ||
+              InternetAddress.tryParse(primary.ip)?.type !=
+                  InternetAddressType.IPv6)) {
+        return fallback;
+      }
+      return primary?.withCountryCodeFrom(fallback) ?? fallback;
+    }
 
     void cleanup() {
       cleanupTimer?.cancel();
@@ -381,7 +400,7 @@ class Request {
       completedCount++;
       if (completedCount == sources.length) {
         if (!firstCompleter.isCompleted) {
-          final res = primaryInfo ?? fallbackInfo;
+          final res = preferredInfo();
           if (res != null) {
             onUpdate?.call(res);
           } else {
@@ -434,27 +453,20 @@ class Request {
                   ipInfo = IpInfo.fromCloudflareTrace(text);
                 }
 
-                if (ipInfo != null) {
+                if (ipInfo != null &&
+                    InternetAddress.tryParse(ipInfo.ip) != null) {
                   if (isPrimary) {
-                    final info = ipInfo.withCountryCodeFrom(fallbackInfo);
-                    primaryInfo = info;
-                    onUpdate?.call(info);
-                    if (!firstCompleter.isCompleted) {
-                      firstCompleter.complete(Result.success(info));
-                    }
+                    primaryInfo = ipInfo;
                   } else {
                     fallbackInfo = ipInfo;
-                    final primary = primaryInfo;
-                    if (primary != null) {
-                      final info = primary.withCountryCodeFrom(ipInfo);
-                      if (!identical(info, primary)) {
-                        primaryInfo = info;
-                        onUpdate?.call(info);
-                      }
-                    } else if (!firstCompleter.isCompleted) {
-                      onUpdate?.call(ipInfo);
-                      firstCompleter.complete(Result.success(ipInfo));
-                    }
+                  }
+                  final info = preferredInfo()!;
+                  if (!identical(info, publishedInfo)) {
+                    publishedInfo = info;
+                    onUpdate?.call(info);
+                  }
+                  if (!firstCompleter.isCompleted) {
+                    firstCompleter.complete(Result.success(info));
                   }
                 }
               } catch (_) {}
@@ -489,7 +501,7 @@ class Request {
     return await firstCompleter.future.timeout(
       effectiveTimeout,
       onTimeout: () {
-        final res = primaryInfo ?? fallbackInfo;
+        final res = preferredInfo();
         if (res == null) {
           lastIpFailureReason = IpFailureReason.timeout;
           commonPrint.log('[ip] overall timeout after ${effectiveTimeout.inSeconds}s');
@@ -526,13 +538,21 @@ class Request {
     Duration? timeout,
     void Function(IpInfo info)? onUpdate,
     int retries = 2,
+    bool direct = false,
   }) async {
+    final sources = _getPrimaryIpSources();
+    final primary = sources.first;
+    final preferIpv6 = globalState.config.patchClashConfig.ipv6 &&
+        (primary == defaultNetworkDetectionUrl ||
+            primary == _builtinPrimaryIpSource());
     return _withRetries(
       () => _checkIpFromSources(
-        _getPrimaryIpSources(),
+        sources,
         cancelToken,
         timeout,
         onUpdate: onUpdate,
+        preferIpv6: preferIpv6,
+        direct: direct,
       ),
       retries: retries,
       cancelToken: cancelToken,
@@ -543,12 +563,14 @@ class Request {
     CancelToken? cancelToken,
     Duration? timeout,
     void Function(IpInfo info)? onUpdate,
+    bool direct = false,
   }) async {
     return _checkIpFromSources(
       _domesticIpSources,
       cancelToken,
       timeout,
       onUpdate: onUpdate,
+      direct: direct,
     );
   }
 

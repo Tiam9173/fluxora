@@ -13,16 +13,16 @@ import 'package:window_manager/window_manager.dart';
 
 import 'item.dart';
 
+enum _ConnectionScope { active, closed, all }
+
 class ConnectionsView extends ConsumerStatefulWidget {
   final bool respectCurrentPage;
-
-  /// 合并页面用：把标题位置让给「请求 / 连接」切换器。
-  final Widget? titleWidgetOverride;
+  final bool startWithHistory;
 
   const ConnectionsView({
     super.key,
     this.respectCurrentPage = true,
-    this.titleWidgetOverride,
+    this.startWithHistory = false,
   });
 
   @override
@@ -35,6 +35,11 @@ class _ConnectionsViewState extends ConsumerState<ConnectionsView>
   Timer? _timer;
   ProviderSubscription? _pageLabelSubscription;
   final _connectionUpdateGate = SerialTaskGate();
+  late var _scope = widget.startWithHistory
+      ? _ConnectionScope.closed
+      : _ConnectionScope.active;
+  var _network = 'all';
+  var _autoScrollToEnd = false;
 
   bool get _isForeground {
     final lifecycleState = WidgetsBinding.instance.lifecycleState;
@@ -130,7 +135,9 @@ class _ConnectionsViewState extends ConsumerState<ConnectionsView>
       _timer = null;
       return;
     }
-    final connections = await clashCore.getConnections();
+    final connections = clashCore.hasLiveProcess
+        ? await clashCore.getConnections()
+        : const <TrackerInfo>[];
     if (!mounted || !await _shouldRunTimer()) {
       _timer?.cancel();
       _timer = null;
@@ -196,105 +203,202 @@ class _ConnectionsViewState extends ConsumerState<ConnectionsView>
     ref.read(connectionsKeywordsProvider.notifier).state = keywords;
   }
 
+  void _changeScope(_ConnectionScope scope) {
+    setState(() {
+      _scope = scope;
+      _autoScrollToEnd = false;
+    });
+    if (_scrollController.hasClients) _scrollController.jumpTo(0);
+  }
+
   @override
   Widget build(BuildContext context) {
     return CommonScaffold(
       backgroundColor: FluxoraMaterial.of(context).enabled
           ? context.colorScheme.surface
           : null,
-      title: widget.titleWidgetOverride == null
-          ? appLocalizations.connections
-          : null,
-      titleWidget: widget.titleWidgetOverride,
+      title: appLocalizations.connections,
       onKeywordsUpdate: _onKeywordsUpdate,
       searchState: AppBarSearchState(onSearch: _onSearch),
       actions: [
-        IconButton(
-          onPressed: _handleCloseAll,
-          tooltip: appLocalizations.closeAll,
-          icon: const Icon(Icons.delete_sweep_outlined),
-        ),
-        IconButton(
-          tooltip: appLocalizations.connectionsSort,
-          onPressed: () async {
-            final currentSortType = ref.read(connectionsSortProvider);
-            final selectedSortType = await globalState
-                .showCommonDialog<ConnectionsSortType>(
-                  child: OptionsDialog<ConnectionsSortType>(
-                    title: appLocalizations.connectionsSort,
-                    options: ConnectionsSortType.values
-                        .where(
-                          (sortType) =>
-                              sortType != ConnectionsSortType.creationTime,
-                        )
-                        .toList(),
-                    value: currentSortType,
-                    textBuilder: (sortType) {
-                      return switch (sortType) {
-                        ConnectionsSortType.defaultSort =>
-                          appLocalizations.defaultSort,
-                        ConnectionsSortType.realTimeSpeed =>
-                          appLocalizations.realTimeSpeed,
-                        ConnectionsSortType.totalTraffic =>
-                          appLocalizations.totalTraffic,
-                        ConnectionsSortType.creationTime =>
-                          appLocalizations.creationTime,
-                      };
-                    },
-                  ),
-                );
-            if (selectedSortType != null &&
-                selectedSortType != currentSortType) {
-              ref.read(connectionsSortProvider.notifier).state =
-                  selectedSortType;
-            }
-          },
-          icon: const Icon(Icons.sort),
-        ),
+        if (_scope == _ConnectionScope.closed) ...[
+          IconButton(
+            onPressed: ref.read(requestsProvider.notifier).clearRequests,
+            tooltip: appLocalizations.clear,
+            icon: const Icon(Icons.delete_sweep_outlined),
+          ),
+          IconButton(
+            isSelected: _autoScrollToEnd,
+            onPressed: () =>
+                setState(() => _autoScrollToEnd = !_autoScrollToEnd),
+            tooltip: appLocalizations.autoScroll,
+            icon: const Icon(Icons.vertical_align_top_outlined),
+          ),
+        ] else ...[
+          IconButton(
+            onPressed: _handleCloseAll,
+            tooltip: appLocalizations.closeAll,
+            icon: const Icon(Icons.delete_sweep_outlined),
+          ),
+          IconButton(
+            tooltip: appLocalizations.connectionsSort,
+            onPressed: () async {
+              final currentSortType = ref.read(connectionsSortProvider);
+              final selectedSortType = await globalState
+                  .showCommonDialog<ConnectionsSortType>(
+                    child: OptionsDialog<ConnectionsSortType>(
+                      title: appLocalizations.connectionsSort,
+                      options: ConnectionsSortType.values
+                          .where(
+                            (sortType) =>
+                                sortType != ConnectionsSortType.creationTime,
+                          )
+                          .toList(),
+                      value: currentSortType,
+                      textBuilder: (sortType) {
+                        return switch (sortType) {
+                          ConnectionsSortType.defaultSort =>
+                            appLocalizations.defaultSort,
+                          ConnectionsSortType.realTimeSpeed =>
+                            appLocalizations.realTimeSpeed,
+                          ConnectionsSortType.totalTraffic =>
+                            appLocalizations.totalTraffic,
+                          ConnectionsSortType.creationTime =>
+                            appLocalizations.creationTime,
+                        };
+                      },
+                    ),
+                  );
+              if (selectedSortType != null &&
+                  selectedSortType != currentSortType) {
+                ref.read(connectionsSortProvider.notifier).state =
+                    selectedSortType;
+              }
+            },
+            icon: const Icon(Icons.sort),
+          ),
+        ],
       ],
       body: Consumer(
         builder: (_, ref, _) {
-          final connections = ref.watch(filteredConnectionsProvider);
-          final hasConnections = connections.isNotEmpty;
+          final chinese = Localizations.localeOf(context).languageCode == 'zh';
+          final live = ref.watch(filteredConnectionsProvider);
+          final history = ref.watch(filteredConnectionHistoryProvider);
+          // The close event can arrive a frame before the next live snapshot.
+          final closedIds = ref
+              .watch(requestsProvider.select((state) => state.list))
+              .map((item) => item.id)
+              .toSet();
+          bool matchesNetwork(TrackerInfo item) =>
+              _network == 'all' ||
+              item.metadata.network.toLowerCase() == _network;
+          final seen = <String>{};
+          final rows = <(TrackerInfo, bool)>[
+            if (_scope != _ConnectionScope.closed)
+              for (final item in live)
+                if (!closedIds.contains(item.id) &&
+                    matchesNetwork(item) &&
+                    seen.add(item.id))
+                  (item, true),
+            if (_scope != _ConnectionScope.active)
+              for (final item in history)
+                if (matchesNetwork(item) && seen.add(item.id)) (item, false),
+          ];
 
-          if (!hasConnections) {
-            return FluxoraEmptyState(
-              title: appLocalizations.nullTip(appLocalizations.connections),
-            );
-          }
-
-          return CommonScrollBar(
+          final list = CommonScrollBar(
             controller: _scrollController,
             child: ListView.builder(
               controller: _scrollController,
-              padding: const EdgeInsets.only(bottom: 16, top: 8),
+              padding: EdgeInsets.only(
+                bottom: 16 + getFloatingBottomBarReserveHeight(context),
+                top: 8,
+              ),
               itemBuilder: (context, index) {
-                final trackerInfo = connections[index];
+                final (trackerInfo, active) = rows[index];
                 return TrackerInfoItem(
                   key: ValueKey(trackerInfo.id),
                   index: index,
-                  count: connections.length,
+                  count: rows.length,
                   trackerInfo: trackerInfo,
                   onClickKeyword: (value) {
                     context.commonScaffoldState?.addKeyword(value);
                   },
-                  trailing: IconButton(
-                    padding: EdgeInsets.zero,
-                    visualDensity: VisualDensity.compact,
-                    style: const ButtonStyle(
-                      minimumSize: WidgetStatePropertyAll(Size.zero),
-                    ),
-                    icon: const Icon(Icons.block),
-                    onPressed: () => _handleBlockConnection(trackerInfo.id),
-                  ),
+                  trailing: active
+                      ? IconButton(
+                          padding: EdgeInsets.zero,
+                          visualDensity: VisualDensity.compact,
+                          style: const ButtonStyle(
+                            minimumSize: WidgetStatePropertyAll(Size.zero),
+                          ),
+                          icon: const Icon(Icons.block),
+                          onPressed: () =>
+                              _handleBlockConnection(trackerInfo.id),
+                        )
+                      : _scope == _ConnectionScope.all
+                      ? Tooltip(
+                          message: chinese ? '已关闭' : 'Closed',
+                          child: const Icon(Icons.history, size: 18),
+                        )
+                      : null,
                   detailTitle: appLocalizations.details,
                 );
               },
               itemExtentBuilder: (index, _) {
                 return TrackerInfoItem.height + 1;
               },
-              itemCount: connections.length,
+              itemCount: rows.length,
             ),
+          );
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CategoryFilterBar(
+                key: const ValueKey('connection-category-strip'),
+                children: [
+                  for (final scope in _ConnectionScope.values)
+                    CategoryFilterChip(
+                      label: switch (scope) {
+                        _ConnectionScope.active => chinese ? '活跃' : 'Active',
+                        _ConnectionScope.closed => chinese ? '已关闭' : 'Closed',
+                        _ConnectionScope.all => appLocalizations.filterAll,
+                      },
+                      selected: _scope == scope,
+                      onSelected: (_) => _changeScope(scope),
+                    ),
+                  const SizedBox(height: 20, child: VerticalDivider(width: 8)),
+                  for (final network in ['all', 'tcp', 'udp'])
+                    CategoryFilterChip(
+                      label: network == 'all'
+                          ? (chinese ? '不限协议' : 'Any protocol')
+                          : network.toUpperCase(),
+                      selected: _network == network,
+                      onSelected: (selected) =>
+                          setState(() => _network = selected ? network : 'all'),
+                    ),
+                ],
+              ),
+              Expanded(
+                child: rows.isEmpty
+                    ? FluxoraEmptyState(
+                        title: appLocalizations.nullTip(
+                          appLocalizations.connections,
+                        ),
+                      )
+                    : ScrollToEndBox(
+                        controller: _scrollController,
+                        dataSource: rows,
+                        enable:
+                            _scope == _ConnectionScope.closed &&
+                            _autoScrollToEnd,
+                        onCancelToEnd: () {
+                          if (_autoScrollToEnd) {
+                            setState(() => _autoScrollToEnd = false);
+                          }
+                        },
+                        child: list,
+                      ),
+              ),
+            ],
           );
         },
       ),

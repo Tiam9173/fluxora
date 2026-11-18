@@ -1,4 +1,4 @@
-
+import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluxora/models/ip_reputation.dart';
 import 'package:fluxora/services/ip_reputation_service.dart';
@@ -57,6 +57,33 @@ void main() {
 
   IpRiskMarker marker(IpReputation r, String id) =>
       r.markers.firstWhere((m) => m.id == id);
+
+  test('reads a v1 report and reuses a recent successful lookup', () async {
+    final dio = Dio();
+    addTearDown(() => dio.close(force: true));
+    var requests = 0;
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          requests++;
+          expect(options.uri.path, '/api/v1/ip/203.0.113.7');
+          handler.resolve(
+            Response(
+              requestOptions: options,
+              statusCode: 200,
+              data: {'data': fullBody()},
+            ),
+          );
+        },
+      ),
+    );
+    final client = IpReputationService(dio: dio);
+    final first = await client.lookup('203.0.113.7');
+    final second = await client.lookup('203.0.113.7');
+    expect(first.isOk, isTrue);
+    expect(second, same(first));
+    expect(requests, 1);
+  });
 
   group('P4 — success mapping', () {
     test('maps the independent markers from `flags`', () {
@@ -121,7 +148,11 @@ void main() {
     });
 
     test('every marker is present even with no flags object at all', () {
-      final r = service.parse('203.0.113.7', 200, fullBody(flags: null)..remove('flags'));
+      final r = service.parse(
+        '203.0.113.7',
+        200,
+        fullBody(flags: null)..remove('flags'),
+      );
 
       expect(r.markers.length, IpReputationService.markerIds.length);
       expect(
@@ -162,7 +193,13 @@ void main() {
         200,
         fullBody(
           blocklists: [
-            {'zone': 'zen.spamhaus.org', 'label': 'Spamhaus ZEN', 'listed': true, 'benign': false, 'unavailable': false},
+            {
+              'zone': 'zen.spamhaus.org',
+              'label': 'Spamhaus ZEN',
+              'listed': true,
+              'benign': false,
+              'unavailable': false,
+            },
           ],
         ),
       );
@@ -176,7 +213,13 @@ void main() {
         200,
         fullBody(
           blocklists: [
-            {'zone': 'pbl', 'label': 'Spamhaus PBL', 'listed': true, 'benign': true, 'unavailable': false},
+            {
+              'zone': 'pbl',
+              'label': 'Spamhaus PBL',
+              'listed': true,
+              'benign': true,
+              'unavailable': false,
+            },
           ],
         ),
       );
@@ -190,7 +233,13 @@ void main() {
         200,
         fullBody(
           blocklists: [
-            {'zone': 'x', 'label': 'X', 'listed': true, 'benign': false, 'unavailable': true},
+            {
+              'zone': 'x',
+              'label': 'X',
+              'listed': true,
+              'benign': false,
+              'unavailable': true,
+            },
           ],
         ),
       );
@@ -200,6 +249,21 @@ void main() {
   });
 
   group('P4 — E-5: failure is never a clean result', () {
+    test('v1 authentication requirement means no public report', () {
+      final r = service.parse('203.0.113.7', 401, {
+        'error': {'code': 'invalid_api_key'},
+      });
+      expect(r.failureReason, IpReputationFailure.noPublicReport);
+      expect(r.markers, isEmpty);
+    });
+
+    test('a report for another address is rejected', () {
+      expect(
+        service.parse('203.0.113.8', 200, {'data': fullBody()}).failureReason,
+        IpReputationFailure.parseError,
+      );
+    });
+
     test('403 verification_required maps to quota exhausted', () {
       final r = service.parse('203.0.113.7', 403, {
         'error': 'quota',

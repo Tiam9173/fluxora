@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart' show CancelToken;
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/models/models.dart';
@@ -93,6 +94,10 @@ class _NetworkDetectionState extends ConsumerState<NetworkDetection> {
         builder: (_, state, _) {
           final ipInfo = state.ipInfo;
           final countryCode = ipInfo?.flagCountryCode;
+          final countryName = ipInfo?.country?.trim();
+          final regionLabel = countryName?.isNotEmpty == true
+              ? countryName!
+              : countryCode;
           final isLoading = state.isLoading;
           return CommonCard(
             onPressed: ipInfo != null
@@ -104,6 +109,7 @@ class _NetworkDetectionState extends ConsumerState<NetworkDetection> {
                   },
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Container(
                   height: globalState.measure.titleMediumHeight + 16,
@@ -111,27 +117,32 @@ class _NetworkDetectionState extends ConsumerState<NetworkDetection> {
                   child: Row(
                     mainAxisSize: MainAxisSize.max,
                     children: [
-                      countryCode != null
-                          ? Text(
-                              utils.countryCodeToEmoji(countryCode),
-                              semanticsLabel: ipInfo?.country ?? countryCode,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.toLight
-                                  .copyWith(
-                                    fontFamily: FontFamily.twEmoji.value,
-                                    fontFamilyFallback: [
-                                      FontFamily.twEmoji.value,
-                                    ],
-                                  ),
-                            )
-                          : Icon(
-                              Icons.network_check,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurfaceVariant,
+                      if (countryCode == null)
+                        Icon(
+                          Icons.network_check,
+                          size: 18,
+                          color: context.colorScheme.onSurfaceVariant,
+                        )
+                      else
+                        SizedBox.square(
+                          dimension: 18,
+                          child: Tooltip(
+                            message: regionLabel!,
+                            excludeFromSemantics: true,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                utils.countryCodeToEmoji(countryCode),
+                                semanticsLabel: regionLabel,
+                                style: TextStyle(
+                                  fontFamily: FontFamily.twEmoji.value,
+                                  fontSize: 14,
+                                  height: 1,
+                                ),
+                              ),
                             ),
+                          ),
+                        ),
                       const SizedBox(width: 8),
                       Flexible(
                         flex: 1,
@@ -584,9 +595,10 @@ class _IpRiskSection extends ConsumerStatefulWidget {
 }
 
 class _IpRiskSectionState extends ConsumerState<_IpRiskSection> {
-  final IpReputationService _service = IpReputationService();
+  static final IpReputationService _service = IpReputationService();
   IpReputation? _report;
   bool _loading = false;
+  CancelToken? _cancelToken;
 
   @override
   void initState() {
@@ -598,13 +610,29 @@ class _IpRiskSectionState extends ConsumerState<_IpRiskSection> {
   }
 
   Future<void> _query() async {
+    _cancelToken?.cancel();
+    final token = _cancelToken = CancelToken();
     setState(() => _loading = true);
-    final report = await _service.lookup(widget.ip);
-    if (!mounted) return;
+    final report = await _service.lookup(widget.ip, cancelToken: token);
+    if (!mounted || _cancelToken != token) return;
     setState(() {
       _report = report;
       _loading = false;
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant _IpRiskSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.ip == widget.ip) return;
+    _report = null;
+    if (ref.read(appSettingProvider).ipReputationEnabled) _query();
+  }
+
+  @override
+  void dispose() {
+    _cancelToken?.cancel();
+    super.dispose();
   }
 
   void _setEnabled(bool value) {
@@ -615,7 +643,12 @@ class _IpRiskSectionState extends ConsumerState<_IpRiskSection> {
       _query();
     } else {
       // Turning it off drops the result rather than leaving it on screen.
-      setState(() => _report = null);
+      _cancelToken?.cancel();
+      _cancelToken = null;
+      setState(() {
+        _report = null;
+        _loading = false;
+      });
     }
   }
 
@@ -679,9 +712,7 @@ class _IpRiskSectionState extends ConsumerState<_IpRiskSection> {
                     label: appLocalizations.ipRiskEnable,
                     child: Switch.adaptive(
                       value: enabled,
-                      onChanged: _loading
-                          ? null
-                          : _setLoadingGuard(_setEnabled),
+                      onChanged: _setEnabled,
                     ),
                   ),
                 ],
@@ -712,19 +743,12 @@ class _IpRiskSectionState extends ConsumerState<_IpRiskSection> {
           IpReputationResult(
             report: report,
             fields: fields,
+            onRetry: _query,
             onOpenReport: report.reportUrl == null
                 ? null
                 : () => globalState.openUrl(report.reportUrl!),
           ),
       ],
     );
-  }
-
-  /// Blocks a second toggle while a lookup is in flight.
-  ValueChanged<bool> _setLoadingGuard(ValueChanged<bool> inner) {
-    return (value) {
-      if (_loading) return;
-      inner(value);
-    };
   }
 }

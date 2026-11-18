@@ -517,6 +517,7 @@ _ThemeProps _$ThemePropsFromJson(Map<String, dynamic> json) => _ThemeProps(
   glassClarity: (json['glassClarity'] as num?)?.toDouble() ?? .5,
   motionIntensity: (json['motionIntensity'] as num?)?.toDouble() ?? .5,
   launchAnimation: json['launchAnimation'] as bool? ?? true,
+  autoHideNavigationBar: json['autoHideNavigationBar'] as bool? ?? false,
   visualStyle:
       $enumDecodeNullable(
         _$FluxoraVisualStyleEnumMap,
@@ -546,6 +547,7 @@ Map<String, dynamic> _$ThemePropsToJson(_ThemeProps instance) =>
       'glassClarity': instance.glassClarity,
       'motionIntensity': instance.motionIntensity,
       'launchAnimation': instance.launchAnimation,
+      'autoHideNavigationBar': instance.autoHideNavigationBar,
       'visualStyle': _$FluxoraVisualStyleEnumMap[instance.visualStyle]!,
       'useHarmonyFont': instance.useHarmonyFont,
       'invertTrayIcon': instance.invertTrayIcon,

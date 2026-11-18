@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'glass_surface.dart';
+import 'package:flutter/physics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show Intl;
@@ -28,8 +29,64 @@ class AuroraBottomNavBar extends ConsumerStatefulWidget {
   ConsumerState<AuroraBottomNavBar> createState() => _AuroraBottomNavBarState();
 }
 
-class _AuroraBottomNavBarState extends ConsumerState<AuroraBottomNavBar> {
-  double? _dragIndex;
+class _AuroraBottomNavBarState extends ConsumerState<AuroraBottomNavBar>
+    with SingleTickerProviderStateMixin {
+  late final _position = AnimationController.unbounded(
+    vsync: this,
+    value: _selected.toDouble(),
+  );
+  final _previewIndex = ValueNotifier<int?>(null);
+  bool _dragging = false;
+  int? _destination;
+
+  int get _last => widget.navigationItems.length - 1;
+  int get _selected => _last < 0 ? 0 : widget.selectedIndex.clamp(0, _last);
+
+  @override
+  void didUpdateWidget(covariant AuroraBottomNavBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.navigationItems.length != widget.navigationItems.length) {
+      _dragging = false;
+      _previewIndex.value = null;
+      _destination = null;
+      _position.value = _selected.toDouble();
+    } else if (oldWidget.selectedIndex != widget.selectedIndex && !_dragging) {
+      if (_destination != _selected) _settle(_selected);
+    }
+  }
+
+  @override
+  void dispose() {
+    _previewIndex.dispose();
+    _position.dispose();
+    super.dispose();
+  }
+
+  void _settle(int index, {double? velocity}) {
+    _destination = index;
+    final motion = FluxoraMotion.ofContext(context);
+    final target = index.toDouble();
+    if (motion.reduceMotion || target == _position.value) {
+      _position.value = target;
+    } else if (velocity != null) {
+      _position.animateWith(
+        SpringSimulation(
+          const SpringDescription(mass: 1, stiffness: 320, damping: 29),
+          _position.value,
+          target,
+          velocity.clamp(-8, 8),
+          snapToEnd: true,
+          tolerance: const Tolerance(distance: .003, velocity: .03),
+        ),
+      );
+    } else {
+      _position.animateTo(
+        target,
+        duration: motion.base,
+        curve: motion.standard,
+      );
+    }
+  }
 
   IconData _iconOf(Widget iconWidget) {
     if (iconWidget is Icon) return iconWidget.icon ?? Icons.home;
@@ -76,7 +133,9 @@ class _AuroraBottomNavBarState extends ConsumerState<AuroraBottomNavBar> {
                   scheme.primary.withValues(alpha: .11),
                 ],
               ),
-              border: Border.all(color: material.border(scheme)),
+              border: Border.fromBorderSide(
+                BorderSide(color: lensHighlight.withValues(alpha: .16)),
+              ),
             ),
           )
         : DecoratedBox(
@@ -105,105 +164,154 @@ class _AuroraBottomNavBarState extends ConsumerState<AuroraBottomNavBar> {
       final count = navigationItems.length;
       final width = constraints.maxWidth;
       final itemWidth = width / count;
-      final selected = selectedIndex.clamp(0, count - 1).toDouble();
-      final dragging = _dragIndex != null;
-      final target = (_dragIndex ?? selected).clamp(0.0, count - 1.0);
       final canDrag = material.liquid && count > 1 && itemWidth > 0;
+      final rtl = Directionality.of(context) == TextDirection.rtl;
 
       void drag(Offset position) {
-        final x = Directionality.of(context) == TextDirection.rtl
-            ? width - position.dx
-            : position.dx;
-        setState(
-          () => _dragIndex = (x / itemWidth - .5).clamp(0.0, count - 1.0),
-        );
+        if (!_dragging) setState(() => _dragging = true);
+        final x = rtl ? width - position.dx : position.dx;
+        final track = x / itemWidth - .5;
+        final inside = track.clamp(0.0, count - 1.0);
+        final excess = track - inside;
+        _position.value = motion.reduceMotion
+            ? inside
+            : inside + excess * .18 / (1 + excess.abs());
+        _previewIndex.value = inside.round();
       }
 
-      void cancelDrag() {
-        if (_dragIndex != null) setState(() => _dragIndex = null);
+      void finishDrag({double? pixelsPerSecond}) {
+        if (!_dragging) return;
+        final velocity = pixelsPerSecond == null
+            ? 0.0
+            : pixelsPerSecond / itemWidth * (rtl ? -1 : 1);
+        final lead = motion.reduceMotion
+            ? 0.0
+            : (velocity * .10).clamp(-.40, .40);
+        final destination = pixelsPerSecond == null
+            ? _selected
+            : (_position.value + lead).round().clamp(0, count - 1);
+        setState(() => _dragging = false);
+        _previewIndex.value = null;
+        _settle(destination, velocity: velocity);
+        if (destination != selectedIndex) {
+          handleTabChange(destination);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted &&
+                !_dragging &&
+                _destination == destination &&
+                _selected != destination) {
+              _settle(_selected);
+            }
+          });
+        }
       }
 
       return Listener(
-        onPointerCancel: (_) => cancelDrag(),
+        onPointerCancel: (_) => finishDrag(),
         child: GestureDetector(
+          excludeFromSemantics: true,
+          onLongPressStart: canDrag
+              ? (details) => drag(details.localPosition)
+              : null,
+          onLongPressMoveUpdate: canDrag
+              ? (details) => drag(details.localPosition)
+              : null,
+          onLongPressCancel: canDrag ? finishDrag : null,
+          onLongPressEnd: canDrag
+              ? (details) => finishDrag(
+                  pixelsPerSecond: details.velocity.pixelsPerSecond.dx,
+                )
+              : null,
           onHorizontalDragStart: canDrag
               ? (details) => drag(details.localPosition)
               : null,
           onHorizontalDragUpdate: canDrag
               ? (details) => drag(details.localPosition)
               : null,
-          onHorizontalDragCancel: canDrag ? cancelDrag : null,
+          onHorizontalDragCancel: canDrag ? finishDrag : null,
           onHorizontalDragEnd: canDrag
-              ? (_) {
-                  final destination = _dragIndex
-                      ?.clamp(0.0, count - 1.0)
-                      .round();
-                  cancelDrag();
-                  if (destination != null && destination != selectedIndex) {
-                    handleTabChange(destination);
-                  }
-                }
+              ? (details) =>
+                    finishDrag(pixelsPerSecond: details.primaryVelocity ?? 0)
               : null,
           child: Stack(
+            clipBehavior: Clip.none,
             children: [
               Positioned.fill(
                 child: IgnorePointer(
                   child: TweenAnimationBuilder<double>(
-                    key: const ValueKey('aurora-dock-indicator'),
-                    tween: Tween(end: target),
-                    duration: dragging ? Duration.zero : motion.base,
-                    curve: material.liquid || motion.expressive
-                        ? Curves.easeOutBack
-                        : motion.standard,
+                    tween: Tween(
+                      end: _dragging && !motion.reduceMotion ? 1 : 0,
+                    ),
+                    duration: motion.fast,
+                    curve: Curves.easeOutCubic,
                     child: lensMaterial,
-                    builder: (context, position, lens) {
-                      final stretch = material.liquid && !motion.reduceMotion
-                          ? motion.intensity *
-                                (dragging
-                                    ? .32
-                                    : .42 *
-                                          (target - position).abs().clamp(0, 1))
-                          : 0.0;
-                      final lensWidth = (itemWidth * (1 + stretch)).clamp(
-                        0.0,
-                        width,
-                      );
-                      final center = ((position + .5) * itemWidth).clamp(
-                        lensWidth / 2,
-                        width - lensWidth / 2,
-                      );
-                      final travel = width - lensWidth;
-                      return Align(
-                        alignment: AlignmentDirectional(
-                          travel <= 0
-                              ? 0
-                              : 2 * (center - lensWidth / 2) / travel - 1,
-                          0,
-                        ),
-                        child: SizedBox(
-                          key: const ValueKey('aurora-dock-lens'),
-                          width: lensWidth,
-                          height: double.infinity,
-                          child: lens,
-                        ),
-                      );
-                    },
+                    builder: (context, lift, lens) => AnimatedBuilder(
+                      animation: _position,
+                      child: lens,
+                      builder: (context, lens) {
+                        final position = motion.reduceMotion && !_dragging
+                            ? _selected.toDouble()
+                            : _position.value;
+                        final liftAmount = lift * (.5 + .5 * motion.intensity);
+                        final stretch = liftAmount * .27;
+                        final lensWidth = (itemWidth * (1 + stretch)).clamp(
+                          0.0,
+                          width,
+                        );
+                        final restPosition = position.clamp(0.0, count - 1.0);
+                        final center = ((restPosition + .5) * itemWidth).clamp(
+                          lensWidth / 2,
+                          width - lensWidth / 2,
+                        );
+                        final travel = width - lensWidth;
+                        return Align(
+                          alignment: AlignmentDirectional(
+                            travel <= 0
+                                ? 0
+                                : 2 * (center - lensWidth / 2) / travel - 1,
+                            0,
+                          ),
+                          child: Transform.translate(
+                            offset: Offset(
+                              (position - restPosition) *
+                                  itemWidth *
+                                  (rtl ? -1 : 1),
+                              0,
+                            ),
+                            child: Transform.scale(
+                              scaleY: 1 + .24 * liftAmount,
+                              child: SizedBox(
+                                key: const ValueKey('aurora-dock-lens'),
+                                width: lensWidth,
+                                height: double.infinity,
+                                child: lens,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),
-              Row(
-                children: [
-                  for (var index = 0; index < count; index++)
-                    Expanded(
-                      child: _AuroraDockItem(
-                        icon: _iconOf(navigationItems[index].icon),
-                        label: Intl.message(navigationItems[index].label.name),
-                        selected: index == selectedIndex,
-                        emphasized: index == target.round(),
-                        onTap: () => handleTabChange(index),
+              ValueListenableBuilder<int?>(
+                valueListenable: _previewIndex,
+                builder: (context, preview, _) => Row(
+                  children: [
+                    for (var index = 0; index < count; index++)
+                      Expanded(
+                        child: _AuroraDockItem(
+                          icon: _iconOf(navigationItems[index].icon),
+                          label: Intl.message(
+                            navigationItems[index].label.name,
+                          ),
+                          selected: index == selectedIndex,
+                          emphasized: index == (preview ?? selectedIndex),
+                          onTap: () => handleTabChange(index),
+                        ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
@@ -305,6 +413,7 @@ class _AuroraDockItemState extends State<_AuroraDockItem> {
         : scheme.onSurfaceVariant;
     final radius = BorderRadius.circular(FluxoraRadius.xl);
     final motion = FluxoraMotion.ofContext(context);
+    final liquid = FluxoraMaterial.of(context).liquid;
 
     return Semantics(
       button: true,
@@ -334,6 +443,8 @@ class _AuroraDockItemState extends State<_AuroraDockItem> {
             },
             // Feedback is not tied to the haptics preference: turning off
             // vibration should not turn off the touch response.
+            splashFactory: liquid ? NoSplash.splashFactory : null,
+            highlightColor: liquid ? hoverWash : null,
             splashColor: scheme.primary.withValues(alpha: 0.10),
             child: Padding(
               padding: const EdgeInsets.symmetric(

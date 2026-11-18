@@ -10,11 +10,13 @@ class IpReputationResult extends StatelessWidget {
     required this.report,
     required this.fields,
     this.onOpenReport,
+    this.onRetry,
   });
 
   final IpReputation report;
   final Set<String> fields;
   final VoidCallback? onOpenReport;
+  final VoidCallback? onRetry;
 
   static String _markerLabel(String id) => switch (id) {
     'vpn' => appLocalizations.ipRiskVpn,
@@ -50,15 +52,34 @@ class IpReputationResult extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!report.isOk) {
+      final reason = report.failureReason;
       return _ResultCard(
         title: appLocalizations.ipRiskFailed,
         icon: Icons.cloud_off_outlined,
-        child: SelectableText(switch (report.failureReason) {
-          IpReputationFailure.timeout => appLocalizations.timeoutLabel,
-          IpReputationFailure.network =>
-            appLocalizations.networkErrorRetryLater,
-          _ => report.failureReason ?? appLocalizations.unknown,
-        }, style: context.textTheme.bodyMedium),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SelectableText(switch (reason) {
+              IpReputationFailure.noPublicReport ||
+              IpReputationFailure.quotaExhausted =>
+                appLocalizations.ipRiskNoPublicReport,
+              IpReputationFailure.rateLimited =>
+                appLocalizations.ipRiskRateLimited,
+              IpReputationFailure.timeout => appLocalizations.timeoutLabel,
+              IpReputationFailure.network || IpReputationFailure.httpError =>
+                appLocalizations.networkErrorRetryLater,
+              _ => appLocalizations.unknown,
+            }, style: context.textTheme.bodyMedium),
+            if (onRetry != null &&
+                (reason == IpReputationFailure.network ||
+                    reason == IpReputationFailure.timeout ||
+                    reason == IpReputationFailure.httpError))
+              TextButton(
+                onPressed: onRetry,
+                child: Text(appLocalizations.retry),
+              ),
+          ],
+        ),
       );
     }
     final risk = report.risk;

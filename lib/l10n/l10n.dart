@@ -8255,10 +8255,10 @@ class AppLocalizations {
     return Intl.message('None (off)', name: 'obfsNoneOff', desc: '', args: []);
   }
 
-  /// `Snell version (1-4)`
+  /// `Snell version`
   String get snellVersion {
     return Intl.message(
-      'Snell version (1-4)',
+      'Snell version',
       name: 'snellVersion',
       desc: '',
       args: [],
@@ -8655,6 +8655,26 @@ class AppLocalizations {
     return Intl.message(
       'Open full report',
       name: 'ipRiskOpenReport',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `IPure has no report available without authorization for this address.`
+  String get ipRiskNoPublicReport {
+    return Intl.message(
+      'IPure has no report available without authorization for this address.',
+      name: 'ipRiskNoPublicReport',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `IPure has limited requests. Try again later.`
+  String get ipRiskRateLimited {
+    return Intl.message(
+      'IPure has limited requests. Try again later.',
+      name: 'ipRiskRateLimited',
       desc: '',
       args: [],
     );

@@ -315,15 +315,28 @@ class ScriptState extends _$ScriptState with AutoDisposeNotifierMixin {
     state = state.copyWith(scripts: list);
   }
 
-  void setId(String id) {
+  Future<void> setId(String id) async {
     state = state.copyWith(currentId: state.currentId != id ? id : null);
+    final selected = state.currentScript;
+    if (!await preferences.saveConfig(globalState.config)) {
+      throw StateError('Failed to save script selection');
+    }
+    if (selected == null || selected.compatible) return;
+    final checked = await selected.refreshCompatibility();
+    if (ref.mounted &&
+        !identical(checked, selected) &&
+        state.scripts.contains(selected)) {
+      setScript(checked);
+    }
   }
 
   Future<void> del(String label) async {
     final list = List<Script>.from(state.scripts);
     final index = list.indexWhere((item) => item.label == label);
+    var nextId = state.currentId;
     if (index != -1) {
       final removed = list.removeAt(index);
+      if (nextId == removed.id) nextId = null;
       // P1 ② — the side file outlives the list entry unless removed here.
       try {
         await removed.deleteContent();
@@ -331,7 +344,6 @@ class ScriptState extends _$ScriptState with AutoDisposeNotifierMixin {
         commonPrint.log('Failed to delete script file: $e');
       }
     }
-    final nextId = label == state.currentId ? null : state.currentId;
     state = state.copyWith(scripts: list, currentId: nextId);
   }
 
@@ -422,4 +434,3 @@ class HealthCheckTimeout extends _$HealthCheckTimeout
     state = builder(state);
   }
 }
-

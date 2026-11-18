@@ -117,6 +117,7 @@ class _EditorPageState extends ConsumerState<EditorPage> {
   UndoRedoController? _undoController;
   late TextEditingController _titleController;
   late TextEditingController _fallbackTextController;
+  final _fallbackUndoController = UndoHistoryController();
   bool _hasRustBackend = true;
   final _focusNode = FocusNode();
   late final FocusNode _titleFocusNode;
@@ -295,6 +296,7 @@ class _EditorPageState extends ConsumerState<EditorPage> {
     _titleFocusNode.dispose();
     _focusNode.dispose();
     _saveButtonFocusNode.dispose();
+    _fallbackUndoController.dispose();
     super.dispose();
   }
 
@@ -436,37 +438,56 @@ class _EditorPageState extends ConsumerState<EditorPage> {
     final readOnly = widget.readOnly || widget.simple;
     final canReplace =
         !readOnly && !_disableSyntaxHighlight && _languageMode() != null;
-    final menuItems = <PopupMenuItemData>[
+    List<PopupMenuItemData> menuItems() => [
       PopupMenuItemData(
         icon: Icons.text_fields_rounded,
         label:
             '${Localizations.localeOf(context).languageCode == 'zh' ? '字体大小' : 'Font size'} · ${(_zoom * 100).round()}%',
         onPressed: _chooseFontSize,
       ),
-      PopupMenuItemData(
-        icon: Icons.search,
-        label: appLocalizations.search,
-        onPressed: _handleSearch,
-      ),
-      if (canReplace)
+      if (_findController != null)
+        PopupMenuItemData(
+          icon: Icons.search,
+          label: appLocalizations.search,
+          onPressed: _handleSearch,
+        ),
+      if (canReplace && _findController != null)
         PopupMenuItemData(
           icon: Icons.find_replace,
           label: appLocalizations.replace,
           onPressed: _handleReplace,
         ),
-      if (_hasRustBackend && _undoController != null) ...[
+      if (!readOnly) ...[
         PopupMenuItemData(
           icon: Icons.undo,
           label: appLocalizations.undo,
-          onPressed: _undoController!.canUndo
-              ? () => _undoController!.undo()
+          onPressed:
+              (_undoController?.canUndo ??
+                  _fallbackUndoController.value.canUndo)
+              ? () {
+                  final controller = _undoController;
+                  if (controller != null) {
+                    controller.undo();
+                  } else {
+                    _fallbackUndoController.undo();
+                  }
+                }
               : null,
         ),
         PopupMenuItemData(
           icon: Icons.redo,
           label: appLocalizations.redo,
-          onPressed: _undoController!.canRedo
-              ? () => _undoController!.redo()
+          onPressed:
+              (_undoController?.canRedo ??
+                  _fallbackUndoController.value.canRedo)
+              ? () {
+                  final controller = _undoController;
+                  if (controller != null) {
+                    controller.redo();
+                  } else {
+                    _fallbackUndoController.redo();
+                  }
+                }
               : null,
         ),
       ],
@@ -502,11 +523,12 @@ class _EditorPageState extends ConsumerState<EditorPage> {
                 },
         ),
       ],
-      PopupMenuItemData(
-        icon: _lineWrap ? Icons.check : Icons.wrap_text,
-        label: appLocalizations.lineWrap,
-        onPressed: _isLineWrapDisabled ? null : _toggleLineWrap,
-      ),
+      if (_hasRustBackend)
+        PopupMenuItemData(
+          icon: _lineWrap ? Icons.check : Icons.wrap_text,
+          label: appLocalizations.lineWrap,
+          onPressed: _isLineWrapDisabled ? null : _toggleLineWrap,
+        ),
     ];
 
     return CommonPopScope(
@@ -586,93 +608,67 @@ class _EditorPageState extends ConsumerState<EditorPage> {
               ),
               actions: genActions([
                 if (widget.onSave != null && !readOnly)
-                  // 撤销/重做放到工具栏：之前只在溢出菜单里，得先点 ⋮ 才看得到。
-                  if (_hasRustBackend && _undoController != null)
-                    ListenableBuilder(
-                      listenable: _undoController!,
-                      builder: (context, _) => Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            tooltip: appLocalizations.undo,
-                            icon: const Icon(Icons.undo),
-                            onPressed: _undoController!.canUndo
-                                ? () => _undoController!.undo()
-                                : null,
-                          ),
-                          IconButton(
-                            tooltip: appLocalizations.redo,
-                            icon: const Icon(Icons.redo),
-                            onPressed: _undoController!.canRedo
-                                ? () => _undoController!.redo()
-                                : null,
-                          ),
-                        ],
-                      ),
-                    ),
-                _wrapTitleController(() {
-                  final isNewScript = widget.isNew || widget.title.isEmpty;
-                  final currentContent = _hasRustBackend && _controller != null
-                      ? _controller!.text
-                      : _fallbackTextController.text;
-                  final canSave =
-                      !_isLoading &&
-                      (isNewScript ||
-                          currentContent != widget.content ||
-                          _titleController.text != widget.title);
-                  return IconButton(
-                    focusNode: _saveButtonFocusNode,
-                    style: globalState.isAndroidTV
-                        ? ButtonStyle(
-                            backgroundColor: WidgetStateProperty.resolveWith((
-                              states,
-                            ) {
-                              if (states.contains(WidgetState.focused)) {
-                                return context.colorScheme.primary.withValues(
-                                  alpha: 0.2,
-                                );
-                              }
-                              return null;
-                            }),
-                            side: WidgetStateBorderSide.resolveWith((states) {
-                              if (states.contains(WidgetState.focused)) {
-                                return BorderSide(
-                                  color: context.colorScheme.primary,
-                                  width: 2,
-                                );
-                              }
-                              return null;
-                            }),
-                          )
-                        : null,
-                    onPressed: canSave ? () => _handleSave(context) : null,
-                    tooltip: appLocalizations.save,
-                    icon: const Icon(Icons.save_sharp),
-                  );
-                }),
+                  _wrapTitleController(() {
+                    final isNewScript = widget.isNew || widget.title.isEmpty;
+                    final currentContent =
+                        _hasRustBackend && _controller != null
+                        ? _controller!.text
+                        : _fallbackTextController.text;
+                    final canSave =
+                        !_isLoading &&
+                        (isNewScript ||
+                            currentContent != widget.content ||
+                            _titleController.text != widget.title);
+                    return IconButton(
+                      focusNode: _saveButtonFocusNode,
+                      style: globalState.isAndroidTV
+                          ? ButtonStyle(
+                              backgroundColor: WidgetStateProperty.resolveWith((
+                                states,
+                              ) {
+                                if (states.contains(WidgetState.focused)) {
+                                  return context.colorScheme.primary.withValues(
+                                    alpha: 0.2,
+                                  );
+                                }
+                                return null;
+                              }),
+                              side: WidgetStateBorderSide.resolveWith((states) {
+                                if (states.contains(WidgetState.focused)) {
+                                  return BorderSide(
+                                    color: context.colorScheme.primary,
+                                    width: 2,
+                                  );
+                                }
+                                return null;
+                              }),
+                            )
+                          : null,
+                      onPressed: canSave ? () => _handleSave(context) : null,
+                      tooltip: appLocalizations.save,
+                      icon: const Icon(Icons.save_sharp),
+                    );
+                  }),
                 if (widget.supportRemoteDownload && !readOnly)
                   IconButton(
                     onPressed: _isLoading ? null : _handleImport,
                     tooltip: appLocalizations.download,
                     icon: const Icon(Icons.arrow_downward),
                   ),
-                ListenableBuilder(
-                  listenable: _hasRustBackend && _undoController != null
-                      ? _undoController!
-                      : _fallbackTextController,
-                  builder: (_, _) => CommonPopupBox(
-                    targetBuilder: (open) {
-                      return IconButton(
-                        onPressed: _isLoading
-                            ? null
-                            : () {
-                                open(offset: const Offset(-20, 20));
-                              },
-                        tooltip: appLocalizations.more,
-                        icon: const Icon(Icons.more_vert),
-                      );
-                    },
-                    popup: CommonPopupMenu(items: menuItems),
+                CommonPopupBox(
+                  targetBuilder: (open) {
+                    return IconButton(
+                      onPressed: _isLoading
+                          ? null
+                          : () {
+                              open(offset: const Offset(-20, 20));
+                            },
+                      tooltip: appLocalizations.more,
+                      icon: const Icon(Icons.more_vert),
+                    );
+                  },
+                  popup: Builder(
+                    builder: (_) => CommonPopupMenu(items: menuItems()),
                   ),
                 ),
               ]),
@@ -739,6 +735,7 @@ class _EditorPageState extends ConsumerState<EditorPage> {
                       ),
                       child: TextField(
                         controller: _fallbackTextController,
+                        undoController: _fallbackUndoController,
                         focusNode: _focusNode,
                         readOnly: readOnly,
                         maxLines: null,

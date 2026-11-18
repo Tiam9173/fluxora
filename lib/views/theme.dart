@@ -12,6 +12,7 @@ import 'package:fluxora/views/app_icons.dart';
 import 'package:fluxora/widgets/app_brand_icon.dart';
 import 'package:fluxora/widgets/fluxora/fluxora_launch_reveal.dart';
 import 'package:fluxora/widgets/liquid_backdrop.dart';
+import 'package:fluxora/providers/app.dart';
 import 'package:fluxora/providers/config.dart';
 import 'package:fluxora/providers/state.dart';
 import 'package:fluxora/state.dart';
@@ -63,12 +64,27 @@ class ThemeView extends ConsumerWidget {
         effectiveLocale.languageCode == 'en';
 
     final chinese = Localizations.localeOf(context).languageCode == 'zh';
+    final showNavigationSetting =
+        ref.watch(isMobileViewProvider) && !globalState.isAndroidTV;
     final appearance = _ThemePanel(
       title: chinese ? '显示与材质' : 'Display & material',
       children: [
         _ThemeModeItem(),
         const _SurfaceStyleItem(),
         const _EffectsItem(),
+        if (showNavigationSetting)
+          SwitchListTile.adaptive(
+            title: Text(chinese ? '自动隐藏导航栏' : 'Auto-hide navigation bar'),
+            subtitle: Text(
+              chinese ? '上滑隐藏，下滑显示' : 'Swipe up to hide, down to show',
+            ),
+            value: ref.watch(
+              themeSettingProvider.select((p) => p.autoHideNavigationBar),
+            ),
+            onChanged: (value) => ref
+                .read(themeSettingProvider.notifier)
+                .updateState((p) => p.copyWith(autoHideNavigationBar: value)),
+          ),
         if (brightness == Brightness.dark) _PrueBlackItem(),
       ],
     );
@@ -548,6 +564,34 @@ class _GlassPreviewState extends State<_GlassPreview> {
                 ),
               ),
               Positioned(
+                left: constraints.maxWidth * .17,
+                top: 18,
+                child: Transform.rotate(
+                  angle: -.28,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(26),
+                      color: scheme.primary.withValues(alpha: .26),
+                    ),
+                    child: const SizedBox(width: 76, height: 60),
+                  ),
+                ),
+              ),
+              Positioned(
+                right: constraints.maxWidth * .14,
+                top: 58,
+                child: Transform.rotate(
+                  angle: .31,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(24),
+                      color: scheme.tertiary.withValues(alpha: .30),
+                    ),
+                    child: const SizedBox(width: 72, height: 46),
+                  ),
+                ),
+              ),
+              Positioned(
                 left: travel * _position,
                 top: 32,
                 child: GestureDetector(
@@ -1016,7 +1060,9 @@ class _PrimaryColorItemState extends ConsumerState<_PrimaryColorItem> {
                         ),
                         width: 22,
                         height: 22,
-                        cacheWidth: (22 * MediaQuery.devicePixelRatioOf(context)).ceil(),
+                        cacheWidth:
+                            (22 * MediaQuery.devicePixelRatioOf(context))
+                                .ceil(),
                         excludeFromSemantics: true,
                       ),
                       label: Text(

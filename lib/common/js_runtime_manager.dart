@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:code_forge/code_forge.dart' as rust_script;
 import 'package:fluxora/common/common.dart';
+import 'package:flutter/foundation.dart';
 
 class _ScriptOptionsCache {
   static final _entries = <String, Map<String, dynamic>>{};
@@ -68,9 +69,12 @@ class JavaScriptRuntimeManager {
         token: token,
       );
       _logScriptLines(run.logs);
-      final decoded = json.decode(run.config);
-      if (decoded is Map) {
-        return _deepCastMap(decoded);
+      final output = run.config;
+      final decoded = output.length >= 512 * 1024
+          ? await compute(jsonDecode, output)
+          : jsonDecode(output);
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
       }
       // 脚本返回了非对象：保持旧行为，原样交回输入配置。
       return config;
@@ -93,14 +97,11 @@ class JavaScriptRuntimeManager {
     if (cached != null) return cached;
 
     try {
-      final raw = await rust_script.extractScriptOptions(
-        script: scriptContent,
-      );
+      final raw = await rust_script.extractScriptOptions(script: scriptContent);
       final decoded = json.decode(raw);
-      final result = <String, dynamic>{};
-      if (decoded is Map) {
-        result.addAll(_deepCastMap(decoded));
-      }
+      final result = decoded is Map<String, dynamic>
+          ? decoded
+          : <String, dynamic>{};
       _ScriptOptionsCache.put(scriptContent, result);
       return result;
     } on rust_script.ScriptError catch (error) {
@@ -108,23 +109,15 @@ class JavaScriptRuntimeManager {
       commonPrint.log(
         'extractScriptOptions error: ${error.kind} ${error.message}',
       );
-      return <String, dynamic>{};
+      throw StateError(error.message);
     } catch (error) {
       commonPrint.log('extractScriptOptions error: $error');
-      return <String, dynamic>{};
+      rethrow;
     }
   }
 
   static void invalidateCachedOptions(String scriptContent) {
     _ScriptOptionsCache.remove(scriptContent);
-  }
-
-  static bool hasCachedOptions(String scriptContent) {
-    return _ScriptOptionsCache.get(scriptContent) != null;
-  }
-
-  static Map<String, dynamic>? getCachedOptions(String scriptContent) {
-    return _ScriptOptionsCache.get(scriptContent);
   }
 
   /// 下载回来的内容到底是不是一段脚本。
@@ -153,20 +146,5 @@ class JavaScriptRuntimeManager {
     for (final line in lines) {
       commonPrint.log('[script] ${line.level}: ${line.text}');
     }
-  }
-
-  static Map<String, dynamic> _deepCastMap(Map dynamicMap) {
-    return dynamicMap.map<String, dynamic>((key, value) {
-      return MapEntry(key.toString(), _deepCastValue(value));
-    });
-  }
-
-  static dynamic _deepCastValue(dynamic value) {
-    if (value is Map) {
-      return _deepCastMap(value);
-    } else if (value is List) {
-      return value.map((e) => _deepCastValue(e)).toList();
-    }
-    return value;
   }
 }

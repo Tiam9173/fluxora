@@ -76,11 +76,7 @@ class IpRiskMarker {
   /// Optional extra fact supplied by the source (e.g. a known VPN operator name).
   final String? detail;
 
-  const IpRiskMarker({
-    required this.id,
-    required this.state,
-    this.detail,
-  });
+  const IpRiskMarker({required this.id, required this.state, this.detail});
 }
 
 enum IpReputationStatus { ok, unavailable }
@@ -88,6 +84,7 @@ enum IpReputationStatus { ok, unavailable }
 /// Why a lookup produced no report. Kept as a stable key (not a message) so the
 /// UI decides the wording and the caller can distinguish "quota" from "timeout".
 class IpReputationFailure {
+  static const noPublicReport = 'no_public_report';
   static const quotaExhausted = 'quota_exhausted';
   static const rateLimited = 'rate_limited';
   static const timeout = 'timeout';
@@ -248,12 +245,11 @@ class IpReputation {
     this.reportUrl,
   });
 
-  factory IpReputation.unavailable(String ip, String reason) =>
-      IpReputation(
-        status: IpReputationStatus.unavailable,
-        ip: ip,
-        failureReason: reason,
-      );
+  factory IpReputation.unavailable(String ip, String reason) => IpReputation(
+    status: IpReputationStatus.unavailable,
+    ip: ip,
+    failureReason: reason,
+  );
 
   bool get isOk => status == IpReputationStatus.ok;
 

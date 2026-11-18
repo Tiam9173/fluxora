@@ -1327,6 +1327,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "ipRiskMobile": MessageLookupByLibrary.simpleMessage("Mobile"),
     "ipRiskNativeType": MessageLookupByLibrary.simpleMessage("Native IP"),
+    "ipRiskNoPublicReport": MessageLookupByLibrary.simpleMessage(
+      "IPure has no report available without authorization for this address.",
+    ),
     "ipRiskNotFlagged": MessageLookupByLibrary.simpleMessage("Not flagged"),
     "ipRiskOpenReport": MessageLookupByLibrary.simpleMessage(
       "Open full report",
@@ -1335,6 +1338,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "Sends your IP to a third party (no privacy policy)",
     ),
     "ipRiskProxy": MessageLookupByLibrary.simpleMessage("Proxy"),
+    "ipRiskRateLimited": MessageLookupByLibrary.simpleMessage(
+      "IPure has limited requests. Try again later.",
+    ),
     "ipRiskRelay": MessageLookupByLibrary.simpleMessage("Relay"),
     "ipRiskScenarios": MessageLookupByLibrary.simpleMessage("Scenario Scores"),
     "ipRiskScore": MessageLookupByLibrary.simpleMessage("Source Purity Score"),
@@ -2157,7 +2163,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "smartSuspect": MessageLookupByLibrary.simpleMessage(
       "Possibly unavailable",
     ),
-    "snellVersion": MessageLookupByLibrary.simpleMessage("Snell version (1-4)"),
+    "snellVersion": MessageLookupByLibrary.simpleMessage("Snell version"),
     "sniHint": MessageLookupByLibrary.simpleMessage(
       "Leave blank to default to the server address",
     ),

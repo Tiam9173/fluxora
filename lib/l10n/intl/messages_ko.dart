@@ -1086,12 +1086,18 @@ class MessageLookup extends MessageLookupByLibrary {
     "ipRiskLimits": MessageLookupByLibrary.simpleMessage("이 데이터로 알 수 없는 것"),
     "ipRiskMobile": MessageLookupByLibrary.simpleMessage("모바일"),
     "ipRiskNativeType": MessageLookupByLibrary.simpleMessage("네이티브 IP"),
+    "ipRiskNoPublicReport": MessageLookupByLibrary.simpleMessage(
+      "이 주소는 IPure에서 익명으로 열람할 수 있는 보고서가 없습니다.",
+    ),
     "ipRiskNotFlagged": MessageLookupByLibrary.simpleMessage("발견되지 않음"),
     "ipRiskOpenReport": MessageLookupByLibrary.simpleMessage("전체 보고서 열기"),
     "ipRiskPrivacyNote": MessageLookupByLibrary.simpleMessage(
       "제3자에게 IP를 전송합니다(개인정보 처리방침 없음)",
     ),
     "ipRiskProxy": MessageLookupByLibrary.simpleMessage("프록시"),
+    "ipRiskRateLimited": MessageLookupByLibrary.simpleMessage(
+      "IPure 조회 한도를 초과했습니다. 잠시 후 다시 시도하세요.",
+    ),
     "ipRiskRelay": MessageLookupByLibrary.simpleMessage("릴레이"),
     "ipRiskScenarios": MessageLookupByLibrary.simpleMessage("시나리오별 점수"),
     "ipRiskScore": MessageLookupByLibrary.simpleMessage("제공자 순도 점수"),
@@ -1744,7 +1750,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "현재 경로로 설정한 뒤 검사",
     ),
     "smartSuspect": MessageLookupByLibrary.simpleMessage("사용 불가 의심"),
-    "snellVersion": MessageLookupByLibrary.simpleMessage("Snell 버전 (1-4)"),
+    "snellVersion": MessageLookupByLibrary.simpleMessage("Snell 버전"),
     "sniHint": MessageLookupByLibrary.simpleMessage("비워 두면 서버 주소와 동일하게 설정됩니다"),
     "sniLabel": MessageLookupByLibrary.simpleMessage(
       "SNI (ServerName / 위장 도메인)",

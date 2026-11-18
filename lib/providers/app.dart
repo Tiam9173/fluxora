@@ -35,10 +35,7 @@ class Logs extends _$Logs with AutoDisposeNotifierMixin {
     // `appController.addLog`) and can fire while a widget or provider is
     // building, where mutating a provider is not allowed.
     //
-    // `Logs` is autoDispose and nothing watches it while the Logs page is
-    // closed, so the provider can already be disposed by the time this
-    // microtask runs. `ref.mounted` is Riverpod 3's lifecycle check for exactly
-    // that case — bail out instead of touching a disposed notifier.
+    // The container may be disposed before the queued write runs.
     Future.microtask(() {
       if (!ref.mounted) return;
       state = state.copyWith()..add(value);
@@ -54,21 +51,15 @@ class Logs extends _$Logs with AutoDisposeNotifierMixin {
     state = FixedList(maxLength);
   }
 
-  /// item 6 — replace the whole list, used to seed the buffered log history when
-  /// the Logs page opens.
-  ///
-  /// A **fresh backing list** on purpose: `FixedList.copyWith()` shares the same
-  /// `_list` reference (`common/fixed.dart:31`), so reusing the current state's
-  /// list would leave a stale `_cachedList` on the old wrapper. Assigning `state`
-  /// runs `onUpdate`, which keeps `globalState.appState.logs` in step — so the
-  /// seeded history survives this provider being auto-disposed and rebuilt.
-  ///
-  /// Same deferred-write / `ref.mounted` dance as [addLog]: this can fire from a
-  /// post-frame callback after the page has already gone away.
+  /// Seeds the core history while retaining messages produced by the app.
   void setLogs(List<Log> logs) {
     Future.microtask(() {
       if (!ref.mounted) return;
-      state = FixedList(maxLength, list: [...logs]);
+      final merged = {
+        ...logs,
+        ...state.list.where((log) => log.category == 'APP'),
+      }.toList()..sort((a, b) => a.dateTime.compareTo(b.dateTime));
+      state = FixedList(maxLength, list: merged);
     });
   }
 }
@@ -76,13 +67,31 @@ class Logs extends _$Logs with AutoDisposeNotifierMixin {
 // Search and filter providers for logs
 final logsSearchProvider = StateProvider<String>((ref) => '');
 final logsKeywordsProvider = StateProvider<List<String>>((ref) => []);
+final logsCategoryFilterProvider = StateProvider.autoDispose<String?>(
+  (ref) => null,
+);
+final logsModulesProvider = Provider.autoDispose<List<String>>((ref) {
+  final modules =
+      ref
+          .watch(logsProvider.select((state) => state.list))
+          .map((log) => log.category)
+          .toSet()
+        ..removeAll({'APP', 'CORE'});
+  return modules.toList()..sort();
+});
 
 final filteredLogsProvider = Provider<List<Log>>((ref) {
   final logs = ref.watch(logsProvider.select((s) => s.list));
   final query = ref.watch(logsSearchProvider).toLowerCase();
   final keywords = ref.watch(logsKeywordsProvider);
+  final category = ref.watch(logsCategoryFilterProvider);
 
   return logs.where((item) {
+    if (category == 'CORE') {
+      if (item.category == 'APP') return false;
+    } else if (category != null && item.category != category) {
+      return false;
+    }
     if (query.isNotEmpty) {
       final matchesQuery =
           item.payload.toLowerCase().contains(query) ||
@@ -102,7 +111,7 @@ final filteredLogsProvider = Provider<List<Log>>((ref) {
   }).toList();
 });
 
-@riverpod
+@Riverpod(keepAlive: true)
 class Requests extends _$Requests with AutoDisposeNotifierMixin {
   @override
   FixedList<TrackerInfo> build() {
@@ -115,9 +124,7 @@ class Requests extends _$Requests with AutoDisposeNotifierMixin {
   }
 
   void addRequest(TrackerInfo value) {
-    // Same lifecycle race as `Logs.addLog`: `Requests` is autoDispose and is
-    // fed from the clash connection stream, which keeps producing requests
-    // while no page is watching this provider.
+    // Record close events even while the connection page is hidden.
     Future.microtask(() {
       if (!ref.mounted) return;
       state = state.copyWith()..add(value);
@@ -138,30 +145,34 @@ final filteredRequestsProvider = Provider<List<TrackerInfo>>((ref) {
   final query = ref.watch(requestsSearchProvider).toLowerCase().trim();
   final keywords = ref.watch(requestsKeywordsProvider);
 
-  return requests.where((item) {
-    if (query.isNotEmpty) {
-      final networkText = item.metadata.network.toLowerCase();
-      final hostText = item.metadata.host.toLowerCase();
-      final destinationIPText = item.metadata.destinationIP.toLowerCase();
-      final processText = item.metadata.process.toLowerCase();
-      final chainsText = item.chains.join('').toLowerCase();
-      final matchesQuery =
-          networkText.contains(query) ||
-          hostText.contains(query) ||
-          destinationIPText.contains(query) ||
-          processText.contains(query) ||
-          chainsText.contains(query);
-      if (!matchesQuery) return false;
-    }
-    if (keywords.isNotEmpty) {
-      final chains = item.chains;
-      final process = item.metadata.process;
-      final matchesKeywords = {...chains, process}.containsAll(keywords);
-      if (!matchesKeywords) return false;
-    }
-    return true;
-  }).toList();
+  return requests
+      .where((item) => _trackerMatches(item, query, keywords))
+      .toList();
 });
+
+bool _trackerMatches(TrackerInfo item, String query, List<String> keywords) {
+  if (query.isNotEmpty) {
+    final networkText = item.metadata.network.toLowerCase();
+    final hostText = item.metadata.host.toLowerCase();
+    final destinationIPText = item.metadata.destinationIP.toLowerCase();
+    final processText = item.metadata.process.toLowerCase();
+    final chainsText = item.chains.join('').toLowerCase();
+    final matchesQuery =
+        networkText.contains(query) ||
+        hostText.contains(query) ||
+        destinationIPText.contains(query) ||
+        processText.contains(query) ||
+        chainsText.contains(query);
+    if (!matchesQuery) return false;
+  }
+  if (keywords.isNotEmpty) {
+    final chains = item.chains;
+    final process = item.metadata.process;
+    final matchesKeywords = {...chains, process}.containsAll(keywords);
+    if (!matchesKeywords) return false;
+  }
+  return true;
+}
 
 @Riverpod(keepAlive: true)
 class Providers extends _$Providers with AutoDisposeNotifierMixin {
@@ -542,29 +553,9 @@ final filteredConnectionsProvider = Provider<List<TrackerInfo>>((ref) {
   final query = ref.watch(connectionsSearchProvider).toLowerCase().trim();
   final keywords = ref.watch(connectionsKeywordsProvider);
 
-  final filtered = connections.where((item) {
-    if (query.isNotEmpty) {
-      final networkText = item.metadata.network.toLowerCase();
-      final hostText = item.metadata.host.toLowerCase();
-      final destinationIPText = item.metadata.destinationIP.toLowerCase();
-      final processText = item.metadata.process.toLowerCase();
-      final chainsText = item.chains.join('').toLowerCase();
-      final matchesQuery =
-          networkText.contains(query) ||
-          hostText.contains(query) ||
-          destinationIPText.contains(query) ||
-          processText.contains(query) ||
-          chainsText.contains(query);
-      if (!matchesQuery) return false;
-    }
-    if (keywords.isNotEmpty) {
-      final chains = item.chains;
-      final process = item.metadata.process;
-      final matchesKeywords = {...chains, process}.containsAll(keywords);
-      if (!matchesKeywords) return false;
-    }
-    return true;
-  }).toList();
+  final filtered = connections
+      .where((item) => _trackerMatches(item, query, keywords))
+      .toList();
 
   final sortType = ref.watch(connectionsSortProvider);
   switch (sortType) {
@@ -590,3 +581,13 @@ final filteredConnectionsProvider = Provider<List<TrackerInfo>>((ref) {
   }
   return filtered;
 });
+
+final filteredConnectionHistoryProvider =
+    Provider.autoDispose<List<TrackerInfo>>((ref) {
+      final history = ref.watch(requestsProvider.select((state) => state.list));
+      final query = ref.watch(connectionsSearchProvider).toLowerCase().trim();
+      final keywords = ref.watch(connectionsKeywordsProvider);
+      return history.reversed
+          .where((item) => _trackerMatches(item, query, keywords))
+          .toList();
+    });

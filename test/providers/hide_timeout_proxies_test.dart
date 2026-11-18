@@ -32,12 +32,14 @@ void main() {
     SelectedMap selectedMap = const {},
     List<Group>? allGroups,
     String defaultTestUrl = defaultUrl,
+    bool overrideTestUrl = false,
   }) => computeHideTimeout(
     groups: groups,
     allGroups: allGroups ?? groups,
     delayMap: delayMap,
     selectedMap: selectedMap,
     defaultTestUrl: defaultTestUrl,
+    overrideTestUrl: overrideTestUrl,
   );
 
   group('RC.9 computeHideTimeout', () {
@@ -146,6 +148,25 @@ void main() {
           ),
         ),
         ['b'],
+      );
+    });
+
+    test('filters using the override URL when the group has its own URL', () {
+      final groups = [
+        mkGroup('G', [mkProxy('a'), mkProxy('b')], testUrl: otherUrl),
+      ];
+      expect(
+        visibleNames(
+          run(
+            groups: groups,
+            overrideTestUrl: true,
+            delayMap: {
+              otherUrl: {'a': -1, 'b': 80},
+              defaultUrl: {'a': 100, 'b': -1},
+            },
+          ),
+        ),
+        ['a'],
       );
     });
 

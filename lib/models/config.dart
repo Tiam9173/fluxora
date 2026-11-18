@@ -446,6 +446,7 @@ abstract class ThemeProps with _$ThemeProps {
     @Default(.5) double glassClarity,
     @Default(.5) double motionIntensity,
     @Default(true) bool launchAnimation,
+    @Default(false) bool autoHideNavigationBar,
     @JsonKey(unknownEnumValue: FluxoraVisualStyle.fluxora)
     @Default(FluxoraVisualStyle.fluxora)
     FluxoraVisualStyle visualStyle,
@@ -576,21 +577,26 @@ extension ScriptPropsExt on ScriptProps {
   /// stays small no matter how large the scripts are. Runs on every config
   /// load; a no-op once migrated (idempotent: all content already empty).
   Future<ScriptProps> externalize() async {
-    if (scripts.every((script) => script.content.isEmpty)) return this;
     final next = <Script>[];
+    var changed = false;
     for (final script in scripts) {
       if (script.content.isEmpty) {
-        next.add(script);
+        final checked = script.id == currentId
+            ? await script.refreshCompatibility()
+            : script;
+        next.add(checked);
+        changed |= !identical(checked, script);
         continue;
       }
       try {
         next.add(await script.writeContent(script.content));
+        changed = true;
       } catch (e) {
         commonPrint.log('Failed to store script ${script.label}: $e');
         next.add(script);
       }
     }
-    return copyWith(scripts: next);
+    return changed ? copyWith(scripts: next) : this;
   }
 }
 

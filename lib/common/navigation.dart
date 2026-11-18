@@ -37,8 +37,6 @@ class Navigation {
         builder: (_) =>
             ProfilesView(key: const GlobalObjectKey(PageLabel.profiles)),
       ),
-      // 请求和连接合成一个入口：内容是一件事的两面，分成两个导航项只是让人
-      // 来回切。页面内的「请求 | 连接」切换器负责分栏。
       NavigationItem(
         icon: Icon(Icons.swap_vert_rounded),
         label: PageLabel.connections,

@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluxora/models/chain_proxy.dart';
+import 'package:fluxora/models/warp_config.dart';
 
 void main() {
   group('Chain Proxy 2.0 Mihomo 配置注入与影子节点生成集成测试', () {
@@ -49,6 +50,34 @@ void main() {
         'rules': ['MATCH,PROXY'],
       };
     });
+
+    test(
+      'a policy group can be the entry hop without receiving its own exits',
+      () {
+        final groups = sampleConfig['proxy-groups'] as List;
+        groups.add({
+          'name': 'Entry',
+          'type': 'select',
+          'proxies': ['PROXY'],
+        });
+        const ChainProxyConfig(
+          enable: true,
+          hop1Node: 'Entry',
+          hop2Node: 'SG-01',
+          autoInjectGroups: true,
+        ).applyToClashConfig(sampleConfig);
+        final exit = (sampleConfig['proxies'] as List).singleWhere(
+          (proxy) => proxy['name'] == '🔗出口·SG-01',
+        );
+        expect(exit['dialer-proxy'], 'Entry');
+        final updated = {
+          for (final group in sampleConfig['proxy-groups'] as List)
+            group['name']: group['proxies'],
+        };
+        expect(updated['Entry'], ['PROXY']);
+        expect(updated['PROXY'], isNot(contains('🔗出口·SG-01')));
+      },
+    );
 
     test('TC-GEN-01: 两跳模式影子出口节点生成与级联 dialer-proxy', () {
       const config = ChainProxyConfig(
@@ -152,6 +181,79 @@ void main() {
       expect(rules.contains('DST-PORT,3478,REJECT'), isTrue);
       expect(rules.contains('DST-PORT,19302,REJECT'), isTrue);
       expect(rules.last, equals('MATCH,PROXY'));
+    });
+
+    test('已有 WebRTC 防护规则移到普通放行规则之前并去重', () {
+      const userRules = [
+        'DOMAIN,example.test,DIRECT',
+        'NETWORK,UDP,DIRECT',
+        'MATCH,PROXY',
+      ];
+      const stunRule = 'DST-PORT,3478,REJECT';
+      sampleConfig['rules'] = [
+        ...userRules.take(2),
+        ' $stunRule ',
+        stunRule,
+        userRules.last,
+      ];
+      const config = ChainProxyConfig(enable: true);
+
+      config.applyToClashConfig(sampleConfig);
+
+      final rules = (sampleConfig['rules'] as List).cast<String>();
+      expect(rules.where((rule) => rule.trim() == stunRule), [stunRule]);
+      expect(rules.indexOf(stunRule), lessThan(rules.indexOf(userRules.first)));
+      expect(rules.where(userRules.contains), userRules);
+    });
+
+    for (final mode in [WarpMode.googleAndAi, WarpMode.custom]) {
+      test('WARP ${mode.name} 规则排在 WebRTC 防护之后', () {
+        const chain = ChainProxyConfig(enable: true, preventDnsLeak: false);
+        chain.applyToClashConfig(sampleConfig);
+        final protection = (sampleConfig['rules'] as List)
+            .take(chain.webRtcProtectionRuleCount)
+            .toList();
+        const customRule = 'NETWORK,UDP,DIRECT';
+        final warp = WarpConfig(
+          enable: true,
+          privateKey: 'fixture-key',
+          mode: mode,
+          customRules: const [customRule],
+        );
+
+        warp.applyToClashConfig(
+          sampleConfig,
+          protectedRuleCount: chain.webRtcProtectionRuleCount,
+        );
+
+        final rules = (sampleConfig['rules'] as List).cast<String>();
+        expect(rules.take(protection.length), protection);
+        expect(protection, contains('DST-PORT,3478,REJECT'));
+        expect(
+          rules[protection.length],
+          mode == WarpMode.custom
+              ? customRule
+              : 'DOMAIN-SUFFIX,google.com,${warp.dedicatedGroupName}',
+        );
+        expect(rules.last, 'MATCH,PROXY');
+      });
+    }
+
+    test('关闭 WebRTC 防护时保留 WARP 规则优先级', () {
+      const chain = ChainProxyConfig(enable: true, preventWebRtcLeak: false);
+      chain.applyToClashConfig(sampleConfig);
+      const warpRule = 'NETWORK,UDP,DIRECT';
+      const WarpConfig(
+        enable: true,
+        privateKey: 'fixture-key',
+        mode: WarpMode.custom,
+        customRules: [warpRule],
+      ).applyToClashConfig(
+        sampleConfig,
+        protectedRuleCount: chain.webRtcProtectionRuleCount,
+      );
+
+      expect(sampleConfig['rules'], [warpRule, 'MATCH,PROXY']);
     });
 
     test('TC-CLEAN-01: 停用链式代理时彻底清除所有影子节点与专属组 (Zero Residue Teardown)', () {

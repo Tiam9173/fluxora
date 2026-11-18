@@ -5,9 +5,8 @@ import 'package:flutter/material.dart';
 /// A unified empty / unavailable / error placeholder.
 ///
 /// Replaces the many ad-hoc "nothing here" blocks with one restrained layout:
-/// a tonal icon chip, a title, an optional description and an optional action.
-/// There are deliberately **no large illustrations** — the Fluxora principles
-/// call for restraint over decoration.
+/// a tonal icon or illustration, a title, an optional description and an
+/// optional action.
 ///
 /// Colours come from `ColorScheme` (`surfaceContainer` chip, `onSurface` title,
 /// `onSurfaceVariant` description), so light / dark / `pureBlack` all work.
@@ -27,6 +26,7 @@ class FluxoraEmptyState extends StatelessWidget {
   const FluxoraEmptyState({
     super.key,
     this.icon,
+    this.illustration,
     this.title,
     this.description,
     this.action,
@@ -35,6 +35,7 @@ class FluxoraEmptyState extends StatelessWidget {
   });
 
   final IconData? icon;
+  final Widget? illustration;
 
   /// Primary message.
   final String? title;
@@ -73,30 +74,30 @@ class FluxoraEmptyState extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            if (icon != null) ...[
-              Container(
-                width: chipSize,
-                height: chipSize,
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainer,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  icon,
-                  size: iconSize,
-                  color: iconColor ?? colorScheme.onSurfaceVariant,
-                ),
-              ),
+            if (illustration != null || icon != null) ...[
+              illustration ??
+                  Container(
+                    width: chipSize,
+                    height: chipSize,
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainer,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      icon,
+                      size: iconSize,
+                      color: iconColor ?? colorScheme.onSurfaceVariant,
+                    ),
+                  ),
               SizedBox(height: compact ? FluxoraSpacing.md : FluxoraSpacing.lg),
             ],
             if (titleText != null && titleText.isNotEmpty)
               EmojiText(
                 titleText,
                 textAlign: TextAlign.center,
-                style: (compact
-                        ? FluxoraTypography.body
-                        : FluxoraTypography.title)
-                    .copyWith(color: colorScheme.onSurface),
+                style:
+                    (compact ? FluxoraTypography.body : FluxoraTypography.title)
+                        .copyWith(color: colorScheme.onSurface),
               ),
             if (descriptionText != null && descriptionText.isNotEmpty) ...[
               const SizedBox(height: FluxoraSpacing.sm),

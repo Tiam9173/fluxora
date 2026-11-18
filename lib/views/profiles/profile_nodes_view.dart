@@ -79,7 +79,8 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
 
   Future<void> _loadProxies() async {
     setState(() => _isLoading = true);
-    final list = ProfileNodesView.proxiesOverrideForTest ??
+    final list =
+        ProfileNodesView.proxiesOverrideForTest ??
         await ManualProxyHelper.getProfileProxies(_profile);
     if (mounted) {
       final names = {
@@ -97,9 +98,7 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
   Future<void> _handleDeleteProxy(String proxyName) async {
     final confirm = await globalState.showMessage(
       title: appLocalizations.confirmDelete,
-      message: TextSpan(
-        text: appLocalizations.confirmDeleteNodeMsg(proxyName),
-      ),
+      message: TextSpan(text: appLocalizations.confirmDeleteNodeMsg(proxyName)),
     );
     if (confirm != true) return;
 
@@ -154,7 +153,7 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
                     // 只列内核真正支持的协议：trojan-go / awg / juicity / naive
                     // 是 sing-box 的东西，导入进来也加载不了。
                     'vmess://, vless://, ss://, ssr://, trojan://, hy2://, hysteria://, tuic://, '
-                    'wireguard://, snell://, anytls://, ssh://, shadow-tls://, socks5://, http://, direct://',
+                    'wireguard://, snell://, mierus://, anytls://, ssh://, shadow-tls://, socks5://, http://, direct://',
                     style: TextStyle(
                       fontSize: 12,
                       // Secondary hint copy: the theme's muted foreground rather
@@ -455,8 +454,7 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
   List<String> get _protocols {
     final values = {
       for (final proxy in _proxies)
-        if (proxy['type'] is String)
-          (proxy['type'] as String).toUpperCase(),
+        if (proxy['type'] is String) (proxy['type'] as String).toUpperCase(),
     }.toList()..sort();
     return values;
   }
@@ -483,9 +481,7 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
       'grpc-opts',
       'reality-opts',
     ];
-    return keys
-        .map((key) => '$key=${jsonEncode(proxy[key])}')
-        .join('|');
+    return keys.map((key) => '$key=${jsonEncode(proxy[key])}').join('|');
   }
 
   List<List<Map<String, dynamic>>> get _duplicateGroups {
@@ -636,8 +632,7 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
                 FilterChip(
                   label: Text(appLocalizations.nodeAllProtocols),
                   selected: _protocolFilter == null,
-                  onSelected: (_) =>
-                      setState(() => _protocolFilter = null),
+                  onSelected: (_) => setState(() => _protocolFilter = null),
                 ),
                 for (final protocol in _protocols) ...[
                   const SizedBox(width: 6),
@@ -677,9 +672,7 @@ class _ProfileNodesViewState extends State<ProfileNodesView> {
     final selected = _selected.contains(name);
 
     return Card(
-      margin: grid
-          ? EdgeInsets.zero
-          : const EdgeInsets.only(bottom: 10),
+      margin: grid ? EdgeInsets.zero : const EdgeInsets.only(bottom: 10),
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(FluxoraRadius.card),
@@ -1093,6 +1086,10 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
   String _security = 'reality'; // none, tls, reality
   bool _udp = true;
   bool _skipCertVerify = true;
+  int _snellVersion = 4;
+  String _snellMode = 'default';
+  bool _snellReuse = false;
+  String _mieruTransport = 'TCP';
 
   @override
   void dispose() {
@@ -1179,8 +1176,10 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
           break;
         case ManualProtocol.snell:
           _portCtrl.text = '443';
-          _flowCtrl.text = '4'; // version 4
           _security = 'tls';
+          break;
+        case ManualProtocol.mieru:
+          _portCtrl.text = '2090';
           break;
         case ManualProtocol.ssh:
           _portCtrl.text = '22';
@@ -1417,13 +1416,30 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
 
       case ManualProtocol.snell:
         map['psk'] = secret;
-        map['version'] = int.tryParse(_flowCtrl.text.trim()) ?? 4;
-        if (_security != 'none') {
+        map['version'] = _snellVersion;
+        map['udp'] = _snellVersion >= 3 && _udp;
+        if (_snellVersion >= 4) {
+          map['reuse'] = _snellReuse;
+        }
+        if (_snellVersion == 6) {
+          map['mode'] = _snellMode;
+        } else if (_security != 'none') {
           map['obfs-opts'] = {
             'mode': _security,
             if (sni.isNotEmpty) 'host': sni,
           };
         }
+        break;
+
+      case ManualProtocol.mieru:
+        final binding = _portCtrl.text.trim();
+        if (binding.contains('-')) {
+          map.remove('port');
+          map['port-range'] = binding;
+        }
+        map['transport'] = _mieruTransport;
+        map['username'] = host;
+        map['password'] = secret;
         break;
 
       case ManualProtocol.ssh:
@@ -1516,9 +1532,9 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                     vertical: FluxoraSpacing.sm,
                   ),
                 ),
-                items: ManualProtocol.values
-                    .where((p) => p.kernelSupported)
-                    .map((p) {
+                items: ManualProtocol.values.where((p) => p.kernelSupported).map((
+                  p,
+                ) {
                   return DropdownMenuItem(
                     value: p,
                     child: Row(
@@ -1612,9 +1628,14 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                       flex: 1,
                       child: TextField(
                         controller: _portCtrl,
-                        keyboardType: TextInputType.number,
+                        keyboardType: _protocol == ManualProtocol.mieru
+                            ? TextInputType.text
+                            : TextInputType.number,
                         decoration: InputDecoration(
                           labelText: appLocalizations.portLabel,
+                          hintText: _protocol == ManualProtocol.mieru
+                              ? '2090-2099'
+                              : null,
                           border: const OutlineInputBorder(),
                         ),
                       ),
@@ -1643,6 +1664,7 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
 
                 // SSH or Juicity or Naive Username / Password
                 if (_protocol == ManualProtocol.ssh ||
+                    _protocol == ManualProtocol.mieru ||
                     _protocol == ManualProtocol.juicity ||
                     _protocol == ManualProtocol.naive ||
                     _protocol == ManualProtocol.socks5 ||
@@ -1653,6 +1675,7 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                       labelText: switch (_protocol) {
                         ManualProtocol.juicity =>
                           appLocalizations.juicityPassword,
+                        ManualProtocol.mieru => appLocalizations.username,
                         _ => appLocalizations.usernameOptional,
                       },
                       border: const OutlineInputBorder(),
@@ -1660,6 +1683,21 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                   ),
                   const SizedBox(height: FluxoraSpacing.md),
                 ],
+
+                if (_protocol == ManualProtocol.mieru)
+                  DropdownButtonFormField<String>(
+                    initialValue: _mieruTransport,
+                    decoration: InputDecoration(
+                      labelText: appLocalizations.networkLabel,
+                      border: const OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 'TCP', child: Text('TCP')),
+                      DropdownMenuItem(value: 'UDP', child: Text('UDP')),
+                    ],
+                    onChanged: (value) =>
+                        setState(() => _mieruTransport = value ?? 'TCP'),
+                  ),
 
                 // Protocol-specific fields
                 if (_protocol == ManualProtocol.vless ||
@@ -1710,9 +1748,7 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                           items: [
                             DropdownMenuItem(
                               value: 'none',
-                              child: Text(
-                                appLocalizations.securityNonePlain,
-                              ),
+                              child: Text(appLocalizations.securityNonePlain),
                             ),
                             const DropdownMenuItem(
                               value: 'tls',
@@ -1737,42 +1773,97 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                 if (_protocol == ManualProtocol.snell) ...[
                   Row(
                     children: [
+                      if (_snellVersion != 6)
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            key: ValueKey('snell_obfs_$_security'),
+                            isExpanded: true,
+                            initialValue: _security,
+                            decoration: InputDecoration(
+                              labelText: appLocalizations.obfsModeLabel,
+                              border: const OutlineInputBorder(),
+                            ),
+                            items: [
+                              DropdownMenuItem(
+                                value: 'none',
+                                child: Text(appLocalizations.obfsNoneOff),
+                              ),
+                              DropdownMenuItem(
+                                value: 'http',
+                                child: Text('HTTP'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'tls',
+                                child: Text('TLS'),
+                              ),
+                            ],
+                            onChanged: (val) =>
+                                setState(() => _security = val ?? 'none'),
+                          ),
+                        ),
+                      if (_snellVersion != 6)
+                        const SizedBox(width: FluxoraSpacing.sm),
                       Expanded(
-                        child: DropdownButtonFormField<String>(
-                          key: ValueKey('snell_obfs_$_security'),
-                          initialValue: _security,
+                        child: DropdownButtonFormField<int>(
+                          isExpanded: true,
+                          initialValue: _snellVersion,
                           decoration: InputDecoration(
-                            labelText: appLocalizations.obfsModeLabel,
+                            labelText: appLocalizations.snellVersion,
                             border: const OutlineInputBorder(),
                           ),
                           items: [
-                            DropdownMenuItem(
-                              value: 'none',
-                              child: Text(appLocalizations.obfsNoneOff),
-                            ),
-                            DropdownMenuItem(
-                              value: 'http',
-                              child: Text('HTTP'),
-                            ),
-                            DropdownMenuItem(value: 'tls', child: Text('TLS')),
+                            for (var version = 1; version <= 6; version++)
+                              DropdownMenuItem(
+                                value: version,
+                                child: Text('$version'),
+                              ),
                           ],
-                          onChanged: (val) =>
-                              setState(() => _security = val ?? 'none'),
-                        ),
-                      ),
-                      const SizedBox(width: FluxoraSpacing.sm),
-                      Expanded(
-                        child: TextField(
-                          controller: _flowCtrl,
-                          decoration: InputDecoration(
-                            labelText: appLocalizations.snellVersion,
-                            hintText: '4',
-                            border: const OutlineInputBorder(),
-                          ),
+                          onChanged: (version) {
+                            if (version != null) {
+                              setState(() => _snellVersion = version);
+                            }
+                          },
                         ),
                       ),
                     ],
                   ),
+                  if (_snellVersion == 6) ...[
+                    const SizedBox(height: FluxoraSpacing.sm),
+                    DropdownButtonFormField<String>(
+                      initialValue: _snellMode,
+                      decoration: InputDecoration(
+                        labelText:
+                            Localizations.localeOf(context).languageCode == 'zh'
+                            ? 'Snell v6 模式'
+                            : 'Snell v6 mode',
+                        border: const OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'default',
+                          child: Text('Default'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'unshaped',
+                          child: Text('Unshaped'),
+                        ),
+                      ],
+                      onChanged: (mode) {
+                        if (mode != null) setState(() => _snellMode = mode);
+                      },
+                    ),
+                  ],
+                  if (_snellVersion >= 4)
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(
+                        Localizations.localeOf(context).languageCode == 'zh'
+                            ? '复用连接'
+                            : 'Reuse connections',
+                      ),
+                      value: _snellReuse,
+                      onChanged: (value) => setState(() => _snellReuse = value),
+                    ),
                   const SizedBox(height: FluxoraSpacing.md),
                 ],
 
@@ -1827,6 +1918,7 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                     _protocol == ManualProtocol.juicity ||
                     _protocol == ManualProtocol.naive ||
                     (_protocol == ManualProtocol.snell &&
+                        _snellVersion != 6 &&
                         _security != 'none')) ...[
                   TextField(
                     controller: _sniCtrl,
@@ -2060,22 +2152,25 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                 ],
 
                 // Options
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(appLocalizations.enableUdpForwarding),
-                  value: _udp,
-                  onChanged: (v) => setState(() => _udp = v),
-                ),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(appLocalizations.skipCertVerify),
-                  subtitle: Text(
-                    appLocalizations.skipCertVerifyDesc,
-                    style: const TextStyle(fontSize: 11),
+                if (_protocol != ManualProtocol.snell || _snellVersion >= 3)
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(appLocalizations.enableUdpForwarding),
+                    value: _udp,
+                    onChanged: (v) => setState(() => _udp = v),
                   ),
-                  value: _skipCertVerify,
-                  onChanged: (v) => setState(() => _skipCertVerify = v),
-                ),
+                if (_protocol != ManualProtocol.snell &&
+                    _protocol != ManualProtocol.mieru)
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(appLocalizations.skipCertVerify),
+                    subtitle: Text(
+                      appLocalizations.skipCertVerifyDesc,
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                    value: _skipCertVerify,
+                    onChanged: (v) => setState(() => _skipCertVerify = v),
+                  ),
               ],
             ],
           ),
@@ -2093,6 +2188,43 @@ class _ManualNodeFormDialogState extends State<_ManualNodeFormDialog> {
                 _serverCtrl.text.trim().isEmpty) {
               context.showSnackBar(appLocalizations.serverAddressRequired);
               return;
+            }
+            if (_protocol == ManualProtocol.snell) {
+              final length = utf8.encode(_uuidPasswordCtrl.text.trim()).length;
+              if (length == 0 ||
+                  (_snellVersion == 6 && (length < 12 || length > 255))) {
+                final chinese =
+                    Localizations.localeOf(context).languageCode == 'zh';
+                context.showSnackBar(
+                  _snellVersion == 6
+                      ? (chinese
+                            ? 'Snell v6 的 PSK 须为 12–255 字节'
+                            : 'Snell v6 PSK must be 12–255 bytes')
+                      : appLocalizations.emptyTip(appLocalizations.pskKey),
+                );
+                return;
+              }
+            }
+            if (_protocol == ManualProtocol.mieru) {
+              if (!ManualProxyHelper.validMieruPort(_portCtrl.text.trim())) {
+                final chinese =
+                    Localizations.localeOf(context).languageCode == 'zh';
+                context.showSnackBar(
+                  chinese ? '请输入有效端口或端口范围' : 'Enter a valid port or port range',
+                );
+                return;
+              }
+              if (_hostCtrl.text.trim().isEmpty ||
+                  _uuidPasswordCtrl.text.trim().isEmpty) {
+                context.showSnackBar(
+                  appLocalizations.emptyTip(
+                    _hostCtrl.text.trim().isEmpty
+                        ? appLocalizations.username
+                        : appLocalizations.password,
+                  ),
+                );
+                return;
+              }
             }
             final proxyMap = _buildProxyMap();
             Navigator.of(context).pop();

@@ -86,6 +86,9 @@ void main() {
     await (FontLoader(
       'MaterialIcons',
     )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
+    await (FontLoader(
+      'Twemoji',
+    )..addFont(rootBundle.load('assets/fonts/Twemoji.Mozilla.ttf'))).load();
   });
 
   Future<void> open(
@@ -170,6 +173,7 @@ void main() {
     IpReputation report, {
     Set<String>? fields,
     VoidCallback? onOpen,
+    VoidCallback? onRetry,
   }) => CommonDialog(
     title: appLocalizations.ipRiskIntel,
     maxWidth: 600,
@@ -183,6 +187,7 @@ void main() {
       report: report,
       fields: fields ?? IpReputationFieldIds.all.toSet(),
       onOpenReport: onOpen,
+      onRetry: onRetry,
     ),
   );
 
@@ -292,13 +297,61 @@ void main() {
   }
 
   testWidgets('failure is not a clean score', (tester) async {
+    var retries = 0;
     await open(
       tester,
-      child: result(IpReputation.unavailable(_ip, IpReputationFailure.timeout)),
+      child: result(
+        IpReputation.unavailable(_ip, IpReputationFailure.timeout),
+        onRetry: () => retries++,
+      ),
     );
     expect(find.text(appLocalizations.ipRiskFailed), findsOneWidget);
     expect(find.text(appLocalizations.ipRiskScore), findsNothing);
     await capture(tester, 'report-failure');
+    await tester.tap(find.text(appLocalizations.retry));
+    expect(retries, 1);
+  });
+
+  testWidgets('network card keeps the flag at the start of the header', (
+    tester,
+  ) async {
+    final previous = detectionState.state.value;
+    addTearDown(() => detectionState.state.value = previous);
+    detectionState.state.value = const NetworkDetectionState(
+      isLoading: false,
+      ipInfo: _info,
+    );
+    await open(
+      tester,
+      child: CommonDialog(
+        title: appLocalizations.networkDetection,
+        child: const SizedBox(width: 166, child: NetworkDetection()),
+      ),
+    );
+    final card = find.byType(NetworkDetection);
+    final flag = find.descendant(of: card, matching: find.text('🇩🇪'));
+    final title = find.descendant(
+      of: card,
+      matching: find.text(appLocalizations.networkDetection),
+    );
+    expect(flag, findsOneWidget);
+    expect(tester.getCenter(flag).dx, lessThan(tester.getCenter(title).dx));
+    expect(tester.getCenter(flag).dy, closeTo(tester.getCenter(title).dy, 3));
+    await capture(tester, 'network-card-ipv6');
+    detectionState.state.value = NetworkDetectionState(
+      isLoading: false,
+      ipInfo: null,
+      errorMessage: appLocalizations.timeoutLabel,
+    );
+    await tester.pumpAndSettle();
+    expect(flag, findsNothing);
+    expect(
+      find.descendant(of: card, matching: find.byIcon(Icons.network_check)),
+      findsOneWidget,
+    );
+    expect(find.text(appLocalizations.timeoutLabel), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await capture(tester, 'network-card-failure');
   });
 
   testWidgets('missing score and unknown markers remain unknown at 200% text', (

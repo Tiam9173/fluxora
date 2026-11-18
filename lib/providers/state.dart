@@ -67,6 +67,7 @@ List<Group> computeHideTimeout({
   required DelayMap delayMap,
   required SelectedMap selectedMap,
   required String defaultTestUrl,
+  bool overrideTestUrl = false,
 }) {
   final resolved = <String, ProxyCardState>{};
   final (groupsByName, nodesByName) = _indexProxies(allGroups);
@@ -96,8 +97,10 @@ List<Group> computeHideTimeout({
       if (unprobeableProxyTypes.contains(proxyTypes[state.proxyName])) {
         return true;
       }
-      final delay =
-          delayMap[state.testUrl.getSafeValue(groupTestUrl)]?[state.proxyName];
+      final url = overrideTestUrl
+          ? defaultTestUrl
+          : state.testUrl.getSafeValue(groupTestUrl);
+      final delay = delayMap[url]?[state.proxyName];
       // Only a definite negative measurement is a timeout. `null` (never
       // tested) and `0` (test in flight) are both kept — unlike FlClash, whose
       // delay map uses 0 for "no data"; Fluxora's convention is
@@ -191,6 +194,7 @@ GroupsState visibleGroupsState(Ref ref) {
       delayMap: ref.watch(delayDataSourceProvider),
       selectedMap: ref.watch(selectedMapProvider),
       defaultTestUrl: ref.watch(getRealTestUrlProvider()),
+      overrideTestUrl: ref.watch(overrideTestUrlProvider),
     ),
   );
 }
@@ -911,7 +915,10 @@ ColorScheme genColorScheme(
 VM3<String?, String?, Dns?> needSetup(Ref ref) {
   final profileId = ref.watch(currentProfileIdProvider);
   final scriptDigest = ref.watch(
-    scriptStateProvider.select((state) => state.currentScript?.digest),
+    scriptStateProvider.select((state) {
+      final script = state.currentScript;
+      return script == null ? null : '${script.id}:${script.digest ?? ''}';
+    }),
   );
   final overrideDns = ref.watch(overrideDnsProvider);
   final dns = overrideDns == true
@@ -948,3 +955,5 @@ class Query extends _$Query with AutoDisposeNotifierMixin {
   @override
   String build() => '';
 }
+
+final pendingProfileIdProvider = StateProvider<String?>((ref) => null);

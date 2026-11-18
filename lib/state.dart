@@ -1380,7 +1380,10 @@ class GlobalState {
     );
 
     // Apply Cloudflare WARP on Proxy configuration if enabled (including Google anti-redirect & AI unlock rules)
-    warpManager.applyToClashConfig(rawConfig);
+    warpManager.applyToClashConfig(
+      rawConfig,
+      protectedRuleCount: chainProxyManager.config.webRtcProtectionRuleCount,
+    );
 
     // 旧的两槽位链路（profile_chain_dialog）仍然保留，但它会把**所有**节点的
     // dialer-proxy 改成 preProxy。新链路系统已经写好了 dialer-proxy，这里再跑
@@ -1909,18 +1912,23 @@ class GlobalState {
     Profile? profile,
     Script? script,
   }) async {
+    final currentScript =
+        script ?? globalState.config.scriptProps.currentScript;
+    if (currentScript == null || profile?.useScriptOverride == false) {
+      return config;
+    }
     return _scriptEvaluateLock.synchronized(() async {
-      final currentScript =
-          script ?? globalState.config.scriptProps.currentScript;
-      if (currentScript == null) return config;
-
-      if (profile != null && !profile.useScriptOverride) return config;
-
       config['proxy-providers'] ??= <String, dynamic>{};
 
       try {
+        final content = await currentScript.readContent();
+        if (content.trim().isEmpty) {
+          throw StateError(
+            'Script "${currentScript.label}" has no saved content',
+          );
+        }
         return await JavaScriptRuntimeManager.evaluateScript(
-          await currentScript.readContent(),
+          content,
           config,
           customOptions: currentScript.customOptions,
         );

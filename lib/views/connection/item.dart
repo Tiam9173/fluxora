@@ -50,12 +50,14 @@ class TrackerInfoItem extends ConsumerWidget {
   }
 
   String _getSourceText(TrackerInfo trackerInfo) {
-    final progress = trackerInfo.progressText.isNotEmpty
-        ? '${trackerInfo.progressText} · '
-        : '';
     final up = TrafficValue(value: trackerInfo.upload).toString();
     final down = TrafficValue(value: trackerInfo.download).toString();
-    return '$progress$up↑ $down↓';
+    return [
+      if (trackerInfo.metadata.network.isNotEmpty)
+        trackerInfo.metadata.network.toUpperCase(),
+      if (trackerInfo.progressText.isNotEmpty) trackerInfo.progressText,
+      '↑ $up  ↓ $down',
+    ].join(' · ');
   }
 
   @override
@@ -66,6 +68,11 @@ class TrackerInfoItem extends ConsumerWidget {
             state.findProcessMode == FindProcessMode.always && system.isAndroid,
       ),
     );
+    final metadata = trackerInfo.metadata;
+    final host = metadata.host.isEmpty ? metadata.destinationIP : metadata.host;
+    final endpoint = metadata.destinationPort.isEmpty || host.isEmpty
+        ? host
+        : '${host.contains(':') && !host.startsWith('[') ? '[$host]' : host}:${metadata.destinationPort}';
     final title = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -75,17 +82,22 @@ class TrackerInfoItem extends ConsumerWidget {
           spacing: 8,
           children: [
             Flexible(
-              child: Text(
-                trackerInfo.desc,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: context.textTheme.bodyLarge,
+              child: Tooltip(
+                message: trackerInfo.desc,
+                child: Text(
+                  endpoint.isEmpty ? trackerInfo.desc : endpoint,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ),
             Text(
               trackerInfo.start.lastUpdateTimeDesc,
               style: context.textTheme.bodySmall?.copyWith(
-                color: context.colorScheme.onSurface.opacity60,
+                color: context.colorScheme.onSurfaceVariant,
               ),
             ),
           ],
@@ -95,7 +107,7 @@ class TrackerInfoItem extends ConsumerWidget {
           _getSourceText(trackerInfo),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: context.textTheme.bodyMedium?.copyWith(
+          style: context.textTheme.bodySmall?.copyWith(
             color: context.colorScheme.onSurfaceVariant,
           ),
         ),
@@ -219,11 +231,7 @@ class _ProcessIcon extends StatefulWidget {
   final String path;
   final Function(String)? onClick;
 
-  const _ProcessIcon({
-    required this.process,
-    this.path = '',
-    this.onClick,
-  });
+  const _ProcessIcon({required this.process, this.path = '', this.onClick});
 
   @override
   State<_ProcessIcon> createState() => _ProcessIconState();
@@ -395,8 +403,10 @@ class TrackerInfoDetailView extends ConsumerWidget {
                       showIpDetailDialog(context, ip);
                     },
                     child: Padding(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -423,10 +433,7 @@ class TrackerInfoDetailView extends ConsumerWidget {
                 ),
                 if (port != null && port.isNotEmpty) ...[
                   const SizedBox(width: 4),
-                  Text(
-                    ':$port',
-                    style: context.textTheme.bodyMedium,
-                  ),
+                  Text(':$port', style: context.textTheme.bodyMedium),
                 ],
               ],
             ),
@@ -436,22 +443,14 @@ class TrackerInfoDetailView extends ConsumerWidget {
     );
   }
 
-  Widget _buildItem({
-    required String title,
-    required String desc,
-  }) {
+  Widget _buildItem({required String title, required String desc}) {
     return ListItem(
       title: Row(
         spacing: 16,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            spacing: 4,
-            children: [
-              Text(title),
-            ],
-          ),
+          Row(spacing: 4, children: [Text(title)]),
           Flexible(child: EmojiText(desc, textAlign: TextAlign.end)),
         ],
       ),
@@ -486,7 +485,10 @@ class TrackerInfoDetailView extends ConsumerWidget {
                 title: appLocalizations.host,
                 ip: info.metadata.host,
               )
-            : _buildItem(title: appLocalizations.host, desc: info.metadata.host),
+            : _buildItem(
+                title: appLocalizations.host,
+                desc: info.metadata.host,
+              ),
       if (info.metadata.sourceIP.isNotEmpty)
         _buildIpItem(
           context,

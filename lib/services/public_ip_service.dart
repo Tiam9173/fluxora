@@ -124,8 +124,8 @@ class PublicIpService {
       ];
     }
     return const [
-      'http://ip-api.com/json/?lang=zh-CN',
       'https://get.geojs.io/v1/ip/geo.json',
+      'http://ip-api.com/json/?lang=zh-CN',
       'https://api.ip.sb/cdn-cgi/trace',
     ];
   }

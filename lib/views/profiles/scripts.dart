@@ -65,9 +65,9 @@ Future<void> showScriptCustomOptions(
       type: type,
       load: () async {
         final content = await script.readContent();
-        final data =
-            JavaScriptRuntimeManager.getCachedOptions(content) ??
-            await JavaScriptRuntimeManager.extractScriptOptions(content);
+        final data = await JavaScriptRuntimeManager.extractScriptOptions(
+          content,
+        );
         final (options, icons) = _processScriptData(data, script);
         return _ScriptCustomOptionsSheet(
           type: type,
@@ -264,15 +264,13 @@ class _ScriptsViewState extends ConsumerState<ScriptsView> {
                     title: EmojiText(script.label),
                     leading: Switch(
                       value: isSelected,
-                      onChanged: (value) {
-                        if (value) {
-                          ref
-                              .read(scriptStateProvider.notifier)
-                              .setId(script.id);
-                        } else if (isSelected) {
-                          ref
-                              .read(scriptStateProvider.notifier)
-                              .setId(script.id);
+                      onChanged: (value) async {
+                        if (value || isSelected) {
+                          await globalState.appController.safeRun(
+                            () => ref
+                                .read(scriptStateProvider.notifier)
+                                .setId(script.id),
+                          );
                         }
                       },
                     ),
@@ -535,6 +533,9 @@ class _ScriptsViewState extends ConsumerState<ScriptsView> {
 
   @override
   Widget build(BuildContext context) {
+    final currentScript = ref.watch(
+      scriptStateProvider.select((state) => state.currentScript),
+    );
     return CommonScaffold(
       floatingActionButton: FloatingActionButton(
         onPressed: () {
@@ -543,6 +544,12 @@ class _ScriptsViewState extends ConsumerState<ScriptsView> {
         child: Icon(Icons.add),
       ),
       actions: [
+        if (currentScript?.isCompatibleWithFluxora == true)
+          IconButton(
+            onPressed: () => _handleCustomOptions(currentScript!),
+            tooltip: appLocalizations.customScriptOptions,
+            icon: const Icon(Icons.tune),
+          ),
         IconButton(
           onPressed: _handleShowScriptSettings,
           tooltip: appLocalizations.settings,
@@ -593,6 +600,7 @@ class _ScriptSettingsSheet extends ConsumerWidget {
                                 profile.id,
                                 (p) => p.copyWith(useScriptOverride: value),
                               );
+                          await globalState.appController.savePreferences();
                           if (isCurrentProfile) {
                             await globalState.appController.applyProfile(
                               silence: true,
@@ -696,6 +704,8 @@ class __ScriptCustomOptionsSheetState
     _dirty = false;
     if (mounted) setState(() => _isSaving = true);
     try {
+      await globalState.appController.savePreferences();
+      if (!mounted) return;
       final applyFuture =
           ref.read(scriptStateProvider).currentId == widget.script.id
           ? globalState.appController.applyProfile(silence: true)

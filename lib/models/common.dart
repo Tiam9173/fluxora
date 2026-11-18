@@ -1,5 +1,6 @@
 // ignore_for_file: invalid_annotation_target
 
+import 'dart:convert' show Utf8Decoder;
 import 'dart:io';
 import 'dart:math';
 
@@ -113,6 +114,10 @@ String _logDateTime(dynamic _) {
   return DateTime.now().showFull;
 }
 
+final _logModulePattern = RegExp(
+  r'^\[([a-zA-Z][a-zA-Z0-9_-]{0,15}(?: [a-zA-Z0-9_-]{1,15})?)\]',
+);
+
 // String _logId(_) {
 //   return utils.id;
 // }
@@ -129,13 +134,32 @@ abstract class Log with _$Log {
   factory Log.app(String payload) {
     return Log(
       logLevel: LogLevel.info,
-      payload: payload,
+      payload: payload.startsWith('[APP]') ? payload : '[APP] $payload',
       dateTime: _logDateTime(null),
       // id: _logId(null),
     );
   }
 
   factory Log.fromJson(Map<String, Object?> json) => _$LogFromJson(json);
+}
+
+extension LogCategory on Log {
+  String get message {
+    final prefix = _logModulePattern.firstMatch(payload);
+    return prefix == null ? payload : payload.substring(prefix.end).trimLeft();
+  }
+
+  String get category {
+    final module = _logModulePattern
+        .firstMatch(payload)
+        ?.group(1)
+        ?.toUpperCase();
+    return switch (module) {
+      'DNS SERVER' => 'DNS',
+      'METADATA PREHANDLE' => 'METADATA',
+      _ => module ?? 'CORE',
+    };
+  }
 }
 
 @freezed
@@ -899,6 +923,22 @@ extension ScriptExt on Script {
   /// be scanned out of the content text; it is now persisted at store time.
   bool get isCompatibleWithFluxora => compatible;
 
+  Future<Script> refreshCompatibility() async {
+    if (compatible) return this;
+    try {
+      final head = content.isNotEmpty
+          ? content
+          : await File(await appPath.getScriptPath(id))
+                .openRead(0, 2000)
+                .transform(const Utf8Decoder(allowMalformed: true))
+                .join();
+      if (_declaresCustomOptions(head)) return copyWith(compatible: true);
+    } on FileSystemException {
+      // The next execution reports a missing or unreadable script.
+    }
+    return this;
+  }
+
   /// Content lives in a side file once stored. Inline content — legacy configs
   /// that have not been migrated yet — still takes precedence.
   Future<String> readContent() async {
@@ -917,11 +957,10 @@ extension ScriptExt on Script {
     await temp.parent.create(recursive: true);
     await temp.writeAsString(value, flush: true);
     await temp.rename(path);
-    final head = value.length > 2000 ? value.substring(0, 2000) : value;
     return copyWith(
       content: '',
       digest: value.toMd5(),
-      compatible: head.contains('Compatible_With_Fluxora'),
+      compatible: _declaresCustomOptions(value),
       volatile: volatileScriptPattern.hasMatch(value),
     );
   }
@@ -931,5 +970,11 @@ extension ScriptExt on Script {
     if (await file.exists()) {
       await file.delete();
     }
+  }
+
+  bool _declaresCustomOptions(String value) {
+    final head = value.length > 2000 ? value.substring(0, 2000) : value;
+    return head.contains('Compatible_With_Fluxora') ||
+        head.contains('Compatible_With_Bettbox');
   }
 }

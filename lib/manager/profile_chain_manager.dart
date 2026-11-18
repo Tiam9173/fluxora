@@ -1,4 +1,5 @@
 import 'package:fluxora/common/common.dart';
+import 'package:fluxora/models/chain_proxy.dart';
 import 'package:fluxora/services/atomic_config_storage.dart';
 import 'package:fluxora/state.dart';
 import 'package:flutter/foundation.dart';
@@ -18,7 +19,8 @@ class ProfileChainConfig {
   });
 
   bool get hasPreProxy => preProxy != null && preProxy!.trim().isNotEmpty;
-  bool get hasLandingProxy => landingProxy != null && landingProxy!.trim().isNotEmpty;
+  bool get hasLandingProxy =>
+      landingProxy != null && landingProxy!.trim().isNotEmpty;
   bool get hasActiveChains => enable && (hasPreProxy || hasLandingProxy);
 
   ProfileChainConfig copyWith({
@@ -33,7 +35,9 @@ class ProfileChainConfig {
       profileId: profileId ?? this.profileId,
       enable: enable ?? this.enable,
       preProxy: clearPreProxy ? null : (preProxy ?? this.preProxy),
-      landingProxy: clearLandingProxy ? null : (landingProxy ?? this.landingProxy),
+      landingProxy: clearLandingProxy
+          ? null
+          : (landingProxy ?? this.landingProxy),
     );
   }
 
@@ -74,6 +78,19 @@ class ProfileChainManager extends ChangeNotifier {
     return _chains[profileId] ?? ProfileChainConfig(profileId: profileId);
   }
 
+  Map<String, dynamic> backupConfig() =>
+      _chains.map((id, chain) => MapEntry(id, chain.toJson()));
+
+  Future<void> restoreBackupConfig(
+    Map<String, ProfileChainConfig> chains, {
+    required bool merge,
+  }) async {
+    final next = merge ? {..._chains, ...chains} : chains;
+    await _saveConfig(next);
+    _chains = next;
+    notifyListeners();
+  }
+
   /// P2.8-B: test-only seam so persistence tests never touch the real
   /// application data directory. Production never sets it.
   ///
@@ -99,8 +116,9 @@ class ProfileChainManager extends ChangeNotifier {
   Future<void> _saveConfig(Map<String, ProfileChainConfig> chains) async {
     try {
       final filePath = await _getConfigFilePath();
-      await AtomicConfigStorage(filePath)
-          .save(chains.map((k, v) => MapEntry(k, v.toJson())));
+      await AtomicConfigStorage(
+        filePath,
+      ).save(chains.map((k, v) => MapEntry(k, v.toJson())));
     } catch (e) {
       commonPrint.log('ProfileChainManager: Failed to save config: $e');
       // Best-effort user notice — it must NEVER mask the real failure.
@@ -201,10 +219,15 @@ class ProfileChainManager extends ChangeNotifier {
         (p) => p is Map && p['name']?.toString() == preProxy,
       );
       if (preProxyExists) {
+        final upstream = proxyDependencyClosure(
+          [preProxy],
+          (rawConfig['proxy-groups'] as List?) ?? const [],
+          proxiesList,
+        );
         for (final item in proxiesList) {
           if (item is Map) {
             final pName = item['name']?.toString() ?? '';
-            if (pName.isNotEmpty && pName != preProxy) {
+            if (pName.isNotEmpty && !upstream.contains(pName)) {
               item['dialer-proxy'] = preProxy;
             }
           }
@@ -219,7 +242,9 @@ class ProfileChainManager extends ChangeNotifier {
 
     // 2. Apply Landing Proxy (落地代理)
     // Connect original proxies to landing proxy: Local -> Node -> LandingProxy -> Target
-    if (chain.hasLandingProxy && landingProxy != null && landingProxy.isNotEmpty) {
+    if (chain.hasLandingProxy &&
+        landingProxy != null &&
+        landingProxy.isNotEmpty) {
       Map<String, dynamic>? landingTemplate;
       for (final item in proxiesList) {
         if (item is Map && item['name'] == landingProxy) {
@@ -231,7 +256,9 @@ class ProfileChainManager extends ChangeNotifier {
       // If landing proxy exists as a node in the list
       if (landingTemplate != null) {
         final originalNodes = List<Map<String, dynamic>>.from(
-          proxiesList.where((p) => p is Map && p['name'] != landingProxy).map((p) => Map<String, dynamic>.from(p as Map)),
+          proxiesList
+              .where((p) => p is Map && p['name'] != landingProxy)
+              .map((p) => Map<String, dynamic>.from(p as Map)),
         );
 
         final List<String> chainedNodeNames = [];

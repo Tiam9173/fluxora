@@ -33,6 +33,34 @@ class _HomePageState extends State<HomePage> {
   /// scale (it contains a label under every icon).
   final GlobalKey _dockKey = GlobalKey();
   double _dockHeight = 0;
+  bool _dockHidden = false;
+  double _dockScroll = 0;
+  PageLabel? _dockPage;
+
+  bool _onDockScroll(ScrollNotification notification) {
+    if (notification.metrics.axis != Axis.vertical) return false;
+    if (notification is ScrollStartNotification) _dockScroll = 0;
+    final delta = switch (notification) {
+      ScrollUpdateNotification(:final dragDetails, :final scrollDelta)
+          when dragDetails != null =>
+        scrollDelta,
+      OverscrollNotification(:final dragDetails, :final overscroll)
+          when dragDetails != null =>
+        overscroll,
+      _ => null,
+    };
+    if (delta == null || delta == 0) return false;
+    final direction = notification.metrics.axisDirection;
+    final movement = direction == AxisDirection.up ? -delta : delta;
+    if (_dockScroll.sign != movement.sign) _dockScroll = 0;
+    _dockScroll += movement;
+    if (_dockScroll.abs() >= 18) {
+      final hide = _dockScroll > 0;
+      _dockScroll = 0;
+      if (hide != _dockHidden) setState(() => _dockHidden = hide);
+    }
+    return false;
+  }
 
   /// Schedules a post-frame measurement of the dock.
   ///
@@ -127,6 +155,21 @@ class _HomePageState extends State<HomePage> {
                     },
                   );
             if (isMobile) {
+              final autoHide =
+                  !globalState.isAndroidTV &&
+                  ref.watch(
+                    themeSettingProvider.select(
+                      (theme) => theme.autoHideNavigationBar,
+                    ),
+                  );
+              final pageLabel = navigationItems
+                  .elementAtOrNull(currentIndex)
+                  ?.label;
+              if (!autoHide || _dockPage != pageLabel) {
+                _dockPage = pageLabel;
+                _dockHidden = false;
+                _dockScroll = 0;
+              }
               // Tell the page how much of its bottom the floating dock covers.
               //
               // Pages that already honour `MediaQuery.padding.bottom` — every
@@ -193,12 +236,31 @@ class _HomePageState extends State<HomePage> {
               );
               return Stack(
                 children: [
-                  Positioned.fill(child: pageContent),
+                  Positioned.fill(
+                    child: NotificationListener<ScrollNotification>(
+                      onNotification: autoHide ? _onDockScroll : null,
+                      child: pageContent,
+                    ),
+                  ),
                   Positioned(
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    child: KeyedSubtree(key: _dockKey, child: navBar),
+                    child: AnimatedSlide(
+                      offset: _dockHidden ? const Offset(0, 1) : Offset.zero,
+                      duration: FluxoraMotion.ofContext(context).fast,
+                      curve: Curves.easeOutCubic,
+                      child: ExcludeFocus(
+                        excluding: _dockHidden,
+                        child: ExcludeSemantics(
+                          excluding: _dockHidden,
+                          child: IgnorePointer(
+                            ignoring: _dockHidden,
+                            child: KeyedSubtree(key: _dockKey, child: navBar),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               );

@@ -32,6 +32,7 @@ import 'common/common.dart';
 import 'common/external_control.dart';
 import 'common/flclash_database_extractor.dart';
 import 'manager/chain_proxy_manager.dart';
+import 'manager/profile_chain_manager.dart';
 import 'services/network_fingerprint_provider.dart';
 import 'services/system_proxy_readback.dart';
 import 'services/tun_readback.dart';
@@ -1134,12 +1135,25 @@ class AppController {
     });
   }
 
+  Future<void> selectProfile(String profileId) {
+    final pending = _ref.read(pendingProfileIdProvider.notifier);
+    pending.state = profileId;
+    return _coreLifecycleLock.synchronized(() {
+      if (pending.state != profileId) return;
+      pending.state = null;
+      if (_ref.read(profilesProvider).getProfile(profileId) == null) return;
+      _ref.read(currentProfileIdProvider.notifier).value = profileId;
+    });
+  }
+
   Future<void> handleChangeProfile({
     bool hardRestart = false,
     required String? previousProfileId,
   }) {
+    final profileId = _ref.read(currentProfileIdProvider);
     return _coreLifecycleLock.synchronized(() async {
-      if (previousProfileId != _ref.read(currentProfileIdProvider)) {
+      if (profileId != _ref.read(currentProfileIdProvider)) return;
+      if (previousProfileId != profileId) {
         _manualDelayTargets.clear();
         _ref.read(delayDataSourceProvider.notifier).value = {};
       }
@@ -2297,6 +2311,12 @@ class AppController {
 
     if (shouldStart) {
       try {
+        final profile = _ref.read(currentProfileProvider);
+        if (globalState.isStart &&
+            profile?.useScriptOverride == true &&
+            globalState.config.scriptProps.currentScript != null) {
+          await applyProfile(silence: true);
+        }
         await updateStatus(true);
       } catch (e) {
         commonPrint.log('Auto start failed: $e');
@@ -2354,6 +2374,12 @@ class AppController {
       if (_manualDelayTargets.contains(target)) return;
     } else {
       _manualDelayTargets.add(target);
+    }
+    // A failed node stays hidden until its retry reports a result.
+    if (delay.value == 0 &&
+        _ref.read(proxiesStyleSettingProvider).hideTimeoutProxies &&
+        (_ref.read(delayDataSourceProvider)[delay.url]?[delay.name] ?? 0) < 0) {
+      return;
     }
     final startedAt = globalState.startTime;
     // A health check can complete just after the tunnel comes up.
@@ -3021,13 +3047,24 @@ class AppController {
   Future<List<int>> backupData() async {
     final homeDirPath = await appPath.homeDirPath;
     final profilesPath = await appPath.profilesPath;
-    final configJson = globalState.config.toJson();
+    final config = globalState.config;
+    final chainConfig = chainProxyManager.config.toJson();
+    final profileChains = profileChainManager.backupConfig();
+    // Use the legacy inline field only in the backup. Normal preferences
+    // continue to store script metadata and keep the body in its side file.
+    final scripts = [
+      for (final script in config.scriptProps.scripts)
+        script.copyWith(content: await script.readContent()),
+    ];
+    final configJson = {
+      ...config.copyWith.scriptProps(scripts: scripts).toJson(),
+      'chainProxy': chainConfig,
+      'profileChains': profileChains,
+    };
 
     // Get valid profile IDs
-    final validProfileIds = globalState.config.profiles
-        .map((p) => p.id)
-        .toSet();
-    final currentProfileId = globalState.config.currentProfileId;
+    final validProfileIds = config.profiles.map((p) => p.id).toSet();
+    final currentProfileId = config.currentProfileId;
 
     commonPrint.log(
       'Starting backup: ${validProfileIds.length} profiles, current: $currentProfileId',
@@ -3035,99 +3072,88 @@ class AppController {
 
     return Isolate.run<List<int>>(() async {
       // Use ZipFileEncoder like FLClash - more reliable than ZipEncoder + Archive
-      final tempDir = Directory.systemTemp;
-      final tempZipPath = join(
-        tempDir.path,
-        'fluxora_backup_${DateTime.now().millisecondsSinceEpoch}.zip',
-      );
-      final encoder = ZipFileEncoder();
-      encoder.create(tempZipPath);
+      final tempDir = await Directory.systemTemp.createTemp('fluxora_backup_');
+      try {
+        final tempZipPath = join(tempDir.path, 'backup.zip');
+        final encoder = ZipFileEncoder()..create(tempZipPath);
+        try {
+          // Add marker file
+          final markerData = json.encode({
+            'app': 'Fluxora',
+            'version': '1.0',
+            'timestamp': DateTime.now().millisecondsSinceEpoch,
+          });
+          final markerBytes = utf8.encode(markerData);
+          final tempMarkerFile = File(join(tempDir.path, '.fluxora_marker'));
+          await tempMarkerFile.writeAsBytes(markerBytes);
+          await encoder.addFile(tempMarkerFile, '.fluxora_marker');
+          await tempMarkerFile.delete();
 
-      // Add marker file
-      final markerData = json.encode({
-        'app': 'Fluxora',
-        'version': '1.0',
-        'timestamp': DateTime.now().millisecondsSinceEpoch,
-      });
-      final markerBytes = utf8.encode(markerData);
-      final tempMarkerFile = File(
-        join(
-          tempDir.path,
-          'fluxora_marker_${DateTime.now().millisecondsSinceEpoch}.tmp',
-        ),
-      );
-      await tempMarkerFile.writeAsBytes(markerBytes);
-      await encoder.addFile(tempMarkerFile, '.fluxora_marker');
-      await tempMarkerFile.delete();
+          // Add config file
+          final configStr = json.encode(configJson);
+          final tempConfigFile = File(join(tempDir.path, 'config.json'));
+          await tempConfigFile.writeAsString(configStr);
+          await encoder.addFile(tempConfigFile, 'config.json');
+          await tempConfigFile.delete();
 
-      // Add config file
-      final configStr = json.encode(configJson);
-      final tempConfigFile = File(
-        join(
-          tempDir.path,
-          'fluxora_config_${DateTime.now().millisecondsSinceEpoch}.tmp',
-        ),
-      );
-      await tempConfigFile.writeAsString(configStr);
-      await encoder.addFile(tempConfigFile, 'config.json');
-      await tempConfigFile.delete();
+          // Add profiles dir (valid subscriptions only)
+          final profilesDir = Directory(profilesPath);
+          if (await profilesDir.exists()) {
+            final files = await profilesDir
+                .list(recursive: false)
+                .toList(); // First level only
 
-      // Add profiles dir (valid subscriptions only)
-      final profilesDir = Directory(profilesPath);
-      if (await profilesDir.exists()) {
-        final files = await profilesDir
-            .list(recursive: false)
-            .toList(); // First level only
+            for (final file in files) {
+              if (file is File) {
+                // Check if valid subscription config
+                final fileName = basename(file.path);
+                final profileId = fileName.replaceAll(
+                  RegExp(r'\.(yaml|yml)$'),
+                  '',
+                );
 
-        for (final file in files) {
-          if (file is File) {
-            // Check if valid subscription config
-            final fileName = basename(file.path);
-            final profileId = fileName.replaceAll(RegExp(r'\.(yaml|yml)$'), '');
-
-            if (validProfileIds.contains(profileId)) {
-              // Normalize path: use Unix-style / separator
-              final relativePath = relative(
-                file.path,
-                from: homeDirPath,
-              ).replaceAll('\\', '/');
-              await encoder.addFile(file, relativePath);
+                if (validProfileIds.contains(profileId)) {
+                  // Normalize path: use Unix-style / separator
+                  final relativePath = relative(
+                    file.path,
+                    from: homeDirPath,
+                  ).replaceAll('\\', '/');
+                  await encoder.addFile(file, relativePath);
+                }
+              }
             }
-          }
-        }
 
-        // Add current active subscription Providers
-        if (currentProfileId != null &&
-            validProfileIds.contains(currentProfileId)) {
-          final providersDir = Directory(
-            join(profilesPath, 'providers', currentProfileId),
-          );
+            // Add current active subscription Providers
+            if (currentProfileId != null &&
+                validProfileIds.contains(currentProfileId)) {
+              final providersDir = Directory(
+                join(profilesPath, 'providers', currentProfileId),
+              );
 
-          if (await providersDir.exists()) {
-            final providerFiles = await providersDir
-                .list(recursive: true)
-                .toList();
+              if (await providersDir.exists()) {
+                final providerFiles = await providersDir
+                    .list(recursive: true)
+                    .toList();
 
-            for (final providerFile in providerFiles) {
-              if (providerFile is File) {
-                final relativePath = relative(
-                  providerFile.path,
-                  from: homeDirPath,
-                ).replaceAll('\\', '/');
-                await encoder.addFile(providerFile, relativePath);
+                for (final providerFile in providerFiles) {
+                  if (providerFile is File) {
+                    final relativePath = relative(
+                      providerFile.path,
+                      from: homeDirPath,
+                    ).replaceAll('\\', '/');
+                    await encoder.addFile(providerFile, relativePath);
+                  }
+                }
               }
             }
           }
+        } finally {
+          await encoder.close();
         }
+        return await File(tempZipPath).readAsBytes();
+      } finally {
+        await tempDir.delete(recursive: true);
       }
-
-      encoder.close();
-
-      // Read the zip file and return bytes
-      final zipFile = File(tempZipPath);
-      final bytes = await zipFile.readAsBytes();
-      await zipFile.delete();
-      return bytes;
     });
   }
 
@@ -3145,14 +3171,14 @@ class AppController {
     );
   }
 
-  Future<void> _processRecoveryArchive(
+  Future<List<String>> _processRecoveryArchive(
     Future<Archive> Function() getArchive,
     RecoveryOption recoveryOption,
   ) async {
     try {
       final archive = await getArchive();
       commonPrint.log('Archive decoded: ${archive.files.length} files');
-      await _recoveryFromArchive(archive, recoveryOption);
+      return await _recoveryFromArchive(archive, recoveryOption);
     } catch (e) {
       commonPrint.log('Recovery failed: $e');
       throw 'Backup file is corrupted or invalid: $e';
@@ -3160,12 +3186,12 @@ class AppController {
   }
 
   /// Restore data from bytes
-  Future<void> recoveryData(
+  Future<List<String>> recoveryData(
     List<int> data,
     RecoveryOption recoveryOption,
   ) async {
     commonPrint.log('Starting recovery from bytes: ${data.length} bytes');
-    await _processRecoveryArchive(
+    return _processRecoveryArchive(
       () => Isolate.run<Archive>(() {
         final zipDecoder = ZipDecoder();
         return zipDecoder.decodeBytes(data);
@@ -3175,35 +3201,16 @@ class AppController {
   }
 
   /// Restore data from file path
-  Future<void> recoveryDataFromFile(
+  Future<List<String>> recoveryDataFromFile(
     String path,
     RecoveryOption recoveryOption,
   ) async {
     commonPrint.log('Starting recovery from file: $path');
-    await _processRecoveryArchive(
-      () => Isolate.run<Archive>(() {
-        try {
-          final input = InputFileStream(path);
-          final zipDecoder = ZipDecoder();
-          final result = zipDecoder.decodeStream(input);
-          input.close();
-          if (result.files.isNotEmpty) {
-            return result;
-          }
-        } catch (e) {
-          commonPrint.log('Stream decoding failed: $e');
-        }
-
-        final bytes = File(path).readAsBytesSync();
-        final zipDecoder = ZipDecoder();
-        return zipDecoder.decodeBytes(bytes);
-      }),
-      recoveryOption,
-    );
+    return recoveryData(await File(path).readAsBytes(), recoveryOption);
   }
 
   /// Unified recovery entry: check marker and dispatch to recovery logic
-  Future<void> _recoveryFromArchive(
+  Future<List<String>> _recoveryFromArchive(
     Archive archive,
     RecoveryOption recoveryOption,
   ) async {
@@ -3219,51 +3226,107 @@ class AppController {
     );
 
     if (hasFluxoraMarker) {
-      // Fluxora backup
-      await _recoveryFluxoraBackup(archive, recoveryOption, homeDirPath);
-    } else {
-      // Legacy backup
-      await _recoveryLegacyBackup(archive, recoveryOption, homeDirPath);
+      return _recoveryFluxoraBackup(archive, recoveryOption, homeDirPath);
     }
+    await _recoveryLegacyBackup(archive, recoveryOption, homeDirPath);
+    return const [];
   }
 
   /// Restore Fluxora
-  Future<void> _recoveryFluxoraBackup(
+  Future<List<String>> _recoveryFluxoraBackup(
     Archive archive,
     RecoveryOption recoveryOption,
     String homeDirPath,
   ) async {
-    // Separate config and profile files
-    final configs = archive.files
-        .where(
-          (item) =>
-              item.name.endsWith('.json') && item.name != '.fluxora_marker',
-        )
-        .toList();
-    final profiles = archive.files.where(
-      (item) => !item.name.endsWith('.json') && item.name != '.fluxora_marker',
+    final configFile = archive.files.firstWhereOrNull(
+      (file) => file.name == 'config.json' && file.isFile,
     );
-
-    // Find config.json
-    final configIndex = configs.indexWhere(
-      (config) => config.name == 'config.json',
-    );
-    if (configIndex == -1) throw 'invalid backup file';
-
-    // Parse config
-    final configFile = configs[configIndex];
-    final configContent = configFile.content;
-    if (configContent.isEmpty) {
-      throw 'Config file is empty or corrupted';
+    if (configFile == null || configFile.content.isEmpty) {
+      throw const FormatException('Missing backup config.json');
     }
-    var tempConfig = Config.compatibleFromJson(
-      json.decode(utf8.decode(configContent)),
+    final raw =
+        json.decode(utf8.decode(configFile.content)) as Map<String, dynamic>;
+    var config = Config.compatibleFromJson(raw);
+    final fullRestore = recoveryOption == RecoveryOption.all;
+    final chainData = fullRestore ? raw['chainProxy'] : null;
+    final chainConfig = chainData == null
+        ? null
+        : ChainProxyConfig.fromJson(chainData as Map<String, dynamic>);
+    final profileChainData = fullRestore
+        ? raw['profileChains'] as Map<String, dynamic>?
+        : null;
+    final profileChains = profileChainData?.map(
+      (id, value) => MapEntry(
+        id,
+        ProfileChainConfig.fromJson(
+          value as Map<String, dynamic>,
+        ).copyWith(profileId: id),
+      ),
     );
-
-    await restoreBackupFiles(profiles, homeDirPath);
-
-    // Apply recovery logic
-    _recovery(tempConfig, recoveryOption);
+    final merge =
+        _ref.read(appSettingProvider).recoveryStrategy ==
+        RecoveryStrategy.compatible;
+    final missingScripts = <String>[];
+    await _coreLifecycleLock.synchronized(() async {
+      final previousSetup = _ref.read(needSetupProvider);
+      await restoreBackupFiles(
+        archive.files.where((file) {
+          final name = posix.normalize(file.name.replaceAll(r'\', '/'));
+          return name.startsWith('$profilesDirectoryName/');
+        }),
+        homeDirPath,
+      );
+      if (fullRestore) {
+        final scripts = <Script>[];
+        for (final script in config.scriptProps.scripts) {
+          var content = script.content;
+          if (content.trim().isEmpty) {
+            final entry = archive.findFile('scripts/${basename(script.id)}.js');
+            if (entry != null && entry.isFile) {
+              content = utf8.decode(entry.content);
+            }
+          }
+          if (content.trim().isNotEmpty) {
+            scripts.add(await script.writeContent(content));
+            continue;
+          }
+          final local = await script.readContent();
+          if (local.trim().isNotEmpty && local.toMd5() == script.digest) {
+            scripts.add(script);
+          } else {
+            missingScripts.add(script.label);
+          }
+        }
+        final currentId = config.scriptProps.currentId;
+        config = config.copyWith(
+          scriptProps: ScriptProps(
+            scripts: scripts,
+            currentId: scripts.any((script) => script.id == currentId)
+                ? currentId
+                : null,
+          ),
+        );
+        if (chainConfig != null) {
+          await chainProxyManager.restoreBackupConfig(chainConfig);
+        }
+        if (profileChains != null) {
+          await profileChainManager.restoreBackupConfig(
+            profileChains,
+            merge: merge,
+          );
+        }
+      }
+      _recovery(config, recoveryOption);
+      if (!await preferences.saveConfig(globalState.config)) {
+        throw StateError('Failed to save restored settings');
+      }
+      // A profile file or its chain can change without a new setup key.
+      if (_ref.read(needSetupProvider) == previousSetup &&
+          _ref.read(currentProfileProvider) != null) {
+        await _applyProfile();
+      }
+    });
+    return missingScripts;
   }
 
   /// Restore legacy

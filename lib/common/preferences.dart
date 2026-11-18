@@ -5,6 +5,7 @@ import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/models/models.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:synchronized/synchronized.dart';
 
 import 'constant.dart';
 import 'system.dart';
@@ -13,6 +14,7 @@ import 'print.dart';
 
 class Preferences {
   static Preferences? _instance;
+  final _saveConfigLock = Lock();
   Completer<SharedPreferences?> sharedPreferencesCompleter = Completer();
 
   Future<bool> get isInit async => await sharedPreferencesCompleter.future != null;
@@ -122,14 +124,11 @@ class Preferences {
     }
   }
 
-  Future<bool> saveConfig(Config config) async {
+  Future<bool> saveConfig(Config config) => _saveConfigLock.synchronized(() async {
     final preferences = await sharedPreferencesCompleter.future;
-    
     await preferences?.setBool('autoLaunch', config.appSetting.autoLaunch);
-    
-    return await preferences?.setString(configKey, json.encode(config)) ??
-        false;
-  }
+    return await preferences?.setString(configKey, json.encode(config)) ?? false;
+  });
 
   static const trustedPortalHostsKey = 'trustedPortalHosts';
 

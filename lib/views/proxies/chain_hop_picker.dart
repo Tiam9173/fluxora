@@ -14,12 +14,14 @@ Future<void> showChainHopPicker({
   required Set<String> excludeNames,
   required void Function(String name) onSelect,
   bool allowFollowMain = true,
+  bool allowPolicyGroups = false,
 }) {
   return showDialog(
     context: context,
     builder: (ctx) => SwitchCard(
       title: title,
       excludeNames: excludeNames,
+      allowPolicyGroups: allowPolicyGroups,
       specialOptions: [
         if (allowFollowMain)
           SwitchCardSpecialOption(

@@ -33,18 +33,23 @@ Future<void> updateExternalProviders(
   if (providers.isEmpty) return;
 
   final providersNotifier = ref.read(providersProvider.notifier);
-  final messages = [];
+  final messages = <String>[];
   final updateProviders = providers.map<Future>((provider) async {
     providersNotifier.setProvider(provider.copyWith(isUpdating: true));
-    final message = await clashCore.updateExternalProvider(
-      providerName: provider.name,
-    );
-    if (message.isNotEmpty) {
-      messages.add('${provider.name}: $message \n');
+    ExternalProvider? refreshed;
+    try {
+      final message = await clashCore.updateExternalProvider(
+        providerName: provider.name,
+      );
+      if (message.isNotEmpty) messages.add('${provider.name}: $message\n');
+      refreshed = await clashCore.getExternalProvider(provider.name);
+    } catch (error) {
+      messages.add('${provider.name}: ${error.formatErrorLog}\n');
+    } finally {
+      providersNotifier.setProvider(
+        refreshed ?? provider.copyWith(isUpdating: false),
+      );
     }
-    providersNotifier.setProvider(
-      await clashCore.getExternalProvider(provider.name),
-    );
   });
   final titleMedium = context.textTheme.titleMedium;
   await Future.wait(updateProviders);

@@ -325,6 +325,13 @@ function InitializeUninstall(): Boolean;
 var
   Response: Integer;
 begin
+  if UninstallSilent then
+  begin
+    ShouldCleanUserData := False;
+    Result := True;
+    Exit;
+  end;
+
   Response := MsgBox(CustomMessage('RemoveUserDataPrompt'), mbConfirmation, MB_YESNOCANCEL);
   
   if Response = IDCANCEL then

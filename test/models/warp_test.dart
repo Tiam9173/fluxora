@@ -3,6 +3,51 @@ import 'package:fluxora/models/warp_config.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test(
+    'WARP dials the selected policy group without injecting into its nested groups',
+    () {
+      final config = WarpConfig(
+        enable: true,
+        privateKey: 'fixture',
+        mode: WarpMode.all,
+        defaultDialerProxy: 'Entry',
+      );
+      final raw = <String, dynamic>{
+        'proxies': [
+          {'name': 'Node', 'type': 'ss'},
+        ],
+        'proxy-groups': [
+          {
+            'name': 'Entry',
+            'type': 'select',
+            'proxies': ['Nested'],
+          },
+          {
+            'name': 'Nested',
+            'type': 'select',
+            'proxies': ['Node'],
+          },
+          {
+            'name': 'Other',
+            'type': 'select',
+            'proxies': ['Node'],
+          },
+        ],
+      };
+      config.applyToClashConfig(raw);
+      final warp = (raw['proxies'] as List).singleWhere(
+        (p) => p['name'] == config.proxyName,
+      );
+      expect(warp['dialer-proxy'], 'Entry');
+      final groups = {
+        for (final group in raw['proxy-groups'] as List)
+          group['name']: group['proxies'],
+      };
+      expect(groups['Entry'], ['Nested']);
+      expect(groups['Nested'], ['Node']);
+      expect(groups['Other'], contains(config.proxyName));
+    },
+  );
   group('WarpConfig 模型与序列化测试', () {
     test('WarpConfig 默认参数与 JSON 双向转换', () {
       final config = WarpConfig(
@@ -20,13 +65,20 @@ void main() {
       );
 
       final jsonStr = jsonEncode(config.toJson());
-      final restored =
-          WarpConfig.fromJson(jsonDecode(jsonStr) as Map<String, dynamic>);
+      final restored = WarpConfig.fromJson(
+        jsonDecode(jsonStr) as Map<String, dynamic>,
+      );
 
       expect(restored.enable, isTrue);
       expect(restored.proxyName, '🛡️ Cloudflare WARP');
-      expect(restored.privateKey, 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=');
-      expect(restored.publicKey, 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=');
+      expect(
+        restored.privateKey,
+        'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+      );
+      expect(
+        restored.publicKey,
+        'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=',
+      );
       expect(restored.server, '162.159.192.1');
       expect(restored.port, 2408);
       expect(restored.reserved, [1, 2, 3]);
@@ -74,10 +126,7 @@ void main() {
     });
 
     test('当跳板为 DIRECT 时不注入 dialer-proxy', () {
-      final config = WarpConfig(
-        enable: true,
-        privateKey: 'priv_key',
-      );
+      final config = WarpConfig(enable: true, privateKey: 'priv_key');
 
       final map = config.toMihomoProxyMap('DIRECT');
       expect(map.containsKey('dialer-proxy'), isFalse);
@@ -89,14 +138,14 @@ void main() {
       final config = WarpConfig(enable: false, privateKey: 'test_priv');
       final raw = <String, dynamic>{
         'proxies': [
-          {'name': 'Node1', 'type': 'ss', 'server': '1.1.1.1', 'port': 8388}
+          {'name': 'Node1', 'type': 'ss', 'server': '1.1.1.1', 'port': 8388},
         ],
         'proxy-groups': [
           {
             'name': 'GLOBAL',
             'type': 'select',
-            'proxies': ['Node1']
-          }
+            'proxies': ['Node1'],
+          },
         ],
         'rules': ['GEOIP,CN,DIRECT'],
       };
@@ -120,47 +169,56 @@ void main() {
 
       final raw = <String, dynamic>{
         'proxies': [
-          {'name': '🇭🇰 香港 01', 'type': 'ss', 'server': '1.1.1.1', 'port': 8388},
-          {'name': '🇯🇵 日本 01', 'type': 'trojan', 'server': '2.2.2.2', 'port': 443},
+          {
+            'name': '🇭🇰 香港 01',
+            'type': 'ss',
+            'server': '1.1.1.1',
+            'port': 8388,
+          },
+          {
+            'name': '🇯🇵 日本 01',
+            'type': 'trojan',
+            'server': '2.2.2.2',
+            'port': 443,
+          },
           {'name': '剩余流量 100GB', 'type': 'ss', 'server': '0.0.0.0', 'port': 0},
         ],
         'proxy-groups': [
           {
             'name': '🔰 节点选择',
             'type': 'select',
-            'proxies': ['🇭🇰 香港 01', '🇯🇵 日本 01']
-          }
+            'proxies': ['🇭🇰 香港 01', '🇯🇵 日本 01'],
+          },
         ],
-        'rules': [
-          'GEOIP,CN,DIRECT',
-          'MATCH,🔰 节点选择',
-        ],
+        'rules': ['GEOIP,CN,DIRECT', 'MATCH,🔰 节点选择'],
       };
 
       config.applyToClashConfig(raw);
 
       // 1. 验证 WireGuard 节点被注入
       final proxies = raw['proxies'] as List;
-      final warpProxy = proxies.firstWhere(
-        (p) => p is Map && p['name'] == '🛡️ Cloudflare WARP',
-      ) as Map<String, dynamic>;
+      final warpProxy =
+          proxies.firstWhere(
+                (p) => p is Map && p['name'] == '🛡️ Cloudflare WARP',
+              )
+              as Map<String, dynamic>;
       expect(warpProxy['type'], 'wireguard');
       expect(warpProxy['dialer-proxy'], '✈️ WARP跳板');
 
       // 2. 验证 ✈️ WARP跳板 策略组已生成并自动过滤非节点信息行
       final groups = raw['proxy-groups'] as List;
-      final hopGroup = groups.firstWhere(
-        (g) => g is Map && g['name'] == '✈️ WARP跳板',
-      ) as Map<String, dynamic>;
+      final hopGroup =
+          groups.firstWhere((g) => g is Map && g['name'] == '✈️ WARP跳板')
+              as Map<String, dynamic>;
       final hopProxies = hopGroup['proxies'] as List;
       expect(hopProxies.contains('🇭🇰 香港 01'), isTrue);
       expect(hopProxies.contains('🇯🇵 日本 01'), isTrue);
       expect(hopProxies.contains('剩余流量 100GB'), isFalse);
 
       // 3. 验证 🛡️ WARP 出口 策略组已生成
-      final warpGroup = groups.firstWhere(
-        (g) => g is Map && g['name'] == '🛡️ WARP 出口',
-      ) as Map<String, dynamic>;
+      final warpGroup =
+          groups.firstWhere((g) => g is Map && g['name'] == '🛡️ WARP 出口')
+              as Map<String, dynamic>;
       final warpGroupProxies = warpGroup['proxies'] as List;
       expect(warpGroupProxies.contains('🛡️ Cloudflare WARP'), isTrue);
       expect(warpGroupProxies.contains('DIRECT'), isTrue);
@@ -173,7 +231,10 @@ void main() {
       expect(rules.contains('DOMAIN-SUFFIX,chatgpt.com,🛡️ WARP 出口'), isTrue);
       expect(rules.contains('DOMAIN-SUFFIX,anthropic.com,🛡️ WARP 出口'), isTrue);
       expect(rules.contains('DOMAIN-SUFFIX,claude.ai,🛡️ WARP 出口'), isTrue);
-      expect(rules.contains('DOMAIN-SUFFIX,gemini.google.com,🛡️ WARP 出口'), isTrue);
+      expect(
+        rules.contains('DOMAIN-SUFFIX,gemini.google.com,🛡️ WARP 出口'),
+        isTrue,
+      );
       expect(rules.first, 'DOMAIN-SUFFIX,google.com,🛡️ WARP 出口');
     });
 
@@ -186,8 +247,18 @@ void main() {
 
       final raw = <String, dynamic>{
         'proxies': [
-          {'name': '🇭🇰 香港 01', 'type': 'ss', 'server': '1.1.1.1', 'port': 8388},
-          {'name': '🇯🇵 日本 01', 'type': 'trojan', 'server': '2.2.2.2', 'port': 443},
+          {
+            'name': '🇭🇰 香港 01',
+            'type': 'ss',
+            'server': '1.1.1.1',
+            'port': 8388,
+          },
+          {
+            'name': '🇯🇵 日本 01',
+            'type': 'trojan',
+            'server': '2.2.2.2',
+            'port': 443,
+          },
         ],
         'proxy-groups': [],
         'rules': [],
@@ -196,9 +267,11 @@ void main() {
       config.applyToClashConfig(raw);
 
       final proxies = raw['proxies'] as List;
-      final warpProxy = proxies.firstWhere(
-        (p) => p is Map && p['name'] == '🛡️ Cloudflare WARP',
-      ) as Map<String, dynamic>;
+      final warpProxy =
+          proxies.firstWhere(
+                (p) => p is Map && p['name'] == '🛡️ Cloudflare WARP',
+              )
+              as Map<String, dynamic>;
       expect(warpProxy['dialer-proxy'], '🇯🇵 日本 01');
     });
   });
@@ -309,15 +382,25 @@ warp=off
 
       final raw = <String, dynamic>{
         'proxies': [
-          {'name': '🇭🇰 香港 01', 'type': 'ss', 'server': '1.1.1.1', 'port': 8388},
-          {'name': '🇯🇵 日本 01', 'type': 'trojan', 'server': '2.2.2.2', 'port': 443},
+          {
+            'name': '🇭🇰 香港 01',
+            'type': 'ss',
+            'server': '1.1.1.1',
+            'port': 8388,
+          },
+          {
+            'name': '🇯🇵 日本 01',
+            'type': 'trojan',
+            'server': '2.2.2.2',
+            'port': 443,
+          },
         ],
         'proxy-groups': [
           {
             'name': 'GLOBAL',
             'type': 'select',
-            'proxies': ['🇭🇰 香港 01']
-          }
+            'proxies': ['🇭🇰 香港 01'],
+          },
         ],
         'rules': ['MATCH,GLOBAL'],
       };

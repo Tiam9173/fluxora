@@ -980,12 +980,18 @@ class MessageLookup extends MessageLookupByLibrary {
     "ipRiskLimits": MessageLookupByLibrary.simpleMessage("本資料無法判斷"),
     "ipRiskMobile": MessageLookupByLibrary.simpleMessage("行動網路"),
     "ipRiskNativeType": MessageLookupByLibrary.simpleMessage("原生 IP"),
+    "ipRiskNoPublicReport": MessageLookupByLibrary.simpleMessage(
+      "IPure 暫未提供此位址的匿名報告。",
+    ),
     "ipRiskNotFlagged": MessageLookupByLibrary.simpleMessage("未發現"),
     "ipRiskOpenReport": MessageLookupByLibrary.simpleMessage("檢視完整報告"),
     "ipRiskPrivacyNote": MessageLookupByLibrary.simpleMessage(
       "資料將傳送至第三方（無隱私政策）",
     ),
     "ipRiskProxy": MessageLookupByLibrary.simpleMessage("代理"),
+    "ipRiskRateLimited": MessageLookupByLibrary.simpleMessage(
+      "IPure 查詢次數受限，請稍後重試。",
+    ),
     "ipRiskRelay": MessageLookupByLibrary.simpleMessage("中繼"),
     "ipRiskScenarios": MessageLookupByLibrary.simpleMessage("分場景評分"),
     "ipRiskScore": MessageLookupByLibrary.simpleMessage("源方純淨度"),
@@ -1576,7 +1582,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "smartRecheck": MessageLookupByLibrary.simpleMessage("重新體檢"),
     "smartSetAsCurrent": MessageLookupByLibrary.simpleMessage("設為當前鏈路後體檢"),
     "smartSuspect": MessageLookupByLibrary.simpleMessage("疑似不可用"),
-    "snellVersion": MessageLookupByLibrary.simpleMessage("Snell 版本 (1-4)"),
+    "snellVersion": MessageLookupByLibrary.simpleMessage("Snell 版本"),
     "sniHint": MessageLookupByLibrary.simpleMessage("留空預設與伺服器位址一致"),
     "sniLabel": MessageLookupByLibrary.simpleMessage("SNI (ServerName / 偽裝網域)"),
     "sniffer": MessageLookupByLibrary.simpleMessage("Sniffer"),

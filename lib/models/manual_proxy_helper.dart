@@ -21,6 +21,7 @@ enum ManualProtocol {
   wireguard,
   amneziaWg,
   snell,
+  mieru,
   ssh,
   shadowTls,
   juicity,
@@ -58,6 +59,7 @@ extension ManualProtocolExt on ManualProtocol {
     ManualProtocol.wireguard => 'WireGuard',
     ManualProtocol.amneziaWg => 'AmneziaWG 2/3',
     ManualProtocol.snell => 'Snell',
+    ManualProtocol.mieru => 'Mieru',
     ManualProtocol.ssh => 'SSH',
     ManualProtocol.shadowTls => 'ShadowTLS',
     ManualProtocol.juicity => 'Juicity',
@@ -81,6 +83,7 @@ extension ManualProtocolExt on ManualProtocol {
     ManualProtocol.wireguard => 'wireguard',
     ManualProtocol.amneziaWg => 'wireguard',
     ManualProtocol.snell => 'snell',
+    ManualProtocol.mieru => 'mieru',
     ManualProtocol.ssh => 'ssh',
     ManualProtocol.shadowTls => 'shadow-tls',
     ManualProtocol.juicity => 'juicity',
@@ -105,6 +108,7 @@ extension ManualProtocolExt on ManualProtocol {
     ManualProtocol.wireguard => Colors.green,
     ManualProtocol.amneziaWg => Colors.lightGreen.shade800,
     ManualProtocol.snell => Colors.indigo,
+    ManualProtocol.mieru => Colors.teal,
     ManualProtocol.ssh => Colors.brown,
     ManualProtocol.shadowTls => Colors.purple,
     ManualProtocol.juicity => Colors.lime.shade900,
@@ -177,6 +181,8 @@ class ManualProxyHelper {
         return _parseWireGuard(raw);
       } else if (raw.startsWith('snell://')) {
         return _parseSnell(raw);
+      } else if (raw.startsWith('mierus://')) {
+        return _parseMieru(raw);
       } else if (raw.startsWith('ssh://')) {
         return _parseSSH(raw);
       } else if (raw.startsWith('shadow-tls://') ||
@@ -201,7 +207,9 @@ class ManualProxyHelper {
         return _parseRawYamlOrJson(raw);
       }
     } catch (e) {
-      commonPrint.log('ManualProxyHelper: Failed to parse link $raw: $e');
+      commonPrint.log(
+        'ManualProxyHelper: Failed to parse link (${e.runtimeType})',
+      );
     }
     return null;
   }
@@ -330,6 +338,7 @@ class ManualProxyHelper {
     final net = query['type']?.toLowerCase() ?? 'tcp';
     final security = query['security']?.toLowerCase() ?? 'none';
     final flow = query['flow'];
+    final encryption = query['encryption'];
     final sni = query['sni'];
     final host = query['host'];
     final path = query['path'];
@@ -349,16 +358,20 @@ class ManualProxyHelper {
     if (flow != null && flow.isNotEmpty) {
       map['flow'] = flow;
     }
+    if (encryption != null && encryption.isNotEmpty && encryption != 'none') {
+      map['encryption'] = encryption;
+    }
 
+    final isXHttp = net == 'xhttp' || net == 'splithttp';
     if (security == 'tls') {
       map['tls'] = true;
-      map['skip-cert-verify'] = true;
+      if (!isXHttp) map['skip-cert-verify'] = true;
       if (sni != null && sni.isNotEmpty) {
         map['servername'] = sni;
       }
     } else if (security == 'reality') {
       map['tls'] = true;
-      map['skip-cert-verify'] = true;
+      if (!isXHttp) map['skip-cert-verify'] = true;
       if (sni != null && sni.isNotEmpty) {
         map['servername'] = sni;
       }
@@ -371,7 +384,25 @@ class ManualProxyHelper {
       }
     }
 
-    if (net == 'ws') {
+    if (isXHttp) {
+      final mode = query['mode'];
+      final alpn = query['alpn'];
+      final extra = query['extra'];
+      Object? padding = query['xPaddingBytes'] ?? query['x-padding-bytes'];
+      if (padding == null && extra != null && extra.isNotEmpty) {
+        final options = jsonDecode(extra);
+        if (options is Map) padding = options['xPaddingBytes'];
+      }
+      map['network'] = 'xhttp';
+      map['xhttp-opts'] = {
+        if (path != null && path.isNotEmpty) 'path': path,
+        if (host != null && host.isNotEmpty) 'host': host,
+        if (mode != null && mode.isNotEmpty) 'mode': mode,
+        if (padding is String && padding.isNotEmpty) 'x-padding-bytes': padding,
+      };
+      if (alpn != null && alpn.isNotEmpty) map['alpn'] = alpn.split(',');
+      if (fp != null && fp.isNotEmpty) map['client-fingerprint'] = fp;
+    } else if (net == 'ws') {
       map['network'] = 'ws';
       final wsOpts = <String, dynamic>{};
       if (path != null && path.isNotEmpty) {
@@ -814,20 +845,47 @@ class ManualProxyHelper {
   }
 
   static Map<String, dynamic>? _parseSnell(String rawUri) {
-    final parsedUri = Uri.parse(rawUri.replaceFirst('snell://', 'http://'));
+    final parsedUri = Uri.parse(rawUri);
     final server = parsedUri.host;
-    final port = parsedUri.port == 0 ? 443 : parsedUri.port;
+    final port = parsedUri.hasPort ? parsedUri.port : 443;
     final name = parsedUri.fragment.isNotEmpty
         ? Uri.decodeComponent(parsedUri.fragment)
         : 'Snell_${server}_$port';
     final query = parsedUri.queryParameters;
 
     final psk = parsedUri.userInfo.isNotEmpty
-        ? parsedUri.userInfo
+        ? Uri.decodeComponent(parsedUri.userInfo)
         : (query['psk'] ?? '');
-    final version = int.tryParse(query['version'] ?? '4') ?? 4;
-    final obfsMode = query['obfs'] ?? query['mode'];
+    final version = int.tryParse(query['version'] ?? '4');
+    final mode = query['mode'];
+    final obfsMode = query['obfs'] ?? (version == 6 ? null : mode);
     final obfsHost = query['host'];
+    if (server.isEmpty ||
+        psk.isEmpty ||
+        port < 1 ||
+        port > 65535 ||
+        version == null ||
+        version < 1 ||
+        version > 6 ||
+        (version < 3 && query['udp'] == 'true')) {
+      return null;
+    }
+    if (version == 6) {
+      final length = utf8.encode(psk).length;
+      if (length < 12 ||
+          length > 255 ||
+          obfsMode == 'http' ||
+          obfsMode == 'tls' ||
+          (mode != null &&
+              !const {
+                '',
+                'default',
+                'unshaped',
+                'unsafe-raw',
+              }.contains(mode))) {
+        return null;
+      }
+    }
 
     final map = <String, dynamic>{
       'name': name,
@@ -836,15 +894,66 @@ class ManualProxyHelper {
       'port': port,
       'psk': psk,
       'version': version,
+      if (version == 6 && mode != null && mode.isNotEmpty) 'mode': mode,
+      if (query['udp'] == 'true' || query['udp'] == 'false')
+        'udp': query['udp'] == 'true',
+      if (query['reuse'] == 'true' || query['reuse'] == 'false')
+        'reuse': query['reuse'] == 'true',
     };
 
-    if (obfsMode != null && obfsMode.isNotEmpty && obfsMode != 'off') {
+    if (obfsMode != null && !const {'', 'off', 'none'}.contains(obfsMode)) {
       map['obfs-opts'] = {
         'mode': obfsMode,
         if (obfsHost != null && obfsHost.isNotEmpty) 'host': obfsHost,
       };
     }
     return map;
+  }
+
+  static Map<String, dynamic>? _parseMieru(String raw) {
+    final uri = Uri.parse(raw);
+    final credentials = uri.userInfo.indexOf(':');
+    final ports = uri.queryParametersAll['port'];
+    final protocols = uri.queryParametersAll['protocol'];
+    if (uri.host.isEmpty ||
+        credentials <= 0 ||
+        ports?.length != 1 ||
+        protocols?.length != 1) {
+      return null;
+    }
+    final query = uri.queryParameters;
+    final transport = protocols!.single.toUpperCase();
+    final port = ports!.single;
+    final name = query['profile'];
+    final password = Uri.decodeComponent(
+      uri.userInfo.substring(credentials + 1),
+    );
+    if (name == null ||
+        name.isEmpty ||
+        password.isEmpty ||
+        !validMieruPort(port) ||
+        (transport != 'TCP' && transport != 'UDP')) {
+      return null;
+    }
+    return {
+      'name': name,
+      'type': 'mieru',
+      'server': uri.host,
+      if (port.contains('-')) 'port-range': port else 'port': int.parse(port),
+      'transport': transport,
+      'username': Uri.decodeComponent(uri.userInfo.substring(0, credentials)),
+      'password': password,
+      'udp': query['udp'] != 'false',
+      for (final key in ['multiplexing', 'handshake-mode', 'traffic-pattern'])
+        if (query[key] case final String value) key: value,
+    };
+  }
+
+  static bool validMieruPort(String value) {
+    final ports = value.split('-').map(int.tryParse).toList();
+    return ports.length <= 2 &&
+        ports.every((port) => port != null && port >= 1 && port <= 65535) &&
+        ports.first! <= ports.last!;
   }
 
   static Map<String, dynamic>? _parseSSH(String rawUri) {
@@ -1318,8 +1427,7 @@ class ManualProxyHelper {
       final list = List<dynamic>.from(configMap['proxies'] as List);
       final before = list.length;
       list.removeWhere(
-        (item) =>
-            item is Map && proxyNames.contains(item['name']?.toString()),
+        (item) => item is Map && proxyNames.contains(item['name']?.toString()),
       );
       removed = before - list.length;
       configMap['proxies'] = list;
@@ -1330,9 +1438,7 @@ class ManualProxyHelper {
       for (final g in configMap['proxy-groups']) {
         if (g is Map && g['proxies'] is List) {
           final pList = List<dynamic>.from(g['proxies'] as List);
-          pList.removeWhere(
-            (name) => proxyNames.contains(name?.toString()),
-          );
+          pList.removeWhere((name) => proxyNames.contains(name?.toString()));
           g['proxies'] = pList;
         }
       }

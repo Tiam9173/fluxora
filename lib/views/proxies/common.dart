@@ -162,25 +162,40 @@ Future<void> delayTest(
   String? testUrl,
   String? groupName,
   Future<void> Function()? onDelayUpdated,
+  bool useExactTargets = false,
 }) async {
   Future<void> runTest() async {
     final appController = globalState.appController;
     final profileId = appController.ref.read(currentProfileIdProvider);
+    final groups = appController.getCurrentGroups();
+    final sourceGroup = groups.getGroup(groupName ?? '');
     final proxyTypes = <String, String>{};
-    for (final group in appController.getCurrentGroups()) {
+    for (final group in groups) {
       proxyTypes.putIfAbsent(group.name, () => group.type.name);
       for (final proxy in group.all) {
         proxyTypes.putIfAbsent(proxy.name, () => proxy.type);
       }
     }
     final targets = <DelayTestTarget>{};
-    for (final proxy in proxies) {
+    for (final proxy in sourceGroup?.all ?? proxies) {
+      if (useExactTargets) {
+        if (proxy.name.isNotEmpty) {
+          targets.add(
+            DelayTestTarget(
+              name: proxy.name,
+              url: appController.getRealTestUrl(testUrl ?? ''),
+              profileId: profileId,
+            ),
+          );
+        }
+        continue;
+      }
       if (_isNonTestableProxy(proxy)) {
         continue;
       }
       final state = appController.getProxyCardState(proxy.name);
       final url = appController.getRealTestUrl(
-        state.testUrl.getSafeValue(testUrl ?? ''),
+        state.testUrl.getSafeValue(sourceGroup?.testUrl ?? testUrl ?? ''),
       );
       final name = state.proxyName;
       // B4: same shared rule, now also applied to the *resolved* proxy name.
@@ -219,7 +234,9 @@ Future<void> delayTest(
     // A `url-test` group would otherwise keep whatever the core picked at its
     // last interval tick, which is what makes "自动选择" feel dead right after
     // a speed test. Push the winner we just measured.
-    await appController.selectFastestForGroup(groupName ?? '');
+    if (!useExactTargets) {
+      await appController.selectFastestForGroup(groupName ?? '');
+    }
   }
 
   if (groupName == null || groupName.isEmpty) {

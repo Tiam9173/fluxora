@@ -1,7 +1,10 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:fluxora/models/ip_reputation.dart';
 
-/// P4 — reads the IPure report for one IP.
+/// Reads a public report for one IP from IPure.
 ///
 /// Contract (see `ip_reputation.dart` for the E-4/E-5 decisions):
 ///
@@ -19,13 +22,13 @@ class IpReputationService {
   IpReputationService({Dio? dio}) : _dio = dio ?? Dio();
 
   final Dio _dio;
+  final _cache = <String, ({IpReputation report, DateTime expiresAt})>{};
 
-  /// Keyless public endpoint — no API key, no secret compiled into the client.
-  static const String endpoint = 'https://ipure.dev/api/lookup';
+  /// Only reports already stored by IPure are available anonymously.
+  static const String endpoint = 'https://ipure.dev/api/v1/ip';
 
   /// Vendor-documented status codes that carry a machine-readable `code`.
   static const String _codeVerificationRequired = 'verification_required';
-  static const String _codeOpenRateLimited = 'open_rate_limited';
 
   /// Marker `id` → the key the source uses inside `flags`.
   static const Map<String, String> markerFlagKeys = {
@@ -49,15 +52,21 @@ class IpReputationService {
     Duration timeout = const Duration(seconds: 8),
     CancelToken? cancelToken,
   }) async {
-    if (ip.trim().isEmpty) {
+    final address = InternetAddress.tryParse(ip.trim());
+    if (address == null) {
       return IpReputation.unavailable(ip, IpReputationFailure.parseError);
     }
+    final key = address.address;
+    final cached = _cache[key];
+    if (cached != null && cached.expiresAt.isAfter(DateTime.now())) {
+      return cached.report;
+    }
+    final token = cancelToken ?? CancelToken();
     try {
       final res = await _dio
           .get<dynamic>(
-            endpoint,
-            queryParameters: {'ip': ip},
-            cancelToken: cancelToken,
+            '$endpoint/${Uri.encodeComponent(key)}',
+            cancelToken: token,
             options: Options(
               responseType: ResponseType.json,
               receiveTimeout: timeout,
@@ -65,16 +74,34 @@ class IpReputationService {
               validateStatus: (status) => true,
             ),
           )
-          .timeout(timeout);
+          .timeout(
+            timeout,
+            onTimeout: () {
+              token.cancel();
+              throw TimeoutException('IP reputation lookup timed out', timeout);
+            },
+          );
       final body = res.data is Map
           ? Map<String, dynamic>.from(res.data as Map)
           : null;
-      return parse(ip, res.statusCode ?? 0, body);
+      final report = parse(ip, res.statusCode ?? 0, body);
+      if (report.isOk) {
+        _cache.remove(key);
+        if (_cache.length >= 32) _cache.remove(_cache.keys.first);
+        _cache[key] = (
+          report: report,
+          expiresAt: DateTime.now().add(const Duration(minutes: 5)),
+        );
+      }
+      return report;
+    } on TimeoutException {
+      return IpReputation.unavailable(ip, IpReputationFailure.timeout);
     } on DioException catch (e) {
       if (e.type == DioExceptionType.cancel) {
         return IpReputation.unavailable(ip, IpReputationFailure.network);
       }
-      final mapped = e.type == DioExceptionType.connectionTimeout ||
+      final mapped =
+          e.type == DioExceptionType.connectionTimeout ||
               e.type == DioExceptionType.receiveTimeout ||
               e.type == DioExceptionType.sendTimeout
           ? IpReputationFailure.timeout
@@ -88,8 +115,12 @@ class IpReputationService {
   /// Pure mapping from an HTTP status + decoded body to a report. Kept public so
   /// the failure taxonomy and the marker tri-state can be unit-tested offline.
   IpReputation parse(String ip, int statusCode, Map<String, dynamic>? body) {
+    final error = body?['error'];
+    final code = error is Map ? error['code'] : body?['code'];
+    if (statusCode == 401 && code == 'invalid_api_key') {
+      return IpReputation.unavailable(ip, IpReputationFailure.noPublicReport);
+    }
     if (statusCode == 403) {
-      final code = body?['code']?.toString();
       return IpReputation.unavailable(
         ip,
         code == _codeVerificationRequired
@@ -98,18 +129,17 @@ class IpReputationService {
       );
     }
     if (statusCode == 429) {
-      final code = body?['code']?.toString();
-      return IpReputation.unavailable(
-        ip,
-        code == _codeOpenRateLimited
-            ? IpReputationFailure.rateLimited
-            : IpReputationFailure.httpError,
-      );
+      return IpReputation.unavailable(ip, IpReputationFailure.rateLimited);
     }
     if (statusCode < 200 || statusCode >= 300) {
       return IpReputation.unavailable(ip, IpReputationFailure.httpError);
     }
-    if (body == null || body['ip'] == null) {
+    final data = body?['data'];
+    if (data is Map) body = Map<String, dynamic>.from(data);
+    final requested = InternetAddress.tryParse(ip.trim());
+    if (body == null ||
+        requested == null ||
+        InternetAddress.tryParse(body['ip']?.toString() ?? '') != requested) {
       return IpReputation.unavailable(ip, IpReputationFailure.parseError);
     }
 
@@ -232,11 +262,11 @@ class IpReputationService {
       for (final entry in markerFlagKeys.entries)
         IpRiskMarker(
           id: entry.key,
-          state: flags == null || !flags.containsKey(entry.value)
-              ? IpRiskMarkerState.unknown
-              : (flags[entry.value] == true
-                    ? IpRiskMarkerState.flagged
-                    : IpRiskMarkerState.clear),
+          state: switch (flags?[entry.value]) {
+            true => IpRiskMarkerState.flagged,
+            false => IpRiskMarkerState.clear,
+            _ => IpRiskMarkerState.unknown,
+          },
         ),
     ];
   }

@@ -3,6 +3,35 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+Set<String> proxyDependencyClosure(
+  Iterable<String> roots,
+  Iterable<dynamic> groups,
+  Iterable<dynamic> proxies,
+) {
+  final dependencies = <String, Iterable<String>>{};
+  for (final group in groups.whereType<Map>()) {
+    final members = group['proxies'];
+    if (group['name'] case final String name when members is List) {
+      dependencies[name] = members.whereType<String>();
+    }
+  }
+  for (final proxy in proxies.whereType<Map>()) {
+    if (proxy case {
+      'name': final String name,
+      'dialer-proxy': final String dialer,
+    }) {
+      dependencies[name] = [dialer];
+    }
+  }
+  final visited = <String>{};
+  final pending = roots.toList();
+  while (pending.isNotEmpty) {
+    final name = pending.removeLast();
+    if (visited.add(name)) pending.addAll(dependencies[name] ?? const []);
+  }
+  return visited;
+}
+
 String _generateUuidV4() {
   final Random random = Random();
   final bytes = List.generate(16, (_) => random.nextInt(256));
@@ -516,6 +545,7 @@ class ChainProxyConfig {
   final List<LandingProxy> landingProxies;
   final ChainHopMode hopMode;
   final String hop1Node;
+
   /// 前置跳板链，第一项即入口。默认空 = 只用 [hop1Node] 一跳，
   /// 与旧配置完全等价；出口始终由落地节点决定，不受跳数影响。
   final List<String> frontHops;
@@ -695,6 +725,7 @@ class ChainProxyConfig {
         .trim();
     return cleaned.isEmpty ? nodeName : cleaned;
   }
+
   static bool isShadowNodeName(String name) =>
       name.startsWith('🔗中转·') || name.startsWith('🔗出口·');
 
@@ -750,6 +781,38 @@ class ChainProxyConfig {
     'REMATCH',
   };
 
+  static const Set<String> _webRtcRules = {
+    'DOMAIN-KEYWORD,stun,REJECT',
+    'DOMAIN-KEYWORD,turn,REJECT',
+    'DOMAIN-SUFFIX,stun.cloudflare.com,REJECT',
+    'DOMAIN-SUFFIX,stun.l.google.com,REJECT',
+    'DOMAIN-SUFFIX,stun1.l.google.com,REJECT',
+    'DOMAIN-SUFFIX,stun2.l.google.com,REJECT',
+    'DOMAIN-SUFFIX,stun3.l.google.com,REJECT',
+    'DOMAIN-SUFFIX,stun4.l.google.com,REJECT',
+    'DOMAIN-SUFFIX,stun.services.mozilla.com,REJECT',
+    'DOMAIN-SUFFIX,stun.qq.com,REJECT',
+    'DOMAIN-SUFFIX,stun.miwifi.com,REJECT',
+    'DOMAIN-SUFFIX,stun.chat.bilibili.com,REJECT',
+    'DOMAIN-SUFFIX,stun.hitv.com,REJECT',
+    'DST-PORT,3478,REJECT',
+    'DST-PORT,3479,REJECT',
+    'DST-PORT,5349,REJECT',
+    'DST-PORT,5350,REJECT',
+    'DST-PORT,19302,REJECT',
+    'DST-PORT,19303,REJECT',
+    'DST-PORT,19304,REJECT',
+    'DST-PORT,19305,REJECT',
+    'DST-PORT,19306,REJECT',
+    'DST-PORT,19307,REJECT',
+    'DST-PORT,19308,REJECT',
+    'DST-PORT,19309,REJECT',
+  };
+
+  /// Length of the WebRTC protection prefix written by [applyToClashConfig].
+  int get webRtcProtectionRuleCount =>
+      enable && preventWebRtcLeak ? _webRtcRules.length : 0;
+
   /// [extraProxyConfigs] 是**只用于查找**的节点配置，来自聚合 provider。
   ///
   /// provider 的节点不在 `rawConfig['proxies']` 里，但用户能在代理页看到它们，
@@ -804,39 +867,11 @@ class ChainProxyConfig {
           ? List<dynamic>.from(rawRules)
           : <dynamic>[];
 
-      const webRtcRules = [
-        'DOMAIN-KEYWORD,stun,REJECT',
-        'DOMAIN-KEYWORD,turn,REJECT',
-        'DOMAIN-SUFFIX,stun.cloudflare.com,REJECT',
-        'DOMAIN-SUFFIX,stun.l.google.com,REJECT',
-        'DOMAIN-SUFFIX,stun1.l.google.com,REJECT',
-        'DOMAIN-SUFFIX,stun2.l.google.com,REJECT',
-        'DOMAIN-SUFFIX,stun3.l.google.com,REJECT',
-        'DOMAIN-SUFFIX,stun4.l.google.com,REJECT',
-        'DOMAIN-SUFFIX,stun.services.mozilla.com,REJECT',
-        'DOMAIN-SUFFIX,stun.qq.com,REJECT',
-        'DOMAIN-SUFFIX,stun.miwifi.com,REJECT',
-        'DOMAIN-SUFFIX,stun.chat.bilibili.com,REJECT',
-        'DOMAIN-SUFFIX,stun.hitv.com,REJECT',
-        'DST-PORT,3478,REJECT',
-        'DST-PORT,3479,REJECT',
-        'DST-PORT,5349,REJECT',
-        'DST-PORT,5350,REJECT',
-        'DST-PORT,19302,REJECT',
-        'DST-PORT,19303,REJECT',
-        'DST-PORT,19304,REJECT',
-        'DST-PORT,19305,REJECT',
-        'DST-PORT,19306,REJECT',
-        'DST-PORT,19307,REJECT',
-        'DST-PORT,19308,REJECT',
-        'DST-PORT,19309,REJECT',
-      ];
-
-      final existingRuleSet = rulesList.map((e) => e.toString().trim()).toSet();
-      final rulesToInsert = webRtcRules
-          .where((r) => !existingRuleSet.contains(r))
-          .toList();
-      rulesList.insertAll(0, rulesToInsert);
+      // Move existing copies ahead of rules that may allow the same traffic.
+      rulesList.removeWhere(
+        (rule) => rule is String && _webRtcRules.contains(rule.trim()),
+      );
+      rulesList.insertAll(0, _webRtcRules);
       rawConfig['rules'] = rulesList;
     }
 
@@ -958,10 +993,18 @@ class ChainProxyConfig {
     final bool isHopGroup =
         hop1.isNotEmpty &&
         hop1.toUpperCase() != 'DIRECT' &&
-        groupList.any((g) => g is Map && g['name']?.toString() == hop1);
+        hop1 != 'GLOBAL' &&
+        hop1 != dedicatedGroupName &&
+        groupList.any((g) => g is Map && g['name']?.toString() == hop1) &&
+        !proxyDependencyClosure([hop1], groupList, proxiesList).any(
+          (name) =>
+              name == 'GLOBAL' ||
+              name == dedicatedGroupName ||
+              activeLandings.any((landing) => landing.name == name) ||
+              isShadowNodeName(name),
+        );
 
-    final String fallbackHop =
-        (isHopSpecificProxy || isHopDirect || isHopGroup)
+    final String fallbackHop = (isHopSpecificProxy || isHopDirect || isHopGroup)
         ? hop1
         : dedicatedHopGroupName;
 
@@ -977,9 +1020,7 @@ class ChainProxyConfig {
     // A placeholder is enough here: ensureDedicatedHopGroup() replaces it with
     // the real member list later.
     if (chainTerminal == dedicatedHopGroupName &&
-        !groupList.any(
-          (g) => g is Map && g['name'] == dedicatedHopGroupName,
-        )) {
+        !groupList.any((g) => g is Map && g['name'] == dedicatedHopGroupName)) {
       groupList.insert(0, <String, dynamic>{
         'name': dedicatedHopGroupName,
         'type': 'select',
@@ -1011,9 +1052,7 @@ class ChainProxyConfig {
         final hopExit = Map<String, dynamic>.from(base);
         hopExit['name'] = hopExitName;
         hopExit['dialer-proxy'] = chainTerminal == shadowName
-            ? (frontChain[i - 1] == 'DIRECT'
-                  ? null
-                  : frontChain[i - 1])
+            ? (frontChain[i - 1] == 'DIRECT' ? null : frontChain[i - 1])
             : chainTerminal;
         if (hopExit['dialer-proxy'] == null) {
           hopExit.remove('dialer-proxy');
@@ -1270,6 +1309,11 @@ class ChainProxyConfig {
 
       // 2. Auto-inject into user selector groups without circular loops
       if (autoInjectGroups) {
+        final dialerGroups = proxyDependencyClosure(
+          injectedProxyNames,
+          groupList,
+          proxiesList,
+        );
         const excludedGroupKeywords = [
           '直连',
           '拦截',
@@ -1287,6 +1331,7 @@ class ChainProxyConfig {
           final groupName = g['name']?.toString() ?? '';
           if (groupName == effectiveDedicatedGroupName ||
               groupName == dedicatedHopGroupName ||
+              dialerGroups.contains(groupName) ||
               groupName == 'GLOBAL') {
             continue;
           }
@@ -1370,9 +1415,7 @@ class ChainProxyConfig {
       }
       dns['fake-ip-filter'] = fifList;
     }
-
   }
-
 }
 
 class LandingProxyParser {

@@ -1,5 +1,6 @@
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/manager/profile_chain_manager.dart';
+import 'package:fluxora/manager/warp_manager.dart';
 import 'package:fluxora/models/models.dart';
 import 'package:fluxora/state.dart';
 import 'package:flutter/material.dart';
@@ -9,10 +10,7 @@ import 'package:fluxora/clash/clash.dart';
 class ProfileChainDialog extends StatefulWidget {
   final Profile profile;
 
-  const ProfileChainDialog({
-    super.key,
-    required this.profile,
-  });
+  const ProfileChainDialog({super.key, required this.profile});
 
   static Future<void> show(BuildContext context, Profile profile) {
     return showDialog(
@@ -34,6 +32,7 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
 
   /// 每个节点的延迟，键是节点名。值 `-1` 表示测过但失败。
   final Map<String, int> _delays = {};
+  final _pickerRevision = ValueNotifier(0);
   bool _testingDelays = false;
   bool _isLoading = true;
 
@@ -50,11 +49,15 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
   void dispose() {
     _customPreCtrl.dispose();
     _customLandingCtrl.dispose();
+    _pickerRevision.dispose();
     super.dispose();
   }
 
   Future<void> _loadCandidates() async {
-    final candidates = <String>{'🛡️ Cloudflare WARP'};
+    final warp = warpManager.config;
+    final candidates = <String>{
+      if (warp.enable && warp.privateKey.isNotEmpty) warp.proxyName,
+    };
     try {
       // Gather proxies from current runtime config or profiles
       final currentMap = await globalState.getProfileConfig(widget.profile.id);
@@ -78,9 +81,11 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
 
   /// 把已有测量结果读进 `_delays`，让面板一打开就有数字。
   void _seedKnownDelays() {
-    final map = globalState.appState.delayMap;
-    for (final perUrl in map.values) {
-      for (final entry in perUrl.entries) {
+    if (!_canTest) return;
+    final url = globalState.appController.getRealTestUrl('');
+    final results = globalState.appState.delayMap[url];
+    if (results != null) {
+      for (final entry in results.entries) {
         if (!_candidateProxies.contains(entry.key)) continue;
         final value = entry.value;
         if (value == null || value == 0) continue; // 0 = 排队未测，不是结果
@@ -89,37 +94,39 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
     }
   }
 
-  /// 逐个测延迟。
-  ///
-  /// 这些节点属于**当前订阅**，只有正在运行的那个订阅的节点才在内核里，所以
-  /// 非活动订阅会全部失败——面板上会显示「—」，不会假装测过。
+  // The live core can only test nodes in the active profile.
+  bool get _canTest =>
+      clashCore.hasLiveProcess &&
+      globalState.config.currentProfileId == widget.profile.id;
+
   Future<void> _testDelays() async {
-    if (_testingDelays) return;
-    setState(() => _testingDelays = true);
+    if (_testingDelays || !_canTest) return;
+    _testingDelays = true;
+    _delays.clear();
+    _pickerRevision.value++;
     const int concurrency = 6;
     final url = globalState.appController.getRealTestUrl('');
     try {
       for (var i = 0; i < _candidateProxies.length; i += concurrency) {
-        if (!mounted) return;
+        if (!mounted || !_canTest) return;
         final batch = _candidateProxies.skip(i).take(concurrency);
-        final results = await Future.wait(batch.map((name) async {
-          try {
-            final delay = await clashCore.getDelay(url, name);
-            return MapEntry(name, delay.value);
-          } catch (_) {
-            return MapEntry(name, -1);
-          }
-        }));
-        if (!mounted) return;
-        setState(() {
-          for (final e in results) {
-            final value = e.value;
-            if (value != null && value != 0) _delays[e.key] = value;
-          }
-        });
+        final results = await Future.wait(
+          batch.map((name) async {
+            try {
+              final delay = await clashCore.getDelay(url, name);
+              return MapEntry(name, delay.value ?? -1);
+            } catch (_) {
+              return MapEntry(name, -1);
+            }
+          }),
+        );
+        if (!mounted || !_canTest) return;
+        _delays.addEntries(results);
+        _pickerRevision.value++;
       }
     } finally {
-      if (mounted) setState(() => _testingDelays = false);
+      _testingDelays = false;
+      if (mounted) _pickerRevision.value++;
     }
   }
 
@@ -168,26 +175,39 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
       context: context,
       builder: (ctx) {
         var keyword = '';
-        return StatefulBuilder(
-          builder: (ctx, setLocal) {
+        return ListenableBuilder(
+          listenable: _pickerRevision,
+          builder: (ctx, _) {
             final options = _candidateProxies
-                .where((n) => keyword.isEmpty || n.toLowerCase().contains(keyword.toLowerCase()))
+                .where(
+                  (n) =>
+                      keyword.isEmpty ||
+                      n.toLowerCase().contains(keyword.toLowerCase()),
+                )
                 .toList();
             return GlassAlertDialog(
               title: Row(
                 children: [
-                  Expanded(child: Text(title, style: const TextStyle(fontSize: 16))),
-                  TextButton.icon(
-                    onPressed: _testingDelays ? null : _testDelays,
-                    icon: _testingDelays
-                        ? const SizedBox(
-                            width: 12,
-                            height: 12,
-                            child: CircularProgressIndicator(strokeWidth: 1.5),
-                          )
-                        : const Icon(Icons.speed, size: 16),
-                    label: Text(appLocalizations.chainSpeedTest, style: TextStyle(fontSize: 12)),
+                  Expanded(
+                    child: Text(title, style: const TextStyle(fontSize: 16)),
                   ),
+                  if (_canTest && _candidateProxies.isNotEmpty)
+                    TextButton.icon(
+                      onPressed: _testingDelays ? null : _testDelays,
+                      icon: _testingDelays
+                          ? const SizedBox(
+                              width: 12,
+                              height: 12,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 1.5,
+                              ),
+                            )
+                          : const Icon(Icons.speed, size: 16),
+                      label: Text(
+                        appLocalizations.chainSpeedTest,
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ),
                 ],
               ),
               content: SizedBox(
@@ -203,7 +223,10 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                         hintText: appLocalizations.chainSearchNode,
                         border: OutlineInputBorder(),
                       ),
-                      onChanged: (v) => setLocal(() => keyword = v),
+                      onChanged: (v) {
+                        keyword = v;
+                        _pickerRevision.value++;
+                      },
                     ),
                     const SizedBox(height: 8),
                     Expanded(
@@ -212,8 +235,10 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                           ListTile(
                             dense: true,
                             leading: const Icon(Icons.block, size: 18),
-                            title: Text(appLocalizations.chainNoneDirect,
-                                style: TextStyle(fontSize: 13)),
+                            title: Text(
+                              appLocalizations.chainNoneDirect,
+                              style: TextStyle(fontSize: 13),
+                            ),
                             trailing: (current == null || current.isEmpty)
                                 ? const Icon(Icons.check, size: 18)
                                 : null,
@@ -223,9 +248,11 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                             ListTile(
                               dense: true,
                               leading: const Icon(Icons.dns_outlined, size: 18),
-                              title: Text(name,
-                                  style: const TextStyle(fontSize: 13),
-                                  overflow: TextOverflow.ellipsis),
+                              title: Text(
+                                name,
+                                style: const TextStyle(fontSize: 13),
+                                overflow: TextOverflow.ellipsis,
+                              ),
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -255,7 +282,9 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
         );
       },
     );
-    if (selected != null) onSelect(selected.isEmpty ? null : selected);
+    if (mounted && selected != null) {
+      onSelect(selected.isEmpty ? null : selected);
+    }
   }
 
   /// Shows what a section actually does.
@@ -301,7 +330,10 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
       content: SizedBox(
         width: 520,
         child: _isLoading
-            ? const SizedBox(height: 200, child: Center(child: CircularProgressIndicator()))
+            ? const SizedBox(
+                height: 200,
+                child: Center(child: CircularProgressIndicator()),
+              )
             : SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -309,12 +341,19 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                   children: [
                     // Topology Diagram Card (v2rayN Style)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                        color: colorScheme.surfaceContainerHighest.withValues(
+                          alpha: 0.5,
+                        ),
                         borderRadius: BorderRadius.circular(FluxoraRadius.md),
                         border: Border.all(
-                          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                          color: colorScheme.outlineVariant.withValues(
+                            alpha: 0.5,
+                          ),
                         ),
                       ),
                       child: Column(
@@ -322,7 +361,11 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                         children: [
                           Row(
                             children: [
-                              Icon(Icons.hub_rounded, size: 16, color: colorScheme.primary),
+                              Icon(
+                                Icons.hub_rounded,
+                                size: 16,
+                                color: colorScheme.primary,
+                              ),
                               const SizedBox(width: 6),
                               Text(
                                 appLocalizations.chainTopologyPreview,
@@ -340,48 +383,69 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                           SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
                             child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // RC.8: each node is `Flexible` so the row shrinks
-                              // with the dialog instead of overflowing. The bare
-                              // Row overflowed by 112 px at 360 px width.
-                              SizedBox(
-                                width: 96,
-                                child: _buildHopNode(
-                                  appLocalizations.chainNodeDeviceApp,
-                                  appLocalizations.chainNodeLocal,
-                                  Colors.grey,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // RC.8: each node is `Flexible` so the row shrinks
+                                // with the dialog instead of overflowing. The bare
+                                // Row overflowed by 112 px at 360 px width.
+                                SizedBox(
+                                  width: 96,
+                                  child: _buildHopNode(
+                                    appLocalizations.chainNodeDeviceApp,
+                                    appLocalizations.chainNodeLocal,
+                                    Colors.grey,
+                                  ),
                                 ),
-                              ),
-                              const Icon(Icons.arrow_forward_rounded, size: 14, color: Colors.grey),
-                              SizedBox(
-                                width: 96,
-                                child: _buildHopNode(
-                                  appLocalizations.chainNodePreProxy,
-                                  _config.preProxy?.isNotEmpty == true ? _config.preProxy! : appLocalizations.chainPreProxyNone,
-                                  _config.preProxy?.isNotEmpty == true ? Colors.blue : Colors.grey,
+                                const Icon(
+                                  Icons.arrow_forward_rounded,
+                                  size: 14,
+                                  color: Colors.grey,
                                 ),
-                              ),
-                              const Icon(Icons.arrow_forward_rounded, size: 14, color: Colors.grey),
-                              SizedBox(
-                                width: 96,
-                                child: _buildHopNode(
-                                  appLocalizations.chainNodeSubscription,
-                                  appLocalizations.chainNodeGroupNodes,
-                                  Colors.teal,
+                                SizedBox(
+                                  width: 96,
+                                  child: _buildHopNode(
+                                    appLocalizations.chainNodePreProxy,
+                                    _config.preProxy?.isNotEmpty == true
+                                        ? _config.preProxy!
+                                        : appLocalizations.chainPreProxyNone,
+                                    _config.preProxy?.isNotEmpty == true
+                                        ? Colors.blue
+                                        : Colors.grey,
+                                  ),
                                 ),
-                              ),
-                              const Icon(Icons.arrow_forward_rounded, size: 14, color: Colors.grey),
-                              SizedBox(
-                                width: 96,
-                                child: _buildHopNode(
-                                  appLocalizations.roleExit,
-                                  _config.landingProxy?.isNotEmpty == true ? _config.landingProxy! : appLocalizations.chainLandingProxyNone,
-                                  _config.landingProxy?.isNotEmpty == true ? Colors.deepPurple : Colors.grey,
+                                const Icon(
+                                  Icons.arrow_forward_rounded,
+                                  size: 14,
+                                  color: Colors.grey,
                                 ),
-                              ),
-                            ],
-                          ),
+                                SizedBox(
+                                  width: 96,
+                                  child: _buildHopNode(
+                                    appLocalizations.chainNodeSubscription,
+                                    appLocalizations.chainNodeGroupNodes,
+                                    Colors.teal,
+                                  ),
+                                ),
+                                const Icon(
+                                  Icons.arrow_forward_rounded,
+                                  size: 14,
+                                  color: Colors.grey,
+                                ),
+                                SizedBox(
+                                  width: 96,
+                                  child: _buildHopNode(
+                                    appLocalizations.roleExit,
+                                    _config.landingProxy?.isNotEmpty == true
+                                        ? _config.landingProxy!
+                                        : appLocalizations
+                                              .chainLandingProxyNone,
+                                    _config.landingProxy?.isNotEmpty == true
+                                        ? Colors.deepPurple
+                                        : Colors.grey,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
@@ -547,7 +611,10 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
               clearLandingProxy: landing.isEmpty,
             );
 
-            await profileChainManager.updateChain(widget.profile.id, (_) => toSave);
+            await profileChainManager.updateChain(
+              widget.profile.id,
+              (_) => toSave,
+            );
             if (context.mounted) {
               Navigator.of(context).pop();
               context.showNotifier(appLocalizations.profileChainSaved);

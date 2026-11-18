@@ -418,13 +418,13 @@ class ChainProxyManager extends ChangeNotifier {
     // automatic failover path was unreachable even though the flag was stored.
   }
 
-  Future<void> _saveConfig() async {
+  Future<void> _saveConfig(ChainProxyConfig config) async {
     final filePath = await _getConfigFilePath();
     // P2.4-A: crash-safe atomic write (tmp → validate → .bak → rename).
     // P2.5-E: the failure propagates — a config that never landed must not be
     // reported as a successful save (no false success).
     await AtomicConfigStorage(filePath).save(<String, dynamic>{
-      ..._config.toJson(),
+      ...config.toJson(),
       PersistenceSchema.versionKey: PersistenceSchema.currentVersion,
     });
   }
@@ -472,7 +472,7 @@ class ChainProxyManager extends ChangeNotifier {
   }) async {
     _config = updater(_config);
     notifyListeners();
-    await _saveConfig();
+    await _saveConfig(_config);
     if (reloadCore) {
       // P2.4-C: a reload failure must reach the caller instead of being
       // swallowed — otherwise a config that never actually applied would be
@@ -481,6 +481,12 @@ class ChainProxyManager extends ChangeNotifier {
       await _reloadRuntimeConfig();
       notifyListeners();
     }
+  }
+
+  Future<void> restoreBackupConfig(ChainProxyConfig config) async {
+    await _saveConfig(config);
+    _config = config;
+    notifyListeners();
   }
 
   /// Enables or disables the chain proxy.

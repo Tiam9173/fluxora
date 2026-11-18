@@ -53,6 +53,7 @@ class SwitchCard extends ConsumerStatefulWidget {
     this.specialOptions = const [],
     this.onOpenProfiles,
     this.onStart,
+    this.allowPolicyGroups = false,
   });
 
   /// Called once a node has been picked, so the host can dismiss itself.
@@ -75,6 +76,7 @@ class SwitchCard extends ConsumerStatefulWidget {
   final List<SwitchCardSpecialOption> specialOptions;
   final VoidCallback? onOpenProfiles;
   final VoidCallback? onStart;
+  final bool allowPolicyGroups;
 
   @override
   ConsumerState<SwitchCard> createState() => _SwitchCardState();
@@ -134,19 +136,43 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
         visibleGroups.where((g) => g.name == _groupName).firstOrNull ??
         visibleGroups.where((g) => g.name == initialGroup).firstOrNull ??
         (visibleGroups.isEmpty ? null : visibleGroups.first);
+    final policyNames = widget.allowPolicyGroups
+        ? visibleGroups
+              .where(
+                (g) =>
+                    g.name != GroupName.GLOBAL.name &&
+                    !widget.excludeNames.contains(g.name),
+              )
+              .map((g) => g.name)
+              .toSet()
+        : const <String>{};
+    final canPickCurrentGroup = policyNames.contains(currentGroup?.name);
+    final members = currentGroup?.all ?? const <Proxy>[];
+    final memberNames =
+        widget.allowPolicyGroups && currentGroup?.name == GroupName.GLOBAL.name
+        ? members.map((proxy) => proxy.name).toSet()
+        : const <String>{};
     final nodes =
-        currentGroup?.all
+        [
+              ...members,
+              if (widget.allowPolicyGroups &&
+                  currentGroup?.name == GroupName.GLOBAL.name)
+                for (final group in visibleGroups)
+                  if (policyNames.contains(group.name) &&
+                      !memberNames.contains(group.name))
+                    Proxy(name: group.name, type: group.type.name),
+            ]
             .where((p) => !widget.excludeNames.contains(p.name))
             .where(
               (p) =>
                   widget.onSelect == null ||
+                  policyNames.contains(p.name) ||
                   ChainProxyConfig.isSelectableProxy(
                     name: p.name,
                     type: p.type,
                   ),
             )
-            .toList() ??
-        [];
+            .toList();
     final query = _searchController.text.trim().toLowerCase();
     final visible = query.isEmpty
         ? nodes
@@ -217,15 +243,36 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
           IconButton(
             visualDensity: VisualDensity.compact,
             tooltip: appLocalizations.startTest,
-            onPressed: currentGroup == null || _testing || _selecting || busy
+            onPressed:
+                currentGroup == null ||
+                    _testing ||
+                    _selecting ||
+                    busy ||
+                    (widget.onSelect != null &&
+                        nodes.isEmpty &&
+                        !canPickCurrentGroup)
                 ? null
                 : () async {
                     setState(() => _testing = true);
                     try {
                       await delayTest(
-                        currentGroup.all,
-                        testUrl: currentGroup.testUrl ?? defaultTestUrl,
-                        groupName: currentGroup.name,
+                        widget.onSelect == null
+                            ? currentGroup.all
+                            : [
+                                ...nodes,
+                                if (canPickCurrentGroup)
+                                  Proxy(
+                                    name: currentGroup.name,
+                                    type: currentGroup.type.name,
+                                  ),
+                              ],
+                        testUrl: widget.onSelect == null
+                            ? currentGroup.testUrl ?? defaultTestUrl
+                            : delayUrl,
+                        groupName: widget.onSelect == null
+                            ? currentGroup.name
+                            : null,
+                        useExactTargets: widget.onSelect != null,
                       );
                     } finally {
                       if (mounted) setState(() => _testing = false);
@@ -533,6 +580,21 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
                 ),
               ),
             ),
+          if (canPickCurrentGroup &&
+              currentGroup != null &&
+              widget.onSelect != null)
+            ListTile(
+              dense: true,
+              leading: const Icon(Icons.account_tree_outlined, size: 18),
+              title: Text(
+                Localizations.localeOf(context).languageCode == 'zh'
+                    ? '使用策略组 ${currentGroup.name}'
+                    : 'Use group ${currentGroup.name}',
+              ),
+              trailing: _DelayChip(name: currentGroup.name, url: delayUrl),
+              onTap: () =>
+                  widget.onSelect!(currentGroup.name, currentGroup.name),
+            ),
           // Level 3 — nodes.
           Flexible(
             child: busy || currentGroup == null || visible.isEmpty
@@ -637,10 +699,14 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
                                         Icon(
                                           selected
                                               ? Icons.check_circle
+                                              : policyNames.contains(proxy.name)
+                                              ? Icons.account_tree_outlined
                                               : Icons.circle_outlined,
                                           size: 15,
                                           color: selected
                                               ? colorScheme.primary
+                                              : policyNames.contains(proxy.name)
+                                              ? colorScheme.onSurfaceVariant
                                               : colorScheme.outlineVariant,
                                         ),
                                       const SizedBox(width: 8),

@@ -10,6 +10,17 @@ import 'edit_profile.dart';
 import 'profile_nodes_view.dart';
 import 'tv_qr_import_dialog.dart';
 
+void showAddProfileSheet(BuildContext context) {
+  showExtend(
+    context,
+    builder: (_, type) => AdaptiveSheetScaffold(
+      type: type,
+      body: AddProfileView(context: context),
+      title: appLocalizations.addProfile,
+    ),
+  );
+}
+
 class AddProfileView extends StatelessWidget {
   final BuildContext context;
 

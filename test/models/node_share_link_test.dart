@@ -6,6 +6,88 @@ import 'package:flutter_test/flutter_test.dart';
 /// 只断言"生成的字符串长得像链接"没有意义，那种测试挡不住字段写错。
 void main() {
   group('NodeShareLink 往返', () {
+    test(
+      'legacy Snell links retain version and obfuscation and default to port 443',
+      () {
+        final node = ManualProxyHelper.parseShareLink(
+          'snell://sample@edge.example.test?version=2&mode=tls&host=cover.example.test#legacy',
+        )!;
+        expect(node['version'], 2);
+        expect(node['port'], 443);
+        expect(node['obfs-opts'], {
+          'mode': 'tls',
+          'host': 'cover.example.test',
+        });
+        expect(
+          ManualProxyHelper.parseShareLink(NodeShareLink.fromProxy(node)!),
+          node,
+        );
+      },
+    );
+    test('Snell export preserves options beyond the share URI format', () {
+      final node = <String, dynamic>{
+        'name': 'Snell custom',
+        'type': 'snell',
+        'server': 'edge.example.test',
+        'port': 443,
+        'psk': 'sample',
+        'version': 4,
+        'obfs-opts': {
+          'mode': 'shadow-tls',
+          'host': 'cover.example.test',
+          'version': 3,
+        },
+      };
+      expect(
+        ManualProxyHelper.parseMultipleLinks(
+          NodeShareLink.fromProxy(node)!,
+        ).single,
+        node,
+      );
+    });
+    test(
+      'Mieru simple link preserves a port range, credentials and transport',
+      () {
+        final node = <String, dynamic>{
+          'name': 'Mieru test',
+          'type': 'mieru',
+          'server': '2001:db8::2',
+          'port-range': '2090-2099',
+          'username': 'user:part',
+          'password': 'secret@?#',
+          'transport': 'UDP',
+          'udp': false,
+        };
+        expect(
+          ManualProxyHelper.parseMultipleLinks(
+            NodeShareLink.fromProxy(node)!,
+          ).single,
+          node,
+        );
+      },
+    );
+    test(
+      'Snell v6 round-trips an IPv6 address, escaped PSK and v6 options',
+      () {
+        final node = <String, dynamic>{
+          'name': 'Snell v6 节点',
+          'type': 'snell',
+          'server': '2001:db8::1',
+          'port': 8443,
+          'psk': 'example:@#%/psk',
+          'version': 6,
+          'mode': 'unshaped',
+          'udp': true,
+          'reuse': false,
+        };
+        expect(
+          ManualProxyHelper.parseMultipleLinks(
+            NodeShareLink.fromProxy(node)!,
+          ).single,
+          node,
+        );
+      },
+    );
     test('vless + reality 导出后能解析回同样的字段', () {
       final proxy = <String, dynamic>{
         'name': '美国05',

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' show Intl;
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/l10n/l10n.dart';
@@ -63,16 +63,21 @@ void main() {
     Brightness brightness = Brightness.dark,
     int selectedIndex = 0,
     ValueChanged<int>? onTabChange,
+    FluxoraMaterial material = const FluxoraMaterial(),
+    TextDirection direction = TextDirection.ltr,
   }) async {
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(
           theme: ThemeData(
+            extensions: [material],
             colorScheme: ColorScheme.fromSeed(
               seedColor: const Color(0xFF29D6C7),
               brightness: brightness,
             ),
           ),
+          builder: (_, child) =>
+              Directionality(textDirection: direction, child: child!),
           home: Scaffold(
             body: AuroraBottomNavBar(
               navigationItems: items(),
@@ -291,6 +296,35 @@ void main() {
   });
 
   group('behaviour', () {
+    testWidgets('a reduced-motion long press follows RTL and commits once', (
+      tester,
+    ) async {
+      final taps = <int>[];
+      await pumpNavBar(
+        tester,
+        material: const FluxoraMaterial(
+          style: FluxoraSurfaceStyle.liquid,
+          motionStyle: FluxoraMotionStyle.off,
+        ),
+        direction: TextDirection.rtl,
+        onTabChange: taps.add,
+      );
+      final lens = find.byKey(const ValueKey('aurora-dock-lens'));
+      final rest = tester.getRect(lens);
+      final target = tester.getCenter(find.byIcon(Icons.folder));
+      final hold = await tester.startGesture(rest.center);
+      await tester.pump(kLongPressTimeout);
+      await hold.moveTo(Offset(target.dx, rest.center.dy));
+      await tester.pump();
+      expect(tester.getRect(lens).width, rest.width);
+      expect(tester.getCenter(lens).dx, closeTo(target.dx, 1));
+      expect(taps, isEmpty);
+      await hold.up();
+      await tester.pumpAndSettle();
+      expect(taps, [1]);
+      expect(tester.hasRunningAnimations, isFalse);
+    });
+
     testWidgets('a tap reports the tapped index', (tester) async {
       final taps = <int>[];
       await pumpNavBar(tester, onTabChange: taps.add);

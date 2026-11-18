@@ -74,6 +74,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
     const warpHopGroupName = WarpConfig.warpHopGroupName;
 
     bool isInternalGroup(String name) =>
+        name == 'GLOBAL' ||
         name == chainGroupName ||
         name == warpExitGroupName ||
         name == warpHopGroupName;
@@ -86,7 +87,7 @@ class _WarpViewState extends ConsumerState<WarpView> {
 
     final allProxies = <String>{};
     for (final g in groups) {
-      if (isInternalGroup(g.name)) {
+      if (g.name != 'GLOBAL' && isInternalGroup(g.name)) {
         continue;
       }
       for (final p in g.all) {
@@ -129,7 +130,14 @@ class _WarpViewState extends ConsumerState<WarpView> {
                         showChainHopPicker(
                           context: context,
                           title: appLocalizations.warpStr98,
-                          excludeNames: {config.proxyName},
+                          allowPolicyGroups: true,
+                          excludeNames: {
+                            config.proxyName,
+                            warpExitGroupName,
+                            warpHopGroupName,
+                            chainGroupName,
+                            '✈️ 链式跳板',
+                          },
                           onSelect: onSelect,
                         );
                       },

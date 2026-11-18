@@ -33,19 +33,24 @@ void main() {
   vec2 halfExtent = min(u_size / pixelsPerUnit, u_extent) * 0.5;
   vec2 p = (uv - 0.5) * u_size / pixelsPerUnit;
   float radius = min(u_radius, min(halfExtent.x, halfExtent.y));
-  float distance = roundedRectDistance(p, halfExtent, radius);
-  vec2 x = vec2(2.0, 0.0);
-  vec2 y = vec2(0.0, 2.0);
-  vec2 normal = vec2(
-    roundedRectDistance(p + x, halfExtent, radius) - roundedRectDistance(p - x, halfExtent, radius),
-    roundedRectDistance(p + y, halfExtent, radius) - roundedRectDistance(p - y, halfExtent, radius)
-  ) * 0.25;
+  float inset = -roundedRectDistance(p, halfExtent, radius);
+  vec2 q = abs(p) - halfExtent + radius;
+  vec2 corner = max(q, 0.0);
+  float cornerLength = length(corner);
+  vec2 normal = sign(p) * (cornerLength > 0.0
+      ? corner / cornerLength
+      : (q.x > q.y ? vec2(1.0, 0.0) : vec2(0.0, 1.0)));
   // A clipped capture has no reliable vertical centre for the lens.
   float coverage = u_size.y / max(u_extent.y * pixelsPerUnit, 1.0);
-  float rim = exp(-abs(distance) / (4.0 + 5.0 * u_strength))
+  // Build displacement inside the bevel and ease it out across the face.
+  // Leaving the silhouette undistorted avoids sampling along a hard clip.
+  float depth = min(halfExtent.x, halfExtent.y);
+  float bevel = min(3.0 + 5.0 * u_strength, depth * 0.48);
+  float rim = smoothstep(0.0, bevel, inset)
+      * (1.0 - smoothstep(bevel, max(bevel + 0.001, depth * 0.9), inset))
       * smoothstep(0.82, 0.99, coverage);
   vec2 pixel = pixelsPerUnit / u_size;
-  vec2 refracted = uv - normal * rim * u_strength * 8.0 * pixel;
+  vec2 refracted = uv + normal * rim * u_strength * 9.0 * pixel;
 
   // One pass avoids mismatched blur and refraction bounds while softening text.
   vec2 spread = (1.0 + 3.0 * (1.0 - u_clarity)) * pixel;

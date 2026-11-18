@@ -1087,12 +1087,18 @@ class MessageLookup extends MessageLookupByLibrary {
     "ipRiskLimits": MessageLookupByLibrary.simpleMessage("このデータでは分からないこと"),
     "ipRiskMobile": MessageLookupByLibrary.simpleMessage("モバイル回線"),
     "ipRiskNativeType": MessageLookupByLibrary.simpleMessage("ネイティブ IP"),
+    "ipRiskNoPublicReport": MessageLookupByLibrary.simpleMessage(
+      "このアドレスの匿名で閲覧できるレポートはありません。",
+    ),
     "ipRiskNotFlagged": MessageLookupByLibrary.simpleMessage("検出なし"),
     "ipRiskOpenReport": MessageLookupByLibrary.simpleMessage("完全なレポートを開く"),
     "ipRiskPrivacyNote": MessageLookupByLibrary.simpleMessage(
       "第三者に IP を送信します（プライバシーポリシーなし）",
     ),
     "ipRiskProxy": MessageLookupByLibrary.simpleMessage("プロキシ"),
+    "ipRiskRateLimited": MessageLookupByLibrary.simpleMessage(
+      "IPure の照会上限に達しました。後でもう一度お試しください。",
+    ),
     "ipRiskRelay": MessageLookupByLibrary.simpleMessage("リレー"),
     "ipRiskScenarios": MessageLookupByLibrary.simpleMessage("シナリオ別スコア"),
     "ipRiskScore": MessageLookupByLibrary.simpleMessage("提供元の純度スコア"),
@@ -1751,7 +1757,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "現在の経路に設定してからチェック",
     ),
     "smartSuspect": MessageLookupByLibrary.simpleMessage("利用不可の疑い"),
-    "snellVersion": MessageLookupByLibrary.simpleMessage("Snell バージョン (1-4)"),
+    "snellVersion": MessageLookupByLibrary.simpleMessage("Snell バージョン"),
     "sniHint": MessageLookupByLibrary.simpleMessage("空欄の場合はサーバーアドレスと同じになります"),
     "sniLabel": MessageLookupByLibrary.simpleMessage(
       "SNI (ServerName / 偽装ドメイン)",

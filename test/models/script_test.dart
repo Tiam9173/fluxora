@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 // Test-only: both are transitive dependencies of `path_provider`. Without a
 // working platform the `appPath` singleton throws from `getDownloadsDirectory`
 // (macOS-only in the platform interface) the first time it is touched.
@@ -12,7 +13,10 @@ import 'package:path_provider_platform_interface/path_provider_platform_interfac
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/models/models.dart';
+import 'package:fluxora/providers/config.dart';
+import 'package:fluxora/state.dart';
 import 'package:path/path.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class _FakePathProviderPlatform extends Fake
     with MockPlatformInterfaceMixin
@@ -112,9 +116,60 @@ void main() {
     expect(await second.readContent(), isEmpty);
   });
 
+  test(
+    'cold restore recognizes an existing script and keeps its options',
+    () async {
+      const content =
+          'const Compatible_With_Bettbox = {}; function main(c) { return c; }';
+      final script = await Script.create(
+        label: 'Existing',
+      ).writeContent(content);
+      final props = ScriptProps(
+        currentId: script.id,
+        scripts: [
+          script.copyWith(compatible: false, customOptions: {'ads': false}),
+        ],
+      );
+      final restored = await ScriptProps.fromJson(
+        jsonDecode(jsonEncode(props)) as Map<String, dynamic>,
+      ).externalize();
+      expect(restored.currentScript?.compatible, isTrue);
+      expect(restored.currentScript?.customOptions, {'ads': false});
+      expect(await restored.currentScript?.readContent(), content);
+    },
+  );
+
   test('script ids cannot escape the scripts directory', () async {
     final path = await appPath.getScriptPath('../../outside');
 
     expect(File(path).parent.path, join(home.path, 'scripts'));
+  });
+
+  test('script selection and options round trip through preferences', () async {
+    SharedPreferences.setMockInitialValues({});
+    final content = 'function main(c) { return c; }';
+    final script = await Script.create(label: 'Saved').writeContent(content);
+    globalState.config = Config(
+      themeProps: const ThemeProps(),
+      scriptProps: ScriptProps(
+        scripts: [
+          script.copyWith(customOptions: {'ads': false}),
+        ],
+      ),
+    );
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    final keepAlive = container.listen(scriptStateProvider, (_, _) {});
+    addTearDown(keepAlive.close);
+
+    final notifier = container.read(scriptStateProvider.notifier);
+    await notifier.setId(script.id);
+    await (await preferences.sharedPreferencesCompleter.future)!.reload();
+    final restored = (await preferences.getConfig())!.scriptProps;
+    expect(restored.currentId, script.id);
+    expect(restored.currentScript?.customOptions, {'ads': false});
+    expect(await restored.currentScript?.readContent(), content);
+    await notifier.setId(script.id);
+    expect((await preferences.getConfig())!.scriptProps.currentId, isNull);
   });
 }

@@ -1387,6 +1387,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "ipRiskMobile": MessageLookupByLibrary.simpleMessage("Мобильная сеть"),
     "ipRiskNativeType": MessageLookupByLibrary.simpleMessage("Нативный IP"),
+    "ipRiskNoPublicReport": MessageLookupByLibrary.simpleMessage(
+      "Для этого адреса отчёт IPure без авторизации недоступен.",
+    ),
     "ipRiskNotFlagged": MessageLookupByLibrary.simpleMessage("Не обнаружено"),
     "ipRiskOpenReport": MessageLookupByLibrary.simpleMessage(
       "Открыть полный отчёт",
@@ -1395,6 +1398,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "Ваш IP отправляется третьей стороне (нет политики конфиденциальности)",
     ),
     "ipRiskProxy": MessageLookupByLibrary.simpleMessage("Прокси"),
+    "ipRiskRateLimited": MessageLookupByLibrary.simpleMessage(
+      "Достигнут лимит запросов IPure. Повторите попытку позже.",
+    ),
     "ipRiskRelay": MessageLookupByLibrary.simpleMessage("Ретранслятор"),
     "ipRiskScenarios": MessageLookupByLibrary.simpleMessage(
       "Оценки по сценариям",
@@ -2259,7 +2265,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "smartSuspect": MessageLookupByLibrary.simpleMessage(
       "Возможно, недоступен",
     ),
-    "snellVersion": MessageLookupByLibrary.simpleMessage("Версия Snell (1-4)"),
+    "snellVersion": MessageLookupByLibrary.simpleMessage("Версия Snell"),
     "sniHint": MessageLookupByLibrary.simpleMessage(
       "Оставьте пустым, чтобы использовать адрес сервера",
     ),

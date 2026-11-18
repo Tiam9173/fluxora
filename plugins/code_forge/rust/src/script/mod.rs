@@ -298,14 +298,17 @@ var __icons = {};
 if (typeof serviceConfigs !== 'undefined' && Array.isArray(serviceConfigs)) {
   for (var __i = 0; __i < serviceConfigs.length; __i++) {
     var __service = serviceConfigs[__i];
-    if (__service && __service.name && typeof __service.icon === 'string') {
-      __icons[__service.name] = __service.icon;
+    if (__service && typeof __service.icon === 'string') {
+      if (typeof __service.name === 'string') __icons[__service.name] = __service.icon;
+      if (typeof __service.key === 'string') __icons[__service.key] = __service.icon;
     }
   }
 }
 var __groups = [];
-if (typeof Compatible_With_Bettbox !== 'undefined' && Compatible_With_Bettbox && Array.isArray(Compatible_With_Bettbox.policyGroupOptions)) {
-  var __declared = Compatible_With_Bettbox.policyGroupOptions;
+var __compatibility = typeof Compatible_With_Fluxora !== 'undefined' ? Compatible_With_Fluxora :
+  (typeof Compatible_With_Bettbox !== 'undefined' ? Compatible_With_Bettbox : null);
+if (__compatibility && Array.isArray(__compatibility.policyGroupOptions)) {
+  var __declared = __compatibility.policyGroupOptions;
   for (var __j = 0; __j < __declared.length; __j++) {
     if (typeof __declared[__j] === 'string') {
       __groups.push(__declared[__j]);

@@ -166,7 +166,9 @@ void main() {
         ),
       );
       final lensAnimation = tester.widget(lens);
-      final mouse = await tester.createGesture(kind: ui.PointerDeviceKind.mouse);
+      final mouse = await tester.createGesture(
+        kind: ui.PointerDeviceKind.mouse,
+      );
       await mouse.addPointer(location: const Offset(5, 5));
       addTearDown(mouse.removePointer);
       await mouse.moveTo(tester.getCenter(find.text('Select')));
@@ -276,6 +278,16 @@ void main() {
         reason:
             'strength changes sampled background, not just a decorative border',
       );
+      for (var y = 42; y < 50; y++) {
+        for (var x = 9; x < 48; x++) {
+          final offset = (y * 240 + x) * 4;
+          expect(
+            b.getUint32(offset),
+            a.getUint32(offset),
+            reason: 'outside the silhouette the bevel must not displace pixels',
+          );
+        }
+      }
       final lightData = (await light.toByteData(
         format: ui.ImageByteFormat.rawRgba,
       ))!;

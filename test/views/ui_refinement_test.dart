@@ -50,11 +50,14 @@ import 'package:fluxora/views/dashboard/widgets/traffic_usage.dart';
 import 'package:fluxora/views/dashboard/widgets/start_button.dart';
 import 'package:fluxora/views/tools.dart';
 import 'package:fluxora/views/profiles/profiles.dart';
+import 'package:fluxora/views/profiles/profile_chain_dialog.dart';
+import 'package:fluxora/views/profiles/profile_nodes_view.dart';
 import 'package:fluxora/views/other_setting.dart';
 import 'package:fluxora/views/proxies/proxies.dart';
 import 'package:fluxora/views/proxies/list.dart';
 import 'package:fluxora/views/proxies/tab.dart' show DelayTestButton;
 import 'package:fluxora/views/proxies/notification_switch_card.dart';
+import 'package:fluxora/views/proxies/chain_hop_picker.dart';
 import 'package:fluxora/widgets/widgets.dart';
 import 'package:fluxora/widgets/liquid_backdrop.dart';
 
@@ -133,9 +136,12 @@ class _VisualController extends RecordingAppController {
 class _VisualCore implements ClashHandlerInterface {
   Completer<Result>? configRead;
   Completer<String>? delayReply;
+  List<TrackerInfo> connections = [];
+  bool live = false;
 
   @override
-  Future<String> asyncTestDelay(String url, String proxyName) => delayReply!.future;
+  Future<String> asyncTestDelay(String url, String proxyName) =>
+      delayReply!.future;
 
   @override
   Future<Result> getConfig(String path, {String? ageSecretKey}) {
@@ -146,9 +152,10 @@ class _VisualCore implements ClashHandlerInterface {
   @override
   Future<String> getMemory() async => '0';
   @override
-  bool get hasLiveProcess => false;
+  bool get hasLiveProcess => live;
   @override
-  Future<String> getConnections() async => '{"connections":[]}';
+  Future<String> getConnections() async =>
+      jsonEncode({'connections': connections});
   @override
   dynamic noSuchMethod(Invocation invocation) => throw StateError(
     'Unexpected core call in UI test: ${invocation.memberName}',
@@ -228,6 +235,7 @@ void main() {
     List<Group> groups = const [],
     FluxoraVisualStyle visualStyle = FluxoraVisualStyle.fluxora,
     FluxoraSurfaceStyle surfaceStyle = FluxoraSurfaceStyle.hybrid,
+    bool systemProxy = false,
   }) async {
     final morePage = [
       PageLabel.connections,
@@ -241,6 +249,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     globalState.config = Config(
+      networkProps: NetworkProps(systemProxy: systemProxy),
       appSetting: AppSettingProps(
         locale: 'zh_CN',
         mobileDashboardWidgets:
@@ -280,6 +289,8 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         chainProxyConfigProvider.overrideWith((ref) => _VisualChainManager()),
+        if (systemProxy)
+          systemProxyAppliedProvider.overrideWith((ref) => true),
         startButtonSelectorStateProvider.overrideWith(
           (ref) => StartButtonSelectorState(isInit: true, hasProfile: !empty),
         ),
@@ -497,6 +508,439 @@ void main() {
     await capture(tester, 'delay-manual-timeout');
   });
 
+  testWidgets('script overflow reads undo redo and selection after each edit', (
+    tester,
+  ) async {
+    await show(tester, reduce: true);
+    Future<void> settleEditor() async {
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 450));
+    }
+
+    const initial = 'const value = 1;';
+    Navigator.of(tester.element(find.byType(HomePage))).push(
+      MaterialPageRoute(
+        builder: (_) => EditorPage(
+          title: 'demo.js',
+          content: initial,
+          languages: const [Language.javaScript],
+          onSave: (_, _, _) {},
+        ),
+      ),
+    );
+    await settleEditor();
+    final editor = find.byType(CodeForge);
+    final fallbackEditor = find.byWidgetPredicate(
+      (widget) => widget is TextField && widget.expands,
+    );
+    if (editor.evaluate().isNotEmpty) {
+      final controller = tester.widget<CodeForge>(editor).controller!;
+      controller.setSelectionImmediately(
+        TextSelection.collapsed(offset: initial.length),
+      );
+      controller.insertAtCurrentCursor('\n// edited');
+    } else {
+      await tester.tap(fallbackEditor);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.enterText(
+        fallbackEditor,
+        '$initial\n// edited',
+      );
+    }
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(find.byTooltip(appLocalizations.undo), findsNothing);
+    expect(find.byTooltip(appLocalizations.redo), findsNothing);
+    await tester.tap(find.byTooltip(appLocalizations.more).last);
+    await settleEditor();
+    await capture(tester, 'editor-overflow-after-edit');
+    await tester.tap(find.text(appLocalizations.undo));
+    await settleEditor();
+    String currentText() => editor.evaluate().isNotEmpty
+        ? tester.widget<CodeForge>(editor).controller!.text
+        : tester
+              .widget<TextField>(fallbackEditor)
+              .controller!
+              .text;
+    expect(currentText(), initial);
+    await tester.tap(find.byTooltip(appLocalizations.more).last);
+    await settleEditor();
+    await tester.tap(find.text(appLocalizations.redo));
+    await settleEditor();
+    expect(currentText(), '$initial\n// edited');
+    if (editor.evaluate().isNotEmpty) {
+      final controller = tester.widget<CodeForge>(editor).controller!;
+      await tester.tap(find.byTooltip(appLocalizations.more).last);
+      await settleEditor();
+      await tester.tap(find.text(appLocalizations.selectAll));
+      await settleEditor();
+      expect(controller.selection.isCollapsed, isFalse);
+      await tester.tap(find.byTooltip(appLocalizations.more).last);
+      await settleEditor();
+      await tester.tap(find.text(appLocalizations.cancelSelectAll));
+      await settleEditor();
+      expect(controller.selection.isCollapsed, isTrue);
+      final finder = tester.widget<CodeForge>(editor).findController!;
+      for (final replace in [false, true]) {
+        await tester.tap(find.byTooltip(appLocalizations.more).last);
+        await settleEditor();
+        await tester.tap(
+          find
+              .text(
+                replace ? appLocalizations.replace : appLocalizations.search,
+              )
+              .last,
+        );
+        await settleEditor();
+        expect(finder.isActive, isTrue);
+        expect(finder.isReplaceMode, replace);
+        finder.isActive = false;
+        await settleEditor();
+      }
+    }
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 1));
+  });
+
+  testWidgets(
+    'jump picker selects a policy group from GLOBAL without switching the live node',
+    (tester) async {
+      final container = await show(
+        tester,
+        reduce: true,
+        groups: const [
+          Group(
+            type: GroupType.Selector,
+            name: 'GLOBAL',
+            all: [Proxy(name: 'Demo node', type: 'SS')],
+          ),
+          Group(
+            type: GroupType.Selector,
+            name: 'Demo policy',
+            all: [Proxy(name: 'Demo node', type: 'SS')],
+          ),
+        ],
+      );
+      String? selected;
+      showChainHopPicker(
+        context: tester.element(find.byType(HomePage)),
+        title: '选择跳板',
+        excludeNames: const {},
+        allowPolicyGroups: true,
+        onSelect: (name) => selected = name,
+      );
+      await tester.pumpAndSettle();
+      final core = clashCore.clashInterface as _VisualCore;
+      core.delayReply = Completer<String>();
+      addTearDown(() => core.delayReply = null);
+      await tester.tap(find.byTooltip(appLocalizations.startTest));
+      await tester.pump();
+      core.delayReply!.complete(
+        jsonEncode(const Delay(name: 'Demo node', url: '', value: 42)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('42'), findsWidgets);
+      await capture(tester, 'hop-picker-policy-groups');
+      await tester.tap(
+        find
+            .descendant(
+              of: find.byType(ListView),
+              matching: find.text('Demo policy'),
+            )
+            .last,
+      );
+      await tester.pumpAndSettle();
+      expect(selected, 'Demo policy');
+      expect(
+        (globalState.appController as _VisualController).operation,
+        isNull,
+      );
+      expect(container.read(selectedMapProvider)['GLOBAL'], isNull);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 1));
+    },
+  );
+
+  testWidgets('profile chain picker displays latency in the open dialog', (
+    tester,
+  ) async {
+    final container = await show(tester, reduce: true);
+    final core = clashCore.clashInterface as _VisualCore;
+    core.live = true;
+    core.configRead = Completer<Result>()
+      ..complete(
+        Result.success(<String, dynamic>{
+          'proxies': [
+            {'name': 'Fixture relay', 'type': 'ss'},
+          ],
+        }),
+      );
+    core.delayReply = Completer<String>();
+    addTearDown(() {
+      core.live = false;
+      core.configRead = null;
+      core.delayReply = null;
+    });
+    ProfileChainDialog.show(
+      tester.element(find.byType(HomePage)),
+      container.read(currentProfileProvider)!,
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+    final pre = find.text(appLocalizations.preProxyOptionNone);
+    for (var i = 0; i < 15 && pre.evaluate().isEmpty; i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 30)),
+      );
+      await tester.pump();
+    }
+    await tester.ensureVisible(pre);
+    await tester.tap(pre);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(appLocalizations.chainSpeedTest));
+    await tester.pump();
+    expect(find.byType(CircularProgressIndicator), findsWidgets);
+    core.delayReply!.complete(
+      jsonEncode(const Delay(name: 'Fixture relay', url: '', value: 62)),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('62ms'), findsOneWidget);
+    await capture(tester, 'profile-chain-picker-latency');
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 1));
+  });
+
+  testWidgets(
+    'auto-hide dock follows vertical drags and reappears on scroll back',
+    (tester) async {
+      final container = await show(
+        tester,
+        page: PageLabel.proxies,
+        reduce: true,
+        groups: [
+          Group(
+            type: GroupType.Selector,
+            name: '节点选择',
+            all: [
+              for (var index = 1; index <= 40; index++)
+                Proxy(name: '节点 $index', type: 'SS'),
+            ],
+          ),
+        ],
+      );
+      final navigator = Navigator.of(tester.element(find.byType(HomePage)));
+      navigator.push(
+        MaterialPageRoute<void>(
+          builder: (_) => const Scaffold(body: ThemeView()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final setting = find.text('自动隐藏导航栏');
+      await tester.ensureVisible(setting);
+      await tester.tap(setting);
+      await tester.pumpAndSettle();
+      expect(
+        container.read(themeSettingProvider).autoHideNavigationBar,
+        isTrue,
+      );
+      await capture(tester, 'auto-hide-dock-setting');
+      navigator.pop();
+      await tester.pumpAndSettle();
+      final dock = find.byType(AuroraBottomNavBar);
+      final shownY = tester.getTopLeft(dock).dy;
+      await capture(tester, 'auto-hide-dock-visible');
+      await tester.dragFrom(const Offset(170, 460), const Offset(0, -235));
+      await tester.pumpAndSettle();
+      expect(tester.getTopLeft(dock).dy, greaterThan(shownY));
+      await capture(tester, 'auto-hide-dock-hidden');
+      await tester.dragFrom(const Offset(170, 375), const Offset(0, 160));
+      await tester.pumpAndSettle();
+      expect(tester.getTopLeft(dock).dy, shownY);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 1));
+    },
+  );
+
+  testWidgets('Snell v6 form exposes its mode in place of simple obfuscation', (
+    tester,
+  ) async {
+    final container = await show(
+      tester,
+      size: const Size(390, 844),
+      reduce: true,
+    );
+    ProfileNodesView.proxiesOverrideForTest = const [];
+    addTearDown(() => ProfileNodesView.proxiesOverrideForTest = null);
+    Navigator.of(tester.element(find.byType(HomePage))).push(
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            ProfileNodesView(profile: container.read(currentProfileProvider)!),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(appLocalizations.manualEntry));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(DropdownButton<ManualProtocol>));
+    await tester.pumpAndSettle();
+    final snell = find.text('Snell').last;
+    await tester.ensureVisible(snell);
+    await tester.tap(snell);
+    await tester.pumpAndSettle();
+    expect(find.text(appLocalizations.obfsModeLabel), findsOneWidget);
+    await capture(tester, 'snell-v4-form');
+    final versionPicker = find.byType(DropdownButton<int>);
+    await tester.ensureVisible(versionPicker);
+    await tester.tap(versionPicker);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('6').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Snell v6 模式'), findsOneWidget);
+    expect(find.text(appLocalizations.obfsModeLabel), findsNothing);
+    await capture(tester, 'snell-v6-form');
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 1));
+  });
+
+  testWidgets(
+    'logs filter by source and module and prepare an AI query without secrets',
+    (tester) async {
+      final container = await show(
+        tester,
+        reduce: true,
+        size: const Size(320, 740),
+      );
+      const logs = [
+        Log(
+          logLevel: LogLevel.debug,
+          payload: '[Adapter] Loaded',
+          dateTime: '2000-01-01 11:59:59',
+        ),
+        Log(
+          logLevel: LogLevel.info,
+          payload: '[TCP] Connection established',
+          dateTime: '2000-01-01 12:00:00',
+        ),
+        Log(
+          logLevel: LogLevel.error,
+          payload: '[DNS Server] Resolver failed token=sample-secret',
+          dateTime: '2000-01-01 12:00:01',
+        ),
+      ];
+      container
+          .read(logsProvider.notifier)
+          .addLog(Log.app('Local settings saved'));
+      Navigator.of(tester.element(find.byType(HomePage))).push(
+        MaterialPageRoute<void>(
+          builder: (_) => LogsView(historyLoader: () async => logs),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await capture(tester, 'logs-all-categories');
+      await tester.tap(find.widgetWithText(ChoiceChip, appLocalizations.app));
+      await tester.pumpAndSettle();
+      expect(find.text('Local settings saved'), findsOneWidget);
+      expect(find.text('Connection established'), findsNothing);
+      final categoryStrip = find.byKey(const ValueKey('log-category-strip'));
+      final dnsFilter = find.widgetWithText(ChoiceChip, 'DNS');
+      expect(dnsFilter.hitTestable(), findsNothing);
+      await tester.drag(categoryStrip, const Offset(-200, 0));
+      await tester.pumpAndSettle();
+      await tester.tap(dnsFilter);
+      await tester.pumpAndSettle();
+      expect(find.text('Connection established'), findsNothing);
+      expect(container.read(logsCategoryFilterProvider), 'DNS');
+      await capture(tester, 'logs-dns-filter-narrow');
+      await tester.tap(find.text('Resolver failed token=sample-secret'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('AI 搜索'));
+      await tester.pumpAndSettle();
+      final input = find.descendant(
+        of: find.byType(InputDialog),
+        matching: find.byType(EditableText),
+      );
+      expect(
+        tester.widget<EditableText>(input).controller.text,
+        'Mihomo error dns resolver',
+      );
+      await capture(tester, 'logs-ai-query-preview');
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 1));
+    },
+  );
+
+  testWidgets(
+    'connections merge history with live rows and filter by protocol',
+    (tester) async {
+      final container = await show(
+        tester,
+        reduce: true,
+        size: const Size(360, 760),
+        brightness: Brightness.light,
+      );
+      TrackerInfo tracker(String id, String type) => TrackerInfo(
+        id: id,
+        start: DateTime(2026, 11, 18),
+        metadata: Metadata(
+          host: '$id.example.test',
+          network: type,
+          destinationPort: '443',
+        ),
+        chains: const ['DIRECT'],
+        rule: 'Match',
+        rulePayload: '',
+      );
+      final tcp = tracker('active', 'tcp');
+      final udp = tracker('finished', 'udp');
+      final core = clashCore.clashInterface as _VisualCore;
+      core.live = true;
+      core.connections = [tcp, udp];
+      addTearDown(() {
+        core.live = false;
+        core.connections = [];
+      });
+      Navigator.of(tester.element(find.byType(HomePage))).push(
+        MaterialPageRoute<void>(
+          builder: (_) =>
+              const RequestsConnectionsView(startOnConnections: true),
+        ),
+      );
+      await tester.pumpAndSettle();
+      container.read(requestsProvider.notifier).addRequest(udp);
+      await tester.pump();
+      await tester.tap(
+        find.widgetWithText(ChoiceChip, appLocalizations.filterAll),
+      );
+      await tester.pump();
+      final activeEndpoint = find.text('active.example.test:443');
+      final closedEndpoint = find.text('finished.example.test:443');
+      expect(activeEndpoint, findsOneWidget);
+      expect(closedEndpoint, findsOneWidget);
+      expect(find.byIcon(Icons.block), findsOneWidget);
+      await capture(tester, 'connections-all-deduplicated');
+      final categoryStrip = find.byKey(
+        const ValueKey('connection-category-strip'),
+      );
+      final udpFilter = find.widgetWithText(ChoiceChip, 'UDP');
+      expect(udpFilter.hitTestable(), findsNothing);
+      await tester.drag(
+        categoryStrip,
+        const Offset(-240, 0),
+        kind: ui.PointerDeviceKind.mouse,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(udpFilter);
+      await tester.pumpAndSettle();
+      expect(activeEndpoint, findsNothing);
+      expect(closedEndpoint, findsOneWidget);
+      expect(find.byIcon(Icons.block), findsNothing);
+      await capture(tester, 'connections-udp-filter');
+      await tester.tap(udpFilter);
+      await tester.pumpAndSettle();
+      expect(activeEndpoint, findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 1));
+    },
+  );
+
   for (final brightness in Brightness.values) {
     testWidgets('node details from long press $brightness', (tester) async {
       const name = '东京 · 高速线路 01';
@@ -626,6 +1070,10 @@ void main() {
     final lens = find.byKey(const ValueKey('aurora-dock-lens'));
     final rest = tester.getRect(lens);
     final drag = await tester.startGesture(rest.center);
+    await tester.pump(const Duration(milliseconds: 510));
+    await tester.pump(const Duration(milliseconds: 160));
+    expect(tester.getRect(lens).top, lessThan(rest.top));
+    expect(tester.getRect(lens).bottom, greaterThan(rest.bottom));
     await drag.moveBy(const Offset(42, 0));
     await drag.moveBy(const Offset(105, 0));
     await tester.pump();
@@ -634,15 +1082,13 @@ void main() {
     expect(container.read(currentPageLabelProvider), PageLabel.dashboard);
     await capture(tester, 'liquid-dock-drag');
     await drag.cancel();
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pumpAndSettle();
     expect(tester.getRect(lens), rest);
     final nextDrag = await tester.startGesture(rest.center);
     await nextDrag.moveBy(const Offset(42, 0));
     await nextDrag.moveBy(const Offset(120, 0));
     await nextDrag.up();
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pumpAndSettle();
     expect(container.read(currentPageLabelProvider), PageLabel.profiles);
     expect(tester.getSize(lens).width, rest.width);
     expect(tester.takeException(), isNull);
@@ -1261,6 +1707,7 @@ void main() {
         size: size,
         brightness: size.width < 600 ? Brightness.dark : Brightness.light,
         reduce: true,
+        systemProxy: true,
         groups: [
           Group(
             type: GroupType.Selector,
@@ -2043,16 +2490,9 @@ void main() {
         expect(tester.takeException(), isNull);
         await capture(tester, 'page-${page.name}-${brightness.name}');
         if (page == PageLabel.proxies) {
-          final action = find.descendant(
-            of: find.byType(FluxoraEmptyState),
-            matching: find.byType(FilledButton),
-          );
-          await tester.tap(action);
+          await tester.tap(find.byKey(const ValueKey('import-first-profile')));
           await tester.pumpAndSettle();
-          expect(
-            (globalState.appController as _VisualController).pages.last,
-            PageLabel.profiles,
-          );
+          expect(find.text(appLocalizations.addProfile), findsWidgets);
         }
         if (page == PageLabel.profiles) {
           final action = find.descendant(
@@ -2281,6 +2721,7 @@ void main() {
           tester,
           brightness: brightness,
           size: size,
+          systemProxy: true,
         );
         final controller = globalState.appController as _VisualController;
         final prefix = 'motion-${size.width.toInt()}-${brightness.name}';

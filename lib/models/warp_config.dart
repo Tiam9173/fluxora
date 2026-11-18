@@ -1,8 +1,13 @@
 import 'dart:convert';
 import 'package:fluxora/common/curve25519.dart';
 
+import 'chain_proxy.dart';
+
 enum WarpMode {
-  googleAndAi('智能防送中与 AI 解锁 (推荐)', '针对 Google、OpenAI、Claude、Gemini 等平台套 WARP 出口，其余保持机场原生高速'),
+  googleAndAi(
+    '智能防送中与 AI 解锁 (推荐)',
+    '针对 Google、OpenAI、Claude、Gemini 等平台套 WARP 出口，其余保持机场原生高速',
+  ),
   all('全局接管模式', '所有代理出站流量全部经过 WARP 进行二次封装，隐藏真实机场落地 IP'),
   custom('自定义规则分流', '根据指定域名或 IP 规则决定是否通过 WARP 出口');
 
@@ -356,7 +361,12 @@ class WarpConfig {
   }
 
   /// Injects WARP WireGuard proxy, dedicated group, and anti-redirect rules into Clash rawConfig
-  void applyToClashConfig(Map<String, dynamic> rawConfig) {
+  ///
+  /// [protectedRuleCount] preserves the higher-priority rules already at the front.
+  void applyToClashConfig(
+    Map<String, dynamic> rawConfig, {
+    int protectedRuleCount = 0,
+  }) {
     if (!enable || privateKey.trim().isEmpty) {
       // Off means off. A config that still carries the WG outbound - or worse,
       // a dialer-proxy pointing at the hop group - makes mihomo refuse the
@@ -437,15 +447,34 @@ class WarpConfig {
     // Case B: warpOverProxy ("通过代理路由 WARP", default)
     // Client -> Airport Proxy (hop) -> WARP (WireGuard) -> Destination
     const String dedicatedWarpHopGroup = WarpConfig.warpHopGroupName;
-    String configuredHop = defaultDialerProxy.trim();
+    final configuredHop = defaultDialerProxy.trim();
+    final warpOutboundGroupName = dedicatedGroupName.trim().isNotEmpty
+        ? dedicatedGroupName.trim()
+        : defaultDedicatedGroupName;
+    final hopDependencies = proxyDependencyClosure(
+      [configuredHop],
+      groupList,
+      proxiesList,
+    );
+    final canDialHop =
+        !hopDependencies.contains(proxyName) &&
+        !hopDependencies.contains(warpOutboundGroupName) &&
+        !hopDependencies.contains('GLOBAL');
 
-    final bool isHopSpecificProxy = configuredHop.isNotEmpty &&
+    final bool isHopSpecificProxy =
+        configuredHop.isNotEmpty &&
         configuredHop.toUpperCase() != 'DIRECT' &&
         airportProxyNames.contains(configuredHop);
 
     final bool isHopDirect = configuredHop.toUpperCase() == 'DIRECT';
+    final isHopGroup =
+        canDialHop &&
+        groupList.any(
+          (group) => group is Map && group['name'] == configuredHop,
+        );
 
-    final String effectiveHop = (isHopSpecificProxy || isHopDirect)
+    final String effectiveHop =
+        ((isHopSpecificProxy && canDialHop) || isHopDirect || isHopGroup)
         ? configuredHop
         : dedicatedWarpHopGroup;
 
@@ -482,8 +511,8 @@ class WarpConfig {
       final List<String> hopProxies = validHopNodes.isNotEmpty
           ? List<String>.from(validHopNodes)
           : (airportProxyNames.isNotEmpty
-              ? List<String>.from(airportProxyNames)
-              : ['DIRECT']);
+                ? List<String>.from(airportProxyNames)
+                : ['DIRECT']);
 
       final dedicatedHopMap = <String, dynamic>{
         'name': dedicatedWarpHopGroup,
@@ -502,12 +531,7 @@ class WarpConfig {
     proxiesList.removeWhere((p) => p is Map && p['name'] == proxyName);
     proxiesList.add(toMihomoProxyMap(effectiveHop));
 
-
     // 4. Create dedicated WARP outbound policy group: 🛡️ WARP 出口
-    final warpOutboundGroupName = dedicatedGroupName.trim().isNotEmpty
-        ? dedicatedGroupName.trim()
-        : defaultDedicatedGroupName;
-
     final existingWarpGroupIndex = groupList.indexWhere(
       (g) => g is Map && g['name'] == warpOutboundGroupName,
     );
@@ -566,15 +590,18 @@ class WarpConfig {
       ];
 
       final existingRuleSet = rulesList.map((e) => e.toString().trim()).toSet();
-      final rulesToInsert =
-          priorityRules.where((r) => !existingRuleSet.contains(r)).toList();
-      rulesList.insertAll(0, rulesToInsert);
+      final rulesToInsert = priorityRules
+          .where((r) => !existingRuleSet.contains(r))
+          .toList();
+      rulesList.insertAll(protectedRuleCount, rulesToInsert);
     } else if (mode == WarpMode.all) {
       // In all mode: add WARP proxy to other selector groups so it's globally selectable / top
       for (final group in groupList) {
         if (group is Map &&
             group['name'] != warpOutboundGroupName &&
-            group['name'] != dedicatedWarpHopGroup) {
+            group['name'] != dedicatedWarpHopGroup &&
+            !(effectiveHop == configuredHop &&
+                hopDependencies.contains(group['name']))) {
           final pList = group['proxies'];
           if (pList is List && !pList.contains(proxyName)) {
             pList.insert(0, proxyName);
@@ -584,9 +611,11 @@ class WarpConfig {
     } else if (mode == WarpMode.custom && customRules.isNotEmpty) {
       final existingRuleSet = rulesList.map((e) => e.toString().trim()).toSet();
       final rulesToInsert = customRules
-          .where((r) => r.trim().isNotEmpty && !existingRuleSet.contains(r.trim()))
+          .where(
+            (r) => r.trim().isNotEmpty && !existingRuleSet.contains(r.trim()),
+          )
           .toList();
-      rulesList.insertAll(0, rulesToInsert);
+      rulesList.insertAll(protectedRuleCount, rulesToInsert);
     }
   }
 }

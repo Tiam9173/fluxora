@@ -13,6 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../profiles/scripts.dart'
     show showGroupSwitchOptions, showScriptCustomOptions;
+import '../profiles/profile_import_empty_state.dart';
 import 'advanced_settings.dart';
 import 'chain_proxy_view.dart';
 import 'warp_view.dart';
@@ -317,11 +318,45 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
     );
     ref.watch(appSettingProvider.select((state) => state.locale));
     final applying = ref.watch(isRestartingCoreProvider);
+    final hasProfiles = ref.watch(
+      profilesProvider.select((profiles) => profiles.isNotEmpty),
+    );
+    final hasUnloadedProviders = ref.watch(
+      providersProvider.select(
+        (providers) => providers.any(
+          (provider) =>
+              provider.type == 'Proxy' &&
+              provider.vehicleType == 'HTTP' &&
+              provider.count == 0 &&
+              !provider.isUpdating,
+        ),
+      ),
+    );
+    final proxies = switch (hasGroups) {
+      false when !hasProfiles && !hasUnloadedProviders =>
+        const ProfileImportEmptyState(),
+      false => Align(
+        alignment: Alignment.topCenter,
+        child: FluxoraEmptyState(
+        icon: Icons.hub_outlined,
+        title: appLocalizations.noProxy,
+        action: FilledButton.icon(
+          onPressed: () => globalState.appController.toPage(PageLabel.profiles),
+          icon: const Icon(Icons.folder_open_outlined),
+          label: Text(appLocalizations.profiles),
+        ),
+        ),
+      ),
+      true => switch (proxiesType) {
+        ProxiesType.tab => ProxiesTabView(key: _proxiesTabKey),
+        ProxiesType.list => const ProxiesListView(),
+      },
+    };
     return CommonScaffold(
       floatingActionButton: hasGroups && !applying ? _buildFAB() : null,
       actions: _buildActions(hasGroups: hasGroups && !applying),
       title: appLocalizations.proxies,
-      searchState: AppBarSearchState(onSearch: _onSearch),
+      searchState: hasGroups ? AppBarSearchState(onSearch: _onSearch) : null,
       body: applying
           ? Center(
               child: Column(
@@ -337,22 +372,28 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
                 ],
               ),
             )
-          : switch (hasGroups) {
-              false => FluxoraEmptyState(
-                icon: Icons.hub_outlined,
-                title: appLocalizations.noProxy,
-                action: FilledButton.icon(
-                  onPressed: () =>
-                      globalState.appController.toPage(PageLabel.profiles),
-                  icon: const Icon(Icons.folder_open_outlined),
-                  label: Text(appLocalizations.profiles),
-                ),
-              ),
-              true => switch (proxiesType) {
-                ProxiesType.tab => ProxiesTabView(key: _proxiesTabKey),
-                ProxiesType.list => const ProxiesListView(),
-              },
-            },
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (hasUnloadedProviders)
+                  MaterialBanner(
+                    dividerColor: Colors.transparent,
+                    content: Text(
+                      Localizations.localeOf(context).languageCode == 'zh'
+                          ? '部分订阅源尚无节点'
+                          : 'Some subscription sources have no nodes yet',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () =>
+                            updateExternalProviders(ref, context, type: 'Proxy'),
+                        child: Text(appLocalizations.update),
+                      ),
+                    ],
+                  ),
+                Expanded(child: proxies),
+              ],
+            ),
     );
   }
 }

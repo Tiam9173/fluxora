@@ -19,6 +19,7 @@ import 'add_profile.dart';
 import 'aggregate_view.dart';
 import 'profile_nodes_view.dart';
 import 'profile_chain_dialog.dart';
+import 'profile_import_empty_state.dart';
 
 class ProfilesView extends ConsumerStatefulWidget {
   const ProfilesView({super.key});
@@ -62,18 +63,7 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
   }
 
   void _handleShowAddExtendPage() {
-    showExtend(
-      globalState.navigatorKey.currentState!.context,
-      builder: (_, type) {
-        return AdaptiveSheetScaffold(
-          type: type,
-          body: AddProfileView(
-            context: globalState.navigatorKey.currentState!.context,
-          ),
-          title: appLocalizations.add,
-        );
-      },
-    );
+    showAddProfileSheet(context);
   }
 
   Future<void> _updateProfiles() async {
@@ -103,14 +93,15 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
     }
   }
 
-  List<Widget> _buildActions() {
+  List<Widget> _buildActions({required bool hasProfiles}) {
     return [
-      ..._buildProfileControls(),
-      IconButton(
-        onPressed: _updateProfiles,
-        icon: const Icon(Icons.sync_rounded),
-        tooltip: appLocalizations.syncAll,
-      ),
+      ..._buildProfileControls(hasProfiles: hasProfiles),
+      if (hasProfiles)
+        IconButton(
+          onPressed: _updateProfiles,
+          icon: const Icon(Icons.sync_rounded),
+          tooltip: appLocalizations.syncAll,
+        ),
       PopupMenuButton<String>(
         tooltip: appLocalizations.more,
         icon: const Icon(Icons.more_horiz_rounded),
@@ -166,7 +157,7 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
     ];
   }
 
-  List<Widget> _buildProfileControls() {
+  List<Widget> _buildProfileControls({required bool hasProfiles}) {
     final scriptOn = ref.watch(
       scriptStateProvider.select((s) => s.realId != null),
     );
@@ -179,18 +170,19 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
         onPressed: () =>
             showExtend(context, builder: (_, type) => const ScriptsView()),
       ),
-      IconButton(
-        key: const ValueKey('profile-sort'),
-        tooltip: appLocalizations.sort,
-        icon: const Icon(Icons.reorder_rounded),
-        onPressed: () => showSheet(
-          context: context,
-          builder: (_, type) => ReorderableProfilesSheet(
-            type: type,
-            profiles: globalState.config.profiles,
+      if (hasProfiles)
+        IconButton(
+          key: const ValueKey('profile-sort'),
+          tooltip: appLocalizations.sort,
+          icon: const Icon(Icons.reorder_rounded),
+          onPressed: () => showSheet(
+            context: context,
+            builder: (_, type) => ReorderableProfilesSheet(
+              type: type,
+              profiles: globalState.config.profiles,
+            ),
           ),
         ),
-      ),
     ];
   }
 
@@ -214,10 +206,13 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
   @override
   Widget build(BuildContext context) {
     ref.watch(appSettingProvider.select((state) => state.locale));
+    final hasProfiles = ref.watch(
+      profilesProvider.select((profiles) => profiles.isNotEmpty),
+    );
     return CommonScaffold(
       title: appLocalizations.profiles,
-      floatingActionButton: _buildFAB(),
-      actions: _buildActions(),
+      floatingActionButton: hasProfiles ? _buildFAB() : null,
+      actions: _buildActions(hasProfiles: hasProfiles),
       body: Column(
         children: [
           Expanded(
@@ -232,17 +227,10 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
                 final profilesSelectorState = ref.watch(
                   profilesSelectorStateProvider,
                 );
+                final pendingProfileId = ref.watch(pendingProfileIdProvider);
                 final isMobileView = ref.watch(isMobileViewProvider);
                 if (profilesSelectorState.profiles.isEmpty) {
-                  return FluxoraEmptyState(
-                    icon: Icons.folder_open_outlined,
-                    title: appLocalizations.nullProfileDesc,
-                    action: FilledButton.icon(
-                      onPressed: _handleShowAddExtendPage,
-                      icon: const Icon(Icons.add_rounded),
-                      label: Text(appLocalizations.add),
-                    ),
-                  );
+                  return const ProfileImportEmptyState();
                 }
                 final columns = system.isAndroid
                     ? 1
@@ -293,12 +281,13 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
                               profile: profile,
                               groupValue:
                                   profilesSelectorState.currentProfileId,
+                              isPending: profile.id == pendingProfileId,
                               onChanged: (profileId) {
-                                if (ref.read(isRestartingCoreProvider)) return;
-                                ref
-                                        .read(currentProfileIdProvider.notifier)
-                                        .value =
-                                    profileId;
+                                if (profileId != null) {
+                                  globalState.appController.selectProfile(
+                                    profileId,
+                                  );
+                                }
                               },
                             ),
                           ),
@@ -343,6 +332,7 @@ class _ProfileDragHandle extends StatelessWidget {
 class ProfileItem extends StatelessWidget {
   final Profile profile;
   final String? groupValue;
+  final bool isPending;
   final void Function(String? value) onChanged;
 
   const ProfileItem({
@@ -350,6 +340,7 @@ class ProfileItem extends StatelessWidget {
     required this.profile,
     required this.groupValue,
     required this.onChanged,
+    this.isPending = false,
   });
 
   Future<void> _handleDeleteProfile(BuildContext context) async {
@@ -544,20 +535,19 @@ class ProfileItem extends StatelessWidget {
         ? appLocalizations.localFile
         : profile.subscriptionInfo?.expireDesc;
 
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Flexible(
+        Tooltip(
+          message: profile.label ?? profile.id,
           child: EmojiText(
             profile.label ?? profile.id,
             style: context.textTheme.titleMedium,
-            maxLines: 1,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
         ),
         if (subtitleText != null && subtitleText.isNotEmpty) ...[
-          const SizedBox(width: 6),
-          Text('·', style: context.textTheme.labelMedium?.toLight),
-          const SizedBox(width: 6),
           Text(
             subtitleText,
             style: context.textTheme.labelMedium?.toLight,
@@ -581,10 +571,7 @@ class ProfileItem extends StatelessWidget {
     if (hasUsageBar) {
       bottomText = '${_getTrafficText(subscriptionInfo)} · $updateTimeText';
     } else if (profile.type == ProfileType.url) {
-      final trafficText = subscriptionInfo != null
-          ? _getTrafficText(subscriptionInfo)
-          : 'Unlimited';
-      bottomText = '$trafficText · $updateTimeText';
+      bottomText = updateTimeText;
     } else {
       bottomText = '${appLocalizations.lastEdit} · $updateTimeText';
     }
@@ -806,6 +793,20 @@ class ProfileItem extends StatelessWidget {
     );
   }
 
+  Widget _pendingIndicator(BuildContext context) {
+    return Center(
+      child: SizedBox.square(
+        dimension: 18,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          semanticsLabel: Localizations.localeOf(context).languageCode == 'zh'
+              ? '等待应用配置'
+              : 'Configuration queued',
+        ),
+      ),
+    );
+  }
+
   Widget _buildNormalLayout(BuildContext context) {
     final hasPortal = profile.portalUrl.isSafeWebUrl;
     final trailingWidget = FadeThroughBox(
@@ -865,15 +866,17 @@ class ProfileItem extends StatelessWidget {
                   color: context.colorScheme.primary.withValues(alpha: .10),
                   borderRadius: FluxoraRadius.smAll,
                 ),
-                child: Icon(
-                  profile.id == groupValue
-                      ? Icons.check_rounded
-                      : (profile.type == ProfileType.file
-                            ? Icons.description_outlined
-                            : Icons.cloud_download_outlined),
-                  size: 20,
-                  color: context.colorScheme.primary,
-                ),
+                child: isPending
+                    ? _pendingIndicator(context)
+                    : Icon(
+                        profile.id == groupValue
+                            ? Icons.check_rounded
+                            : (profile.type == ProfileType.file
+                                  ? Icons.description_outlined
+                                  : Icons.cloud_download_outlined),
+                        size: 20,
+                        color: context.colorScheme.primary,
+                      ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -900,6 +903,7 @@ class ProfileItem extends StatelessWidget {
   Widget _buildTVLayout(BuildContext context) {
     return Row(
       children: [
+        if (isPending) _pendingIndicator(context),
         Expanded(
           child: InkWell(
             onTap: () => onChanged(profile.id),

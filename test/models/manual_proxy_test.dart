@@ -4,6 +4,39 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('ManualProxyHelper Share Link Parsing Tests', () {
+    test('preserves VLESS XHTTP options and encryption without bypassing TLS', () {
+      final link = Uri(
+        scheme: 'vless',
+        userInfo: 'b83cda07-a309-4783-8026-c0f6dff99485',
+        host: 'edge.test',
+        port: 443,
+        queryParameters: {
+          'type': 'splithttp',
+          'security': 'tls',
+          'encryption': 'mlkem768x25519plus.test',
+          'sni': 'front.test',
+          'host': 'front.test',
+          'path': '/edge%2Fpath',
+          'mode': 'packet-up',
+          'alpn': 'h2,http/1.1',
+          'extra': '{"xPaddingBytes":"100-1000"}',
+        },
+      );
+      final proxy = ManualProxyHelper.parseShareLink(link.toString())!;
+      expect(proxy['network'], 'xhttp');
+      expect(proxy['tls'], isTrue);
+      expect(proxy.containsKey('skip-cert-verify'), isFalse);
+      expect(proxy['servername'], 'front.test');
+      expect(proxy['alpn'], ['h2', 'http/1.1']);
+      expect(proxy['encryption'], 'mlkem768x25519plus.test');
+      expect(proxy['xhttp-opts'], {
+        'path': '/edge%2Fpath',
+        'host': 'front.test',
+        'mode': 'packet-up',
+        'x-padding-bytes': '100-1000',
+      });
+    });
+
     test('Parse VMess link', () {
       // vmess://eyJ2IjoiMiIsInBzIjoiVGVzdC1WTWVzcyIsImFkZCI6IjEuMi4zLjQiLCJwb3J0IjoiNDQzIiwiaWQiOiJiODNjZGEwNy1hMzA5LTQ3ODMtODAyNi1jMGY2ZGZmOTk0ODUiLCJhaWQiOiIwIiwic2N5IjoiYXV0byIsIm5ldCI6IndzIiwidHlwZSI6Im5vbmUiLCJob3N0IjoidGVzdC5jb20iLCJwYXRoIjoiL3dzIiwidGxzIjoidGxzIiwic25pIjoidGVzdC5jb20ifQ==
       const link =

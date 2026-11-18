@@ -65,24 +65,22 @@ class BackupAndRecovery extends ConsumerWidget {
       );
       if (password == null || password.isEmpty || !context.mounted) return;
     }
-    final res = await globalState.appController.safeRun<bool>(
-      () async {
-        final data = await client.recovery(entry.name);
-        final plaintext = entry.isEncrypted
-            ? await _decryptBackup(data, password!)
-            : data;
-        await globalState.appController.recoveryData(plaintext, recoveryOption);
-        return true;
-      },
-      needLoading: true,
-      title: appLocalizations.recovery,
-    );
-    if (res != true) return;
-    globalState.showMessage(
-      title: appLocalizations.recovery,
-      message: TextSpan(text: appLocalizations.recoverySuccess),
-      cancelable: false,
-    );
+    final missingScripts = await globalState.appController
+        .safeRun<List<String>>(
+          () async {
+            final data = await client.recovery(entry.name);
+            final plaintext = entry.isEncrypted
+                ? await _decryptBackup(data, password!)
+                : data;
+            return globalState.appController.recoveryData(
+              plaintext,
+              recoveryOption,
+            );
+          },
+          needLoading: true,
+          title: appLocalizations.recovery,
+        );
+    if (missingScripts != null) _showRecoveryResult(missingScripts);
   }
 
   /// P1 ② — a wrong password and a tampered file fail the same way in GCM, so
@@ -147,30 +145,32 @@ class BackupAndRecovery extends ConsumerWidget {
   Future<void> _recoveryOnLocal(RecoveryOption recoveryOption) async {
     final file = await picker.pickerFile(withData: false);
     final path = file?.path;
-    final res = await globalState.appController.safeRun<bool>(
-      () async {
-        if (path != null) {
-          await globalState.appController.recoveryDataFromFile(
-            path,
-            recoveryOption,
-          );
-        } else if (file?.bytes != null) {
-          await globalState.appController.recoveryData(
-            List<int>.from(file!.bytes!),
-            recoveryOption,
-          );
-        } else {
-          return false;
-        }
-        return true;
-      },
-      needLoading: true,
-      title: appLocalizations.recovery,
-    );
-    if (res != true) return;
+    final bytes = file?.bytes;
+    if (path == null && bytes == null) return;
+    final missingScripts = await globalState.appController
+        .safeRun<List<String>>(
+          () => path != null
+              ? globalState.appController.recoveryDataFromFile(
+                  path,
+                  recoveryOption,
+                )
+              : globalState.appController.recoveryData(bytes!, recoveryOption),
+          needLoading: true,
+          title: appLocalizations.recovery,
+        );
+    if (missingScripts != null) _showRecoveryResult(missingScripts);
+  }
+
+  void _showRecoveryResult(List<String> missingScripts) {
+    final chinese = Intl.getCurrentLocale().startsWith('zh');
+    final message = missingScripts.isEmpty
+        ? appLocalizations.recoverySuccess
+        : chinese
+        ? '已恢复备份中的可用数据。请重新导入缺少正文的脚本。\n\n${missingScripts.join('\n')}'
+        : 'Available data restored. Reimport these scripts. Their contents are missing from the backup.\n\n${missingScripts.join('\n')}';
     globalState.showMessage(
       title: appLocalizations.recovery,
-      message: TextSpan(text: appLocalizations.recoverySuccess),
+      message: TextSpan(text: message),
       cancelable: false,
     );
   }
@@ -421,48 +421,50 @@ class _BackupVersionsDialogState extends State<BackupVersionsDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              ...widget.entries.map<Widget>((entry) {
-                final timestamp = entry.timestamp;
-                final subtitle = entry.isVersioned && timestamp != null
-                    ? _formatUtc(timestamp)
-                    : appLocalizations.legacyBackup;
+              ...widget.entries
+                  .map<Widget>((entry) {
+                    final timestamp = entry.timestamp;
+                    final subtitle = entry.isVersioned && timestamp != null
+                        ? _formatUtc(timestamp)
+                        : appLocalizations.legacyBackup;
 
-                return ListItem<BackupEntry>.radio(
-                  title: Row(
-                    children: [
-                      // P1 ② — an encrypted backup needs its password at
-                      // restore time; mark it before the user picks it.
-                      if (entry.isEncrypted) ...[
-                        Icon(
-                          Icons.lock_outline,
-                          size: 14,
-                          color: context.colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: 4),
-                      ],
-                      Expanded(
-                        child: Text(
-                          entry.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                    return ListItem<BackupEntry>.radio(
+                      title: Row(
+                        children: [
+                          // P1 ② — an encrypted backup needs its password at
+                          // restore time; mark it before the user picks it.
+                          if (entry.isEncrypted) ...[
+                            Icon(
+                              Icons.lock_outline,
+                              size: 14,
+                              color: context.colorScheme.onSurfaceVariant,
+                            ),
+                            const SizedBox(width: 4),
+                          ],
+                          Expanded(
+                            child: Text(
+                              entry.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  subtitle: Text(subtitle),
-                  delegate: RadioDelegate<BackupEntry>(
-                    value: entry,
-                    groupValue: _selected,
-                    onChanged: (val) {
-                      if (val != null) {
-                        setState(() {
-                          _selected = val;
-                        });
-                      }
-                    },
-                  ),
-                );
-              }).separated(const Divider(height: 1)),
+                      subtitle: Text(subtitle),
+                      delegate: RadioDelegate<BackupEntry>(
+                        value: entry,
+                        groupValue: _selected,
+                        onChanged: (val) {
+                          if (val != null) {
+                            setState(() {
+                              _selected = val;
+                            });
+                          }
+                        },
+                      ),
+                    );
+                  })
+                  .separated(const Divider(height: 1)),
             ],
           ),
         ),

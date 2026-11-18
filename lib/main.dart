@@ -286,13 +286,16 @@ Future<bool> _probeRunningInstance() async {
   }
 }
 
-Future<void> _runApp({Object? startupError}) async {
+Future<void> _initCodeForge() async {
   try {
     await RustLib.init();
   } catch (e) {
     commonPrint.log('Failed to initialize code_forge RustLib: $e');
   }
+}
 
+Future<void> _runApp({Object? startupError}) async {
+  await _initCodeForge();
   if (system.isAndroid) {
     try {
       await FlutterDisplayMode.setHighRefreshRate();
@@ -449,6 +452,9 @@ Future<void> _service(List<String> flags) async {
 
     Future(() async {
       try {
+        if (globalState.config.scriptProps.scripts.isNotEmpty) {
+          await _initCodeForge();
+        }
         final params = await globalState.getSetupParams(
           pathConfig: clashConfig,
         );

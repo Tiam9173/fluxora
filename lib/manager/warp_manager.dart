@@ -493,8 +493,11 @@ class WarpManager extends ChangeNotifier {
 
   /// Injects WARP configuration into runtime Clash config.
   /// Called in `state.dart` within `patchRawConfig`.
-  void applyToClashConfig(Map<String, dynamic> rawConfig) {
-    _config.applyToClashConfig(rawConfig);
+  void applyToClashConfig(
+    Map<String, dynamic> rawConfig, {
+    int protectedRuleCount = 0,
+  }) {
+    _config.applyToClashConfig(rawConfig, protectedRuleCount: protectedRuleCount);
   }
 }
 

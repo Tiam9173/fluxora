@@ -450,16 +450,20 @@ fn runs_a_profile_override_end_to_end() {
 fn extracts_script_options() {
     let script = include_str!("../../tests/fixtures/profile_script.js");
 
-    let options: Json = serde_json::from_str(&extract_options(script).unwrap()).unwrap();
-
-    assert_eq!(
-        options,
-        json!({
-            "options": { "ai": true, "streaming": true, "ads": false },
-            "icons": { "AI": "ai.png", "Streaming": "tv.png" },
-            "policyGroupOptions": ["AI", "Streaming"],
-        })
-    );
+    for input in [
+        script.to_string(),
+        script.replace("Compatible_With_Bettbox", "Compatible_With_Fluxora"),
+    ] {
+        let options: Json = serde_json::from_str(&extract_options(&input).unwrap()).unwrap();
+        assert_eq!(
+            options,
+            json!({
+                "options": { "ai": true, "streaming": true, "ads": false },
+                "icons": { "AI": "ai.png", "ai": "ai.png", "Streaming": "tv.png", "streaming": "tv.png" },
+                "policyGroupOptions": ["AI", "Streaming"],
+            })
+        );
+    }
 }
 
 #[test]

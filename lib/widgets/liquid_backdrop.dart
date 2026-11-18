@@ -222,16 +222,16 @@ class _GlassRim extends CustomPainter {
       shape,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.2
+        ..strokeWidth = 1
         ..shader = ui.Gradient.radial(
           focus,
           size.longestSide * (.82 + .12 * pressure),
           [
             Colors.white.withValues(
-              alpha: (dark ? .24 : .72) + .10 * strength + .13 * pressure,
+              alpha: (dark ? .23 : .56) + .10 * strength + .13 * pressure,
             ),
             (dark ? Colors.white : const Color(0xFF7585A7)).withValues(
-              alpha: dark ? .11 : .20,
+              alpha: dark ? .06 : .12,
             ),
           ],
         ),

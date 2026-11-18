@@ -18,6 +18,36 @@ class NodeShareLink {
     // `direct` has no address at all, so it has to be answered before the
     // server/port guard that every other protocol needs.
     if (type == 'direct') return 'direct://#${Uri.encodeComponent(name)}';
+    if (type == 'mieru' && server.isNotEmpty) {
+      final binding = proxy['port-range']?.toString() ?? port;
+      final user = proxy['username']?.toString() ?? '';
+      final password = proxy['password']?.toString() ?? '';
+      final transport = proxy['transport']?.toString() ?? '';
+      if (binding.isEmpty ||
+          user.isEmpty ||
+          password.isEmpty ||
+          transport.isEmpty) {
+        return null;
+      }
+      return Uri(
+        scheme: 'mierus',
+        userInfo:
+            '${Uri.encodeComponent(user)}:${Uri.encodeComponent(password)}',
+        host: server,
+        queryParameters: {
+          'profile': name,
+          'port': binding,
+          'protocol': transport,
+          if (proxy['udp'] == false) 'udp': 'false',
+          for (final key in [
+            'multiplexing',
+            'handshake-mode',
+            'traffic-pattern',
+          ])
+            if (proxy[key] case final String value) key: value,
+        },
+      ).toString();
+    }
     if (server.isEmpty || port.isEmpty) return null;
 
     switch (type) {
@@ -76,12 +106,7 @@ class NodeShareLink {
 
   // ── 各协议 ──────────────────────────────────────────────────────────
 
-  static String _vmess(
-    Map proxy,
-    String server,
-    String port,
-    String name,
-  ) {
+  static String _vmess(Map proxy, String server, String port, String name) {
     final obj = <String, dynamic>{
       'v': '2',
       'ps': name,
@@ -101,12 +126,7 @@ class NodeShareLink {
     return 'vmess://${base64Encode(utf8.encode(jsonEncode(obj)))}';
   }
 
-  static String _vless(
-    Map proxy,
-    String server,
-    String port,
-    String name,
-  ) {
+  static String _vless(Map proxy, String server, String port, String name) {
     final params = <String, String>{
       'encryption': proxy['encryption']?.toString() ?? 'none',
       'type': proxy['network']?.toString() ?? 'tcp',
@@ -116,8 +136,7 @@ class NodeShareLink {
         'flow': proxy['flow'].toString(),
       if (proxy['client-fingerprint']?.toString().isNotEmpty == true)
         'fp': proxy['client-fingerprint'].toString(),
-      if (_realityPublicKey(proxy).isNotEmpty)
-        'pbk': _realityPublicKey(proxy),
+      if (_realityPublicKey(proxy).isNotEmpty) 'pbk': _realityPublicKey(proxy),
       if (_realityShortId(proxy).isNotEmpty) 'sid': _realityShortId(proxy),
       if (_isTrue(proxy['skip-cert-verify'])) 'allowInsecure': '1',
     };
@@ -156,13 +175,9 @@ class NodeShareLink {
 
   /// hysteria v1。注意它和 hysteria2 不是一个协议：认证字段是 `auth`/`auth_str`，
   /// 带宽用 `up`/`down` 描述，obfs 也没有单独的 password。
-  static String _hysteria(
-    Map proxy,
-    String server,
-    String port,
-    String name,
-  ) {
-    final auth = proxy['auth_str']?.toString() ??
+  static String _hysteria(Map proxy, String server, String port, String name) {
+    final auth =
+        proxy['auth_str']?.toString() ??
         proxy['auth-str']?.toString() ??
         proxy['auth']?.toString() ??
         proxy['password']?.toString() ??
@@ -222,18 +237,42 @@ class NodeShareLink {
     final psk = proxy['psk']?.toString() ?? '';
     if (psk.isEmpty) return '';
     final obfs = proxy['obfs-opts'];
+    const uriFields = {
+      'name',
+      'type',
+      'server',
+      'port',
+      'psk',
+      'version',
+      'mode',
+      'udp',
+      'reuse',
+      'obfs-opts',
+    };
+    if (proxy.keys.any((key) => !uriFields.contains(key)) ||
+        (obfs is Map &&
+            obfs.keys.any((key) => key != 'mode' && key != 'host'))) {
+      return jsonEncode(proxy);
+    }
     final obfsMode = obfs is Map ? (obfs['mode']?.toString() ?? '') : '';
     final obfsHost = obfs is Map ? (obfs['host']?.toString() ?? '') : '';
     final params = <String, String>{
       if (proxy['version']?.toString().isNotEmpty == true)
         'version': proxy['version'].toString(),
+      if (proxy['version']?.toString() == '6' && proxy['mode'] is String)
+        'mode': proxy['mode'] as String,
+      if (proxy['udp'] is bool) 'udp': proxy['udp'].toString(),
+      if (proxy['reuse'] is bool) 'reuse': proxy['reuse'].toString(),
       if (obfsMode.isNotEmpty && obfsMode != 'off') 'obfs': obfsMode,
       if (obfsHost.isNotEmpty) 'host': obfsHost,
     };
     final query = params.isEmpty
         ? ''
         : '?${params.entries.map((e) => '${e.key}=${Uri.encodeComponent(e.value)}').join('&')}';
-    return 'snell://$psk@$server:$port$query#${Uri.encodeComponent(name)}';
+    final host = server.contains(':') && !server.startsWith('[')
+        ? '[$server]'
+        : server;
+    return 'snell://${Uri.encodeComponent(psk)}@$host:$port$query#${Uri.encodeComponent(name)}';
   }
 
   static String _ssh(Map proxy, String server, String port, String name) {
@@ -247,12 +286,7 @@ class NodeShareLink {
     return 'ssh://$auth$server:$port#${Uri.encodeComponent(name)}';
   }
 
-  static String _shadowTls(
-    Map proxy,
-    String server,
-    String port,
-    String name,
-  ) {
+  static String _shadowTls(Map proxy, String server, String port, String name) {
     final password = proxy['password']?.toString() ?? '';
     if (password.isEmpty) return '';
     final params = <String, String>{
@@ -267,12 +301,7 @@ class NodeShareLink {
         '#${Uri.encodeComponent(name)}';
   }
 
-  static String _wireguard(
-    Map proxy,
-    String server,
-    String port,
-    String name,
-  ) {
+  static String _wireguard(Map proxy, String server, String port, String name) {
     final privateKey = proxy['private-key']?.toString() ?? '';
     if (privateKey.isEmpty) return '';
     final params = <String, String>{
@@ -312,13 +341,9 @@ class NodeShareLink {
     return 'ssr://${base64Encode(utf8.encode(body))}';
   }
 
-  static String _hysteria2(
-    Map proxy,
-    String server,
-    String port,
-    String name,
-  ) {
-    final auth = proxy['password']?.toString() ??
+  static String _hysteria2(Map proxy, String server, String port, String name) {
+    final auth =
+        proxy['password']?.toString() ??
         proxy['auth']?.toString() ??
         proxy['auth-str']?.toString() ??
         '';
@@ -357,9 +382,7 @@ class NodeShareLink {
       value == true || value?.toString().toLowerCase() == 'true';
 
   static String _sni(Map proxy) =>
-      proxy['servername']?.toString() ??
-      proxy['sni']?.toString() ??
-      '';
+      proxy['servername']?.toString() ?? proxy['sni']?.toString() ?? '';
 
   static String _securityOf(Map proxy) =>
       _realityPublicKey(proxy).isNotEmpty ? 'reality' : 'tls';

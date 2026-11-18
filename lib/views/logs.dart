@@ -59,9 +59,8 @@ class _LogsViewState extends ConsumerState<LogsView> {
       return;
     }
     if (!mounted || history.isEmpty) return;
-    // The Go side records history and streams from the *same* subscription:
-    // history covers everything up to now, the stream picks up from now. So
-    // replacing the list once is correct — nothing is lost and nothing repeats.
+    // The core snapshot is authoritative for core logs. The provider also keeps
+    // app messages, which are not part of that snapshot.
     ref.read(logsProvider.notifier).setLogs(history);
   }
 
@@ -138,6 +137,8 @@ class _LogsViewState extends ConsumerState<LogsView> {
   @override
   Widget build(BuildContext context) {
     final logs = ref.watch(filteredLogsProvider);
+    final category = ref.watch(logsCategoryFilterProvider);
+    final modules = ref.watch(logsModulesProvider);
     final hasLogs = logs.isNotEmpty;
     // The list is `reverse: true`, so index 0 — the **newest** line — renders at
     // the visual bottom, exactly where the floating dock sits. Every other
@@ -183,54 +184,93 @@ class _LogsViewState extends ConsumerState<LogsView> {
       onKeywordsUpdate: _onKeywordsUpdate,
       searchState: AppBarSearchState(onSearch: _onSearch),
       title: appLocalizations.logs,
-      body: !hasLogs
-          ? FluxoraEmptyState(
-              title: appLocalizations.nullTip(appLocalizations.logs),
-            )
-          : ScrollToEndBox(
-              onCancelToEnd: _cancelAutoScroll,
-              controller: _scrollController,
-              enable: _autoScrollToEnd,
-              reverse: true,
-              dataSource: logs,
-              child: CommonScrollBar(
-                controller: _scrollController,
-                child: Align(
-                  alignment: Alignment.topCenter,
-                  child: ListView.builder(
-                    physics: const NextClampingScrollPhysics(),
-                    reverse: true,
-                    shrinkWrap: logs.length < 20,
-                    controller: _scrollController,
-                    padding: EdgeInsets.only(
-                      bottom:
-                          16 +
-                          (isMobileView
-                              ? getFloatingBottomBarReserveHeight(context)
-                              : 0),
-                      top: 8,
-                    ),
-                    itemExtentBuilder: (index, _) {
-                      return LogItem.height + 1;
-                    },
-                    itemBuilder: (context, index) {
-                      final log = logs[index];
-                      return LogItem(
-                        key: ValueKey(log.dateTime),
-                        index: index,
-                        count: logs.length,
-                        reversed: true,
-                        log: log,
-                        onClick: (value) {
-                          context.commonScaffoldState?.addKeyword(value);
-                        },
-                      );
-                    },
-                    itemCount: logs.length,
-                  ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CategoryFilterBar(
+            key: const ValueKey('log-category-strip'),
+            children: [
+              for (final option in <String?>[
+                null,
+                'APP',
+                'CORE',
+                ...modules,
+                if (category != null &&
+                    category != 'APP' &&
+                    category != 'CORE' &&
+                    !modules.contains(category))
+                  category,
+              ])
+                CategoryFilterChip(
+                  key: ValueKey(option),
+                  label: switch (option) {
+                    null => appLocalizations.filterAll,
+                    'APP' => appLocalizations.app,
+                    'CORE' => appLocalizations.core,
+                    final String name => name,
+                  },
+                  selected: category == option,
+                  onSelected: (selected) =>
+                      ref.read(logsCategoryFilterProvider.notifier).state =
+                          selected ? option : null,
                 ),
-              ),
-            ),
+            ],
+          ),
+          Expanded(
+            child: !hasLogs
+                ? FluxoraEmptyState(
+                    title: appLocalizations.nullTip(appLocalizations.logs),
+                  )
+                : ScrollToEndBox(
+                    onCancelToEnd: _cancelAutoScroll,
+                    controller: _scrollController,
+                    enable: _autoScrollToEnd,
+                    reverse: true,
+                    dataSource: logs,
+                    child: CommonScrollBar(
+                      controller: _scrollController,
+                      child: Align(
+                        alignment: Alignment.topCenter,
+                        child: ListView.builder(
+                          physics: const NextClampingScrollPhysics(),
+                          reverse: true,
+                          shrinkWrap: logs.length < 20,
+                          controller: _scrollController,
+                          padding: EdgeInsets.only(
+                            bottom:
+                                16 +
+                                (isMobileView
+                                    ? getFloatingBottomBarReserveHeight(context)
+                                    : 0),
+                            top: 8,
+                          ),
+                          itemExtentBuilder: (index, _) {
+                            return LogItem.height + 1;
+                          },
+                          itemBuilder: (context, index) {
+                            final log = logs[index];
+                            return LogItem(
+                              index: index,
+                              count: logs.length,
+                              reversed: true,
+                              log: log,
+                              onClick: (value) =>
+                                  ref
+                                          .read(
+                                            logsCategoryFilterProvider.notifier,
+                                          )
+                                          .state =
+                                      value,
+                            );
+                          },
+                          itemCount: logs.length,
+                        ),
+                      ),
+                    ),
+                  ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -244,12 +284,7 @@ class LogItem extends StatelessWidget {
 
   static double get height {
     final measure = globalState.measure;
-    return measure.bodyLargeHeight * 2 +
-        8 +
-        24 +
-        measure.labelMediumHeight +
-        16 +
-        16;
+    return measure.bodyLargeHeight * 2 + measure.labelMediumHeight + 64;
   }
 
   const LogItem({
@@ -273,44 +308,60 @@ class LogItem extends StatelessWidget {
           onTap: () {
             globalState.showCommonDialog(child: LogDetailDialog(log: log));
           },
-          title: EmojiText(
-            log.payload,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: context.textTheme.bodyLarge?.copyWith(
-              color: log.logLevel.colorOf(context),
-            ),
-          ),
-          subtitle: Padding(
-            padding: const EdgeInsets.only(top: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                CommonChip(
-                  onPressed: () {
-                    onClick?.call(log.logLevel.name);
-                  },
-                  label: log.logLevel.name,
-                ),
-                // P8-2C F-4 — the chip and the timestamp are both unbounded, so
-                // at phone widths (~364 px of content against 288 px of usable
-                // width at 320) the row overflowed. The chip is short and fixed,
-                // the timestamp is the one that has to give: it shrinks and
-                // ellipsises, and the full value stays readable in
-                // `LogDetailDialog`, which opens on tap.
-                Flexible(
-                  child: Text(
-                    log.dateTime,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.end,
-                    style: context.textTheme.bodySmall?.copyWith(
-                      color: context.colorScheme.onSurface.opacity80,
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            spacing: 6,
+            children: [
+              Row(
+                spacing: 8,
+                children: [
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 116),
+                    child: CommonChip(
+                      avatar: Tooltip(
+                        message: log.logLevel.name,
+                        child: Icon(
+                          switch (log.logLevel) {
+                            LogLevel.error => Icons.error_outline_rounded,
+                            LogLevel.warning => Icons.warning_amber_rounded,
+                            _ => Icons.circle,
+                          },
+                          size: switch (log.logLevel) {
+                            LogLevel.error || LogLevel.warning => 13,
+                            _ => 7,
+                          },
+                          color: log.logLevel.colorOf(context),
+                        ),
+                      ),
+                      onPressed: () => onClick?.call(log.category),
+                      label: log.category,
                     ),
                   ),
-                ),
-              ],
-            ),
+                  Flexible(
+                    fit: FlexFit.tight,
+                    child: Tooltip(
+                      message: log.dateTime,
+                      child: Text(
+                        log.dateTime,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.end,
+                        style: context.textTheme.bodySmall?.copyWith(
+                          color: context.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              EmojiText(
+                log.message.isEmpty ? log.payload : log.message,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: context.textTheme.bodyLarge,
+              ),
+            ],
           ),
         ),
       ),
@@ -323,11 +374,52 @@ class LogDetailDialog extends StatelessWidget {
 
   const LogDetailDialog({super.key, required this.log});
 
+  Future<void> _searchWithAi(BuildContext context) async {
+    final chinese = Localizations.localeOf(context).languageCode == 'zh';
+    final payload = log.payload.toLowerCase();
+    final topics = const [
+      'dns',
+      'resolver',
+      'tls',
+      'handshake',
+      'connection refused',
+      'deadline exceeded',
+    ].where(payload.contains);
+    final query = await showDialog<String>(
+      context: context,
+      builder: (_) => InputDialog(
+        title: chinese ? 'AI 搜索' : 'AI search',
+        labelText: chinese ? '将发送给 Google 的问题' : 'Query sent to Google',
+        hintText: chinese
+            ? '请勿粘贴密钥或订阅链接'
+            : 'Omit secrets and subscription URLs',
+        value: ['Mihomo', log.logLevel.name, ...topics].join(' '),
+        maxLines: 4,
+      ),
+    );
+    if (query == null || query.trim().isEmpty) return;
+    await globalState.openSafeWebUrl(
+      Uri.https('www.google.com', '/search', {
+        'q': query.trim(),
+        'udm': '50',
+      }).toString(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return CommonDialog(
       title: appLocalizations.details,
       actions: [
+        TextButton.icon(
+          onPressed: () => _searchWithAi(context),
+          icon: const Icon(Icons.auto_awesome_outlined),
+          label: Text(
+            Localizations.localeOf(context).languageCode == 'zh'
+                ? 'AI 搜索'
+                : 'AI search',
+          ),
+        ),
         TextButton(
           onPressed: () {
             Navigator.of(context).pop(true);
