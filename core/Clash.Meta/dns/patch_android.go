@@ -3,10 +3,12 @@
 package dns
 
 import (
+	"sync/atomic"
+
 	"github.com/metacubex/mihomo/component/resolver"
 )
 
-var systemResolver []dnsClient
+var systemResolver atomic.Value
 
 func FlushCacheWithDefaultResolver() {
 	resolver.ClearCache()
@@ -14,24 +16,22 @@ func FlushCacheWithDefaultResolver() {
 }
 
 func UpdateSystemDNS(addr []string) {
-	if len(addr) == 0 {
-		systemResolver = nil
-	}
-
 	ns := make([]NameServer, 0, len(addr))
 	for _, d := range addr {
 		ns = append(ns, NameServer{Addr: d})
 	}
 
-	systemResolver = transform(ns, nil)
+	systemResolver.Store(transform(ns, nil))
 }
 
 func (c *systemClient) getDnsClients() ([]dnsClient, error) {
-	return systemResolver, nil
+	clients, _ := systemResolver.Load().([]dnsClient)
+	return clients, nil
 }
 
 func (c *systemClient) ResetConnection() {
-	for _, r := range systemResolver {
+	clients, _ := c.getDnsClients()
+	for _, r := range clients {
 		r.ResetConnection()
 	}
 }

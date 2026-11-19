@@ -314,7 +314,7 @@ func NewTrojan(option TrojanOption) (*Trojan, error) {
 	if err != nil {
 		return nil, err
 	}
-	t.restlsConfig, err = option.RestlsOpts.Parse(option.SNI, option.ClientFingerprint)
+	t.restlsConfig, err = option.RestlsOpts.Parse(option.SNI, option.ClientFingerprint, option.RootCAs)
 	if err != nil {
 		return nil, err
 	}

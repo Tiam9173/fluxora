@@ -14,7 +14,7 @@ import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/providers/state.dart' as providers_state;
 
 import 'package:fluxora/widgets/dialog.dart';
-import 'package:flutter/foundation.dart' show ValueListenable;
+import 'package:flutter/foundation.dart' show ValueListenable, listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' as flutter_riverpod;
@@ -47,6 +47,26 @@ String resolveExternalControllerValue({
     return configured.value;
   }
   return sessionController ?? ExternalControllerStatus.open.value;
+}
+
+({String endpoint, String secret}) applyExternalControllerConfig(
+  Map<String, dynamic> rawConfig, {
+  required ExternalControllerStatus configured,
+  required bool forceLoopback,
+  String? sessionController,
+  String? configuredSecret,
+}) {
+  final endpoint = resolveExternalControllerValue(
+    configured: configured,
+    forceLoopback: forceLoopback,
+    sessionController: sessionController,
+  );
+  final secret = configuredSecret == null || configuredSecret.isEmpty
+      ? rawConfig['secret']?.toString() ?? ''
+      : configuredSecret;
+  rawConfig['external-controller'] = endpoint;
+  rawConfig['secret'] = secret;
+  return (endpoint: endpoint, secret: secret);
 }
 
 class GlobalState {
@@ -895,25 +915,20 @@ class GlobalState {
     }
     // 用会话里实际生效的地址：控制器端口被占用时会被避让到别的端口，这里
     // 若还写配置里的 9090，内核监听的和 App/通知栏卡片连的就不是同一个端口。
-    final controllerValue = resolveExternalControllerValue(
+    final controller = applyExternalControllerConfig(
+      rawConfig,
       configured: realPatchConfig.externalController,
       forceLoopback: forceLoopback,
       sessionController: sessionExternalController,
+      configuredSecret: realPatchConfig.secret,
     );
-    rawConfig['external-controller'] = realPatchConfig.allowLan
-        ? controllerValue.replaceAll('127.0.0.1', '0.0.0.0')
-        : controllerValue;
     {
-      final secret = realPatchConfig.secret;
-      if (secret != null && secret.isNotEmpty) {
-        rawConfig['secret'] = secret;
-      }
       // 通知栏切换卡片是原生 Activity，它不跑 Flutter，拿不到这份配置。
       // 把地址和密钥写进 SharedPreferences，原生侧直接读。
       unawaited(
         _persistCoreEndpoint(
-          rawConfig['external-controller']?.toString(),
-          realPatchConfig.secret,
+          controller.endpoint,
+          controller.secret,
         ),
       );
     }
@@ -1067,6 +1082,10 @@ class GlobalState {
         rawConfig,
         originalDns: originalDns,
         originalHosts: originalHosts,
+        keepSubscriptionPublicNodeResolvers: listEquals(
+          dns.proxyServerNameserver,
+          const Dns().proxyServerNameserver,
+        ),
       );
     }
 

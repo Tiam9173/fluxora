@@ -155,6 +155,7 @@ func NewHysteria(option HysteriaOption) (*Hysteria, error) {
 
 	tlsConfig, err := ca.GetTLSConfig(ca.Option{
 		TLSConfig: &tls.Config{
+			RootCAs:            option.RootCAs,
 			ServerName:         serverName,
 			InsecureSkipVerify: option.SkipCertVerify,
 			MinVersion:         tls.VersionTLS13,

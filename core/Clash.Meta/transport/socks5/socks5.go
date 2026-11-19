@@ -492,11 +492,23 @@ func DecodeUDPPacket(packet []byte) (addr Addr, payload []byte, err error) {
 	return
 }
 
-func EncodeUDPPacket(addr Addr, payload []byte) (packet []byte, err error) {
+func EncodeUDPPacket(addr Addr, payload []byte) ([]byte, error) {
+	return EncodeUDPPacketTo(nil, addr, payload)
+}
+
+// EncodeUDPPacketTo encodes a UDP packet into a caller-owned buffer.
+func EncodeUDPPacketTo(buffer []byte, addr Addr, payload []byte) ([]byte, error) {
 	if addr == nil {
-		err = errors.New("address is invalid")
-		return
+		return nil, errors.New("address is invalid")
 	}
-	packet = bytes.Join([][]byte{{0, 0, 0}, addr, payload}, []byte{})
-	return
+	size := 3 + len(addr) + len(payload)
+	if cap(buffer) < size {
+		buffer = make([]byte, size)
+	} else {
+		buffer = buffer[:size]
+		buffer[0], buffer[1], buffer[2] = 0, 0, 0
+	}
+	copy(buffer[3:], addr)
+	copy(buffer[3+len(addr):], payload)
+	return buffer, nil
 }

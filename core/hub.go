@@ -5,6 +5,7 @@ import (
 	"context"
 	"core/state"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -69,9 +70,9 @@ func recordLogHistory(entry logEntry) {
 	logHistoryHead = (logHistoryHead + 1) % maxLogHistory
 }
 
-/// Serialised for the Dart side. Always returns valid JSON — an empty array on
-/// a cold buffer or a marshal failure, never an error, so a log read can never
-/// break the page that asked for it.
+// / Serialised for the Dart side. Always returns valid JSON — an empty array on
+// / a cold buffer or a marshal failure, never an error, so a log read can never
+// / break the page that asked for it.
 func handleGetLogs() string {
 	logHistoryLock.RLock()
 	if len(logHistory) == 0 {
@@ -146,9 +147,10 @@ func handleGetIsInit() bool {
 func handleForceGc(forceFreeOSMemory bool) {
 	go func() {
 		log.Infoln("[APP] Request force GC, forceFreeOSMemory=%t", forceFreeOSMemory)
-		runtime.GC()
 		if forceFreeOSMemory {
 			debug.FreeOSMemory()
+		} else {
+			runtime.GC()
 		}
 	}()
 }
@@ -156,7 +158,6 @@ func handleForceGc(forceFreeOSMemory bool) {
 func handleShutdown() bool {
 	stopListeners()
 	executor.Shutdown()
-	runtime.GC()
 	debug.FreeOSMemory()
 	isInit = false
 	return true
@@ -219,6 +220,10 @@ func handleChangeProxy(data string, fn func(string string)) {
 			fn(err.Error())
 			return
 		}
+		if params == nil || params.GroupName == nil || params.ProxyName == nil {
+			fn("Missing group or node")
+			return
+		}
 		groupName := *params.GroupName
 		proxyName := *params.ProxyName
 		group, ok := tunnel.Proxies()[groupName]
@@ -241,7 +246,6 @@ func handleChangeProxy(data string, fn func(string string)) {
 			fn(err.Error())
 			return
 		}
-
 		fn("")
 		return
 	}()
@@ -279,19 +283,24 @@ func handleResetTraffic() {
 	statistic.DefaultManager.ResetStatistic()
 }
 
+var delayTestSlots = make(chan struct{}, 50)
+
 func handleAsyncTestDelay(paramsString string, fn func(string)) {
-	mBatch.Go(paramsString, func() (bool, error) {
+	go func() {
+		delayTestSlots <- struct{}{}
+		defer func() { <-delayTestSlots }()
+
 		var params = &TestDelayParams{}
 		err := json.Unmarshal([]byte(paramsString), params)
 		if err != nil {
 			fn("")
-			return false, nil
+			return
 		}
 
 		expectedStatus, err := utils.NewUnsignedRanges[uint16]("")
 		if err != nil {
 			fn("")
-			return false, nil
+			return
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*time.Duration(params.Timeout))
@@ -322,7 +331,7 @@ func handleAsyncTestDelay(paramsString string, fn func(string)) {
 			delayData.Value = -1
 			data, _ := json.Marshal(delayData)
 			fn(string(data))
-			return false, nil
+			return
 		}
 
 		testUrl := constant.DefaultTestURL
@@ -335,16 +344,16 @@ func handleAsyncTestDelay(paramsString string, fn func(string)) {
 		delay, err := proxy.URLTest(ctx, testUrl, expectedStatus)
 		if err != nil || delay == 0 {
 			delayData.Value = -1
+			delayData.TimedOut = errors.Is(err, context.DeadlineExceeded)
 			data, _ := json.Marshal(delayData)
 			fn(string(data))
-			return false, nil
+			return
 		}
 
 		delayData.Value = int32(delay)
 		data, _ := json.Marshal(delayData)
 		fn(string(data))
-		return false, nil
-	})
+	}()
 }
 
 func handleGetConnections() string {

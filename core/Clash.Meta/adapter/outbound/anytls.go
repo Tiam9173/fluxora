@@ -129,7 +129,7 @@ func NewAnyTLS(option AnyTLSOption) (*AnyTLS, error) {
 	if err != nil {
 		return nil, err
 	}
-	restlsConfig, err := option.RestlsOpts.Parse(option.SNI, option.ClientFingerprint)
+	restlsConfig, err := option.RestlsOpts.Parse(option.SNI, option.ClientFingerprint, option.RootCAs)
 	if err != nil {
 		return nil, err
 	}

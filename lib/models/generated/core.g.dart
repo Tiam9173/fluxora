@@ -215,12 +215,14 @@ _Delay _$DelayFromJson(Map<String, dynamic> json) => _Delay(
   name: json['name'] as String,
   url: json['url'] as String,
   value: (json['value'] as num?)?.toInt(),
+  timedOut: json['timedOut'] as bool?,
 );
 
 Map<String, dynamic> _$DelayToJson(_Delay instance) => <String, dynamic>{
   'name': instance.name,
   'url': instance.url,
   'value': instance.value,
+  'timedOut': ?instance.timedOut,
 };
 
 _Now _$NowFromJson(Map<String, dynamic> json) =>

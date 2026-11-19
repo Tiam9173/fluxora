@@ -21,7 +21,6 @@ import (
 	"golang.org/x/sync/semaphore"
 	"net"
 	"strconv"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"syscall"
@@ -133,7 +132,7 @@ func handleStartTun(fd int, callback unsafe.Pointer) bool {
 		}
 		tunHandler.Store(handler)
 		initTunHook()
-		tunListener, _ := t.Start(fd, currentConfig.General.Tun.Device, currentConfig.General.Tun.Stack, currentConfig.General.Tun.DisableICMPForwarding, uint32(currentConfig.General.Tun.MTU), currentConfig.General.IPv6)
+		tunListener, _ := t.Start(fd, currentConfig.General.Tun, currentConfig.General.IPv6, currentConfig.DNS.Enable)
 		if tunListener != nil {
 			log.Infoln("TUN address: %v", tunListener.Address())
 			handler.listener = tunListener
@@ -213,11 +212,8 @@ func handleGetAndroidVpnOptions() string {
 }
 
 func handleUpdateDns(value string) {
-	go func() {
-		log.Infoln("[DNS] updateDns %s", value)
-		dns.UpdateSystemDNS(strings.Split(value, ","))
-		dns.FlushCacheWithDefaultResolver()
-	}()
+	dns.UpdateSystemDNS(state.AndroidSystemDNSServers(value))
+	dns.FlushCacheWithDefaultResolver()
 }
 
 func handleGetCurrentProfileName() string {

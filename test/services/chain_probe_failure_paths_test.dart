@@ -1,6 +1,26 @@
+import 'dart:convert';
+
+import 'package:fluxora/clash/core.dart';
+import 'package:fluxora/clash/interface.dart';
 import 'package:fluxora/models/chain_proxy.dart';
 import 'package:fluxora/services/chain_probe_service.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+class _DelayReplyCore extends Fake implements ClashHandlerInterface {
+  _DelayReplyCore(this.middleHop);
+
+  final Map<String, Object> middleHop;
+
+  @override
+  Future<String> asyncTestDelay(String url, String proxyName) async {
+    return jsonEncode({
+      'url': url,
+      'name': proxyName,
+      'value': 40,
+      if (proxyName == 'Relay') ...middleHop,
+    });
+  }
+}
 
 void main() {
   const multiFrontConfig = ChainProxyConfig(
@@ -10,6 +30,40 @@ void main() {
     frontHops: ['Entry', 'Relay'],
     hop2Node: 'Exit',
   );
+
+  group('default core delay responses', () {
+    late ClashHandlerInterface original;
+
+    setUp(() => original = clashCore.clashInterface);
+    tearDown(() => clashCore.clashInterface = original);
+
+    test('reports a core-confirmed middle-hop timeout', () async {
+      clashCore.clashInterface = _DelayReplyCore({
+        'value': -1,
+        'timedOut': true,
+      });
+
+      final report = await ChainProbeService().probeChain(
+        config: multiFrontConfig,
+        checkExitPublicIp: false,
+      );
+
+      expect(report.errorCode, ChainProbeErrorCodes.hop2Timeout);
+      expect(report.hops[1].status, HopProbeStatus.timeout);
+    });
+
+    test('keeps an untyped failure distinct from a timeout', () async {
+      clashCore.clashInterface = _DelayReplyCore({'value': -1});
+
+      final report = await ChainProbeService().probeChain(
+        config: multiFrontConfig,
+        checkExitPublicIp: false,
+      );
+
+      expect(report.errorCode, ChainProbeErrorCodes.hop2Failed);
+      expect(report.hops[1].status, HopProbeStatus.failed);
+    });
+  });
 
   test(
     'failed middle hop stops before exit and fails the whole chain',

@@ -211,24 +211,24 @@ Future<void> delayTest(
     final concurrencyLimit = globalState.config.proxiesStyle.concurrencyLimit
         .clamp(1, maxConcurrentDelayTests);
 
-    // 按实际节点和实际测试地址创建任务，避免多个代理组别名重复测速。
-    final delayTasks = targets.map((target) {
-      return () async {
+    final pending = targets.iterator;
+    Future<void> testPendingTargets() async {
+      while (appController.ref.read(currentProfileIdProvider) == profileId &&
+          pending.moveNext()) {
+        final target = pending.current;
         try {
           await _testProxyDelay(target);
           await onDelayUpdated?.call();
         } catch (e) {
           commonPrint.log('Delay task failed for ${target.name}: $e');
         }
-      };
-    }).toList();
-
-    // Execute tasks in batches
-    final batchedTasks = delayTasks.batch(concurrencyLimit);
-    for (final batchTasks in batchedTasks) {
-      if (appController.ref.read(currentProfileIdProvider) != profileId) return;
-      await Future.wait(batchTasks.map((task) => task()));
+      }
     }
+
+    await Future.wait([
+      for (var i = 0; i < concurrencyLimit && i < targets.length; i++)
+        testPendingTargets(),
+    ]);
     if (appController.ref.read(currentProfileIdProvider) != profileId) return;
     appController.addSortNum();
     // A `url-test` group would otherwise keep whatever the core picked at its

@@ -418,8 +418,9 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 	// Compile the list of all the fields that we're going to be decoding
 	// from all the structs.
 	type field struct {
-		field reflect.StructField
-		val   reflect.Value
+		name      string
+		val       reflect.Value
+		omitempty bool
 	}
 
 	// remainField is set to a valid field set with the "remain" tag if
@@ -445,18 +446,20 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 			squash := fieldVal.Kind() == reflect.Struct && fieldType.Anonymous
 			remain := false
 
-			// We always parse the tags cause we're looking for other tags too
-			tagParts := strings.Split(fieldType.Tag.Get(d.option.TagName), ",")
-			for _, tag := range tagParts[1:] {
+			fieldName, tags, _ := strings.Cut(fieldType.Tag.Get(d.option.TagName), ",")
+			omitempty := false
+			for tags != "" {
+				var tag string
+				tag, tags, _ = strings.Cut(tags, ",")
 				if tag == "squash" {
 					squash = true
 					break
 				}
-
 				if tag == "remain" {
 					remain = true
 					break
 				}
+				omitempty = omitempty || tag == "omitempty"
 			}
 
 			if squash {
@@ -471,35 +474,18 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 
 			// Build our field
 			if remain {
-				remainField = &field{fieldType, fieldVal}
-			} else {
-				// Normal struct field, store it away
-				fields = append(fields, field{fieldType, fieldVal})
+				remainField = &field{val: fieldVal}
+			} else if fieldName != "-" {
+				if fieldName == "" {
+					fieldName = fieldType.Name
+				}
+				fields = append(fields, field{name: fieldName, val: fieldVal, omitempty: omitempty})
 			}
 		}
 	}
 
-	// for fieldType, field := range fields {
 	for _, f := range fields {
-		field, fieldValue := f.field, f.val
-		fieldName := field.Name
-
-		tagParts := strings.Split(field.Tag.Get(d.option.TagName), ",")
-		tagValue := tagParts[0]
-		if tagValue != "" {
-			fieldName = tagValue
-		}
-
-		if tagValue == "-" {
-			continue
-		}
-
-		omitempty := false
-		for _, tag := range tagParts[1:] {
-			if tag == "omitempty" {
-				omitempty = true
-			}
-		}
+		fieldName, fieldValue := f.name, f.val
 
 		rawMapKey := reflect.ValueOf(fieldName)
 		rawMapVal := dataVal.MapIndex(rawMapKey)
@@ -529,7 +515,7 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 			if !rawMapVal.IsValid() {
 				// There was no matching key in the map for the value in
 				// the struct. Remember it for potential errors and metadata.
-				if !omitempty {
+				if !f.omitempty {
 					targetValKeysUnused[fieldName] = struct{}{}
 				}
 				continue

@@ -7,6 +7,7 @@ import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.net.ConnectivityManager
 import android.net.Network
+import android.net.NetworkCapabilities
 import android.os.Build
 import android.system.OsConstants.IPPROTO_TCP
 import android.system.OsConstants.IPPROTO_UDP
@@ -79,8 +80,12 @@ fun String.toCIDR(): CIDR {
     return CIDR(address, prefixLength)
 }
 
-fun ConnectivityManager.resolveDns(network: Network?): List<String> =
-    getLinkProperties(network)?.dnsServers?.map { it.asSocketAddressText(53) } ?: emptyList()
+fun ConnectivityManager.resolveUnderlyingDns(network: Network?): List<String> {
+    if (network == null ||
+        getNetworkCapabilities(network)?.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN) != true
+    ) return emptyList()
+    return getLinkProperties(network)?.dnsServers?.map { it.asSocketAddressText(53) } ?: emptyList()
+}
 
 fun InetAddress.asSocketAddressText(port: Int): String = when (this) {
     is Inet6Address -> "[${numericToTextFormat(this)}]:$port"

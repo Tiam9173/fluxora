@@ -196,8 +196,12 @@ abstract class InvokeMessage with _$InvokeMessage {
 
 @freezed
 abstract class Delay with _$Delay {
-  const factory Delay({required String name, required String url, int? value}) =
-      _Delay;
+  const factory Delay({
+    required String name,
+    required String url,
+    int? value,
+    @JsonKey(includeIfNull: false) bool? timedOut,
+  }) = _Delay;
 
   factory Delay.fromJson(Map<String, Object?> json) => _$DelayFromJson(json);
 }

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"net"
@@ -20,6 +21,7 @@ import (
 	"github.com/metacubex/mihomo/common/yaml"
 	"github.com/metacubex/mihomo/component/age"
 	"github.com/metacubex/mihomo/component/auth"
+	"github.com/metacubex/mihomo/component/ca"
 	"github.com/metacubex/mihomo/component/cidr"
 	"github.com/metacubex/mihomo/component/fakeip"
 	"github.com/metacubex/mihomo/component/geodata"
@@ -189,6 +191,7 @@ type TLS struct {
 	ClientAuthCert  string
 	EchKey          string
 	CustomTrustCert []string
+	RootCAs         *x509.CertPool `json:"-"`
 }
 
 // Config is mihomo config manager
@@ -674,7 +677,7 @@ func ParseRawConfig(rawCfg *RawConfig) (*Config, error) {
 	}
 	config.TLS = tlsCfg
 
-	proxies, providers, err := parseProxies(rawCfg)
+	proxies, providers, err := parseProxies(rawCfg, adapter.WithRootCAs(tlsCfg.RootCAs))
 	if err != nil {
 		return nil, err
 	}
@@ -866,6 +869,10 @@ func parseProfile(cfg *RawConfig) (*Profile, error) {
 }
 
 func parseTLS(cfg *RawConfig) (*TLS, error) {
+	pool, invalid := ca.NewCertPool(cfg.TLS.CustomTrustCert)
+	for _, err := range invalid {
+		log.Warnln("%s", err)
+	}
 	return &TLS{
 		Certificate:     cfg.TLS.Certificate,
 		PrivateKey:      cfg.TLS.PrivateKey,
@@ -873,10 +880,11 @@ func parseTLS(cfg *RawConfig) (*TLS, error) {
 		ClientAuthCert:  cfg.TLS.ClientAuthCert,
 		EchKey:          cfg.TLS.EchKey,
 		CustomTrustCert: cfg.TLS.CustomTrustCert,
+		RootCAs:         pool,
 	}, nil
 }
 
-func parseProxies(cfg *RawConfig) (proxies map[string]C.Proxy, providersMap map[string]P.ProxyProvider, err error) {
+func parseProxies(cfg *RawConfig, proxyOptions ...adapter.ProxyOption) (proxies map[string]C.Proxy, providersMap map[string]P.ProxyProvider, err error) {
 	proxies = make(map[string]C.Proxy)
 	providersMap = make(map[string]P.ProxyProvider)
 	proxiesConfig := cfg.Proxy
@@ -898,8 +906,9 @@ func parseProxies(cfg *RawConfig) (proxies map[string]C.Proxy, providersMap map[
 	proxyList = append(proxyList, "DIRECT", "REJECT")
 
 	// parse proxy
+	options := append([]adapter.ProxyOption{adapter.WithTunnelForAPI(T.Tunnel)}, proxyOptions...)
 	for idx, mapping := range proxiesConfig {
-		proxy, err := adapter.ParseProxy(mapping, adapter.WithTunnelForAPI(T.Tunnel))
+		proxy, err := adapter.ParseProxy(mapping, options...)
 		if err != nil {
 			return nil, nil, fmt.Errorf("proxy %d: %w", idx, err)
 		}
@@ -936,7 +945,7 @@ func parseProxies(cfg *RawConfig) (proxies map[string]C.Proxy, providersMap map[
 			return nil, nil, fmt.Errorf("can not defined a provider called `%s`", provider.ReservedName)
 		}
 
-		pd, err := provider.ParseProxyProvider(name, mapping, T.Tunnel)
+		pd, err := provider.ParseProxyProvider(name, mapping, T.Tunnel, proxyOptions...)
 		if err != nil {
 			return nil, nil, fmt.Errorf("parse proxy provider %s error: %w", name, err)
 		}
@@ -1056,39 +1065,39 @@ func parseSubRules(cfg *RawConfig, proxies map[string]C.Proxy, ruleProviders map
 }
 
 func verifySubRule(subRules map[string][]C.Rule) error {
-	for name := range subRules {
-		err := verifySubRuleCircularReferences(name, subRules, []string{})
-		if err != nil {
-			return err
+	const visiting, verified = 1, 2
+	state := make(map[string]uint8, len(subRules))
+	var path []string
+	var visit func(string) error
+	visit = func(name string) error {
+		switch state[name] {
+		case visiting:
+			return fmt.Errorf("sub-rule error: circular references [%s]", strings.Join(append(path, name), "->"))
+		case verified:
+			return nil
 		}
-	}
-	return nil
-}
 
-func verifySubRuleCircularReferences(n string, subRules map[string][]C.Rule, arr []string) error {
-	isInArray := func(v string, array []string) bool {
-		for _, c := range array {
-			if v == c {
-				return true
+		state[name] = visiting
+		path = append(path, name)
+		for i, rule := range subRules[name] {
+			if rule.RuleType() != C.SubRules {
+				continue
 			}
-		}
-		return false
-	}
-
-	arr = append(arr, n)
-	for i, rule := range subRules[n] {
-		if rule.RuleType() == C.SubRules {
-			if _, ok := subRules[rule.Adapter()]; !ok {
-				return fmt.Errorf("sub-rule[%d:%s] error: [%s] not found", i, n, rule.Adapter())
+			target := rule.Adapter()
+			if _, ok := subRules[target]; !ok {
+				return fmt.Errorf("sub-rule[%d:%s] error: [%s] not found", i, name, target)
 			}
-			if isInArray(rule.Adapter(), arr) {
-				arr = append(arr, rule.Adapter())
-				return fmt.Errorf("sub-rule error: circular references [%s]", strings.Join(arr, "->"))
-			}
-
-			if err := verifySubRuleCircularReferences(rule.Adapter(), subRules, arr); err != nil {
+			if err := visit(target); err != nil {
 				return err
 			}
+		}
+		path = path[:len(path)-1]
+		state[name] = verified
+		return nil
+	}
+	for name := range subRules {
+		if err := visit(name); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -1409,6 +1418,13 @@ func parseNameServerPolicy(nsPolicy *orderedmap.OrderedMap[string, any], adapter
 	}
 
 	return policy, nil
+}
+
+// ParseDNS applies the same IPv6 normalization as a full configuration load.
+func ParseDNS(rawCfg *RawConfig, ruleProviders map[string]P.RuleProvider) (*DNS, error) {
+	normalized := *rawCfg
+	parseIPV6(&normalized)
+	return parseDNS(&normalized, ruleProviders)
 }
 
 func parseDNS(rawCfg *RawConfig, ruleProviders map[string]P.RuleProvider) (*DNS, error) {

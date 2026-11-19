@@ -27,7 +27,13 @@ const (
 	tlsHandshakeTypeServerHello byte = 0x02
 )
 
-func (vc *Conn) FilterTLS(buffer []byte) (index int) {
+func (vc *Conn) FilterTLS(buffer []byte) int {
+	vc.filterMu.Lock()
+	defer vc.filterMu.Unlock()
+	return vc.filterTLS(buffer)
+}
+
+func (vc *Conn) filterTLS(buffer []byte) (index int) {
 	if vc.packetsToFilter <= 0 {
 		return 0
 	}

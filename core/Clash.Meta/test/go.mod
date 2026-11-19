@@ -13,6 +13,8 @@ require (
 
 replace github.com/metacubex/mihomo => ../
 
+replace github.com/metacubex/restls-client-go => ../../third_party/restls-client-go
+
 require (
 	github.com/3andne/restls-client-go v0.1.6 // indirect
 	github.com/Microsoft/go-winio v0.6.0 // indirect

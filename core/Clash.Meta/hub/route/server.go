@@ -108,6 +108,9 @@ func router(isDebug bool, secret string, dohServer string, cors Cors) *chi.Mux {
 	if isDebug {
 		r.Mount("/debug", func() http.Handler {
 			r := chi.NewRouter()
+			if secret != "" {
+				r.Use(authentication(secret))
+			}
 			r.Put("/gc", func(w http.ResponseWriter, r *http.Request) {
 				debug.FreeOSMemory()
 			})

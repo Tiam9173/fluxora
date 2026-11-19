@@ -18,5 +18,8 @@ func ServeMsg(ctx context.Context, msg *D.Msg) (*D.Msg, error) {
 		return server.ServeMsg(ctx, msg)
 	}
 
+	if system := SystemResolver; system != nil {
+		return system.ExchangeContext(ctx, msg)
+	}
 	return nil, ErrIPNotFound
 }

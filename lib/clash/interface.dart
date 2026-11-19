@@ -7,6 +7,7 @@ import 'package:fluxora/clash/message.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/models/models.dart';
+import 'package:fluxora/state.dart';
 
 mixin ClashInterface {
   Future<bool> init(InitParams params);
@@ -129,6 +130,7 @@ abstract class ClashHandlerInterface with ClashInterface {
   Map<String, Completer> callbackCompleterMap = {};
   int _activeDelayTests = 0;
   final _delayWaiters = Queue<Completer<void>>();
+
 
   Future<void> handleResult(ActionResult result) async {
     final completer = callbackCompleterMap[result.id];
@@ -440,16 +442,20 @@ abstract class ClashHandlerInterface with ClashInterface {
     } else {
       _activeDelayTests++;
     }
+    final milliseconds = globalState.config.healthCheckTimeout;
+    final timeout = milliseconds > 0
+        ? Duration(milliseconds: milliseconds)
+        : httpTimeoutDuration;
     final delayParams = {
       'proxy-name': proxyName,
-      'timeout': httpTimeoutDuration.inMilliseconds,
+      'timeout': timeout.inMilliseconds,
       'test-url': url,
     };
     try {
       return await invoke<String>(
         method: ActionMethod.asyncTestDelay,
         data: json.encode(delayParams),
-        timeout: Duration(milliseconds: 6000),
+        timeout: timeout + const Duration(seconds: 1),
         onTimeout: () {
           return json.encode(Delay(name: proxyName, value: -1, url: url));
         },
