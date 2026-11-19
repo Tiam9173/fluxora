@@ -27,6 +27,7 @@ import 'package:fluxora/common/brand_icons.dart';
 import 'package:fluxora/common/node_overrides.dart';
 import 'package:fluxora/clash/clash.dart';
 import 'package:fluxora/clash/interface.dart';
+import 'package:fluxora/manager/warp_manager.dart';
 import 'package:fluxora/common/theme.dart';
 import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/l10n/l10n.dart';
@@ -608,7 +609,10 @@ void main() {
           Group(
             type: GroupType.Selector,
             name: 'GLOBAL',
-            all: [Proxy(name: 'Demo node', type: 'SS')],
+            all: [
+              Proxy(name: 'Demo node', type: 'SS'),
+              Proxy(name: 'Demo policy', type: 'Selector'),
+            ],
           ),
           Group(
             type: GroupType.Selector,
@@ -692,7 +696,7 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 300));
     final pre = find.text(appLocalizations.preProxyOptionNone);
-    for (var i = 0; i < 15 && pre.evaluate().isEmpty; i++) {
+    for (var i = 0; i < 100 && pre.evaluate().isEmpty; i++) {
       await tester.runAsync(
         () => Future<void>.delayed(const Duration(milliseconds: 30)),
       );
@@ -701,7 +705,7 @@ void main() {
     await tester.ensureVisible(pre);
     await tester.tap(pre);
     await tester.pumpAndSettle();
-    await tester.tap(find.text(appLocalizations.chainSpeedTest));
+    await tester.tap(find.byKey(const ValueKey('hop-delay-test')));
     await tester.pump();
     expect(find.byType(CircularProgressIndicator), findsWidgets);
     core.delayReply!.complete(
@@ -715,11 +719,92 @@ void main() {
           .any((measurements) => measurements['Fixture relay'] == 62),
       isTrue,
     );
-    expect(find.textContaining('62'), findsOneWidget);
+    final nodeRow = find
+        .ancestor(
+          of: find.text('Fixture relay'),
+          matching: find.byType(InkWell),
+        )
+        .first;
+    expect(
+      find.descendant(of: nodeRow, matching: find.text('62 ms')),
+      findsOneWidget,
+    );
     await capture(tester, 'profile-chain-picker-latency');
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(seconds: 1));
   });
+
+  testWidgets(
+    'profile pickers retain WARP entry and exit outside live GLOBAL',
+    (tester) async {
+      final container = await show(tester, reduce: true);
+      await tester.runAsync(() => warpManager.init());
+      final previous = warpManager.config;
+      final previousPath = WarpManager.configFilePathOverride;
+      WarpManager.configFilePathOverride =
+          '${Directory.systemTemp.path}/fluxora-warp-picker-$pid.json';
+      await tester.runAsync(
+        () => warpManager.updateConfig(
+          (c) => c.copyWith(privateKey: 'fixture-key'),
+          reloadCore: false,
+        ),
+      );
+      addTearDown(() async {
+        await warpManager.updateConfig((_) => previous, reloadCore: false);
+        await File(WarpManager.configFilePathOverride!).delete();
+        WarpManager.configFilePathOverride = previousPath;
+      });
+      final core = clashCore.clashInterface as _VisualCore;
+      core.configRead = Completer<Result>()
+        ..complete(
+          Result.success(<String, dynamic>{
+            'proxies': [
+              {'name': 'Fixture relay', 'type': 'ss'},
+            ],
+          }),
+        );
+      addTearDown(() => core.configRead = null);
+      ProfileChainDialog.show(
+        tester.element(find.byType(HomePage)),
+        container.read(currentProfileProvider)!,
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+      for (
+        var i = 0;
+        i < 15 &&
+            find.text(appLocalizations.preProxyOptionNone).evaluate().isEmpty;
+        i++
+      ) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 30)),
+        );
+        await tester.pump();
+      }
+      await tester.ensureVisible(
+        find.text(appLocalizations.preProxyOptionNone).first,
+      );
+      await tester.tap(find.text(appLocalizations.preProxyOptionNone).first);
+      await tester.pumpAndSettle();
+      expect(find.text('WARP 入口'), findsOneWidget);
+      await capture(tester, 'profile-warp-entry-picker');
+      await tester.tap(find.text('WARP 入口'));
+      await tester.pumpAndSettle();
+      final landing = find.text(appLocalizations.landingProxyOptionNone).last;
+      await tester.ensureVisible(landing);
+      await tester.tap(landing);
+      await tester.pumpAndSettle();
+      expect(find.text('WARP 出口'), findsOneWidget);
+      await capture(tester, 'profile-warp-exit-picker');
+      await tester.tap(find.text('WARP 出口'));
+      await tester.pumpAndSettle();
+      expect(find.byType(SwitchCard), findsNothing);
+      expect(find.text('WARP 出口'), findsWidgets);
+      expect(find.byType(TextField), findsNothing);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 1));
+    },
+  );
 
   testWidgets(
     'auto-hide dock follows vertical drags and reappears on scroll back',

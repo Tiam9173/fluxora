@@ -552,7 +552,7 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                         // 中转跳也允许"跟随主选择"：以前只放给第 1 跳，
                         // 用户想整条链路都跟着主选择走时没有入口。
                         allowFollowMain: true,
-                        allowPolicyGroups: i == 0,
+                        selectedName: hopsForUi[i],
                         excludeNames: {
                           ...hopsForUi.where((h) => h != hopsForUi[i]),
                           config.dedicatedGroupName,
@@ -572,7 +572,11 @@ class _ChainProxyViewState extends ConsumerState<ChainProxyView> {
                       context: context,
                       title: appLocalizations.chainAddRelay,
                       allowFollowMain: false,
-                      excludeNames: frontHops.toSet(),
+                      excludeNames: {
+                        ...frontHops,
+                        config.dedicatedGroupName,
+                        '✈️ 链式跳板',
+                      },
                       onSelect: (hop) => chainProxyManager.addFrontHop(hop),
                     );
                   },

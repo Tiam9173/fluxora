@@ -22,7 +22,7 @@ class RealTunEnable extends _$RealTunEnable with AutoDisposeNotifierMixin {
   }
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 class Logs extends _$Logs with AutoDisposeNotifierMixin {
   @override
   FixedList<Log> build() {
@@ -304,7 +304,8 @@ class LocalNetwork extends _$LocalNetwork with AutoDisposeNotifierMixin {
 
 @riverpod
 class RunTime extends _$RunTime with AutoDisposeNotifierMixin {
-  @override  int? build() {
+  @override
+  int? build() {
     return globalState.appState.runTime;
   }
 
@@ -408,8 +409,9 @@ class SortNum extends _$SortNum with AutoDisposeNotifierMixin {
 /// `false` = ascending (the existing behaviour), `true` = descending. Unknown /
 /// failed delays sink to the end in **both** directions — see
 /// `AppController._sortOfDelay`.
-final delaySortDescendingProvider =
-    NotifierProvider<DelaySortDescending, bool>(DelaySortDescending.new);
+final delaySortDescendingProvider = NotifierProvider<DelaySortDescending, bool>(
+  DelaySortDescending.new,
+);
 
 class DelaySortDescending extends Notifier<bool> {
   @override

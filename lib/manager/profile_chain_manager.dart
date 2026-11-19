@@ -1,11 +1,14 @@
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/models/chain_proxy.dart';
+import 'package:fluxora/models/warp_config.dart';
 import 'package:fluxora/services/atomic_config_storage.dart';
 import 'package:fluxora/state.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
 class ProfileChainConfig {
+  static const warpEntry = 'fluxora:warp:entry';
+  static const warpExit = 'fluxora:warp:exit';
   final String profileId;
   final bool enable;
   final String? preProxy; // 前置代理节点名称 (Pre-Proxy)
@@ -193,7 +196,13 @@ class ProfileChainManager extends ChangeNotifier {
 
   /// Injects pre-proxy and landing-proxy chain topology into the Clash configuration map at runtime.
   /// Called in `state.dart` within `patchRawConfig`.
-  void applyToClashConfig(Map<String, dynamic> rawConfig, String profileId) {
+  void applyToClashConfig(
+    Map<String, dynamic> rawConfig,
+    String profileId, {
+    WarpConfig? warp,
+    Map<String, String> selectedMap = const {},
+    ChainPolicyAliases? policyAliases,
+  }) {
     final chain = getChain(profileId);
     if (!chain.hasActiveChains) return;
 
@@ -202,8 +211,26 @@ class ProfileChainManager extends ChangeNotifier {
 
     final List<dynamic> proxiesList = List<dynamic>.from(rawProxies);
     rawConfig['proxies'] = proxiesList;
-    final preProxy = chain.preProxy?.trim();
-    final landingProxy = chain.landingProxy?.trim();
+    var preProxy = chain.preProxy?.trim();
+    var landingProxy = chain.landingProxy?.trim();
+    for (final slot in [
+      ProfileChainConfig.warpEntry,
+      ProfileChainConfig.warpExit,
+    ]) {
+      if (preProxy != slot && landingProxy != slot) continue;
+      if (warp == null || warp.privateKey.trim().isEmpty) {
+        throw const FormatException('请先配置 WARP 密钥');
+      }
+      final name = slot == ProfileChainConfig.warpEntry
+          ? '🛡️ WARP 入口'
+          : '🛡️ WARP 落地';
+      if (proxiesList.any((p) => p is Map && p['name'] == name)) {
+        throw FormatException('代理名称冲突：$name');
+      }
+      proxiesList.add(warp.toMihomoProxyMap('')..['name'] = name);
+      if (preProxy == slot) preProxy = name;
+      if (landingProxy == slot) landingProxy = name;
+    }
 
     // 1. Apply Pre-Proxy (前置代理)
     // All original proxies in this subscription dial through preProxy
@@ -215,15 +242,28 @@ class ProfileChainManager extends ChangeNotifier {
       // `proxyName[🇺🇸 美国05 |公益|1倍] not found` and a WARP that only times
       // out. Skip the hop instead of poisoning the whole config; the chain is
       // re-picked from the UI when the user notices.
-      final preProxyExists = proxiesList.any(
-        (p) => p is Map && p['name']?.toString() == preProxy,
-      );
+      final preProxyExists =
+          proxiesList.any(
+            (p) => p is Map && p['name']?.toString() == preProxy,
+          ) ||
+          ((rawConfig['proxy-groups'] as List?) ?? const []).any(
+            (g) => g is Map && g['name'] == preProxy,
+          );
       if (preProxyExists) {
         final upstream = proxyDependencyClosure(
           [preProxy],
           (rawConfig['proxy-groups'] as List?) ?? const [],
           proxiesList,
+          (rawConfig['proxy-providers'] as Map?) ?? const {},
         );
+        final preIsGroup = ((rawConfig['proxy-groups'] as List?) ?? const [])
+            .any((g) => g is Map && g['name'] == preProxy);
+        if (preIsGroup &&
+            !proxiesList.whereType<Map>().any(
+              (p) => !upstream.contains(p['name']),
+            )) {
+          throw const FormatException('前置策略组覆盖所有节点，请选择独立入口组或使用链式代理入口');
+        }
         for (final item in proxiesList) {
           if (item is Map) {
             final pName = item['name']?.toString() ?? '';
@@ -253,6 +293,66 @@ class ProfileChainManager extends ChangeNotifier {
         }
       }
 
+      if (landingTemplate == null &&
+          ((rawConfig['proxy-groups'] as List?) ?? const []).any(
+            (g) => g is Map && g['name'] == landingProxy,
+          )) {
+        final originals = proxiesList
+            .whereType<Map>()
+            .map((p) => p['name'])
+            .whereType<String>()
+            .toList();
+        final sourceGroups = List<dynamic>.from(
+          (rawConfig['proxy-groups'] as List?) ?? const [],
+        );
+        final dependencies = proxyDependencyClosure(
+          [landingProxy],
+          sourceGroups,
+          proxiesList,
+          (rawConfig['proxy-providers'] as Map?) ?? const {},
+        );
+        final outputs = <String>[];
+        final candidates = originals
+            .where((name) => !dependencies.contains(name))
+            .toList();
+        var landingCount = originals.where(dependencies.contains).length;
+        final providers = (rawConfig['proxy-providers'] as Map?) ?? const {};
+        for (final group in sourceGroups.whereType<Map>().where(
+          (g) => dependencies.contains(g['name']),
+        )) {
+          for (final name in (group['use'] as List?) ?? const []) {
+            final provider = providers[name];
+            if (provider is! Map || provider['payload'] is! List) {
+              throw const FormatException('动态节点集合暂不能批量作为后置，请选择具体节点');
+            }
+            landingCount += (provider['payload'] as List).length;
+          }
+        }
+        if (candidates.isEmpty) {
+          throw const FormatException('后置策略组与入口节点重合，请选择独立后置组或单个节点');
+        }
+        if (candidates.length * landingCount > 10000) {
+          throw const FormatException('后置策略组会生成过多链路，请缩小策略组或选择单个节点');
+        }
+        for (final node in candidates) {
+          outputs.add(
+            chainProxyWithDialer(
+              rawConfig,
+              name: landingProxy,
+              dialer: node,
+              outputName: '$node ➜ $landingProxy',
+              selectedMap: selectedMap,
+              policyAliases: policyAliases,
+            ),
+          );
+        }
+        for (final group in sourceGroups.whereType<Map>()) {
+          if (!dependencies.contains(group['name']) &&
+              group['proxies'] is List) {
+            group['proxies'] = [...outputs, ...group['proxies'] as List];
+          }
+        }
+      }
       // If landing proxy exists as a node in the list
       if (landingTemplate != null) {
         final originalNodes = List<Map<String, dynamic>>.from(

@@ -75,6 +75,8 @@ class GlobalState {
   AggregateMergeReport? lastAggregateMergeReport;
   AggregateConfigSummary? lastAggregateConfigSummary;
   AggregateConfigDiff? lastAggregateConfigDiff;
+  String? lastGeneratedConfigProfileId;
+  ChainPolicyAliases chainPolicyAliases = {};
   final Map<String, Map<String, dynamic>> _aggregateMemberCache = {};
   bool isService = false;
   bool isExiting = false;
@@ -489,7 +491,9 @@ class GlobalState {
           : await clashCore.startListener();
       if (started != true) throw StateError(appLocalizations.checkError);
       if (nativeService != null &&
-          !await nativeService.waitForVpnStart(cancellation: cancellation?.future)) {
+          !await nativeService.waitForVpnStart(
+            cancellation: cancellation?.future,
+          )) {
         if (cancellation?.isCompleted == true) {
           await handleStop(includeVpnService);
           return;
@@ -658,13 +662,12 @@ class GlobalState {
       pageBuilder: (context, animation, secondaryAnimation) => child,
       transitionBuilder: (context, animation, secondaryAnimation, child) {
         // Keep the liquid backdrop out of the fade's intermediate opacity layer.
-        if (liquid || FluxoraMotion.ofContext(context).reduceMotion) return child;
+        if (liquid || FluxoraMotion.ofContext(context).reduceMotion) {
+          return child;
+        }
         final curved = animation.drive(CurveTween(curve: FluxoraMotion.enter));
         return RepaintBoundary(
-          child: FadeTransition(
-            opacity: curved,
-            child: child,
-          ),
+          child: FadeTransition(opacity: curved, child: child),
         );
       },
     );
@@ -804,8 +807,15 @@ class GlobalState {
   }
 
   Future<SetupParams> getSetupParams({required ClashConfig pathConfig}) async {
-    final clashConfig = await patchRawConfig(patchConfig: pathConfig);
+    final sourceProfileId = config.currentProfileId;
+    final aliases = <String, ({String source, Map<String, String> members})>{};
+    final clashConfig = await patchRawConfig(
+      patchConfig: pathConfig,
+      policyAliases: aliases,
+    );
     await _writeRunningConfig(clashConfig);
+    lastGeneratedConfigProfileId = sourceProfileId;
+    chainPolicyAliases = aliases;
     return SetupParams(
       selectedMap: config.currentProfile?.selectedMap ?? {},
       testUrl: config.appSetting.testUrl,
@@ -832,6 +842,7 @@ class GlobalState {
   Future<Map<String, dynamic>> patchRawConfig({
     required ClashConfig patchConfig,
     Profile? profile,
+    ChainPolicyAliases? policyAliases,
   }) async {
     final targetProfile = profile ?? config.currentProfile;
     if (targetProfile == null) {
@@ -1066,12 +1077,18 @@ class GlobalState {
       final originalHosts = rawConfig['hosts'] is Map
           ? (rawConfig['hosts'] as Map).cast<String, dynamic>()
           : null;
-      final dns = switch (!isEnableDns) {
-        true => realPatchConfig.dns.copyWith(
-          nameserver: [...realPatchConfig.dns.nameserver, 'system://'],
-        ),
-        false => realPatchConfig.dns,
-      };
+      // A TUN still needs a DNS handler when the subscription omits DNS.
+      // Keep that system-resolver mode separate from the user's DNS override.
+      final dns = overrideDns
+          ? realPatchConfig.dns
+          : const Dns(
+              enhancedMode: DnsMode.redirHost,
+              nameserver: ['system'],
+              defaultNameserver: ['system'],
+              proxyServerNameserver: ['system'],
+              nameserverPolicy: {},
+              fakeIpFilter: [],
+            );
       rawConfig['dns'] = dns.toJson();
       rawConfig['dns']['nameserver-policy'] = <String, dynamic>{};
       for (final entry in dns.nameserverPolicy.entries) {
@@ -1396,6 +1413,8 @@ class GlobalState {
     chainProxyManager.applyToClashConfig(
       rawConfig,
       extraProxyConfigs: aggregateProxies,
+      selectedMap: targetProfile.selectedMap,
+      policyAliases: policyAliases,
     );
 
     // Apply Cloudflare WARP on Proxy configuration if enabled (including Google anti-redirect & AI unlock rules)
@@ -1408,7 +1427,13 @@ class GlobalState {
     // dialer-proxy 改成 preProxy。新链路系统已经写好了 dialer-proxy，这里再跑
     // 一遍会把结果整个覆盖掉——两套都开时，以新系统为准。
     if (!chainProxyManager.config.enable) {
-      profileChainManager.applyToClashConfig(rawConfig, targetProfile.id);
+      profileChainManager.applyToClashConfig(
+        rawConfig,
+        targetProfile.id,
+        warp: warpManager.config,
+        selectedMap: targetProfile.selectedMap,
+        policyAliases: policyAliases,
+      );
     }
 
     // Scripts may rename aggregate nodes (for example, adding a region flag).

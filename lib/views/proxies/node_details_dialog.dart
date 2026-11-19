@@ -5,6 +5,12 @@ import 'package:flutter/services.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/common/node_overrides.dart';
+import 'dart:io';
+import 'dart:isolate';
+import 'package:flutter/foundation.dart' show compute;
+import 'package:fluxora/clash/clash.dart';
+import 'package:fluxora/common/node_details.dart';
+import 'package:fluxora/models/models.dart';
 
 /// 节点详情。
 ///
@@ -36,7 +42,7 @@ Future<void> showNodeDetailsDialog(
         final hasOverride = overriddenFields.isNotEmpty;
         final theme = Theme.of(ctx);
         final colors = theme.colorScheme;
-        final data = snapshot.data;
+        final data = snapshot.data?.config;
         final type = protocol ?? data?['type']?.toString();
         final endpoint = [
           if (data?['server'] case final Object server)
@@ -239,7 +245,7 @@ Future<void> showNodeDetailsDialog(
               onPressed: () => Navigator.of(ctx).pop(),
               child: Text(appLocalizations.nodeDetailClose),
             ),
-            if (data != null && profileId != null)
+            if (data != null && snapshot.data!.editable && profileId != null)
               FilledButton(
                 onPressed: () async {
                   final changed = await showNodeEditDialog(
@@ -264,21 +270,75 @@ Future<void> showNodeDetailsDialog(
   );
 }
 
-Future<Map<String, dynamic>?> _readNodeDetails(
+Future<({Map<String, dynamic> config, bool editable})?> _readNodeDetails(
   String proxyName,
   String? profileId,
 ) async {
   if (profileId == null) return null;
   Map<String, dynamic>? raw;
+  Map<String, dynamic> effectiveConfig = {};
+  Map<String, dynamic> sourceConfig = {};
   try {
-    final configMap = await globalState.getProfileConfig(profileId);
-    final proxies = configMap['proxies'];
-    if (proxies is List) {
-      for (final item in proxies) {
-        if (item is Map && item['name']?.toString() == proxyName) {
-          raw = Map<String, dynamic>.from(item);
-          break;
+    if (globalState.lastGeneratedConfigProfileId == profileId &&
+        globalState.config.currentProfileId == profileId) {
+      final file = File(await appPath.configFilePath);
+      if (await file.exists()) {
+        final running = await compute(
+          decodeNodeConfig,
+          await file.readAsString(),
+        );
+        effectiveConfig = running;
+        if (globalState.lastGeneratedConfigProfileId == profileId &&
+            globalState.config.currentProfileId == profileId) {
+          raw = findNodeConfig(running, proxyName);
         }
+      }
+    }
+    sourceConfig = await globalState.getProfileConfig(profileId);
+    if (raw == null) {
+      final configMap = sourceConfig;
+      final evaluated = await globalState.handleEvaluate(
+        configMap,
+        profile: globalState.config.profiles.getProfile(profileId),
+      );
+      effectiveConfig = evaluated;
+      raw =
+          findNodeConfig(evaluated, proxyName) ??
+          findNodeConfig(configMap, proxyName);
+    }
+    if (raw == null &&
+        globalState.config.currentProfileId == profileId &&
+        clashCore.hasLiveProcess) {
+      final providers = await clashCore.getExternalProviders();
+      for (final provider in providers) {
+        if (!(provider.proxies ?? const []).whereType<Map>().any(
+          (p) =>
+              p['name'] == proxyName ||
+              '${p['name']}[${provider.name}]' == proxyName,
+        )) {
+          continue;
+        }
+        final content = await clashCore.parseExternalProviderContent(
+          provider.name,
+        );
+        final parsed = await compute(decodeNodeConfig, content);
+        final originalName = proxyName.endsWith('[${provider.name}]')
+            ? proxyName.substring(
+                0,
+                proxyName.length - provider.name.length - 2,
+              )
+            : proxyName;
+        final definitions = effectiveConfig['proxy-providers'];
+        final definition = definitions is Map
+            ? definitions[provider.name]
+            : null;
+        final overrides = definition is Map
+            ? definition['override'] as Map?
+            : null;
+        raw = await Isolate.run(
+          () => findProviderNodeConfig(parsed, originalName, overrides),
+        );
+        if (raw != null) break;
       }
     }
     // 聚合节点不在当前订阅里：它们带 `[别名] ` 前缀，属于另一个订阅。
@@ -291,7 +351,10 @@ Future<Map<String, dynamic>?> _readNodeDetails(
         final prefix = '[$alias] ';
         if (!proxyName.startsWith(prefix)) continue;
         final original = proxyName.substring(prefix.length);
-        final otherConfig = await globalState.getProfileConfig(profile.id);
+        final otherConfig = await globalState.handleEvaluate(
+          await globalState.getProfileConfig(profile.id),
+          profile: profile,
+        );
         final others = otherConfig['proxies'];
         if (others is! List) continue;
         for (final item in others) {
@@ -304,10 +367,15 @@ Future<Map<String, dynamic>?> _readNodeDetails(
       }
     }
   } catch (e) {
-    commonPrint.log('showNodeDetailsDialog: $e');
+    commonPrint.log('showNodeDetailsDialog: ${e.runtimeType}');
   }
   await NodeOverrideStore.instance.ensureLoaded();
-  return raw;
+  return raw == null
+      ? null
+      : (
+          config: raw,
+          editable: findNodeConfig(sourceConfig, proxyName)?['server'] != null,
+        );
 }
 
 Object? _displayField(String key, Object? value) {
@@ -364,7 +432,10 @@ Future<bool> showNodeEditDialog(
   final saved = await showDialog<bool>(
     context: context,
     builder: (ctx) => GlassAlertDialog(
-      title: Text(appLocalizations.nodeDetailEditTitle(proxyName), style: const TextStyle(fontSize: 15)),
+      title: Text(
+        appLocalizations.nodeDetailEditTitle(proxyName),
+        style: const TextStyle(fontSize: 15),
+      ),
       content: SizedBox(
         width: 380,
         child: SingleChildScrollView(

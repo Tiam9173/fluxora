@@ -37,11 +37,13 @@ class SwitchCardSpecialOption {
     required this.label,
     required this.value,
     required this.icon,
+    this.enabled = true,
   });
 
   final String label;
   final String value;
   final IconData icon;
+  final bool enabled;
 }
 
 class SwitchCard extends ConsumerStatefulWidget {
@@ -100,6 +102,15 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
 
   bool get _selecting => _pendingNode != null;
 
+  Future<void> _testTargets(List<Proxy> targets, String url) async {
+    setState(() => _testing = true);
+    try {
+      await delayTest(targets, testUrl: url, useExactTargets: true);
+    } finally {
+      if (mounted) setState(() => _testing = false);
+    }
+  }
+
   void _jumpToListStart() {
     if (_nodesController.hasClients) _nodesController.jumpTo(0);
   }
@@ -151,7 +162,7 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
         visibleGroups.where((g) => g.name == initialGroup).firstOrNull ??
         (visibleGroups.isEmpty ? null : visibleGroups.first);
     final policyNames = widget.allowPolicyGroups
-        ? visibleGroups
+        ? groups
               .where(
                 (g) =>
                     g.name != GroupName.GLOBAL.name &&
@@ -162,31 +173,17 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
         : const <String>{};
     final canPickCurrentGroup = policyNames.contains(currentGroup?.name);
     final members = currentGroup?.all ?? const <Proxy>[];
-    final memberNames =
-        widget.allowPolicyGroups && currentGroup?.name == GroupName.GLOBAL.name
-        ? members.map((proxy) => proxy.name).toSet()
-        : const <String>{};
-    final nodes =
-        [
-              ...members,
-              if (widget.allowPolicyGroups &&
-                  currentGroup?.name == GroupName.GLOBAL.name)
-                for (final group in visibleGroups)
-                  if (policyNames.contains(group.name) &&
-                      !memberNames.contains(group.name))
-                    Proxy(name: group.name, type: group.type.name),
-            ]
-            .where((p) => !widget.excludeNames.contains(p.name))
-            .where(
-              (p) =>
-                  widget.onSelect == null ||
-                  policyNames.contains(p.name) ||
-                  ChainProxyConfig.isSelectableProxy(
-                    name: p.name,
-                    type: p.type,
-                  ),
-            )
-            .toList();
+    // GLOBAL uses the proxy page's exact members, including hidden groups and
+    // generated exits. Only the caller's explicit cycle exclusions apply.
+    final nodes = members
+        .where((p) => !widget.excludeNames.contains(p.name))
+        .where(
+          (p) =>
+              widget.onSelect == null ||
+              widget.allowPolicyGroups ||
+              ChainProxyConfig.isSelectableProxy(name: p.name, type: p.type),
+        )
+        .toList();
     final query = _searchController.text.trim().toLowerCase();
     final visible = query.isEmpty
         ? nodes
@@ -218,6 +215,9 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
         children: [
           IconButton(
             key: const ValueKey('switch-card-locate'),
+            constraints: widget.onSelect == null
+                ? null
+                : const BoxConstraints(minWidth: 48, minHeight: 48),
             tooltip: Localizations.localeOf(context).languageCode == 'zh'
                 ? '定位当前节点'
                 : 'Locate current node',
@@ -255,6 +255,41 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
               tooltip: appLocalizations.profiles,
               onPressed: _selecting || busy ? null : widget.onOpenProfiles,
               icon: const Icon(Icons.folder_open_outlined),
+            ),
+          if (widget.onSelect != null)
+            IconButton(
+              key: const ValueKey('hop-delay-test'),
+              tooltip: _testing
+                  ? appLocalizations.testing
+                  : !sourceIsActive
+                  ? (Localizations.localeOf(context).languageCode == 'zh'
+                        ? '切换到此配置后可测试延迟'
+                        : 'Select this profile to test latency')
+                  : appLocalizations.startTest,
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+              onPressed:
+                  sourceIsActive &&
+                      clashCore.hasLiveProcess &&
+                      currentGroup != null &&
+                      (nodes.isNotEmpty || canPickCurrentGroup) &&
+                      !busy &&
+                      !_selecting &&
+                      !_testing
+                  ? () => _testTargets([
+                      ...nodes,
+                      if (canPickCurrentGroup)
+                        Proxy(
+                          name: currentGroup.name,
+                          type: currentGroup.type.name,
+                        ),
+                    ], delayUrl)
+                  : null,
+              icon: _testing
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.speed_rounded, size: 20),
             ),
           if (widget.onSelect == null)
             IconButton(
@@ -318,78 +353,43 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (widget.onSelect != null)
-            Align(
-              alignment: AlignmentDirectional.centerEnd,
-              child: Tooltip(
-                message: !sourceIsActive
-                    ? (Localizations.localeOf(context).languageCode == 'zh'
-                          ? '切换到此配置后可测试延迟'
-                          : 'Select this profile to test latency')
-                    : appLocalizations.startTest,
-                child: TextButton.icon(
-                  key: const ValueKey('hop-delay-test'),
-                  onPressed:
-                      sourceIsActive &&
-                          clashCore.hasLiveProcess &&
-                          currentGroup != null &&
-                          (nodes.isNotEmpty || canPickCurrentGroup) &&
-                          !busy &&
-                          !_selecting &&
-                          !_testing
-                      ? () async {
-                          setState(() => _testing = true);
-                          try {
-                            await delayTest(
-                              [
-                                ...nodes,
-                                if (canPickCurrentGroup)
-                                  Proxy(
-                                    name: currentGroup.name,
-                                    type: currentGroup.type.name,
-                                  ),
-                              ],
-                              testUrl: delayUrl,
-                              useExactTargets: true,
-                            );
-                          } finally {
-                            if (mounted) setState(() => _testing = false);
-                          }
-                        }
-                      : null,
-                  icon: _testing
-                      ? const SizedBox.square(
-                          dimension: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.speed_rounded, size: 18),
-                  label: Text(appLocalizations.chainSpeedTest),
-                ),
-              ),
-            ),
           for (final option in widget.specialOptions)
             InkWell(
-              onTap: () {
-                final handler = widget.onSelect;
-                if (handler != null) {
-                  handler(option.value, '');
-                }
-                setState(() {});
-                widget.onFinished?.call();
-              },
-              child: Padding(
+              onTap: !option.enabled
+                  ? null
+                  : () {
+                      final handler = widget.onSelect;
+                      if (handler != null) {
+                        handler(option.value, '');
+                      }
+                      setState(() {});
+                      widget.onFinished?.call();
+                    },
+              child: Container(
+                constraints: const BoxConstraints(minHeight: 48),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 8,
                 ),
                 child: Row(
                   children: [
-                    Icon(option.icon, size: 16, color: colorScheme.primary),
+                    Icon(
+                      option.icon,
+                      size: 20,
+                      color: option.enabled
+                          ? colorScheme.primary
+                          : colorScheme.onSurface.withValues(alpha: 0.38),
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         option.label,
-                        style: const TextStyle(fontSize: 13),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: option.enabled
+                              ? null
+                              : colorScheme.onSurface.withValues(alpha: 0.38),
+                        ),
                       ),
                     ),
                   ],
@@ -641,6 +641,19 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
                   : null,
               onTap: () =>
                   widget.onSelect!(currentGroup.name, currentGroup.name),
+              onLongPress:
+                  sourceIsActive &&
+                      clashCore.hasLiveProcess &&
+                      !busy &&
+                      !_selecting &&
+                      !_testing
+                  ? () => _testTargets([
+                      Proxy(
+                        name: currentGroup.name,
+                        type: currentGroup.type.name,
+                      ),
+                    ], delayUrl)
+                  : null,
             ),
           // Level 3 — nodes.
           Flexible(
@@ -679,6 +692,17 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
                           return Semantics(
                             selected: selected,
                             child: InkWell(
+                              onLongPress:
+                                  !sourceIsActive ||
+                                      !clashCore.hasLiveProcess ||
+                                      busy ||
+                                      _selecting ||
+                                      _testing
+                                  ? null
+                                  : () => _testTargets([proxy], delayUrl),
+                              borderRadius: widget.onSelect == null
+                                  ? null
+                                  : BorderRadius.circular(12),
                               onTap: selectable && !_selecting
                                   ? () async {
                                       setState(() {
@@ -724,7 +748,17 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
                                       }
                                     }
                                   : null,
-                              child: Padding(
+                              child: Ink(
+                                decoration: widget.onSelect == null
+                                    ? null
+                                    : BoxDecoration(
+                                        color: selected
+                                            ? colorScheme.primary.withValues(
+                                                alpha: 0.10,
+                                              )
+                                            : null,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 12,
                                   vertical: 6,

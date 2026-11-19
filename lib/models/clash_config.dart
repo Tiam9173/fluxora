@@ -3,6 +3,7 @@
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/enum/enum.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:flutter/foundation.dart' show listEquals, mapEquals;
 
 part 'generated/clash_config.freezed.dart';
 part 'generated/clash_config.g.dart';
@@ -95,9 +96,7 @@ List<String> resolveBypassRouteAddress({
   required bool isAndroid,
   List<String>? custom,
 }) {
-  final routes = List<String>.from(
-    custom ?? defaultBypassPrivateRouteAddress,
-  );
+  final routes = List<String>.from(custom ?? defaultBypassPrivateRouteAddress);
   if (isAndroid && custom == null) {
     routes.add('0.0.0.0/32');
   }
@@ -317,6 +316,7 @@ abstract class Tun with _$Tun {
     @Default(tunDeviceName) String device,
     @JsonKey(name: 'auto-route') @Default(false) bool autoRoute,
     @Default(TunStack.mips) TunStack stack,
+
     /// 系统 DNS 的配置方式：`disabled` / `native` / `hijack`，空串表示沿用
     /// 内核的旧行为（Windows/Linux 开 auto-route 时默认 hijack）。
     @JsonKey(name: 'dns-mode') @Default('') String dnsMode,
@@ -415,7 +415,7 @@ abstract class Dns with _$Dns {
     @Default(true) @JsonKey(name: 'use-system-hosts') bool useSystemHosts,
     @Default(false) @JsonKey(name: 'respect-rules') bool respectRules,
     @Default(false) bool ipv6,
-    @Default(['114.114.114.114'])
+    @Default(['223.5.5.5', '119.29.29.29'])
     @JsonKey(name: 'default-nameserver')
     List<String> defaultNameserver,
     @Default(DnsMode.fakeIp)
@@ -432,25 +432,23 @@ abstract class Dns with _$Dns {
       // 这里**不能**放 `*`：配合 `fake-ip-filter-mode: blacklist`，它会把
       // 所有域名排除在 fake-ip 之外，等于把 fake-ip 整个关掉——每个域名都要
       // 先做一次真实 DNS 才建连。访问境外站点时这一步既慢又容易被污染。
-      'geosite:private',
-      'geosite:category-ntp',
-      'geosite:geolocation-cn',
-      'geosite:connectivity-check',
+      '*.lan',
+      '+.local',
+      'localhost.ptlogin2.qq.com',
     ])
     @JsonKey(name: 'fake-ip-filter')
     List<String> fakeIpFilter,
     @Default(1) @JsonKey(name: 'fake-ip-ttl') int fakeIpTtl,
-    @Default({
-      '+.internal.corp.com': '10.0.0.1',
-      'geosite:cn': '119.29.29.29',
-      'geosite:private': 'system',
-      '*': 'system',
-    })
+    @Default(<String, String>{})
     @JsonKey(name: 'nameserver-policy')
     Map<String, String> nameserverPolicy,
-    @Default(['223.5.5.5', '119.29.29.29']) List<String> nameserver,
+    @Default(['https://dns.alidns.com/dns-query', 'https://doh.pub/dns-query'])
+    List<String> nameserver,
     @Default([]) List<String> fallback,
-    @Default(['https://120.53.53.53/dns-query#DIRECT'])
+    @Default([
+      'https://dns.alidns.com/dns-query#DIRECT',
+      'https://doh.pub/dns-query#DIRECT',
+    ])
     @JsonKey(name: 'proxy-server-nameserver')
     List<String> proxyServerNameserver,
     @Default([])
@@ -471,7 +469,35 @@ abstract class Dns with _$Dns {
 
   factory Dns.safeDnsFromJson(Map<String, Object?> json) {
     try {
-      return Dns.fromJson(json);
+      final migrated = Map<String, Object?>.from(json);
+      // Only replace exact historical defaults; custom resolvers stay intact.
+      const oldLists = {
+        'default-nameserver': ['114.114.114.114'],
+        'nameserver': ['223.5.5.5', '119.29.29.29'],
+        'proxy-server-nameserver': ['https://120.53.53.53/dns-query#DIRECT'],
+        'fake-ip-filter': [
+          'geosite:private',
+          'geosite:category-ntp',
+          'geosite:geolocation-cn',
+          'geosite:connectivity-check',
+        ],
+      };
+      for (final entry in oldLists.entries) {
+        if (migrated[entry.key] is List &&
+            listEquals(migrated[entry.key] as List, entry.value)) {
+          migrated.remove(entry.key);
+        }
+      }
+      if (migrated['nameserver-policy'] is Map &&
+          mapEquals(migrated['nameserver-policy'] as Map, const {
+            '+.internal.corp.com': '10.0.0.1',
+            'geosite:cn': '119.29.29.29',
+            'geosite:private': 'system',
+            '*': 'system',
+          })) {
+        migrated.remove('nameserver-policy');
+      }
+      return Dns.fromJson(migrated);
     } catch (_) {
       return const Dns();
     }
@@ -708,11 +734,15 @@ List<Rule> _genRule(List<dynamic>? rules) {
 }
 
 List<RuleProvider> _genRuleProviders(Map json) {
-  return json.entries.map((entry) => RuleProvider(name: entry.key.toString())).toList();
+  return json.entries
+      .map((entry) => RuleProvider(name: entry.key.toString()))
+      .toList();
 }
 
 List<SubRule> _genSubRules(Map json) {
-  return json.entries.map((entry) => SubRule(name: entry.key.toString())).toList();
+  return json.entries
+      .map((entry) => SubRule(name: entry.key.toString()))
+      .toList();
 }
 
 @freezed
@@ -742,6 +772,7 @@ abstract class ClashConfig with _$ClashConfig {
     @Default(0) @JsonKey(name: 'tproxy-port') int tproxyPort,
     @Default(Mode.rule) Mode mode,
     @Default(false) @JsonKey(name: 'allow-lan') bool allowLan,
+
     /// item 6 (Bettbox 1.19.3) — `user:password` entries for the LAN proxy.
     ///
     /// Only meaningful while [allowLan] is on; an empty list means mihomo does
