@@ -152,7 +152,7 @@ final class VisibleGroupsStateProvider
 }
 
 String _$visibleGroupsStateHash() =>
-    r'f064555529b2244b6966c03be3bfccbb98fdda61';
+    r'e5c7069e519670efdc356635f3ba62c3075a31dd';
 
 @ProviderFor(navigationItemsState)
 final navigationItemsStateProvider = NavigationItemsStateProvider._();
@@ -470,7 +470,7 @@ final class ProxyStateProvider
   }
 }
 
-String _$proxyStateHash() => r'c854ca2b6bdbf095b7db3ee01ec1591e9bda9247';
+String _$proxyStateHash() => r'77d5a2b012657ef1643bb10b4e2af91ac9fbd8b2';
 
 @ProviderFor(trayState)
 final trayStateProvider = TrayStateProvider._();
@@ -1515,7 +1515,7 @@ final class GetProxyCardStateProvider
   }
 }
 
-String _$getProxyCardStateHash() => r'0f131148cb5ed60c9c4c4f31fbe32f114ac346bb';
+String _$getProxyCardStateHash() => r'b94169fa7c13ab875ff2cc0db6b13d0a60c38041';
 
 final class GetProxyCardStateFamily extends $Family
     with $FunctionalFamilyOverride<ProxyCardState, String> {
@@ -2282,7 +2282,7 @@ final class NeedSetupProvider
   }
 }
 
-String _$needSetupHash() => r'abba1c0e0e5ec94f89d33fbc7c3dc11b96cfb2fc';
+String _$needSetupHash() => r'7a4f42d230704d7ae971098ae4c1f10d5ff0fe32';
 
 @ProviderFor(currentBrightness)
 final currentBrightnessProvider = CurrentBrightnessProvider._();

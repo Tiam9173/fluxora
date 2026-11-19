@@ -21,7 +21,7 @@ import io.fluxora.app.RunState
 import io.fluxora.core.Core
 import io.fluxora.app.extensions.awaitResult
 import io.fluxora.app.extensions.asSocketAddressText
-import io.fluxora.app.extensions.resolveDns
+import io.fluxora.app.extensions.resolveUnderlyingDns
 import java.net.Inet4Address
 import io.fluxora.app.models.StartForegroundParams
 import io.fluxora.app.models.VpnOptions
@@ -495,7 +495,7 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             else -> {
                 val cm = connectivity
                 val activeNetwork = cm?.activeNetwork
-                activeNetwork?.let { cm.resolveDns(it) } ?: emptyList()
+                cm?.resolveUnderlyingDns(activeNetwork) ?: emptyList()
             }
         }.toSet()
         return when {
@@ -507,7 +507,7 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     private fun getAllNetworksDns(): String {
         return runCatching {
             connectivity?.allNetworks?.flatMap { network ->
-                connectivity?.resolveDns(network) ?: emptyList()
+                connectivity?.resolveUnderlyingDns(network) ?: emptyList()
             }?.filter { it.isNotBlank() }?.toSet()?.joinToString(",") ?: ""
         }.getOrElse { "" }
     }

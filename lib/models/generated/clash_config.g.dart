@@ -252,7 +252,7 @@ _Dns _$DnsFromJson(Map<String, dynamic> json) => _Dns(
       (json['default-nameserver'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList() ??
-      const ['114.114.114.114'],
+      const ['223.5.5.5', '119.29.29.29'],
   enhancedMode:
       $enumDecodeNullable(_$DnsModeEnumMap, json['enhanced-mode']) ??
       DnsMode.fakeIp,
@@ -265,28 +265,18 @@ _Dns _$DnsFromJson(Map<String, dynamic> json) => _Dns(
       (json['fake-ip-filter'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList() ??
-      const [
-        'geosite:private',
-        'geosite:category-ntp',
-        'geosite:geolocation-cn',
-        'geosite:connectivity-check',
-      ],
+      const ['*.lan', '+.local', 'localhost.ptlogin2.qq.com'],
   fakeIpTtl: (json['fake-ip-ttl'] as num?)?.toInt() ?? 1,
   nameserverPolicy:
       (json['nameserver-policy'] as Map<String, dynamic>?)?.map(
         (k, e) => MapEntry(k, e as String),
       ) ??
-      const {
-        '+.internal.corp.com': '10.0.0.1',
-        'geosite:cn': '119.29.29.29',
-        'geosite:private': 'system',
-        '*': 'system',
-      },
+      const <String, String>{},
   nameserver:
       (json['nameserver'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList() ??
-      const ['223.5.5.5', '119.29.29.29'],
+      const ['https://dns.alidns.com/dns-query', 'https://doh.pub/dns-query'],
   fallback:
       (json['fallback'] as List<dynamic>?)?.map((e) => e as String).toList() ??
       const [],
@@ -294,7 +284,10 @@ _Dns _$DnsFromJson(Map<String, dynamic> json) => _Dns(
       (json['proxy-server-nameserver'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList() ??
-      const ['https://120.53.53.53/dns-query#DIRECT'],
+      const [
+        'https://dns.alidns.com/dns-query#DIRECT',
+        'https://doh.pub/dns-query#DIRECT',
+      ],
   directNameserver:
       (json['direct-nameserver'] as List<dynamic>?)
           ?.map((e) => e as String)

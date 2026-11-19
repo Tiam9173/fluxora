@@ -1646,7 +1646,7 @@ class AppController {
           profileId != _ref.read(currentProfileIdProvider)) {
         throw StateError(appLocalizations.checkOrAddProfile);
       }
-      await clashCore.changeProxy(
+      final linked = await _changeProxyWithChainPolicies(
         ChangeProxyParams(groupName: groupName, proxyName: proxyName),
       );
       if (profileId != _ref.read(currentProfileIdProvider)) {
@@ -1666,6 +1666,9 @@ class AppController {
       // A startup snapshot may still contain the selection from before this RPC.
       _backgroundLoadVersion++;
       updateCurrentSelectedMap(groupName, proxyName);
+      for (final entry in linked.entries) {
+        updateCurrentSelectedMap(entry.key, entry.value);
+      }
       if (_ref.read(appSettingProvider).closeConnections) {
         clashCoreForget(
           clashCore.closeConnections(),
@@ -1676,6 +1679,64 @@ class AppController {
       await updateGroups();
       _scheduleCheckIpRefresh();
     });
+  }
+
+  Future<Map<String, String>> _changeProxyWithChainPolicies(
+    ChangeProxyParams params,
+  ) async {
+    final loaded = _ref.read(groupsProvider).map((g) => g.name).toSet();
+    final targets = {params.groupName: params.proxyName};
+    for (final entry in globalState.chainPolicyAliases.entries) {
+      if (entry.value.source == params.groupName &&
+          loaded.contains(entry.key)) {
+        targets[entry.key] =
+            entry.value.members[params.proxyName] ?? params.proxyName;
+      }
+    }
+    if (targets.length == 1) {
+      await clashCore.changeProxy(params);
+      return const {};
+    }
+    final previous = await clashCore.clashInterface.getProxies();
+    final old = <String, String>{};
+    for (final name in targets.keys) {
+      final value = previous[name];
+      if (value is! Map) throw StateError(appLocalizations.checkError);
+      old[name] = (value['fixed'] ?? value['now'] ?? '').toString();
+    }
+    final attempted = <String>[];
+    try {
+      for (final entry in targets.entries) {
+        attempted.add(entry.key);
+        await clashCore.changeProxy(
+          ChangeProxyParams(groupName: entry.key, proxyName: entry.value),
+        );
+      }
+      final confirmed = await clashCore.clashInterface.getProxies();
+      for (final entry in targets.entries) {
+        final value = confirmed[entry.key];
+        if (value is! Map ||
+            (value['fixed'] != null
+                ? value['fixed'] != entry.value
+                : entry.value.isNotEmpty && value['now'] != entry.value)) {
+          throw StateError(appLocalizations.checkError);
+        }
+      }
+    } catch (_) {
+      for (final name in attempted.reversed) {
+        try {
+          await clashCore.changeProxy(
+            ChangeProxyParams(groupName: name, proxyName: old[name]!),
+          );
+        } catch (error) {
+          commonPrint.log(
+            'Policy selection rollback failed: ${error.runtimeType}',
+          );
+        }
+      }
+      rethrow;
+    }
+    return Map<String, String>.from(targets)..remove(params.groupName);
   }
 
   /// Applies a `group -> proxy` map to the core.
@@ -1717,9 +1778,12 @@ class AppController {
     var allAccepted = true;
     for (final entry in groupToProxyMap.entries) {
       try {
-        await clashCore.changeProxy(
+        final linked = await _changeProxyWithChainPolicies(
           ChangeProxyParams(groupName: entry.key, proxyName: entry.value),
         );
+        for (final alias in linked.entries) {
+          updateCurrentSelectedMap(alias.key, alias.value);
+        }
       } catch (e) {
         if (profileId != _ref.read(currentProfileIdProvider)) return false;
         allAccepted = false;

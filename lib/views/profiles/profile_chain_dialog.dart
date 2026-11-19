@@ -52,6 +52,7 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
   }
 
   Future<void> _loadCandidates() async {
+    await warpManager.init();
     final warp = warpManager.config;
     final candidates = <Proxy>[
       if (warp.enable && warp.privateKey.isNotEmpty)
@@ -72,17 +73,49 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
           }
         }
       }
+      final byName = {for (final proxy in candidates) proxy.name: proxy};
+      final definitions =
+          (currentMap['proxy-groups'] as List?)?.whereType<Map>().toList() ??
+          const <Map>[];
+      for (final group in definitions) {
+        final name = group['name'];
+        final type = GroupType.parseProfileType(
+          group['type']?.toString() ?? '',
+        );
+        if (name is String && name != 'GLOBAL') {
+          byName[name] = Proxy(name: name, type: type.name);
+        }
+      }
+      _candidateGroups = [
+        Group(
+          name: 'GLOBAL',
+          type: GroupType.Selector,
+          all: byName.values.toList(),
+        ),
+        for (final group in definitions)
+          if (group['name'] is String && group['name'] != 'GLOBAL')
+            Group(
+              name: group['name'] as String,
+              type: GroupType.parseProfileType(group['type'] as String),
+              all: [
+                for (final member in (group['proxies'] as List?) ?? const [])
+                  ?byName[member],
+              ],
+            ),
+      ];
     } catch (_) {}
 
     if (mounted) {
       setState(() {
-        _candidateGroups = [
-          Group(
-            name: widget.profile.label ?? widget.profile.id,
-            type: GroupType.Selector,
-            all: candidates,
-          ),
-        ];
+        if (_candidateGroups.isEmpty) {
+          _candidateGroups = [
+            Group(
+              name: widget.profile.label ?? widget.profile.id,
+              type: GroupType.Selector,
+              all: candidates,
+            ),
+          ];
+        }
         _isLoading = false;
       });
     }
@@ -90,6 +123,7 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
 
   Future<void> _showProxyPicker({
     required String title,
+    required bool isEntry,
     required String? current,
     required ValueChanged<String?> onSelect,
   }) => showChainHopPicker(
@@ -106,11 +140,30 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
         value: '',
         icon: Icons.block,
       ),
+      SwitchCardSpecialOption(
+        label: isEntry ? 'WARP 入口' : 'WARP 出口',
+        value: isEntry
+            ? ProfileChainConfig.warpEntry
+            : ProfileChainConfig.warpExit,
+        icon: Icons.shield_outlined,
+        enabled: warpManager.config.privateKey.trim().isNotEmpty,
+      ),
     ],
     onSelect: (name) {
       if (mounted) onSelect(name.isEmpty ? null : name);
     },
   );
+
+  String _proxyLabel(String name) => switch (name) {
+    ProfileChainConfig.warpEntry => 'WARP 入口',
+    ProfileChainConfig.warpExit => 'WARP 出口',
+    _ => name,
+  };
+
+  bool _isKnownProxy(String? name) =>
+      _candidateProxies.contains(name) ||
+      name == ProfileChainConfig.warpEntry ||
+      name == ProfileChainConfig.warpExit;
 
   /// Shows what a section actually does.
   ///
@@ -231,7 +284,7 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                                   child: _buildHopNode(
                                     appLocalizations.chainNodePreProxy,
                                     _config.preProxy?.isNotEmpty == true
-                                        ? _config.preProxy!
+                                        ? _proxyLabel(_config.preProxy!)
                                         : appLocalizations.chainPreProxyNone,
                                     _config.preProxy?.isNotEmpty == true
                                         ? Colors.blue
@@ -261,7 +314,7 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                                   child: _buildHopNode(
                                     appLocalizations.roleExit,
                                     _config.landingProxy?.isNotEmpty == true
-                                        ? _config.landingProxy!
+                                        ? _proxyLabel(_config.landingProxy!)
                                         : appLocalizations
                                               .chainLandingProxyNone,
                                     _config.landingProxy?.isNotEmpty == true
@@ -317,7 +370,7 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                       leading: const Icon(Icons.hub_outlined),
                       title: Text(
                         _config.preProxy?.isNotEmpty == true
-                            ? _config.preProxy!
+                            ? _proxyLabel(_config.preProxy!)
                             : appLocalizations.preProxyOptionNone,
                         style: const TextStyle(fontSize: 13),
                         overflow: TextOverflow.ellipsis,
@@ -325,6 +378,7 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => _showProxyPicker(
                         title: appLocalizations.preProxySectionTitle,
+                        isEntry: true,
                         current: _config.preProxy,
                         onSelect: (val) => setState(() {
                           if (val == null) {
@@ -338,7 +392,7 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                       ),
                     ),
                     if (_config.preProxy?.isNotEmpty == true &&
-                        !_candidateProxies.contains(_config.preProxy)) ...[
+                        !_isKnownProxy(_config.preProxy)) ...[
                       const SizedBox(height: 8),
                       TextField(
                         controller: _customPreCtrl,
@@ -382,7 +436,7 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                       leading: const Icon(Icons.flight_land_outlined),
                       title: Text(
                         _config.landingProxy?.isNotEmpty == true
-                            ? _config.landingProxy!
+                            ? _proxyLabel(_config.landingProxy!)
                             : appLocalizations.landingProxyOptionNone,
                         style: const TextStyle(fontSize: 13),
                         overflow: TextOverflow.ellipsis,
@@ -390,6 +444,7 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => _showProxyPicker(
                         title: appLocalizations.landingProxySectionTitle,
+                        isEntry: false,
                         current: _config.landingProxy,
                         onSelect: (val) => setState(() {
                           if (val == null) {
@@ -403,7 +458,7 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
                       ),
                     ),
                     if (_config.landingProxy?.isNotEmpty == true &&
-                        !_candidateProxies.contains(_config.landingProxy)) ...[
+                        !_isKnownProxy(_config.landingProxy)) ...[
                       const SizedBox(height: 8),
                       TextField(
                         controller: _customLandingCtrl,

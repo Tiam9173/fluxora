@@ -3,17 +3,50 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+typedef ChainPolicyAliases =
+    Map<String, ({String source, Map<String, String> members})>;
+
 Set<String> proxyDependencyClosure(
   Iterable<String> roots,
   Iterable<dynamic> groups,
-  Iterable<dynamic> proxies,
-) {
-  final dependencies = <String, Iterable<String>>{};
+  Iterable<dynamic> proxies, [
+  Map providers = const {},
+]) {
+  final dependencies = <Object, Iterable<Object>>{};
   for (final group in groups.whereType<Map>()) {
     final members = group['proxies'];
-    if (group['name'] case final String name when members is List) {
-      dependencies[name] = members.whereType<String>();
+    if (group['name'] case final String name) {
+      dependencies[name] = [
+        if (members is List) ...members.whereType<String>(),
+        for (final provider in (group['use'] as List?) ?? const [])
+          (provider: provider.toString()),
+        if (group['include-all'] == true ||
+            group['include-all-proxies'] == true)
+          for (final p in proxies.whereType<Map>())
+            if (p['name'] is String) p['name'] as String,
+        if (group['include-all'] == true ||
+            group['include-all-providers'] == true)
+          for (final p in providers.keys) (provider: p.toString()),
+      ];
     }
+  }
+  for (final entry in providers.entries) {
+    final value = entry.value;
+    if (value is! Map) continue;
+    final override = value['override'];
+    final dialer =
+        (override is Map ? override['dialer-proxy'] : null) ??
+        value['dialer-proxy'];
+    dependencies[(provider: entry.key.toString())] = [
+      if (dialer is String)
+        dialer
+      else
+        for (final p
+            in ((value['payload'] as List?) ?? const []).whereType<Map>()) ...[
+          if (p['name'] is String) p['name'] as String,
+          if (p['dialer-proxy'] is String) p['dialer-proxy'] as String,
+        ],
+    ];
   }
   for (final proxy in proxies.whereType<Map>()) {
     if (proxy case {
@@ -23,13 +56,212 @@ Set<String> proxyDependencyClosure(
       dependencies[name] = [dialer];
     }
   }
-  final visited = <String>{};
-  final pending = roots.toList();
+  final visited = <Object>{};
+  final pending = <Object>[...roots];
   while (pending.isNotEmpty) {
     final name = pending.removeLast();
     if (visited.add(name)) pending.addAll(dependencies[name] ?? const []);
   }
-  return visited;
+  return visited.whereType<String>().toSet();
+}
+
+/// Freeze include-all before injecting exits, so an entry group cannot include
+/// its own new exit. An inline provider preserves filters on the original names.
+void freezeProxyGroupIncludes(
+  Map<String, dynamic> config,
+  Iterable<String> roots,
+) {
+  final groups = (config['proxy-groups'] as List?) ?? const [];
+  final proxies = (config['proxies'] as List?) ?? const [];
+  final providers = Map<String, dynamic>.from(
+    (config['proxy-providers'] as Map?) ?? const {},
+  );
+  final originalProviderNames = providers.keys.toList();
+  final reachable = proxyDependencyClosure(roots, groups, proxies, providers);
+  String? snapshot;
+  for (final group in groups.whereType<Map>().where(
+    (g) => reachable.contains(g['name']),
+  )) {
+    final allProxies =
+        group['include-all'] == true || group['include-all-proxies'] == true;
+    final allProviders =
+        group['include-all'] == true || group['include-all-providers'] == true;
+    if (!allProxies && !allProviders) continue;
+    final use = ((group['use'] as List?) ?? const []).toSet();
+    if (allProviders) use.addAll(originalProviderNames);
+    if (allProxies && proxies.isNotEmpty) {
+      if (snapshot == null) {
+        final base = '🔗快照·${roots.join(' · ')}';
+        snapshot = base;
+        for (var i = 1; providers.containsKey(snapshot); i++) {
+          snapshot = '$base $i';
+        }
+        providers[snapshot!] = {
+          'type': 'inline',
+          'payload': [
+            for (final p in proxies.whereType<Map>())
+              Map<String, dynamic>.from(p),
+          ],
+        };
+      }
+      use.add(snapshot);
+      if (group['type'] != 'select' &&
+          (group['interval'] == null || group['interval'] == 0)) {
+        group['interval'] = 300;
+      }
+    }
+    group
+      ..remove('include-all')
+      ..remove('include-all-proxies')
+      ..remove('include-all-providers')
+      ..['use'] = use.toList();
+    if (use.isEmpty && ((group['proxies'] as List?) ?? const []).isEmpty) {
+      group['proxies'] = [group['empty-fallback'] ?? 'COMPATIBLE'];
+    }
+  }
+  if (snapshot != null) config['proxy-providers'] = providers;
+}
+
+/// Makes an isolated outbound (or policy subtree) dial through an earlier hop.
+/// A group itself cannot have `dialer-proxy` in Mihomo.
+String chainProxyWithDialer(
+  Map<String, dynamic> config, {
+  required String name,
+  required String dialer,
+  required String outputName,
+  Map<String, Map<String, dynamic>> extraProxies = const {},
+  Map<String, String> selectedMap = const {},
+  ChainPolicyAliases? policyAliases,
+}) {
+  final proxies = List<dynamic>.from((config['proxies'] as List?) ?? const []);
+  final groups = List<dynamic>.from(
+    (config['proxy-groups'] as List?) ?? const [],
+  );
+  final providers = (config['proxy-providers'] as Map?) ?? const {};
+  final proxyByName = <String, Map>{
+    ...extraProxies,
+    for (final p in proxies.whereType<Map>()) p['name'].toString(): p,
+  };
+  final groupByName = {
+    for (final g in groups.whereType<Map>()) g['name'].toString(): g,
+  };
+  final addedProxies = <Map<String, dynamic>>[];
+  final addedGroups = <Map<String, dynamic>>[];
+  final addedProviders = <String, dynamic>{};
+  final visiting = <String>{};
+  final aliases = <String, String>{};
+  final addedPolicies =
+      <String, ({String source, Map<String, String> members})>{};
+  String copy(String source) {
+    if (source == 'DIRECT' || source == 'COMPATIBLE') return dialer;
+    if (source == 'REJECT' || source == 'REJECT-DROP' || source == 'PASS') {
+      return source;
+    }
+    if (source == 'GLOBAL' || !visiting.add(source)) {
+      throw FormatException('代理链存在循环依赖：$source');
+    }
+    try {
+      if (aliases[source] case final existing?) return existing;
+      final alias = source == name ? outputName : '$outputName › $source';
+      if (proxyByName.containsKey(alias) || groupByName.containsKey(alias)) {
+        throw FormatException('代理链名称冲突：$alias');
+      }
+      final group = groupByName[source];
+      if (group != null) {
+        final clone = Map<String, dynamic>.from(group);
+        final members =
+            (group['proxies'] as List?)?.whereType<String>().toList() ??
+            <String>[];
+        if (members.isNotEmpty &&
+            (group['exclude-filter']?.toString().isNotEmpty ?? false)) {
+          // Renaming explicit members would change anchored exclusion rules.
+          throw FormatException('策略组 $source 包含静态节点排除表达式，请将它用作入口策略组');
+        }
+        final mapped = {for (final member in members) member: copy(member)};
+        final use =
+            (group['use'] as List?)?.whereType<String>().toList() ?? <String>[];
+        if (group['include-all'] == true ||
+            group['include-all-providers'] == true) {
+          use.addAll(
+            providers.keys.whereType<String>().where(
+              (key) => !use.contains(key),
+            ),
+          );
+        }
+        final clonedUse = <String>[];
+        if (group['include-all'] == true ||
+            group['include-all-proxies'] == true) {
+          final payload = proxies
+              .whereType<Map>()
+              .where(
+                (p) => !ChainProxyConfig.isShadowNodeName(
+                  p['name']?.toString() ?? '',
+                ),
+              )
+              .toList();
+          if (payload.isNotEmpty) {
+            final providerAlias = '$outputName › 全部节点';
+            addedProviders[providerAlias] = {
+              'type': 'inline',
+              'payload': payload,
+              'override': {'dialer-proxy': dialer},
+            };
+            clonedUse.add(providerAlias);
+          }
+        }
+        for (final providerName in use) {
+          final provider = providers[providerName];
+          if (provider is! Map) throw FormatException('找不到代理集合：$providerName');
+          final providerAlias = '$outputName › $providerName';
+          final clonedProvider = Map<String, dynamic>.from(provider);
+          // Provider nodes keep their names: anchored filters and saved
+          // selections must still match after applying this override.
+          clonedProvider['override'] = {
+            ...?provider['override'] as Map?,
+            'dialer-proxy': dialer,
+          };
+          addedProviders[providerAlias] = clonedProvider;
+          clonedUse.add(providerAlias);
+        }
+        clone
+          ..remove('include-all')
+          ..remove('include-all-proxies')
+          ..remove('include-all-providers')
+          ..['name'] = alias
+          ..['proxies'] = mapped.values.toList()
+          ..['use'] = clonedUse;
+        final selected = selectedMap[source] ?? group['default-selected'];
+        if (selected is String) {
+          clone['default-selected'] = mapped[selected] ?? selected;
+        }
+        addedGroups.add(clone);
+        addedPolicies[alias] = (source: source, members: mapped);
+      } else {
+        final original = proxyByName[source];
+        if (original == null) throw FormatException('找不到代理节点：$source');
+        final clone = Map<String, dynamic>.from(original)..['name'] = alias;
+        if (dialer == 'DIRECT') {
+          clone.remove('dialer-proxy');
+        } else {
+          clone['dialer-proxy'] = dialer;
+        }
+        addedProxies.add(clone);
+      }
+      aliases[source] = alias;
+      return alias;
+    } finally {
+      visiting.remove(source);
+    }
+  }
+
+  final result = copy(name);
+  policyAliases?.addAll(addedPolicies);
+  config['proxies'] = proxies..addAll(addedProxies);
+  config['proxy-groups'] = groups..addAll(addedGroups);
+  if (addedProviders.isNotEmpty) {
+    config['proxy-providers'] = {...providers, ...addedProviders};
+  }
+  return result;
 }
 
 String _generateUuidV4() {
@@ -821,6 +1053,8 @@ class ChainProxyConfig {
   void applyToClashConfig(
     Map<String, dynamic> rawConfig, {
     Map<String, Map<String, dynamic>> extraProxyConfigs = const {},
+    Map<String, String> selectedMap = const {},
+    ChainPolicyAliases? policyAliases,
   }) {
     final rawProxies = rawConfig['proxies'];
     final rawGroups = rawConfig['proxy-groups'];
@@ -840,7 +1074,9 @@ class ChainProxyConfig {
         rawGroups.removeWhere(
           (g) =>
               g is Map &&
-              (g['name'] == dedicatedGroupName || g['name'] == '✈️ 链式跳板'),
+              (g['name'] == dedicatedGroupName ||
+                  g['name'] == '✈️ 链式跳板' ||
+                  isShadowNodeName(g['name']?.toString() ?? '')),
         );
         for (final g in rawGroups) {
           if (g is Map && g['proxies'] is List) {
@@ -933,7 +1169,7 @@ class ChainProxyConfig {
       return;
     }
 
-    final List<dynamic> proxiesList = (rawProxies is List)
+    List<dynamic> proxiesList = (rawProxies is List)
         ? List<dynamic>.from(rawProxies)
         : <dynamic>[];
     rawConfig['proxies'] = proxiesList;
@@ -946,10 +1182,18 @@ class ChainProxyConfig {
               p['name']?.toString().startsWith('🔗出口·') == true),
     );
 
-    final List<dynamic> groupList = (rawGroups is List)
+    List<dynamic> groupList = (rawGroups is List)
         ? List<dynamic>.from(rawGroups)
         : <dynamic>[];
     rawConfig['proxy-groups'] = groupList;
+    groupList.removeWhere(
+      (g) => g is Map && isShadowNodeName(g['name']?.toString() ?? ''),
+    );
+    final providers = rawConfig['proxy-providers'];
+    if (providers is Map) {
+      rawConfig['proxy-providers'] = Map<dynamic, dynamic>.from(providers)
+        ..removeWhere((name, _) => isShadowNodeName(name.toString()));
+    }
 
     // Performance, throughput & latency acceleration for multi-hop chain proxies
     rawConfig['tcp-concurrent'] = true;
@@ -979,6 +1223,7 @@ class ChainProxyConfig {
 
     const String dedicatedHopGroupName = '✈️ 链式跳板';
     final String hop1 = effectiveHop1.trim();
+    freezeProxyGroupIncludes(rawConfig, effectiveFrontHops);
 
     final bool isHopSpecificProxy =
         hop1.isNotEmpty &&
@@ -996,7 +1241,12 @@ class ChainProxyConfig {
         hop1 != 'GLOBAL' &&
         hop1 != dedicatedGroupName &&
         groupList.any((g) => g is Map && g['name']?.toString() == hop1) &&
-        !proxyDependencyClosure([hop1], groupList, proxiesList).any(
+        !proxyDependencyClosure(
+          [hop1],
+          groupList,
+          proxiesList,
+          (rawConfig['proxy-providers'] as Map?) ?? const {},
+        ).any(
           (name) =>
               name == 'GLOBAL' ||
               name == dedicatedGroupName ||
@@ -1013,6 +1263,12 @@ class ChainProxyConfig {
     // 不会改变最终出口 —— 落地住宅节点保持原样。
     var chainTerminal = fallbackHop;
     final frontChain = effectiveFrontHops;
+    final sourceHopDependencies = proxyDependencyClosure(
+      frontChain,
+      groupList,
+      proxiesList,
+      (rawConfig['proxy-providers'] as Map?) ?? const {},
+    );
 
     // `fallbackHop` may be the dedicated hop group rather than a node. The
     // group is created further down, but the shadows below already point at it,
@@ -1030,7 +1286,25 @@ class ChainProxyConfig {
     for (var i = 1; i < frontChain.length; i++) {
       final hopName = frontChain[i];
       final base = proxyConfigMap[hopName];
-      if (base == null) continue;
+      if (base == null) {
+        chainTerminal = chainProxyWithDialer(
+          rawConfig,
+          name: hopName,
+          dialer: chainTerminal,
+          outputName: frontHopShadowName(i, hopName),
+          extraProxies: extraProxyConfigs,
+          selectedMap: selectedMap,
+          policyAliases: policyAliases,
+        );
+        proxiesList = rawConfig['proxies'] as List;
+        groupList = rawConfig['proxy-groups'] as List;
+        groupList.add({
+          'name': exitShadowName(_chainExitLabel(hopName)),
+          'type': 'select',
+          'proxies': [chainTerminal],
+        });
+        continue;
+      }
       final shadowName = frontHopShadowName(i, hopName);
       final clone = Map<String, dynamic>.from(base);
       clone['name'] = shadowName;
@@ -1051,12 +1325,8 @@ class ChainProxyConfig {
       if (!hopExitExists) {
         final hopExit = Map<String, dynamic>.from(base);
         hopExit['name'] = hopExitName;
-        hopExit['dialer-proxy'] = chainTerminal == shadowName
-            ? (frontChain[i - 1] == 'DIRECT' ? null : frontChain[i - 1])
-            : chainTerminal;
-        if (hopExit['dialer-proxy'] == null) {
-          hopExit.remove('dialer-proxy');
-        }
+        hopExit['dialer-proxy'] = clone['dialer-proxy'];
+        if (hopExit['dialer-proxy'] == null) hopExit.remove('dialer-proxy');
         proxiesList.add(hopExit);
       }
     }
@@ -1227,7 +1497,8 @@ class ChainProxyConfig {
           : chainTerminal;
       if (effectiveHop != 'DIRECT' &&
           effectiveHop != dedicatedHopGroupName &&
-          !airportProxyNames.contains(effectiveHop)) {
+          !airportProxyNames.contains(effectiveHop) &&
+          !groupList.any((g) => g is Map && g['name'] == effectiveHop)) {
         effectiveHop = chainTerminal;
       }
 
@@ -1251,7 +1522,7 @@ class ChainProxyConfig {
       // 出口变体是在 frontChain 循环里直接塞进 proxiesList 的，那时
       // injectedProxyNames 还没声明，加不进去。结果它们成了"有代理、没组"
       // 的孤儿：代理页按组渲染，这些节点既不显示也测不了延迟。
-      for (final proxy in proxiesList) {
+      for (final proxy in [...proxiesList, ...groupList]) {
         if (proxy is! Map) continue;
         final name = proxy['name']?.toString() ?? '';
         if (name.isEmpty) continue;
@@ -1313,6 +1584,7 @@ class ChainProxyConfig {
           injectedProxyNames,
           groupList,
           proxiesList,
+          (rawConfig['proxy-providers'] as Map?) ?? const {},
         );
         const excludedGroupKeywords = [
           '直连',
@@ -1332,6 +1604,7 @@ class ChainProxyConfig {
           if (groupName == effectiveDedicatedGroupName ||
               groupName == dedicatedHopGroupName ||
               dialerGroups.contains(groupName) ||
+              sourceHopDependencies.contains(groupName) ||
               groupName == 'GLOBAL') {
             continue;
           }

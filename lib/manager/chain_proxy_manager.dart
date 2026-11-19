@@ -972,8 +972,15 @@ class ChainProxyManager extends ChangeNotifier {
   void applyToClashConfig(
     Map<String, dynamic> rawConfig, {
     Map<String, Map<String, dynamic>> extraProxyConfigs = const {},
+    Map<String, String> selectedMap = const {},
+    ChainPolicyAliases? policyAliases,
   }) {
-    _config.applyToClashConfig(rawConfig, extraProxyConfigs: extraProxyConfigs);
+    _config.applyToClashConfig(
+      rawConfig,
+      extraProxyConfigs: extraProxyConfigs,
+      selectedMap: selectedMap,
+      policyAliases: policyAliases,
+    );
   }
 
   // ─── Phase 5.x Runtime State ─────────────────────────────────────────────

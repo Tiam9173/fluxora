@@ -44,6 +44,7 @@ void main() {
   );
 
   setUp(() async {
+    globalState.chainPolicyAliases = {};
     fake = _FakeClashCore();
     clashCore.clashInterface = fake;
 
@@ -127,6 +128,47 @@ void main() {
   }
 
   // ── Node selection ───────────────────────────────────────────────────────
+
+  for (final rejected in [false, true]) {
+    testWidgets(
+      'chained policy mirrors manual choice and rolls back on rejection: $rejected',
+      (tester) async {
+        final controller = await pump(tester, selected: {groupName: oldNode});
+        const alias = '🔗中转·Policy';
+        globalState.chainPolicyAliases = {
+          alias: (
+            source: groupName,
+            members: {oldNode: 'old-alias', newNode: 'new-alias'},
+          ),
+        };
+        fake.selections.addAll({groupName: oldNode, alias: 'old-alias'});
+        capturedRef.read(groupsProvider.notifier).value = [
+          group(groupName, oldNode),
+          group(alias, 'old-alias'),
+        ];
+        controller.readBack = () => [
+          for (final entry in fake.selections.entries)
+            group(entry.key, entry.value),
+        ];
+        if (rejected) fake.reject.add(alias);
+        final result = controller.changeProxy(
+          groupName: groupName,
+          proxyName: newNode,
+        );
+        if (rejected) {
+          await expectLater(result, throwsStateError);
+          expect(fake.selections[groupName], oldNode);
+          expect(fake.selections[alias], 'old-alias');
+          expect(selectedMap()[groupName], oldNode);
+        } else {
+          await result;
+          expect(fake.selections[groupName], newNode);
+          expect(fake.selections[alias], 'new-alias');
+          expect(selectedMap()[alias], 'new-alias');
+        }
+      },
+    );
+  }
 
   testWidgets('a native error string preserves the confirmed node', (
     tester,

@@ -448,6 +448,7 @@ class WarpConfig {
     // Client -> Airport Proxy (hop) -> WARP (WireGuard) -> Destination
     const String dedicatedWarpHopGroup = WarpConfig.warpHopGroupName;
     final configuredHop = defaultDialerProxy.trim();
+    freezeProxyGroupIncludes(rawConfig, [configuredHop]);
     final warpOutboundGroupName = dedicatedGroupName.trim().isNotEmpty
         ? dedicatedGroupName.trim()
         : defaultDedicatedGroupName;
@@ -455,6 +456,7 @@ class WarpConfig {
       [configuredHop],
       groupList,
       proxiesList,
+      (rawConfig['proxy-providers'] as Map?) ?? const {},
     );
     final canDialHop =
         !hopDependencies.contains(proxyName) &&

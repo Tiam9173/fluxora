@@ -15,7 +15,7 @@ Future<void> showChainHopPicker({
   required Set<String> excludeNames,
   required void Function(String name) onSelect,
   bool allowFollowMain = true,
-  bool allowPolicyGroups = false,
+  bool allowPolicyGroups = true,
   String? sourceProfileId,
   List<Group>? candidateGroups,
   String? selectedName,
@@ -23,26 +23,39 @@ Future<void> showChainHopPicker({
 }) {
   return showDialog(
     context: context,
-    builder: (ctx) => SwitchCard(
-      title: title,
-      excludeNames: excludeNames,
-      allowPolicyGroups: allowPolicyGroups,
-      sourceProfileId: sourceProfileId,
-      candidateGroups: candidateGroups,
-      selectedName: selectedName,
-      specialOptions: [
-        ...specialOptions,
-        if (allowFollowMain)
-          SwitchCardSpecialOption(
-            label: appLocalizations.cardFollowMain,
-            value: '',
-            icon: Icons.auto_awesome,
+    builder: (ctx) => Theme(
+      data: Theme.of(ctx).copyWith(
+        dialogTheme: Theme.of(ctx).dialogTheme.copyWith(
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 24,
+            vertical: 24,
           ),
-      ],
-      onSelect: (name, _) {
-        onSelect(name);
-        Navigator.of(ctx).pop();
-      },
+          titleTextStyle: Theme.of(
+            ctx,
+          ).textTheme.titleLarge?.merge(FluxoraTypography.title),
+        ),
+      ),
+      child: SwitchCard(
+        title: title,
+        excludeNames: excludeNames,
+        allowPolicyGroups: allowPolicyGroups,
+        sourceProfileId: sourceProfileId,
+        candidateGroups: candidateGroups,
+        selectedName: selectedName,
+        specialOptions: [
+          ...specialOptions,
+          if (allowFollowMain)
+            SwitchCardSpecialOption(
+              label: appLocalizations.cardFollowMain,
+              value: '',
+              icon: Icons.auto_awesome,
+            ),
+        ],
+        onSelect: (name, _) {
+          onSelect(name);
+          Navigator.of(ctx).pop();
+        },
+      ),
     ),
   );
 }
