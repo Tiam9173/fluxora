@@ -1076,6 +1076,10 @@ void main() {
                 'port': 443,
                 'tls': true,
                 'reality-opts': {'private-key': 'abcdefghijklmxyz'},
+                'headers': {
+                  'Authorization': 'Bearer fixture-sensitive-token',
+                  'Cookie': 'session=fixture-sensitive-cookie',
+                },
               },
             ],
           }),
@@ -1113,6 +1117,15 @@ void main() {
       expect(inDialog(find.text('reality-opts')), findsOneWidget);
       expect(inDialog(find.textContaining('ab****yz')), findsOneWidget);
       expect(inDialog(find.textContaining('abcdefghijklmxyz')), findsNothing);
+      expect(
+        inDialog(find.textContaining('Bearer fixture-sensitive-token')),
+        findsNothing,
+      );
+      expect(
+        inDialog(find.textContaining('session=fixture-sensitive-cookie')),
+        findsNothing,
+      );
+      expect(inDialog(find.textContaining('Be****en')), findsOneWidget);
       await capture(tester, 'node-details-expanded-${brightness.name}');
       await tester.tap(inDialog(find.text(appLocalizations.nodeDetailClose)));
       await tester.pumpAndSettle();

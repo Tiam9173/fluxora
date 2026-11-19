@@ -392,6 +392,10 @@ Object? _displayField(String key, Object? value) {
 bool _isSecret(String key) {
   final k = key.toLowerCase();
   return k.contains('password') ||
+      k.contains('authorization') ||
+      k == 'cookie' ||
+      k == 'set-cookie' ||
+      k.contains('privatekey') ||
       k.contains('passwd') ||
       k.contains('uuid') ||
       k.contains('token') ||
