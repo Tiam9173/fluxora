@@ -60,9 +60,12 @@ class JavaScriptRuntimeManager {
   }) async {
     final token = _nextToken++;
     try {
+      final timer = Stopwatch()..start();
+      final configJson = await compute(jsonEncode, config);
+      final encodeMs = timer.elapsedMilliseconds;
       final run = await rust_script.evaluateScript(
         script: scriptContent,
-        configJson: json.encode(config),
+        configJson: configJson,
         customOptions: customOptions == null || customOptions.isEmpty
             ? null
             : json.encode(customOptions),
@@ -70,9 +73,14 @@ class JavaScriptRuntimeManager {
       );
       _logScriptLines(run.logs);
       final output = run.config;
+      timer.reset();
       final decoded = output.length >= 512 * 1024
           ? await compute(jsonDecode, output)
           : jsonDecode(output);
+      commonPrint.log(
+        '[Script] encode=${encodeMs}ms runtime=${run.elapsedMs}ms '
+        'decode=${timer.elapsedMilliseconds}ms',
+      );
       if (decoded is Map<String, dynamic>) {
         return decoded;
       }
