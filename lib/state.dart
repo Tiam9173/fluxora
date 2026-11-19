@@ -14,7 +14,7 @@ import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/providers/state.dart' as providers_state;
 
 import 'package:fluxora/widgets/dialog.dart';
-import 'package:flutter/foundation.dart' show ValueListenable, listEquals;
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' as flutter_riverpod;
@@ -1059,9 +1059,6 @@ class GlobalState {
       final originalDns = rawConfig['dns'] is Map
           ? (rawConfig['dns'] as Map).cast<String, dynamic>()
           : null;
-      final originalHosts = rawConfig['hosts'] is Map
-          ? (rawConfig['hosts'] as Map).cast<String, dynamic>()
-          : null;
       // A TUN still needs a DNS handler when the subscription omits DNS.
       // Keep that system-resolver mode separate from the user's DNS override.
       final dns = overrideDns
@@ -1083,19 +1080,8 @@ class GlobalState {
       applyDnsNodeOverride(
         rawConfig,
         originalDns: originalDns,
-        originalHosts: originalHosts,
-        keepSubscriptionPublicNodeResolvers: listEquals(
-          dns.proxyServerNameserver,
-          const Dns().proxyServerNameserver,
-        ),
+        keepSubscriptionPublicNodeResolvers: !overrideDns,
       );
-    }
-
-    if (rawConfig['dns'] != null &&
-        rawConfig['dns']['fallback-filter'] != null) {
-      if (rawConfig['dns']['fallback-filter'] is Map) {
-        (rawConfig['dns']['fallback-filter'] as Map).remove('geosite');
-      }
     }
 
     if (system.isAndroid && rawConfig['dns']['listen'] != null) {
