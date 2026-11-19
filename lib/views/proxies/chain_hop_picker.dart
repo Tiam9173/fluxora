@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fluxora/common/common.dart';
+import 'package:fluxora/models/models.dart';
 import 'package:fluxora/views/proxies/notification_switch_card.dart';
 
 /// Picks a node for one front hop.
@@ -15,6 +16,10 @@ Future<void> showChainHopPicker({
   required void Function(String name) onSelect,
   bool allowFollowMain = true,
   bool allowPolicyGroups = false,
+  String? sourceProfileId,
+  List<Group>? candidateGroups,
+  String? selectedName,
+  List<SwitchCardSpecialOption> specialOptions = const [],
 }) {
   return showDialog(
     context: context,
@@ -22,7 +27,11 @@ Future<void> showChainHopPicker({
       title: title,
       excludeNames: excludeNames,
       allowPolicyGroups: allowPolicyGroups,
+      sourceProfileId: sourceProfileId,
+      candidateGroups: candidateGroups,
+      selectedName: selectedName,
       specialOptions: [
+        ...specialOptions,
         if (allowFollowMain)
           SwitchCardSpecialOption(
             label: appLocalizations.cardFollowMain,

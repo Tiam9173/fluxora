@@ -33,16 +33,15 @@ class _ClashContainerState extends ConsumerState<ClashManager>
     clashMessage.addListener(this);
     ref.listenManual(needSetupProvider, (prev, next) {
       if (prev != next) {
-        final profileChanged = prev?.a != next.a;
-        unawaited(
-          globalState.appController
-              .handleChangeProfile(
-                hardRestart: system.isDesktop && profileChanged,
-                previousProfileId: prev?.a,
-              )
-              .catchError((Object error, StackTrace stackTrace) {
-                commonPrint.log('Profile change failed: $error');
-              }),
+        // Reload notifications must not inherit a completed lifecycle lock.
+        Zone.root.run(
+          () => unawaited(
+            globalState.appController
+                .handleChangeProfile(previousProfileId: prev?.a)
+                .catchError((Object error, StackTrace stackTrace) {
+                  commonPrint.log('Profile change failed: $error');
+                }),
+          ),
         );
       }
     });

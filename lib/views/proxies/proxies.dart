@@ -54,18 +54,17 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
     final showHiddenItems = ref.watch(
       proxiesStyleSettingProvider.select((state) => state.showHiddenItems),
     );
-    final (scriptOn, compatible) = ref.watch(
-      scriptStateProvider.select(
-        (s) => (
-          s.currentId != null,
-          s.currentScript?.isCompatibleWithFluxora ?? false,
-        ),
-      ),
+    final script = ref.watch(
+      scriptStateProvider.select((state) => state.currentScript),
     );
+    final compatible =
+        script != null &&
+        (ref.watch(scriptOptionsAvailableProvider(script)).asData?.value ??
+            script.isCompatibleWithFluxora);
     final profileOverride = ref.watch(
       currentProfileProvider.select((p) => p?.useScriptOverride ?? false),
     );
-    final hasScriptCustom = scriptOn && compatible && profileOverride;
+    final hasScriptCustom = compatible && profileOverride;
     final hasGroupCustom =
         !hasScriptCustom && ref.watch(currentProfileIdProvider) != null;
     final hasCustom = hasScriptCustom || hasGroupCustom;
@@ -270,10 +269,14 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
     final profileOverride =
         ref.read(currentProfileProvider)?.useScriptOverride ?? false;
     final script = ref.read(scriptStateProvider).currentScript;
-    if (script != null && script.isCompatibleWithFluxora && profileOverride) {
+    if (script != null &&
+        profileOverride &&
+        await ref.read(scriptOptionsAvailableProvider(script).future)) {
+      if (!mounted) return;
       await showScriptCustomOptions(context, ref, script: script);
       return;
     }
+    if (!mounted) return;
     final profileId = ref.read(currentProfileIdProvider);
     if (profileId != null) {
       await showGroupSwitchOptions(context, ref, profileId: profileId);
@@ -338,13 +341,14 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
       false => Align(
         alignment: Alignment.topCenter,
         child: FluxoraEmptyState(
-        icon: Icons.hub_outlined,
-        title: appLocalizations.noProxy,
-        action: FilledButton.icon(
-          onPressed: () => globalState.appController.toPage(PageLabel.profiles),
-          icon: const Icon(Icons.folder_open_outlined),
-          label: Text(appLocalizations.profiles),
-        ),
+          icon: Icons.hub_outlined,
+          title: appLocalizations.noProxy,
+          action: FilledButton.icon(
+            onPressed: () =>
+                globalState.appController.toPage(PageLabel.profiles),
+            icon: const Icon(Icons.folder_open_outlined),
+            label: Text(appLocalizations.profiles),
+          ),
         ),
       ),
       true => switch (proxiesType) {
@@ -385,8 +389,11 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
                     ),
                     actions: [
                       TextButton(
-                        onPressed: () =>
-                            updateExternalProviders(ref, context, type: 'Proxy'),
+                        onPressed: () => updateExternalProviders(
+                          ref,
+                          context,
+                          type: 'Proxy',
+                        ),
                         child: Text(appLocalizations.update),
                       ),
                     ],

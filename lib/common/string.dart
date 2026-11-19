@@ -72,7 +72,10 @@ extension StringExtension on String {
   }
 
   bool get isSvg {
-    return endsWith('.svg');
+    final lower = toLowerCase();
+    return lower.startsWith('data:image/svg+xml;') ||
+        lower.startsWith('data:image/svg+xml,') ||
+        (Uri.tryParse(this)?.path.toLowerCase().endsWith('.svg') ?? false);
   }
 
   bool get isRegex {

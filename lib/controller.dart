@@ -67,6 +67,7 @@ class AppController {
   bool _isUpdatingGroups = false;
   Timer? _updateGroupsRetryTimer;
   int _coreGeneration = 0;
+  ({int mixedPort, ExternalControllerStatus controller})? _appliedPortSettings;
   final Set<DelayTestTarget> _manualDelayTargets = {};
   final Set<String> _updatingProfileIds = {};
   Timer? _idleGcTimer;
@@ -135,11 +136,14 @@ class AppController {
   }
 
   void selectProxy(String groupName, String proxyName) {
-    unawaited(changeProxy(groupName: groupName, proxyName: proxyName)
-        .catchError((Object error) {
-      commonPrint.log('Node selection failed: $error');
-      globalState.showNotifier(error.formatError);
-    }));
+    unawaited(
+      changeProxy(groupName: groupName, proxyName: proxyName).catchError((
+        Object error,
+      ) {
+        commonPrint.log('Node selection failed: $error');
+        globalState.showNotifier(error.formatError);
+      }),
+    );
   }
 
   void _invalidateCoreReads() {
@@ -171,6 +175,7 @@ class AppController {
     bool refreshData = true,
   }) async {
     commonPrint.log('restart core');
+    _appliedPortSettings = null;
     _invalidateCoreReads();
 
     final wasRunning = _ref.read(runTimeProvider.notifier).isStart;
@@ -294,7 +299,8 @@ class AppController {
       }
     } else {
       _invalidateCoreReads();
-      _ref.read(connectionCheckProvider.notifier).state = ConnectionCheck.untested;
+      _ref.read(connectionCheckProvider.notifier).state =
+          ConnectionCheck.untested;
       try {
         await globalState.handleStop();
       } finally {
@@ -336,7 +342,8 @@ class AppController {
 
   void _scheduleCheckIpRefresh({bool immediate = false}) {
     final generation = ++_connectionCheckGeneration;
-    _ref.read(connectionCheckProvider.notifier).state = ConnectionCheck.untested;
+    _ref.read(connectionCheckProvider.notifier).state =
+        ConnectionCheck.untested;
     _ipRefreshTimer?.cancel();
     if (!_ref.read(runTimeProvider.notifier).isStart &&
         _ref.read(connectionTargetProvider) != true) {
@@ -363,7 +370,8 @@ class AppController {
     if (port <= 0 || uri == null || uri.scheme != 'https' || uri.host.isEmpty) {
       return;
     }
-    _ref.read(connectionCheckProvider.notifier).state = ConnectionCheck.checking;
+    _ref.read(connectionCheckProvider.notifier).state =
+        ConnectionCheck.checking;
     final client = HttpClient()
       ..badCertificateCallback = null
       ..connectionTimeout = const Duration(seconds: 5)
@@ -395,7 +403,8 @@ class AppController {
     Future.microtask(() async {
       try {
         final providers = await clashCore.getExternalProviders();
-        if (version != _backgroundLoadVersion || generation != _coreGeneration) {
+        if (version != _backgroundLoadVersion ||
+            generation != _coreGeneration) {
           return;
         }
         _ref.read(providersProvider.notifier).value = providers;
@@ -406,7 +415,9 @@ class AppController {
           if (attempt > 0) {
             await Future.delayed(Duration(milliseconds: 200 * attempt));
           }
-          groups = await clashCore.getProxiesGroups(preloadedProviders: providers);
+          groups = await clashCore.getProxiesGroups(
+            preloadedProviders: providers,
+          );
           if (groups.isNotEmpty) break;
         }
         if (version != _backgroundLoadVersion) return;
@@ -435,15 +446,25 @@ class AppController {
     // _updateClashConfig behind `!isStart`, but the start path calls
     // handleStart() (which sets runTime) before that, so the guard was always
     // false and the fallback never happened.
-    await _resolveMixedPortFallback();
-    await _resolveExternalControllerFallback();
-    await currentProfile.checkAndUpdate();
     final patchConfig = _ref.read(patchClashConfigProvider);
+    // Reuse ports only after this controller has successfully applied the same settings.
+    if (!globalState.isStart ||
+        _appliedPortSettings?.mixedPort != patchConfig.mixedPort) {
+      await _resolveMixedPortFallback();
+    }
+    if (!globalState.isStart ||
+        _appliedPortSettings?.controller != patchConfig.externalController) {
+      await _resolveExternalControllerFallback();
+    }
+    await currentProfile.checkAndUpdate();
     final targetTun = patchConfig.tun.enable;
 
     final realTunEnable = await _prepareTun(targetTun);
     if (realTunEnable == null) return false;
-    if (requireRequestedTun && system.isDesktop && targetTun && !realTunEnable) {
+    if (requireRequestedTun &&
+        system.isDesktop &&
+        targetTun &&
+        !realTunEnable) {
       throw StateError(appLocalizations.tunMismatchOn);
     }
 
@@ -481,6 +502,10 @@ class AppController {
       final prefs = await preferences.sharedPreferencesCompleter.future;
       await prefs?.setBool('is_tun_running', realTunEnable);
     }
+    _appliedPortSettings = (
+      mixedPort: patchConfig.mixedPort,
+      controller: patchConfig.externalController,
+    );
     lastProfileModified = await _ref.read(
       currentProfileProvider.select((state) => state?.profileLastModified),
     );
@@ -991,6 +1016,7 @@ class AppController {
   }
 
   Future<void> _updateClashConfig() async {
+    final patchConfig = _ref.read(patchClashConfigProvider);
     final updateParams = _ref.read(updateParamsProvider);
     final tunResult = await _requestAdmin(updateParams.tun.enable);
     if (tunResult.isError) return;
@@ -1006,6 +1032,10 @@ class AppController {
       updateParams.copyWith.tun(enable: realTunEnable),
     );
     if (message.isNotEmpty) throw message;
+    _appliedPortSettings = (
+      mixedPort: patchConfig.mixedPort,
+      controller: patchConfig.externalController,
+    );
 
     if (system.isDesktop) {
       final prefs = await preferences.sharedPreferencesCompleter.future;
@@ -1140,8 +1170,11 @@ class AppController {
     pending.state = profileId;
     return _coreLifecycleLock.synchronized(() {
       if (pending.state != profileId) return;
-      pending.state = null;
-      if (_ref.read(profilesProvider).getProfile(profileId) == null) return;
+      if (_ref.read(profilesProvider).getProfile(profileId) == null ||
+          _ref.read(currentProfileIdProvider) == profileId) {
+        pending.state = null;
+        return;
+      }
       _ref.read(currentProfileIdProvider.notifier).value = profileId;
     });
   }
@@ -1151,53 +1184,59 @@ class AppController {
     required String? previousProfileId,
   }) {
     final profileId = _ref.read(currentProfileIdProvider);
-    return _coreLifecycleLock.synchronized(() async {
-      if (profileId != _ref.read(currentProfileIdProvider)) return;
-      if (previousProfileId != profileId) {
-        _manualDelayTargets.clear();
-        _ref.read(delayDataSourceProvider.notifier).value = {};
-      }
-      if (hardRestart) {
-        _ref.read(isRestartingCoreProvider.notifier).state = true;
-        try {
-          await _restartCore();
-        } catch (err) {
-          _reportCoreRestartFailure(err);
-          rethrow;
-        } finally {
-          _ref.read(isRestartingCoreProvider.notifier).state = false;
-        }
-      } else {
-        if (system.isAndroid) {
-          // Best-effort cleanup must not hold the lifecycle lock before apply/start.
-          clashCoreForget(
-            clashCore.closeConnections(),
-            'profile connections cleanup',
-          );
-          clashCoreForget(clashCore.flushDnsCache(), 'profile DNS cleanup');
-        }
-        final prevProfileId = previousProfileId;
-        _ref.read(isRestartingCoreProvider.notifier).state = true;
-        try {
-          if (prevProfileId != _ref.read(currentProfileIdProvider)) {
-            await clashCore.refreshProfileTransport();
+    return _coreLifecycleLock
+        .synchronized(() async {
+          if (profileId != _ref.read(currentProfileIdProvider)) return;
+          if (previousProfileId != profileId) {
+            _manualDelayTargets.clear();
+            _ref.read(delayDataSourceProvider.notifier).value = {};
           }
-          await _applyProfile();
-        } catch (err) {
-          await _reportProfileSwitchFailure(
-            failedProfileId: _ref.read(currentProfileIdProvider),
-            restoreProfileId: prevProfileId,
-            error: err,
-          );
-        } finally {
-          _ref.read(isRestartingCoreProvider.notifier).state = false;
-        }
-      }
-      _ref.read(logsProvider.notifier).value = FixedList(maxLength);
-      _ref.read(requestsProvider.notifier).value = FixedList(maxLength);
-      globalState.computeHeightMapCache = {};
-      addCheckIpNumDebounce();
-    });
+          if (hardRestart) {
+            _ref.read(isRestartingCoreProvider.notifier).state = true;
+            try {
+              await _restartCore();
+            } catch (err) {
+              _reportCoreRestartFailure(err);
+              rethrow;
+            } finally {
+              _ref.read(isRestartingCoreProvider.notifier).state = false;
+            }
+          } else {
+            if (system.isAndroid) {
+              // Best-effort cleanup must not hold the lifecycle lock before apply/start.
+              clashCoreForget(
+                clashCore.closeConnections(),
+                'profile connections cleanup',
+              );
+              clashCoreForget(clashCore.flushDnsCache(), 'profile DNS cleanup');
+            }
+            final prevProfileId = previousProfileId;
+            _ref.read(isRestartingCoreProvider.notifier).state = true;
+            try {
+              if (prevProfileId != _ref.read(currentProfileIdProvider)) {
+                await clashCore.refreshProfileTransport();
+              }
+              await _applyProfile();
+            } catch (err) {
+              await _reportProfileSwitchFailure(
+                failedProfileId: _ref.read(currentProfileIdProvider),
+                restoreProfileId: prevProfileId,
+                error: err,
+              );
+            } finally {
+              _ref.read(isRestartingCoreProvider.notifier).state = false;
+            }
+          }
+          _ref.read(logsProvider.notifier).value = FixedList(maxLength);
+          _ref.read(requestsProvider.notifier).value = FixedList(maxLength);
+          globalState.computeHeightMapCache = {};
+          addCheckIpNumDebounce();
+        })
+        .whenComplete(() {
+          if (!context.mounted) return;
+          final pending = _ref.read(pendingProfileIdProvider.notifier);
+          if (pending.state == profileId) pending.state = null;
+        });
   }
 
   /// item 6 (P0) — report a failed profile switch honestly.
@@ -1580,9 +1619,9 @@ class AppController {
     final profileId = _ref.read(currentProfileIdProvider);
     await _coreLifecycleLock.synchronized(() async {
       if (profileId != _ref.read(currentProfileIdProvider)) return;
-      final group = _ref.read(groupsProvider).firstWhereOrNull(
-        (group) => group.name == groupName,
-      );
+      final group = _ref
+          .read(groupsProvider)
+          .firstWhereOrNull((group) => group.name == groupName);
       if (group?.type != GroupType.URLTest) return;
       if (_ref.read(selectedMapProvider)[groupName]?.isNotEmpty == true) return;
 
@@ -1603,7 +1642,8 @@ class AppController {
   }) {
     final profileId = _ref.read(currentProfileIdProvider);
     return _coreLifecycleLock.synchronized(() async {
-      if (profileId == null || profileId != _ref.read(currentProfileIdProvider)) {
+      if (profileId == null ||
+          profileId != _ref.read(currentProfileIdProvider)) {
         throw StateError(appLocalizations.checkOrAddProfile);
       }
       await clashCore.changeProxy(
@@ -1627,7 +1667,10 @@ class AppController {
       _backgroundLoadVersion++;
       updateCurrentSelectedMap(groupName, proxyName);
       if (_ref.read(appSettingProvider).closeConnections) {
-        clashCoreForget(clashCore.closeConnections(), 'node connections cleanup');
+        clashCoreForget(
+          clashCore.closeConnections(),
+          'node connections cleanup',
+        );
       }
       clashCoreForget(clashCore.flushDnsCache(), 'node DNS cleanup');
       await updateGroups();
@@ -1999,6 +2042,7 @@ class AppController {
   Future<void> _initCore() async {
     final isInit = await clashCore.isInit;
     if (!isInit) {
+      _appliedPortSettings = null;
       await clashCore.init();
       await clashCore.setState(globalState.getCoreState());
     }
@@ -2185,22 +2229,28 @@ class AppController {
     };
 
     vpn_service.service?.addNativeEventCallback((method, arguments) async {
-      if (method == 'vpnStartFailed' && !_isStarting &&
+      if (method == 'vpnStartFailed' &&
+          !_isStarting &&
           !_ref.read(isRestartingCoreProvider)) {
         globalState.showNotifier(appLocalizations.networkErrorRetryLater);
       } else if (method == 'runStateChanged') {
         final state = arguments as String?;
-        if (state == 'STOP' && !_isStarting &&
+        if (state == 'STOP' &&
+            !_isStarting &&
             !_ref.read(isRestartingCoreProvider) &&
             _ref.read(connectionTargetProvider) == null &&
             _ref.read(runTimeProvider) != null) {
-          unawaited(_coreLifecycleLock.synchronized(() async {
-            if (!await globalState.isVpnServiceRunning()) {
-              await _updateStatus(false);
-            }
-          }).catchError((Object error) {
-            commonPrint.log('VPN stop synchronization failed: $error');
-          }));
+          unawaited(
+            _coreLifecycleLock
+                .synchronized(() async {
+                  if (!await globalState.isVpnServiceRunning()) {
+                    await _updateStatus(false);
+                  }
+                })
+                .catchError((Object error) {
+                  commonPrint.log('VPN stop synchronization failed: $error');
+                }),
+          );
         }
       }
     });
@@ -2268,9 +2318,10 @@ class AppController {
     }
     _ref.read(initProvider.notifier).value = true;
     if (_localIpRequest == 0 &&
-        _ref.read(dashboardStateProvider).dashboardWidgets.contains(
-          DashboardWidget.intranetIp,
-        )) {
+        _ref
+            .read(dashboardStateProvider)
+            .dashboardWidgets
+            .contains(DashboardWidget.intranetIp)) {
       unawaited(updateLocalIp());
     }
   }
@@ -2835,8 +2886,13 @@ class AppController {
 
   void updateStart() {
     final pending = _ref.read(connectionTargetProvider);
-    unawaited(updateStatus(!(pending ?? _ref.read(runTimeProvider.notifier).isStart))
-        .catchError((Object error) => globalState.showNotifier(error.formatError)));
+    unawaited(
+      updateStatus(
+        !(pending ?? _ref.read(runTimeProvider.notifier).isStart),
+      ).catchError(
+        (Object error) => globalState.showNotifier(error.formatError),
+      ),
+    );
   }
 
   void updateCurrentSelectedMap(String groupName, String proxyName) {

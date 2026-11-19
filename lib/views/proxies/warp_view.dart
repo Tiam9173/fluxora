@@ -1,9 +1,7 @@
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/manager/chain_proxy_manager.dart';
 import 'package:fluxora/manager/warp_manager.dart';
-import 'package:fluxora/models/chain_proxy.dart';
 import 'package:fluxora/models/warp_config.dart';
-import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/providers/warp.dart';
 import 'package:fluxora/widgets/widgets.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluxora/manager/warp_clean_ip_scanner.dart';
 import 'package:fluxora/views/proxies/chain_hop_picker.dart';
+import 'package:fluxora/views/proxies/notification_switch_card.dart';
 import 'package:fluxora/l10n/l10n.dart';
 
 String _modeLabel(WarpMode m, AppLocalizations l) => switch (m) {
@@ -61,258 +60,26 @@ class _WarpViewState extends ConsumerState<WarpView> {
     required String currentHop,
     required Function(String) onSelect,
   }) {
-    // B4.1: derive the internal group names from live state instead of
-    // hard-coding them — the chain group and the WARP exit group are both
-    // user-configurable (`ChainProxyConfig.dedicatedGroupName` /
-    // `WarpConfig.dedicatedGroupName`), so a literal would silently stop
-    // matching once the user renames them.
-    final chainGroupName = chainProxyManager.config.dedicatedGroupName;
-    final warpExitGroupName = config.dedicatedGroupName;
-    // The WARP hop group is the single exception: its only definition is a
-    // function-local `const` inside `warp_config.dart` that is not exported, so
-    // there is no accessible source to reference.
-    const warpHopGroupName = WarpConfig.warpHopGroupName;
-
-    bool isInternalGroup(String name) =>
-        name == 'GLOBAL' ||
-        name == chainGroupName ||
-        name == warpExitGroupName ||
-        name == warpHopGroupName;
-
-    final groups = ref.read(groupsProvider);
-    final groupNames = groups
-        .map((g) => g.name)
-        .where((name) => !isInternalGroup(name))
-        .toList();
-
-    final allProxies = <String>{};
-    for (final g in groups) {
-      if (g.name != 'GLOBAL' && isInternalGroup(g.name)) {
-        continue;
-      }
-      for (final p in g.all) {
-        // B4.1: reuse the shared classification rule — built-in policies
-        // (DIRECT / REJECT / PASS / COMPATIBLE …), proxy groups and chain shadow
-        // nodes are not ordinary nodes; unknown types are kept. The WARP-specific
-        // exclusion is retained, but against the LIVE `proxyName` so a renamed
-        // WARP outbound can never be offered as its own dialer.
-        if (ChainProxyConfig.isSelectableProxy(name: p.name, type: p.type) &&
-            p.name != config.proxyName) {
-          allProxies.add(p.name);
-        }
-      }
-    }
-    final proxyList = allProxies.toList()..sort();
-
-    showSheet(
+    showChainHopPicker(
       context: context,
-      props: SheetProps(isScrollControlled: true),
-      builder: (ctx, type) {
-        return AdaptiveSheetScaffold(
-          type: type,
-          title: appLocalizations.warpStr98,
-          body: CustomScrollView(
-            slivers: [
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: FluxoraSpacing.sm,
-                ),
-                sliver: SliverList.list(
-                  children: [
-                    // 和链式跳板用同一套视觉：圆角卡片 + 带底色的图标块 + 右侧对勾。
-                    _hopOption(
-                      icon: Icons.grid_view_rounded,
-                      color: Colors.teal,
-                      title: appLocalizations.warpStr28,
-                      subtitle: appLocalizations.warpStr27,
-                      onTap: () {
-                        Navigator.of(ctx).pop();
-                        showChainHopPicker(
-                          context: context,
-                          title: appLocalizations.warpStr98,
-                          allowPolicyGroups: true,
-                          excludeNames: {
-                            config.proxyName,
-                            warpExitGroupName,
-                            warpHopGroupName,
-                            chainGroupName,
-                            '✈️ 链式跳板',
-                          },
-                          onSelect: onSelect,
-                        );
-                      },
-                    ),
-                    _hopOption(
-                      icon: Icons.auto_mode,
-                      color: Colors.blue,
-                      title: appLocalizations.warpStr20,
-                      subtitle: appLocalizations.warpStr86,
-                      selected: currentHop.isEmpty,
-                      onTap: () {
-                        onSelect('');
-                        Navigator.of(ctx).pop();
-                      },
-                    ),
-                    _hopOption(
-                      icon: Icons.directions,
-                      color: Colors.green,
-                      title: appLocalizations.warpStr6,
-                      subtitle: '不经过机场直接连接 WARP（需本地网络未屏蔽 CF Anycast IP）',
-                      selected: currentHop == 'DIRECT',
-                      onTap: () {
-                        onSelect('DIRECT');
-                        Navigator.of(ctx).pop();
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              if (groupNames.isNotEmpty) ...[
-                SliverToBoxAdapter(
-                  child: _hopSection(appLocalizations.warpStr84),
-                ),
-                SliverList.builder(
-                  itemCount: groupNames.length,
-                  itemBuilder: (_, index) {
-                    final group = groupNames[index];
-                    return _hopOption(
-                      icon: Icons.folder_outlined,
-                      color: Colors.amber,
-                      title: group,
-                      selected: currentHop == group,
-                      onTap: () {
-                        onSelect(group);
-                        Navigator.of(ctx).pop();
-                      },
-                    );
-                  },
-                ),
-              ],
-              if (proxyList.isNotEmpty) ...[
-                SliverToBoxAdapter(
-                  child: _hopSection(appLocalizations.warpStr63),
-                ),
-                SliverList.builder(
-                  itemCount: proxyList.length,
-                  itemBuilder: (_, index) {
-                    final name = proxyList[index];
-                    return _hopOption(
-                      icon: Icons.flight_takeoff,
-                      color: Colors.indigo,
-                      title: name,
-                      selected: currentHop == name,
-                      onTap: () {
-                        onSelect(name);
-                        Navigator.of(ctx).pop();
-                      },
-                    );
-                  },
-                ),
-              ],
-            ],
-          ),
-        );
+      title: appLocalizations.warpStr98,
+      selectedName: currentHop,
+      allowPolicyGroups: true,
+      excludeNames: {
+        config.proxyName,
+        config.dedicatedGroupName,
+        WarpConfig.warpHopGroupName,
+        chainProxyManager.config.dedicatedGroupName,
+        '✈️ 链式跳板',
       },
-    );
-  }
-
-  /// 分区标题：和卡片之间的间距保持一致。
-  Widget _hopSection(String title) {
-    final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: scheme.onSurfaceVariant,
+      specialOptions: [
+        SwitchCardSpecialOption(
+          label: appLocalizations.warpStr6,
+          value: 'DIRECT',
+          icon: Icons.directions,
         ),
-      ),
-    );
-  }
-
-  /// 单个可选项：圆角卡片 + 带底色的图标块，和链式跳板的 SwitchCard 一致。
-  Widget _hopOption({
-    required IconData icon,
-    required Color color,
-    required String title,
-    String? subtitle,
-    bool selected = false,
-    required VoidCallback onTap,
-  }) {
-    final scheme = Theme.of(context).colorScheme;
-    final radius = BorderRadius.circular(FluxoraRadius.md);
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: FluxoraSpacing.md,
-        vertical: FluxoraSpacing.xs,
-      ),
-      child: Material(
-        color: selected
-            ? scheme.primary.withValues(alpha: 0.10)
-            : scheme.surfaceContainerHighest.withValues(alpha: 0.45),
-        borderRadius: radius,
-        child: InkWell(
-          borderRadius: radius,
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Row(
-              children: [
-                Container(
-                  width: 34,
-                  height: 34,
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(FluxoraRadius.icon),
-                  ),
-                  child: Icon(icon, size: 18, color: color),
-                ),
-                const SizedBox(width: FluxoraSpacing.md),
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      if (subtitle != null && subtitle.isNotEmpty) ...[
-                        const SizedBox(height: FluxoraSpacing.xxs),
-                        Text(
-                          subtitle,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: scheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                if (selected)
-                  Padding(
-                    padding: const EdgeInsets.only(left: FluxoraSpacing.sm),
-                    child: Icon(
-                      Icons.check_circle,
-                      size: 18,
-                      color: scheme.primary,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ),
+      ],
+      onSelect: onSelect,
     );
   }
 

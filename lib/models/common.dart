@@ -1,6 +1,5 @@
 // ignore_for_file: invalid_annotation_target
 
-import 'dart:convert' show Utf8Decoder;
 import 'dart:io';
 import 'dart:math';
 
@@ -926,13 +925,9 @@ extension ScriptExt on Script {
   Future<Script> refreshCompatibility() async {
     if (compatible) return this;
     try {
-      final head = content.isNotEmpty
-          ? content
-          : await File(await appPath.getScriptPath(id))
-                .openRead(0, 2000)
-                .transform(const Utf8Decoder(allowMalformed: true))
-                .join();
-      if (_declaresCustomOptions(head)) return copyWith(compatible: true);
+      if (_declaresCustomOptions(await readContent())) {
+        return copyWith(compatible: true);
+      }
     } on FileSystemException {
       // The next execution reports a missing or unreadable script.
     }
@@ -973,8 +968,8 @@ extension ScriptExt on Script {
   }
 
   bool _declaresCustomOptions(String value) {
-    final head = value.length > 2000 ? value.substring(0, 2000) : value;
-    return head.contains('Compatible_With_Fluxora') ||
-        head.contains('Compatible_With_Bettbox');
+    return value.contains('Compatible_With_Fluxora') ||
+        value.contains('Compatible_With_Bettbox') ||
+        RegExp(r'\bruleOptionsEnable\s*(?:=|:)').hasMatch(value);
   }
 }

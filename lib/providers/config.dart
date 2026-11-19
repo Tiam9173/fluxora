@@ -2,8 +2,14 @@ import 'package:fluxora/common/common.dart';
 import 'package:fluxora/models/models.dart';
 import 'package:fluxora/state.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 part 'generated/config.g.dart';
+
+final scriptOptionsAvailableProvider = FutureProvider.autoDispose
+    .family<bool, Script>((ref, script) async {
+      return (await script.refreshCompatibility()).isCompatibleWithFluxora;
+    });
 
 @riverpod
 class AppSetting extends _$AppSetting with AutoDisposeNotifierMixin {

@@ -145,6 +145,51 @@ void main() {
     expect(File(path).parent.path, join(home.path, 'scripts'));
   });
 
+  test(
+    'options declared after a long header work without a compatibility marker',
+    () async {
+      final content =
+          '// ${'header ' * 600}\n'
+          'const ruleOptionsEnable = { ads: false }; function main(c) { return c; }';
+      final stored = await Script.create(
+        label: 'Long header',
+      ).writeContent(content);
+      expect(stored.isCompatibleWithFluxora, isTrue);
+      final legacy = stored.copyWith(compatible: false);
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      expect(
+        await container.read(scriptOptionsAvailableProvider(legacy).future),
+        isTrue,
+      );
+      expect(await legacy.readContent(), content);
+    },
+  );
+
+  test('a plain script keeps its custom options control hidden', () async {
+    const script = Script(
+      id: 'plain',
+      label: 'Plain',
+      content: 'function main(config) { return config; }',
+    );
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    expect(
+      await container.read(scriptOptionsAvailableProvider(script).future),
+      isFalse,
+    );
+  });
+
+  test(
+    'rule SVG icons support data sources and URLs with query parameters',
+    () {
+      expect('data:image/svg+xml;base64,PHN2Zy8+'.isSvg, isTrue);
+      expect('https://example.invalid/icon.svg?version=2'.isSvg, isTrue);
+      expect('https://example.invalid/ICON.SVG'.isSvg, isTrue);
+      expect('https://example.invalid/icon.png?name=.svg'.isSvg, isFalse);
+    },
+  );
+
   test('script selection and options round trip through preferences', () async {
     SharedPreferences.setMockInitialValues({});
     final content = 'function main(c) { return c; }';

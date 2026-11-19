@@ -12,6 +12,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_svg/svg.dart' show SvgPicture;
 import 'package:intl/intl.dart';
 // Test-only platform fakes, matching the existing AppPath isolation tests.
 // ignore: depend_on_referenced_packages
@@ -52,6 +53,8 @@ import 'package:fluxora/views/tools.dart';
 import 'package:fluxora/views/profiles/profiles.dart';
 import 'package:fluxora/views/profiles/profile_chain_dialog.dart';
 import 'package:fluxora/views/profiles/profile_nodes_view.dart';
+import 'package:fluxora/views/profiles/scripts.dart'
+    show showGroupSwitchOptions;
 import 'package:fluxora/views/other_setting.dart';
 import 'package:fluxora/views/proxies/proxies.dart';
 import 'package:fluxora/views/proxies/list.dart';
@@ -289,8 +292,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         chainProxyConfigProvider.overrideWith((ref) => _VisualChainManager()),
-        if (systemProxy)
-          systemProxyAppliedProvider.overrideWith((ref) => true),
+        if (systemProxy) systemProxyAppliedProvider.overrideWith((ref) => true),
         startButtonSelectorStateProvider.overrideWith(
           (ref) => StartButtonSelectorState(isInit: true, hasProfile: !empty),
         ),
@@ -543,10 +545,7 @@ void main() {
       await tester.tap(fallbackEditor);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 600));
-      await tester.enterText(
-        fallbackEditor,
-        '$initial\n// edited',
-      );
+      await tester.enterText(fallbackEditor, '$initial\n// edited');
     }
     await tester.pump(const Duration(milliseconds: 600));
     expect(find.byTooltip(appLocalizations.undo), findsNothing);
@@ -558,10 +557,7 @@ void main() {
     await settleEditor();
     String currentText() => editor.evaluate().isNotEmpty
         ? tester.widget<CodeForge>(editor).controller!.text
-        : tester
-              .widget<TextField>(fallbackEditor)
-              .controller!
-              .text;
+        : tester.widget<TextField>(fallbackEditor).controller!.text;
     expect(currentText(), initial);
     await tester.tap(find.byTooltip(appLocalizations.more).last);
     await settleEditor();
@@ -621,6 +617,9 @@ void main() {
           ),
         ],
       );
+      final core = clashCore.clashInterface as _VisualCore;
+      core.live = true;
+      addTearDown(() => core.live = false);
       String? selected;
       showChainHopPicker(
         context: tester.element(find.byType(HomePage)),
@@ -630,7 +629,6 @@ void main() {
         onSelect: (name) => selected = name,
       );
       await tester.pumpAndSettle();
-      final core = clashCore.clashInterface as _VisualCore;
       core.delayReply = Completer<String>();
       addTearDown(() => core.delayReply = null);
       await tester.tap(find.byTooltip(appLocalizations.startTest));
@@ -667,6 +665,13 @@ void main() {
     final container = await show(tester, reduce: true);
     final core = clashCore.clashInterface as _VisualCore;
     core.live = true;
+    container.read(groupsProvider.notifier).value = const [
+      Group(
+        name: 'Fixture group',
+        type: GroupType.Selector,
+        all: [Proxy(name: 'Fixture relay', type: 'ss')],
+      ),
+    ];
     core.configRead = Completer<Result>()
       ..complete(
         Result.success(<String, dynamic>{
@@ -703,7 +708,14 @@ void main() {
       jsonEncode(const Delay(name: 'Fixture relay', url: '', value: 62)),
     );
     await tester.pumpAndSettle();
-    expect(find.text('62ms'), findsOneWidget);
+    expect(
+      container
+          .read(delayDataSourceProvider)
+          .values
+          .any((measurements) => measurements['Fixture relay'] == 62),
+      isTrue,
+    );
+    expect(find.textContaining('62'), findsOneWidget);
     await capture(tester, 'profile-chain-picker-latency');
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(seconds: 1));
@@ -1835,6 +1847,180 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets(
+    'inactive scripts expose declared custom options without enabling them',
+    (tester) async {
+      final container = await show(
+        tester,
+        page: PageLabel.script,
+        reduce: true,
+      );
+      const script = Script(
+        id: 'inactive-with-options',
+        label: '可自定义的未启用脚本',
+        content:
+            'const ruleOptionsEnable = { ads: false }; function main(c) { return c; }',
+      );
+      container.read(scriptStateProvider.notifier).setScript(script);
+      await container.read(scriptOptionsAvailableProvider(script).future);
+      await tester.pumpAndSettle();
+      final row = find.byKey(
+        const ValueKey('script-row-inactive-with-options'),
+      );
+      await tester.tap(
+        find.descendant(
+          of: row,
+          matching: find.byTooltip(appLocalizations.more),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text(appLocalizations.custom), findsOneWidget);
+      expect(container.read(scriptStateProvider).currentId, isNull);
+      await capture(tester, 'inactive-script-custom-options');
+    },
+  );
+
+  testWidgets(
+    'group custom rules retain the icon from the evaluated configuration',
+    (tester) async {
+      final container = await show(
+        tester,
+        page: PageLabel.proxies,
+        reduce: true,
+      );
+      const icon =
+          'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiIGZpbGw9IiM2QTlCRkYiLz48L3N2Zz4=';
+      final core = clashCore.clashInterface as _VisualCore;
+      core.configRead = Completer<Result>()
+        ..complete(
+          Result.success(<String, dynamic>{
+            'proxy-groups': [
+              {'name': '带图标的规则', 'icon': icon},
+              {'name': '其他规则'},
+            ],
+            'rule': ['MATCH,带图标的规则'],
+          }),
+        );
+      addTearDown(() => core.configRead = null);
+      showGroupSwitchOptions(
+        tester.element(find.byType(HomePage)),
+        (globalState.appController as _VisualController).bindingRef,
+        profileId: container.read(currentProfileIdProvider)!,
+      );
+      await tester.pump();
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 60)),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byWidgetPredicate(
+          (widget) => widget is CommonTargetIcon && widget.src == icon,
+        ),
+        findsOneWidget,
+      );
+      expect(find.byType(SvgPicture), findsOneWidget);
+      expect(find.text('带图标的规则'), findsOneWidget);
+      await capture(tester, 'group-custom-rule-icons');
+    },
+  );
+
+  for (final brightness in Brightness.values) {
+    testWidgets(
+      'inactive script options persist and reach native execution $brightness',
+      (tester) async {
+        final container = await show(
+          tester,
+          page: PageLabel.script,
+          reduce: true,
+          brightness: brightness,
+        );
+        final script = await tester.runAsync(
+          () => Script.create(label: '原生选项验证').writeContent(
+            'const Compatible_With_Fluxora = {policyGroupOptions: ["AI"]}; const ruleOptionsEnable = { AI: true, ads: true }; '
+            'const serviceConfigs = [{key:"AI",name:"AI",icon:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiIGZpbGw9IiM2QTlCRkYiLz48L3N2Zz4="}]; '
+            'function main(config) { config.flags = ruleOptionsEnable; return config; }',
+          ),
+        );
+        container.read(scriptStateProvider.notifier).setScript(script!);
+        final declared = await tester.runAsync(
+          () async => JavaScriptRuntimeManager.extractScriptOptions(
+            await script.readContent(),
+          ),
+        );
+        expect(declared?['options'], {'AI': true, 'ads': true});
+        await tester.pumpAndSettle();
+        final row = find.byKey(ValueKey('script-row-${script.id}'));
+        await tester.tap(
+          find.descendant(
+            of: row,
+            matching: find.byTooltip(appLocalizations.more),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(appLocalizations.custom));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 450));
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 120)),
+        );
+        await tester.pump();
+        for (
+          var attempt = 0;
+          attempt < 20 && find.text('AI').evaluate().isEmpty;
+          attempt++
+        ) {
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 30)),
+          );
+          await tester.pump();
+        }
+        expect(find.text('AI'), findsOneWidget);
+        final otherRules = find.byKey(const ValueKey('script-other-rules'));
+        expect(otherRules, findsOneWidget);
+        expect(find.text('ads').hitTestable(), findsNothing);
+        await capture(tester, 'script-others-collapsed-${brightness.name}');
+        await tester.tap(otherRules);
+        await tester.pumpAndSettle();
+        expect(
+          find.text('ads'),
+          findsOneWidget,
+          reason: tester
+              .widgetList<Text>(find.byType(Text))
+              .map((text) => text.data)
+              .join(' | '),
+        );
+        await tester.tap(find.byType(Switch).last);
+        await tester.pumpAndSettle();
+        await capture(
+          tester,
+          'inactive-script-options-native-${brightness.name}',
+        );
+        await tester.runAsync(() async {
+          await tester.tap(find.byTooltip(appLocalizations.save));
+          await Future<void>.delayed(const Duration(milliseconds: 80));
+        });
+        await tester.pumpAndSettle();
+        final saved = container.read(scriptStateProvider).scripts.single;
+        expect(saved.customOptions, {'AI': true, 'ads': false});
+        expect(container.read(scriptStateProvider).currentId, isNull);
+        final restored = await tester.runAsync(() => preferences.getConfig());
+        expect(restored?.scriptProps.scripts.single.customOptions, {
+          'AI': true,
+          'ads': false,
+        });
+        final result = await tester.runAsync(
+          () async => JavaScriptRuntimeManager.evaluateScript(
+            await saved.readContent(),
+            {},
+            customOptions: saved.customOptions,
+          ),
+        );
+        expect(result?['flags'], {'AI': true, 'ads': false});
+      },
+      skip: !const bool.fromEnvironment('SCRIPT_NATIVE'),
+    );
+  }
 
   testWidgets(
     'a rejected picker selection stays open and preserves the previous node',

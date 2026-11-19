@@ -161,8 +161,17 @@ class ClashService extends ClashHandlerInterface {
 
   Process? process;
 
+  bool _bridgeClosed = false;
+
+  bool get usesHelper =>
+      _coreStartedViaHelper &&
+      !_isDestroying &&
+      !isStarting &&
+      !_bridgeClosed &&
+      socketCompleter.isCompleted;
+
   @override
-  bool get hasLiveProcess => process != null;
+  bool get hasLiveProcess => process != null || usesHelper;
 
   Completer<void>? _restartCompleter;
 
@@ -396,7 +405,9 @@ class ClashService extends ClashHandlerInterface {
       () async {
         await for (final socket in server) {
           await _destroySocket();
-          socketCompleter.complete(socket);
+          final connection = socketCompleter;
+          connection.complete(socket);
+          _bridgeClosed = false;
 
           socket
               .transform(FrameDecoderTransformer())
@@ -409,6 +420,9 @@ class ClashService extends ClashHandlerInterface {
                   commonPrint.log('Frame decode error: $error');
                 },
                 onDone: () {
+                  if (identical(connection, socketCompleter)) {
+                    _bridgeClosed = true;
+                  }
                   commonPrint.log('Socket connection closed');
                 },
               );
@@ -422,7 +436,7 @@ class ClashService extends ClashHandlerInterface {
   }
 
   @override
-  Future<void> reStart() async {
+  Future<void> reStart({bool requireHelper = false}) async {
     final completer = Completer<void>();
     final previous = _restartCompleter;
     _restartCompleter = completer;

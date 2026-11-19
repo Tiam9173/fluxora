@@ -5,51 +5,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fluxora/clash/service.dart';
 import 'package:fluxora/common/common.dart';
 
-/// `ClashService` socket lifecycle — R7-6 teardown bookkeeping + R7-15.1
-/// ownership, bind-failure propagation and multi-instance safety.
-///
-/// `ClashService._internal()` starts `_initTransport()` unawaited, and that path
-/// binds `<systemTemp>\Fluxora_<unique>.sock` and spawns the core.
-///
-/// Three things used to be wrong (see
-/// `PHASE_06_8_R7_15_SOCKET_LIFECYCLE_AUDIT_REPORT.md`):
-///
-///  * the file name was `Fluxora_<0..9999>.sock`, so two processes could pick
-///    the same one;
-///  * the bind path **unlinked** that name first, unconditionally — a collision
-///    therefore deleted the other instance's live socket;
-///  * a failed bind never completed `serverCompleter`, so `preload()` waited
-///    forever and the app never finished starting.
-///
-/// What is pinned here: instance-unique names, exclusive bind, ownership-gated
-/// unlink, and an error path that reaches every waiter.
-///
-/// Two seams make a real bind observable without launching a core:
-///  * [ClashService.skipCoreSpawnForTest] — bind for real, stop before
-///    `Process.start` (which cannot be faked);
-///  * [ClashService.resetForTest] — drop the singleton so the next
-///    `ClashService()` binds again.
-///
-/// Bind failures and slow binds are injected with `IOOverrides.serverSocketBind`
-/// (the SDK's own hook, `dart-sdk/lib/io/socket.dart:343`), so no production
-/// seam exists for them.
+// Exercise the real local listener while skipping the helper and core process.
+// Unix uses an owned filesystem path and Windows uses loopback TCP.
 void main() {
   // `_initServer`'s error handler calls `globalState.showNotifier`, which reads
   // `WidgetsBinding.instance`. Without a binding the bind-failure path throws
   // from the error handler instead of from the bind.
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  /// Every `Fluxora_*.sock` **this process** created in the system temp dir.
-  ///
-  /// Deliberately **not** `whereType<File>()`: on Windows a bound AF_UNIX socket
-  /// is a reparse point, so `listSync` reports it as `Link` even though
-  /// `File(path).existsSync()` is `true` (`entityType` is `unixDomainSock`).
-  ///
-  /// Scoped to this pid because `flutter test` runs test **files** in parallel:
-  /// another file binding its own `Fluxora_<otherPid>_…sock` would otherwise be
-  /// counted here. Every caller only ever asks for the sockets this process
-  /// made (`difference(before)`), and `decoy()` already builds a pid-scoped
-  /// name, so the filter matches what the assertions actually mean.
   Set<String> socketFiles() => Directory.systemTemp
       .listSync(followLinks: false)
       .map((e) => e.path)
@@ -59,6 +22,54 @@ void main() {
             p.split(Platform.pathSeparator).last.startsWith('Fluxora_${pid}_'),
       )
       .toSet();
+
+  Future<({InternetAddress address, int port})> boundEndpoint(
+    ClashService service,
+  ) async {
+    final listener = await service.serverCompleter.future;
+    final address = listener.address;
+    if (Platform.isWindows) {
+      expect(address, InternetAddress.loopbackIPv4);
+      expect(listener.port, greaterThan(0));
+    } else {
+      expect(address.type, InternetAddressType.unix);
+      expect(socketFiles(), contains(address.address));
+    }
+    return (address: address, port: listener.port);
+  }
+
+  Future<void> expectListening(
+    ({InternetAddress address, int port}) endpoint,
+  ) async {
+    final probe = await Socket.connect(
+      endpoint.address,
+      endpoint.port,
+      timeout: const Duration(seconds: 2),
+    );
+    probe.destroy();
+  }
+
+  Future<void> expectReleased(
+    ({InternetAddress address, int port}) endpoint,
+  ) async {
+    await expectLater(
+      Socket.connect(
+        endpoint.address,
+        endpoint.port,
+        timeout: const Duration(seconds: 2),
+      ).then((socket) => socket.destroy()),
+      throwsA(isA<SocketException>()),
+    );
+    if (endpoint.address.type == InternetAddressType.unix) {
+      expect(socketFiles(), isNot(contains(endpoint.address.address)));
+    } else {
+      final rebound = await IOOverrides.runWithIOOverrides(
+        () => ServerSocket.bind(endpoint.address, endpoint.port),
+        _RealBind(),
+      );
+      await rebound.close();
+    }
+  }
 
   File decoy(String suffix) => File(
     '${Directory.systemTemp.path}${Platform.pathSeparator}'
@@ -103,7 +114,9 @@ void main() {
 
   group('socket name uniqueness', () {
     test('socketFileName() never repeats and carries the pid', () {
-      final names = {for (var i = 0; i < 64; i++) ClashService.socketFileName()};
+      final names = {
+        for (var i = 0; i < 64; i++) ClashService.socketFileName(),
+      };
 
       expect(names.length, 64, reason: 'a repeated name is a collision');
       for (final name in names) {
@@ -114,41 +127,40 @@ void main() {
       }
     });
 
-    test('two consecutive instances bind different files', () async {
-      final before = socketFiles();
-
+    test('two live instances have separate endpoints', () async {
       final first = await startService();
-      final firstFiles = socketFiles().difference(before);
-      expect(firstFiles.length, 1);
-      await first.destroy();
+      addTearDown(first.destroy);
+      final firstEndpoint = await boundEndpoint(first);
 
       ClashService.resetForTest();
-      service = null;
+      final second = await startService();
+      final secondEndpoint = await boundEndpoint(second);
 
-      await startService();
-      final secondFiles = socketFiles().difference(before);
-      expect(secondFiles.length, 1);
-      expect(
-        secondFiles.single,
-        isNot(firstFiles.single),
-        reason: 'each instance must get its own path',
-      );
+      expect(secondEndpoint, isNot(firstEndpoint));
+      await expectListening(firstEndpoint);
+      await expectListening(secondEndpoint);
+      await first.destroy();
+      await expectReleased(firstEndpoint);
+      await expectListening(secondEndpoint);
     });
   });
 
   group('bind failure', () {
-    test('reaches preload() as the original error instead of hanging', () async {
-      IOOverrides.global = _FailingBind();
+    test(
+      'reaches preload() as the original error instead of hanging',
+      () async {
+        IOOverrides.global = _FailingBind();
 
-      final s = ClashService();
-      service = s;
+        final s = ClashService();
+        service = s;
 
-      await expectLater(
-        s.preload().timeout(const Duration(seconds: 5)),
-        throwsA(isA<SocketException>()),
-        reason: 'a failed bind must fail the waiter, not park it forever',
-      );
-    });
+        await expectLater(
+          s.preload().timeout(const Duration(seconds: 5)),
+          throwsA(isA<SocketException>()),
+          reason: 'a failed bind must fail the waiter, not park it forever',
+        );
+      },
+    );
 
     test('does not delete an unrelated socket file', () async {
       final foreign = decoy('99');
@@ -169,58 +181,54 @@ void main() {
       );
     });
 
-    test('destroy() after a failed bind returns instead of rethrowing', () async {
-      IOOverrides.global = _FailingBind();
-      final s = ClashService();
-      service = s;
-      await expectLater(s.preload(), throwsA(isA<SocketException>()));
+    test(
+      'destroy() after a failed bind returns instead of rethrowing',
+      () async {
+        IOOverrides.global = _FailingBind();
+        final s = ClashService();
+        service = s;
+        await expectLater(s.preload(), throwsA(isA<SocketException>()));
 
-      IOOverrides.global = null;
-      expect(
-        await Future<bool>.value(s.destroy()).timeout(const Duration(seconds: 5)),
-        isTrue,
-        reason: 'teardown must not rethrow the bind error',
-      );
-    });
+        IOOverrides.global = null;
+        expect(
+          await Future<bool>.value(
+            s.destroy(),
+          ).timeout(const Duration(seconds: 5)),
+          isTrue,
+          reason: 'teardown must not rethrow the bind error',
+        );
+      },
+    );
   });
 
   group('teardown ownership', () {
-    test('shutdown() unlinks the socket it created', () async {
-      final before = socketFiles();
+    test('shutdown() releases its own endpoint', () async {
       final s = await startService();
-
-      final mine = socketFiles().difference(before);
-      expect(mine.length, 1);
-      expect(File(mine.single).existsSync(), isTrue);
+      final endpoint = await boundEndpoint(s);
+      await expectListening(endpoint);
 
       expect(await s.shutdown(), isTrue);
-      expect(
-        File(mine.single).existsSync(),
-        isFalse,
-        reason: 'shutdown must remove its own socket file',
-      );
+      await expectReleased(endpoint);
     });
 
-    test('shutdown() leaves another instance\'s socket alone', () async {
+    test('shutdown() leaves an unrelated endpoint live', () async {
       final foreign = decoy('98');
-      await foreign.create(recursive: true);
-      addTearDown(() {
+      final foreignAddress = Platform.isWindows
+          ? InternetAddress.loopbackIPv4
+          : InternetAddress(foreign.path, type: InternetAddressType.unix);
+      final other = await ServerSocket.bind(foreignAddress, 0);
+      other.listen((socket) => socket.destroy());
+      addTearDown(() async {
+        await other.close();
         if (foreign.existsSync()) foreign.deleteSync();
       });
 
-      final before = socketFiles();
       final s = await startService();
-      final mine = socketFiles().difference(before);
-      expect(mine.length, 1);
+      final endpoint = await boundEndpoint(s);
+      expect(await s.shutdown(), isTrue);
 
-      await s.shutdown();
-
-      expect(File(mine.single).existsSync(), isFalse);
-      expect(
-        foreign.existsSync(),
-        isTrue,
-        reason: 'only the owned path may be unlinked',
-      );
+      await expectReleased(endpoint);
+      await expectListening((address: other.address, port: other.port));
     });
 
     test('destroy() is idempotent on a bound service', () async {
@@ -249,91 +257,60 @@ void main() {
     });
 
     test('a bind that lands after destroy() is released, not leaked', () async {
-      final before = socketFiles();
-      IOOverrides.global = _SlowBind(const Duration(milliseconds: 300));
+      final delayed = _SlowBind(const Duration(milliseconds: 300));
+      IOOverrides.global = delayed;
 
       final s = ClashService();
       service = s;
-      unawaited(s.preload().then<void>((_) {}, onError: (Object _) {}));
+      final preloadFailed = expectLater(
+        s.preload(),
+        throwsA(isA<StateError>()),
+      );
 
       await s.destroy();
 
-      // Let the delayed bind finish and the late release run.
-      await Future<void>.delayed(const Duration(milliseconds: 800));
-
-      expect(
-        socketFiles().difference(before),
-        isEmpty,
-        reason:
-            'a listener that lands after destroy() must be closed and unlinked',
-      );
+      final endpoint = await delayed.endpoint.future;
+      await preloadFailed;
+      await expectReleased(endpoint);
     });
   });
 
   group('R7-15.4 shutdown → reStart', () {
     test('reStart() after shutdown() binds a live listener again', () async {
-      final before = socketFiles();
       final s = await startService();
+      final endpoint = await boundEndpoint(s);
 
-      final mine = socketFiles().difference(before);
-      expect(mine.length, 1, reason: 'the first bind created exactly one file');
-      final path = mine.single;
-
-      await s.shutdown();
-      expect(
-        File(path).existsSync(),
-        isFalse,
-        reason: 'shutdown releases the listener and unlinks its file',
-      );
+      expect(await s.shutdown(), isTrue);
+      await expectReleased(endpoint);
 
       await s.reStart();
-
-      expect(
-        File(path).existsSync(),
-        isTrue,
-        reason: 'a restart must give the core a path that actually listens',
-      );
-      expect(
-        s.hasLiveProcess,
-        isFalse,
-        reason: 'the core spawn is skipped by the test seam',
-      );
+      await expectListening(await boundEndpoint(s));
+      expect(s.hasLiveProcess, isFalse);
     });
 
     test('the re-bound listener is fresh, not the released one', () async {
-      final before = socketFiles();
       final s = await startService();
-      final path = socketFiles().difference(before).single;
+      final original = await s.serverCompleter.future;
 
-      await s.shutdown();
+      expect(await s.shutdown(), isTrue);
       await s.reStart();
 
-      // `preload()` awaits `serverCompleter`. It only resolves if `_doRestart`
-      // created a *new* completer — reusing the completed one would have let it
-      // return while the listener was still closed.
-      expect(
-        await Future<bool>.value(s.preload()).timeout(const Duration(seconds: 5)),
-        isTrue,
-      );
-      expect(File(path).existsSync(), isTrue);
+      expect(await s.preload().timeout(const Duration(seconds: 5)), isTrue);
+      expect(await s.serverCompleter.future, isNot(same(original)));
+      await expectListening(await boundEndpoint(s));
     });
 
     test('repeated shutdown → reStart cycles keep working', () async {
-      final before = socketFiles();
       final s = await startService();
-      final path = socketFiles().difference(before).single;
 
       for (var i = 0; i < 3; i++) {
-        await s.shutdown();
-        expect(File(path).existsSync(), isFalse, reason: 'cycle $i: released');
+        final endpoint = await boundEndpoint(s);
+        await expectListening(endpoint);
+        expect(await s.shutdown(), isTrue, reason: 'cycle $i');
+        await expectReleased(endpoint);
 
         await s.reStart();
-        expect(File(path).existsSync(), isTrue, reason: 'cycle $i: re-bound');
-        expect(
-          socketFiles().difference(before).length,
-          1,
-          reason: 'cycle $i must not leave a second listener behind',
-        );
+        await expectListening(await boundEndpoint(s));
       }
     });
 
@@ -351,23 +328,17 @@ void main() {
     });
 
     test('destroy() blocks a later reStart() from resurrecting', () async {
-      final before = socketFiles();
       final s = await startService();
-      final path = socketFiles().difference(before).single;
+      final endpoint = await boundEndpoint(s);
+      final ready = s.serverCompleter;
 
-      await s.destroy();
-
+      expect(await s.destroy(), isTrue);
       await expectLater(
-        Future<void>.value(s.reStart()).timeout(const Duration(seconds: 5)),
+        s.reStart().timeout(const Duration(seconds: 5)),
         throwsA(isA<StateError>()),
-        reason: 'a destroyed instance must never come back to life',
       );
-      expect(
-        File(path).existsSync(),
-        isFalse,
-        reason: 'a blocked restart must not leave a new socket behind',
-      );
-      expect(socketFiles().difference(before), isEmpty);
+      expect(s.serverCompleter, same(ready));
+      await expectReleased(endpoint);
     });
   });
 
@@ -429,6 +400,8 @@ void main() {
   });
 }
 
+final class _RealBind extends IOOverrides {}
+
 /// Fails every `ServerSocket.bind` with a [SocketException].
 final class _FailingBind extends IOOverrides {
   @override
@@ -448,6 +421,7 @@ final class _SlowBind extends IOOverrides {
   _SlowBind(this.delay);
 
   final Duration delay;
+  final endpoint = Completer<({InternetAddress address, int port})>();
 
   @override
   Future<ServerSocket> serverSocketBind(
@@ -460,12 +434,14 @@ final class _SlowBind extends IOOverrides {
     await Future<void>.delayed(delay);
     // `super` reaches the real bind — calling `ServerSocket.bind` here would
     // re-enter this override.
-    return super.serverSocketBind(
+    final listener = await super.serverSocketBind(
       address,
       port,
       backlog: backlog,
       v6Only: v6Only,
       shared: shared,
     );
+    endpoint.complete((address: listener.address, port: listener.port));
+    return listener;
   }
 }

@@ -384,6 +384,15 @@ class _CommonTargetIconState extends State<CommonTargetIcon> {
     final cacheSize = (widget.size * devicePixelRatio).ceil();
 
     if (base64 != null) {
+      if (widget.src.isSvg) {
+        return SvgPicture.memory(
+          base64,
+          width: widget.size,
+          height: widget.size,
+          fit: BoxFit.contain,
+          errorBuilder: (_, _, _) => _defaultIcon(),
+        );
+      }
       return Image.memory(
         base64,
         gaplessPlayback: true,

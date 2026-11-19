@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluxora/clash/clash.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/providers/providers.dart';
@@ -54,6 +55,9 @@ class SwitchCard extends ConsumerStatefulWidget {
     this.onOpenProfiles,
     this.onStart,
     this.allowPolicyGroups = false,
+    this.sourceProfileId,
+    this.candidateGroups,
+    this.selectedName,
   });
 
   /// Called once a node has been picked, so the host can dismiss itself.
@@ -77,6 +81,9 @@ class SwitchCard extends ConsumerStatefulWidget {
   final VoidCallback? onOpenProfiles;
   final VoidCallback? onStart;
   final bool allowPolicyGroups;
+  final String? sourceProfileId;
+  final List<Group>? candidateGroups;
+  final String? selectedName;
 
   @override
   ConsumerState<SwitchCard> createState() => _SwitchCardState();
@@ -109,21 +116,28 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
     final colorScheme = context.colorScheme;
     final profiles = ref.watch(profilesProvider);
     final currentProfileId = ref.watch(currentProfileIdProvider);
-    final groups = ref.watch(groupsProvider);
+    final runtimeGroups = ref.watch(groupsProvider);
+    final sourceIsActive =
+        widget.sourceProfileId == null ||
+        widget.sourceProfileId == currentProfileId;
+    final groups = sourceIsActive && runtimeGroups.isNotEmpty
+        ? runtimeGroups
+        : widget.candidateGroups ?? const <Group>[];
     final selectedMap = ref.watch(selectedMapProvider);
     final defaultTestUrl = ref.watch(getRealTestUrlProvider());
     final fromHome = widget.onStart != null;
     final busy =
-        fromHome &&
-        (ref.watch(isRestartingCoreProvider) ||
-            ref.watch(connectionTargetProvider) != null);
+        ref.watch(isRestartingCoreProvider) ||
+        (fromHome && ref.watch(connectionTargetProvider) != null);
     final running =
         fromHome &&
         ref.watch(runTimeProvider.select((runtime) => runtime != null));
     final canStart = fromHome && !running && !busy && currentProfileId != null;
 
     final profile = profiles.where((e) => e.id == currentProfileId).firstOrNull;
-    final visibleGroups = groups.where((g) => g.hidden != true).toList();
+    final visibleGroups = groups
+        .where((g) => g.hidden != true && !widget.excludeNames.contains(g.name))
+        .toList();
     final mode = fromHome
         ? ref.watch(patchClashConfigProvider.select((state) => state.mode))
         : null;
@@ -179,9 +193,11 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
         : nodes
               .where((node) => node.name.toLowerCase().contains(query))
               .toList();
-    final selectedName = currentGroup?.getCurrentSelectedName(
-      selectedMap[currentGroup.name] ?? '',
-    );
+    final selectedName =
+        widget.selectedName ??
+        currentGroup?.getCurrentSelectedName(
+          selectedMap[currentGroup.name] ?? '',
+        );
     final delayUrl = ref.watch(
       getRealTestUrlProvider(currentGroup?.testUrl ?? defaultTestUrl),
     );
@@ -240,52 +256,32 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
               onPressed: _selecting || busy ? null : widget.onOpenProfiles,
               icon: const Icon(Icons.folder_open_outlined),
             ),
-          IconButton(
-            visualDensity: VisualDensity.compact,
-            tooltip: appLocalizations.startTest,
-            onPressed:
-                currentGroup == null ||
-                    _testing ||
-                    _selecting ||
-                    busy ||
-                    (widget.onSelect != null &&
-                        nodes.isEmpty &&
-                        !canPickCurrentGroup)
-                ? null
-                : () async {
-                    setState(() => _testing = true);
-                    try {
-                      await delayTest(
-                        widget.onSelect == null
-                            ? currentGroup.all
-                            : [
-                                ...nodes,
-                                if (canPickCurrentGroup)
-                                  Proxy(
-                                    name: currentGroup.name,
-                                    type: currentGroup.type.name,
-                                  ),
-                              ],
-                        testUrl: widget.onSelect == null
-                            ? currentGroup.testUrl ?? defaultTestUrl
-                            : delayUrl,
-                        groupName: widget.onSelect == null
-                            ? currentGroup.name
-                            : null,
-                        useExactTargets: widget.onSelect != null,
-                      );
-                    } finally {
-                      if (mounted) setState(() => _testing = false);
-                    }
-                  },
-            icon: _testing
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.refresh_rounded, size: 20),
-          ),
+          if (widget.onSelect == null)
+            IconButton(
+              visualDensity: VisualDensity.compact,
+              tooltip: appLocalizations.startTest,
+              onPressed: currentGroup == null || _testing || _selecting || busy
+                  ? null
+                  : () async {
+                      setState(() => _testing = true);
+                      try {
+                        await delayTest(
+                          currentGroup.all,
+                          testUrl: currentGroup.testUrl ?? defaultTestUrl,
+                          groupName: currentGroup.name,
+                        );
+                      } finally {
+                        if (mounted) setState(() => _testing = false);
+                      }
+                    },
+              icon: _testing
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.refresh_rounded, size: 20),
+            ),
         ],
       ),
       actions: [
@@ -322,6 +318,55 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (widget.onSelect != null)
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: Tooltip(
+                message: !sourceIsActive
+                    ? (Localizations.localeOf(context).languageCode == 'zh'
+                          ? '切换到此配置后可测试延迟'
+                          : 'Select this profile to test latency')
+                    : appLocalizations.startTest,
+                child: TextButton.icon(
+                  key: const ValueKey('hop-delay-test'),
+                  onPressed:
+                      sourceIsActive &&
+                          clashCore.hasLiveProcess &&
+                          currentGroup != null &&
+                          (nodes.isNotEmpty || canPickCurrentGroup) &&
+                          !busy &&
+                          !_selecting &&
+                          !_testing
+                      ? () async {
+                          setState(() => _testing = true);
+                          try {
+                            await delayTest(
+                              [
+                                ...nodes,
+                                if (canPickCurrentGroup)
+                                  Proxy(
+                                    name: currentGroup.name,
+                                    type: currentGroup.type.name,
+                                  ),
+                              ],
+                              testUrl: delayUrl,
+                              useExactTargets: true,
+                            );
+                          } finally {
+                            if (mounted) setState(() => _testing = false);
+                          }
+                        }
+                      : null,
+                  icon: _testing
+                      ? const SizedBox.square(
+                          dimension: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.speed_rounded, size: 18),
+                  label: Text(appLocalizations.chainSpeedTest),
+                ),
+              ),
+            ),
           for (final option in widget.specialOptions)
             InkWell(
               onTap: () {
@@ -591,7 +636,9 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
                     ? '使用策略组 ${currentGroup.name}'
                     : 'Use group ${currentGroup.name}',
               ),
-              trailing: _DelayChip(name: currentGroup.name, url: delayUrl),
+              trailing: sourceIsActive
+                  ? _DelayChip(name: currentGroup.name, url: delayUrl)
+                  : null,
               onTap: () =>
                   widget.onSelect!(currentGroup.name, currentGroup.name),
             ),
@@ -707,7 +754,7 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
                                               ? colorScheme.primary
                                               : policyNames.contains(proxy.name)
                                               ? colorScheme.onSurfaceVariant
-                                              : colorScheme.outlineVariant,
+                                              : colorScheme.onSurfaceVariant,
                                         ),
                                       const SizedBox(width: 8),
                                       Expanded(
@@ -727,10 +774,11 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
                                         ),
                                       ),
                                       const SizedBox(width: 6),
-                                      _DelayChip(
-                                        name: proxy.name,
-                                        url: delayUrl,
-                                      ),
+                                      if (sourceIsActive)
+                                        _DelayChip(
+                                          name: proxy.name,
+                                          url: delayUrl,
+                                        ),
                                     ],
                                   ),
                                 ),

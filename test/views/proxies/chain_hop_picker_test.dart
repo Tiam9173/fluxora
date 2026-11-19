@@ -27,6 +27,8 @@ void main() {
     WidgetTester tester, {
     bool picking = true,
     Brightness brightness = Brightness.dark,
+    String? sourceProfileId,
+    List<Group>? candidateGroups,
   }) async {
     selected = null;
     tester.view.physicalSize = const Size(390, 844);
@@ -104,6 +106,8 @@ void main() {
                           context: context,
                           title: '前置跳板',
                           excludeNames: {'Excluded node'},
+                          sourceProfileId: sourceProfileId,
+                          candidateGroups: candidateGroups,
                           onSelect: (value) => selected = value,
                         );
                       } else {
@@ -171,4 +175,33 @@ void main() {
     );
     expect(row.onTap, isNotNull);
   });
+
+  testWidgets(
+    'an inactive profile keeps its own nodes and a visible disabled test action',
+    (tester) async {
+      await open(
+        tester,
+        sourceProfileId: 'inactive',
+        candidateGroups: const [
+          Group(
+            name: 'Inactive profile',
+            type: GroupType.Selector,
+            all: [Proxy(name: 'Inactive node', type: 'vless')],
+          ),
+        ],
+      );
+      expect(find.text('Tokyo node'), findsNothing);
+      expect(find.text('Inactive node'), findsOneWidget);
+      expect(
+        tester
+            .widget<TextButton>(find.byKey(const ValueKey('hop-delay-test')))
+            .onPressed,
+        isNull,
+      );
+      await tester.tap(find.text('Inactive node'));
+      await tester.pumpAndSettle();
+      expect(selected, 'Inactive node');
+      expect(globalState.config.currentProfileId, isNull);
+    },
+  );
 }

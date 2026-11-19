@@ -13,6 +13,7 @@ import 'package:fluxora/models/models.dart';
 import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/views/proxies/warp_view.dart';
+import 'package:fluxora/views/proxies/notification_switch_card.dart';
 import 'package:fluxora/common/theme.dart';
 import '../../support/render_capture.dart';
 
@@ -179,9 +180,9 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
 
       expect(
-        find.text(appLocalizations.warpStr63),
+        find.byType(SwitchCard),
         findsOneWidget,
-        reason: 'the hop picker sheet must be open',
+        reason: 'WARP opens the shared hop picker directly',
       );
     }
 
@@ -275,7 +276,6 @@ void main() {
       expect(find.text('HopInternal'), findsNothing);
 
       // ── the 「策略组」 section still offers proxy groups independently ──────
-      expect(find.text(appLocalizations.warpStr84), findsOneWidget);
       expect(find.text('Airport-Manual'), findsOneWidget);
       expect(find.text('Airport-Auto'), findsOneWidget);
       // …but the internal groups are not offered as策略组 either.
@@ -308,7 +308,12 @@ void main() {
             size: const Size(390, 844),
           );
           expect(find.text('node-499'), findsNothing);
-          final view = find.byType(CustomScrollView);
+          final view = find.descendant(
+            of: find.byType(SwitchCard),
+            matching: find.byWidgetPredicate(
+              (widget) => widget is ListView && widget.scrollDirection == Axis.vertical,
+            ),
+          );
           expect(view, findsOneWidget);
           if (const bool.fromEnvironment('FEEDBACK_CAPTURE')) {
             await captureFlutterFrame(

@@ -40,6 +40,8 @@ class _Core extends Fake implements ClashHandlerInterface {
   String groupType = 'Selector';
   String? nativeLock;
   final changes = <ChangeProxyParams>[];
+  Completer<void>? pendingSetup;
+  int? appliedPort;
   @override
   Future<String> changeProxy(ChangeProxyParams params) async {
     changes.add(params);
@@ -68,6 +70,8 @@ class _Core extends Fake implements ClashHandlerInterface {
       await File(await appPath.configFilePath).readAsString(),
     );
     final name = (config['proxies'] as List).first['name'] as String;
+    appliedPort = config['mixed-port'] as int?;
+    if (name == 'B-node' && pendingSetup != null) await pendingSetup!.future;
     if (rejectB && name == 'B-node') {
       throw StateError('Invalid B configuration');
     }
@@ -187,13 +191,127 @@ rules: ['MATCH,Select']
     if (!core.flush.isCompleted) core.flush.complete(true);
     clashCore.clashInterface = original;
     System.platformOverride = null;
+    globalState.startTime = null;
   });
 
+  for (final warm in [false, true]) {
+    testWidgets(
+      'port collision checks preserve a live listener and cover cold start warm=$warm',
+      (tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            child: MaterialApp(
+              navigatorKey: globalState.navigatorKey,
+              home: Consumer(
+                builder: (context, r, _) {
+                  ref = r;
+                  controller = _Controller(context, ref);
+                  globalState.appController = controller;
+                  return const SizedBox();
+                },
+              ),
+            ),
+          ),
+        );
+        final fallbackState = ref.listenManual(
+          mixedPortFallbackProvider,
+          (_, _) {},
+        );
+        addTearDown(fallbackState.close);
+        await tester.runAsync(() async {
+          final listener = await ServerSocket.bind(
+            InternetAddress.loopbackIPv4,
+            0,
+          );
+          try {
+            ref
+                .read(patchClashConfigProvider.notifier)
+                .updateState(
+                  (config) => config.copyWith(mixedPort: listener.port),
+                );
+            if (warm) await controller.applyProfile(silence: true);
+            globalState.startTime = DateTime.now().subtract(
+              const Duration(seconds: 1),
+            );
+            ref
+                .read(vpnSettingProvider.notifier)
+                .updateState(
+                  (settings) => settings.copyWith(portFallback: true),
+                );
+            await controller.applyProfile(silence: true);
+            expect(core.appliedPort == listener.port, warm);
+            if (warm) {
+              expect(ref.read(mixedPortFallbackProvider), isNull);
+            } else {
+              expect(ref.read(mixedPortFallbackProvider), core.appliedPort);
+            }
+          } finally {
+            await listener.close();
+          }
+        });
+        await tester.pumpWidget(const SizedBox());
+        await tester.pump(const Duration(seconds: 3));
+      },
+    );
+  }
+
+  for (final platform in ['android', 'windows', 'linux', 'macos']) {
+    testWidgets(
+      'profile selection refreshes the scoped proxy page on $platform',
+      (tester) async {
+        System.platformOverride = platform;
+        final container = await tester.runAsync(
+          () async => ProviderContainer(),
+        );
+        addTearDown(container!.dispose);
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: MaterialApp(
+              navigatorKey: globalState.navigatorKey,
+              home: ClashManager(
+                child: Consumer(
+                  builder: (context, r, _) {
+                    globalState.measure = Measure.of(context, 1);
+                    ref = r;
+                    controller = _Controller(context, ref);
+                    globalState.appController = controller;
+                    return ProviderScope(
+                      overrides: [queryProvider.overrideWith(() => Query())],
+                      child: const ProxiesView(),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.runAsync(() => controller.applyProfile(silence: true));
+        await tester.pumpAndSettle();
+        expect(find.text('A-node'), findsWidgets);
+        await tester.runAsync(() async {
+          container.read(currentProfileIdProvider.notifier).value =
+              profiles.last.id;
+          container.read(needSetupProvider);
+          expect(controller.lastChange, isNotNull);
+          await controller.lastChange!.timeout(const Duration(seconds: 3));
+        });
+        await tester.pumpAndSettle();
+        expect(core.node, 'B-node');
+        expect(find.text('B-node'), findsWidgets);
+        expect(find.text('A-node'), findsNothing);
+        await tester.pumpWidget(const SizedBox());
+        await tester.pump(const Duration(seconds: 3));
+      },
+    );
+  }
+
   testWidgets(
-    'profile selection through the live manager refreshes the scoped proxy page',
+    'a slow profile remains pending and the latest selection is applied next',
     (tester) async {
-      final container = await tester.runAsync(() async => ProviderContainer());
-      addTearDown(container!.dispose);
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      var bound = false;
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
@@ -202,34 +320,38 @@ rules: ['MATCH,Select']
             home: ClashManager(
               child: Consumer(
                 builder: (context, r, _) {
-                  globalState.measure = Measure.of(context, 1);
-                  ref = r;
-                  controller = _Controller(context, ref);
-                  globalState.appController = controller;
-                  return ProviderScope(
-                    overrides: [queryProvider.overrideWith(() => Query())],
-                    child: const ProxiesView(),
-                  );
+                  if (!bound) {
+                    ref = r;
+                    controller = _Controller(context, ref);
+                    globalState.appController = controller;
+                    bound = true;
+                  }
+                  return const SizedBox();
                 },
               ),
             ),
           ),
         ),
       );
-      await tester.runAsync(() => controller.applyProfile(silence: true));
-      await tester.pumpAndSettle();
-      expect(find.text('A-node'), findsWidgets);
       await tester.runAsync(() async {
-        container.read(currentProfileIdProvider.notifier).value =
-            profiles.last.id;
+        await controller.applyProfile(silence: true);
+        core.pendingSetup = Completer<void>();
+        await controller.selectProfile(profiles.last.id);
         container.read(needSetupProvider);
-        expect(controller.lastChange, isNotNull);
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+        expect(container.read(pendingProfileIdProvider), profiles.last.id);
+        expect(core.node, 'A-node');
+        final nextSelection = controller.selectProfile(profiles.first.id);
+        expect(container.read(pendingProfileIdProvider), profiles.first.id);
+        core.pendingSetup!.complete();
         await controller.lastChange!.timeout(const Duration(seconds: 3));
+        await nextSelection;
+        container.read(needSetupProvider);
+        await controller.lastChange!.timeout(const Duration(seconds: 3));
+        expect(core.node, 'A-node');
+        expect(container.read(groupsProvider).last.all.single.name, 'A-node');
+        expect(container.read(pendingProfileIdProvider), isNull);
       });
-      await tester.pumpAndSettle();
-      expect(core.node, 'B-node');
-      expect(find.text('B-node'), findsWidgets);
-      expect(find.text('A-node'), findsNothing);
       await tester.pumpWidget(const SizedBox());
       await tester.pump(const Duration(seconds: 3));
     },

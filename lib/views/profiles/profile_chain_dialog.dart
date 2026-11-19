@@ -5,7 +5,9 @@ import 'package:fluxora/models/models.dart';
 import 'package:fluxora/state.dart';
 import 'package:flutter/material.dart';
 import 'package:fluxora/widgets/widgets.dart';
-import 'package:fluxora/clash/clash.dart';
+import 'package:fluxora/enum/enum.dart';
+import 'package:fluxora/views/proxies/chain_hop_picker.dart';
+import 'package:fluxora/views/proxies/notification_switch_card.dart';
 
 class ProfileChainDialog extends StatefulWidget {
   final Profile profile;
@@ -28,12 +30,9 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
   final _customPreCtrl = TextEditingController();
   final _customLandingCtrl = TextEditingController();
 
-  List<String> _candidateProxies = [];
-
-  /// 每个节点的延迟，键是节点名。值 `-1` 表示测过但失败。
-  final Map<String, int> _delays = {};
-  final _pickerRevision = ValueNotifier(0);
-  bool _testingDelays = false;
+  List<Group> _candidateGroups = [];
+  Iterable<String> get _candidateProxies =>
+      _candidateGroups.expand((group) => group.all).map((proxy) => proxy.name);
   bool _isLoading = true;
 
   @override
@@ -49,22 +48,27 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
   void dispose() {
     _customPreCtrl.dispose();
     _customLandingCtrl.dispose();
-    _pickerRevision.dispose();
     super.dispose();
   }
 
   Future<void> _loadCandidates() async {
     final warp = warpManager.config;
-    final candidates = <String>{
-      if (warp.enable && warp.privateKey.isNotEmpty) warp.proxyName,
-    };
+    final candidates = <Proxy>[
+      if (warp.enable && warp.privateKey.isNotEmpty)
+        Proxy(name: warp.proxyName, type: 'wireguard'),
+    ];
     try {
       // Gather proxies from current runtime config or profiles
       final currentMap = await globalState.getProfileConfig(widget.profile.id);
       if (currentMap['proxies'] is List) {
         for (final p in currentMap['proxies']) {
           if (p is Map && p['name'] is String) {
-            candidates.add(p['name'] as String);
+            candidates.add(
+              Proxy(
+                name: p['name'] as String,
+                type: p['type']?.toString() ?? '',
+              ),
+            );
           }
         }
       }
@@ -72,220 +76,41 @@ class _ProfileChainDialogState extends State<ProfileChainDialog> {
 
     if (mounted) {
       setState(() {
-        _candidateProxies = candidates.toList();
+        _candidateGroups = [
+          Group(
+            name: widget.profile.label ?? widget.profile.id,
+            type: GroupType.Selector,
+            all: candidates,
+          ),
+        ];
         _isLoading = false;
-        _seedKnownDelays();
       });
     }
   }
 
-  /// 把已有测量结果读进 `_delays`，让面板一打开就有数字。
-  void _seedKnownDelays() {
-    if (!_canTest) return;
-    final url = globalState.appController.getRealTestUrl('');
-    final results = globalState.appState.delayMap[url];
-    if (results != null) {
-      for (final entry in results.entries) {
-        if (!_candidateProxies.contains(entry.key)) continue;
-        final value = entry.value;
-        if (value == null || value == 0) continue; // 0 = 排队未测，不是结果
-        _delays[entry.key] = value;
-      }
-    }
-  }
-
-  // The live core can only test nodes in the active profile.
-  bool get _canTest =>
-      clashCore.hasLiveProcess &&
-      globalState.config.currentProfileId == widget.profile.id;
-
-  Future<void> _testDelays() async {
-    if (_testingDelays || !_canTest) return;
-    _testingDelays = true;
-    _delays.clear();
-    _pickerRevision.value++;
-    const int concurrency = 6;
-    final url = globalState.appController.getRealTestUrl('');
-    try {
-      for (var i = 0; i < _candidateProxies.length; i += concurrency) {
-        if (!mounted || !_canTest) return;
-        final batch = _candidateProxies.skip(i).take(concurrency);
-        final results = await Future.wait(
-          batch.map((name) async {
-            try {
-              final delay = await clashCore.getDelay(url, name);
-              return MapEntry(name, delay.value ?? -1);
-            } catch (_) {
-              return MapEntry(name, -1);
-            }
-          }),
-        );
-        if (!mounted || !_canTest) return;
-        _delays.addEntries(results);
-        _pickerRevision.value++;
-      }
-    } finally {
-      _testingDelays = false;
-      if (mounted) _pickerRevision.value++;
-    }
-  }
-
-  /// 延迟徽标：未测不占位，失败显示超时，正常显示毫秒。
-  Widget _delayBadge(String name) {
-    if (_testingDelays && !_delays.containsKey(name)) {
-      return const SizedBox(
-        width: 12,
-        height: 12,
-        child: CircularProgressIndicator(strokeWidth: 1.5),
-      );
-    }
-    final value = _delays[name];
-    if (value == null) return const SizedBox.shrink();
-    final failed = value < 0;
-    // Same 200/500 ladder as `notification_switch_card` — only the colour source
-    // changes. Material's green/orange/red sat at a different hue from the brand
-    // status roles, so the two delay read-outs disagreed on what "good" looks
-    // like. The thresholds themselves are untouched.
-    final statusColors = FluxoraColorSet.of(Theme.of(context).brightness);
-    final color = failed
-        ? context.colorScheme.error
-        : (value < 200
-              ? statusColors.success
-              : (value < 500
-                    ? statusColors.warning
-                    : context.colorScheme.error));
-    return Text(
-      failed ? appLocalizations.chainTimeout : '${value}ms',
-      style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w500),
-    );
-  }
-
-  /// 从当前订阅自己的节点里选一个。
-  ///
-  /// 这里不能用切换卡片：卡片读的是**正在运行**的订阅，而这个对话框编辑的
-  /// 是任意一个订阅的链路，用卡片会拿到错的节点列表。所以列表来自
-  /// `_candidateProxies`（本订阅配置里的 proxies），再加一个搜索框——节点
-  /// 多的时候，下拉列表根本翻不动。
   Future<void> _showProxyPicker({
     required String title,
     required String? current,
     required ValueChanged<String?> onSelect,
-  }) async {
-    final selected = await showDialog<String>(
-      context: context,
-      builder: (ctx) {
-        var keyword = '';
-        return ListenableBuilder(
-          listenable: _pickerRevision,
-          builder: (ctx, _) {
-            final options = _candidateProxies
-                .where(
-                  (n) =>
-                      keyword.isEmpty ||
-                      n.toLowerCase().contains(keyword.toLowerCase()),
-                )
-                .toList();
-            return GlassAlertDialog(
-              title: Row(
-                children: [
-                  Expanded(
-                    child: Text(title, style: const TextStyle(fontSize: 16)),
-                  ),
-                  if (_canTest && _candidateProxies.isNotEmpty)
-                    TextButton.icon(
-                      onPressed: _testingDelays ? null : _testDelays,
-                      icon: _testingDelays
-                          ? const SizedBox(
-                              width: 12,
-                              height: 12,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 1.5,
-                              ),
-                            )
-                          : const Icon(Icons.speed, size: 16),
-                      label: Text(
-                        appLocalizations.chainSpeedTest,
-                        style: TextStyle(fontSize: 12),
-                      ),
-                    ),
-                ],
-              ),
-              content: SizedBox(
-                width: 360,
-                height: 420,
-                child: Column(
-                  children: [
-                    TextField(
-                      autofocus: false,
-                      decoration: InputDecoration(
-                        isDense: true,
-                        prefixIcon: Icon(Icons.search, size: 18),
-                        hintText: appLocalizations.chainSearchNode,
-                        border: OutlineInputBorder(),
-                      ),
-                      onChanged: (v) {
-                        keyword = v;
-                        _pickerRevision.value++;
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    Expanded(
-                      child: ListView(
-                        children: [
-                          ListTile(
-                            dense: true,
-                            leading: const Icon(Icons.block, size: 18),
-                            title: Text(
-                              appLocalizations.chainNoneDirect,
-                              style: TextStyle(fontSize: 13),
-                            ),
-                            trailing: (current == null || current.isEmpty)
-                                ? const Icon(Icons.check, size: 18)
-                                : null,
-                            onTap: () => Navigator.of(ctx).pop(''),
-                          ),
-                          for (final name in options)
-                            ListTile(
-                              dense: true,
-                              leading: const Icon(Icons.dns_outlined, size: 18),
-                              title: Text(
-                                name,
-                                style: const TextStyle(fontSize: 13),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  _delayBadge(name),
-                                  if (name == current) ...[
-                                    const SizedBox(width: 6),
-                                    const Icon(Icons.check, size: 18),
-                                  ],
-                                ],
-                              ),
-                              onTap: () => Navigator.of(ctx).pop(name),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(ctx).pop(),
-                  child: Text(appLocalizations.cancel),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-    if (mounted && selected != null) {
-      onSelect(selected.isEmpty ? null : selected);
-    }
-  }
+  }) => showChainHopPicker(
+    context: context,
+    title: title,
+    sourceProfileId: widget.profile.id,
+    candidateGroups: _candidateGroups,
+    selectedName: current,
+    allowFollowMain: false,
+    excludeNames: const {},
+    specialOptions: [
+      SwitchCardSpecialOption(
+        label: appLocalizations.preProxyOptionNone,
+        value: '',
+        icon: Icons.block,
+      ),
+    ],
+    onSelect: (name) {
+      if (mounted) onSelect(name.isEmpty ? null : name);
+    },
+  );
 
   /// Shows what a section actually does.
   ///
