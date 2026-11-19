@@ -1,5 +1,11 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:convert';
+
+import 'package:code_forge/code_forge.dart' show RustLib;
+// ignore: depend_on_referenced_packages
+import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated_io.dart'
+    show ExternalLibrary;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -17,6 +23,7 @@ import 'package:fluxora/manager/clash_manager.dart';
 import 'package:fluxora/views/proxies/proxies.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:yaml/yaml.dart';
+import '../support/render_capture.dart';
 // ignore: depend_on_referenced_packages
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 // ignore: depend_on_referenced_packages
@@ -130,6 +137,22 @@ class _Controller extends AppController {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  const scriptDll = String.fromEnvironment('SCRIPT_DLL');
+  setUpAll(() async {
+    if (scriptDll.isNotEmpty) {
+      await RustLib.init(externalLibrary: ExternalLibrary.open(scriptDll));
+      await (FontLoader(
+        'MaterialIcons',
+      )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
+      final font = File('C:/Windows/Fonts/msyh.ttc');
+      if (await font.exists()) {
+        await (FontLoader('ScriptFixture')..addFont(
+              font.readAsBytes().then((bytes) => ByteData.sublistView(bytes)),
+            ))
+            .load();
+      }
+    }
+  });
   late _Core core;
   late ClashHandlerInterface original;
   late WidgetRef ref;
@@ -193,6 +216,101 @@ rules: ['MATCH,Select']
     System.platformOverride = null;
     globalState.startTime = null;
   });
+
+  for (final platform in ['android', 'windows']) {
+    testWidgets('native script profile switching on $platform', (tester) async {
+      System.platformOverride = platform;
+      tester.view.physicalSize = platform == 'android'
+          ? const Size(390, 844)
+          : const Size(1280, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final script = const Script(id: 'native', label: 'Native fixture')
+          .copyWith(
+            content: '''
+async function main(c) {
+  c.proxies.forEach(p => p.name += ' · script');
+  c['proxy-groups'] = [{name:'Select',type:'select',proxies:c.proxies.map(p=>p.name)}];
+  c['rule-providers'] = {common: {type:'http',url:'http://127.0.0.1:1/rules.yaml',behavior:'domain',format:'yaml',interval:86400}};
+  c.rules = ['RULE-SET,common,DIRECT','MATCH,Select'];
+  return c;
+}
+''',
+          );
+      globalState.config = globalState.config.copyWith(
+        scriptProps: ScriptProps(currentId: script.id, scripts: [script]),
+      );
+      final boundary = GlobalKey();
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            navigatorKey: globalState.navigatorKey,
+            theme: ThemeData(
+              fontFamily: 'ScriptFixture',
+              brightness: platform == 'android'
+                  ? Brightness.dark
+                  : Brightness.light,
+            ),
+            home: Consumer(
+              builder: (context, r, _) {
+                globalState.measure = Measure.of(context, 1);
+                ref = r;
+                controller = _Controller(context, ref);
+                globalState.appController = controller;
+                return RepaintBoundary(
+                  key: boundary,
+                  child: ProviderScope(
+                    overrides: [queryProvider.overrideWith(() => Query())],
+                    child: const ProxiesView(),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      );
+      final paths = <String>[];
+      for (final id in ['switch-A', 'switch-B', 'switch-A']) {
+        await tester.runAsync(() async {
+          ref.read(currentProfileIdProvider.notifier).value = id;
+          await controller.applyProfile(silence: true);
+          final config = loadYaml(
+            await File(await appPath.configFilePath).readAsString(),
+          );
+          paths.add(config['rule-providers']['common']['path'] as String);
+          final output = File('build/script-loading/$id.json');
+          await output.parent.create(recursive: true);
+          await output.writeAsString(jsonEncode(config));
+        });
+        await tester.pumpAndSettle();
+        final expected = id.endsWith('A')
+            ? 'A-node · script'
+            : 'B-node · script';
+        expect(find.text(expected), findsWidgets);
+        expect(ref.read(groupsProvider).last.all.single.name, expected);
+      }
+      expect(paths.toSet(), hasLength(1));
+      await captureFlutterFrame(
+        tester,
+        find.byKey(boundary),
+        'build/script-loading/script-switch-$platform.png',
+      );
+      core.emptyReads = 4;
+      await tester.runAsync(() => controller.applyProfile(silence: true));
+      await tester.pump();
+      expect(find.text('A-node · script'), findsWidgets);
+      await captureFlutterFrame(
+        tester,
+        find.byKey(boundary),
+        'build/script-loading/transient-empty-$platform.png',
+      );
+      await tester.runAsync(() => controller.updateGroups());
+      expect(ref.read(groupsProvider).last.all.single.name, 'A-node · script');
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 3));
+    }, skip: scriptDll.isEmpty);
+  }
 
   for (final warm in [false, true]) {
     testWidgets(

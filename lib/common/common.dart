@@ -42,6 +42,7 @@ export 'proxy_ownership.dart';
 export 'render.dart';
 export 'request.dart';
 export 'rule_provider_warning.dart';
+export 'rule_provider_cache.dart';
 export 'scroll.dart';
 export 'string.dart';
 export 'system.dart';

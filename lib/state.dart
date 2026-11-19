@@ -1036,10 +1036,10 @@ class GlobalState {
           continue;
         }
         if (ruleProvider['url'] != null) {
-          ruleProvider['path'] = await appPath.getProvidersFilePath(
+          ruleProvider['path'] = await prepareRuleProviderCache(
             targetProfile.id,
-            'rules',
-            ruleProvider['url'],
+            ruleProvider,
+            userAgent: realPatchConfig.globalUa,
           );
         }
       }
@@ -1862,10 +1862,10 @@ class GlobalState {
   ) async {
     final type = provider['type'];
     if (type == 'http' && provider['url'] is String) {
-      return appPath.getProvidersFilePath(
+      return prepareRuleProviderCache(
         profileId,
-        'rules',
-        provider['url'] as String,
+        provider,
+        userAgent: config.patchClashConfig.globalUa,
       );
     }
     if (type != 'file') return null;

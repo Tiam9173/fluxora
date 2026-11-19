@@ -476,10 +476,16 @@ class AppController {
     final effectivePatchConfig = fallbackPort == null
         ? realPatchConfig
         : realPatchConfig.copyWith(mixedPort: fallbackPort);
+    final setupTimer = Stopwatch()..start();
     final params = await globalState.getSetupParams(
       pathConfig: effectivePatchConfig,
     );
+    final generateMs = setupTimer.elapsedMilliseconds;
+    setupTimer.reset();
     final message = await clashCore.setupConfig(params);
+    commonPrint.log(
+      '[Config] generate=${generateMs}ms apply=${setupTimer.elapsedMilliseconds}ms',
+    );
     if (message.isNotEmpty) {
       final tolerable =
           _ref.read(appSettingProvider).tolerateRuleProviderErrors &&
