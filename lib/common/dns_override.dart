@@ -116,13 +116,6 @@ bool _usesDnsListener(Uri? endpoint, Uri? listener) {
   return address != null && address == InternetAddress.tryParse(listenHost);
 }
 
-int hostSpecificity(String pattern) {
-  if (pattern.startsWith('+.')) return 2;
-  if (pattern.startsWith('.')) return 1;
-  if (pattern.contains('*')) return 0;
-  return 3;
-}
-
 bool matchDomainPattern(String pattern, Iterable<String> domains) {
   pattern = pattern.toLowerCase();
 
@@ -166,72 +159,9 @@ String stripDnsSuffix(String dns) {
   return dns.substring(0, hashIndex);
 }
 
-List<dynamic> applyHostsToProxies(
-  List<dynamic> proxies,
-  Map<String, dynamic>? hosts,
-) {
-  if (hosts == null || hosts.isEmpty) return proxies;
-
-  final hostEntries =
-      hosts.entries
-          .where(
-            (entry) =>
-                (entry.value is String && (entry.value as String).isNotEmpty) ||
-                (entry.value is List && (entry.value as List).isNotEmpty),
-          )
-          .toList()
-        ..sort((a, b) => hostSpecificity(b.key) - hostSpecificity(a.key));
-  if (hostEntries.isEmpty) return proxies;
-
-  String? targetOf(dynamic value) {
-    if (value is List) {
-      for (final item in value) {
-        if (item is String && item.isNotEmpty) return item;
-      }
-      return null;
-    }
-    return value is String && value.isNotEmpty ? value : null;
-  }
-
-  final resolveCache = <String, String>{};
-
-  String resolve(String server) {
-    final cached = resolveCache[server];
-    if (cached != null) return cached;
-
-    final seen = <String>{};
-    var current = server.toLowerCase();
-    var result = server;
-    while (seen.add(current)) {
-      MapEntry<String, dynamic>? entry;
-      for (final e in hostEntries) {
-        if (matchDomainPattern(e.key, [current])) {
-          entry = e;
-          break;
-        }
-      }
-      final target = entry == null ? null : targetOf(entry.value);
-      if (target == null) break;
-      result = target;
-      current = target.toLowerCase();
-    }
-    resolveCache[server] = result;
-    return result;
-  }
-
-  return proxies.map((proxy) {
-    if (proxy is! Map) return proxy;
-    final server = proxy['server'];
-    if (server is! String) return proxy;
-    final resolved = resolve(server);
-    return resolved == server ? proxy : {...proxy, 'server': resolved};
-  }).toList();
-}
-
 void applyDnsNodeOverride(
   Map<String, dynamic> rawConfig, {
   Map<String, dynamic>? originalDns,
-  Map<String, dynamic>? originalHosts,
   bool keepSubscriptionPublicNodeResolvers = false,
 }) {
   originalDns ??= {};
@@ -249,21 +179,8 @@ void applyDnsNodeOverride(
   bool usesLocalListener(Uri? endpoint) =>
       _usesDnsListener(endpoint, listener) ||
       _usesDnsListener(endpoint, newListener);
-  final shouldRewriteByHosts =
-      proxyServerNameservers.length == 1 &&
-      _usesDnsListener(
-        _dnsEndpoint(stripDnsSuffix(proxyServerNameservers.single)),
-        listener,
-      );
-
   final proxies = (rawConfig['proxies'] as List?) ?? const [];
-
-  final mappedProxies = shouldRewriteByHosts
-      ? applyHostsToProxies(proxies, originalHosts)
-      : proxies;
-  if (!identical(mappedProxies, proxies)) {
-    rawConfig['proxies'] = mappedProxies;
-  }
+  // The core resolves hosts while retaining server names for TLS verification.
 
   final proxyDomains = <String>{};
   void collectServers(List<dynamic> list) {
@@ -276,9 +193,6 @@ void applyDnsNodeOverride(
   }
 
   collectServers(proxies);
-  if (shouldRewriteByHosts) {
-    collectServers(mappedProxies);
-  }
 
   final nodeResolvers = <String>{};
   void collectResolver(String value, {required bool explicit}) {

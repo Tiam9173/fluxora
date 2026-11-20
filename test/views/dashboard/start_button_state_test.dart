@@ -13,6 +13,7 @@ import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/views/dashboard/widgets/start_button.dart';
 import 'package:fluxora/widgets/fluxora/fluxora.dart';
+import '../../support/render_capture.dart';
 
 /// The connection control's operation contract.
 ///
@@ -35,8 +36,16 @@ class _ControllableController extends AppController {
 
   int updateStatusCalls = 0;
   int restartCoreCalls = 0;
+  int connectionRetries = 0;
   Completer<void>? pending;
   Object? failure;
+
+  @override
+  void refreshConnectionCheck({bool immediate = false}) {
+    connectionRetries++;
+    bindingRef.read(connectionCheckProvider.notifier).state =
+        ConnectionCheck.checking;
+  }
 
   @override
   Future<void> updateStatus(bool isStart) {
@@ -60,6 +69,13 @@ void main() {
 
   setUpAll(() async {
     await AppLocalizations.load(const Locale('zh', 'CN'));
+    await (FontLoader('HarmonyOS_Sans')..addFont(
+          rootBundle.load('assets/fonts/HarmonyOS_Sans_SC_Regular.ttf'),
+        ))
+        .load();
+    await (FontLoader(
+      'MaterialIcons',
+    )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
   });
 
   setUp(() {
@@ -102,6 +118,7 @@ void main() {
         child: MaterialApp(
           theme: ThemeData(
             useMaterial3: true,
+            fontFamily: 'HarmonyOS_Sans',
             colorScheme: ColorScheme.fromSeed(
               seedColor: const Color(0xFF29D6C7),
               brightness: brightness,
@@ -119,7 +136,13 @@ void main() {
                 ).copyWith(textScaler: TextScaler.linear(textScale)),
                 child: Scaffold(
                   body: Center(
-                    child: SizedBox(width: 320, child: StartButton()),
+                    child: RepaintBoundary(
+                      key: const ValueKey('start-capture'),
+                      child: SizedBox(
+                        width: size.width < 600 ? 320 : 520,
+                        child: StartButton(),
+                      ),
+                    ),
                   ),
                 ),
               );
@@ -255,4 +278,60 @@ void main() {
       );
     });
   });
+
+  for (final brightness in Brightness.values) {
+    for (final size in [const Size(320, 680), const Size(1280, 800)]) {
+      testWidgets('network retry recovers without reconnecting $brightness $size', (
+        tester,
+      ) async {
+        final controller = await pumpHero(
+          tester,
+          brightness: brightness,
+          size: size,
+          textScale: size.width < 600 ? 1.6 : 1,
+        );
+        controller.bindingRef.read(runTimeProvider.notifier).value = 156000;
+        controller.bindingRef.read(connectionCheckProvider.notifier).state =
+            ConnectionCheck.limited;
+        await tester.pumpAndSettle();
+        expect(find.text(appLocalizations.retry), findsOneWidget);
+        expect(find.text(appLocalizations.checkError), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        if (const bool.fromEnvironment('FEEDBACK_CAPTURE')) {
+          await captureFlutterFrame(
+            tester,
+            find.byKey(const ValueKey('start-capture')),
+            'build/feedback_fixes/screenshots/start-retry-${brightness.name}-${size.width.toInt()}.png',
+          );
+        }
+        await tester.tap(find.byKey(const ValueKey('connection-retry')));
+        await tester.pump();
+        expect(controller.connectionRetries, 1);
+        expect(
+          tester
+              .widget<TextButton>(
+                find.byKey(const ValueKey('connection-retry')),
+              )
+              .onPressed,
+          isNull,
+        );
+        expect(find.text(appLocalizations.checking), findsOneWidget);
+        expect(controller.updateStatusCalls, 0);
+        expect(controller.restartCoreCalls, 0);
+        controller.bindingRef.read(connectionCheckProvider.notifier).state =
+            ConnectionCheck.reachable;
+        await tester.pumpAndSettle();
+        expect(find.text(appLocalizations.healthHealthy), findsOneWidget);
+        expect(find.text(appLocalizations.checkError), findsNothing);
+        expect(controller.bindingRef.read(runTimeProvider), 156000);
+        if (const bool.fromEnvironment('FEEDBACK_CAPTURE')) {
+          await captureFlutterFrame(
+            tester,
+            find.byKey(const ValueKey('start-capture')),
+            'build/feedback_fixes/screenshots/start-recovered-${brightness.name}-${size.width.toInt()}.png',
+          );
+        }
+      });
+    }
+  }
 }

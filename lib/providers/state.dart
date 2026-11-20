@@ -100,7 +100,8 @@ List<Group> computeHideTimeout({
       final url = overrideTestUrl
           ? defaultTestUrl
           : state.testUrl.getSafeValue(groupTestUrl);
-      final delay = delayMap[url]?[state.proxyName];
+      final delay =
+          delayMap[url]?[proxy.name] ?? delayMap[url]?[state.proxyName];
       // Only a definite negative measurement is a timeout. `null` (never
       // tested) and `0` (test in flight) are both kept — unlike FlClash, whose
       // delay map uses 0 for "no data"; Fluxora's convention is
@@ -605,7 +606,7 @@ int? getDelay(Ref ref, {required String proxyName, String? testUrl}) {
   final delay = ref.watch(
     delayDataSourceProvider.select((state) {
       final delayMap = state[currentTestUrl];
-      return delayMap?[proxyCardState.proxyName];
+      return delayMap?[proxyName] ?? delayMap?[proxyCardState.proxyName];
     }),
   );
   return delay;

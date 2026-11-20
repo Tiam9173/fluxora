@@ -408,4 +408,40 @@ void main() {
     await tester.pumpAndSettle();
     expect(selected, 'Hidden policy');
   });
+
+  testWidgets(
+    'hop bulk tests include GLOBAL policy groups and show their results',
+    (tester) async {
+      final previous = clashCore.clashInterface;
+      final core = _DelayCore();
+      clashCore.clashInterface = core;
+      addTearDown(() => clashCore.clashInterface = previous);
+      await open(
+        tester,
+        allowPolicyGroups: true,
+        runtimeGroups: [
+          Group(
+            name: 'GLOBAL',
+            type: GroupType.Selector,
+            all: [
+              for (final type in GroupType.values)
+                Proxy(name: type.name, type: type.name),
+            ],
+          ),
+          for (final type in GroupType.values)
+            Group(
+              name: type.name,
+              type: type,
+              now: 'node',
+              all: const [Proxy(name: 'node', type: 'vless')],
+            ),
+        ],
+      );
+      await tester.tap(find.byKey(const ValueKey('hop-delay-test')));
+      await tester.pumpAndSettle();
+      expect(core.names.toSet(), GroupType.values.map((t) => t.name).toSet());
+      expect(find.text('62 ms'), findsNWidgets(4));
+      expect(selected, isNull);
+    },
+  );
 }

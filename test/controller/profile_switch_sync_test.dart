@@ -374,6 +374,59 @@ async function main(c) {
   }
 
   for (final platform in ['android', 'windows', 'linux', 'macos']) {
+    testWidgets('DNS override respects node resolver settings on $platform', (
+      tester,
+    ) async {
+      System.platformOverride = platform;
+      await tester.runAsync(() async {
+        final file = await profiles.first.getFile();
+        await file.writeAsString('''
+dns:
+  enable: true
+  nameserver: [223.5.5.5]
+  proxy-server-nameserver: [223.5.5.5, 119.29.29.29]
+  fallback: [1.1.1.1]
+  fallback-filter: {geosite: [gfw]}
+''', mode: FileMode.append);
+      });
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            home: Consumer(
+              builder: (context, r, _) {
+                ref = r;
+                controller = _Controller(context, ref);
+                globalState.appController = controller;
+                return const SizedBox();
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.runAsync(() async {
+        for (final enabled in [false, true]) {
+          globalState.config = globalState.config.copyWith(
+            overrideDns: enabled,
+          );
+          await controller.applyProfile(silence: true);
+          final output = loadYaml(
+            await File(await appPath.configFilePath).readAsString(),
+          );
+          expect(
+            output['dns']['proxy-server-nameserver'],
+            enabled
+                ? const Dns().proxyServerNameserver
+                : ['223.5.5.5', '119.29.29.29'],
+          );
+          if (!enabled) {
+            expect(output['dns']['fallback-filter']['geosite'], ['gfw']);
+          }
+        }
+      });
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 3));
+    });
+
     testWidgets(
       'profile selection refreshes the scoped proxy page on $platform',
       (tester) async {

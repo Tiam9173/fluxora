@@ -76,10 +76,11 @@ void main() {
     expect(dns['proxy-server-nameserver'], bootstrap);
   });
 
-  test('rewrites proxy hosts for the matching local DNS listener', () {
+  test('retains proxy hostnames for the matching local DNS listener', () {
     final dns = <String, dynamic>{'proxy-server-nameserver': bootstrap};
     final config = <String, dynamic>{
       'dns': dns,
+      'hosts': {'edge.office.test': '192.0.2.22'},
       'proxies': [
         {'server': 'edge.office.test'},
       ],
@@ -91,11 +92,10 @@ void main() {
         'proxy-server-nameserver': ['tcp://[::1]#direct'],
         'nameserver': ['0:0:0:0:0:0:0:1', 'https://[::1]:53/dns-query'],
       },
-      originalHosts: {'edge.office.test': '192.0.2.22'},
     );
 
     expect(config['proxies'], [
-      {'server': '192.0.2.22'},
+      {'server': 'edge.office.test'},
     ]);
     expect(dns['proxy-server-nameserver'], ['https://[::1]:53/dns-query']);
   });
@@ -178,7 +178,6 @@ void main() {
           'listen': listen,
           'proxy-server-nameserver': [resolver],
         },
-        originalHosts: {'edge.office.test': '192.0.2.22'},
       );
 
       expect(config['proxies'], [

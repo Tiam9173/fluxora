@@ -60,10 +60,7 @@ class ProxyCard extends StatelessWidget {
 
   Measure get measure => globalState.measure;
 
-  // B4: delegates to the single shared rule so the card's bolt button cannot
-  // offer a delay test for `DIRECT`, a proxy group or a shadow node.
-  bool get _isNonTestableProxy =>
-      !ChainProxyConfig.isSelectableProxy(name: proxy.name, type: proxy.type);
+  bool get _isNonTestableProxy => !isDelayTestableProxy(proxy);
 
   void _handleTestCurrentDelay() {
     if (_isNonTestableProxy) return;
