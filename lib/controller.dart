@@ -67,6 +67,8 @@ class AppController {
   bool _isUpdatingGroups = false;
   Timer? _updateGroupsRetryTimer;
   int _coreGeneration = 0;
+  int _groupDelayGeneration = 0;
+  int get groupDelayGeneration => _groupDelayGeneration;
   ({int mixedPort, ExternalControllerStatus controller})? _appliedPortSettings;
   final Set<DelayTestTarget> _manualDelayTargets = {};
   final Set<String> _updatingProfileIds = {};
@@ -147,9 +149,12 @@ class AppController {
   }
 
   void _invalidateCoreReads() {
+    _invalidateGroupDelays();
     _coreGeneration++;
     _backgroundLoadVersion++;
     _connectionCheckGeneration++;
+    _connectionCheckClient?.close(force: true);
+    _connectionCheckClient = null;
     _ipRefreshTimer?.cancel();
     _updateGroupsRetryTimer?.cancel();
     _updateGroupsRetryTimer = null;
@@ -336,14 +341,20 @@ class AppController {
 
   Timer? _ipRefreshTimer;
   int _connectionCheckGeneration = 0;
+  HttpClient? _connectionCheckClient;
 
   void refreshConnectionCheck({bool immediate = false}) =>
       _scheduleCheckIpRefresh(immediate: immediate);
 
   void _scheduleCheckIpRefresh({bool immediate = false}) {
     final generation = ++_connectionCheckGeneration;
-    _ref.read(connectionCheckProvider.notifier).state =
-        ConnectionCheck.untested;
+    _connectionCheckClient?.close(force: true);
+    _connectionCheckClient = null;
+    _ref
+        .read(connectionCheckProvider.notifier)
+        .state = immediate && _ref.read(runTimeProvider.notifier).isStart
+        ? ConnectionCheck.checking
+        : ConnectionCheck.untested;
     _ipRefreshTimer?.cancel();
     if (!_ref.read(runTimeProvider.notifier).isStart &&
         _ref.read(connectionTargetProvider) != true) {
@@ -367,32 +378,18 @@ class AppController {
   Future<void> _checkConnection(int generation) async {
     final port = effectiveMixedPort;
     final uri = Uri.tryParse(getRealTestUrl(null));
-    if (port <= 0 || uri == null || uri.scheme != 'https' || uri.host.isEmpty) {
-      return;
-    }
     _ref.read(connectionCheckProvider.notifier).state =
         ConnectionCheck.checking;
-    final client = HttpClient()
-      ..badCertificateCallback = null
-      ..connectionTimeout = const Duration(seconds: 5)
-      ..findProxy = (_) => 'PROXY 127.0.0.1:$port';
-    var result = ConnectionCheck.limited;
-    try {
-      final status = await (() async {
-        final request = await client.getUrl(uri);
-        request.followRedirects = false;
-        final response = await request.close();
-        return response.statusCode;
-      })().timeout(const Duration(seconds: 5));
-      if (status >= 200 && status < 300) result = ConnectionCheck.reachable;
-    } catch (error) {
-      commonPrint.log('Connection check failed: ${error.runtimeType}');
-    } finally {
-      client.close(force: true);
+    final client = _connectionCheckClient = HttpClient();
+    final reachable = await probeProxyConnection(client, uri ?? Uri(), port);
+    if (identical(_connectionCheckClient, client)) {
+      _connectionCheckClient = null;
     }
     if (generation == _connectionCheckGeneration &&
         _ref.read(runTimeProvider.notifier).isStart) {
-      _ref.read(connectionCheckProvider.notifier).state = result;
+      _ref.read(connectionCheckProvider.notifier).state = reachable
+          ? ConnectionCheck.reachable
+          : ConnectionCheck.limited;
     }
   }
 
@@ -1137,8 +1134,10 @@ class AppController {
     final delays = _ref.read(delayDataSourceProvider);
     if (delays.isEmpty) return;
     final names = <String>{
-      for (final group in _ref.read(groupsProvider))
+      for (final group in _ref.read(groupsProvider)) ...[
+        group.name,
         for (final proxy in group.all) proxy.name,
+      ],
     };
     _manualDelayTargets.removeWhere((target) => !names.contains(target.name));
     final retained = <String, Map<String, int?>>{};
@@ -1560,6 +1559,7 @@ class AppController {
           }
         }
         if (activeProxyChanged) {
+          _invalidateGroupDelays();
           addCheckIpNumDebounce();
         }
       }
@@ -2969,6 +2969,7 @@ class AppController {
     final currentProfile = _ref.read(currentProfileProvider);
     if (currentProfile != null &&
         currentProfile.selectedMap[groupName] != proxyName) {
+      _invalidateGroupDelays();
       final SelectedMap selectedMap = Map.from(currentProfile.selectedMap);
       if (proxyName.isEmpty) {
         selectedMap.remove(groupName);
@@ -2979,6 +2980,21 @@ class AppController {
           .read(profilesProvider.notifier)
           .setProfile(currentProfile.copyWith(selectedMap: selectedMap));
     }
+  }
+
+  void _invalidateGroupDelays() {
+    _groupDelayGeneration++;
+    final names = _ref.read(groupsProvider).map((group) => group.name).toSet();
+    final delays = _ref.read(delayDataSourceProvider);
+    if (!delays.values.any((values) => values.keys.any(names.contains))) return;
+    _manualDelayTargets.removeWhere((target) => names.contains(target.name));
+    _ref.read(delayDataSourceProvider.notifier).value = {
+      for (final entry in delays.entries)
+        entry.key: {
+          for (final value in entry.value.entries)
+            if (!names.contains(value.key)) value.key: value.value,
+        },
+    };
   }
 
   void updateCurrentUnfoldSet(Set<String> value) {

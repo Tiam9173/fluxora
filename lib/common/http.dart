@@ -4,6 +4,36 @@ import 'package:flutter/foundation.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/state.dart';
 
+Future<bool> probeProxyConnection(
+  HttpClient client,
+  Uri target,
+  int port,
+) async {
+  try {
+    if (port <= 0 ||
+        !const {'http', 'https'}.contains(target.scheme) ||
+        target.host.isEmpty) {
+      return false;
+    }
+    client
+      ..badCertificateCallback = null
+      ..connectionTimeout = const Duration(seconds: 5)
+      ..findProxy = (_) => 'PROXY 127.0.0.1:$port';
+    final status = await (() async {
+      final request = await client.getUrl(target);
+      request.followRedirects = false;
+      final response = await request.close();
+      return response.statusCode;
+    })().timeout(const Duration(seconds: 5));
+    return status >= 200 && status < 300;
+  } catch (error) {
+    commonPrint.log('Connection check failed: ${error.runtimeType}');
+    return false;
+  } finally {
+    client.close(force: true);
+  }
+}
+
 class FluxoraHttpOverrides extends HttpOverrides {
   static String handleFindProxy(Uri url) {
     if ([localhost].contains(url.host)) {

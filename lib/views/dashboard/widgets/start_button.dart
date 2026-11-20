@@ -513,10 +513,8 @@ class _StartButtonState extends ConsumerState<StartButton> {
                                 ],
                               ),
                             ),
-                            if (!largeText) ...[
-                              const SizedBox(width: FluxoraSpacing.md),
-                              control,
-                            ],
+                            const SizedBox(width: FluxoraSpacing.md),
+                            control,
                           ],
                         ),
                       ),
@@ -579,43 +577,58 @@ class _StartButtonState extends ConsumerState<StartButton> {
                               color: scheme.onSurfaceVariant,
                             ),
                           ),
-                          if (largeText) ...[
-                            const SizedBox(width: FluxoraSpacing.sm),
-                            control,
-                          ],
                           if (displayStart)
-                            SizedBox(
-                              width: 48,
-                              height: 48,
-                              child:
-                                  connectionCheck == ConnectionCheck.limited &&
-                                      !systemProxyFailed &&
-                                      !systemProxyPending
-                                  ? IconButton(
-                                      key: const ValueKey('connection-retry'),
-                                      onPressed: busy
-                                          ? null
-                                          : () => globalState.appController
-                                                .refreshConnectionCheck(
-                                                  immediate: true,
-                                                ),
-                                      tooltip: appLocalizations.retest,
-                                      icon: const Icon(
-                                        Icons.refresh_rounded,
-                                        size: 22,
-                                      ),
-                                    )
-                                  : IconButton(
-                                      onPressed: busy
-                                          ? null
-                                          : _handleRestartCore,
-                                      tooltip: appLocalizations.restartCore,
-                                      icon: const Icon(
-                                        Icons.restart_alt,
-                                        size: 22,
+                            connectionCheck != ConnectionCheck.reachable &&
+                                    !systemProxyFailed &&
+                                    !systemProxyPending
+                                ? TextButton.icon(
+                                    key: const ValueKey('connection-retry'),
+                                    onPressed:
+                                        busy ||
+                                            connectionCheck ==
+                                                ConnectionCheck.checking
+                                        ? null
+                                        : () => globalState.appController
+                                              .refreshConnectionCheck(
+                                                immediate: true,
+                                              ),
+                                    style: TextButton.styleFrom(
+                                      minimumSize: const Size(48, 48),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
                                       ),
                                     ),
-                            ),
+                                    label: Text(appLocalizations.retry),
+                                    icon:
+                                        connectionCheck ==
+                                            ConnectionCheck.checking
+                                        ? SizedBox.square(
+                                            dimension: 16,
+                                            child:
+                                                FluxoraMotion.ofContext(
+                                                  context,
+                                                ).reduceMotion
+                                                ? const Icon(
+                                                    Icons.hourglass_top_rounded,
+                                                    size: 16,
+                                                  )
+                                                : const CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                  ),
+                                          )
+                                        : const Icon(
+                                            Icons.refresh_rounded,
+                                            size: 18,
+                                          ),
+                                  )
+                                : IconButton(
+                                    onPressed: busy ? null : _handleRestartCore,
+                                    tooltip: appLocalizations.restartCore,
+                                    icon: const Icon(
+                                      Icons.restart_alt,
+                                      size: 22,
+                                    ),
+                                  ),
                         ],
                       ),
                     ],

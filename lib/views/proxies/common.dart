@@ -40,11 +40,13 @@ class DelayTestTarget {
   final String name;
   final String url;
   final String? profileId;
+  final int? groupGeneration;
 
   const DelayTestTarget({
     required this.name,
     required this.url,
     this.profileId,
+    this.groupGeneration,
   });
 
   @override
@@ -52,11 +54,12 @@ class DelayTestTarget {
     return other is DelayTestTarget &&
         other.name == name &&
         other.url == url &&
-        other.profileId == profileId;
+        other.profileId == profileId &&
+        other.groupGeneration == groupGeneration;
   }
 
   @override
-  int get hashCode => Object.hash(name, url, profileId);
+  int get hashCode => Object.hash(name, url, profileId, groupGeneration);
 }
 
 class DelayTestRequestPool {
@@ -104,21 +107,24 @@ Future<void> proxyDelayTest(
   String? testUrl,
   bool startup = false,
 }) async {
-  if (_isNonTestableProxy(proxy)) return;
+  if (!isDelayTestableProxy(proxy)) return;
   try {
     final appController = globalState.appController;
     final state = appController.getProxyCardState(proxy.name);
     final url = appController.getRealTestUrl(
       state.testUrl.getSafeValue(testUrl ?? ''),
     );
-    if (state.proxyName.isEmpty) {
+    if (proxy.name.isEmpty) {
       return;
     }
     await _testProxyDelay(
       DelayTestTarget(
-        name: state.proxyName,
+        name: proxy.name,
         url: url,
         profileId: appController.ref.read(currentProfileIdProvider),
+        groupGeneration: GroupTypeExtension.getGroupType(proxy.type) != null
+            ? appController.groupDelayGeneration
+            : null,
       ),
       startup: startup,
     );
@@ -133,6 +139,11 @@ Future<void> _testProxyDelay(
   bool startup = false,
 }) async {
   final appController = globalState.appController;
+  bool isCurrent() =>
+      appController.ref.read(currentProfileIdProvider) == target.profileId &&
+      (target.groupGeneration == null ||
+          target.groupGeneration == appController.groupDelayGeneration);
+  if (!isCurrent()) return;
   if (!startup) {
     appController.setDelay(Delay(url: target.url, name: target.name, value: 0));
   }
@@ -144,18 +155,15 @@ Future<void> _testProxyDelay(
       return Delay(url: target.url, name: target.name, value: -1);
     }
   });
-  if (appController.ref.read(currentProfileIdProvider) == target.profileId) {
+  if (isCurrent()) {
     appController.setDelay(delay, startup: startup);
   }
 }
 
-/// B4: delegates to the single shared rule ([ChainProxyConfig.isSelectableProxy])
-/// so the delay-test path can no longer diverge from the node picker's filter.
-/// Previously this used its own, narrower list that omitted `DIRECT` and every
-/// group type, so "测速" issued real requests for `DIRECT` and nested-group
-/// members.
-bool _isNonTestableProxy(Proxy proxy) =>
-    !ChainProxyConfig.isSelectableProxy(name: proxy.name, type: proxy.type);
+// Policy groups are testable paths, but are not ordinary chain-hop nodes.
+bool isDelayTestableProxy(Proxy proxy) =>
+    GroupTypeExtension.getGroupType(proxy.type) != null ||
+    ChainProxyConfig.isSelectableProxy(name: proxy.name, type: proxy.type);
 
 Future<void> delayTest(
   List<Proxy> proxies, {
@@ -169,13 +177,6 @@ Future<void> delayTest(
     final profileId = appController.ref.read(currentProfileIdProvider);
     final groups = appController.getCurrentGroups();
     final sourceGroup = groups.getGroup(groupName ?? '');
-    final proxyTypes = <String, String>{};
-    for (final group in groups) {
-      proxyTypes.putIfAbsent(group.name, () => group.type.name);
-      for (final proxy in group.all) {
-        proxyTypes.putIfAbsent(proxy.name, () => proxy.type);
-      }
-    }
     final targets = <DelayTestTarget>{};
     for (final proxy in sourceGroup?.all ?? proxies) {
       if (useExactTargets) {
@@ -185,33 +186,38 @@ Future<void> delayTest(
               name: proxy.name,
               url: appController.getRealTestUrl(testUrl ?? ''),
               profileId: profileId,
+              groupGeneration:
+                  GroupTypeExtension.getGroupType(proxy.type) != null
+                  ? appController.groupDelayGeneration
+                  : null,
             ),
           );
         }
         continue;
       }
-      if (_isNonTestableProxy(proxy)) {
+      if (!isDelayTestableProxy(proxy)) {
         continue;
       }
       final state = appController.getProxyCardState(proxy.name);
       final url = appController.getRealTestUrl(
         state.testUrl.getSafeValue(sourceGroup?.testUrl ?? testUrl ?? ''),
       );
-      final name = state.proxyName;
-      // B4: same shared rule, now also applied to the *resolved* proxy name.
-      if (name.isEmpty ||
-          !ChainProxyConfig.isSelectableProxy(
-            name: name,
-            type: proxyTypes[name] ?? '',
-          )) {
-        continue;
-      }
-      targets.add(DelayTestTarget(name: name, url: url, profileId: profileId));
+      if (proxy.name.isEmpty) continue;
+      targets.add(
+        DelayTestTarget(
+          name: proxy.name,
+          url: url,
+          profileId: profileId,
+          groupGeneration: GroupTypeExtension.getGroupType(proxy.type) != null
+              ? appController.groupDelayGeneration
+              : null,
+        ),
+      );
     }
     final concurrencyLimit = globalState.config.proxiesStyle.concurrencyLimit
         .clamp(1, maxConcurrentDelayTests);
 
-    // 按实际节点和实际测试地址创建任务，避免多个代理组别名重复测速。
+    // Deduplicate the same path and URL; groups retain their own measurements.
     final delayTasks = targets.map((target) {
       return () async {
         try {

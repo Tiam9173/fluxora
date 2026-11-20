@@ -43,6 +43,36 @@ void main() {
   );
 
   group('RC.9 computeHideTimeout', () {
+    for (final ownDelay in [-1, 80]) {
+      test('policy filtering follows its own result $ownDelay', () {
+        final parent = mkGroup('Parent', [
+          mkProxy('keep'),
+          mkProxy('Balance', type: 'LoadBalance'),
+        ]);
+        final child = Group(
+          name: 'Balance',
+          type: GroupType.LoadBalance,
+          now: 'leaf',
+          all: [mkProxy('leaf')],
+        );
+        expect(
+          visibleNames(
+            run(
+              groups: [parent],
+              allGroups: [parent, child],
+              delayMap: {
+                defaultUrl: {
+                  'Balance': ownDelay,
+                  'leaf': ownDelay < 0 ? 40 : -1,
+                },
+              },
+            ),
+          ),
+          ownDelay < 0 ? ['keep'] : ['keep', 'Balance'],
+        );
+      });
+    }
+
     test('drops the proxies whose last probe timed out (negative)', () {
       final groups = [
         mkGroup('G', [mkProxy('ok'), mkProxy('dead')]),
