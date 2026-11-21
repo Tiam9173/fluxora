@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../common/common.dart';
+import 'glass_surface.dart';
 
 /// One entry in an Aurora navigation surface.
 ///
@@ -79,29 +80,34 @@ class AuroraNavigationRail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: extended ? extendedWidth : collapsedWidth,
-      child: LayoutBuilder(
-        builder: (context, constraints) => Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (var index = 0; index < destinations.length; index++)
-              Padding(
-                padding: const EdgeInsets.only(bottom: FluxoraSpacing.xs),
-                child: Semantics(
-                  key: ValueKey('aurora-rail-destination-$index'),
-                  label: destinations[index].label,
-                  button: true,
-                  selected: index == selectedIndex,
-                  child: _AuroraRailItem(
-                    destination: destinations[index],
+    return GlassSurface(
+      radius: FluxoraRadius.sheet,
+      floating: true,
+      blur: true,
+      child: SizedBox(
+        width: extended ? extendedWidth : collapsedWidth,
+        child: LayoutBuilder(
+          builder: (context, constraints) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (var index = 0; index < destinations.length; index++)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: FluxoraSpacing.xs),
+                  child: Semantics(
+                    key: ValueKey('aurora-rail-destination-$index'),
+                    label: destinations[index].label,
+                    button: true,
                     selected: index == selectedIndex,
-                    extended: extended && constraints.maxWidth >= 120,
-                    onTap: () => onDestinationSelected(index),
+                    child: _AuroraRailItem(
+                      destination: destinations[index],
+                      selected: index == selectedIndex,
+                      extended: extended && constraints.maxWidth >= 120,
+                      onTap: () => onDestinationSelected(index),
+                    ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );
