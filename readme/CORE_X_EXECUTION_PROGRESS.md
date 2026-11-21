@@ -256,3 +256,11 @@
 - 集成本地验证：Go 桥接、Mihomo 定向测试、DNS/resource/规则提供器/tunnel race、smux 写入回归、75 项 Flutter 集成测试通过，分析无问题。版本名保持 1.1.4-rc.1，构建号 2026111901。
 - 新 GitHub Android/Windows 整包与安装后验收仍为本次后续门禁，不复用旧包的成功状态。
 
+## 2026-11-21 首轮 DNS、磁贴状态与重启路径
+
+- 首轮 DNS 测速竞态修复：`_service` 在注册 DNS 监听后同步读取一次当前物理 DNS，最多等待 2 秒，再进入 quick/boot start 和首轮测速路径。原先的 `unawaited` 拉取已移除。
+- 磁贴/App 状态修复：Android VPN 原生启动完成后发送 `START` 事件；App 收到后立即同步真实 VPN 状态，并在控制器初始化早期再同步一次。这样磁贴启动后 App 不再依赖下一次前后台切换才能显示“已启动”。
+- 重启轻量化：Android 重启仍保留连接、fake-IP 和 DNS 缓存清理，移除立即 `debug.FreeOSMemory()`，避免与配置重建争抢 CPU。
+- 已验证：`flutter analyze --no-pub`；Android VPN/DNS、DNS 覆写、启动按钮、Android 生命周期定向测试；Go fake-IP/config/DNS/tunnel 定向测试均通过。
+- NOT VERIFIED：真实手机首轮测速的“首轮失败/次轮成功”现场、磁贴启动后进入 App 的真机状态一致性、Android 重启前后耗时对比、Android APK/Kotlin 构建。当前日志证据属于修复前现场。
+

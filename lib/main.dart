@@ -421,6 +421,17 @@ Future<void> _service(List<String> flags) async {
         onNetworkChanged: checkSmartAutoStop,
       ),
     );
+    // The native plugin pushes DNS once during engine attach. Pull it again
+    // after the Dart listener is registered and wait for it before quick
+    // start/first delay tests; otherwise the first probe can race an empty
+    // Android `system` resolver.
+    try {
+      final dns = await (vpn?.getCurrentDns() ?? Future<String>.value(''))
+          .timeout(const Duration(seconds: 2));
+      if (dns.isNotEmpty) clashLibHandler.updateDns(dns);
+    } catch (e) {
+      commonPrint.log('Service: initial DNS sync failed: $e');
+    }
 
     if (!quickStart && !bootStart) {
       _handleMainIpc(clashLibHandler);
@@ -585,7 +596,6 @@ void _handleMainIpc(ClashLibHandler clashLibHandler) {
   _messageReceiverPort!.listen((message) {
     _safeSend(sendPort, message);
   });
-
 }
 
 void _safeSend(SendPort sendPort, dynamic message) {

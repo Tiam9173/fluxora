@@ -207,7 +207,6 @@ class AppController {
       // 之后解析仍然指向已经失效的连接，表现就是"重启完还是不通"。
       await clashCore.flushFakeIP();
       await clashCore.flushDnsCache();
-      await clashCore.requestGc(forceFreeOSMemory: true);
       if (wasRunning) {
         // 给系统一点时间真正拆掉 TUN。Bettbox 用的是固定 500ms，这里保留
         // 同样的下限，再叠加前面的状态轮询。
@@ -2305,7 +2304,11 @@ class AppController {
         globalState.showNotifier(appLocalizations.networkErrorRetryLater);
       } else if (method == 'runStateChanged') {
         final state = arguments as String?;
-        if (state == 'STOP' &&
+        if (state == 'START') {
+          // A tile/notification can start the service while this isolate is
+          // still alive. Pull the native state into the app immediately.
+          unawaited(globalState.syncVpnState());
+        } else if (state == 'STOP' &&
             !_isStarting &&
             !_ref.read(isRestartingCoreProvider) &&
             _ref.read(connectionTargetProvider) == null &&
@@ -2324,6 +2327,12 @@ class AppController {
         }
       }
     });
+
+    if (system.isAndroid) {
+      // A tile start may have completed before the UI engine attached. Sync
+      // once before the slower core/profile initialization path.
+      await globalState.syncVpnState();
+    }
 
     if (system.isAndroid) {
       await _initHighRefreshRateDefault();

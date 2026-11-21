@@ -4,6 +4,15 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   const bootstrap = ['192.0.2.53'];
 
+  test('adds strict private DNS host to a mode-independent bypass list', () {
+    final config = <String, dynamic>{
+      'dns': <String, dynamic>{'enhanced-mode': 'fake-ip'},
+    };
+    applyPrivateDnsBypass(config, 'Dns.Private.Example.');
+    applyPrivateDnsBypass(config, 'dns.private.example');
+    expect(config['dns']['fake-ip-filter-bypass'], ['dns.private.example']);
+  });
+
   test('drops self-referencing bootstrap DNS from mixed lists and policy', () {
     final dns = <String, dynamic>{'proxy-server-nameserver': bootstrap};
     applyDnsNodeOverride(

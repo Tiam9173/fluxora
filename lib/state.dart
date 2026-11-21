@@ -413,8 +413,10 @@ class GlobalState {
     _syncVpnState();
   }
 
+  Future<void> syncVpnState() => _syncVpnState();
+
   @visibleForTesting
-  Future<void> testSyncVpnState() => _syncVpnState();
+  Future<void> testSyncVpnState() => syncVpnState();
 
   Future<void> _syncVpnState() async {
     if (!system.isAndroid) return;
@@ -936,12 +938,7 @@ class GlobalState {
     {
       // 通知栏切换卡片是原生 Activity，它不跑 Flutter，拿不到这份配置。
       // 把地址和密钥写进 SharedPreferences，原生侧直接读。
-      unawaited(
-        _persistCoreEndpoint(
-          controller.endpoint,
-          controller.secret,
-        ),
-      );
+      unawaited(_persistCoreEndpoint(controller.endpoint, controller.secret));
     }
     rawConfig['external-ui'] = await appPath.uiPath;
     rawConfig['external-ui-url'] =
@@ -1119,6 +1116,10 @@ class GlobalState {
         rawConfig['dns']['listen'] =
             '127.0.0.1${listen.substring('0.0.0.0'.length)}';
       }
+    }
+
+    if (system.isAndroid) {
+      applyPrivateDnsBypass(rawConfig, await utils.getPrivateDnsServerName());
     }
 
     if (rawConfig['ntp'] == null) {

@@ -5,12 +5,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/models/models.dart';
 import 'package:fluxora/plugins/service.dart';
+import 'package:fluxora/plugins/vpn.dart';
 import 'package:fluxora/state.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   const channel = MethodChannel('service');
+  const vpnChannel = MethodChannel('vpn');
   bool? mockStatusResult;
   bool shouldThrow = false;
   int methodCallCount = 0;
@@ -55,7 +57,19 @@ void main() {
     globalState.testStartTimeOverride = null;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, null);
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(vpnChannel, null);
     globalState.stopUpdateTasks();
+  });
+
+  test('reads current physical DNS for the Android cold-start sync', () async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(vpnChannel, (call) async {
+          if (call.method == 'getCurrentDns') return '223.5.5.5,119.29.29.29';
+          return null;
+        });
+
+    expect(await Vpn().getCurrentDns(), '223.5.5.5,119.29.29.29');
   });
 
   test(

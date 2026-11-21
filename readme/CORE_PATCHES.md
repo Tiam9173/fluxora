@@ -128,6 +128,13 @@
 - 脚本选中状态在兼容性检查前写入偏好，Android 磁贴和开机入口在生成配置前初始化 Code Forge。独立回滚 `main.dart`、`providers/config.dart`、`views/profiles/scripts.dart` 的对应增量。
 - 脚本大 JSON 结果解码交给独立 isolate，小结果维持直接解码。独立回滚 `js_runtime_manager.dart` 的分支。
 - 配置页在内核切换期间只保留最后一次待处理选择，继续通过同一个生命周期锁应用配置。配套的挂起标识和回归覆盖实际点击。回滚 `controller.dart`、`manager/clash_manager.dart`、`providers/state.dart`、`views/profiles/profiles.dart` 的选择队列增量。
+
+## Core X #5/#3 · Android 首轮 DNS 与磁贴状态同步
+
+- 服务 isolate 在首次测速和 quick/boot start 前有界读取一次当前物理 DNS，避免异步 `dnsChanged` 推送与首轮 `asyncTestDelay` 竞态。读取最多等待 2 秒，失败时沿用原有事件路径。
+- VPN 原生启动完成后发送 `START` 状态事件；App 在磁贴或通知启动服务时立即拉取真实 VPN 状态，并在控制器初始化早期再同步一次，避免磁贴显示已启动而 App 仍显示关闭。
+- Android 重启路径不再立即触发 `debug.FreeOSMemory()`；连接、fake-IP 和 DNS 缓存清理保留，已有空闲 GC 调度继续负责回收。
+- 回滚：撤回 `lib/main.dart`、`lib/controller.dart`、`lib/state.dart` 和 `android/app/src/main/kotlin/io/fluxora/app/plugins/VpnPlugin.kt` 的本节增量。Flutter/Go 定向回归通过，真实 Android 首轮测速与重启耗时仍需设备复测。
 ## 2026-11-19 节点快照候选
 
 - **#1/#7，NO_PATCH**。尝试直接返回测速队列已经复制出的快照，省去逐项追加生成第二份切片。空历史的 JSON 仍分别保持原有的 `[]` 与 `null`，快照隔离和并发读写回归均通过。

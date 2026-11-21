@@ -12,11 +12,18 @@ const (
 type Skipper struct {
 	Rules []C.Rule
 	Host  []C.DomainMatcher
-	Mode  C.FilterMode
+	// Bypass always uses real IP, regardless of the configured filter mode.
+	Bypass []C.DomainMatcher
+	Mode   C.FilterMode
 }
 
 // ShouldSkipped return if domain should be skipped
 func (p *Skipper) ShouldSkipped(domain string) bool {
+	for _, matcher := range p.Bypass {
+		if matcher.MatchDomain(domain) {
+			return true
+		}
+	}
 	if len(p.Rules) > 0 {
 		metadata := &C.Metadata{Host: domain}
 		for _, rule := range p.Rules {

@@ -151,6 +151,38 @@ bool matchDomainPattern(String pattern, Iterable<String> domains) {
   });
 }
 
+/// Keeps a strict Android Private DNS endpoint out of the fake-IP pool.
+///
+/// This is separate from the user's filter list because adding a host to a
+/// whitelist has the opposite meaning. The core consumes this field before
+/// applying blacklist, whitelist, or rule semantics.
+void applyPrivateDnsBypass(
+  Map<String, dynamic> rawConfig, [
+  String? privateDnsServerName,
+]) {
+  final host = privateDnsServerName?.trim().toLowerCase().replaceFirst(
+    RegExp(r'\.$'),
+    '',
+  );
+  if (host == null ||
+      host.isEmpty ||
+      InternetAddress.tryParse(host) != null ||
+      !host.contains('.') ||
+      !RegExp(r'^[a-z0-9.-]+$').hasMatch(host)) {
+    return;
+  }
+  final dns = (rawConfig['dns'] as Map?)?.cast<String, dynamic>();
+  if (dns == null || dns['enhanced-mode']?.toString() != 'fake-ip') return;
+  final current = dns['fake-ip-filter-bypass'];
+  final bypass = current is List
+      ? current.map((item) => item.toString()).toList()
+      : <String>[];
+  if (!bypass.any((item) => item.toLowerCase() == host)) {
+    bypass.add(host);
+  }
+  dns['fake-ip-filter-bypass'] = bypass;
+}
+
 String stripDnsSuffix(String dns) {
   final hashIndex = dns.indexOf('#');
   if (hashIndex == -1) return dns;
