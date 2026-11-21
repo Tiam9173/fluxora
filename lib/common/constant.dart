@@ -35,6 +35,7 @@ final baseInfoEdgeInsets = EdgeInsets.symmetric(
 final defaultTextScaleFactor =
     WidgetsBinding.instance.platformDispatcher.textScaleFactor;
 const httpTimeoutDuration = Duration(milliseconds: 5000);
+const delayTestTimeout = Duration(seconds: 10);
 // Native core/common.go has 50 delay workers; queue before starting IPC deadlines.
 const maxConcurrentDelayTests = 50;
 const moreDuration = Duration(milliseconds: 100);

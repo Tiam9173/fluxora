@@ -12,6 +12,7 @@ import 'package:fluxora/models/models.dart';
 /// Models the native 50-worker delay batch without opening sockets or a core.
 class _QueuedCore extends ClashHandlerInterface {
   final _queue = Queue<Action>();
+  final budgetsMs = <int>[];
   int active = 0;
   int peak = 0;
   int dispatched = 0;
@@ -28,9 +29,9 @@ class _QueuedCore extends ClashHandlerInterface {
       return;
     }
     dispatched++;
-    if ((jsonDecode(action.data as String)['proxy-name'] as String).startsWith(
-      'silent-',
-    )) {
+    final data = jsonDecode(action.data as String) as Map<String, dynamic>;
+    budgetsMs.add(data['timeout'] as int);
+    if ((data['proxy-name'] as String).startsWith('silent-')) {
       return;
     }
     _queue.add(action);
@@ -85,10 +86,33 @@ void main() {
       });
       clock.flushMicrotasks();
       expect(core.dispatched, 50);
+      expect(core.budgetsMs, everyElement(10000));
+      clock.elapse(const Duration(seconds: 11));
+      clock.flushMicrotasks();
+      expect(failed, 0);
+      // The healthy request only enters the native queue after the first
+      // batch's 12-second deadlines, then keeps its own cleanup timer.
       clock.elapse(const Duration(seconds: 14));
+      clock.flushMicrotasks();
       expect(failed, 50);
       expect(recovered?.value, 4000);
       expect(core.callbackCompleterMap, isEmpty);
+    });
+  });
+
+  test('manual probes allow the DNS budget plus a short node handshake', () {
+    fakeAsync((clock) {
+      final core = _QueuedCore();
+      String? result;
+      core.asyncTestDelay('https://example.test/204', 'node').then((raw) {
+        result = raw;
+      });
+      clock.flushMicrotasks();
+      expect(core.budgetsMs, [10000]);
+      clock.elapse(const Duration(seconds: 10));
+      clock.flushMicrotasks();
+      expect(result, isNotNull);
+      expect(Delay.fromJson(jsonDecode(result!)).value, 4000);
     });
   });
 

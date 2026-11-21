@@ -442,14 +442,14 @@ abstract class ClashHandlerInterface with ClashInterface {
     }
     final delayParams = {
       'proxy-name': proxyName,
-      'timeout': httpTimeoutDuration.inMilliseconds,
+      'timeout': delayTestTimeout.inMilliseconds,
       'test-url': url,
     };
     try {
       return await invoke<String>(
         method: ActionMethod.asyncTestDelay,
         data: json.encode(delayParams),
-        timeout: Duration(milliseconds: 6000),
+        timeout: delayTestTimeout + const Duration(seconds: 2),
         onTimeout: () {
           return json.encode(Delay(name: proxyName, value: -1, url: url));
         },
