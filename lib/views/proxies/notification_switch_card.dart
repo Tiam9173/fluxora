@@ -180,7 +180,8 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
         .where(
           (p) =>
               widget.onSelect == null ||
-              widget.allowPolicyGroups ||
+              (widget.allowPolicyGroups &&
+                  currentGroup?.name == GroupName.GLOBAL.name) ||
               ChainProxyConfig.isSelectableProxy(name: p.name, type: p.type),
         )
         .toList();
