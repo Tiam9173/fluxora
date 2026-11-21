@@ -89,7 +89,11 @@ class _CommonTargetIconState extends State<CommonTargetIcon> {
   }
 
   void _syncCheckAndInit() {
-    if (widget.src.isEmpty || widget.src.getBase64 != null) return;
+    if (widget.src.isEmpty ||
+        widget.src.getBase64 != null ||
+        widget.src.startsWith('asset://')) {
+      return;
+    }
 
     final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
     final cacheSize = (widget.size * devicePixelRatio).ceil();
@@ -276,7 +280,7 @@ class _CommonTargetIconState extends State<CommonTargetIcon> {
   }
 
   Future<void> _init(int cacheSize) async {
-    if (widget.src.isEmpty) {
+    if (widget.src.isEmpty || widget.src.startsWith('asset://')) {
       return;
     }
     if (widget.src.getBase64 != null) {
@@ -378,6 +382,25 @@ class _CommonTargetIconState extends State<CommonTargetIcon> {
   Widget _buildIcon() {
     if (widget.src.isEmpty) {
       return _defaultIcon();
+    }
+    if (widget.src.startsWith('asset://')) {
+      final asset = widget.src.substring('asset://'.length);
+      final isSvg = asset.toLowerCase().endsWith('.svg');
+      return isSvg
+          ? SvgPicture.asset(
+              asset,
+              width: widget.size,
+              height: widget.size,
+              fit: BoxFit.contain,
+              errorBuilder: (_, _, _) => _defaultIcon(),
+            )
+          : Image.asset(
+              asset,
+              width: widget.size,
+              height: widget.size,
+              fit: BoxFit.contain,
+              errorBuilder: (_, _, _) => _defaultIcon(),
+            );
     }
     final base64 = widget.src.getBase64;
     final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;

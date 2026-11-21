@@ -1,4 +1,5 @@
 import 'package:fluxora/common/common.dart';
+import 'package:fluxora/common/proxy_icon_sets.dart';
 import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/models/config.dart';
 import 'package:fluxora/providers/app.dart';
@@ -269,6 +270,72 @@ class ProxiesSetting extends StatelessWidget {
     );
   }
 
+  List<Widget> _buildIconSetSetting(BuildContext context) {
+    final chinese = Localizations.localeOf(context).languageCode == 'zh';
+    final title = chinese ? '内置图标集' : 'Built-in icon sets';
+    final servicesLabel = chinese ? '服务图标' : 'Service icons';
+    final clearLabel = chinese ? '清空自定义图标' : 'Clear custom icons';
+    bool sameMap(Map<String, String> a, Map<String, String> b) {
+      if (a.length != b.length) return false;
+      for (final entry in a.entries) {
+        if (b[entry.key] != entry.value) return false;
+      }
+      return true;
+    }
+
+    return generateSection(
+      plain: true,
+      title: title,
+      items: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Consumer(
+            builder: (_, ref, _) {
+              final iconMap = ref.watch(
+                proxiesStyleSettingProvider.select((state) => state.iconMap),
+              );
+              return Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                  SettingTextCard(
+                    servicesLabel,
+                    isSelected: sameMap(iconMap, ProxyIconSets.services),
+                    onPressed: () {
+                      ref
+                          .read(proxiesStyleSettingProvider.notifier)
+                          .updateState(
+                            (state) => state.copyWith(
+                              iconStyle: ProxiesIconStyle.standard,
+                              iconMap: ProxyIconSets.services,
+                              hasCustomizedStyle: true,
+                            ),
+                          );
+                    },
+                  ),
+                  SettingTextCard(
+                    clearLabel,
+                    isSelected: iconMap.isEmpty,
+                    onPressed: () {
+                      ref
+                          .read(proxiesStyleSettingProvider.notifier)
+                          .updateState(
+                            (state) => state.copyWith(
+                              iconMap: const {},
+                              hasCustomizedStyle: true,
+                            ),
+                          );
+                    },
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -358,6 +425,21 @@ class ProxiesSetting extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [..._buildGroupStyleSetting()],
+            ),
+          ),
+          Consumer(
+            builder: (_, ref, child) {
+              final isList = ref.watch(
+                proxiesStyleSettingProvider.select(
+                  (state) => state.type == ProxiesType.list,
+                ),
+              );
+              return isList ? child! : const SizedBox.shrink();
+            },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [..._buildIconSetSetting(context)],
             ),
           ),
           // One tap back to the default style. An imported backup can carry a
