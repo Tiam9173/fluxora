@@ -31,6 +31,7 @@ import 'common/archive.dart' show restoreBackupFiles;
 import 'common/common.dart';
 import 'common/external_control.dart';
 import 'common/flclash_database_extractor.dart';
+import 'common/profile_recovery.dart';
 import 'manager/chain_proxy_manager.dart';
 import 'manager/profile_chain_manager.dart';
 import 'services/network_fingerprint_provider.dart';
@@ -3397,25 +3398,39 @@ class AppController {
     final profileChainData = fullRestore
         ? raw['profileChains'] as Map<String, dynamic>?
         : null;
-    final profileChains = profileChainData?.map(
-      (id, value) => MapEntry(
-        id,
-        ProfileChainConfig.fromJson(
-          value as Map<String, dynamic>,
-        ).copyWith(profileId: id),
-      ),
-    );
-    final merge =
-        _ref.read(appSettingProvider).recoveryStrategy ==
-        RecoveryStrategy.compatible;
     final missingScripts = <String>[];
     await _coreLifecycleLock.synchronized(() async {
       final previousSetup = _ref.read(needSetupProvider);
+      final merge =
+          _ref.read(appSettingProvider).recoveryStrategy ==
+          RecoveryStrategy.compatible;
+      final profileRecovery = merge
+          ? ProfileRecoveryPlan.compatible(
+              config.profiles,
+              _ref.read(profilesProvider),
+            )
+          : ProfileRecoveryPlan.exact(config.profiles);
+      config = config.copyWith(
+        profiles: profileRecovery.profiles,
+        currentProfileId: profileRecovery.targetId(config.currentProfileId),
+      );
+      final profileChains = profileChainData == null
+          ? null
+          : {
+              for (final entry in profileChainData.entries)
+                profileRecovery.targetId(
+                  entry.key,
+                )!: ProfileChainConfig.fromJson(
+                  entry.value as Map<String, dynamic>,
+                ).copyWith(profileId: profileRecovery.targetId(entry.key)!),
+            };
       await restoreBackupFiles(
-        archive.files.where((file) {
-          final name = posix.normalize(file.name.replaceAll(r'\', '/'));
-          return name.startsWith('$profilesDirectoryName/');
-        }),
+        archive.files
+            .where((file) {
+              final name = posix.normalize(file.name.replaceAll(r'\', '/'));
+              return name.startsWith('$profilesDirectoryName/');
+            })
+            .map(profileRecovery.remapArchiveFile),
         homeDirPath,
       );
       if (fullRestore) {

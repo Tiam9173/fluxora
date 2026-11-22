@@ -217,6 +217,85 @@ void main() {
     });
   });
 
+  testWidgets('compatible recovery reuses a matching subscription identity', (
+    tester,
+  ) async {
+    await mount(tester);
+    await tester.runAsync(() async {
+      globalState.appState = AppState(
+        viewSize: const Size(800, 600),
+        brightness: Brightness.light,
+        requests: FixedList(0),
+        logs: FixedList(0),
+        traffics: FixedList(0),
+        version: 1,
+        totalTraffic: Traffic(),
+        systemUiOverlayStyle: const SystemUiOverlayStyle(),
+      );
+      const backupProfile = Profile(
+        id: 'backup-profile',
+        label: 'Backup label',
+        url: 'https://example.test/sub?token=a#backup',
+        autoUpdateDuration: Duration(days: 1),
+      );
+      const localProfile = Profile(
+        id: 'local-profile',
+        label: 'Local label',
+        url: 'HTTPS://EXAMPLE.TEST/sub?token=a#local',
+        autoUpdateDuration: Duration(days: 1),
+      );
+      const backupYaml = 'proxies: []\nrules: ["MATCH,PROXY"]\n';
+      await (await backupProfile.getFile()).writeAsString(backupYaml);
+      globalState.config = globalState.config.copyWith(
+        profiles: [backupProfile],
+        currentProfileId: backupProfile.id,
+      );
+      final backupChain = const ProfileChainConfig(
+        profileId: 'backup-profile',
+        preProxy: 'backup-entry',
+      );
+      await profileChainManager.restoreBackupConfig({
+        backupProfile.id: backupChain,
+      }, merge: false);
+      final bytes = await controller.backupData();
+
+      useHome(target);
+      System.platformOverride = 'windows';
+      globalState.config = globalState.config.copyWith(
+        profiles: [localProfile],
+        currentProfileId: 'keep-current',
+      );
+      await profileChainManager.restoreBackupConfig({
+        localProfile.id: ProfileChainConfig(
+          profileId: localProfile.id,
+          preProxy: 'local-entry',
+        ),
+      }, merge: false);
+
+      await controller.recoveryData(bytes, RecoveryOption.all);
+
+      expect(globalState.config.profiles.single.id, localProfile.id);
+      expect(globalState.config.profiles.single.label, localProfile.label);
+      expect(globalState.config.currentProfileId, localProfile.id);
+      expect(
+        await File(
+          p.join(target.path, 'profiles', 'local-profile.yaml'),
+        ).readAsString(),
+        backupYaml,
+      );
+      expect(
+        await File(
+          p.join(target.path, 'profiles', 'backup-profile.yaml'),
+        ).exists(),
+        isFalse,
+      );
+      expect(
+        profileChainManager.getChain(localProfile.id).preProxy,
+        'backup-entry',
+      );
+    });
+  });
+
   testWidgets(
     'old marked backups report missing bodies and keep local chains',
     (tester) async {
