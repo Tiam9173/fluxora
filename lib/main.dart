@@ -90,12 +90,6 @@ Future<void> main(List<String> args) async {
     preload: () => clashCore.preload(),
   );
 
-  try {
-    await uiManager.initializeUI();
-  } catch (e) {
-    commonPrint.log('Failed to initialize UI: $e');
-  }
-
   await _runApp(startupError: startupError);
 }
 
@@ -585,7 +579,6 @@ void _handleMainIpc(ClashLibHandler clashLibHandler) {
   _messageReceiverPort!.listen((message) {
     _safeSend(sendPort, message);
   });
-
 }
 
 void _safeSend(SendPort sendPort, dynamic message) {

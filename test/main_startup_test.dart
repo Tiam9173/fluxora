@@ -92,19 +92,56 @@ void main() {
     );
   });
 
-  test('a later failure still surfaces after the other task finished', () async {
-    final completed = <String>[];
-    final failure = const SocketException('late bind failure');
+  test(
+    'a later failure still surfaces after the other task finished',
+    () async {
+      final completed = <String>[];
+      final failure = const SocketException('late bind failure');
 
-    final error = await runStartupTasks(
-      initApp: () async => completed.add('initApp'),
-      preload: () async {
-        await Future<void>.delayed(const Duration(milliseconds: 10));
-        throw failure;
-      },
-    );
+      final error = await runStartupTasks(
+        initApp: () async => completed.add('initApp'),
+        preload: () async {
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+          throw failure;
+        },
+      );
 
-    expect(error, same(failure));
-    expect(completed, contains('initApp'));
-  });
+      expect(error, same(failure));
+      expect(completed, contains('initApp'));
+    },
+  );
+
+  test(
+    'external UI extraction runs after the first frame and before core init',
+    () {
+      final application = File('lib/application.dart').readAsStringSync();
+      final main = File('lib/main.dart').readAsStringSync();
+      final initStateStart = application.indexOf('void initState()');
+      final initStart = application.indexOf('Future<void> _initApp() async {');
+      final postFrameStart = application.indexOf(
+        'addPostFrameCallback((_) {',
+        initStateStart,
+      );
+      final initEnd = application.indexOf(
+        'void didChangeAppLifecycleState',
+        initStart,
+      );
+      final initBody = application.substring(initStart, initEnd);
+      final uiInit = initBody.indexOf('await uiManager.initializeUI()');
+      final controllerInit = initBody.indexOf(
+        'await globalState.appController.init()',
+      );
+
+      expect(initStart, greaterThanOrEqualTo(0));
+      expect(postFrameStart, greaterThanOrEqualTo(initStateStart));
+      expect(postFrameStart, lessThan(initStart));
+      expect(
+        application.substring(postFrameStart, initStart),
+        contains('unawaited(_initApp())'),
+      );
+      expect(uiInit, greaterThanOrEqualTo(0));
+      expect(controllerInit, greaterThan(uiInit));
+      expect(main, isNot(contains('uiManager.initializeUI()')));
+    },
+  );
 }
