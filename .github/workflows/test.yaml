@@ -13,10 +13,12 @@ on:
     branches:
       - main
       - dev
+      - test
   push:
     branches:
       - main
       - dev
+      - test
   workflow_dispatch:
 
 # Read-only: the checks only need the checked-out source. Nothing here writes
