@@ -236,6 +236,34 @@ class _GlassRim extends CustomPainter {
           ],
         ),
     );
+    final insetShape = RRect.fromRectAndRadius(
+      bounds.deflate(1.5),
+      Radius.circular((radius - 1.5).clamp(0, double.infinity)),
+    );
+    canvas.drawRRect(
+      insetShape,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = .7
+        ..shader = ui.Gradient.linear(
+          Offset.zero,
+          Offset(size.width, size.height),
+          [
+            Colors.white.withValues(alpha: (dark ? .20 : .48) + .13 * pressure),
+            Colors.white.withValues(alpha: dark ? .015 : .035),
+            const Color(0xFF94A9E8).withValues(alpha: dark ? .10 : .12),
+          ],
+          const [0, .5, 1],
+        ),
+    );
+    canvas.drawRRect(
+      shape,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = .55
+        ..color = (dark ? const Color(0xFF8195D8) : const Color(0xFF8291AC))
+            .withValues(alpha: dark ? .11 : .10),
+    );
   }
 
   @override

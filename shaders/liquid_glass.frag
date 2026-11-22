@@ -50,7 +50,7 @@ void main() {
       * (1.0 - smoothstep(bevel, max(bevel + 0.001, depth * 0.9), inset))
       * smoothstep(0.82, 0.99, coverage);
   vec2 pixel = pixelsPerUnit / u_size;
-  vec2 refracted = uv + normal * rim * u_strength * 9.0 * pixel;
+  vec2 refracted = uv + normal * rim * u_strength * 12.0 * pixel;
 
   // One pass avoids mismatched blur and refraction bounds while softening text.
   vec2 spread = (1.0 + 3.0 * (1.0 - u_clarity)) * pixel;
@@ -62,6 +62,12 @@ void main() {
   color += sampleBackdrop(refracted + dy) * 0.15;
   color += sampleBackdrop(refracted - dy) * 0.15;
   vec3 rgb = mix(color.rgb / max(color.a, 0.0001), u_tint, 0.24 - 0.20 * u_clarity);
+  float coverageMask = smoothstep(0.82, 0.99, coverage);
+  float edgeShade = 1.0 - smoothstep(0.0, 1.25, inset);
+  float bevelLight = smoothstep(0.0, 0.8, inset)
+      * (1.0 - smoothstep(4.5, 6.0, inset));
+  edgeShade *= coverageMask;
+  bevelLight *= coverageMask;
   // Protect foreground contrast when bright/dark content passes underneath.
   vec3 linear = pow(max(rgb, 0.0), vec3(2.2));
   float luminance = dot(linear, vec3(0.2126, 0.7152, 0.0722));
@@ -75,5 +81,8 @@ void main() {
     }
   }
   rgb = pow(linear, vec3(1.0 / 2.2));
+  rgb *= 1.0 - edgeShade * (u_dark > 0.5 ? 0.075 : 0.055);
+  rgb += vec3(1.0) * bevelLight * (u_dark > 0.5 ? 0.075 : 0.085)
+      * (0.45 + 0.55 * u_strength);
   fragColor = vec4(rgb * color.a, color.a);
 }

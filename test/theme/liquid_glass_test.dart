@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -263,6 +264,17 @@ void main() {
       final before = await render(0),
           after = await render(1),
           light = await render(1, dark: false);
+      final captureDir = Directory('build/liquid_glass/captures');
+      await captureDir.create(recursive: true);
+      for (final (image, name) in [
+        (after, 'shader-rim-dark.png'),
+        (light, 'shader-rim-light.png'),
+      ]) {
+        final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+        await File(
+          '${captureDir.path}/$name',
+        ).writeAsBytes(bytes!.buffer.asUint8List());
+      }
       final a = (await before.toByteData(format: ui.ImageByteFormat.rawRgba))!;
       final b = (await after.toByteData(format: ui.ImageByteFormat.rawRgba))!;
       var changed = 0;
