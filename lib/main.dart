@@ -90,12 +90,6 @@ Future<void> main(List<String> args) async {
     preload: () => clashCore.preload(),
   );
 
-  try {
-    await uiManager.initializeUI();
-  } catch (e) {
-    commonPrint.log('Failed to initialize UI: $e');
-  }
-
   await _runApp(startupError: startupError);
 }
 

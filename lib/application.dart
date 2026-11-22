@@ -128,6 +128,13 @@ class ApplicationState extends ConsumerState<Application>
       // split across two controllers for the rest of the session.
       globalState.appController.rebindContext(currentContext);
     }
+    // Keep the first frame independent of archive extraction, but prepare the
+    // external UI before core configuration reads its directory.
+    try {
+      await uiManager.initializeUI();
+    } catch (e) {
+      commonPrint.log('Failed to initialize UI: $e');
+    }
     await globalState.appController.init();
     try {
       await ExternalControl.start();
