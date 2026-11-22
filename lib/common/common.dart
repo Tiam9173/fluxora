@@ -18,6 +18,7 @@ export 'function.dart';
 export 'future.dart';
 export 'http.dart';
 export 'icons.dart';
+export 'icon_collection.dart';
 export 'iterable.dart';
 export 'js_runtime_manager.dart';
 export 'keyboard.dart';

@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'card.dart';
 import 'common.dart';
+import 'icon_library.dart';
 
 bool _stackGroupActions(BuildContext context) =>
     MediaQuery.sizeOf(context).width < 360 ||
@@ -490,7 +491,7 @@ class _GroupHeader extends ConsumerWidget {
           children: [
             Row(
               children: [
-                _buildIcon(context, iconStyle, icon),
+                _buildIcon(context, ref, iconStyle, icon),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -571,30 +572,59 @@ class _GroupHeader extends ConsumerWidget {
     ),
   ];
 
-  Widget _buildIcon(BuildContext context, ProxiesIconStyle style, String icon) {
+  Widget _buildIcon(
+    BuildContext context,
+    WidgetRef ref,
+    ProxiesIconStyle style,
+    String icon,
+  ) {
     if (style == ProxiesIconStyle.none) return const SizedBox();
     const iconSize = 40.0;
-    if (style == ProxiesIconStyle.standard) {
-      return Container(
-        margin: const EdgeInsets.only(right: 16),
-        width: iconSize,
-        height: iconSize,
-        alignment: Alignment.center,
-        padding: const EdgeInsets.all(6),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(FluxoraRadius.md),
-          color: context.colorScheme.secondaryContainer,
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: Tooltip(
+        message: Localizations.localeOf(context).languageCode == 'zh'
+            ? '更换策略组图标'
+            : 'Change group icon',
+        child: IconButton(
+          key: ValueKey('change-group-icon-${group.name}'),
+          onPressed: () async {
+            final selected = await showProxyIconLibrary(
+              context,
+              groupName: group.name,
+              selected: icon,
+            );
+            if (selected == null || !context.mounted) return;
+            ref
+                .read(proxiesStyleSettingProvider.notifier)
+                .updateState(
+                  (state) => state.copyWith(
+                    iconStyle: state.iconStyle == ProxiesIconStyle.none
+                        ? ProxiesIconStyle.standard
+                        : state.iconStyle,
+                    iconMap: setGroupIcon(state.iconMap, group.name, selected),
+                  ),
+                );
+          },
+          icon: Container(
+            width: iconSize,
+            height: iconSize,
+            alignment: Alignment.center,
+            padding: EdgeInsets.all(style == ProxiesIconStyle.standard ? 6 : 0),
+            decoration: style == ProxiesIconStyle.standard
+                ? BoxDecoration(
+                    borderRadius: BorderRadius.circular(FluxoraRadius.md),
+                    color: context.colorScheme.secondaryContainer,
+                  )
+                : null,
+            clipBehavior: Clip.antiAlias,
+            child: CommonTargetIcon(
+              src: icon,
+              size: iconSize - (style == ProxiesIconStyle.standard ? 12 : 8),
+            ),
+          ),
         ),
-        clipBehavior: Clip.antiAlias,
-        child: CommonTargetIcon(src: icon, size: iconSize - 12),
-      );
-    }
-    return Container(
-      margin: const EdgeInsets.only(right: 16),
-      width: iconSize,
-      height: iconSize,
-      alignment: Alignment.center,
-      child: CommonTargetIcon(src: icon, size: iconSize - 8),
+      ),
     );
   }
 

@@ -19,6 +19,7 @@ import 'chain_proxy_view.dart';
 import 'warp_view.dart';
 import 'setting.dart';
 import 'tab.dart';
+import 'icon_library.dart';
 
 class ProxiesView extends ConsumerStatefulWidget {
   const ProxiesView({super.key});
@@ -223,6 +224,17 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
                                 ),
                               );
                             },
+                          ),
+                          IconButton(
+                            onPressed: () async {
+                              await showProxyIconLibrary(context);
+                            },
+                            tooltip:
+                                Localizations.localeOf(context).languageCode ==
+                                    'zh'
+                                ? '图标库'
+                                : 'Icon library',
+                            icon: const Icon(Icons.collections_outlined),
                           ),
                         ],
                       );
