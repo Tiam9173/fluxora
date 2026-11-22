@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../common/common.dart';
-import 'glass_surface.dart';
 
 /// One entry in an Aurora navigation surface.
 ///
@@ -80,34 +79,30 @@ class AuroraNavigationRail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassSurface(
-      radius: FluxoraRadius.sheet,
-      floating: true,
-      blur: true,
-      child: SizedBox(
-        width: extended ? extendedWidth : collapsedWidth,
-        child: LayoutBuilder(
-          builder: (context, constraints) => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (var index = 0; index < destinations.length; index++)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: FluxoraSpacing.xs),
-                  child: Semantics(
-                    key: ValueKey('aurora-rail-destination-$index'),
-                    label: destinations[index].label,
-                    button: true,
+    return SizedBox(
+      width: extended ? extendedWidth : collapsedWidth,
+      child: LayoutBuilder(
+        builder: (context, constraints) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (var index = 0; index < destinations.length; index++)
+              Padding(
+                padding: const EdgeInsets.only(bottom: FluxoraSpacing.xs),
+                child: Semantics(
+                  key: ValueKey('aurora-rail-destination-$index'),
+                  label: destinations[index].label,
+                  button: true,
+                  selected: index == selectedIndex,
+                  child: _AuroraRailItem(
+                    destination: destinations[index],
                     selected: index == selectedIndex,
-                    child: _AuroraRailItem(
-                      destination: destinations[index],
-                      selected: index == selectedIndex,
-                      extended: extended && constraints.maxWidth >= 120,
-                      onTap: () => onDestinationSelected(index),
-                    ),
+                    extended: extended && constraints.maxWidth >= 120,
+                    onTap: () => onDestinationSelected(index),
                   ),
                 ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );
@@ -199,6 +194,40 @@ class _AuroraRailItemState extends State<_AuroraRailItem> {
           )
         : icon;
 
+    Widget pill() => Material(
+      animationDuration: FluxoraMotion.ofContext(context).base,
+      color: background,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: radius,
+        side: _focused
+            ? BorderSide(color: scheme.primary, width: 2)
+            : BorderSide.none,
+      ),
+      child: InkWell(
+        onTap: widget.onTap,
+        onHover: (value) {
+          if (_hovered != value) setState(() => _hovered = value);
+        },
+        onFocusChange: (value) {
+          if (_focused != value) setState(() => _focused = value);
+        },
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: widget.extended ? FluxoraSpacing.md : 0,
+            vertical: FluxoraSpacing.sm,
+          ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              minHeight:
+                  AuroraNavigationRail.itemHeight - 2 * FluxoraSpacing.sm,
+            ),
+            child: Center(child: content),
+          ),
+        ),
+      ),
+    );
+
     return Tooltip(
       message: widget.destination.label,
       excludeFromSemantics: true,
@@ -208,66 +237,40 @@ class _AuroraRailItemState extends State<_AuroraRailItem> {
               ? AuroraNavigationRail.extendedItemHeight
               : AuroraNavigationRail.itemHeight,
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Accent lane. Always 6 px wide so the pill's left edge does not move
-            // when the selection changes; only the bar itself appears or not.
-            SizedBox(
-              width: 3,
-              child: selected
-                  ? Container(
-                      key: const ValueKey('aurora-rail-accent'),
-                      height: 18,
-                      decoration: BoxDecoration(
-                        color: accent,
-                        borderRadius: const BorderRadius.horizontal(
-                          right: Radius.circular(FluxoraRadius.xs),
-                        ),
-                      ),
-                    )
-                  : null,
-            ),
-            const SizedBox(width: 3),
-            Expanded(
-              child: Material(
-                animationDuration: FluxoraMotion.ofContext(context).base,
-                color: background,
-                clipBehavior: Clip.antiAlias,
-                shape: RoundedRectangleBorder(
-                  borderRadius: radius,
-                  side: _focused
-                      ? BorderSide(color: scheme.primary, width: 2)
-                      : BorderSide.none,
-                ),
-                child: InkWell(
-                  onTap: widget.onTap,
-                  onHover: (value) {
-                    if (_hovered != value) setState(() => _hovered = value);
-                  },
-                  onFocusChange: (value) {
-                    if (_focused != value) setState(() => _focused = value);
-                  },
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      vertical: FluxoraSpacing.sm,
-                      horizontal: widget.extended ? FluxoraSpacing.md : 0,
-                    ),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(
-                        minHeight:
-                            AuroraNavigationRail.itemHeight -
-                            2 * FluxoraSpacing.sm,
-                      ),
-                      child: Center(child: content),
-                    ),
+        child: widget.extended
+            ? Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // The edge marker belongs to the expanded desktop pill.
+                  SizedBox(
+                    width: 3,
+                    child: selected
+                        ? Container(
+                            key: const ValueKey('aurora-rail-accent'),
+                            height: 18,
+                            decoration: BoxDecoration(
+                              color: accent,
+                              borderRadius: const BorderRadius.horizontal(
+                                right: Radius.circular(FluxoraRadius.xs),
+                              ),
+                            ),
+                          )
+                        : null,
+                  ),
+                  const SizedBox(width: 3),
+                  Expanded(child: pill()),
+                  const SizedBox(width: 6),
+                ],
+              )
+            : Center(
+                child: SizedBox(
+                  width: 48,
+                  child: KeyedSubtree(
+                    key: const ValueKey('aurora-collapsed-pill'),
+                    child: pill(),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(width: 6),
-          ],
-        ),
       ),
     );
   }

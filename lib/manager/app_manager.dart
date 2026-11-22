@@ -431,8 +431,10 @@ class AppSidebarContainer extends ConsumerWidget {
                           const SizedBox(height: FluxoraSpacing.lg),
                           if (!system.isMacOS) ...[
                             Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: FluxoraSpacing.md,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: extended
+                                    ? FluxoraSpacing.md
+                                    : FluxoraSpacing.xs,
                               ),
                               child: LayoutBuilder(
                                 builder: (context, constraints) => Row(
@@ -463,7 +465,7 @@ class AppSidebarContainer extends ConsumerWidget {
                             alignment: AlignmentDirectional.centerStart,
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: FluxoraSpacing.md,
+                                horizontal: FluxoraSpacing.xs,
                               ),
                               child: IconButton(
                                 key: const ValueKey('toggle-desktop-sidebar'),

@@ -254,6 +254,7 @@ void main() {
       if (const bool.fromEnvironment('GLASS_CAPTURE')) {
         tester.view.physicalSize = const Size(1200, 800);
         await tester.pump(const Duration(milliseconds: 250));
+        await _capture(tester, 'sidebar-collapsed-${brightness.name}');
         await tester.tap(find.byKey(const ValueKey('toggle-desktop-sidebar')));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 250));

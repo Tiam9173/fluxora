@@ -216,6 +216,36 @@ void main() {
   );
 
   testWidgets(
+    'collapsed rail centers each fixed-width item inside the sidebar',
+    (tester) async {
+      final container = await pumpSidebar(tester);
+      await tester.tap(getToggle());
+      await tester.pumpAndSettle();
+
+      final sidebar = tester.getRect(getSidebar());
+      final itemCount = container
+          .read(navigationStateProvider)
+          .navigationItems
+          .length;
+      for (var index = 0; index < itemCount; index++) {
+        final item = find.byKey(ValueKey('aurora-rail-destination-$index'));
+        final pill = find.descendant(
+          of: item,
+          matching: find.byKey(const ValueKey('aurora-collapsed-pill')),
+        );
+        expect(pill, findsOneWidget);
+        final rect = tester.getRect(pill);
+        expect(rect.width, 48);
+        expect(rect.left, greaterThanOrEqualTo(sidebar.left));
+        expect(rect.right, lessThanOrEqualTo(sidebar.right));
+        expect(rect.center.dx, closeTo(sidebar.center.dx, .5));
+      }
+      expect(find.byKey(const ValueKey('aurora-rail-accent')), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
     'narrow window temporarily folds without changing saved preference',
     (tester) async {
       final container = await pumpSidebar(tester);
