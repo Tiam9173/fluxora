@@ -176,6 +176,55 @@ void main() {
     });
   });
 
+  group('memory pressure', () {
+    testWidgets('releases inactive pages and retains the current page', (
+      tester,
+    ) async {
+      await tester.pumpWidget(host(index: 0, tags: const ['a', 'b', 'c']));
+      await settle(tester);
+      await tester.pumpWidget(host(index: 1, tags: const ['a', 'b', 'c']));
+      await settle(tester);
+      await tester.pumpWidget(host(index: 2, tags: const ['a', 'b', 'c']));
+      await settle(tester);
+      await tester.tap(find.text('page-c'));
+      await tester.pump();
+
+      tester.binding.handleMemoryPressure();
+      await tester.pump();
+
+      expect(log.disposes, containsAll(['a', 'b']));
+      expect(log.disposes, isNot(contains('c')));
+      expect(find.text('page-c:1'), findsOneWidget);
+
+      await tester.pumpWidget(host(index: 0, tags: const ['a', 'b', 'c']));
+      await settle(tester);
+      expect(log.inits, ['a', 'b', 'c', 'a']);
+
+      await tester.pumpWidget(host(index: 2, tags: const ['a', 'b', 'c']));
+      await settle(tester);
+      expect(find.text('page-c:1'), findsOneWidget);
+      expect(log.inits, ['a', 'b', 'c', 'a']);
+    });
+
+    testWidgets('defers eviction until an active transition completes', (
+      tester,
+    ) async {
+      await tester.pumpWidget(host(index: 0, tags: const ['a', 'b', 'c']));
+      await settle(tester);
+      await tester.pumpWidget(host(index: 1, tags: const ['a', 'b', 'c']));
+      await settle(tester);
+      await tester.pumpWidget(host(index: 2, tags: const ['a', 'b', 'c']));
+      await tester.pump();
+
+      tester.binding.handleMemoryPressure();
+      await settle(tester);
+
+      expect(log.disposes, containsAll(['a', 'b']));
+      expect(log.disposes, isNot(contains('c')));
+      expect(find.text('page-c'), findsOneWidget);
+    });
+  });
+
   group('inertness', () {
     testWidgets('a hidden page is off-stage and does not advance tickers', (
       tester,

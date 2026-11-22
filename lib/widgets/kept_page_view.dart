@@ -48,7 +48,7 @@ class KeptPageView extends StatefulWidget {
 }
 
 class _KeptPageViewState extends State<KeptPageView>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: widget.duration,
@@ -63,6 +63,7 @@ class _KeptPageViewState extends State<KeptPageView>
   double _direction = 1;
   bool _dragging = false;
   int? _dragOrigin;
+  bool _evictInactiveAfterTransition = false;
 
   double get _readingDirection =>
       Directionality.of(context) == TextDirection.rtl ? -1 : 1;
@@ -80,6 +81,7 @@ class _KeptPageViewState extends State<KeptPageView>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _current = widget.index;
     _built.add(_current);
     _resolveAnimations();
@@ -100,8 +102,30 @@ class _KeptPageViewState extends State<KeptPageView>
     // Once the cross-fade has finished the outgoing page can go off-stage: it
     // stays mounted (state kept) but stops costing a paint.
     if (status == AnimationStatus.completed && _leaving != null && !_dragging) {
-      setState(() => _leaving = null);
+      setState(() {
+        _leaving = null;
+        _applyPendingMemoryEviction();
+      });
     }
+  }
+
+  @override
+  void didHaveMemoryPressure() {
+    if (!mounted) return;
+    if (_leaving != null || _dragging) {
+      _evictInactiveAfterTransition = true;
+      return;
+    }
+    _built.removeWhere((index) => index != _current);
+    setState(() {});
+  }
+
+  void _applyPendingMemoryEviction() {
+    if (!_evictInactiveAfterTransition || _leaving != null || _dragging) {
+      return;
+    }
+    _built.removeWhere((index) => index != _current);
+    _evictInactiveAfterTransition = false;
   }
 
   @override
@@ -162,11 +186,13 @@ class _KeptPageViewState extends State<KeptPageView>
           _controller.forward();
         }
       }
+      _applyPendingMemoryEviction();
     }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _controller.removeStatusListener(_onStatus);
     _in.dispose();
     _out.dispose();
@@ -326,6 +352,7 @@ class _KeptPageViewState extends State<KeptPageView>
         _current = origin ?? widget.index;
         _leaving = null;
         _controller.value = 1;
+        _applyPendingMemoryEviction();
       });
     }
   }
