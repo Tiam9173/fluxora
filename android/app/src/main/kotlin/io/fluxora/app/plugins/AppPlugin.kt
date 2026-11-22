@@ -40,6 +40,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -59,6 +60,7 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
 
     private var activityRef: WeakReference<Activity>? = null
     private var cachedTaskId: Int? = null
+    private var excludeFromRecentsRequest = 0
     private lateinit var channel: MethodChannel
     private lateinit var scope: CoroutineScope
     private var vpnCallBack: ((Boolean) -> Unit)? = null
@@ -237,8 +239,28 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
                 result.success(true)
             }
             "updateExcludeFromRecents" -> {
-                updateExcludeFromRecents(call.argument<Boolean>("value"))
-                result.success(true)
+                val value = call.argument<Boolean>("value") ?: false
+                val request = ++excludeFromRecentsRequest
+                scope.launch {
+                    repeat(4) { attempt ->
+                        if (request != excludeFromRecentsRequest) {
+                            result.success(false)
+                            return@launch
+                        }
+                        if (updateExcludeFromRecents(value)) {
+                            result.success(true)
+                            return@launch
+                        }
+                        if (attempt < 3) delay(150L)
+                    }
+                    if (request == excludeFromRecentsRequest) {
+                        android.util.Log.w(
+                            "AppPlugin",
+                            "Could not apply the recent-task visibility setting",
+                        )
+                    }
+                    result.success(false)
+                }
             }
             "initShortcuts" -> {
                 val labels = call.arguments as? Map<String, String> ?: emptyMap()
@@ -358,22 +380,22 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
         }.getOrElse { false }
     }
 
-    private fun updateExcludeFromRecents(value: Boolean?) {
+    private fun updateExcludeFromRecents(value: Boolean): Boolean {
+        val taskId = activityRef?.get()?.taskId ?: cachedTaskId ?: return false
+        cachedTaskId = taskId
         val am = FluxoraApplication.getAppContext().getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
         val task = am?.appTasks?.firstOrNull { task ->
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                task.taskInfo.taskId == activityRef?.get()?.taskId
+                task.taskInfo.taskId == taskId
             } else {
                 @Suppress("DEPRECATION")
-                task.taskInfo.id == activityRef?.get()?.taskId
+                task.taskInfo.id == taskId
             }
-        }
-
-        when (value) {
-            true -> task?.setExcludeFromRecents(value)
-            false -> task?.setExcludeFromRecents(value)
-            null -> task?.setExcludeFromRecents(false)
-        }
+        } ?: return false
+        return runCatching {
+            task.setExcludeFromRecents(value)
+            true
+        }.getOrDefault(false)
     }
 
     private fun getIconSizePx(): Int {
@@ -573,6 +595,7 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         activityRef = WeakReference(binding.activity)
+        cachedTaskId = binding.activity.taskId
         if (!isActivityAttached) {
             isActivityAttached = true
             binding.addActivityResultListener(::onActivityResult)
@@ -585,6 +608,7 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
     }
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
         activityRef = WeakReference(binding.activity)
+        cachedTaskId = binding.activity.taskId
     }
     override fun onDetachedFromActivity() {
         channel.invokeMethod("exit", null)
