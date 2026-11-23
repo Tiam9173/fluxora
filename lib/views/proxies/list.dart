@@ -170,7 +170,7 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
   double _getHeaderHeight([Group? group]) {
     final measure = globalState.measure;
     final contentRowHeight = [
-      48.0,
+      52.0,
       measure.titleMediumHeight + 4 + measure.labelMediumHeight,
     ].reduce((a, b) => a > b ? a : b);
     return 28.0 +
@@ -617,7 +617,9 @@ class _GroupHeader extends ConsumerWidget {
                     color: context.colorScheme.secondaryContainer,
                   )
                 : null,
-            clipBehavior: Clip.antiAlias,
+            clipBehavior: style == ProxiesIconStyle.standard
+                ? Clip.antiAlias
+                : Clip.none,
             child: CommonTargetIcon(
               src: icon,
               size: iconSize - (style == ProxiesIconStyle.standard ? 12 : 8),
