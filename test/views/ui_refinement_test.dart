@@ -59,6 +59,7 @@ import 'package:fluxora/views/profiles/scripts.dart'
 import 'package:fluxora/views/other_setting.dart';
 import 'package:fluxora/views/proxies/proxies.dart';
 import 'package:fluxora/views/proxies/list.dart';
+import 'package:fluxora/views/proxies/icon_library.dart' show IconLibraryView;
 import 'package:fluxora/views/proxies/tab.dart' show DelayTestButton;
 import 'package:fluxora/views/proxies/notification_switch_card.dart';
 import 'package:fluxora/views/proxies/chain_hop_picker.dart';
@@ -1319,6 +1320,101 @@ void main() {
       },
     );
   }
+
+  testWidgets(
+    'proxy list content returns after inactive-page memory eviction',
+    (tester) async {
+      const node = '东京 · 高速线路 01';
+      final container = await show(
+        tester,
+        page: PageLabel.proxies,
+        reduce: true,
+        groups: const [
+          Group(
+            type: GroupType.Selector,
+            name: '节点选择',
+            all: [Proxy(name: node, type: 'VLESS')],
+          ),
+        ],
+      );
+      container
+          .read(proxiesStyleSettingProvider.notifier)
+          .updateState((state) => state.copyWith(type: ProxiesType.list));
+      final profile = container.read(currentProfileProvider)!;
+      container
+          .read(profilesProvider.notifier)
+          .setProfile(profile.copyWith(unfoldSet: const {'节点选择'}));
+      await tester.pumpAndSettle();
+
+      expect(find.text(node), findsOneWidget);
+      globalState.appController.toPage(PageLabel.dashboard);
+      await tester.pumpAndSettle();
+      tester.binding.handleMemoryPressure();
+      await tester.pumpAndSettle();
+      globalState.appController.toPage(PageLabel.proxies);
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('toggle-group-节点选择')), findsOneWidget);
+      expect(find.byKey(const ValueKey('节点选择.$node')), findsOneWidget);
+      expect(find.text(node), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await capture(tester, 'proxies-list-memory-pressure-return');
+    },
+  );
+
+  testWidgets('list icon-only style keeps group and node content visible', (
+    tester,
+  ) async {
+    const node = '东京 · 高速线路 01';
+    const group = Group(
+      type: GroupType.Selector,
+      name: '节点选择',
+      icon: 'asset://assets/images/platforms/apple.svg',
+      all: [Proxy(name: node, type: 'VLESS')],
+    );
+    final container = await show(
+      tester,
+      page: PageLabel.proxies,
+      reduce: true,
+      groups: const [group],
+    );
+    container
+        .read(proxiesStyleSettingProvider.notifier)
+        .updateState(
+          (state) => state.copyWith(
+            type: ProxiesType.list,
+            iconStyle: ProxiesIconStyle.standard,
+          ),
+        );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull, reason: 'standard icon style');
+    container
+        .read(proxiesStyleSettingProvider.notifier)
+        .updateState(
+          (state) => state.copyWith(iconStyle: ProxiesIconStyle.icon),
+        );
+    final profile = container.read(currentProfileProvider)!;
+    container
+        .read(profilesProvider.notifier)
+        .setProfile(profile.copyWith(unfoldSet: const {'节点选择'}));
+    await tester.pumpAndSettle();
+
+    expect(find.text('节点选择'), findsOneWidget);
+    expect(find.text(node), findsOneWidget);
+    expect(find.byType(ErrorWidget), findsNothing);
+    expect(
+      find.byKey(const ValueKey('change-group-icon-节点选择')),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+    await capture(tester, 'proxies-list-icon-only');
+
+    await tester.tap(find.byKey(const ValueKey('change-group-icon-节点选择')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byType(IconLibraryView), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets(
     'navigation lens moves continuously to a tapped nonadjacent tab',
