@@ -357,6 +357,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "AmneziaWG 2/3 難読化パラメータ (Jc / Jmin / Jmax / S1 / S2 / H1-H4)",
     ),
     "app": MessageLookupByLibrary.simpleMessage("アプリ"),
+    "applyingConfiguration": MessageLookupByLibrary.simpleMessage("設定を適用中"),
     "appAccessControl": MessageLookupByLibrary.simpleMessage("アプリのアクセス制御"),
     "appDesc": MessageLookupByLibrary.simpleMessage("アプリ設定を管理"),
     "application": MessageLookupByLibrary.simpleMessage("アプリケーション"),

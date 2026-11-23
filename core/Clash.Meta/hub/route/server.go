@@ -5,11 +5,13 @@ import (
 	"context"
 	"crypto/subtle"
 	"encoding/json"
+	"errors"
 	"net"
 	"os"
 	"path/filepath"
 	"runtime/debug"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -33,10 +35,13 @@ import (
 var (
 	uiPath = ""
 
-	httpServer *http.Server
-	tlsServer  *http.Server
-	unixServer *http.Server
-	pipeServer *http.Server
+	httpServer   *http.Server
+	httpListener net.Listener
+	httpConfig   *Config
+	httpMux      sync.Mutex
+	tlsServer    *http.Server
+	unixServer   *http.Server
+	pipeServer   *http.Server
 
 	embedMode = false
 )
@@ -89,13 +94,16 @@ func (c Cors) Apply(r chi.Router) {
 	}).Handler)
 }
 
-func ReCreateServer(cfg *Config) {
-	go start(cfg)
+func ReCreateServer(cfg *Config) error {
+	if err := start(cfg); err != nil {
+		return err
+	}
 	go startTLS(cfg)
 	go startUnix(cfg)
 	if inbound.SupportNamedPipe {
 		go startPipe(cfg)
 	}
+	return nil
 }
 
 func SetUIPath(path string) {
@@ -159,30 +167,50 @@ func router(isDebug bool, secret string, dohServer string, cors Cors) *chi.Mux {
 	return r
 }
 
-func start(cfg *Config) {
-	// first stop existing server
+func closeHTTP() {
 	if httpServer != nil {
 		_ = httpServer.Close()
-		httpServer = nil
+		_ = httpListener.Close()
+		httpServer, httpListener, httpConfig = nil, nil, nil
 	}
+}
 
-	// handle addr
-	if len(cfg.Addr) > 0 {
-		lc := inbound.NewListenConfig()
-		lc.SetRouteMark(cfg.RoutingMark)
-		l, err := lc.Listen(context.Background(), "tcp", cfg.Addr)
-		if err != nil {
-			log.Errorln("External controller listen error: %s", err)
-			return
-		}
-		log.Infoln("RESTful API listening at: %s", l.Addr().String())
-
-		server := &http.Server{
-			Handler: router(cfg.IsDebug, cfg.Secret, cfg.DohServer, cfg.Cors),
-		}
-		httpServer = server
-		_ = server.Serve(l)
+func bindHTTP(cfg *Config) error {
+	lc := inbound.NewListenConfig()
+	lc.SetRouteMark(cfg.RoutingMark)
+	l, err := lc.Listen(context.Background(), "tcp", cfg.Addr)
+	if err != nil {
+		log.Errorln("External controller listen error: %s", err)
+		return err
 	}
+	server := &http.Server{Handler: router(cfg.IsDebug, cfg.Secret, cfg.DohServer, cfg.Cors)}
+	closeHTTP()
+	httpServer, httpListener, httpConfig = server, l, cfg
+	log.Infoln("RESTful API listening at: %s", l.Addr())
+	go server.Serve(l)
+	return nil
+}
+
+func start(cfg *Config) error {
+	httpMux.Lock()
+	defer httpMux.Unlock()
+	if cfg.Addr == "" {
+		closeHTTP()
+		return nil
+	}
+	previous := httpConfig
+	if previous != nil {
+		_, oldPort, _ := net.SplitHostPort(previous.Addr)
+		_, newPort, _ := net.SplitHostPort(cfg.Addr)
+		if oldPort == newPort && newPort != "0" {
+			closeHTTP()
+			if err := bindHTTP(cfg); err != nil {
+				return errors.Join(err, bindHTTP(previous))
+			}
+			return nil
+		}
+	}
+	return bindHTTP(cfg)
 }
 
 func startTLS(cfg *Config) {

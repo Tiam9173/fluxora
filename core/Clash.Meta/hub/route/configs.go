@@ -339,8 +339,22 @@ func patchConfigs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	oldAllowLan, oldAddress := listener.AllowLan(), listener.BindAddress()
 	if general.AllowLan != nil {
 		listener.SetAllowLan(*general.AllowLan)
+	}
+
+	if general.BindAddress != nil {
+		listener.SetBindAddress(*general.BindAddress)
+	}
+
+	ports := listener.GetPorts()
+	if err := listener.ReCreateMixed(pointerOrDefault(general.MixedPort, ports.MixedPort), tunnel.Tunnel); err != nil {
+		listener.SetAllowLan(oldAllowLan)
+		listener.SetBindAddress(oldAddress)
+		render.Status(r, http.StatusConflict)
+		render.JSON(w, r, newError(err.Error()))
+		return
 	}
 
 	if general.SkipAuthPrefixes != nil {
@@ -355,10 +369,6 @@ func patchConfigs(w http.ResponseWriter, r *http.Request) {
 		inbound.SetDisAllowedIPs(*general.LanDisAllowedIPs)
 	}
 
-	if general.BindAddress != nil {
-		listener.SetBindAddress(*general.BindAddress)
-	}
-
 	if general.Sniffing != nil {
 		tunnel.SetSniffing(*general.Sniffing)
 	}
@@ -371,13 +381,10 @@ func patchConfigs(w http.ResponseWriter, r *http.Request) {
 		dialer.DefaultInterface.Store(*general.InterfaceName)
 	}
 
-	ports := listener.GetPorts()
-
 	listener.ReCreateHTTP(pointerOrDefault(general.Port, ports.Port), tunnel.Tunnel)
 	listener.ReCreateSocks(pointerOrDefault(general.SocksPort, ports.SocksPort), tunnel.Tunnel)
 	listener.ReCreateRedir(pointerOrDefault(general.RedirPort, ports.RedirPort), tunnel.Tunnel)
 	listener.ReCreateTProxy(pointerOrDefault(general.TProxyPort, ports.TProxyPort), tunnel.Tunnel)
-	listener.ReCreateMixed(pointerOrDefault(general.MixedPort, ports.MixedPort), tunnel.Tunnel)
 	listener.ReCreateTun(pointerOrDefaultTun(general.Tun, listener.LastTunConf), tunnel.Tunnel)
 	listener.ReCreateShadowSocks(pointerOrDefault(general.ShadowSocksConfig, ports.ShadowSocksConfig), tunnel.Tunnel)
 	listener.ReCreateVmess(pointerOrDefault(general.VmessConfig, ports.VmessConfig), tunnel.Tunnel)

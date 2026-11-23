@@ -137,7 +137,7 @@ class ClashLib extends ClashHandlerInterface with AndroidClashInterface {
   }
 
   @override
-  sendMessage(String message) async {
+  Future<void> sendMessage(String message) async {
     await _canSendCompleter.future;
     try {
       sendPort?.send(message);

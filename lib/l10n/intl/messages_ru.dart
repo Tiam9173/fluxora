@@ -429,6 +429,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Параметры обфускации AmneziaWG 2/3 (Jc / Jmin / Jmax / S1 / S2 / H1-H4)",
     ),
     "app": MessageLookupByLibrary.simpleMessage("Приложение"),
+    "applyingConfiguration": MessageLookupByLibrary.simpleMessage("Применение конфигурации"),
     "appAccessControl": MessageLookupByLibrary.simpleMessage(
       "Маршрутизация приложений",
     ),

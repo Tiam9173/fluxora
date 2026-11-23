@@ -294,7 +294,7 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
                               groupValue:
                                   profilesSelectorState.currentProfileId,
                               onChanged: (profileId) {
-                                if (ref.read(isRestartingCoreProvider)) return;
+                                if (ref.read(coreBusyProvider)) return;
                                 ref
                                         .read(currentProfileIdProvider.notifier)
                                         .value =

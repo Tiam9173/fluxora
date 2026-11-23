@@ -316,7 +316,7 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
       groupsProvider.select((state) => state.isNotEmpty),
     );
     ref.watch(appSettingProvider.select((state) => state.locale));
-    final applying = ref.watch(isRestartingCoreProvider);
+    final applying = ref.watch(coreBusyProvider);
     return CommonScaffold(
       floatingActionButton: hasGroups && !applying ? _buildFAB() : null,
       actions: _buildActions(hasGroups: hasGroups && !applying),

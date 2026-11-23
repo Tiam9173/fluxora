@@ -42,11 +42,13 @@ String resolveExternalControllerValue({
   required ExternalControllerStatus configured,
   required bool forceLoopback,
   String? sessionController,
+  bool allowLan = false,
 }) {
   if (configured != ExternalControllerStatus.open && !forceLoopback) {
     return configured.value;
   }
-  return sessionController ?? ExternalControllerStatus.open.value;
+  final address = sessionController ?? ExternalControllerStatus.open.value;
+  return allowLan ? address.replaceAll('127.0.0.1', '0.0.0.0') : address;
 }
 
 class GlobalState {
@@ -783,11 +785,20 @@ class GlobalState {
     );
   }
 
-  Future<SetupParams> getSetupParams({required ClashConfig pathConfig}) async {
-    final clashConfig = await patchRawConfig(patchConfig: pathConfig);
+  Future<SetupParams> getSetupParams({
+    required ClashConfig pathConfig,
+    Profile? profile,
+  }) async {
+    final target = profile ?? config.currentProfile;
+    var selectedMap = target?.selectedMap ?? const <String, String>{};
+    final clashConfig = await patchRawConfig(
+      patchConfig: pathConfig,
+      profile: target,
+      onSelectionRemapped: (selection) => selectedMap = selection,
+    );
     await _writeRunningConfig(clashConfig);
     return SetupParams(
-      selectedMap: config.currentProfile?.selectedMap ?? {},
+      selectedMap: selectedMap,
       testUrl: config.appSetting.testUrl,
       overrideTestUrl: config.overrideTestUrl,
     );
@@ -812,6 +823,7 @@ class GlobalState {
   Future<Map<String, dynamic>> patchRawConfig({
     required ClashConfig patchConfig,
     Profile? profile,
+    void Function(SelectedMap)? onSelectionRemapped,
   }) async {
     final targetProfile = profile ?? config.currentProfile;
     if (targetProfile == null) {
@@ -899,10 +911,9 @@ class GlobalState {
       configured: realPatchConfig.externalController,
       forceLoopback: forceLoopback,
       sessionController: sessionExternalController,
+      allowLan: realPatchConfig.allowLan,
     );
-    rawConfig['external-controller'] = realPatchConfig.allowLan
-        ? controllerValue.replaceAll('127.0.0.1', '0.0.0.0')
-        : controllerValue;
+    rawConfig['external-controller'] = controllerValue;
     {
       final secret = realPatchConfig.secret;
       if (secret != null && secret.isNotEmpty) {
@@ -1412,6 +1423,7 @@ class GlobalState {
       }
     }
     if (selectionChanged) {
+      onSelectionRemapped?.call(remappedSelection);
       final remappedProfile = targetProfile.copyWith(
         selectedMap: remappedSelection,
       );

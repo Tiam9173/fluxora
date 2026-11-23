@@ -277,6 +277,7 @@ enum ActionMethod {
   getTotalTraffic,
   resetTraffic,
   asyncTestDelay,
+  checkDefaultRoute,
   getConnections,
   closeConnections,
   resetConnections,

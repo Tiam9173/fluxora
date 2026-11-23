@@ -85,12 +85,19 @@ Future<int?> findNextAvailablePort(
 ///   proof the port is free for every bind scope.
 /// * A port released moments ago can still be in `TIME_WAIT` and fail to bind
 ///   even though nothing is serving on it.
-Future<bool> isPortAvailable(int port, {InternetAddress? address}) async {
+Future<bool> isPortAvailable(int port, {InternetAddress? address, bool udp = false}) async {
   final target = address ?? InternetAddress.loopbackIPv4;
   try {
     final socket = await ServerSocket.bind(target, port);
-    await socket.close();
-    return true;
+    try {
+      if (udp) {
+        final datagram = await RawDatagramSocket.bind(target, port, reuseAddress: false);
+        datagram.close();
+      }
+      return true;
+    } finally {
+      await socket.close();
+    }
   } on SocketException {
     return false;
   }

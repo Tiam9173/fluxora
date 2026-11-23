@@ -89,4 +89,34 @@ func TestStartListenerRejectsUnconfiguredAndOccupiedPort(t *testing.T) {
 	if response.StatusCode != http.StatusNoContent {
 		t.Fatalf("HTTPS through the mixed listener returned %s", response.Status)
 	}
+
+	free, err := net.Listen("tcp4", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer free.Close()
+	udp, err := net.ListenPacket("udp4", free.Addr().String())
+	free.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer udp.Close()
+	conflict := udp.LocalAddr().(*net.UDPAddr).Port
+	if err := updateConfig(&UpdateParams{MixedPort: &conflict}); err == nil {
+		t.Fatal("accepted a UDP-only conflict")
+	}
+	if currentConfig.General.MixedPort != port || listener.GetPorts().MixedPort != port {
+		t.Fatal("failed rebind moved the active port")
+	}
+	handleStopListener()
+	currentConfig.General.MixedPort = conflict
+	if handleStartListener() || listener.GetPorts().MixedPort != 0 {
+		t.Fatal("UDP failure left a partially active mixed listener")
+	}
+	if err := udp.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if !handleStartListener() || listener.GetPorts().MixedPort != conflict {
+		t.Fatal("could not retry the same mixed port")
+	}
 }

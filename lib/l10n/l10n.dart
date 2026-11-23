@@ -5665,6 +5665,16 @@ class AppLocalizations {
     );
   }
 
+  /// `Applying configuration`
+  String get applyingConfiguration {
+    return Intl.message(
+      'Applying configuration',
+      name: 'applyingConfiguration',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Switch Subscription Failed`
   String get switchProfileFailed {
     return Intl.message(

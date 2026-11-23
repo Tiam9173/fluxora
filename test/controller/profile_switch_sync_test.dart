@@ -34,6 +34,15 @@ class _Paths extends Fake
 class _Core extends Fake implements ClashHandlerInterface {
   @override
   Future<bool> setState(CoreState state) async => true;
+  Future<void> Function()? beforeRead;
+  final pushed = <String>[];
+  bool alive = true;
+  int healthReads = 0;
+  @override
+  bool get hasLiveProcess {
+    healthReads++;
+    return alive;
+  }
   String node = 'A-node';
   bool rejectB = false;
   int emptyReads = 0;
@@ -55,6 +64,7 @@ class _Core extends Fake implements ClashHandlerInterface {
   Future<bool> flushDnsCache() => flush.future;
   @override
   Future<Result> getConfig(String path, {String? ageSecretKey}) async {
+    await beforeRead?.call();
     final config = Map<String, dynamic>.from(
       loadYaml(await File(path).readAsString()),
     );
@@ -68,6 +78,7 @@ class _Core extends Fake implements ClashHandlerInterface {
       await File(await appPath.configFilePath).readAsString(),
     );
     final name = (config['proxies'] as List).first['name'] as String;
+    pushed.add('$name/${params.selectedMap['Select'] ?? ''}');
     if (rejectB && name == 'B-node') {
       throw StateError('Invalid B configuration');
     }
@@ -107,13 +118,15 @@ class _Core extends Fake implements ClashHandlerInterface {
 class _Controller extends AppController {
   _Controller(super.context, super.ref);
   Future<void>? lastChange;
+  String? checkUrl;
+  int restarts = 0;
   @override
-  Future<void> handleChangeProfile({
-    bool hardRestart = false,
-    required String? previousProfileId,
-  }) {
+  Future<void> restartCore() async { restarts++; }
+  @override
+  String getRealTestUrl(String? url) => checkUrl ?? super.getRealTestUrl(url);
+  @override
+  Future<void> handleChangeProfile({required String? previousProfileId}) {
     return lastChange = super.handleChangeProfile(
-      hardRestart: hardRestart,
       previousProfileId: previousProfileId,
     );
   }
@@ -189,51 +202,224 @@ rules: ['MATCH,Select']
     System.platformOverride = null;
   });
 
-  testWidgets(
-    'profile selection through the live manager refreshes the scoped proxy page',
-    (tester) async {
-      final container = await tester.runAsync(() async => ProviderContainer());
-      addTearDown(container!.dispose);
-      await tester.pumpWidget(
-        UncontrolledProviderScope(
-          container: container,
-          child: MaterialApp(
-            navigatorKey: globalState.navigatorKey,
-            home: ClashManager(
-              child: Consumer(
-                builder: (context, r, _) {
-                  globalState.measure = Measure.of(context, 1);
-                  ref = r;
-                  controller = _Controller(context, ref);
-                  globalState.appController = controller;
-                  return ProviderScope(
-                    overrides: [queryProvider.overrideWith(() => Query())],
-                    child: const ProxiesView(),
-                  );
-                },
+  testWidgets('overlapping switches keep each selection with its profile YAML', (tester) async {
+    System.platformOverride = 'windows';
+    await tester.pumpWidget(ProviderScope(child: MaterialApp(
+      navigatorKey: globalState.navigatorKey,
+      home: Consumer(builder: (ctx, r, _) {
+        ref = r;
+        controller = _Controller(ctx, r);
+        globalState.appController = controller;
+        return const SizedBox();
+      }),
+    )));
+    await tester.runAsync(() async {
+      for (final p in profiles) {
+        ref.read(profilesProvider.notifier).setProfile(p.copyWith(selectedMap: {'Select': '${p.label}-node'}));
+      }
+      await controller.applyProfile(silence: true);
+      final bRead = Completer<void>(), release = Completer<void>();
+      core.beforeRead = () async {
+        core.beforeRead = null;
+        bRead.complete();
+        await release.future;
+      };
+      ref.read(currentProfileIdProvider.notifier).value = profiles.last.id;
+      final switchB = controller.handleChangeProfile(previousProfileId: profiles.first.id);
+      await bRead.future.timeout(const Duration(seconds: 5));
+      ref.read(currentProfileIdProvider.notifier).value = profiles.first.id;
+      final switchA = controller.handleChangeProfile(previousProfileId: profiles.last.id);
+      release.complete();
+      await Future.wait([switchB, switchA]);
+      expect(core.pushed, ['A-node/A-node', 'B-node/B-node', 'A-node/A-node']);
+    });
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds:3));
+  });
+
+  testWidgets('watchdog rechecks recovery and stop intent after backoff', (tester) async {
+    System.platformOverride = 'windows';
+    await tester.pumpWidget(ProviderScope(child: Consumer(builder: (ctx, r, _) {
+      ref = r;
+      controller = _Controller(ctx, r);
+      return const SizedBox();
+    })));
+    globalState.startTime = DateTime.now();
+    addTearDown(() => globalState.startTime = null);
+    controller.startCoreWatchdog();
+    addTearDown(controller.stopCoreWatchdog);
+    core.alive = false;
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pump(const Duration(seconds: 5));
+    core.alive = true;
+    await tester.pump(const Duration(seconds: 1));
+    expect(core.healthReads, 3);
+    expect(controller.restarts, 0);
+    core.alive = false;
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pump(const Duration(seconds: 5));
+    ref.read(connectionTargetProvider.notifier).state = false;
+    await tester.pump(const Duration(seconds: 1));
+    expect(core.healthReads, 5);
+    expect(controller.restarts, 0);
+    controller.stopCoreWatchdog();
+  });
+
+  testWidgets('Windows connection rechecks notice proxy drift and recovery', (tester) async {
+    System.platformOverride = 'windows';
+    await tester.pumpWidget(ProviderScope(child: Consumer(builder: (ctx, r, _) {
+      ref = r;
+      controller = _Controller(ctx, r)..checkUrl = 'http://fixture.invalid';
+      return const SizedBox();
+    })));
+    ref.read(networkSettingProvider.notifier).updateState((v) => v.copyWith(systemProxy: true));
+    ref.read(runTimeProvider.notifier).value = 0;
+    final expected = '127.0.0.1:${controller.effectiveMixedPort}';
+    addTearDown(() => ProxyOwnership.readForTest = null);
+    for (final (snapshot, applied) in <(ProxySnapshot?, bool?)>[
+      (ProxySnapshot(enable: 1, server: expected), true),
+      (const ProxySnapshot(), false),
+      (const ProxySnapshot(enable: 1, server: 'other'), false),
+      (ProxySnapshot(enable: 1, server: expected, autoConfigUrl: 'test.pac'), false),
+      (null, null),
+      (ProxySnapshot(enable: 1, server: expected), true),
+    ]) {
+      ProxyOwnership.readForTest = () => snapshot;
+      await controller.recheckRunningConnection();
+      expect(ref.read(systemProxyAppliedProvider), applied);
+    }
+  });
+
+  for (final platform in ['windows', 'android']) {
+    testWidgets(
+      'profile selection on $platform hot-applies through the live manager',
+      (tester) async {
+        System.platformOverride = platform;
+        final container = await tester.runAsync(
+          () async => ProviderContainer(),
+        );
+        addTearDown(container!.dispose);
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: MaterialApp(
+              navigatorKey: globalState.navigatorKey,
+              home: ClashManager(
+                child: Consumer(
+                  builder: (context, r, _) {
+                    globalState.measure = Measure.of(context, 1);
+                    ref = r;
+                    controller = _Controller(context, ref);
+                    globalState.appController = controller;
+                    return ProviderScope(
+                      overrides: [queryProvider.overrideWith(() => Query())],
+                      child: const ProxiesView(),
+                    );
+                  },
+                ),
               ),
             ),
           ),
+        );
+        await tester.runAsync(() => controller.applyProfile(silence: true));
+        await tester.pumpAndSettle();
+        expect(find.text('A-node'), findsWidgets);
+        await tester.runAsync(() async {
+          container.read(currentProfileIdProvider.notifier).value =
+              profiles.last.id;
+          container.read(needSetupProvider);
+          expect(controller.lastChange, isNotNull);
+          await controller.lastChange!.timeout(const Duration(seconds: 3));
+        });
+        await tester.pumpAndSettle();
+        expect(core.node, 'B-node');
+        expect(find.text('B-node'), findsWidgets);
+        expect(find.text('A-node'), findsNothing);
+        await tester.pumpWidget(const SizedBox());
+        await tester.pump(const Duration(seconds: 3));
+      },
+    );
+  }
+  testWidgets('a running Windows hot apply keeps both bound session ports', (
+    tester,
+  ) async {
+    System.platformOverride = 'windows';
+    final mixed = (await tester.runAsync(
+      () => ServerSocket.bind(InternetAddress.loopbackIPv4, 0),
+    ))!;
+    addTearDown(mixed.close);
+    globalState.config = globalState.config.copyWith(
+      patchClashConfig: globalState.config.patchClashConfig.copyWith(
+        mixedPort: mixed.port,
+      ),
+      vpnProps: const VpnProps(
+        portFallback: true,
+        controllerPortFallback: true,
+      ),
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        child: Consumer(
+          builder: (context, r, _) {
+            ref = r;
+            controller = _Controller(context, ref);
+            globalState.appController = controller;
+            return const SizedBox();
+          },
         ),
+      ),
+    );
+    await tester.runAsync(() async {
+      await controller.applyProfile(silence: true);
+      final port = controller.effectiveMixedPort;
+      expect(port, isNot(mixed.port));
+      final address = controller.effectiveExternalController;
+      globalState.startTime = DateTime.now().subtract(
+        const Duration(seconds: 1),
       );
-      await tester.runAsync(() => controller.applyProfile(silence: true));
-      await tester.pumpAndSettle();
-      expect(find.text('A-node'), findsWidgets);
-      await tester.runAsync(() async {
-        container.read(currentProfileIdProvider.notifier).value =
-            profiles.last.id;
-        container.read(needSetupProvider);
-        expect(controller.lastChange, isNotNull);
-        await controller.lastChange!.timeout(const Duration(seconds: 3));
-      });
-      await tester.pumpAndSettle();
-      expect(core.node, 'B-node');
-      expect(find.text('B-node'), findsWidgets);
-      expect(find.text('A-node'), findsNothing);
-      await tester.pumpWidget(const SizedBox());
-      await tester.pump(const Duration(seconds: 3));
-    },
-  );
+      addTearDown(() => globalState.startTime = null);
+      // A hot apply must reuse the acknowledged endpoints without probing.
+      // Record attempted binds even when a production caller catches the error.
+      final attemptedBinds = <int>[];
+      await IOOverrides.runZoned(
+        () async {
+          for (final target in [profiles.last, profiles.first]) {
+            final previous = ref.read(currentProfileIdProvider);
+            ref.read(currentProfileIdProvider.notifier).value = target.id;
+            await controller.handleChangeProfile(previousProfileId: previous);
+            expect(core.node, '${target.label}-node');
+            expect(controller.effectiveMixedPort, port);
+            expect(controller.effectiveExternalController, address);
+            final config = loadYaml(
+              await File(await appPath.configFilePath).readAsString(),
+            );
+            expect(config['mixed-port'], port);
+            expect(config['external-controller'], endsWith(':${address.split(':').last}'));
+          }
+        },
+        serverSocketBind: (address, port, {backlog = 0, v6Only = false, shared = false}) {
+          attemptedBinds.add(port);
+          throw StateError('unexpected listener probe during hot apply');
+        },
+      );
+      expect(attemptedBinds, isEmpty);
+      final free = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+      final newPort = free.port;
+      await free.close();
+      ref.read(patchClashConfigProvider.notifier).updateState((c) => c.copyWith(mixedPort: newPort));
+      ref.read(vpnSettingProvider.notifier).updateState((v) => v.copyWith(portFallback: false));
+      ref.read(runTimeProvider.notifier).value = 0;
+      expect(controller.effectiveMixedPort, port);
+      expect(ref.read(proxyStateProvider).port, port);
+      ref.read(runTimeProvider.notifier).value = null;
+      globalState.startTime = null;
+      await controller.applyProfile(silence: true);
+      final disk = loadYaml(await File(await appPath.configFilePath).readAsString());
+      expect(disk['mixed-port'], newPort);
+    });
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 3));
+  });
 
   testWidgets(
     'automatic groups reflect native locks and release without reasserting stale choices',

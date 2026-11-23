@@ -115,6 +115,10 @@ func handleAction(action *Action, result ActionResult) {
 		handleResetTraffic()
 		result.success(true)
 		return
+	case checkDefaultRouteMethod:
+		target, ok := action.Data.(string)
+		go func() { result.success(ok && checkDefaultRoute(target)) }()
+		return
 	case asyncTestDelayMethod:
 		data := action.Data.(string)
 		handleAsyncTestDelay(data, func(value string) {
