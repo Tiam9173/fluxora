@@ -162,7 +162,8 @@ class ClashService extends ClashHandlerInterface {
   Process? process;
 
   @override
-  bool get hasLiveProcess => process != null;
+  bool get hasLiveProcess => process != null ||
+      (_coreStartedViaHelper && !_isDestroying && socketCompleter.isCompleted);
 
   Completer<void>? _restartCompleter;
 
@@ -396,7 +397,8 @@ class ClashService extends ClashHandlerInterface {
       () async {
         await for (final socket in server) {
           await _destroySocket();
-          socketCompleter.complete(socket);
+          final connection = socketCompleter;
+          connection.complete(socket);
 
           socket
               .transform(FrameDecoderTransformer())
@@ -409,6 +411,10 @@ class ClashService extends ClashHandlerInterface {
                   commonPrint.log('Frame decode error: $error');
                 },
                 onDone: () {
+                  if (identical(connection, socketCompleter)) {
+                    socketCompleter = Completer<Socket>();
+                    socket.destroy();
+                  }
                   commonPrint.log('Socket connection closed');
                 },
               );
@@ -794,7 +800,7 @@ class ClashService extends ClashHandlerInterface {
   }
 
   @override
-  sendMessage(String message) async {
+  Future<void> sendMessage(String message) async {
     if (_isDestroying || globalState.isExiting) {
       return;
     }
@@ -861,9 +867,9 @@ class ClashService extends ClashHandlerInterface {
 
   Future<void> _destroySocket() async {
     if (socketCompleter.isCompleted) {
-      final lastSocket = await socketCompleter.future;
-      await lastSocket.close();
+      final previous = socketCompleter;
       socketCompleter = Completer();
+      (await previous.future).destroy();
     }
   }
 

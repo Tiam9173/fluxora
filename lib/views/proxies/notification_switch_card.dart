@@ -113,7 +113,7 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
     final fromHome = widget.onStart != null;
     final busy =
         fromHome &&
-        (ref.watch(isRestartingCoreProvider) ||
+        (ref.watch(coreBusyProvider) ||
             ref.watch(connectionTargetProvider) != null);
     final running =
         fromHome &&

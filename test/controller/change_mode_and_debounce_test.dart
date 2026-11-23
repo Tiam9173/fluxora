@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fluxora/clash/core.dart';
 import 'package:fluxora/clash/interface.dart';
 import 'package:fluxora/common/common.dart';
@@ -20,6 +21,8 @@ import 'package:fluxora/state.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() async {
+    SharedPreferences.setMockInitialValues({'force_loopback_controller': false});
+    await preferences.sharedPreferencesCompleter.future;
     await AppLocalizations.load(const Locale('en'));
   });
 
@@ -47,9 +50,7 @@ void main() {
     fake = _FakeClashCore();
     clashCore.clashInterface = fake;
 
-    // `_updateClashConfig` awaits `preferences.sharedPreferencesCompleter` on
-    // desktop, which never completes under the test binding. Non-desktop keeps
-    // that branch out of the way; nothing else in these paths depends on it.
+    // Exercise the mobile mode-switch path without the desktop TUN readback.
     System.platformOverride = 'android';
 
     globalState.appState = AppState(
@@ -378,7 +379,7 @@ class _FakeClashCore implements ClashHandlerInterface {
 
   /// `_updateClashConfig` throws when the core answers with a message.
   @override
-  Future<String> updateConfig(UpdateParams updateParams) async => '';
+  Future<String> updateConfig(UpdateParams updateParams, {String? controllerAddress}) async => '';
 
   @override
   dynamic noSuchMethod(Invocation invocation) {

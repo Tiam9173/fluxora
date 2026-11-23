@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/metacubex/mihomo/adapter"
 	"github.com/metacubex/mihomo/adapter/inbound"
 	"github.com/metacubex/mihomo/adapter/outboundgroup"
@@ -17,7 +18,6 @@ import (
 	"github.com/metacubex/mihomo/constant/features"
 	cp "github.com/metacubex/mihomo/constant/provider"
 	"github.com/metacubex/mihomo/hub"
-	"github.com/metacubex/mihomo/hub/route"
 	"github.com/metacubex/mihomo/listener"
 	"github.com/metacubex/mihomo/log"
 	rp "github.com/metacubex/mihomo/rules/provider"
@@ -120,12 +120,19 @@ func sideUpdateExternalProvider(p cp.Provider, bytes []byte) error {
 	}
 }
 
-func updateListeners() {
+// Bind the requested entry point before publishing configuration changes.
+func bindMixed(g *config.General) error {
 	if !isRunning {
-		return
+		return nil
 	}
-	if currentConfig == nil {
-		return
+	listener.SetAllowLan(g.AllowLan)
+	listener.SetBindAddress(g.BindAddress)
+	return listener.ReCreateMixed(g.MixedPort, tunnel.Tunnel)
+}
+
+func updateListeners() error {
+	if !isRunning || currentConfig == nil {
+		return nil
 	}
 	listeners := currentConfig.Listeners
 	general := currentConfig.General
@@ -139,13 +146,21 @@ func updateListeners() {
 	listener.ReCreateSocks(general.SocksPort, tunnel.Tunnel)
 	listener.ReCreateRedir(general.RedirPort, tunnel.Tunnel)
 	listener.ReCreateTProxy(general.TProxyPort, tunnel.Tunnel)
-	listener.ReCreateMixed(general.MixedPort, tunnel.Tunnel)
+	mixedErr := listener.ReCreateMixed(general.MixedPort, tunnel.Tunnel)
 	listener.ReCreateShadowSocks(general.ShadowSocksConfig, tunnel.Tunnel)
 	listener.ReCreateVmess(general.VmessConfig, tunnel.Tunnel)
 	listener.ReCreateTuic(general.TuicServer, tunnel.Tunnel)
 	if !features.Android {
 		listener.ReCreateTun(general.Tun, tunnel.Tunnel)
 	}
+	listenerErrors := []error{mixedErr}
+	if general.MixedPort > 0 && listener.GetPorts().MixedPort != general.MixedPort {
+		listenerErrors = append(listenerErrors, fmt.Errorf("mixed port %d did not start", general.MixedPort))
+	}
+	if !features.Android && general.Tun.Enable && !listener.GetTunConf().Enable {
+		listenerErrors = append(listenerErrors, errors.New("TUN listener did not start"))
+	}
+	return errors.Join(listenerErrors...)
 }
 
 func stopListeners() {
@@ -184,18 +199,43 @@ func readFile(path string) ([]byte, error) {
 	return os.ReadFile(path)
 }
 
-func updateConfig(params *UpdateParams) {
+func updateConfig(params *UpdateParams) error {
 	runLock.Lock()
 	defer runLock.Unlock()
 	if currentConfig == nil {
-		log.Infoln("[APP] updateConfig called before setupConfig")
-		return
+		return errors.New("updateConfig called before setupConfig")
 	}
 	general := currentConfig.General
-	wasDebug := general.LogLevel == log.DEBUG
+	next := *general
 	if params.MixedPort != nil {
-		general.MixedPort = *params.MixedPort
+		next.MixedPort = *params.MixedPort
 	}
+	if params.AllowLan != nil {
+		next.AllowLan = *params.AllowLan
+	}
+	if params.LogLevel != nil {
+		next.LogLevel = *params.LogLevel
+	}
+	if err := bindMixed(&next); err != nil {
+		return errors.Join(err, bindMixed(general))
+	}
+	if currentConfig.Controller != nil {
+		controller := *currentConfig.Controller
+		if params.ExternalController != nil {
+			controller.ExternalController = *params.ExternalController
+		}
+		if controller.ExternalController != currentConfig.Controller.ExternalController ||
+			(next.LogLevel == log.DEBUG) != (general.LogLevel == log.DEBUG) {
+			candidate := *currentConfig
+			candidate.General, candidate.Controller = &next, &controller
+			if err := hub.ApplyRoute(&candidate); err != nil {
+				return errors.Join(err, bindMixed(general))
+			}
+			currentConfig.Controller = &controller
+		}
+	}
+	general.MixedPort, general.AllowLan = next.MixedPort, next.AllowLan
+
 	if params.Sniffing != nil {
 		general.Sniffing = *params.Sniffing
 		tunnel.SetSniffing(general.Sniffing)
@@ -228,34 +268,6 @@ func updateConfig(params *UpdateParams) {
 		general.IPv6 = *params.IPv6
 		resolver.DisableIPv6 = !general.IPv6
 	}
-	if params.ExternalController != nil {
-		currentConfig.Controller.ExternalController = *params.ExternalController
-	}
-
-	isDebug := general.LogLevel == log.DEBUG
-	needRecreateServer := params.ExternalController != nil ||
-		(params.LogLevel != nil && isDebug != wasDebug)
-
-	if needRecreateServer {
-		route.ReCreateServer(&route.Config{
-			Addr:           currentConfig.Controller.ExternalController,
-			TLSAddr:        currentConfig.Controller.ExternalControllerTLS,
-			UnixAddr:       currentConfig.Controller.ExternalControllerUnix,
-			PipeAddr:       currentConfig.Controller.ExternalControllerPipe,
-			Secret:         currentConfig.Controller.Secret,
-			Certificate:    currentConfig.TLS.Certificate,
-			PrivateKey:     currentConfig.TLS.PrivateKey,
-			ClientAuthType: currentConfig.TLS.ClientAuthType,
-			ClientAuthCert: currentConfig.TLS.ClientAuthCert,
-			EchKey:         currentConfig.TLS.EchKey,
-			DohServer:      currentConfig.Controller.ExternalDohServer,
-			IsDebug:        isDebug,
-			Cors: route.Cors{
-				AllowOrigins:        currentConfig.Controller.Cors.AllowOrigins,
-				AllowPrivateNetwork: currentConfig.Controller.Cors.AllowPrivateNetwork,
-			},
-		})
-	}
 
 	if params.Tun != nil {
 		general.Tun.Enable = params.Tun.Enable
@@ -276,7 +288,7 @@ func updateConfig(params *UpdateParams) {
 		general.Tun.DisableICMPForwarding = *params.Tun.DisableICMPForwarding
 	}
 
-	updateListeners()
+	return updateListeners()
 }
 
 func setupConfig(params *SetupParams) error {
@@ -300,17 +312,30 @@ func setupConfig(params *SetupParams) error {
 		}
 	}
 
-	currentConfig, err = config.ParseRawConfig(rawCfg)
+	parsed, err := config.ParseRawConfig(rawCfg)
 	if err != nil {
 		return err
 	}
+	previous := currentConfig
+	if err := bindMixed(parsed.General); err != nil {
+		if previous != nil {
+			return errors.Join(err, bindMixed(previous.General))
+		}
+		return err
+	}
+	if err := hub.ApplyConfig(parsed); err != nil {
+		if previous != nil {
+			return errors.Join(err, bindMixed(previous.General))
+		}
+		return err
+	}
+	currentConfig = parsed
 	currentRawConfig = rawCfg
-	hub.ApplyConfig(currentConfig)
 	patchSelectGroup(params.SelectedMap)
-	updateListeners()
+	err = updateListeners()
 	runtime.GC()
 	debug.FreeOSMemory()
-	return nil
+	return err
 }
 
 func UnmarshalJson(data []byte, v any) error {

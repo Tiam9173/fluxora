@@ -97,6 +97,15 @@ void main() {
   });
 
   group('isPortAvailable', () {
+    test('a UDP-only collision rules out a mixed port', () async {
+      final held = await RawDatagramSocket.bind(InternetAddress.loopbackIPv4, 0,
+          reuseAddress: false);
+      try {
+        expect(await isPortAvailable(held.port, udp: true), isFalse);
+      } finally {
+        held.close();
+      }
+    });
     test('reports false for a port this test is holding', () async {
       final held = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
       try {

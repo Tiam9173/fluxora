@@ -135,8 +135,8 @@ class ClashCore {
     return clashInterface.decryptAgeConfig(data, ageSecretKey);
   }
 
-  Future<String> updateConfig(UpdateParams updateParams) async {
-    return await clashInterface.updateConfig(updateParams);
+  Future<String> updateConfig(UpdateParams updateParams, {String? controllerAddress}) async {
+    return await clashInterface.updateConfig(updateParams, controllerAddress: controllerAddress);
   }
 
   Future<String> setupConfig(SetupParams setupParams) async {

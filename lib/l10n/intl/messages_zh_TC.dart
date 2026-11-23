@@ -324,6 +324,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "AmneziaWG 2/3 混淆參數 (Jc / Jmin / Jmax / S1 / S2 / H1-H4)",
     ),
     "app": MessageLookupByLibrary.simpleMessage("應用"),
+    "applyingConfiguration": MessageLookupByLibrary.simpleMessage("正在套用設定"),
     "appAccessControl": MessageLookupByLibrary.simpleMessage("應用存取控制"),
     "appDesc": MessageLookupByLibrary.simpleMessage("處理應用相關設定"),
     "application": MessageLookupByLibrary.simpleMessage("應用程式"),

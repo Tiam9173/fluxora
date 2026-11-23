@@ -37,15 +37,9 @@ func StopListener() {
 		tproxyUDPListener = nil
 	}
 
-	if mixedListener != nil {
-		_ = mixedListener.Close()
-		mixedListener = nil
-	}
-
-	if mixedUDPLister != nil {
-		_ = mixedUDPLister.Close()
-		mixedUDPLister = nil
-	}
+	mixedMux.Lock()
+	closeMixed()
+	mixedMux.Unlock()
 
 	if tunLister != nil {
 		_ = tunLister.Close()

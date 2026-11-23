@@ -407,6 +407,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "پارامترهای پنهان‌سازی AmneziaWG 2/3 (Jc / Jmin / Jmax / S1 / S2 / H1-H4)",
     ),
     "app": MessageLookupByLibrary.simpleMessage("برنامه"),
+    "applyingConfiguration": MessageLookupByLibrary.simpleMessage("در حال اعمال پیکربندی"),
     "appAccessControl": MessageLookupByLibrary.simpleMessage(
       "کنترل دسترسی برنامه‌ها",
     ),

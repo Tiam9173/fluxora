@@ -756,7 +756,7 @@ class _DashboardStartSwitchState extends ConsumerState<_DashboardStartSwitch> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(startButtonSelectorStateProvider);
-    final isRestarting = ref.watch(isRestartingCoreProvider);
+    final isRestarting = ref.watch(coreBusyProvider);
     final target = ref.watch(connectionTargetProvider);
     final isSmartStopped = ref.watch(isSmartStoppedProvider);
     final runTime = ref.watch(runTimeProvider);

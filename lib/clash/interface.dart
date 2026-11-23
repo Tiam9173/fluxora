@@ -37,7 +37,9 @@ mixin ClashInterface {
 
   Future<String> asyncTestDelay(String url, String proxyName);
 
-  FutureOr<String> updateConfig(UpdateParams updateParams);
+  Future<bool> checkDefaultRoute(String url);
+
+  FutureOr<String> updateConfig(UpdateParams updateParams, {String? controllerAddress});
 
   FutureOr<String> setupConfig(SetupParams setupParams);
 
@@ -154,7 +156,7 @@ abstract class ClashHandlerInterface with ClashInterface {
     }
   }
 
-  void sendMessage(String message);
+  FutureOr<void> sendMessage(String message);
 
   FutureOr<void> reStart();
 
@@ -169,7 +171,8 @@ abstract class ClashHandlerInterface with ClashInterface {
   }) async {
     final id = '${method.name}#${utils.id}';
 
-    callbackCompleterMap[id] = Completer<T>();
+    final reply = Completer<T>();
+    callbackCompleterMap[id] = reply;
 
     dynamic mDefaultValue = defaultValue;
     if (mDefaultValue == null) {
@@ -182,20 +185,20 @@ abstract class ClashHandlerInterface with ClashInterface {
       }
     }
 
-    sendMessage(json.encode(Action(id: id, method: method, data: data)));
-
-    return (callbackCompleterMap[id] as Completer<T>).safeFuture(
-      timeout: timeout,
-      onLast: () {
-        callbackCompleterMap.remove(id);
-      },
-      onTimeout:
-          onTimeout ??
-          () {
-            return mDefaultValue;
-          },
-      functionName: id,
-    );
+    try {
+      final sent = sendMessage(json.encode(Action(id: id, method: method, data: data)));
+      if (sent is Future<void>) {
+        unawaited(sent.catchError((Object error, StackTrace stack) {
+          if (!reply.isCompleted) reply.completeError(error, stack);
+        }));
+      }
+      return await reply.future.timeout(
+        timeout ?? const Duration(seconds: 30),
+        onTimeout: onTimeout ?? () => mDefaultValue,
+      );
+    } finally {
+      callbackCompleterMap.remove(id);
+    }
   }
 
   @override
@@ -254,11 +257,15 @@ abstract class ClashHandlerInterface with ClashInterface {
   }
 
   @override
-  Future<String> updateConfig(UpdateParams updateParams) async {
+  Future<String> updateConfig(UpdateParams updateParams, {String? controllerAddress}) async {
     return await invoke<String>(
       method: ActionMethod.updateConfig,
-      data: json.encode(updateParams),
+      data: json.encode({
+        ...updateParams.toJson(),
+        'external-controller': ?controllerAddress,
+      }),
       timeout: const Duration(seconds: 60),
+      onTimeout: () => throw TimeoutException('Core did not acknowledge settings update'),
     );
   }
 
@@ -430,6 +437,14 @@ abstract class ClashHandlerInterface with ClashInterface {
   stopListener() {
     return invoke<bool>(method: ActionMethod.stopListener);
   }
+
+  @override
+  Future<bool> checkDefaultRoute(String url) => invoke<bool>(
+    method: ActionMethod.checkDefaultRoute,
+    data: url,
+    timeout: const Duration(seconds: 6),
+    onTimeout: () => false,
+  );
 
   @override
   Future<String> asyncTestDelay(String url, String proxyName) async {

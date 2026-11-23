@@ -222,19 +222,20 @@ class _StartButtonState extends ConsumerState<StartButton> {
         system.isWindows && wantsSystemProxy && systemProxyApplied == null;
     final isSmartStopped = ref.watch(isSmartStoppedProvider);
     final isRestarting = ref.watch(isRestartingCoreProvider);
+    final isApplying = ref.watch(isApplyingProfileProvider);
     final canPress =
         state.isInit &&
         state.hasProfile &&
         target == null &&
         !_isDisabled &&
-        !isRestarting &&
+        !isRestarting && !isApplying &&
         !isSmartStopped;
     final hasNoProfile =
         state.isInit &&
         !state.hasProfile &&
         target == null &&
         !_isDisabled &&
-        !isRestarting &&
+        !isRestarting && !isApplying &&
         !isSmartStopped;
     final runTime = ref.watch(runTimeProvider);
     final profile = ref.watch(currentProfileProvider);
@@ -270,7 +271,7 @@ class _StartButtonState extends ConsumerState<StartButton> {
           final displayStart = !isSmartStopped && isStart;
           // Busy means initialization or a real operation still awaiting completion.
           final busy =
-              !state.isInit || target != null || _isDisabled || isRestarting;
+              !state.isInit || target != null || _isDisabled || isRestarting || isApplying;
 
           final hero = _isDisabled || target != null
               ? (
@@ -284,6 +285,7 @@ class _StartButtonState extends ConsumerState<StartButton> {
                   isInit: state.isInit,
                   hasProfile: state.hasProfile,
                   isRestarting: isRestarting,
+                  isApplying: isApplying,
                   isSmartStopped: isSmartStopped,
                   started: displayStart,
                   runTime: runTime,
@@ -637,6 +639,7 @@ class _StartButtonState extends ConsumerState<StartButton> {
     required bool isInit,
     required bool hasProfile,
     required bool isRestarting,
+    required bool isApplying,
     required bool isSmartStopped,
     required bool started,
     required int? runTime,
@@ -654,6 +657,13 @@ class _StartButtonState extends ConsumerState<StartButton> {
       return (
         kind: FluxoraStatusKind.connecting,
         label: appLocalizations.restartCoreTitle,
+        value: '',
+      );
+    }
+    if (isApplying) {
+      return (
+        kind: FluxoraStatusKind.connecting,
+        label: appLocalizations.applyingConfiguration,
         value: '',
       );
     }

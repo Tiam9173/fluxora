@@ -33,11 +33,9 @@ class _ClashContainerState extends ConsumerState<ClashManager>
     clashMessage.addListener(this);
     ref.listenManual(needSetupProvider, (prev, next) {
       if (prev != next) {
-        final profileChanged = prev?.a != next.a;
         unawaited(
           globalState.appController
               .handleChangeProfile(
-                hardRestart: system.isDesktop && profileChanged,
                 previousProfileId: prev?.a,
               )
               .catchError((Object error, StackTrace stackTrace) {

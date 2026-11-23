@@ -356,6 +356,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "AmneziaWG 2/3 난독화 매개변수 (Jc / Jmin / Jmax / S1 / S2 / H1-H4)",
     ),
     "app": MessageLookupByLibrary.simpleMessage("앱"),
+    "applyingConfiguration": MessageLookupByLibrary.simpleMessage("설정 적용 중"),
     "appAccessControl": MessageLookupByLibrary.simpleMessage("앱 액세스 제어"),
     "appDesc": MessageLookupByLibrary.simpleMessage("앱 관련 설정 관리"),
     "application": MessageLookupByLibrary.simpleMessage("애플리케이션"),

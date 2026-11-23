@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluxora/clash/service.dart';
+import 'package:fluxora/state.dart';
 import 'package:fluxora/common/common.dart';
 // Test-only: both are transitive dependencies of `path_provider`. `AppPath`
 // resolves its temp/download dirs through it, and the platform interface throws
@@ -65,6 +66,7 @@ void main() {
   });
 
   setUp(() {
+    globalState.config = globalState.config.copyWith.appSetting(enableHighPriority: false);
     ClashService.resetForTest();
     ClashService.skipTransportForTest = false;
     // The constructor kicks off its own `reStart()`. Keep it at the guard until
@@ -120,6 +122,7 @@ void main() {
       late ClashService s;
 
       ClashService.startHooksForTest = ClashServiceStartHooks(
+        stopCore: () async => true,
         registerService: () async => true,
         startCore: ({required corePath, required arg, required homeDir}) async {
           helperCalls.add((corePath: corePath, arg: arg, homeDir: homeDir));
@@ -219,6 +222,7 @@ void main() {
       late ClashService s;
 
       ClashService.startHooksForTest = ClashServiceStartHooks(
+        stopCore: () async => true,
         registerService: () async => true,
         startCore: ({required corePath, required arg, required homeDir}) async {
           helperCalls++;
@@ -233,6 +237,7 @@ void main() {
       s = await startService();
       await s.reStart();
 
+      expect(s.hasLiveProcess, isTrue);
       expect(helperCalls, 1, reason: 'the helper started the core');
       expect(launches, 0, reason: 'no fallback when the helper succeeded');
       expect(s.process, isNull);
@@ -290,6 +295,7 @@ void main() {
       expect(Platform.isWindows, isTrue, reason: 'drives the Windows branch');
 
       ClashService.startHooksForTest = ClashServiceStartHooks(
+        stopCore: () async => true,
         registerService: () async => true,
         startCore: ({required corePath, required arg, required homeDir}) async {
           throw const FileSystemException('helper pipe vanished');

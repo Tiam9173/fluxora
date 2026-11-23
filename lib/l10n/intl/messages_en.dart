@@ -419,6 +419,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "AmneziaWG 2/3 obfuscation parameters (Jc / Jmin / Jmax / S1 / S2 / H1-H4)",
     ),
     "app": MessageLookupByLibrary.simpleMessage("App"),
+    "applyingConfiguration": MessageLookupByLibrary.simpleMessage("Applying configuration"),
     "appAccessControl": MessageLookupByLibrary.simpleMessage(
       "App Access Control",
     ),

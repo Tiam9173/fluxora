@@ -265,12 +265,31 @@ CoreState coreState(Ref ref) {
 @riverpod
 class MixedPortFallback extends _$MixedPortFallback {
   @override
-  int? build() => null;
+  int? build() {
+    // The active listener outlives any screen watching its port.
+    ref.keepAlive();
+    ref.watch(patchClashConfigProvider.select((s) => s.mixedPort));
+    ref.watch(vpnSettingProvider.select((s) => s.portFallback));
+    return null;
+  }
 
   void set(int? port) {
     state = port;
   }
 }
+
+// WinINET and probes must follow the last acknowledged listener while a new
+// port is being bound (including when the requested change fails).
+final appliedMixedPortProvider = StateProvider<int?>((ref) => null);
+
+final effectiveMixedPortProvider = Provider<int>((ref) {
+  if (ref.watch(runTimeProvider.select((v) => v != null))) {
+    final applied = ref.watch(appliedMixedPortProvider);
+    if (applied != null) return applied;
+  }
+  return ref.watch(mixedPortFallbackProvider) ??
+      ref.watch(patchClashConfigProvider.select((s) => s.mixedPort));
+});
 
 @riverpod
 UpdateParams updateParams(Ref ref) {
@@ -319,10 +338,7 @@ ProxyState proxyState(Ref ref) {
       (state) => VM2(a: state.systemProxy, b: state.bypassDomain),
     ),
   );
-  final mixedPort =
-      ref.watch(mixedPortFallbackProvider) ??
-      ref.watch(patchClashConfigProvider.select((state) => state.mixedPort)) ??
-      0;
+  final mixedPort = ref.watch(effectiveMixedPortProvider);
   return ProxyState(
     isStart: isStart,
     systemProxy: vm2.a,
@@ -334,6 +350,12 @@ ProxyState proxyState(Ref ref) {
 final wakelockStateProvider = StateProvider<bool>((ref) => false);
 
 final isRestartingCoreProvider = StateProvider<bool>((ref) => false);
+
+final isApplyingProfileProvider = StateProvider<bool>((ref) => false);
+
+final coreBusyProvider = Provider<bool>(
+  (ref) => ref.watch(isRestartingCoreProvider) || ref.watch(isApplyingProfileProvider),
+);
 
 final connectionTargetProvider = StateProvider<bool?>((ref) => null);
 
@@ -370,7 +392,7 @@ TrayState trayState(Ref ref) {
   return TrayState(
     mode: clashConfig.mode,
     // 端口避让生效时，托盘里的局域网地址必须跟着变，否则用户按它连会失败。
-    port: ref.watch(mixedPortFallbackProvider) ?? clashConfig.mixedPort,
+    port: ref.watch(effectiveMixedPortProvider),
     autoLaunch: appSetting.autoLaunch,
     systemProxy: networkProps.systemProxy,
     tunEnable: clashConfig.tun.enable,

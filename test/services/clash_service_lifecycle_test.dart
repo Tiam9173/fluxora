@@ -101,6 +101,13 @@ void main() {
     return s;
   }
 
+  Future<bool> isBound(ServerSocket socket) async {
+    if (socket.address.type == InternetAddressType.unix) {
+      return File(socket.address.address).existsSync();
+    }
+    return !await isPortAvailable(socket.port, address: socket.address);
+  }
+
   group('socket name uniqueness', () {
     test('socketFileName() never repeats and carries the pid', () {
       final names = {for (var i = 0; i < 64; i++) ClashService.socketFileName()};
@@ -114,25 +121,18 @@ void main() {
       }
     });
 
-    test('two consecutive instances bind different files', () async {
-      final before = socketFiles();
-
+    test('two instances have independent listeners', () async {
       final first = await startService();
-      final firstFiles = socketFiles().difference(before);
-      expect(firstFiles.length, 1);
-      await first.destroy();
-
+      final firstListener = await first.serverCompleter.future;
+      addTearDown(first.destroy);
       ClashService.resetForTest();
-      service = null;
-
-      await startService();
-      final secondFiles = socketFiles().difference(before);
-      expect(secondFiles.length, 1);
-      expect(
-        secondFiles.single,
-        isNot(firstFiles.single),
-        reason: 'each instance must get its own path',
-      );
+      final second = await startService();
+      final secondListener = await second.serverCompleter.future;
+      expect(await isBound(firstListener), isTrue);
+      expect(await isBound(secondListener), isTrue);
+      await first.destroy();
+      expect(await isBound(firstListener), isFalse);
+      expect(await isBound(secondListener), isTrue);
     });
   });
 
@@ -185,42 +185,21 @@ void main() {
   });
 
   group('teardown ownership', () {
-    test('shutdown() unlinks the socket it created', () async {
-      final before = socketFiles();
+    test('shutdown() releases its own listener', () async {
       final s = await startService();
-
-      final mine = socketFiles().difference(before);
-      expect(mine.length, 1);
-      expect(File(mine.single).existsSync(), isTrue);
-
+      final listener = await s.serverCompleter.future;
+      expect(await isBound(listener), isTrue);
       expect(await s.shutdown(), isTrue);
-      expect(
-        File(mine.single).existsSync(),
-        isFalse,
-        reason: 'shutdown must remove its own socket file',
-      );
+      expect(await isBound(listener), isFalse);
     });
 
-    test('shutdown() leaves another instance\'s socket alone', () async {
+    test('shutdown() preserves an unrelated socket file', () async {
       final foreign = decoy('98');
-      await foreign.create(recursive: true);
-      addTearDown(() {
-        if (foreign.existsSync()) foreign.deleteSync();
-      });
-
-      final before = socketFiles();
+      await foreign.create();
+      addTearDown(() { if (foreign.existsSync()) foreign.deleteSync(); });
       final s = await startService();
-      final mine = socketFiles().difference(before);
-      expect(mine.length, 1);
-
       await s.shutdown();
-
-      expect(File(mine.single).existsSync(), isFalse);
-      expect(
-        foreign.existsSync(),
-        isTrue,
-        reason: 'only the owned path may be unlinked',
-      );
+      expect(foreign.existsSync(), isTrue);
     });
 
     test('destroy() is idempotent on a bound service', () async {
@@ -271,69 +250,18 @@ void main() {
   });
 
   group('R7-15.4 shutdown → reStart', () {
-    test('reStart() after shutdown() binds a live listener again', () async {
-      final before = socketFiles();
+    test('repeated shutdown and restart cycles bind fresh live listeners', () async {
       final s = await startService();
-
-      final mine = socketFiles().difference(before);
-      expect(mine.length, 1, reason: 'the first bind created exactly one file');
-      final path = mine.single;
-
-      await s.shutdown();
-      expect(
-        File(path).existsSync(),
-        isFalse,
-        reason: 'shutdown releases the listener and unlinks its file',
-      );
-
-      await s.reStart();
-
-      expect(
-        File(path).existsSync(),
-        isTrue,
-        reason: 'a restart must give the core a path that actually listens',
-      );
-      expect(
-        s.hasLiveProcess,
-        isFalse,
-        reason: 'the core spawn is skipped by the test seam',
-      );
-    });
-
-    test('the re-bound listener is fresh, not the released one', () async {
-      final before = socketFiles();
-      final s = await startService();
-      final path = socketFiles().difference(before).single;
-
-      await s.shutdown();
-      await s.reStart();
-
-      // `preload()` awaits `serverCompleter`. It only resolves if `_doRestart`
-      // created a *new* completer — reusing the completed one would have let it
-      // return while the listener was still closed.
-      expect(
-        await Future<bool>.value(s.preload()).timeout(const Duration(seconds: 5)),
-        isTrue,
-      );
-      expect(File(path).existsSync(), isTrue);
-    });
-
-    test('repeated shutdown → reStart cycles keep working', () async {
-      final before = socketFiles();
-      final s = await startService();
-      final path = socketFiles().difference(before).single;
-
       for (var i = 0; i < 3; i++) {
+        final previous = await s.serverCompleter.future;
         await s.shutdown();
-        expect(File(path).existsSync(), isFalse, reason: 'cycle $i: released');
-
+        expect(await isBound(previous), isFalse);
         await s.reStart();
-        expect(File(path).existsSync(), isTrue, reason: 'cycle $i: re-bound');
-        expect(
-          socketFiles().difference(before).length,
-          1,
-          reason: 'cycle $i must not leave a second listener behind',
-        );
+        expect(await s.preload(), isTrue);
+        final next = await s.serverCompleter.future;
+        expect(identical(previous, next), isFalse);
+        expect(await isBound(next), isTrue);
+        expect(s.hasLiveProcess, isFalse);
       }
     });
 
@@ -353,7 +281,7 @@ void main() {
     test('destroy() blocks a later reStart() from resurrecting', () async {
       final before = socketFiles();
       final s = await startService();
-      final path = socketFiles().difference(before).single;
+      final listener = await s.serverCompleter.future;
 
       await s.destroy();
 
@@ -363,7 +291,7 @@ void main() {
         reason: 'a destroyed instance must never come back to life',
       );
       expect(
-        File(path).existsSync(),
+        await isBound(listener),
         isFalse,
         reason: 'a blocked restart must not leave a new socket behind',
       );

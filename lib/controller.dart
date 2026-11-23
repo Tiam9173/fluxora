@@ -146,6 +146,7 @@ class AppController {
     _backgroundLoadVersion++;
     _connectionCheckGeneration++;
     _ipRefreshTimer?.cancel();
+    _ref.read(connectionCheckProvider.notifier).state = ConnectionCheck.untested;
     _updateGroupsRetryTimer?.cancel();
     _updateGroupsRetryTimer = null;
     _updateGroupsRetryCount = 0;
@@ -205,6 +206,7 @@ class AppController {
     }
     if (system.isDesktop) {
       lastProfileModified = null;
+      _controllerPortResolved = false;
       await clashService!.reStart();
     }
     await _initCore();
@@ -293,7 +295,6 @@ class AppController {
       }
     } else {
       _invalidateCoreReads();
-      _ref.read(connectionCheckProvider.notifier).state = ConnectionCheck.untested;
       try {
         await globalState.handleStop();
       } finally {
@@ -356,13 +357,34 @@ class AppController {
     });
   }
 
-  Future<void> _checkConnection(int generation) async {
+  int? _activeCheckGeneration;
+
+  Future<void> recheckRunningConnection() async {
+    if (!context.mounted || !_ref.read(runTimeProvider.notifier).isStart ||
+        _ref.read(coreBusyProvider) || _ref.read(connectionTargetProvider) != null ||
+        _ipRefreshTimer?.isActive == true ||
+        _activeCheckGeneration == _connectionCheckGeneration) {
+      return;
+    }
+    await _checkConnection(_connectionCheckGeneration, periodic: true);
+  }
+
+  Future<void> _checkConnection(int generation, {bool periodic = false}) async {
     final port = effectiveMixedPort;
+    if (system.isWindows && _ref.read(networkSettingProvider).systemProxy) {
+      final current = ProxyOwnership.read();
+      _ref.read(systemProxyAppliedProvider.notifier).state = current?.sameRouting(
+        ProxySnapshot(enable: 1, server: '127.0.0.1:$port'),
+      );
+    }
     final uri = Uri.tryParse(getRealTestUrl(null));
     if (port <= 0 || uri == null || uri.scheme != 'https' || uri.host.isEmpty) {
       return;
     }
-    _ref.read(connectionCheckProvider.notifier).state = ConnectionCheck.checking;
+    _activeCheckGeneration = generation;
+    if (!periodic || _ref.read(connectionCheckProvider) == ConnectionCheck.untested) {
+      _ref.read(connectionCheckProvider.notifier).state = ConnectionCheck.checking;
+    }
     final client = HttpClient()
       ..badCertificateCallback = null
       ..connectionTimeout = const Duration(seconds: 5)
@@ -375,13 +397,20 @@ class AppController {
         final response = await request.close();
         return response.statusCode;
       })().timeout(const Duration(seconds: 5));
-      if (status >= 200 && status < 300) result = ConnectionCheck.reachable;
+      if (!context.mounted || generation != _connectionCheckGeneration) return;
+      if (status >= 200 && status < 300) {
+        final ruleMode = _ref.read(patchClashConfigProvider).mode == Mode.rule;
+        if (!ruleMode || await clashCore.clashInterface.checkDefaultRoute(uri.toString())) {
+          result = ConnectionCheck.reachable;
+        }
+      }
     } catch (error) {
       commonPrint.log('Connection check failed: ${error.runtimeType}');
     } finally {
       client.close(force: true);
+      if (_activeCheckGeneration == generation) _activeCheckGeneration = null;
     }
-    if (generation == _connectionCheckGeneration &&
+    if (context.mounted && generation == _connectionCheckGeneration &&
         _ref.read(runTimeProvider.notifier).isStart) {
       _ref.read(connectionCheckProvider.notifier).state = result;
     }
@@ -429,15 +458,16 @@ class AppController {
     if (currentProfile == null) {
       return false;
     }
-    // item 6 — the port probe belongs here: this runs before the core takes the
-    // port, so "occupied" can only mean someone else. It used to live in
-    // _updateClashConfig behind `!isStart`, but the start path calls
-    // handleStart() (which sets runTime) before that, so the guard was always
-    // false and the fallback never happened.
-    await _resolveMixedPortFallback();
-    await _resolveExternalControllerFallback();
+    // Running listeners already own their ports. Reserve a mixed port only
+    // while stopped; the controller can also be listening before Start.
+    if (!globalState.isStart && !_ref.read(runTimeProvider.notifier).isStart) {
+      await _resolveMixedPortFallback();
+    }
     await currentProfile.checkAndUpdate();
     final patchConfig = _ref.read(patchClashConfigProvider);
+    final controllerEnabled = patchConfig.externalController == ExternalControllerStatus.open ||
+        await _forceLoopbackController();
+    await _resolveExternalControllerFallback(enabled: controllerEnabled);
     final targetTun = patchConfig.tun.enable;
 
     final realTunEnable = await _prepareTun(targetTun);
@@ -456,6 +486,7 @@ class AppController {
         : realPatchConfig.copyWith(mixedPort: fallbackPort);
     final params = await globalState.getSetupParams(
       pathConfig: effectivePatchConfig,
+      profile: currentProfile,
     );
     final message = await clashCore.setupConfig(params);
     if (message.isNotEmpty) {
@@ -476,13 +507,14 @@ class AppController {
       // A fully clean apply retires the notice from the previous attempt.
       _ref.read(ruleProviderWarningsProvider.notifier).state = '';
     }
+    _ref.read(appliedMixedPortProvider.notifier).state = effectivePatchConfig.mixedPort;
+    _controllerPortResolved = controllerEnabled;
+    _appliedProfileId = currentProfile.id;
     if (system.isDesktop) {
       final prefs = await preferences.sharedPreferencesCompleter.future;
       await prefs?.setBool('is_tun_running', realTunEnable);
     }
-    lastProfileModified = await _ref.read(
-      currentProfileProvider.select((state) => state?.profileLastModified),
-    );
+    lastProfileModified = await currentProfile.profileLastModified;
     return true;
   }
 
@@ -734,9 +766,7 @@ class AppController {
   /// session runs on a fallback port (see _resolveMixedPortFallback). Anything
   /// that connects to 127.0.0.1 must use this, not the raw config value, or it
   /// gets a connection refused.
-  int get effectiveMixedPort =>
-      _ref.read(mixedPortFallbackProvider) ??
-      _ref.read(patchClashConfigProvider).mixedPort;
+  int get effectiveMixedPort => _ref.read(effectiveMixedPortProvider);
 
   /// 控制器地址（`host:port`）在**本次会话**里实际生效的值。
   ///
@@ -752,6 +782,7 @@ class AppController {
 
   /// 会话内避让出来的控制器地址；null 表示沿用配置值。
   String? _externalControllerFallback;
+  bool _controllerPortResolved = false;
 
   int getProxiesColumns() {
     return _ref.read(getProxiesColumnsProvider);
@@ -873,10 +904,7 @@ class AppController {
   /// item 6 — pick a session-only fallback port when the configured mixed proxy
   /// port is already bound by something else.
   ///
-  /// Only called at cold start (see [_updateClashConfig]). That gate is what
-  /// keeps the port from drifting: probing while our *own* core still holds the
-  /// port would read as "occupied", so we would move once and then move again on
-  /// every restart. Restarts and hot config updates never call this.
+  /// Called while the mixed listener is stopped. A hot apply keeps its bound port.
   ///
   /// Never writes back to the user's config — the fallback lives in a provider
   /// for the session only. When the probe cannot prove the port is taken, or no
@@ -890,10 +918,11 @@ class AppController {
 
     // Re-probe when the user has since changed the configured port, so a stale
     // fallback from an earlier port is not kept.
-    if (current != null && current == configured) return;
+    bool stillRequested() => _ref.read(vpnSettingProvider).portFallback &&
+        _ref.read(patchClashConfigProvider).mixedPort == configured;
 
-    if (await isPortAvailable(configured)) {
-      if (current != null) {
+    if (await isPortAvailable(configured, udp: true)) {
+      if (current != null && stillRequested()) {
         _ref.read(mixedPortFallbackProvider.notifier).set(null);
       }
       return;
@@ -901,9 +930,13 @@ class AppController {
 
     final next = await findNextAvailablePort(
       configured,
-      isAvailable: (port) => isPortAvailable(port),
+      isAvailable: (port) => isPortAvailable(port, udp: true),
     );
-    if (next == null) return;
+    if (!stillRequested()) return;
+    if (next == null) {
+      _ref.read(mixedPortFallbackProvider.notifier).set(null);
+      return;
+    }
     commonPrint.log(
       'Mixed port $configured is in use, using $next for this session',
     );
@@ -939,25 +972,22 @@ class AppController {
   /// 这里存成会话字段，由 `patchRawConfig` 读 [effectiveExternalController]。
   /// 这样"写进内核配置"和"告诉原生通知栏卡片"用的是同一个值——上一轮混合
   /// 端口出问题，就是因为改了一处、另一处还读老配置。
-  Future<void> _resolveExternalControllerFallback() async {
+  Future<void> _resolveExternalControllerFallback({required bool enabled}) async {
     // 控制器端口有独立的开关，和混合端口避让互不影响。
-    if (!_ref.read(vpnSettingProvider).controllerPortFallback) return;
-
-    // 控制器关闭且没有强制回环时，内核根本不监听，避让没有意义。
-    final status = _ref.read(patchClashConfigProvider).externalController;
-    if (status == ExternalControllerStatus.close &&
-        !await _forceLoopbackController()) {
+    if (!_ref.read(vpnSettingProvider).controllerPortFallback) {
       _externalControllerFallback = null;
       return;
     }
 
-    final configured = status == ExternalControllerStatus.open
-        ? status.value
-        : ExternalControllerStatus.open.value;
-    if (_externalControllerFallback != null &&
-        _externalControllerFallback == configured) {
+    // 控制器关闭且没有强制回环时，内核根本不监听，避让没有意义。
+    if (!enabled) {
+      _externalControllerFallback = null;
+      _controllerPortResolved = false;
       return;
     }
+    if (_controllerPortResolved) return;
+
+    final configured = ExternalControllerStatus.open.value;
 
     final separator = configured.lastIndexOf(':');
     if (separator <= 0) return;
@@ -1001,10 +1031,22 @@ class AppController {
       return;
     }
 
+    final controllerEnabled = updateParams.externalController == ExternalControllerStatus.open ||
+        await _forceLoopbackController();
+    await _resolveExternalControllerFallback(enabled: controllerEnabled);
+    final controllerAddress = resolveExternalControllerValue(
+      configured: updateParams.externalController,
+      forceLoopback: controllerEnabled,
+      sessionController: effectiveExternalController,
+      allowLan: updateParams.allowLan,
+    );
     final message = await clashCore.updateConfig(
       updateParams.copyWith.tun(enable: realTunEnable),
+      controllerAddress: controllerAddress,
     );
     if (message.isNotEmpty) throw message;
+    _ref.read(appliedMixedPortProvider.notifier).state = updateParams.mixedPort;
+    _controllerPortResolved = controllerAddress.isNotEmpty;
 
     if (system.isDesktop) {
       final prefs = await preferences.sharedPreferencesCompleter.future;
@@ -1076,13 +1118,17 @@ class AppController {
     // isolate. Cheap enough to keep (a handful of log lines per switch) and it
     // turns the next bug report into a measurement.
     final total = Stopwatch()..start();
-    final configured = await _setupCoreConfig();
+    final configured = await _setupCoreConfig(requireRequestedTun: globalState.isStart);
     final setupMs = total.elapsedMilliseconds;
     if (!configured) {
+      if (_ref.read(currentProfileProvider) != null) throw StateError(appLocalizations.checkError);
       commonPrint.log('[applyProfile] aborted after ${setupMs}ms');
       return;
     }
+    final appliedProfile = _appliedProfileId;
+    if (_ref.read(currentProfileIdProvider) != appliedProfile) return;
     final providers = await clashCore.getExternalProviders();
+    if (_ref.read(currentProfileIdProvider) != appliedProfile) return;
     final providersMs = total.elapsedMilliseconds - setupMs;
     _ref.read(providersProvider.notifier).value = providers;
     await updateGroups(preloadedProviders: providers);
@@ -1134,50 +1180,38 @@ class AppController {
     });
   }
 
-  Future<void> handleChangeProfile({
-    bool hardRestart = false,
-    required String? previousProfileId,
-  }) {
+  String? _appliedProfileId;
+
+  Future<void> handleChangeProfile({required String? previousProfileId}) {
+    final target = _ref.read(currentProfileIdProvider);
     return _coreLifecycleLock.synchronized(() async {
-      if (previousProfileId != _ref.read(currentProfileIdProvider)) {
+      if (target != _ref.read(currentProfileIdProvider)) return;
+      final restoreId = _appliedProfileId ?? previousProfileId;
+      final switching = previousProfileId != target;
+      if (switching) {
         _manualDelayTargets.clear();
         _ref.read(delayDataSourceProvider.notifier).value = {};
       }
-      if (hardRestart) {
-        _ref.read(isRestartingCoreProvider.notifier).state = true;
-        try {
-          await _restartCore();
-        } catch (err) {
-          _reportCoreRestartFailure(err);
-          rethrow;
-        } finally {
-          _ref.read(isRestartingCoreProvider.notifier).state = false;
-        }
-      } else {
+      _ref.read(isApplyingProfileProvider.notifier).state = true;
+      try {
         if (system.isAndroid) {
-          // Best-effort cleanup must not hold the lifecycle lock before apply/start.
-          clashCoreForget(
-            clashCore.closeConnections(),
-            'profile connections cleanup',
-          );
+          clashCoreForget(clashCore.closeConnections(), 'profile connections cleanup');
           clashCoreForget(clashCore.flushDnsCache(), 'profile DNS cleanup');
+          if (switching) await clashCore.refreshProfileTransport();
         }
-        final prevProfileId = previousProfileId;
-        _ref.read(isRestartingCoreProvider.notifier).state = true;
-        try {
-          if (prevProfileId != _ref.read(currentProfileIdProvider)) {
-            await clashCore.refreshProfileTransport();
-          }
-          await _applyProfile();
-        } catch (err) {
+        await _applyProfile();
+        if (switching && system.isDesktop && globalState.isStart &&
+            _ref.read(appSettingProvider).closeConnections) {
+          clashCoreForget(clashCore.closeConnections(), 'profile connections cleanup');
+        }
+      } catch (err) {
+        if (target == _ref.read(currentProfileIdProvider)) {
           await _reportProfileSwitchFailure(
-            failedProfileId: _ref.read(currentProfileIdProvider),
-            restoreProfileId: prevProfileId,
-            error: err,
+            failedProfileId: target, restoreProfileId: restoreId, error: err,
           );
-        } finally {
-          _ref.read(isRestartingCoreProvider.notifier).state = false;
         }
+      } finally {
+        _ref.read(isApplyingProfileProvider.notifier).state = false;
       }
       _ref.read(logsProvider.notifier).value = FixedList(maxLength);
       _ref.read(requestsProvider.notifier).value = FixedList(maxLength);
@@ -1412,11 +1446,16 @@ class AppController {
     }
     _isUpdatingGroups = true;
     final generation = _coreGeneration;
+    final profileId = _ref.read(currentProfileIdProvider);
+    bool isCurrent() => generation == _coreGeneration &&
+        profileId == _ref.read(currentProfileIdProvider) &&
+        (_appliedProfileId == null || profileId == _appliedProfileId);
 
     try {
       final currentGroups = _ref.read(groupsProvider);
 
       final newGroups = await _retryGetProxiesGroups(preloadedProviders);
+      if (!isCurrent()) return;
 
       if (newGroups.isEmpty) {
         _handleUpdateGroupsError(
@@ -1428,6 +1467,7 @@ class AppController {
 
       try {
         final activeMode = await clashCore.getMode();
+        if (!isCurrent()) return;
         final currentMode = _ref.read(patchClashConfigProvider).mode;
         if (activeMode != currentMode) {
           if (DateTime.now().difference(_lastModeChangeTime) >
@@ -1445,6 +1485,7 @@ class AppController {
         commonPrint.log('Failed to sync active mode: $e');
       }
 
+      if (!isCurrent()) return;
       final currentProfile = _ref.read(currentProfileProvider);
       if (currentProfile != null) {
         final selectedMap = Map<String, String>.from(
@@ -2046,60 +2087,63 @@ class AppController {
     _coreDeadTicks = 0;
   }
 
+  Future<bool> _watchdogCoreHealthy() async {
+    final handler = clashCore.clashInterface;
+    if (handler is ClashService) return handler.checkCoreHealth();
+    return handler.hasLiveProcess;
+  }
+
   Future<void> _checkCoreAlive() async {
     if (_coreRestartInFlight) return;
+    final timer = _coreWatchdogTimer;
+    final generation = _coreGeneration;
+    bool stillExpected() =>
+        context.mounted && timer != null && identical(timer, _coreWatchdogTimer) &&
+        generation == _coreGeneration && globalState.isStart &&
+        !globalState.isExiting && !_ref.read(coreBusyProvider) &&
+        _ref.read(connectionTargetProvider) == null;
 
-    // 用户没让内核跑，就不是"意外退出"。
-    if (!globalState.isStart) {
+    if (!stillExpected()) {
       _coreDeadTicks = 0;
-      _coreRestartAttempts = 0;
+      if (!globalState.isStart) _coreRestartAttempts = 0;
       return;
     }
-    if (_ref.read(isRestartingCoreProvider)) {
-      _coreDeadTicks = 0;
-      return;
-    }
-
-    if (clashCore.hasLiveProcess) {
-      _coreDeadTicks = 0;
-      // 活过一次就认为恢复了，下次崩溃重新从最短退避开始。
-      _coreRestartAttempts = 0;
-      return;
-    }
-
-    _coreDeadTicks++;
-    if (_coreDeadTicks < _coreDeadTicksThreshold) return;
-    _coreDeadTicks = 0;
-
-    if (!coreWatchdogWantsRestart(
-      deadTicks: _coreDeadTicksThreshold,
-      attempts: _coreRestartAttempts,
-    )) {
-      commonPrint.log(
-        'core watchdog: giving up after $_coreRestartAttempts attempts',
-      );
-      globalState.showNotifier(appLocalizations.coreAutoRestartFailed);
-      stopCoreWatchdog();
-      return;
-    }
-
-    final delay = _coreRestartBackoff[_coreRestartAttempts];
-    _coreRestartAttempts++;
-    commonPrint.log(
-      'core watchdog: core is gone, restart attempt $_coreRestartAttempts '
-      'after ${delay.inSeconds}s',
-    );
-    if (_coreRestartAttempts == 1) {
-      globalState.showNotifier(appLocalizations.coreAutoRestart);
-    }
-
     _coreRestartInFlight = true;
     try {
-      await Future.delayed(delay);
-      if (!globalState.isStart) return;
-      await restartCore();
+      final healthy = await _watchdogCoreHealthy();
+      if (!stillExpected()) {
+        _coreDeadTicks = 0;
+        return;
+      }
+      if (healthy) {
+        _coreDeadTicks = 0;
+        _coreRestartAttempts = 0;
+        return;
+      }
+      if (++_coreDeadTicks < _coreDeadTicksThreshold) return;
+      _coreDeadTicks = 0;
+      if (!coreWatchdogWantsRestart(
+        deadTicks: _coreDeadTicksThreshold, attempts: _coreRestartAttempts,
+      )) {
+        globalState.showNotifier(appLocalizations.coreAutoRestartFailed);
+        stopCoreWatchdog();
+        return;
+      }
+      await Future<void>.delayed(_coreRestartBackoff[_coreRestartAttempts]);
+      await _coreLifecycleLock.synchronized(() async {
+        if (!stillExpected()) return;
+        if (await _watchdogCoreHealthy()) {
+          _coreRestartAttempts = 0;
+          return;
+        }
+        if (!stillExpected()) return;
+        if (++_coreRestartAttempts == 1) {
+          globalState.showNotifier(appLocalizations.coreAutoRestart);
+        }
+        await restartCore();
+      });
     } catch (err) {
-      commonPrint.log('core watchdog: restart failed: $err');
+      commonPrint.log('core watchdog: $err');
     } finally {
       _coreRestartInFlight = false;
     }
@@ -2172,12 +2216,12 @@ class AppController {
 
     vpn_service.service?.addNativeEventCallback((method, arguments) async {
       if (method == 'vpnStartFailed' && !_isStarting &&
-          !_ref.read(isRestartingCoreProvider)) {
+          !_ref.read(coreBusyProvider)) {
         globalState.showNotifier(appLocalizations.networkErrorRetryLater);
       } else if (method == 'runStateChanged') {
         final state = arguments as String?;
         if (state == 'STOP' && !_isStarting &&
-            !_ref.read(isRestartingCoreProvider) &&
+            !_ref.read(coreBusyProvider) &&
             _ref.read(connectionTargetProvider) == null &&
             _ref.read(runTimeProvider) != null) {
           unawaited(_coreLifecycleLock.synchronized(() async {
