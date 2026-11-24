@@ -9,15 +9,19 @@ class ProfileRecoveryPlan {
   final List<Profile> profiles;
   final Map<String, String> _targetIds;
 
-  factory ProfileRecoveryPlan.exact(List<Profile> incoming) =>
-      ProfileRecoveryPlan._(List.unmodifiable(incoming), {
-        for (final profile in incoming) profile.id: profile.id,
-      });
+  factory ProfileRecoveryPlan.exact(List<Profile> incoming) {
+    _validateUniqueProfileIds(incoming);
+    return ProfileRecoveryPlan._(List.unmodifiable(incoming), {
+      for (final profile in incoming) profile.id: profile.id,
+    });
+  }
 
   factory ProfileRecoveryPlan.compatible(
     List<Profile> incoming,
     List<Profile> local,
   ) {
+    _validateUniqueProfileIds(incoming);
+
     final localById = {for (final profile in local) profile.id: profile};
     final reservedIds = incoming.map((profile) => profile.id).toSet();
     final localBySource = <String, List<Profile>>{};
@@ -92,5 +96,14 @@ class ProfileRecoveryPlan {
       return null;
     }
     return uri.removeFragment().toString();
+  }
+
+  static void _validateUniqueProfileIds(List<Profile> profiles) {
+    final ids = <String>{};
+    for (final profile in profiles) {
+      if (!ids.add(profile.id)) {
+        throw FormatException('Duplicate profile ID in backup: ${profile.id}');
+      }
+    }
   }
 }

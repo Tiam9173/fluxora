@@ -11,6 +11,37 @@ import 'package:fluxora/models/models.dart';
 import 'package:fluxora/state.dart';
 import 'package:flutter/cupertino.dart';
 
+class _DecompressedResponseLimitExceeded extends FormatException {
+  const _DecompressedResponseLimitExceeded()
+    : super('Decompressed response exceeds 64 MiB');
+}
+
+class _ResponseBodyLimitExceeded extends FormatException {
+  const _ResponseBodyLimitExceeded()
+    : super('HTTP response body exceeds 64 MiB');
+}
+
+class _LimitedByteSink extends ByteConversionSinkBase {
+  _LimitedByteSink(this.maxBytes, this.limitExceeded);
+
+  final int maxBytes;
+  final BytesBuilder _builder = BytesBuilder(copy: false);
+
+  Uint8List takeBytes() => _builder.takeBytes();
+  final FormatException limitExceeded;
+
+  @override
+  void add(List<int> chunk) {
+    if (_builder.length + chunk.length > maxBytes) {
+      throw limitExceeded;
+    }
+    _builder.add(chunk);
+  }
+
+  @override
+  void close() {}
+}
+
 /// IP 检测失败的原因。
 ///
 /// 之前所有失败都显示同一句「请尝试手动刷新」，用户分不清是节点不通、内核
@@ -24,6 +55,9 @@ enum IpFailureReason {
 }
 
 class Request {
+  static const _maxDecompressedBytes = 64 * 1024 * 1024;
+  static const _maxResponseBodyBytes = 64 * 1024 * 1024;
+
   /// 最近一次 IP 检测失败的原因；成功时为 null。
   IpFailureReason? lastIpFailureReason;
   late final Dio _dio;
@@ -66,30 +100,40 @@ class Request {
           current.length >= 2 && current[0] == 0x1f && current[1] == 0x8b;
       if (wantGzip || isGzipMagic) {
         if (!isGzipMagic) {
+          if (wantGzip) throw const FormatException('Invalid gzip response');
           break;
         }
+        if (current.length < 20) {
+          throw const FormatException('Truncated gzip response');
+        }
         try {
-          current = Uint8List.fromList(gzip.decode(current));
+          current = _decodeWithLimit(gzip.decoder, current);
           wantGzip = false;
           continue;
-        } catch (_) {
-          break;
+        } on _DecompressedResponseLimitExceeded {
+          rethrow;
+        } catch (error) {
+          throw FormatException('Invalid gzip response: $error');
         }
       }
       if (wantDeflate) {
         try {
-          current = Uint8List.fromList(zlib.decode(current));
+          current = _decodeWithLimit(zlib.decoder, current);
           wantDeflate = false;
           continue;
-        } catch (_) {
+        } on _DecompressedResponseLimitExceeded {
+          rethrow;
+        } catch (zlibError) {
           try {
-            current = Uint8List.fromList(
-              ZLibDecoder(raw: true).convert(current),
-            );
+            current = _decodeWithLimit(ZLibDecoder(raw: true), current);
             wantDeflate = false;
             continue;
-          } catch (_) {
-            break;
+          } on _DecompressedResponseLimitExceeded {
+            rethrow;
+          } catch (rawError) {
+            throw FormatException(
+              'Invalid deflate response: $zlibError; $rawError',
+            );
           }
         }
       }
@@ -104,10 +148,42 @@ class Request {
     return Uint8List.fromList((data as List).cast<int>());
   }
 
+  Uint8List _decodeWithLimit(
+    Converter<List<int>, List<int>> decoder,
+    Uint8List input,
+  ) {
+    final sink = _LimitedByteSink(
+      _maxDecompressedBytes,
+      const _DecompressedResponseLimitExceeded(),
+    );
+    final inputSink = decoder.startChunkedConversion(sink);
+    inputSink.add(input);
+    inputSink.close();
+    return sink.takeBytes();
+  }
+
+  Future<Uint8List> _readResponseBody(ResponseBody responseBody) async {
+    final sink = _LimitedByteSink(
+      _maxResponseBodyBytes,
+      const _ResponseBodyLimitExceeded(),
+    );
+    try {
+      await for (final chunk in responseBody.stream) {
+        sink.add(chunk);
+      }
+      return sink.takeBytes();
+    } finally {
+      // Close the adapter response when a size-limit error ends the stream early.
+      // ignore: invalid_use_of_internal_member
+      responseBody.close();
+    }
+  }
+
   Future<Response> _getResponseForUrl(
     String url,
-    ResponseType responseType,
-  ) async {
+    ResponseType responseType, {
+    CancelToken? cancelToken,
+  }) async {
     String? userInfo;
     String requestUrl = url;
 
@@ -137,12 +213,15 @@ class Request {
       headers['Authorization'] = 'Basic $auth';
     }
 
-    final response = await _clashDio.get(
+    final response = await _clashDio.get<ResponseBody>(
       requestUrl,
-      options: Options(responseType: ResponseType.bytes, headers: headers),
+      options: Options(responseType: ResponseType.stream, headers: headers),
+      cancelToken: cancelToken,
     );
 
-    final rawBytes = _bytesFromResponse(response);
+    final body = response.data;
+    if (body == null) throw const FormatException('Empty HTTP response body');
+    final rawBytes = await _readResponseBody(body);
     final decompressedBytes = _decompressIfNeeded(rawBytes, response.headers);
 
     if (responseType == ResponseType.plain) {
@@ -171,23 +250,38 @@ class Request {
     }
   }
 
-  Future<Response> getFileResponseForUrl(String url) async {
-    return _getResponseForUrl(url, ResponseType.bytes);
+  Future<Response> getFileResponseForUrl(
+    String url, {
+    CancelToken? cancelToken,
+  }) async {
+    return _getResponseForUrl(
+      url,
+      ResponseType.bytes,
+      cancelToken: cancelToken,
+    );
   }
 
-  Future<Response> getTextResponseForUrl(String url) async {
-    return _getResponseForUrl(url, ResponseType.plain);
+  Future<Response> getTextResponseForUrl(
+    String url, {
+    CancelToken? cancelToken,
+  }) async {
+    return _getResponseForUrl(
+      url,
+      ResponseType.plain,
+      cancelToken: cancelToken,
+    );
   }
 
   Future<MemoryImage?> getImage(String url) async {
     if (url.isEmpty) return null;
-    final response = await _dio.get<Uint8List>(
+    final response = await _dio.get<ResponseBody>(
       url,
-      options: Options(responseType: ResponseType.bytes),
+      options: Options(responseType: ResponseType.stream),
     );
-    final data = response.data;
-    if (data == null) return null;
-    final bytes = _decompressIfNeeded(data, response.headers);
+    final body = response.data;
+    if (body == null) return null;
+    final rawBytes = await _readResponseBody(body);
+    final bytes = _decompressIfNeeded(rawBytes, response.headers);
     return MemoryImage(bytes);
   }
 
@@ -208,7 +302,9 @@ class Request {
       );
       final xml = response.data.toString();
       final current = globalState.packageInfo.version;
-      for (final match in RegExp(r'<entry>([\s\S]*?)</entry>').allMatches(xml)) {
+      for (final match in RegExp(
+        r'<entry>([\s\S]*?)</entry>',
+      ).allMatches(xml)) {
         final entry = match.group(1) ?? '';
         final title = RegExp(
           r'<title>([^<]*)</title>',
@@ -225,9 +321,11 @@ class Request {
         final link = RegExp(
           r'<link[^>]*href="([^"]+)"',
         ).firstMatch(entry)?.group(1);
-        final content = RegExp(
-          r'<content[^>]*>([\s\S]*?)</content>',
-        ).firstMatch(entry)?.group(1) ?? '';
+        final content =
+            RegExp(
+              r'<content[^>]*>([\s\S]*?)</content>',
+            ).firstMatch(entry)?.group(1) ??
+            '';
         return {
           'tag_name': title,
           'html_url': link ?? 'https://github.com/$repository/releases',
@@ -303,7 +401,9 @@ class Request {
   String _builtinPrimaryIpSource() {
     final locale = Intl.getCurrentLocale().toLowerCase();
     final isZh = locale.startsWith('zh');
-    return isZh ? 'http://ip-api.com/json/?lang=zh-CN' : 'http://ip-api.com/json';
+    return isZh
+        ? 'http://ip-api.com/json/?lang=zh-CN'
+        : 'http://ip-api.com/json';
   }
 
   // Reads the user-configured network detection URL (primary source).
@@ -475,9 +575,7 @@ class Request {
           })
           .catchError((e) {
             final elapsed = DateTime.now().difference(startedAt).inMilliseconds;
-            commonPrint.log(
-              '[ip] $url -> ${e.runtimeType}: $e (${elapsed}ms)',
-            );
+            commonPrint.log('[ip] $url -> ${e.runtimeType}: $e (${elapsed}ms)');
             if (e is DioException) {
               switch (e.type) {
                 case DioExceptionType.connectionTimeout:
@@ -504,7 +602,9 @@ class Request {
         final res = preferredInfo();
         if (res == null) {
           lastIpFailureReason = IpFailureReason.timeout;
-          commonPrint.log('[ip] overall timeout after ${effectiveTimeout.inSeconds}s');
+          commonPrint.log(
+            '[ip] overall timeout after ${effectiveTimeout.inSeconds}s',
+          );
         }
         return Result.success(res);
       },
@@ -542,7 +642,8 @@ class Request {
   }) async {
     final sources = _getPrimaryIpSources();
     final primary = sources.first;
-    final preferIpv6 = globalState.config.patchClashConfig.ipv6 &&
+    final preferIpv6 =
+        globalState.config.patchClashConfig.ipv6 &&
         (primary == defaultNetworkDetectionUrl ||
             primary == _builtinPrimaryIpSource());
     return _withRetries(

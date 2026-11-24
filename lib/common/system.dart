@@ -17,6 +17,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart';
 import 'package:synchronized/synchronized.dart';
+import 'package:win32/win32.dart' as win32;
 
 class System {
   static System? _instance;
@@ -67,13 +68,7 @@ class System {
 
   Future<bool> checkIsAdmin() async {
     final corePath = appPath.corePath;
-    if (system.isWindows) {
-      if (windows?.isElevated ?? false) {
-        return true;
-      }
-      final result = await windows?.checkService();
-      return result == WindowsHelperServiceStatus.running;
-    }
+    if (system.isWindows) return windows?.isElevated ?? false;
 
     if (system.isMacOS) {
       final result = await Process.run('stat', ['-f', '%Su:%Sg %Sp', corePath]);
@@ -94,14 +89,16 @@ class System {
     return true;
   }
 
-  Future<AuthorizeCode> authorizeCore() async {
+  Future<AuthorizeCode> authorizeCore({
+    bool currentCoreUsesHelper = false,
+  }) async {
     if (system.isAndroid) return AuthorizeCode.none;
 
     if (await checkIsAdmin()) return AuthorizeCode.none;
 
     if (system.isWindows) {
-      if (await windows?._isHelperHealthy() ?? false) return AuthorizeCode.none;
-      final result = await windows?.registerService();
+      if (currentCoreUsesHelper) return AuthorizeCode.none;
+      final result = await windows?.registerService(allowElevation: true);
       return result == true ? AuthorizeCode.success : AuthorizeCode.error;
     }
 
@@ -442,6 +439,60 @@ class Windows {
     return result > 32;
   }
 
+  String? _systemExecutable(String name) {
+    final buffer = calloc<Uint16>(win32.MAX_PATH).cast<Utf16>();
+    try {
+      final length = win32.GetSystemDirectory(buffer, win32.MAX_PATH);
+      if (length <= 0 || length >= win32.MAX_PATH) return null;
+      return join(buffer.toDartString(length: length), name);
+    } finally {
+      calloc.free(buffer);
+    }
+  }
+
+  Future<bool> _runElevatedHelperCommand(String executable, String args) async {
+    final command = _systemExecutable(executable);
+    if (command == null) return false;
+    final arena = Arena();
+    try {
+      final info = arena<win32.SHELLEXECUTEINFO>();
+      info.ref
+        ..cbSize = sizeOf<win32.SHELLEXECUTEINFO>()
+        ..fMask = 0x140 // SEE_MASK_NOCLOSEPROCESS | SEE_MASK_NOASYNC
+        ..lpVerb = 'runas'.toNativeUtf16(allocator: arena)
+        ..lpFile = command.toNativeUtf16(allocator: arena)
+        ..lpParameters = args.toNativeUtf16(allocator: arena)
+        ..lpDirectory = dirname(command).toNativeUtf16(allocator: arena)
+        ..nShow = win32.SW_HIDE;
+      if (win32.ShellExecuteEx(info) == 0 || info.ref.hProcess == 0) {
+        commonPrint.log('Helper elevation failed: ${win32.GetLastError()}');
+        return false;
+      }
+      final process = info.ref.hProcess;
+      final exitCode = arena<Uint32>();
+      try {
+        for (var attempt = 0; attempt < 150; attempt++) {
+          final status = win32.WaitForSingleObject(process, 0);
+          if (status == win32.WAIT_OBJECT_0) {
+            if (win32.GetExitCodeProcess(process, exitCode) == 0) return false;
+            if (exitCode.value != 0) {
+              commonPrint.log('Helper command failed: ${exitCode.value}');
+            }
+            return exitCode.value == 0;
+          }
+          if (status != win32.WAIT_TIMEOUT) return false;
+          await Future<void>.delayed(const Duration(milliseconds: 200));
+        }
+        commonPrint.log('Helper command timed out');
+        return false;
+      } finally {
+        win32.CloseHandle(process);
+      }
+    } finally {
+      arena.releaseAll();
+    }
+  }
+
   Future<WindowsHelperServiceStatus> checkService() async {
     await HelperAuthManager.ensureAuthKey();
     final result = await _sc(['query', appHelperService]);
@@ -456,6 +507,7 @@ class Windows {
   }
 
   Future<bool>? _registerServiceInFlight;
+  bool _registerServiceAllowsElevation = false;
 
   /// B2 — did **this instance** issue the `sc start` that made the helper run?
   ///
@@ -511,6 +563,9 @@ class Windows {
   /// Test-only: replaces the helper IPC ping (the named pipe).
   @visibleForTesting
   static Future<bool> Function()? helperPingOverrideForTest;
+
+  @visibleForTesting
+  static Future<bool> Function()? helperElevatedStartOverrideForTest;
 
   /// Test-only: replaces the destructive (re)install sequence, which otherwise
   /// runs `runas` and raises UAC.
@@ -569,27 +624,29 @@ class Windows {
     return Process.run('sc', args);
   }
 
-  Future<bool> registerService() {
-    return _registerServiceInFlight ??= _registerService().whenComplete(
-      () => _registerServiceInFlight = null,
-    );
+  Future<bool> registerService({bool allowElevation = false}) async {
+    final inFlight = _registerServiceInFlight;
+    if (inFlight != null) {
+      if (!allowElevation || _registerServiceAllowsElevation) return inFlight;
+      if (await inFlight) return true;
+      return registerService(allowElevation: true);
+    }
+    _registerServiceAllowsElevation = allowElevation;
+    return _registerServiceInFlight =
+        _registerService(allowElevation: allowElevation).whenComplete(
+          () => _registerServiceInFlight = null,
+        );
   }
 
   /// H2-A — start-if-needed, never rebuild-if-stopped.
   ///
-  /// Before this, *any* failed health check fell through to
-  /// [_configureHelperService], which does `sc stop` → `sc delete` →
-  /// `sc create` → `reg add` → `sc start` under `runas`. A service that was
-  /// merely stopped (the normal state right after an app exit) therefore
-  /// triggered a full reinstall and a UAC prompt on every launch.
-  ///
-  /// Now only [HelperStartOutcome.notInstalled] reaches that path. A stopped
+  /// Only [HelperStartOutcome.notInstalled] reaches first-time setup. A stopped
   /// service is started in place; a running-but-unhealthy or
   /// identity-mismatched service is left untouched.
-  Future<bool> _registerService() async {
+  Future<bool> _registerService({required bool allowElevation}) async {
     if (!skipAuthKeyForTest) await HelperAuthManager.ensureAuthKey();
 
-    switch (await _ensureHelperRunning()) {
+    switch (await _ensureHelperRunning(allowElevation: allowElevation)) {
       case HelperStartOutcome.reused:
       case HelperStartOutcome.started:
         return true;
@@ -623,7 +680,9 @@ class Windows {
   Future<HelperStartOutcome> ensureHelperRunningForTest() =>
       _ensureHelperRunning();
 
-  Future<HelperStartOutcome> _ensureHelperRunning() async {
+  Future<HelperStartOutcome> _ensureHelperRunning({
+    bool allowElevation = false,
+  }) async {
     final query = await _sc(['query', appHelperService]);
 
     if (query.exitCode != 0) {
@@ -642,9 +701,9 @@ class Windows {
           : HelperStartOutcome.queryFailed;
     }
 
-    final out = query.stdout.toString();
+    final state = parseServiceState(query.stdout.toString());
 
-    if (out.contains('RUNNING')) {
+    if (state == 4) {
       if (await _pingHelper()) {
         // Running, but not because of us — see [_helperStartIssuedByUs].
         _helperReused = true;
@@ -653,13 +712,15 @@ class Windows {
       return HelperStartOutcome.unhealthy;
     }
 
-    if (out.contains('START_PENDING') || out.contains('STOP_PENDING')) {
+    if (state == 2 || state == 3) {
       // Never treat a transition as "stopped" — that is what used to trigger
       // the rebuild. Wait, bounded, and report honestly if it never lands.
       return await _waitForHelperHealthy()
           ? HelperStartOutcome.started
           : HelperStartOutcome.startFailed;
     }
+
+    if (state != 1) return HelperStartOutcome.queryFailed;
 
     // Installed and stopped. Verify it is *our* helper before touching it.
     if (!await _isHelperIdentityTrusted()) {
@@ -673,9 +734,16 @@ class Windows {
           start.exitCode == 5 ||
           text.contains('access is denied') ||
           text.contains('拒绝访问');
-      return denied
-          ? HelperStartOutcome.accessDenied
-          : HelperStartOutcome.startFailed;
+      if (!denied) {
+        commonPrint.log('Helper start failed: ${start.exitCode}');
+        return HelperStartOutcome.startFailed;
+      }
+      if (!allowElevation) return HelperStartOutcome.accessDenied;
+      final elevatedStart = helperElevatedStartOverrideForTest;
+      final started = elevatedStart != null
+          ? await elevatedStart()
+          : await _runElevatedHelperCommand('sc.exe', 'start "$appHelperService"');
+      if (!started) return HelperStartOutcome.accessDenied;
     }
 
     // The only place ownership is granted: we are the reason it is running.
@@ -946,15 +1014,17 @@ class Windows {
   ) async {
     elevatedHelperCallCountForTest++;
 
+    final unsafePath = RegExp(r'[%"\r\n]');
+    if (unsafePath.hasMatch(sourceDir) || unsafePath.hasMatch(targetDir)) {
+      return false;
+    }
     final command = [
-      '/c',
       'if',
       'not',
       'exist',
       '"$targetDir"',
-      'mkdir',
-      '"$targetDir"',
-      '&&',
+      '(mkdir "$targetDir")',
+      '&',
       for (final name in kHelperAssetNames) ...<String>[
         'copy',
         '/y',
@@ -967,7 +1037,7 @@ class Windows {
       '0',
     ].join(' ');
 
-    return runas('cmd.exe', command);
+    return _runElevatedHelperCommand('cmd.exe', '/d /v:off /s /c "$command"');
   }
 
   Future<bool> _configureHelperService() async {
@@ -988,7 +1058,9 @@ class Windows {
         (protectedDir == null || protectedDir.isEmpty
             ? null
             : '$protectedDir\\$kHelperExeName');
-    if (binPath == null || binPath.isEmpty) {
+    if (binPath == null ||
+        binPath.isEmpty ||
+        RegExp(r'[%"\r\n]').hasMatch(binPath)) {
       commonPrint.log(
         'SEC-P0-01: no protected helper path available; refusing to install',
       );
@@ -998,27 +1070,18 @@ class Windows {
     final serviceRegistryPath =
         'HKLM\\SYSTEM\\CurrentControlSet\\Services\\$appHelperService';
 
+    final sc = _systemExecutable('sc.exe');
+    final reg = _systemExecutable('reg.exe');
+    if (sc == null || reg == null) return false;
+
     final command = [
-      '/c',
-      'sc',
-      'stop',
-      appHelperService,
-      '>nul',
-      '2>&1',
-      '&',
-      'sc',
-      'delete',
-      appHelperService,
-      '>nul',
-      '2>&1',
-      '&',
-      'sc',
+      '"$sc"',
       'create',
       appHelperService,
-      'binPath= "$binPath"',
+      'binPath= "${r'\"'}$binPath${r'\"'}"',
       serviceStartTypeArg,
       '&&',
-      'reg',
+      '"$reg"',
       'add',
       '"$serviceRegistryPath"',
       '/v',
@@ -1029,12 +1092,12 @@ class Windows {
       '"HELPER_AUTH_KEY=$authKey\\0HELPER_SERVICE_NAME=$appHelperService\\0HELPER_PIPE_NAME=$helperPipeName"',
       '/f',
       '&&',
-      'sc',
+      '"$sc"',
       'start',
       appHelperService,
     ].join(' ');
 
-    return runas('cmd.exe', command);
+    return _runElevatedHelperCommand('cmd.exe', '/d /v:off /s /c "$command"');
   }
 
   /// H2-C: `demand` for every identity. Release used to be `auto`, which made

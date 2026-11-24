@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/common/system.dart';
+import 'support/helper_path_fixture.dart';
 
 /// H2-A — the helper **start recovery** state machine.
 ///
@@ -28,6 +29,15 @@ void main() {
   }
 
   TestWidgetsFlutterBinding.ensureInitialized();
+  late HelperPathProviderFixture pathFixture;
+
+  setUpAll(() async {
+    pathFixture = await HelperPathProviderFixture.install();
+  });
+
+  tearDownAll(() async {
+    await pathFixture.dispose();
+  });
 
   ProcessResult sc(int exitCode, String stdout) =>
       ProcessResult(0, exitCode, stdout, '');
@@ -41,6 +51,7 @@ void main() {
     scCalls = <List<String>>[];
     Windows.helperPingOverrideForTest = null;
     Windows.configureHelperServiceOverrideForTest = null;
+    Windows.deployHelperAssetsOverrideForTest = null;
     // `appPath` needs `path_provider`, which a plain `test()` cannot serve, so
     // the identity check reads this instead. Every test starts with a trusted
     // path unless it deliberately swaps in a foreign one.
@@ -49,14 +60,18 @@ void main() {
     // neither of which a plain `test()` can serve.
     Windows.skipAuthKeyForTest = true;
     Windows.scRunnerForTest = null;
+    Windows.deployHelperAssetsOverrideForTest = null;
   });
 
   tearDown(() {
+    Windows.helperElevatedStartOverrideForTest = null;
     Windows.scRunnerForTest = null;
     Windows.helperPingOverrideForTest = null;
     Windows.configureHelperServiceOverrideForTest = null;
+    Windows.deployHelperAssetsOverrideForTest = null;
     Windows.helperIdentityPathOverrideForTest = null;
     Windows.skipAuthKeyForTest = false;
+    Windows.deployHelperAssetsOverrideForTest = null;
   });
 
   /// Installs a fake `sc` that answers `query` / `qc` / `start` from [handler]
@@ -143,6 +158,33 @@ void main() {
       expect(verbs(), isNot(contains('config')));
     });
 
+    test('explicit elevation starts only the trusted stopped helper', () async {
+      var elevatedStarts = 0;
+      Windows.helperElevatedStartOverrideForTest = () async {
+        elevatedStarts++;
+        return true;
+      };
+      Windows.helperPingOverrideForTest = () async => true;
+      fakeSc((args) {
+        return switch (args.first) {
+          'query' =>
+            elevatedStarts == 0
+                ? sc(0, 'STATE : 1  STOPPED')
+                : sc(0, 'STATE : 4  RUNNING'),
+          'qc' => sc(0, 'BINARY_PATH_NAME : "$trustedHelperPath"'),
+          'start' => sc(5, 'Access is denied.'),
+          _ => throw StateError('Unexpected SCM command ${args.first}'),
+        };
+      });
+
+      final helper = Windows();
+      final ordinary = helper.registerService();
+      final explicit = helper.registerService(allowElevation: true);
+      expect(await ordinary, isFalse);
+      expect(await explicit, isTrue);
+      expect(elevatedStarts, 1);
+    });
+
     test('T4 — running but unhealthy is reported, not rebuilt', () async {
       fakeSc(
         (args) =>
@@ -223,7 +265,9 @@ void main() {
     });
 
     test('T8 — concurrent register runs the sequence once', () async {
+      Windows.deployHelperAssetsOverrideForTest = () async => true;
       var configureCalls = 0;
+      Windows.deployHelperAssetsOverrideForTest = () async => true;
       fakeSc(
         (args) => args.first == 'query'
             ? sc(1060, 'The specified service does not exist')
@@ -252,7 +296,9 @@ void main() {
 
   group('H2-A — first install stays the explicit path', () {
     test('only notInstalled reaches the configure sequence', () async {
+      Windows.deployHelperAssetsOverrideForTest = () async => true;
       var configureCalls = 0;
+      Windows.deployHelperAssetsOverrideForTest = () async => true;
       fakeSc(
         (args) => args.first == 'query'
             ? sc(1060, 'The specified service does not exist')

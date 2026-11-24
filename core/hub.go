@@ -5,6 +5,7 @@ import (
 	"context"
 	"core/state"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -24,6 +25,7 @@ import (
 	"github.com/metacubex/mihomo/component/age"
 	"github.com/metacubex/mihomo/component/geodata"
 	"github.com/metacubex/mihomo/component/mmdb"
+	"github.com/metacubex/mihomo/component/profile/cachefile"
 	"github.com/metacubex/mihomo/component/resolver"
 	"github.com/metacubex/mihomo/component/updater"
 	"github.com/metacubex/mihomo/config"
@@ -219,6 +221,10 @@ func handleChangeProxy(data string, fn func(string string)) {
 			fn(err.Error())
 			return
 		}
+		if params == nil || params.GroupName == nil || params.ProxyName == nil {
+			fn("Missing group or node")
+			return
+		}
 		groupName := *params.GroupName
 		proxyName := *params.ProxyName
 		group, ok := tunnel.Proxies()[groupName]
@@ -240,6 +246,9 @@ func handleChangeProxy(data string, fn func(string string)) {
 		if err != nil {
 			fn(err.Error())
 			return
+		}
+		if params.Persist {
+			cachefile.Cache().SetSelected(groupName, proxyName)
 		}
 
 		fn("")
@@ -335,6 +344,7 @@ func handleAsyncTestDelay(paramsString string, fn func(string)) {
 		delay, err := proxy.URLTest(ctx, testUrl, expectedStatus)
 		if err != nil || delay == 0 {
 			delayData.Value = -1
+			delayData.TimedOut = errors.Is(err, context.DeadlineExceeded)
 			data, _ := json.Marshal(delayData)
 			fn(string(data))
 			return false, nil

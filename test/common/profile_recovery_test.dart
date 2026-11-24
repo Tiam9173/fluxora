@@ -43,6 +43,29 @@ void main() {
     expect(plan.targetId('second'), 'second');
   });
 
+  test(
+    'duplicate profile IDs are rejected without collapsing subscriptions',
+    () {
+      expect(
+        () => ProfileRecoveryPlan.compatible([
+          _profile('duplicate', url),
+          _profile('duplicate', 'https://other.test/sub'),
+        ], const []),
+        throwsA(isA<FormatException>()),
+      );
+    },
+  );
+
+  test('duplicate profile IDs are rejected in exact recovery', () {
+    expect(
+      () => ProfileRecoveryPlan.exact([
+        _profile('duplicate', url),
+        _profile('duplicate', 'https://other.test/sub'),
+      ]),
+      throwsA(isA<FormatException>()),
+    );
+  });
+
   test('exact ID wins and a different subscription token is not merged', () {
     final exact = _profile('local', url, label: 'Restored label');
     final plan = ProfileRecoveryPlan.compatible(

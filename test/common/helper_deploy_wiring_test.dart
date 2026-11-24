@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/common/system.dart';
+import 'support/helper_path_fixture.dart';
 
 /// SEC-P0-01 — the deploy step wired into the first-install path.
 ///
@@ -30,6 +31,15 @@ void main() {
   }
 
   TestWidgetsFlutterBinding.ensureInitialized();
+  late HelperPathProviderFixture pathFixture;
+
+  setUpAll(() async {
+    pathFixture = await HelperPathProviderFixture.install();
+  });
+
+  tearDownAll(() async {
+    await pathFixture.dispose();
+  });
 
   ProcessResult sc(int exitCode, String stdout, [String stderr = '']) =>
       ProcessResult(0, exitCode, stdout, stderr);
@@ -131,10 +141,15 @@ void main() {
   test(
     'a verified deploy reaches configure exactly once, then health',
     () async {
-      fakeSc(
-        (args) => args.first == 'query' ? sc(1060, '', '1060') : sc(0, ''),
-      );
-
+      var configured = false;
+      fakeSc((args) {
+        if (args.first == 'query') {
+          return configured
+              ? sc(0, 'STATE : 4  RUNNING')
+              : sc(1060, '', '1060');
+        }
+        return sc(0, '');
+      });
       var deployCalls = 0;
       var configureCalls = 0;
       var pingCalls = 0;
@@ -145,6 +160,7 @@ void main() {
       };
       Windows.configureHelperServiceOverrideForTest = () async {
         configureCalls++;
+        configured = true;
         return true;
       };
       Windows.helperPingOverrideForTest = () async {

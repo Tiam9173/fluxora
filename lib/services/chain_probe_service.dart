@@ -474,7 +474,7 @@ class ChainProbeService implements IChainProbeService {
       final effectiveTimeout = timeout ?? const Duration(seconds: 4);
       final delayFuture = clashCore.getDelay(testUrl, proxyName);
       final res = await delayFuture.timeout(effectiveTimeout);
-      return res.value;
+      return res.timedOut == true ? null : res.value;
     } on TimeoutException {
       return null;
     } catch (_) {

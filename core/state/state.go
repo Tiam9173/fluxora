@@ -1,6 +1,10 @@
 package state
 
-import "net/netip"
+import (
+	"net"
+	"net/netip"
+	"strings"
+)
 
 var DefaultIpv4Address = "172.19.100.1/30"
 var DefaultDnsAddress = "172.19.100.2"
@@ -24,10 +28,10 @@ type AndroidVpnOptions struct {
 }
 
 type AccessControl struct {
-	Enable            bool     `json:"enable"`
-	Mode              string   `json:"mode"`
-	AcceptList        []string `json:"acceptList"`
-	RejectList        []string `json:"rejectList"`
+	Enable     bool     `json:"enable"`
+	Mode       string   `json:"mode"`
+	AcceptList []string `json:"acceptList"`
+	RejectList []string `json:"rejectList"`
 }
 
 type AndroidVpnRawOptions struct {
@@ -51,8 +55,27 @@ var CurrentState = &State{
 	CurrentProfileName:  "",
 }
 
-
-
 func GetDnsServerAddress() string {
 	return DefaultDnsAddress
+}
+
+func AndroidDNSHijackAddresses(configured []string, dnsEnabled bool) []string {
+	addresses := []string{net.JoinHostPort(GetDnsServerAddress(), "53")}
+	if dnsEnabled {
+		addresses = append(addresses, configured...)
+	}
+	return addresses
+}
+
+func AndroidSystemDNSServers(value string) []string {
+	stub, _ := netip.ParseAddr(GetDnsServerAddress())
+	var servers []string
+	for _, entry := range strings.Split(value, ",") {
+		endpoint, err := netip.ParseAddrPort(strings.TrimSpace(entry))
+		if err != nil || endpoint.Port() == 0 || endpoint.Addr().Unmap() == stub {
+			continue
+		}
+		servers = append(servers, endpoint.String())
+	}
+	return servers
 }

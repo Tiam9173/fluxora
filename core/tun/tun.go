@@ -5,12 +5,10 @@ package tun
 import "C"
 import (
 	"core/state"
-	"github.com/metacubex/mihomo/constant"
 	LC "github.com/metacubex/mihomo/listener/config"
 	"github.com/metacubex/mihomo/listener/sing_tun"
 	"github.com/metacubex/mihomo/log"
 	"github.com/metacubex/mihomo/tunnel"
-	"net"
 	"net/netip"
 )
 
@@ -24,7 +22,7 @@ type Props struct {
 	Dns6     string `json:"dns6"`
 }
 
-func Start(fd int, device string, stack constant.TUNStack, disableIcmpForwarding bool, mtu uint32, ipv6Enabled bool) (*sing_tun.Listener, error) {
+func Start(fd int, config LC.Tun, ipv6Enabled, dnsEnabled bool) (*sing_tun.Listener, error) {
 	var prefix4 []netip.Prefix
 	tempPrefix4, err := netip.ParsePrefix(state.DefaultIpv4Address)
 	if err != nil {
@@ -42,26 +40,23 @@ func Start(fd int, device string, stack constant.TUNStack, disableIcmpForwarding
 		prefix6 = append(prefix6, tempPrefix6)
 	}
 
-	var dnsHijack []string
-	dnsHijack = append(dnsHijack, net.JoinHostPort(state.GetDnsServerAddress(), "53"))
-
-	validMtu := mtu
+	validMtu := uint32(config.MTU)
 	if validMtu < 1280 || validMtu > 65535 {
 		validMtu = 1480
 	}
 
 	options := LC.Tun{
 		Enable:                true,
-		Device:                device,
-		Stack:                 stack,
-		DNSHijack:             dnsHijack,
+		Device:                config.Device,
+		Stack:                 config.Stack,
+		DNSHijack:             state.AndroidDNSHijackAddresses(config.DNSHijack, dnsEnabled),
 		AutoRoute:             false,
 		AutoDetectInterface:   false,
 		Inet4Address:          prefix4,
 		Inet6Address:          prefix6,
 		MTU:                   validMtu,
 		FileDescriptor:        fd,
-		DisableICMPForwarding: disableIcmpForwarding,
+		DisableICMPForwarding: config.DisableICMPForwarding,
 	}
 
 	listener, err := sing_tun.New(options, tunnel.Tunnel)

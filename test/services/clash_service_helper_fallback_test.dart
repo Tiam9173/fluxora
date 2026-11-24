@@ -1,8 +1,10 @@
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluxora/clash/service.dart';
 import 'package:fluxora/common/common.dart';
+import 'package:fluxora/l10n/l10n.dart';
 // Test-only: both are transitive dependencies of `path_provider`. `AppPath`
 // resolves its temp/download dirs through it, and the platform interface throws
 // before any channel mock can answer in a VM test.
@@ -54,6 +56,7 @@ void main() {
   ClashService? service;
 
   setUpAll(() async {
+    await AppLocalizations.load(const Locale('en'));
     sandbox = Directory.systemTemp.createTempSync('fluxora_p7d2r2_path_');
     PathProviderPlatform.instance = _FakePathProviderPlatform(sandbox);
   });
@@ -211,6 +214,22 @@ void main() {
       expect(launches, [appPath.corePath], reason: 'launched exactly once');
     }, skip: Platform.isWindows ? false : _windowsOnly);
 
+    test('TUN restart refuses an unprivileged fallback', () async {
+      var directLaunches = 0;
+      ClashService.startHooksForTest = ClashServiceStartHooks(
+        registerService: () async => true,
+        startCore: ({required corePath, required arg, required homeDir}) async =>
+            false,
+        launchCore: (corePath, arg, environment) async {
+          directLaunches++;
+        },
+      );
+      final service = await startService();
+      await expectLater(service.reStart(requireHelper: true), throwsStateError);
+      expect(directLaunches, 0);
+      expect(service.hasLiveProcess, isFalse);
+    }, skip: Platform.isWindows ? false : _windowsOnly);
+
     test('a successful helper start never launches a second core', () async {
       expect(Platform.isWindows, isTrue, reason: 'drives the Windows branch');
 
@@ -236,6 +255,8 @@ void main() {
       expect(helperCalls, 1, reason: 'the helper started the core');
       expect(launches, 0, reason: 'no fallback when the helper succeeded');
       expect(s.process, isNull);
+      expect(s.usesHelper, isTrue);
+      expect(s.hasLiveProcess, isTrue);
       expect(
         s.isStarting,
         isFalse,

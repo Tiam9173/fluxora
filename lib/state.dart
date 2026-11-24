@@ -49,6 +49,30 @@ String resolveExternalControllerValue({
   return sessionController ?? ExternalControllerStatus.open.value;
 }
 
+({String endpoint, String secret}) applyExternalControllerConfig(
+  Map<String, dynamic> rawConfig, {
+  required ExternalControllerStatus configured,
+  required bool forceLoopback,
+  String? sessionController,
+  String? configuredSecret,
+}) {
+  final endpoint = resolveExternalControllerValue(
+    configured: configured,
+    forceLoopback: forceLoopback,
+    sessionController: sessionController,
+  );
+  final secret = configuredSecret == null || configuredSecret.isEmpty
+      ? rawConfig['secret']?.toString() ?? ''
+      : configuredSecret;
+  rawConfig['external-controller'] = endpoint;
+  if (secret.isEmpty) {
+    rawConfig.remove('secret');
+  } else {
+    rawConfig['secret'] = secret;
+  }
+  return (endpoint: endpoint, secret: secret);
+}
+
 class GlobalState {
   static GlobalState? _instance;
   Map<CacheTag, FixedMap<String, double>> computeHeightMapCache = {};
@@ -301,7 +325,7 @@ class GlobalState {
 
   bool get isAndroidTV => _isAndroidTV ?? false;
 
-  String get ua => config.patchClashConfig.globalUa ?? packageInfo.ua;
+  String get ua => subscriptionUserAgent(config.patchClashConfig.globalUa);
 
   Future<void> startUpdateTasks([UpdateTasks? tasks]) async {
     if (tasks != null) {
@@ -459,11 +483,12 @@ class GlobalState {
     await clashCore.requestGc();
   }
 
-  Future<void> handleStart([
+  Future<void> handleStart({
     UpdateTasks? tasks,
     bool includeVpnService = true,
     Completer<void>? cancellation,
-  ]) async {
+    Duration vpnStartTimeout = Service.defaultVpnStartTimeout,
+  }) async {
     final nativeService = includeVpnService ? service : null;
     try {
       final started = system.isAndroid && isService
@@ -472,6 +497,7 @@ class GlobalState {
       if (started != true) throw StateError(appLocalizations.checkError);
       if (nativeService != null &&
           !await nativeService.waitForVpnStart(
+            timeout: vpnStartTimeout,
             cancellation: cancellation?.future,
           )) {
         if (cancellation?.isCompleted == true) {
@@ -888,10 +914,7 @@ class GlobalState {
             config.networkProps.realBypassPrivateRouteAddress,
       ),
     );
-    // 通知栏切换卡片走的是内核的 HTTP 接口，控制器必须是开着的。用户关掉
-    // 「外部控制器」时仍然绑到本机回环地址：只有本机进程能访问，和"对局域网
-    // 开放"是两件事，后者才由 allowLan 控制。
-    // 卡片功能依赖内核 HTTP 接口；用户可以在设置里关掉这个强制开启。
+    // allow-lan 只控制代理入口。回环控制器是独立设置。
     //
     // 这里必须能容忍"读不到"：没有 SharedPreferences 插件时（单元测试、
     // 早期启动）那个 future 永远不会完成，一旦无条件 await，配置生成就会
@@ -906,28 +929,17 @@ class GlobalState {
     }
     // 用会话里实际生效的地址：控制器端口被占用时会被避让到别的端口，这里
     // 若还写配置里的 9090，内核监听的和 App/通知栏卡片连的就不是同一个端口。
-    final controllerValue = resolveExternalControllerValue(
+    final controller = applyExternalControllerConfig(
+      rawConfig,
       configured: realPatchConfig.externalController,
       forceLoopback: forceLoopback,
       sessionController: sessionExternalController,
+      configuredSecret: realPatchConfig.secret,
     );
-    rawConfig['external-controller'] = realPatchConfig.allowLan
-        ? controllerValue.replaceAll('127.0.0.1', '0.0.0.0')
-        : controllerValue;
-    {
-      final secret = realPatchConfig.secret;
-      if (secret != null && secret.isNotEmpty) {
-        rawConfig['secret'] = secret;
-      }
-      // 通知栏切换卡片是原生 Activity，它不跑 Flutter，拿不到这份配置。
-      // 把地址和密钥写进 SharedPreferences，原生侧直接读。
-      unawaited(
-        _persistCoreEndpoint(
-          rawConfig['external-controller']?.toString(),
-          realPatchConfig.secret,
-        ),
-      );
-    }
+    // Keep the controller on its configured/session endpoint. `allow-lan`
+    // controls proxy listeners and must not expose the management API.
+    unawaited(_persistCoreEndpoint(controller.endpoint, controller.secret));
+    unawaited(_persistSwitchCardPreferences());
     rawConfig['external-ui'] = await appPath.uiPath;
     rawConfig['external-ui-url'] =
         'https://github.com/Zephyruso/zashboard/releases/latest/download/dist.zip';
@@ -1037,7 +1049,7 @@ class GlobalState {
       rawConfig['profile']['store-fake-ip'] = true;
     }
     rawConfig['geox-url'] = realPatchConfig.geoXUrl.toJson();
-    rawConfig['global-ua'] = realPatchConfig.globalUa;
+    rawConfig['global-ua'] = subscriptionUserAgent(realPatchConfig.globalUa);
     if (rawConfig['hosts'] == null) {
       rawConfig['hosts'] = <String, dynamic>{};
     }
@@ -1856,14 +1868,9 @@ class GlobalState {
     return null;
   }
 
-  /// 供原生卡片读取：内核地址 + 密钥。
-  Future<void> _persistCoreEndpoint(String? endpoint, String? secret) async {
+  Future<void> _persistSwitchCardPreferences() async {
     try {
       final prefs = await Preferences().sharedPreferencesCompleter.future;
-      if (endpoint != null && endpoint.isNotEmpty) {
-        await prefs?.setString('core_endpoint', endpoint);
-      }
-      await prefs?.setString('core_secret', secret ?? '');
       // 卡片默认停在用户当前用的分组上，而不是每次都从第一个组开始。
       final group = config.currentProfile?.currentGroupName;
       if (group != null && group.isNotEmpty) {
@@ -1874,6 +1881,18 @@ class GlobalState {
       if (testUrl.isNotEmpty) {
         await prefs?.setString('core_test_url', testUrl);
       }
+    } catch (e) {
+      commonPrint.log('persist switch card preferences failed: $e');
+    }
+  }
+
+  Future<void> _persistCoreEndpoint(String? endpoint, String? secret) async {
+    try {
+      final prefs = await Preferences().sharedPreferencesCompleter.future;
+      if (endpoint != null && endpoint.isNotEmpty) {
+        await prefs?.setString('core_endpoint', endpoint);
+      }
+      await prefs?.setString('core_secret', secret ?? '');
     } catch (e) {
       commonPrint.log('persist core endpoint failed: $e');
     }
@@ -2104,6 +2123,9 @@ class DetectionState {
 
     final res = await request.checkIpDomestic(
       cancelToken: _cancelToken,
+      direct:
+          globalState.hasAppController &&
+          globalState.appController.desktopLocalProxyOnly,
       onUpdate: (info) => _onIpProgress(requestId, info),
     );
 
@@ -2239,6 +2261,9 @@ class DetectionState {
         ? await request.checkIp(
             cancelToken: _cancelToken,
             timeout: timeout,
+            direct:
+                globalState.hasAppController &&
+                globalState.appController.desktopLocalProxyOnly,
             onUpdate: (info) => _onIpProgress(requestId, info),
           )
         : await request.checkIpDomestic(

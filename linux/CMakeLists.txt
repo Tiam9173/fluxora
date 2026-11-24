@@ -1,5 +1,12 @@
 # Project-level configuration.
 cmake_minimum_required(VERSION 3.10)
+
+set(BUILD_BUNDLE_DIR "${CMAKE_CURRENT_BINARY_DIR}/bundle")
+# Cache the bundle prefix before a failed configure can leave /usr/local behind.
+if(CMAKE_VERSION VERSION_LESS "3.29" OR "$ENV{CMAKE_INSTALL_PREFIX}" STREQUAL "")
+  set(CMAKE_INSTALL_PREFIX "${BUILD_BUNDLE_DIR}" CACHE PATH "Fluxora bundle install prefix")
+endif()
+
 project(runner LANGUAGES CXX)
 
 set(SENTRY_BACKEND none CACHE STRING "Sentry backend" FORCE)
@@ -114,13 +121,6 @@ include(flutter/generated_plugins.cmake)
 
 
 # === Installation ===
-# By default, "installing" just makes a relocatable bundle in the build
-# directory.
-set(BUILD_BUNDLE_DIR "${PROJECT_BINARY_DIR}/bundle")
-if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-  set(CMAKE_INSTALL_PREFIX "${BUILD_BUNDLE_DIR}" CACHE PATH "..." FORCE)
-endif()
-
 # Start with a clean build bundle directory every time.
 install(CODE "
   file(REMOVE_RECURSE \"${BUILD_BUNDLE_DIR}/\")
@@ -145,7 +145,7 @@ if(_app_dev_found GREATER -1)
 else()
   set(CORE_PATH "${CLASH_DIR}/FluxoraCore")
 endif()
-install(PROGRAMS "${CORE_PATH}" DESTINATION "${BUILD_BUNDLE_DIR}"
+install(PROGRAMS "${CORE_PATH}" DESTINATION "${CMAKE_INSTALL_PREFIX}"
   COMPONENT Runtime)
 
 # GPL-3.0 licence text and attribution notices, installed into the bundle root
