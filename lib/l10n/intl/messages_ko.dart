@@ -969,10 +969,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "fruitSaladScheme": MessageLookupByLibrary.simpleMessage("프루트 샐러드"),
     "general": MessageLookupByLibrary.simpleMessage("일반"),
     "generalCardCoreDesc": MessageLookupByLibrary.simpleMessage(
-      "켜면 코어가 항상 루프백에서 대기해 알림 카드가 접속할 수 있습니다",
+      "외부 컨트롤러를 꺼도 코어가 루프백 주소에서 계속 수신합니다.",
     ),
     "generalCardCoreTitle": MessageLookupByLibrary.simpleMessage(
-      "알림 카드에서 코어 접근",
+      "로컬 컨트롤러 항상 켜기",
     ),
     "generalDesc": MessageLookupByLibrary.simpleMessage("글로벌 일반 설정 변경"),
     "generalKeepService": MessageLookupByLibrary.simpleMessage(

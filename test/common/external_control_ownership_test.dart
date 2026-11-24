@@ -14,6 +14,9 @@ import 'package:path_provider_platform_interface/path_provider_platform_interfac
 // ignore: depend_on_referenced_packages
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
+const _windowsAfUnixSkipReason =
+    'AF_UNIX control transport is intentionally disabled on Windows';
+
 /// R7-15.5 — `ExternalControl` socket ownership.
 ///
 /// The control channel lives at a **fixed** path (`<dataDir>/Fluxora.control.sock`)
@@ -249,29 +252,31 @@ void main() {
       }
     });
 
-    test('an exception after taking the lock frees it for another process',
-        () async {
-      // `start()` throws after the lock was already taken. If the release were
-      // skipped, the lock would stay held for the rest of this process's life
-      // and no later instance - in this process or another one - could ever take
-      // the control channel.
-      IOOverrides.global = _FailingBind();
-      await expectLater(
-        ExternalControl.start(),
-        throwsA(isA<SocketException>()),
-      );
-      IOOverrides.global = null;
+    test(
+      'an exception after taking the lock frees it for another process',
+      () async {
+        // `start()` throws after the lock was already taken. If the release were
+        // skipped, the lock would stay held for the rest of this process's life
+        // and no later instance - in this process or another one - could ever take
+        // the control channel.
+        IOOverrides.global = _FailingBind();
+        await expectLater(
+          ExternalControl.start(),
+          throwsA(isA<SocketException>()),
+        );
+        IOOverrides.global = null;
 
-      // A **real second OS process** must be able to take it.
-      final holder = await holdLockInAnotherProcess();
-      expect(
-        holders.contains(holder),
-        isTrue,
-        reason: 'the holder really ran as a separate process',
-      );
-      expect(holder.process.pid, greaterThan(0));
-      await holder.release();
-    });
+        // A **real second OS process** must be able to take it.
+        final holder = await holdLockInAnotherProcess();
+        expect(
+          holders.contains(holder),
+          isTrue,
+          reason: 'the holder really ran as a separate process',
+        );
+        expect(holder.process.pid, greaterThan(0));
+        await holder.release();
+      },
+    );
 
     test('transport selection happens inside the ownership try', () {
       // `getRecommendedTransport()` is not side-effect free (it probes AF_UNIX by
@@ -303,48 +308,49 @@ void main() {
       );
     });
 
-    test('a failure after the bind closes the listener and frees the lock',
-        () async {
-      // The bind "succeeds" but the listener cannot be consumed, which is what a
-      // half-initialised channel looks like. Without the unwind, `_server` would
-      // stay set — so every later `start()` returns immediately at the
-      // `_server != null` guard — and the listener would stay open.
-      final bind = _HalfBoundBind();
-      IOOverrides.global = bind;
+    test(
+      'a failure after the bind closes the listener and frees the lock',
+      () async {
+        // The bind "succeeds" but the listener cannot be consumed, which is what a
+        // half-initialised channel looks like. Without the unwind, `_server` would
+        // stay set — so every later `start()` returns immediately at the
+        // `_server != null` guard — and the listener would stay open.
+        final bind = _HalfBoundBind();
+        IOOverrides.global = bind;
 
-      await expectLater(
-        ExternalControl.start(),
-        throwsA(isA<StateError>()),
-        reason: 'the listener could not be consumed, so start() must fail',
-      );
-
-      IOOverrides.global = null;
-
-      expect(bind.created, isNotEmpty);
-      for (final server in bind.created) {
-        expect(
-          server.closed,
-          isTrue,
-          reason:
-              'every listener bound during the failed attempt must be closed, '
-              'including the one the TCP fallback replaced',
+        await expectLater(
+          ExternalControl.start(),
+          throwsA(isA<StateError>()),
+          reason: 'the listener could not be consumed, so start() must fail',
         );
-      }
 
-      // `_server` was reset and the lock handed back, so a fresh start works.
-      await ExternalControl.start();
-      expect(File(lockPath).existsSync(), isTrue);
-      if (udsSupported) {
-        expect(
-          FileSystemEntity.typeSync(socketPath),
-          isNot(FileSystemEntityType.notFound),
-          reason: 'the retry must end up with a live channel',
-        );
-      }
-    });
+        IOOverrides.global = null;
 
-    test('a REAL uds bound then failed to listen is unlinked and closed',
-        () async {
+        expect(bind.created, isNotEmpty);
+        for (final server in bind.created) {
+          expect(
+            server.closed,
+            isTrue,
+            reason:
+                'every listener bound during the failed attempt must be closed, '
+                'including the one the TCP fallback replaced',
+          );
+        }
+
+        // `_server` was reset and the lock handed back, so a fresh start works.
+        await ExternalControl.start();
+        expect(File(lockPath).existsSync(), isTrue);
+        if (udsSupported) {
+          expect(
+            FileSystemEntity.typeSync(socketPath),
+            isNot(FileSystemEntityType.notFound),
+            reason: 'the retry must end up with a live channel',
+          );
+        }
+      },
+    );
+
+    test('a REAL uds bound then failed to listen is unlinked and closed', () async {
       // P7-B1 / A4': the test above hands out a *fake* `ServerSocket`, so it
       // proves the listener is closed but never touches a real file. This one
       // binds a real AF_UNIX socket through the OS, faults only `listen()`, and
@@ -392,7 +398,7 @@ void main() {
         FileSystemEntityType.notFound,
         reason: 'stop() must not resurrect the file',
       );
-    });
+    }, skip: Platform.isWindows ? _windowsAfUnixSkipReason : null);
   });
 
   group('non-owner', () {
@@ -413,8 +419,7 @@ void main() {
   });
 
   group('two real OS processes', () {
-    test('a foreign holder blocks start(); RELEASE hands the lock over',
-        () async {
+    test('a foreign holder blocks start(); RELEASE hands the lock over', () async {
       if (!udsSupported) return;
 
       File(socketPath).writeAsStringSync('first instance');
@@ -639,8 +644,7 @@ final class _RealUdsHalfBoundBind extends IOOverrides {
     );
 
     final isUds =
-        address is InternetAddress &&
-        address.type == InternetAddressType.unix;
+        address is InternetAddress && address.type == InternetAddressType.unix;
     if (!isUds) {
       tcpBinds++;
       return real;

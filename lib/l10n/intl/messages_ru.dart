@@ -1224,10 +1224,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "fruitSaladScheme": MessageLookupByLibrary.simpleMessage("Фруктовый микс"),
     "general": MessageLookupByLibrary.simpleMessage("Общие"),
     "generalCardCoreDesc": MessageLookupByLibrary.simpleMessage(
-      "Ядро всегда слушает loopback, чтобы карточка могла к нему обращаться",
+      "Ядро продолжит слушать адрес обратной петли, даже если внешний контроллер выключен.",
     ),
     "generalCardCoreTitle": MessageLookupByLibrary.simpleMessage(
-      "Карточка видит ядро",
+      "Всегда включать локальный контроллер",
     ),
     "generalDesc": MessageLookupByLibrary.simpleMessage(
       "Изменить глобальные настройки",

@@ -7,6 +7,7 @@ import 'package:fluxora/clash/message.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/models/models.dart';
+import 'package:fluxora/state.dart';
 
 mixin ClashInterface {
   Future<bool> init(InitParams params);
@@ -440,16 +441,21 @@ abstract class ClashHandlerInterface with ClashInterface {
     } else {
       _activeDelayTests++;
     }
+    final configuredTimeout = globalState.config.healthCheckTimeout;
+    final timeout = configuredTimeout > delayTestTimeout.inMilliseconds
+        ? Duration(milliseconds: configuredTimeout)
+        : delayTestTimeout;
+    final rpcDeadline = timeout + const Duration(seconds: 2);
     final delayParams = {
       'proxy-name': proxyName,
-      'timeout': delayTestTimeout.inMilliseconds,
+      'timeout': timeout.inMilliseconds,
       'test-url': url,
     };
     try {
       return await invoke<String>(
         method: ActionMethod.asyncTestDelay,
         data: json.encode(delayParams),
-        timeout: delayTestTimeout + const Duration(seconds: 2),
+        timeout: rpcDeadline,
         onTimeout: () {
           return json.encode(Delay(name: proxyName, value: -1, url: url));
         },

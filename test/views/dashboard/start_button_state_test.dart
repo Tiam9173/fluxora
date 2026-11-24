@@ -36,15 +36,23 @@ class _ControllableController extends AppController {
 
   int updateStatusCalls = 0;
   int restartCoreCalls = 0;
+  int refreshConnectionCheckCalls = 0;
+  bool? lastConnectionCheckWasImmediate;
   int connectionRetries = 0;
+  bool delegateHealthCheck = false;
   Completer<void>? pending;
   Object? failure;
 
   @override
   void refreshConnectionCheck({bool immediate = false}) {
     connectionRetries++;
+    refreshConnectionCheckCalls++;
+    lastConnectionCheckWasImmediate = immediate;
     bindingRef.read(connectionCheckProvider.notifier).state =
         ConnectionCheck.checking;
+    if (delegateHealthCheck) {
+      super.refreshConnectionCheck(immediate: immediate);
+    }
   }
 
   @override
@@ -79,6 +87,9 @@ void main() {
   });
 
   setUp(() {
+    globalState.config = globalState.config.copyWith(
+      networkProps: const NetworkProps(systemProxy: true),
+    );
     globalState.appState = AppState(
       viewSize: const Size(400, 800),
       brightness: Brightness.dark,
@@ -91,19 +102,25 @@ void main() {
     );
   });
 
+  tearDown(() => System.platformOverride = null);
+
   /// Pumps the real hero and returns the controller it talks to.
   Future<_ControllableController> pumpHero(
     WidgetTester tester, {
     Brightness brightness = Brightness.dark,
     double textScale = 1.0,
     Size size = const Size(400, 800),
+    bool systemProxy = true,
   }) async {
+    globalState.config = globalState.config.copyWith(
+      networkProps: NetworkProps(systemProxy: systemProxy),
+    );
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    late _ControllableController controller;
+    _ControllableController? controller;
 
     await tester.pumpWidget(
       ProviderScope(
@@ -128,8 +145,8 @@ void main() {
             builder: (ctx, ref, _) {
               globalState.theme = CommonTheme.of(ctx, textScale);
               globalState.measure = Measure.of(ctx, textScale);
-              controller = _ControllableController(ctx, ref);
-              globalState.appController = controller;
+              controller ??= _ControllableController(ctx, ref);
+              globalState.appController = controller!;
               return MediaQuery(
                 data: MediaQuery.of(
                   ctx,
@@ -152,7 +169,7 @@ void main() {
       ),
     );
     await tester.pump();
-    return controller;
+    return controller!;
   }
 
   group('the control is not re-entrant while a toggle is in flight', () {
@@ -218,6 +235,120 @@ void main() {
     },
   );
 
+  Future<void> capture(WidgetTester tester, String name) async {
+    const path = String.fromEnvironment('START_BUTTON_CAPTURE_DIR');
+    if (path.isEmpty) return;
+    await captureFlutterFrame(
+      tester,
+      find.byKey(const ValueKey('start-capture')),
+      '$path/$name.png',
+    );
+  }
+
+  testWidgets('a failed check offers a manual retry without restarting', (
+    tester,
+  ) async {
+    final controller = await pumpHero(tester);
+    final ref = controller.bindingRef;
+    ref.read(runTimeProvider.notifier).value = 156000;
+    ref.read(connectionCheckProvider.notifier).state = ConnectionCheck.limited;
+    await tester.pump();
+    expect(find.text(appLocalizations.checkError), findsOneWidget);
+    expect(find.text(appLocalizations.retry), findsOneWidget);
+    await tester.pumpAndSettle();
+    await capture(tester, 'check-failed');
+    await tester.tap(find.text(appLocalizations.retry));
+    await tester.pump();
+    expect(controller.refreshConnectionCheckCalls, 1);
+    expect(controller.lastConnectionCheckWasImmediate, isTrue);
+    expect(controller.restartCoreCalls, 0);
+    expect(find.text(appLocalizations.checking), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 120));
+    await capture(tester, 'check-retry');
+  });
+
+  testWidgets('a failed connection check recovers on its own', (tester) async {
+    final controller = await pumpHero(tester);
+    final ref = controller.bindingRef;
+    var probes = 0;
+    controller.connectionProbeForTest = () async => ++probes == 2;
+    controller.delegateHealthCheck = true;
+    ref.read(runTimeProvider.notifier).value = 156000;
+    expect(controller.canCheckConnectionForTest, isTrue);
+    controller.refreshConnectionCheck(immediate: true);
+    await tester.pump(const Duration(milliseconds: 1));
+    expect(controller.connectionCheckAttemptsForTest, 1);
+    expect(probes, 1);
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text(appLocalizations.checkError), findsOneWidget);
+    await tester.pump(const Duration(seconds: 3));
+    expect(probes, 2);
+    expect(find.text(appLocalizations.healthHealthy), findsOneWidget);
+    expect(controller.restartCoreCalls, 0);
+  });
+
+  testWidgets('a stop request disables the pending health-check retry', (
+    tester,
+  ) async {
+    final controller = await pumpHero(tester);
+    final ref = controller.bindingRef;
+    ref.read(runTimeProvider.notifier).value = 156000;
+    ref.read(connectionCheckProvider.notifier).state = ConnectionCheck.limited;
+    ref.read(connectionTargetProvider.notifier).state = false;
+    await tester.pump();
+    final retry = tester.widget<TextButton>(
+      find.widgetWithText(TextButton, appLocalizations.retry),
+    );
+    expect(retry.onPressed, isNull);
+    expect(controller.refreshConnectionCheckCalls, 0);
+  });
+
+  testWidgets('a stop request cancels a scheduled health-check retry', (
+    tester,
+  ) async {
+    final controller = await pumpHero(tester);
+    final ref = controller.bindingRef;
+    var probes = 0;
+    controller.connectionProbeForTest = () async {
+      probes++;
+      return false;
+    };
+    controller.delegateHealthCheck = true;
+    ref.read(runTimeProvider.notifier).value = 156000;
+    controller.refreshConnectionCheck(immediate: true);
+    await tester.pump(const Duration(milliseconds: 1));
+    expect(probes, 1);
+    ref.read(connectionTargetProvider.notifier).state = false;
+    await tester.pump(const Duration(seconds: 3));
+    expect(probes, 1);
+  });
+
+  testWidgets('desktop without system proxy or TUN reports local proxy', (
+    tester,
+  ) async {
+    System.platformOverride = 'windows';
+    final controller = await pumpHero(
+      tester,
+      brightness: Brightness.light,
+      size: const Size(640, 500),
+      systemProxy: false,
+    );
+    final ref = controller.bindingRef;
+    ref.read(runTimeProvider.notifier).value = 156000;
+    ref.read(connectionCheckProvider.notifier).state =
+        ConnectionCheck.reachable;
+    await tester.pumpAndSettle();
+
+    expect(controller.desktopLocalProxyOnly, isTrue);
+    expect(find.text(appLocalizations.localProxyOnly), findsOneWidget);
+    expect(find.text(appLocalizations.healthHealthy), findsNothing);
+    await capture(tester, 'local-proxy-only');
+
+    controller.refreshConnectionCheck(immediate: true);
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pump(const Duration(seconds: 1));
+  });
+
   group('failures reach the user', () {
     testWidgets('a failed toggle surfaces a snackbar', (tester) async {
       final controller = await pumpHero(tester);
@@ -276,6 +407,8 @@ void main() {
         tester.getSize(find.byType(StartButton)).height,
         getWidgetHeight(2),
       );
+      await tester.pumpAndSettle();
+      await capture(tester, 'start-default');
     });
   });
 

@@ -448,7 +448,7 @@ class ClashService extends ClashHandlerInterface {
     try {
       // Perform a real restart so every caller is guaranteed to see a fresh
       // core after this call returns. Queued calls will run sequentially.
-      await _doRestart();
+      await _doRestart(requireHelper: requireHelper);
       lastStartFailure = null;
     } catch (e) {
       // P9-S04 — the single funnel for every start path, so the failure is
@@ -475,7 +475,7 @@ class ClashService extends ClashHandlerInterface {
     }
   }
 
-  Future<void> _doRestart() async {
+  Future<void> _doRestart({required bool requireHelper}) async {
     isStarting = true;
     _isDestroying = false;
     // P9-S07 — a helper-owned core has no `Process` handle, so the kill below
@@ -618,9 +618,10 @@ class ClashService extends ClashHandlerInterface {
         // The helper refused the start. The claim is **not** granted: the
         // fallback below runs the core under the user's own token, and nothing
         // in this process may believe a SYSTEM-owned core is running.
-        commonPrint.log(
-          'Helper start core failed, falling back to normal mode',
-        );
+        commonPrint.log('Helper failed to start the core');
+      }
+      if (requireHelper) {
+        throw StateError(appLocalizations.tunEnableRequireAdmin);
       }
     }
 

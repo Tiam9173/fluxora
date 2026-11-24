@@ -385,6 +385,16 @@ class AppLocalizations {
     );
   }
 
+  /// `Local proxy only`
+  String get localProxyOnly {
+    return Intl.message(
+      'Local proxy only',
+      name: 'localProxyOnly',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Service Running`
   String get serviceRunning {
     return Intl.message(
@@ -10860,20 +10870,20 @@ class AppLocalizations {
     );
   }
 
-  /// `Card can reach the core`
+  /// `Keep the local controller on`
   String get generalCardCoreTitle {
     return Intl.message(
-      'Card can reach the core',
+      'Keep the local controller on',
       name: 'generalCardCoreTitle',
       desc: '',
       args: [],
     );
   }
 
-  /// `The core always listens on the loopback address so the notification card can talk to it`
+  /// `Keep the core listening on the loopback address when external control is off.`
   String get generalCardCoreDesc {
     return Intl.message(
-      'The core always listens on the loopback address so the notification card can talk to it',
+      'Keep the core listening on the loopback address when external control is off.',
       name: 'generalCardCoreDesc',
       desc: '',
       args: [],

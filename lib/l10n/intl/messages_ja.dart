@@ -968,10 +968,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "fruitSaladScheme": MessageLookupByLibrary.simpleMessage("フルーツサラダ"),
     "general": MessageLookupByLibrary.simpleMessage("一般"),
     "generalCardCoreDesc": MessageLookupByLibrary.simpleMessage(
-      "オンにするとコアは常にループバックで待ち受け、通知カードが接続できます",
+      "外部コントローラーをオフにしても、コアはループバックアドレスで待ち受けます。",
     ),
     "generalCardCoreTitle": MessageLookupByLibrary.simpleMessage(
-      "通知カードからコアへ接続",
+      "ローカルコントローラーを常に有効にする",
     ),
     "generalDesc": MessageLookupByLibrary.simpleMessage("全般設定を変更"),
     "generalKeepService": MessageLookupByLibrary.simpleMessage(

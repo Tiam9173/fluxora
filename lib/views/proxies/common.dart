@@ -229,12 +229,16 @@ Future<void> delayTest(
       };
     }).toList();
 
-    // Execute tasks in batches
-    final batchedTasks = delayTasks.batch(concurrencyLimit);
-    for (final batchTasks in batchedTasks) {
-      if (appController.ref.read(currentProfileIdProvider) != profileId) return;
-      await Future.wait(batchTasks.map((task) => task()));
+    var nextTask = 0;
+    Future<void> runWorker() async {
+      while (appController.ref.read(currentProfileIdProvider) == profileId) {
+        if (nextTask >= delayTasks.length) return;
+        final task = delayTasks[nextTask++];
+        await task();
+      }
     }
+
+    await Future.wait(List.generate(concurrencyLimit, (_) => runWorker()));
     if (appController.ref.read(currentProfileIdProvider) != profileId) return;
     appController.addSortNum();
     // A `url-test` group would otherwise keep whatever the core picked at its

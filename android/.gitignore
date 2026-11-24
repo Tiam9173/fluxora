@@ -1,6 +1,9 @@
 gradle-wrapper.jar
 /.gradle
-/gradle/
+/gradle/*
+!/gradle/wrapper/
+/gradle/wrapper/*
+!/gradle/wrapper/gradle-wrapper.properties
 /captures/
 /gradlew
 /gradlew.bat

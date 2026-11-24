@@ -14,10 +14,10 @@ import android.widget.ListView
 import android.widget.TextView
 import io.fluxora.app.services.NotificationComponentCache
 import org.json.JSONObject
-import java.net.HttpURLConnection
-import java.net.URL
-import java.net.URLEncoder
+import io.flutter.plugin.common.MethodChannel
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 /// 通知栏「切换」卡片。
 ///
@@ -25,8 +25,7 @@ import java.util.concurrent.Executors
 /// 引擎），要么干脆画不出内容（独立引擎），而这张卡片必须浮在别的 App 之上
 /// 并且四周透明。原生视图没有这两类问题。
 ///
-/// 数据直接问内核要（`/proxies`），不依赖 Flutter 引擎是否在跑 —— 内核在常驻
-/// service 里，地址和密钥由 Dart 写进 SharedPreferences。
+/// 数据经常驻服务的内核桥接获取，卡片独立于主界面运行。
 class SwitchCardActivity : Activity() {
     private class Node(
         val name: String,
@@ -49,8 +48,6 @@ class SwitchCardActivity : Activity() {
     private val nodes: MutableList<Node>
         get() = groups.getOrNull(selectedGroup)?.nodes ?: mutableListOf()
     private var adapter: NodeAdapter? = null
-    private var endpoint: String? = null
-    private var secret: String? = null
     private val io = Executors.newFixedThreadPool(5)
 
     private lateinit var statusView: TextView
@@ -73,8 +70,7 @@ class SwitchCardActivity : Activity() {
             else if (group.type in listOf("URLTest", "Fallback") && group.fixed.isNotEmpty()) {
                 io.execute {
                     runCatching {
-                        val name = URLEncoder.encode(group.name, "UTF-8").replace("+", "%20")
-                        request("/proxies/$name", method = "DELETE")
+                        request("unlock", mapOf("group" to group.name))
                         loadNodes()
                     }.onFailure { error -> runOnUiThread { statusView.text = "恢复自动失败：${error.message}" } }
                 }
@@ -119,7 +115,6 @@ class SwitchCardActivity : Activity() {
         findViewById<TextView>(R.id.btn_test).setOnClickListener { testAll() }
         findViewById<TextView>(R.id.btn_locate).setOnClickListener { locateSelectedNode() }
 
-        readEndpoint()
         loadNodes()
     }
 
@@ -136,79 +131,34 @@ class SwitchCardActivity : Activity() {
         super.onDestroy()
     }
 
-    /// 地址和密钥有两个来源：
-    /// 1. Dart 在生成配置时写下的 `core_endpoint` / `core_secret`（首选）
-    /// 2. 直接读 Dart 的整份 `config`，从里面取 `external-controller`
-    ///
-    /// 第二条是兜底：App 刚装好、还没生成过配置时，第一条还不存在。
-    private fun readEndpoint() {
-        val prefs = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
-        var host = prefs.getString("flutter.core_endpoint", null)
-        var key = prefs.getString("flutter.core_secret", null)
-
-        if (host.isNullOrEmpty()) {
-            val raw = prefs.getString("flutter.config", null)
-            if (!raw.isNullOrEmpty()) {
-                try {
-                    val config = JSONObject(raw)
-                    val controller = config.opt("external-controller")
-                    host = when (controller) {
-                        is JSONObject -> controller.optString("value", "")
-                        is String -> controller
-                        else -> ""
-                    }
-                    if (key.isNullOrEmpty()) {
-                        key = config.optString("secret", "")
-                    }
-                } catch (_: Exception) {
-                    // 配置格式变了也不该让卡片直接崩掉。
+    private fun request(method: String, arguments: Map<String, String> = emptyMap()): Any? {
+        val response = CompletableFuture<Any?>()
+        runOnUiThread {
+            if (isDestroyed || isFinishing) {
+                response.cancel(false)
+                return@runOnUiThread
+            }
+            GlobalState.requestSwitchCard(method, arguments, object : MethodChannel.Result {
+                override fun success(result: Any?) { response.complete(result) }
+                override fun error(code: String, message: String?, details: Any?) {
+                    response.completeExceptionally(IllegalStateException(message ?: code))
                 }
-            }
+                override fun notImplemented() {
+                    response.completeExceptionally(IllegalStateException("代理服务尚未就绪"))
+                }
+            })
         }
-
-        // 只写了端口时补上主机名。
-        if (!host.isNullOrEmpty() && !host.contains(":")) host = "$host:9090"
-        endpoint = host?.takeIf { it.isNotEmpty() }
-        secret = key
-    }
-
-    private fun request(path: String, method: String = "GET", body: String? = null): String {
-        val base = endpoint ?: throw IllegalStateException("内核地址未知")
-        val url = URL("http://$base$path")
-        val conn = (url.openConnection() as HttpURLConnection).apply {
-            requestMethod = method
-            connectTimeout = 3000
-            readTimeout = 4000
-            if (!secret.isNullOrEmpty()) {
-                setRequestProperty("Authorization", "Bearer $secret")
-            }
-            if (body != null) {
-                doOutput = true
-                setRequestProperty("Content-Type", "application/json")
-            }
-        }
-        if (body != null) {
-            conn.outputStream.use { it.write(body.toByteArray()) }
-        }
-        val code = conn.responseCode
-        val stream = if (code in 200..299) conn.inputStream else conn.errorStream
-        val text = stream?.bufferedReader()?.use { it.readText() } ?: ""
-        conn.disconnect()
-        if (code !in 200..299) throw IllegalStateException("HTTP $code")
-        return text
+        return response.get(6, TimeUnit.SECONDS)
     }
 
     private fun loadNodes() {
         io.execute {
-            // 冷启动时内核可能还没开始监听，Dart 也可能还没把地址写进 prefs。
-            // 只试一次就报错，用户看到的就是"读取节点失败"，过一会儿再打开
-            // 又正常——所以这里退避重试，并且每次重试都重读一次地址。
+            // 冷启动期间，内核可能还没有发布当前配置的节点。
             var lastError: Exception? = null
             for (attempt in 0 until 8) {
             try {
-                readEndpoint()
-                val json = JSONObject(request("/proxies"))
-                val proxies = json.getJSONObject("proxies")
+                val proxies = JSONObject(request("groups") as String)
+                check(proxies.length() > 0) { "代理服务尚未就绪" }
                 val collected = mutableListOf<Group>()
                 for (groupName in proxies.keys()) {
                     val group = proxies.optJSONObject(groupName) ?: continue
@@ -241,6 +191,8 @@ class SwitchCardActivity : Activity() {
                     renderChips()
                     updateStatus()
                 }
+                return@execute
+            } catch (_: InterruptedException) {
                 return@execute
             } catch (e: Exception) {
                 lastError = e
@@ -340,7 +292,7 @@ class SwitchCardActivity : Activity() {
         }
     }
 
-    /// `/proxies` 里每个节点带 `history`，最后一条就是上次测得的延迟。
+    /// 节点历史的最后一条就是上次测得的延迟。
     private fun lastDelay(detail: JSONObject?): Int {
         val history = detail?.optJSONArray("history") ?: return -1
         if (history.length() == 0) return -1
@@ -357,19 +309,12 @@ class SwitchCardActivity : Activity() {
     private fun testDelay(node: Node) {
         if (node.testing) return
         node.testing = true
+        val testUrl = testUrlForCurrentGroup()
         runOnUiThread { adapter?.notifyDataSetChanged() }
         io.execute {
             val value = try {
-                // URLEncoder 把空格编成 `+`，而路径段里的 `+` 就是加号本身。
-                // 节点名几乎都带空格（"🇺🇸美国05 |公益1倍"），不换成 %20 的话
-                // 请求打到一个不存在的名字上，表现就是"这个节点测不出来"。
-                val encoded = URLEncoder.encode(node.name, "UTF-8").replace("+", "%20")
-                val url = URLEncoder.encode(testUrlForCurrentGroup(), "UTF-8")
-                    .replace("+", "%20")
-                val json = JSONObject(
-                    request("/proxies/$encoded/delay?timeout=3000&url=$url"),
-                )
-                json.optInt("delay", -1)
+                (request("delay", mapOf("node" to node.name, "url" to testUrl)) as? Number)
+                    ?.toInt() ?: -1
             } catch (e: Exception) {
                 -1
             }
@@ -390,13 +335,7 @@ class SwitchCardActivity : Activity() {
         }
         io.execute {
             try {
-                val groupName = group.name
-            val encoded = URLEncoder.encode(groupName, "UTF-8").replace("+", "%20")
-                request(
-                    "/proxies/$encoded",
-                    method = "PUT",
-                    body = JSONObject().put("name", node.name).toString(),
-                )
+                request("select", mapOf("group" to group.name, "node" to node.name))
                 runOnUiThread { finish() }
             } catch (e: Exception) {
                 runOnUiThread { statusView.text = "切换失败：${e.message}" }

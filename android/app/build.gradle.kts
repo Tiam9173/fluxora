@@ -20,18 +20,16 @@ if (isReleaseBuild && (!mStoreFile.exists() || mStoreFile.length() == 0L || mSto
     throw GradleException("Android Release Signing Error: KEYSTORE, KEY_ALIAS, STORE_PASSWORD, or KEY_PASSWORD configurations are missing. Fallback to debug signing is strictly prohibited.")
 }
 
+// Flutter plugins in this project still use the legacy AGP DSL.
+@Suppress("DEPRECATION_ERROR")
 android {
     namespace = "io.fluxora.app"
-    compileSdk = 36
+    compileSdk = 37
     ndkVersion = "28.2.13676358"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
     defaultConfig {
@@ -64,6 +62,11 @@ android {
         }
     }
 
+    androidResources {
+        // Keep the Flutter debug kernel directly mappable by Android.
+        noCompress.add("kernel_blob.bin")
+    }
+
     packaging {
         jniLibs {
             useLegacyPackaging = true
@@ -74,6 +77,12 @@ android {
         outputs.all {
             (this as? com.android.build.gradle.internal.api.ApkVariantOutputImpl)?.versionCodeOverride = flutter.versionCode
         }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
 }
 

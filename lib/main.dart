@@ -7,6 +7,7 @@ import 'dart:ui';
 
 import 'package:fluxora/plugins/app.dart';
 import 'package:fluxora/plugins/clipboard_ext.dart';
+import 'package:fluxora/plugins/notification_switch_transport.dart';
 import 'package:fluxora/plugins/service.dart' show Service;
 import 'package:fluxora/plugins/tile.dart';
 import 'package:fluxora/plugins/vpn.dart';
@@ -14,6 +15,7 @@ import 'package:fluxora/state.dart';
 import 'package:code_forge/code_forge.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:synchronized/synchronized.dart';
 
@@ -335,6 +337,14 @@ Future<void> _service(List<String> flags) async {
     final quickStart = flags.contains('quick');
     final bootStart = flags.contains('boot');
     final clashLibHandler = ClashLibHandler();
+    const MethodChannel('switch_card').setMethodCallHandler(
+      switchCardHandler(
+        (action) => clashLibHandler.invokeAction(
+          action,
+          timeout: const Duration(seconds: 5),
+        ),
+      ),
+    );
     final smartAutoStopLock = Lock();
 
     Future<void> checkSmartAutoStop() async {

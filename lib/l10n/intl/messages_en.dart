@@ -1176,10 +1176,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "fruitSaladScheme": MessageLookupByLibrary.simpleMessage("Fruit Salad"),
     "general": MessageLookupByLibrary.simpleMessage("General"),
     "generalCardCoreDesc": MessageLookupByLibrary.simpleMessage(
-      "The core always listens on the loopback address so the notification card can talk to it",
+      "Keep the core listening on the loopback address when external control is off.",
     ),
     "generalCardCoreTitle": MessageLookupByLibrary.simpleMessage(
-      "Card can reach the core",
+      "Keep the local controller on",
     ),
     "generalDesc": MessageLookupByLibrary.simpleMessage(
       "Modify global settings",
@@ -1406,6 +1406,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "localFile": MessageLookupByLibrary.simpleMessage("Local File"),
     "localIpLabel": MessageLookupByLibrary.simpleMessage("Local IP"),
+    "localProxyOnly": MessageLookupByLibrary.simpleMessage("Local proxy only"),
     "localRecoveryDesc": MessageLookupByLibrary.simpleMessage(
       "Restore data from file",
     ),

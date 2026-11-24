@@ -869,9 +869,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "fruitSaladScheme": MessageLookupByLibrary.simpleMessage("果缤纷"),
     "general": MessageLookupByLibrary.simpleMessage("常规"),
     "generalCardCoreDesc": MessageLookupByLibrary.simpleMessage(
-      "开启后内核始终在本机回环地址提供接口，供通知栏切换卡片使用",
+      "即使关闭外部控制器，内核也会继续在本机回环地址提供接口。",
     ),
-    "generalCardCoreTitle": MessageLookupByLibrary.simpleMessage("通知栏卡片可访问内核"),
+    "generalCardCoreTitle": MessageLookupByLibrary.simpleMessage("始终开启本机控制器"),
     "generalDesc": MessageLookupByLibrary.simpleMessage("修改全局通用设置"),
     "generalKeepService": MessageLookupByLibrary.simpleMessage("重启内核时保持服务在线"),
     "generalKeepServiceDesc": MessageLookupByLibrary.simpleMessage(
@@ -1027,6 +1027,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "localBackupDesc": MessageLookupByLibrary.simpleMessage("备份数据到本地"),
     "localFile": MessageLookupByLibrary.simpleMessage("本地文件"),
     "localIpLabel": MessageLookupByLibrary.simpleMessage("本地 IP"),
+    "localProxyOnly": MessageLookupByLibrary.simpleMessage("仅本地代理"),
     "localRecoveryDesc": MessageLookupByLibrary.simpleMessage("通过文件恢复数据"),
     "locate": MessageLookupByLibrary.simpleMessage("定位"),
     "log": MessageLookupByLibrary.simpleMessage("日志"),
