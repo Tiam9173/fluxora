@@ -656,6 +656,21 @@ class _SwitchCardState extends ConsumerState<SwitchCard> {
                     ], delayUrl)
                   : null,
             ),
+          if (canPickCurrentGroup &&
+              currentGroup != null &&
+              widget.onSelect != null)
+            ListTile(
+              dense: true,
+              leading: const Icon(Icons.account_tree_outlined, size: 18),
+              title: Text(
+                Localizations.localeOf(context).languageCode == 'zh'
+                    ? '使用策略组 ${currentGroup.name}'
+                    : 'Use group ${currentGroup.name}',
+              ),
+              trailing: _DelayChip(name: currentGroup.name, url: delayUrl),
+              onTap: () =>
+                  widget.onSelect!(currentGroup.name, currentGroup.name),
+            ),
           // Level 3 — nodes.
           Flexible(
             child: busy || currentGroup == null || visible.isEmpty

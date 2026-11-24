@@ -25,6 +25,7 @@ import (
 	"github.com/metacubex/mihomo/component/age"
 	"github.com/metacubex/mihomo/component/geodata"
 	"github.com/metacubex/mihomo/component/mmdb"
+	"github.com/metacubex/mihomo/component/profile/cachefile"
 	"github.com/metacubex/mihomo/component/resolver"
 	"github.com/metacubex/mihomo/component/updater"
 	"github.com/metacubex/mihomo/config"
@@ -246,6 +247,10 @@ func handleChangeProxy(data string, fn func(string string)) {
 			fn(err.Error())
 			return
 		}
+		if params.Persist {
+			cachefile.Cache().SetSelected(groupName, proxyName)
+		}
+
 		fn("")
 		return
 	}()

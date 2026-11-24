@@ -30,6 +30,14 @@ subprojects {
     }
 }
 subprojects {
+    if (name == "file_picker") {
+        pluginManager.withPlugin("com.android.library") {
+            // file_picker 8.3.7 pins API 34, while its lifecycle plugin requires API 36.
+            extensions.getByType<com.android.build.api.variant.LibraryAndroidComponentsExtension>().finalizeDsl {
+                it.compileSdk = 36
+            }
+        }
+    }
     project.evaluationDependsOn(":app")
 }
 

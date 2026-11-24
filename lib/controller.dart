@@ -179,6 +179,7 @@ class AppController {
   Future<void> _restartCore({
     bool setupConfig = true,
     bool refreshData = true,
+    bool requireWindowsHelper = false,
   }) async {
     commonPrint.log('restart core');
     _appliedPortSettings = null;
@@ -216,7 +217,7 @@ class AppController {
     }
     if (system.isDesktop) {
       lastProfileModified = null;
-      await clashService!.reStart();
+      await clashService!.reStart(requireHelper: requireWindowsHelper);
     }
     await _initCore();
 
@@ -233,19 +234,20 @@ class AppController {
     }
 
     if (wasRunning) {
-      // 起服务同样可能被系统拒绝（旧会话未释放 / 前台限制），重试几次再放弃。
+      // Android already retries establishment inside the native start request.
       for (var attempt = 0; attempt < 3; attempt++) {
         try {
-          await globalState.handleStart([
-            updateRunTime,
-            updateTraffic,
-          ], !keepVpnService);
+          await globalState.handleStart(
+            tasks: [updateRunTime, updateTraffic],
+            includeVpnService: !keepVpnService,
+            vpnStartTimeout: const Duration(seconds: 15),
+          );
           break;
         } catch (e) {
           commonPrint.log(
             'restartCore: start attempt ${attempt + 1} failed: $e',
           );
-          if (attempt == 2) rethrow;
+          if (system.isAndroid || attempt == 2) rethrow;
           await Future.delayed(const Duration(milliseconds: 400));
         }
       }
@@ -253,6 +255,9 @@ class AppController {
         _ref.read(runTimeProvider.notifier).value = 0;
       }
       _scheduleCheckIpRefresh();
+      if (system.isDesktop && _ref.read(realTunEnableProvider)) {
+        unawaited(_observeTun());
+      }
       _backgroundLoad();
     }
   }
@@ -327,24 +332,40 @@ class AppController {
     }
     if (cancellation.isCompleted) return;
     await globalState.handleStart(
-      [updateRunTime, updateTraffic],
-      true,
-      cancellation,
+      tasks: [updateRunTime, updateTraffic],
+      includeVpnService: true,
+      cancellation: cancellation,
     );
     if (cancellation.isCompleted) return;
     if (_ref.read(runTimeProvider) == null) {
       _ref.read(runTimeProvider.notifier).value = 0;
     }
     _scheduleCheckIpRefresh();
+    if (system.isDesktop && _ref.read(realTunEnableProvider)) {
+      unawaited(_observeTun());
+    }
     _backgroundLoad();
   }
+
+  bool get desktopLocalProxyOnly => _ref.read(desktopLocalProxyOnlyProvider);
+
+  @visibleForTesting
+  Future<bool> Function()? connectionProbeForTest;
+
+  @visibleForTesting
+  int connectionCheckAttemptsForTest = 0;
+
+  @visibleForTesting
+  bool get canCheckConnectionForTest =>
+      _canCheckConnection(_connectionCheckGeneration);
 
   Timer? _ipRefreshTimer;
   int _connectionCheckGeneration = 0;
   HttpClient? _connectionCheckClient;
 
-  void refreshConnectionCheck({bool immediate = false}) =>
-      _scheduleCheckIpRefresh(immediate: immediate);
+  void refreshConnectionCheck({bool immediate = false}) {
+    _scheduleCheckIpRefresh(immediate: immediate);
+  }
 
   void _scheduleCheckIpRefresh({bool immediate = false}) {
     final generation = ++_connectionCheckGeneration;
@@ -360,8 +381,7 @@ class AppController {
         _ref.read(connectionTargetProvider) != true) {
       return;
     }
-    final delay = immediate ? Duration.zero : const Duration(seconds: 1);
-    _ipRefreshTimer = Timer(delay, () {
+    void refresh() {
       if (!_ref.read(runTimeProvider.notifier).isStart) return;
       // Restarting the core (and the notification's 重置, which goes through
       // it) changes the exit IP. The old result has to be cleared, not just
@@ -372,24 +392,59 @@ class AppController {
       detectionState.startCheck(immediate: true, clearPrevious: true);
       addCheckIpNumDebounce();
       unawaited(_checkConnection(generation));
+    }
+
+    if (immediate) {
+      refresh();
+    } else {
+      _ipRefreshTimer = Timer(const Duration(seconds: 1), refresh);
+    }
+  }
+
+  bool _canCheckConnection(int generation) =>
+      context.mounted &&
+      !globalState.isExiting &&
+      generation == _connectionCheckGeneration &&
+      _ref.read(runTimeProvider.notifier).isStart &&
+      _ref.read(connectionTargetProvider) != false &&
+      !desktopLocalProxyOnly;
+
+  Future<void> _checkConnection(int generation, {int retries = 0}) async {
+    connectionCheckAttemptsForTest++;
+    if (!_canCheckConnection(generation)) return;
+    if (retries == 0) {
+      _ref.read(connectionCheckProvider.notifier).state =
+          ConnectionCheck.checking;
+    }
+    final probe = connectionProbeForTest ?? _probeConnection;
+    final reachable = await probe();
+    if (!_canCheckConnection(generation)) return;
+
+    _ref.read(connectionCheckProvider.notifier).state = reachable
+        ? ConnectionCheck.reachable
+        : ConnectionCheck.limited;
+    if (reachable || retries >= 3) return;
+
+    final delay = switch (retries) {
+      0 => const Duration(seconds: 3),
+      1 => const Duration(seconds: 10),
+      _ => const Duration(seconds: 30),
+    };
+    _ipRefreshTimer = Timer(delay, () {
+      unawaited(_checkConnection(generation, retries: retries + 1));
     });
   }
 
-  Future<void> _checkConnection(int generation) async {
+  Future<bool> _probeConnection() async {
     final port = effectiveMixedPort;
     final uri = Uri.tryParse(getRealTestUrl(null));
-    _ref.read(connectionCheckProvider.notifier).state =
-        ConnectionCheck.checking;
     final client = _connectionCheckClient = HttpClient();
-    final reachable = await probeProxyConnection(client, uri ?? Uri(), port);
-    if (identical(_connectionCheckClient, client)) {
-      _connectionCheckClient = null;
-    }
-    if (generation == _connectionCheckGeneration &&
-        _ref.read(runTimeProvider.notifier).isStart) {
-      _ref.read(connectionCheckProvider.notifier).state = reachable
-          ? ConnectionCheck.reachable
-          : ConnectionCheck.limited;
+    try {
+      return await probeProxyConnection(client, uri ?? Uri(), port);
+    } finally {
+      if (identical(_connectionCheckClient, client)) {
+        _connectionCheckClient = null;
+      }
     }
   }
 
@@ -890,13 +945,19 @@ class AppController {
   }
 
   Future<bool?> _prepareTun(bool targetTun) async {
-    final res = await _requestAdmin(targetTun);
-    if (res.needRestart) {
-      await _restartCore(setupConfig: false, refreshData: false);
-    } else if (res.isError) {
-      return null;
+    final result = await _requestAdmin(targetTun);
+    if (result.isError) return null;
+    final enabled =
+        result.data ?? _ref.read(realTunEnableProvider) ?? targetTun;
+    if (result.needRestart) {
+      await _restartCore(
+        setupConfig: false,
+        refreshData: false,
+        requireWindowsHelper: system.isWindows,
+      );
     }
-    return res.data ?? _ref.read(realTunEnableProvider);
+    _ref.read(realTunEnableProvider.notifier).value = enabled;
+    return enabled;
   }
 
   /// item 6 — pick a session-only fallback port when the configured mixed proxy
@@ -966,8 +1027,6 @@ class AppController {
   ///
   /// 和混合端口不同，控制器地址没法用 `copyWith` 传下去（枚举里写死），所以
   /// 这里存成会话字段，由 `patchRawConfig` 读 [effectiveExternalController]。
-  /// 这样"写进内核配置"和"告诉原生通知栏卡片"用的是同一个值——上一轮混合
-  /// 端口出问题，就是因为改了一处、另一处还读老配置。
   Future<void> _resolveExternalControllerFallback() async {
     // 控制器端口有独立的开关，和混合端口避让互不影响。
     if (!_ref.read(vpnSettingProvider).controllerPortFallback) return;
@@ -1024,10 +1083,9 @@ class AppController {
     final tunResult = await _requestAdmin(updateParams.tun.enable);
     if (tunResult.isError) return;
 
-    final bool realTunEnable =
-        tunResult.data ?? _ref.read(realTunEnableProvider);
+    final realTunEnable = tunResult.data!;
     if (tunResult.needRestart) {
-      await _restartCore();
+      await _restartCore(requireWindowsHelper: system.isWindows);
       return;
     }
 
@@ -1039,6 +1097,10 @@ class AppController {
       mixedPort: patchConfig.mixedPort,
       controller: patchConfig.externalController,
     );
+
+    final tunChanged = _ref.read(realTunEnableProvider) != realTunEnable;
+    _ref.read(realTunEnableProvider.notifier).value = realTunEnable;
+    if (tunChanged) _scheduleCheckIpRefresh();
 
     if (system.isDesktop) {
       final prefs = await preferences.sharedPreferencesCompleter.future;
@@ -1056,24 +1118,22 @@ class AppController {
 
   Future<Result<bool>> _requestAdmin(bool enableTun) async {
     final realTunEnable = _ref.read(realTunEnableProvider);
-    if (enableTun != realTunEnable && realTunEnable == false) {
-      final code = await system.authorizeCore();
-      switch (code) {
-        case AuthorizeCode.success:
-          _ref.read(realTunEnableProvider.notifier).value = enableTun;
-          return Result.success(enableTun, needRestart: true);
-        case AuthorizeCode.none:
-          break;
-        case AuthorizeCode.error:
-          globalState.showNotifier(
-            'TUN mode requires administrator privileges.',
-          );
-          enableTun = false;
-          break;
-      }
+    if (!enableTun || (realTunEnable && !system.isWindows)) {
+      return Result.success(enableTun);
     }
-    _ref.read(realTunEnableProvider.notifier).value = enableTun;
-    return Result.success(enableTun);
+    final code = await system.authorizeCore(
+      currentCoreUsesHelper: clashService?.usesHelper ?? false,
+    );
+    switch (code) {
+      case AuthorizeCode.success:
+        return Result.success(true, needRestart: true);
+      case AuthorizeCode.none:
+        return Result.success(true);
+      case AuthorizeCode.error:
+        final message = appLocalizations.tunEnableRequireAdmin;
+        globalState.showNotifier(message);
+        return Result.error(message);
+    }
   }
 
   Future<void> setupClashConfig() {
@@ -2305,11 +2365,7 @@ class AppController {
         globalState.showNotifier(appLocalizations.networkErrorRetryLater);
       } else if (method == 'runStateChanged') {
         final state = arguments as String?;
-        if (state == 'START') {
-          // A tile/notification can start the service while this isolate is
-          // still alive. Pull the native state into the app immediately.
-          unawaited(globalState.syncVpnState());
-        } else if (state == 'STOP' &&
+        if (state == 'STOP' &&
             !_isStarting &&
             !_ref.read(isRestartingCoreProvider) &&
             _ref.read(connectionTargetProvider) == null &&
@@ -2330,8 +2386,7 @@ class AppController {
     });
 
     if (system.isAndroid) {
-      // A tile start may have completed before the UI engine attached. Sync
-      // once before the slower core/profile initialization path.
+      // A tile can start VPN before the UI engine attaches.
       await globalState.syncVpnState();
     }
 
@@ -2861,6 +2916,7 @@ class AppController {
     _ref
         .read(networkSettingProvider.notifier)
         .updateState((state) => state.copyWith(systemProxy: enabled));
+    if (changed) _scheduleCheckIpRefresh();
 
     // Retry once so a slow platform backend does not surface a transient false
     // mismatch. The desired state is already applied — this only affects how
@@ -2927,9 +2983,16 @@ class AppController {
   /// observes and logs. Never throws.
   Future<void> _observeTun() async {
     if (!system.isDesktop) return;
+    final generation = _coreGeneration;
     final desired = _ref.read(patchClashConfigProvider).tun.enable;
+    bool current() =>
+        context.mounted &&
+        generation == _coreGeneration &&
+        _ref.read(runTimeProvider.notifier).isStart &&
+        _ref.read(patchClashConfigProvider).tun.enable == desired;
     for (var attempt = 1; attempt <= _tunConfirmAttempts; attempt++) {
       await Future<void>.delayed(_tunSetSettle);
+      if (!current()) return;
       try {
         final readback = await TunReadbackService.instance.read();
         final transient =
@@ -2953,6 +3016,9 @@ class AppController {
       'TUN readback: desired=ON but the OS interface is still absent '
       '($_tunConfirmAttempts attempts)',
     );
+    if (desired && current()) {
+      globalState.showNotifier(appLocalizations.tunMismatchOn);
+    }
   }
 
   Future<List<Package>> getPackages({bool forceRefresh = false}) async {
@@ -3419,19 +3485,49 @@ class AppController {
               _ref.read(profilesProvider),
             )
           : ProfileRecoveryPlan.exact(config.profiles);
+      final recoveredProfileIds = profileRecovery.profiles
+          .map((profile) => profile.id)
+          .toSet();
+      final restoredAggregateIds = config.aggregates
+          .map((aggregate) => aggregate.id)
+          .toSet();
+      final currentProfileId = profileRecovery.targetId(
+        config.currentProfileId,
+      );
       config = config.copyWith(
         profiles: profileRecovery.profiles,
-        currentProfileId: profileRecovery.targetId(config.currentProfileId),
+        currentProfileId: recoveredProfileIds.contains(currentProfileId)
+            ? currentProfileId
+            : null,
+        currentAggregateId:
+            restoredAggregateIds.contains(config.currentAggregateId)
+            ? config.currentAggregateId
+            : null,
+        aggregates: [
+          for (final aggregate in config.aggregates)
+            aggregate.copyWith(
+              memberIds: <String>{
+                for (final memberId in aggregate.memberIds)
+                  if (recoveredProfileIds.contains(
+                    profileRecovery.targetId(memberId),
+                  ))
+                    profileRecovery.targetId(memberId)!,
+              }.toList(),
+            ),
+        ],
       );
       final profileChains = profileChainData == null
           ? null
           : {
               for (final entry in profileChainData.entries)
-                profileRecovery.targetId(
-                  entry.key,
-                )!: ProfileChainConfig.fromJson(
-                  entry.value as Map<String, dynamic>,
-                ).copyWith(profileId: profileRecovery.targetId(entry.key)!),
+                if (recoveredProfileIds.contains(
+                  profileRecovery.targetId(entry.key),
+                ))
+                  profileRecovery.targetId(
+                    entry.key,
+                  )!: ProfileChainConfig.fromJson(
+                    entry.value as Map<String, dynamic>,
+                  ).copyWith(profileId: profileRecovery.targetId(entry.key)!),
             };
       await restoreBackupFiles(
         archive.files
@@ -3823,6 +3919,20 @@ class AppController {
       // 8. Restore proxy style
       _ref.read(proxiesStyleSettingProvider.notifier).value =
           config.proxiesStyle;
+
+      globalState.config = globalState.config.copyWith(
+        aggregateMode: config.aggregateMode,
+        aggregateScriptTiming: config.aggregateScriptTiming,
+        aggregateMergeNodes: config.aggregateMergeNodes,
+        aggregateMergeGroups: config.aggregateMergeGroups,
+        aggregateMergeRules: config.aggregateMergeRules,
+        aggregateMergeRuleProviders: config.aggregateMergeRuleProviders,
+        aggregateMergeMemberScripts: config.aggregateMergeMemberScripts,
+        aggregateApplyNodeOverrides: config.aggregateApplyNodeOverrides,
+        aggregateOverrideData: config.aggregateOverrideData,
+        aggregates: config.aggregates,
+        currentAggregateId: config.currentAggregateId,
+      );
 
       // 9. Restore DNS override settings
       _ref.read(overrideDnsProvider.notifier).value = config.overrideDns;

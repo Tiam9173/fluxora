@@ -13,6 +13,7 @@ typedef NativeEventCallback =
 
 class Service {
   static final Service _instance = Service._internal();
+  static const defaultVpnStartTimeout = Duration(seconds: 90);
   final MethodChannel methodChannel = const MethodChannel('service');
 
   final List<NativeEventCallback> _nativeEventCallbacks = [];
@@ -43,7 +44,7 @@ class Service {
 
   Future<bool> waitForVpnStart({
     AndroidVpnOptions? options,
-    Duration timeout = const Duration(seconds: 90),
+    Duration timeout = defaultVpnStartTimeout,
     Duration pollInterval = const Duration(milliseconds: 250),
     Future<void>? cancellation,
   }) async {

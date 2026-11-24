@@ -129,7 +129,7 @@ void main() {
         final content = await buildGradle.readAsString();
 
         // SDK versions & compatibility
-        expect(content, contains('compileSdk = 36'));
+        expect(content, contains('compileSdk = 37'));
         expect(content, contains('minSdk = 26'));
         expect(content, contains('targetSdk = 36'));
         expect(content, contains('useLegacyPackaging = true'));
@@ -228,11 +228,9 @@ void main() {
       },
     );
 
-
     // ══════════════════════════════════════════════════════════════════════════
     // 5. Chain Proxy Multi-Hop Test (2-Hop and 3-Hop on Android)
     // ══════════════════════════════════════════════════════════════════════════
-
 
     // ══════════════════════════════════════════════════════════════════════════
     // 6. Flap Dampening Android Stress Test

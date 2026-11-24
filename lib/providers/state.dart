@@ -348,6 +348,17 @@ final connectionCheckProvider = StateProvider<ConnectionCheck>(
   (ref) => ConnectionCheck.untested,
 );
 
+final desktopLocalProxyOnlyProvider = Provider<bool>((ref) {
+  if (!system.isDesktop) return false;
+  final systemProxy = ref.watch(
+    networkSettingProvider.select((state) => state.systemProxy),
+  );
+  final wantsTun = ref.watch(
+    patchClashConfigProvider.select((state) => state.tun.enable),
+  );
+  return !systemProxy && !wantsTun && !ref.watch(realTunEnableProvider);
+});
+
 final systemProxyAppliedProvider = StateProvider<bool?>((ref) => null);
 
 /// P1 ⑥ — the raw core message of the **last successful** setup that carried

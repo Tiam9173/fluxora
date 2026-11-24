@@ -14,6 +14,7 @@ import io.flutter.FlutterInjector
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.dart.DartExecutor
 import io.flutter.plugins.GeneratedPluginRegistrant
+import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -301,6 +302,19 @@ object GlobalState {
 
     fun getCurrentVPNPlugin(): VpnPlugin? {
         return serviceEngine?.plugins?.get(VpnPlugin::class.java) as? VpnPlugin
+    }
+
+    internal fun requestSwitchCard(
+        method: String,
+        arguments: Map<String, String>,
+        result: MethodChannel.Result,
+    ) {
+        val messenger = serviceEngine?.dartExecutor?.binaryMessenger
+        if (messenger == null) {
+            result.error("SERVICE_UNAVAILABLE", "代理服务尚未就绪", null)
+            return
+        }
+        MethodChannel(messenger, "switch_card").invokeMethod(method, arguments, result)
     }
 
     fun handleToggle() {

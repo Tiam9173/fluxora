@@ -175,4 +175,21 @@ void main() {
     // State is unchanged
     expect(globalState.appState.runTime, 100);
   });
+
+  testWidgets('restart readiness stops waiting at its shorter deadline', (
+    tester,
+  ) async {
+    System.platformOverride = 'windows';
+    mockStatusResult = false;
+    bool? result;
+    unawaited(
+      Service()
+          .waitForVpnStart(timeout: const Duration(seconds: 15))
+          .then((value) => result = value),
+    );
+    await tester.pump(const Duration(seconds: 14));
+    expect(result, isNull);
+    await tester.pump(const Duration(seconds: 1));
+    expect(result, isFalse);
+  });
 }

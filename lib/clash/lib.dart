@@ -201,7 +201,7 @@ class ClashLibHandler {
     return _instance!;
   }
 
-  Future<String> invokeAction(String actionParams) {
+  Future<String> invokeAction(String actionParams, {Duration? timeout}) {
     final completer = Completer<String>();
     final receiver = ReceivePort();
     receiver.listen((message) {
@@ -213,7 +213,9 @@ class ClashLibHandler {
     final actionParamsChar = actionParams.toNativeUtf8().cast<Char>();
     clashFFI.invokeAction(actionParamsChar, receiver.sendPort.nativePort);
     malloc.free(actionParamsChar);
-    return completer.future;
+    return timeout == null
+        ? completer.future
+        : completer.future.timeout(timeout).whenComplete(receiver.close);
   }
 
   /// Same as [invokeAction], but returns the action payload instead of the

@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fluxora/clash/interface.dart';
 import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/models/models.dart';
+import 'package:fluxora/state.dart';
 
 /// Models the native 50-worker delay batch without opening sockets or a core.
 class _QueuedCore extends ClashHandlerInterface {
@@ -16,6 +17,7 @@ class _QueuedCore extends ClashHandlerInterface {
   int active = 0;
   int peak = 0;
   int dispatched = 0;
+  int? timeoutMilliseconds;
 
   @override
   void sendMessage(String message) {
@@ -31,6 +33,7 @@ class _QueuedCore extends ClashHandlerInterface {
     dispatched++;
     final data = jsonDecode(action.data as String) as Map<String, dynamic>;
     budgetsMs.add(data['timeout'] as int);
+    timeoutMilliseconds = data['timeout'] as int;
     if ((data['proxy-name'] as String).startsWith('silent-')) {
       return;
     }
@@ -69,6 +72,25 @@ class _QueuedCore extends ClashHandlerInterface {
 }
 
 void main() {
+  test('uses the configured timeout for the core and the RPC deadline', () {
+    final previous = globalState.config;
+    addTearDown(() => globalState.config = previous);
+    globalState.config = previous.copyWith(healthCheckTimeout: 12000);
+
+    fakeAsync((clock) {
+      final core = _QueuedCore();
+      String? result;
+      core.asyncTestDelay('https://example.test/204', 'silent-0').then((raw) {
+        result = raw;
+      });
+      expect(core.timeoutMilliseconds, 12000);
+      clock.elapse(const Duration(seconds: 12));
+      expect(result, isNull);
+      clock.elapse(const Duration(seconds: 2));
+      expect(Delay.fromJson(jsonDecode(result!)).value, -1);
+    });
+  });
+
   test('real request deadlines release slots for queued healthy nodes', () {
     fakeAsync((clock) {
       final core = _QueuedCore();

@@ -1174,10 +1174,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "fruitSaladScheme": MessageLookupByLibrary.simpleMessage("سالاد میوه"),
     "general": MessageLookupByLibrary.simpleMessage("عمومی"),
     "generalCardCoreDesc": MessageLookupByLibrary.simpleMessage(
-      "هسته همیشه روی لوپ‌بک گوش می‌دهد تا کارت بتواند وصل شود",
+      "حتی اگر کنترل‌گر خارجی خاموش باشد، هسته همچنان روی نشانی لوپ‌بک گوش می‌دهد.",
     ),
     "generalCardCoreTitle": MessageLookupByLibrary.simpleMessage(
-      "دسترسی کارت به هسته",
+      "کنترل‌گر محلی همیشه فعال باشد",
     ),
     "generalDesc": MessageLookupByLibrary.simpleMessage("تغییر تنظیمات عمومی"),
     "generalKeepService": MessageLookupByLibrary.simpleMessage(

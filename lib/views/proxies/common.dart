@@ -218,24 +218,27 @@ Future<void> delayTest(
         .clamp(1, maxConcurrentDelayTests);
 
     // Deduplicate the same path and URL; groups retain their own measurements.
-    final pending = targets.iterator;
-    Future<void> testPendingTargets() async {
-      while (appController.ref.read(currentProfileIdProvider) == profileId &&
-          pending.moveNext()) {
-        final target = pending.current;
+    final delayTasks = targets.map((target) {
+      return () async {
         try {
           await _testProxyDelay(target);
           await onDelayUpdated?.call();
         } catch (e) {
           commonPrint.log('Delay task failed for ${target.name}: $e');
         }
+      };
+    }).toList();
+
+    var nextTask = 0;
+    Future<void> runWorker() async {
+      while (appController.ref.read(currentProfileIdProvider) == profileId) {
+        if (nextTask >= delayTasks.length) return;
+        final task = delayTasks[nextTask++];
+        await task();
       }
     }
 
-    await Future.wait([
-      for (var i = 0; i < concurrencyLimit && i < targets.length; i++)
-        testPendingTargets(),
-    ]);
+    await Future.wait(List.generate(concurrencyLimit, (_) => runWorker()));
     if (appController.ref.read(currentProfileIdProvider) != profileId) return;
     appController.addSortNum();
     // A `url-test` group would otherwise keep whatever the core picked at its

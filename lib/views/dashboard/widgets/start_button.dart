@@ -220,6 +220,7 @@ class _StartButtonState extends ConsumerState<StartButton> {
     final systemProxyFailed = systemProxyApplied == false && wantsSystemProxy;
     final systemProxyPending =
         system.isWindows && wantsSystemProxy && systemProxyApplied == null;
+    final localOnly = ref.watch(desktopLocalProxyOnlyProvider);
     final isSmartStopped = ref.watch(isSmartStoppedProvider);
     final isRestarting = ref.watch(isRestartingCoreProvider);
     final canPress =
@@ -291,6 +292,7 @@ class _StartButtonState extends ConsumerState<StartButton> {
                       ? ConnectionCheck.checking
                       : connectionCheck,
                   systemProxyFailed: systemProxyFailed,
+                  localOnly: localOnly,
                 );
 
           // The header names the *control*; `hero.label` names the *state*.
@@ -580,11 +582,13 @@ class _StartButtonState extends ConsumerState<StartButton> {
                           if (displayStart)
                             connectionCheck != ConnectionCheck.reachable &&
                                     !systemProxyFailed &&
-                                    !systemProxyPending
+                                    !systemProxyPending &&
+                                    !localOnly
                                 ? TextButton.icon(
                                     key: const ValueKey('connection-retry'),
                                     onPressed:
                                         busy ||
+                                            target == false ||
                                             connectionCheck ==
                                                 ConnectionCheck.checking
                                         ? null
@@ -655,6 +659,7 @@ class _StartButtonState extends ConsumerState<StartButton> {
     required int? runTime,
     required ConnectionCheck connectionCheck,
     required bool systemProxyFailed,
+    required bool localOnly,
   }) {
     if (!isInit) {
       return (
@@ -689,6 +694,13 @@ class _StartButtonState extends ConsumerState<StartButton> {
         return (
           kind: FluxoraStatusKind.warning,
           label: appLocalizations.systemProxyMismatchOn,
+          value: _formatRunTime(runTime),
+        );
+      }
+      if (localOnly) {
+        return (
+          kind: FluxoraStatusKind.unknown,
+          label: appLocalizations.localProxyOnly,
           value: _formatRunTime(runTime),
         );
       }

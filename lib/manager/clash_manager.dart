@@ -33,16 +33,33 @@ class _ClashContainerState extends ConsumerState<ClashManager>
     clashMessage.addListener(this);
     ref.listenManual(needSetupProvider, (prev, next) {
       if (prev != next) {
+        final profileChanged = prev?.a != next.a;
         // Reload notifications must not inherit a completed lifecycle lock.
-        Zone.root.run(
-          () => unawaited(
+        Zone.root.run(() {
+          // DNS-only edits rebuild the active config without presenting them as
+          // a profile switch or clearing unrelated runtime state.
+          if (prev != null &&
+              !profileChanged &&
+              prev.b == next.b &&
+              prev.c != next.c) {
+            unawaited(
+              globalState.appController.applyProfile().catchError((
+                Object error,
+                StackTrace stackTrace,
+              ) {
+                commonPrint.log('DNS profile apply failed: $error');
+              }),
+            );
+            return;
+          }
+          unawaited(
             globalState.appController
                 .handleChangeProfile(previousProfileId: prev?.a)
                 .catchError((Object error, StackTrace stackTrace) {
                   commonPrint.log('Profile change failed: $error');
                 }),
-          ),
-        );
+          );
+        });
       }
     });
     ref.listenManual(coreStateProvider, (prev, next) async {

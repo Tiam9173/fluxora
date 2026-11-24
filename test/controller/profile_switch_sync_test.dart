@@ -20,14 +20,17 @@ import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/l10n/l10n.dart';
 import 'package:fluxora/manager/clash_manager.dart';
+import 'package:fluxora/views/config/dns.dart';
+import 'package:fluxora/views/profiles/profiles.dart';
 import 'package:fluxora/views/proxies/proxies.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:yaml/yaml.dart';
-import '../support/render_capture.dart';
 // ignore: depend_on_referenced_packages
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 // ignore: depend_on_referenced_packages
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+
+import '../support/render_capture.dart';
 
 class _Paths extends Fake
     with MockPlatformInterfaceMixin
@@ -47,6 +50,9 @@ class _Core extends Fake implements ClashHandlerInterface {
   String groupType = 'Selector';
   String? nativeLock;
   final changes = <ChangeProxyParams>[];
+  final setups = <String>[];
+  final startedB = Completer<void>();
+  Completer<void>? releaseB;
   Completer<void>? pendingSetup;
   int? appliedPort;
   @override
@@ -78,6 +84,11 @@ class _Core extends Fake implements ClashHandlerInterface {
     );
     final name = (config['proxies'] as List).first['name'] as String;
     appliedPort = config['mixed-port'] as int?;
+    setups.add(name);
+    if (releaseB case final release? when name == 'B-node') {
+      startedB.complete();
+      await release.future;
+    }
     if (name == 'B-node' && pendingSetup != null) await pendingSetup!.future;
     if (rejectB && name == 'B-node') {
       throw StateError('Invalid B configuration');
@@ -118,6 +129,13 @@ class _Core extends Fake implements ClashHandlerInterface {
 class _Controller extends AppController {
   _Controller(super.context, super.ref);
   Future<void>? lastChange;
+  Future<void>? lastApply;
+
+  @override
+  Future<void> applyProfile({bool silence = false}) {
+    return lastApply = super.applyProfile(silence: silence);
+  }
+
   @override
   Future<void> handleChangeProfile({
     bool hardRestart = false,
@@ -171,6 +189,7 @@ void main() {
       autoUpdateDuration: Duration(days: 1),
     ),
   ];
+  final thirdProfile = profiles.first.copyWith(id: 'switch-C', label: 'C');
 
   setUp(() async {
     PathProviderPlatform.instance = _Paths();
@@ -200,7 +219,7 @@ void main() {
       totalTraffic: Traffic(),
       systemUiOverlayStyle: const SystemUiOverlayStyle(),
     );
-    for (final profile in profiles) {
+    for (final profile in [...profiles, thirdProfile]) {
       await (await profile.getFile()).writeAsString('''
 proxies:
   - {name: ${profile.label}-node, type: ss, server: example.invalid, port: 443, cipher: aes-128-gcm, password: fixture}
@@ -528,6 +547,108 @@ dns:
     },
   );
 
+  testWidgets('profile cards accept the latest choice while B is applying', (
+    tester,
+  ) async {
+    const cards = Key('profile-cards');
+    if (const bool.fromEnvironment('UI_REFINEMENT_CAPTURE')) {
+      await (FontLoader('HarmonyOS_Sans')..addFont(
+            rootBundle.load('assets/fonts/HarmonyOS_Sans_SC_Regular.ttf'),
+          ))
+          .load();
+      await (FontLoader(
+        'MaterialIcons',
+      )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
+    }
+    globalState.config = globalState.config.copyWith(
+      profiles: [...profiles, thirdProfile],
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          navigatorKey: globalState.navigatorKey,
+          theme: ThemeData(fontFamily: 'HarmonyOS_Sans'),
+          home: ClashManager(
+            child: Consumer(
+              builder: (context, r, _) {
+                globalState.measure = Measure.of(context, 1);
+                ref = r;
+                controller = _Controller(context, ref);
+                globalState.appController = controller;
+                return ProviderScope(
+                  overrides: [queryProvider.overrideWith(() => Query())],
+                  child: const RepaintBoundary(
+                    key: cards,
+                    child: ProfilesView(),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.runAsync(() => controller.applyProfile(silence: true));
+    await tester.pumpAndSettle();
+
+    Future<void> capture(String state) async {
+      if (const bool.fromEnvironment('UI_REFINEMENT_CAPTURE')) {
+        await captureFlutterFrame(
+          tester,
+          find.byKey(cards),
+          'build/core-x/delay-diagnostics/profile-selection-$state.png',
+        );
+      }
+    }
+
+    await capture('ready');
+    core.releaseB = Completer<void>();
+    await tester.runAsync(() async {
+      await tester.tap(find.byKey(Key(profiles.last.id)).last);
+      await core.startedB.future.timeout(const Duration(seconds: 3));
+    });
+    await tester.pump();
+    await tester.runAsync(() async {
+      await tester.tap(find.byKey(Key(profiles.first.id)).last);
+      await tester.tap(find.byKey(Key(thirdProfile.id)).last);
+    });
+    await tester.pump();
+    expect(ref.read(currentProfileIdProvider), profiles.last.id);
+    expect(ref.read(pendingProfileIdProvider), thirdProfile.id);
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is CircularProgressIndicator &&
+            widget.semanticsLabel == 'Configuration queued',
+      ),
+      findsOneWidget,
+    );
+    await tester.pump(const Duration(milliseconds: 240));
+    await capture('pending');
+    await tester.runAsync(() async {
+      final applied = Completer<void>();
+      final listener = ref.listenManual(groupsProvider, (_, groups) {
+        if (!applied.isCompleted &&
+            groups.any((group) => group.now == 'C-node')) {
+          applied.complete();
+        }
+      });
+      try {
+        core.releaseB!.complete();
+        await applied.future.timeout(const Duration(seconds: 3));
+        await controller.lastChange;
+      } finally {
+        listener.close();
+      }
+    });
+    await tester.pumpAndSettle();
+    expect(ref.read(currentProfileIdProvider), thirdProfile.id);
+    expect(ref.read(pendingProfileIdProvider), isNull);
+    expect(core.setups, ['A-node', 'B-node', 'C-node']);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   testWidgets(
     'automatic groups reflect native locks and release without reasserting stale choices',
     (tester) async {
@@ -676,6 +797,88 @@ dns:
         await Future<void>.delayed(const Duration(milliseconds: 4200));
         expect(ref.read(groupsProvider).last.all.single.name, 'B-node');
       });
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 3));
+    },
+  );
+
+  testWidgets('DNS override applies without entering profile restart', (
+    tester,
+  ) async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          home: ClashManager(
+            child: Consumer(
+              builder: (context, ref, _) {
+                controller = _Controller(context, ref);
+                globalState.appController = controller;
+                return const Scaffold(body: OverrideItem());
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+    final toggle = find.byType(Switch);
+    final before = tester.widget<Switch>(toggle).value;
+    await tester.runAsync(() async {
+      await tester.tap(toggle);
+      container.read(needSetupProvider);
+      await controller.lastApply!.timeout(const Duration(seconds: 3));
+    });
+    await tester.pump();
+    expect(tester.widget<Switch>(toggle).value, !before);
+    expect(controller.lastChange, isNull);
+    expect(container.read(isRestartingCoreProvider), isFalse);
+    expect(core.setups, ['A-node']);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets(
+    'profile selection through the live manager refreshes the scoped proxy page',
+    (tester) async {
+      final container = await tester.runAsync(() async => ProviderContainer());
+      addTearDown(container!.dispose);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            navigatorKey: globalState.navigatorKey,
+            home: ClashManager(
+              child: Consumer(
+                builder: (context, r, _) {
+                  globalState.measure = Measure.of(context, 1);
+                  ref = r;
+                  controller = _Controller(context, ref);
+                  globalState.appController = controller;
+                  return ProviderScope(
+                    overrides: [queryProvider.overrideWith(() => Query())],
+                    child: const ProxiesView(),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.runAsync(() => controller.applyProfile(silence: true));
+      await tester.pumpAndSettle();
+      expect(find.text('A-node'), findsWidgets);
+      await tester.runAsync(() async {
+        container.read(currentProfileIdProvider.notifier).value =
+            profiles.last.id;
+        container.read(needSetupProvider);
+        expect(controller.lastChange, isNotNull);
+        await controller.lastChange!.timeout(const Duration(seconds: 3));
+      });
+      await tester.pumpAndSettle();
+      expect(core.node, 'B-node');
+      expect(find.text('B-node'), findsWidgets);
+      expect(find.text('A-node'), findsNothing);
       await tester.pumpWidget(const SizedBox());
       await tester.pump(const Duration(seconds: 3));
     },

@@ -59,9 +59,13 @@ class MessageManagerState extends State<MessageManager> {
     _pushing = true;
     while (_bufferMessages.isNotEmpty) {
       final commonMessage = _bufferMessages.removeAt(0);
-      _messagesNotifier.value = List.from(_messagesNotifier.value)..add(commonMessage);
+      _messagesNotifier.value = List.from(_messagesNotifier.value)
+        ..add(commonMessage);
       await Future.delayed(const Duration(seconds: 1));
-      Future.delayed(commonMessage.duration, () => _handleRemove(commonMessage));
+      Future.delayed(
+        commonMessage.duration,
+        () => _handleRemove(commonMessage),
+      );
       if (_bufferMessages.isEmpty) _pushing = false;
     }
   }
@@ -92,58 +96,56 @@ class MessageManagerState extends State<MessageManager> {
                       key: Key(messages.last.id),
                       builder: (_, constraints) {
                         final message = messages.last;
-                        return Card(
-                          shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.all(
-                              Radius.circular(FluxoraRadius.md),
-                            ),
-                          ),
-                          elevation: 10,
-                          color: context.colorScheme.surfaceContainerHigh,
-                          child: Container(
-                            width: min(constraints.maxWidth, 500),
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 12,
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                if (message.showCountdown)
-                                  _CountdownWidget(
-                                    duration: message.duration,
-                                  ),
-                                Expanded(
-                                  child: EmojiText(
-                                    message.text,
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                                if (message.actionLabel != null &&
-                                    message.onAction != null) ...[
-                                  const SizedBox(width: 8),
-                                  TextButton(
-                                    onPressed: () {
-                                      _handleRemove(message);
-                                      message.onAction?.call();
-                                    },
-                                    style: TextButton.styleFrom(
-                                      minimumSize: Size.zero,
-                                      tapTargetSize:
-                                          MaterialTapTargetSize.shrinkWrap,
-                                      visualDensity: VisualDensity.compact,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
-                                      ),
-                                      foregroundColor:
-                                          context.colorScheme.primary,
+                        return Dismissible(
+                          key: ValueKey('message-${message.id}'),
+                          direction: DismissDirection.horizontal,
+                          onDismissed: (_) => _handleRemove(message),
+                          child: Card(
+                            child: Container(
+                              width: min(constraints.maxWidth, 500),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 12,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  if (message.showCountdown)
+                                    _CountdownWidget(
+                                      duration: message.duration,
                                     ),
-                                    child: Text(message.actionLabel!),
+                                  Expanded(
+                                    child: EmojiText(
+                                      message.text,
+                                      textAlign: TextAlign.center,
+                                    ),
                                   ),
+                                  if (message.actionLabel != null &&
+                                      message.onAction != null) ...[
+                                    const SizedBox(width: 8),
+                                    TextButton(
+                                      onPressed: () {
+                                        _handleRemove(message);
+                                        message.onAction?.call();
+                                      },
+                                      style: TextButton.styleFrom(
+                                        minimumSize: Size.zero,
+                                        tapTargetSize:
+                                            MaterialTapTargetSize.shrinkWrap,
+                                        visualDensity: VisualDensity.compact,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        foregroundColor:
+                                            context.colorScheme.primary,
+                                      ),
+                                      child: Text(message.actionLabel!),
+                                    ),
+                                  ],
                                 ],
-                              ],
+                              ),
                             ),
                           ),
                         );
@@ -175,10 +177,7 @@ class _CountdownWidgetState extends State<_CountdownWidget>
   void initState() {
     super.initState();
     _totalSeconds = widget.duration.inSeconds;
-    _controller = AnimationController(
-      vsync: this,
-      duration: widget.duration,
-    );
+    _controller = AnimationController(vsync: this, duration: widget.duration);
     _controller.forward();
   }
 

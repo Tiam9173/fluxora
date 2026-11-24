@@ -249,6 +249,23 @@ void main() {
       globalState.config = globalState.config.copyWith(
         profiles: [backupProfile],
         currentProfileId: backupProfile.id,
+        aggregateMode: AggregateMode.full,
+        aggregateScriptTiming: AggregateScriptTiming.before,
+        aggregateMergeNodes: false,
+        aggregateMergeGroups: false,
+        aggregateMergeRules: false,
+        aggregateMergeRuleProviders: false,
+        aggregateMergeMemberScripts: false,
+        aggregateApplyNodeOverrides: false,
+        aggregateOverrideData: const OverrideData(enable: true),
+        aggregates: [
+          const AggregateProfile(
+            id: 'backup-aggregate',
+            name: 'Backup aggregate',
+            memberIds: ['backup-profile', 'missing-profile', 'backup-profile'],
+          ),
+        ],
+        currentAggregateId: 'backup-aggregate',
       );
       final backupChain = const ProfileChainConfig(
         profileId: 'backup-profile',
@@ -264,6 +281,10 @@ void main() {
       globalState.config = globalState.config.copyWith(
         profiles: [localProfile],
         currentProfileId: 'keep-current',
+        aggregateMode: AggregateMode.nodePool,
+        aggregateMergeRules: true,
+        aggregates: const [],
+        currentAggregateId: null,
       );
       await profileChainManager.restoreBackupConfig({
         localProfile.id: ProfileChainConfig(
@@ -277,6 +298,24 @@ void main() {
       expect(globalState.config.profiles.single.id, localProfile.id);
       expect(globalState.config.profiles.single.label, localProfile.label);
       expect(globalState.config.currentProfileId, localProfile.id);
+      expect(globalState.config.aggregates.single.id, 'backup-aggregate');
+      expect(globalState.config.aggregates.single.memberIds, [localProfile.id]);
+      expect(globalState.config.currentAggregateId, 'backup-aggregate');
+      expect(globalState.config.aggregateMode, AggregateMode.full);
+      expect(
+        globalState.config.aggregateScriptTiming,
+        AggregateScriptTiming.before,
+      );
+      expect(globalState.config.aggregateMergeNodes, isFalse);
+      expect(globalState.config.aggregateMergeGroups, isFalse);
+      expect(globalState.config.aggregateMergeRules, isFalse);
+      expect(globalState.config.aggregateMergeRuleProviders, isFalse);
+      expect(globalState.config.aggregateMergeMemberScripts, isFalse);
+      expect(globalState.config.aggregateApplyNodeOverrides, isFalse);
+      expect(
+        globalState.config.aggregateOverrideData,
+        const OverrideData(enable: true),
+      );
       expect(
         await File(
           p.join(target.path, 'profiles', 'local-profile.yaml'),

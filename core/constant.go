@@ -69,6 +69,7 @@ type tunSchema struct {
 type ChangeProxyParams struct {
 	GroupName *string `json:"group-name"`
 	ProxyName *string `json:"proxy-name"`
+	Persist   bool    `json:"persist"`
 }
 
 type TestDelayParams struct {

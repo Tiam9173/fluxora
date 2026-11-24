@@ -13,6 +13,38 @@ void main() {
     expect(config['dns']['fake-ip-filter-bypass'], ['dns.private.example']);
   });
 
+  test('bypasses Android Private DNS hostnames from fake-IP', () {
+    final config = <String, dynamic>{
+      'dns': {
+        'enhanced-mode': 'fake-ip',
+        'fake-ip-filter-bypass': ['existing.example'],
+      },
+    };
+
+    applyPrivateDnsBypass(config, 'Resolver.Private.Example.');
+    applyPrivateDnsBypass(config, 'resolver.private.example');
+
+    expect(config['dns']['fake-ip-filter-bypass'], [
+      'existing.example',
+      'resolver.private.example',
+    ]);
+  });
+
+  test('does not add IP addresses or alter redir-host DNS', () {
+    final fakeIp = <String, dynamic>{
+      'dns': {'enhanced-mode': 'fake-ip'},
+    };
+    final redirHost = <String, dynamic>{
+      'dns': {'enhanced-mode': 'redir-host'},
+    };
+
+    applyPrivateDnsBypass(fakeIp, '192.0.2.53');
+    applyPrivateDnsBypass(redirHost, 'resolver.private.example');
+
+    expect(fakeIp['dns'].containsKey('fake-ip-filter-bypass'), isFalse);
+    expect(redirHost['dns'].containsKey('fake-ip-filter-bypass'), isFalse);
+  });
+
   test('drops self-referencing bootstrap DNS from mixed lists and policy', () {
     final dns = <String, dynamic>{'proxy-server-nameserver': bootstrap};
     applyDnsNodeOverride(

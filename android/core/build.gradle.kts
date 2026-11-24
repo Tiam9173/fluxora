@@ -3,9 +3,11 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+// Flutter plugins in this project still use the legacy AGP DSL.
+@Suppress("DEPRECATION_ERROR")
 android {
     namespace = "io.fluxora.core"
-    compileSdk = 36
+    compileSdk = 37
     ndkVersion = "28.2.13676358"
 
     defaultConfig {
@@ -35,15 +37,17 @@ android {
         }
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
 }
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
+}
+
 dependencies {
     implementation("androidx.annotation:annotation-jvm:1.9.1")
 }

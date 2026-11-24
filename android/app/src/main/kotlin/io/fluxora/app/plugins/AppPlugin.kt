@@ -385,11 +385,12 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
         cachedTaskId = taskId
         val am = FluxoraApplication.getAppContext().getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
         val task = am?.appTasks?.firstOrNull { task ->
+            val taskInfo = task.taskInfo ?: return@firstOrNull false
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                task.taskInfo.taskId == taskId
+                taskInfo.taskId == taskId
             } else {
                 @Suppress("DEPRECATION")
-                task.taskInfo.id == taskId
+                taskInfo.id == taskId
             }
         } ?: return false
         return runCatching {

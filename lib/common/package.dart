@@ -1,5 +1,6 @@
-import 'package:package_info_plus/package_info_plus.dart';
+const defaultSubscriptionUserAgent = 'FlClash/ClashMetaForAndroid/2.11.33.Fluxora';
 
-extension PackageInfoExtension on PackageInfo {
-  String get ua => ['FlClash/ClashMetaForAndroid/2.11.33.Fluxora'].join(' ');
+String subscriptionUserAgent(String? custom) {
+  final value = custom?.trim();
+  return value == null || value.isEmpty ? defaultSubscriptionUserAgent : value;
 }
