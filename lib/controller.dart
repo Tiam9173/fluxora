@@ -2386,6 +2386,11 @@ class AppController {
     });
 
     if (system.isAndroid) {
+      // A tile can start VPN before the UI engine attaches.
+      await globalState.syncVpnState();
+    }
+
+    if (system.isAndroid) {
       await _initHighRefreshRateDefault();
     }
 

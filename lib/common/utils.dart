@@ -1337,6 +1337,19 @@ class Utils {
       return '${match.group(1)}false${match.group(3)}';
     });
   }
+  /// one. Other platforms and opportunistic/private-DNS modes return null.
+  Future<String?> getPrivateDnsServerName() async {
+    if (!system.isAndroid) return null;
+    try {
+      final value = await const MethodChannel(
+        'service',
+      ).invokeMethod<String>('getPrivateDnsServerName');
+      final host = value?.trim();
+      return host == null || host.isEmpty ? null : host;
+    } catch (_) {
+      return null;
+    }
+  }
 }
 
 final utils = Utils();

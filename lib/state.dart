@@ -417,6 +417,8 @@ class GlobalState {
     _syncVpnState();
   }
 
+  Future<void> syncVpnState() => _syncVpnState();
+
   @visibleForTesting
   Future<void> testSyncVpnState() => _syncVpnState();
 
@@ -1116,6 +1118,10 @@ class GlobalState {
         rawConfig['dns']['listen'] =
             '127.0.0.1${listen.substring('0.0.0.0'.length)}';
       }
+    }
+
+    if (system.isAndroid) {
+      applyPrivateDnsBypass(rawConfig, await utils.getPrivateDnsServerName());
     }
 
     if (rawConfig['ntp'] == null) {

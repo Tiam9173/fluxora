@@ -437,6 +437,13 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         emptyMap()
     }
 
+    fun getPrivateDnsServerName(): String = runCatching {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return@runCatching ""
+        val cm = connectivity ?: return@runCatching ""
+        val network = getDefaultPhysicalNetwork() ?: return@runCatching ""
+        cm.getLinkProperties(network)?.privateDnsServerName?.trim().orEmpty()
+    }
+
     fun handleStart(options: VpnOptions): Boolean {
         GlobalState.runLock.withLock {
             if (GlobalState.isCurrentlyStopping()) return false
