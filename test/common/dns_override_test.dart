@@ -8,6 +8,7 @@ void main() {
     final config = <String, dynamic>{
       'dns': {
         'enhanced-mode': 'fake-ip',
+        'nameserver': bootstrap,
         'fake-ip-filter-bypass': ['existing.example'],
       },
     };
@@ -19,21 +20,51 @@ void main() {
       'existing.example',
       'resolver.private.example',
     ]);
+    expect(config['dns']['nameserver'], [
+      'tls://resolver.private.example:853#DIRECT',
+    ]);
+    expect(config['dns']['fallback'], ['192.0.2.53']);
+    expect(config['dns']['fallback-lazy-query'], isTrue);
   });
 
-  test('does not add IP addresses or alter redir-host DNS', () {
+  test('does not add IP addresses and keeps redir-host on Private DNS', () {
     final fakeIp = <String, dynamic>{
-      'dns': {'enhanced-mode': 'fake-ip'},
+      'dns': <String, dynamic>{'enhanced-mode': 'fake-ip'},
     };
     final redirHost = <String, dynamic>{
-      'dns': {'enhanced-mode': 'redir-host'},
+      'dns': <String, dynamic>{'enhanced-mode': 'redir-host'},
     };
 
     applyPrivateDnsBypass(fakeIp, '192.0.2.53');
     applyPrivateDnsBypass(redirHost, 'resolver.private.example');
 
     expect(fakeIp['dns'].containsKey('fake-ip-filter-bypass'), isFalse);
-    expect(redirHost['dns'].containsKey('fake-ip-filter-bypass'), isFalse);
+    expect(redirHost['dns']['nameserver'], [
+      'tls://resolver.private.example:853#DIRECT',
+    ]);
+    expect(
+      redirHost['dns'].containsKey('fake-ip-filter-bypass'),
+      isFalse,
+    );
+  });
+
+  test('uses encrypted fallback when Private DNS is the only resolver', () {
+    final config = <String, dynamic>{
+      'dns': {
+        'enhanced-mode': 'redir-host',
+        'nameserver': ['tls://resolver.private.example:853'],
+      },
+    };
+
+    applyPrivateDnsBypass(config, 'resolver.private.example');
+
+    expect(config['dns']['nameserver'], [
+      'tls://resolver.private.example:853#DIRECT',
+    ]);
+    expect(config['dns']['fallback'], [
+      'https://dns.alidns.com/dns-query#DIRECT',
+      'https://doh.pub/dns-query#DIRECT',
+    ]);
   });
 
   test('drops self-referencing bootstrap DNS from mixed lists and policy', () {

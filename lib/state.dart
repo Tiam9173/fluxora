@@ -586,11 +586,19 @@ class GlobalState {
     startTime = null;
     stopUpdateTasks();
     try {
-      if (system.isAndroid && isService) {
-        await clashLibHandler?.stopListener();
+      if (system.isAndroid) {
+        final stopListener = isService
+            ? clashLibHandler?.stopListener()
+            : clashCore.stopListener();
+        if (stopListener != null) {
+          await stopListener.timeout(const Duration(seconds: 3));
+        }
       } else {
         await clashCore.stopListener();
       }
+    } catch (error) {
+      if (!system.isAndroid) rethrow;
+      commonPrint.log('Android core listener stop did not finish: $error');
     } finally {
       if (includeVpnService) {
         try {

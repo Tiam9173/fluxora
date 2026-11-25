@@ -18,6 +18,11 @@ void main() {
     expect(source, isNot(contains('RunState.PENDING -> Unit')));
     expect(source, contains('VpnPlugin.isServiceConnected()'));
     expect(source, contains('wasRunningBeforeRestart'));
+    expect(
+      source,
+      contains('PENDING still unresolved after retries; force stopping VPN'),
+    );
+    expect(source, contains('VpnPlugin.handleStop(force = true)'));
   });
 
   test('package update only restores a previously running VPN', () {

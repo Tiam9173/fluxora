@@ -40,6 +40,14 @@ import 'services/tun_readback.dart';
 import 'models/models.dart';
 import 'views/profiles/override_profile.dart';
 
+@visibleForTesting
+bool shouldStartAfterAppRecovery({
+  required bool hasProfile,
+  required bool isRunning,
+  required bool autoRun,
+  required bool needsRecovery,
+}) => hasProfile && (isRunning || autoRun || needsRecovery);
+
 class AppController {
   int? lastProfileModified;
 
@@ -262,14 +270,29 @@ class AppController {
     }
   }
 
-  Future<void> updateStatus(bool isStart) {
+  Future<void> updateStatus(bool isStart) async {
     final generation = ++_connectionIntent;
     final cancellation = _cancelStart;
     if (!isStart && cancellation != null && !cancellation.isCompleted) {
       cancellation.complete();
     }
     _ref.read(connectionTargetProvider.notifier).state = isStart;
-    return _coreLifecycleLock.synchronized(() async {
+    if (!isStart &&
+        system.isAndroid &&
+        (cancellation != null || globalState.isStart)) {
+      try {
+        final stopped = await vpn_service.service?.stopVpn().timeout(
+          const Duration(seconds: 3),
+        );
+        if (stopped == true && generation == _connectionIntent) {
+          _ref.read(runTimeProvider.notifier).value = null;
+          _ref.read(connectionTargetProvider.notifier).state = null;
+        }
+      } catch (error) {
+        commonPrint.log('Immediate Android VPN stop failed: $error');
+      }
+    }
+    await _coreLifecycleLock.synchronized(() async {
       if (generation != _connectionIntent) return;
       try {
         await _updateStatus(isStart);
@@ -2491,9 +2514,12 @@ class AppController {
       await macOS?.updateDns(true);
     }
     final hasProfile = _ref.read(currentProfileProvider) != null;
-    final shouldStart =
-        hasProfile &&
-        (globalState.isStart || _ref.read(appSettingProvider).autoRun);
+    final shouldStart = shouldStartAfterAppRecovery(
+      hasProfile: hasProfile,
+      isRunning: globalState.isStart,
+      autoRun: _ref.read(appSettingProvider).autoRun,
+      needsRecovery: needRecovery,
+    );
 
     if (shouldStart) {
       try {

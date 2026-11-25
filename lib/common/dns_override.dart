@@ -151,7 +151,7 @@ bool matchDomainPattern(String pattern, Iterable<String> domains) {
   });
 }
 
-/// Keeps an Android Private DNS hostname out of the fake-IP pool.
+/// Uses Android's strict Private DNS first and falls back when it refuses a name.
 void applyPrivateDnsBypass(
   Map<String, dynamic> rawConfig, [
   String? privateDnsServerName,
@@ -168,7 +168,34 @@ void applyPrivateDnsBypass(
     return;
   }
   final dns = (rawConfig['dns'] as Map?)?.cast<String, dynamic>();
-  if (dns == null || dns['enhanced-mode']?.toString() != 'fake-ip') return;
+  if (dns == null) return;
+
+  final privateResolver = 'tls://$host:853#DIRECT';
+  final fallback = <String>{};
+  for (final raw in [
+    ...(dns['fallback'] as List? ?? const []),
+    ...(dns['nameserver'] is List ? dns['nameserver'] as List : const []),
+  ]) {
+    final resolver = raw.toString().trim();
+    if (resolver.isEmpty) continue;
+    final endpoint = _dnsEndpoint(stripDnsSuffix(resolver));
+    if (endpoint != null &&
+        (_isSystemDns(endpoint) || _dnsHost(endpoint) == host)) {
+      continue;
+    }
+    fallback.add(resolver);
+  }
+  if (fallback.isEmpty) {
+    fallback.addAll(const [
+      'https://dns.alidns.com/dns-query#DIRECT',
+      'https://doh.pub/dns-query#DIRECT',
+    ]);
+  }
+  dns['nameserver'] = [privateResolver];
+  dns['fallback'] = fallback.toList();
+  dns['fallback-lazy-query'] = true;
+
+  if (dns['enhanced-mode']?.toString() != 'fake-ip') return;
   final current = dns['fake-ip-filter-bypass'];
   final bypass = current is List
       ? current.map((item) => item.toString()).toList()

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:isolate';
 import 'dart:ui';
@@ -18,6 +19,7 @@ void main() {
       final oldPort = ReceivePort();
       final freshPort = ReceivePort();
       var servicePort = oldPort.sendPort;
+      var publishIpcPort = true;
       final calls = <String>[];
       final messenger =
           TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
@@ -27,7 +29,9 @@ void main() {
         calls.add(call.method);
         if (call.method == 'isServiceEngineRunning') return true;
         if (call.method == 'reconnectIpc') {
-          IsolateNameServer.lookupPortByName(mainIsolate)!.send(servicePort);
+          if (publishIpcPort) {
+            IsolateNameServer.lookupPortByName(mainIsolate)!.send(servicePort);
+          }
           return true;
         }
         throw StateError('Unexpected service mutation: ${call.method}');
@@ -63,6 +67,16 @@ void main() {
       expect(calls.where((method) => method == 'reconnectIpc'), hasLength(2));
       expect(calls, isNot(contains('destroy')));
       expect(calls, isNot(contains('init')));
+
+      publishIpcPort = false;
+      final reconnect = bridge.refreshIpc();
+      final readiness = bridge.preload();
+      await expectLater(reconnect, throwsA(isA<TimeoutException>()));
+      expect(await readiness, isFalse);
+
+      publishIpcPort = true;
+      await bridge.refreshIpc().timeout(const Duration(seconds: 2));
+      expect(await bridge.preload(), isTrue);
     },
   );
 }

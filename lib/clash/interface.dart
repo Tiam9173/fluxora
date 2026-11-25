@@ -155,7 +155,7 @@ abstract class ClashHandlerInterface with ClashInterface {
     }
   }
 
-  void sendMessage(String message);
+  FutureOr<void> sendMessage(String message);
 
   FutureOr<void> reStart();
 
@@ -183,7 +183,18 @@ abstract class ClashHandlerInterface with ClashInterface {
       }
     }
 
-    sendMessage(json.encode(Action(id: id, method: method, data: data)));
+    unawaited(
+      Future<void>.sync(
+        () => sendMessage(
+          json.encode(Action(id: id, method: method, data: data)),
+        ),
+      ).catchError((Object error, StackTrace stack) {
+        final completer = callbackCompleterMap[id];
+        if (completer != null && !completer.isCompleted) {
+          completer.completeError(error, stack);
+        }
+      }),
+    );
 
     return (callbackCompleterMap[id] as Completer<T>).safeFuture(
       timeout: timeout,
@@ -269,7 +280,7 @@ abstract class ClashHandlerInterface with ClashInterface {
     final res = await invoke<Result>(
       method: ActionMethod.getConfig,
       data: json.encode(params),
-      timeout: const Duration(seconds: 60),
+      timeout: const Duration(seconds: 15),
       onTimeout: () => throw TimeoutException(
         'Core did not return subscription configuration',
       ),

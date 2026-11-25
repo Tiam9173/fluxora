@@ -46,6 +46,15 @@ void main() {
     );
   });
 
+  test('reports a core transport that never became ready', () async {
+    final error = await runStartupTasks(
+      initApp: () async {},
+      preload: () async => false,
+    );
+
+    expect(error, isA<StateError>());
+  });
+
   test('returns the initApp error instead of throwing', () async {
     final failure = StateError('preferences unavailable');
 
