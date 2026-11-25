@@ -27,6 +27,20 @@ class _UnresponsiveCore extends ClashHandlerInterface {
   }
 }
 
+class _BrokenTransportCore extends ClashHandlerInterface {
+  @override
+  bool get hasLiveProcess => true;
+
+  @override
+  Future<bool> preload() async => true;
+
+  @override
+  void sendMessage(String message) => throw StateError('IPC unavailable');
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+
 void main() {
   test(
     'missing subscription read acknowledgement is not an empty valid config',
@@ -50,6 +64,16 @@ void main() {
           ),
         ),
         throwsA(isA<TimeoutException>()),
+      );
+    },
+  );
+
+  test(
+    'IPC send failures reach the request without waiting for its timeout',
+    () async {
+      await expectLater(
+        _BrokenTransportCore().getConfig('isolated-fixture.yaml'),
+        throwsA(isA<StateError>()),
       );
     },
   );

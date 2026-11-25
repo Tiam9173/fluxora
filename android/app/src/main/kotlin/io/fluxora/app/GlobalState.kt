@@ -221,8 +221,11 @@ object GlobalState {
             } else {
                 android.util.Log.w(
                     "GlobalState",
-                    "PENDING still unresolved after retries; preserving PENDING state",
+                    "PENDING still unresolved after retries; force stopping VPN",
                 )
+                hasDeferredIntent = false
+                requestedRunning = false
+                VpnPlugin.handleStop(force = true)
             }
         }
     }

@@ -109,7 +109,12 @@ Future<Object?> runStartupTasks({
   required Future<bool> Function() preload,
 }) async {
   try {
-    await Future.wait([initApp(), preload()]);
+    await Future.wait<void>([
+      initApp(),
+      preload().then<void>((ready) {
+        if (!ready) throw StateError('Core service IPC is not ready');
+      }),
+    ]);
     return null;
   } catch (e, st) {
     commonPrint.log('Core startup failed: $e\n$st');
