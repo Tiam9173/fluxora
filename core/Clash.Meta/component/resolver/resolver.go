@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/netip"
+	"sync/atomic"
 	"time"
 
 	"github.com/metacubex/mihomo/common/utils"
@@ -27,9 +28,9 @@ var (
 	// SystemResolver always using system dns, and was init in dns module
 	SystemResolver Resolver
 
-	// DisableIPv6 means don't resolve ipv6 host
-	// default value is true
-	DisableIPv6 = true
+	// DisableIPv6 means don't resolve IPv6 hosts. Its value can change while
+	// requests are being handled, so readers and writers use atomic accessors.
+	DisableIPv6 atomic.Bool
 
 	// DefaultHosts aim to resolve hosts
 	DefaultHosts = NewHosts(trie.New[HostValue]())
@@ -37,6 +38,10 @@ var (
 	// DefaultDNSTimeout defined the default dns request timeout
 	DefaultDNSTimeout = time.Second * 5
 )
+
+func init() {
+	DisableIPv6.Store(true)
+}
 
 var (
 	ErrIPNotFound   = errors.New("couldn't find ip")
@@ -104,7 +109,7 @@ func ResolveIPv4(ctx context.Context, host string) (netip.Addr, error) {
 
 // LookupIPv6WithResolver same as LookupIPv6, but with a resolver
 func LookupIPv6WithResolver(ctx context.Context, host string, r Resolver) ([]netip.Addr, error) {
-	if DisableIPv6 {
+	if DisableIPv6.Load() {
 		return nil, ErrIPv6Disabled
 	}
 
@@ -158,11 +163,11 @@ func LookupIPWithResolver(ctx context.Context, host string, r Resolver) ([]netip
 	}
 
 	if r != nil && r.Invalid() {
-		if DisableIPv6 {
+		if DisableIPv6.Load() {
 			return r.LookupIPv4(ctx, host)
 		}
 		return r.LookupIP(ctx, host)
-	} else if DisableIPv6 {
+	} else if DisableIPv6.Load() {
 		return LookupIPv4WithResolver(ctx, host, r)
 	}
 

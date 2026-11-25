@@ -467,6 +467,9 @@ func handleUDPConn(packet C.PacketAdapter) {
 		log.Debugln("[Metadata PreHandle] error: %s", err)
 		return
 	}
+	if rejectDisabledIPv6TUNUDP(packet, metadata) {
+		return
+	}
 
 	key := packet.Key()
 	sender, loaded := natTable.GetOrCreate(key, func() C.PacketSender {
@@ -676,6 +679,21 @@ func logMetadataErr(metadata *C.Metadata, rule C.Rule, proxy C.ProxyAdapter, err
 	} else {
 		log.Warnln("[%s] dial %s (match %s/%s) %s --> %s error: %s", strings.ToUpper(metadata.NetWork.String()), proxy.Name(), rule.RuleType().String(), rule.Payload(), metadata.SourceDetail(), metadata.RemoteAddress(), err.Error())
 	}
+}
+
+func rejectDisabledIPv6TUNUDP(packet C.PacketAdapter, metadata *C.Metadata) bool {
+	destination := metadata.DstIP
+	if !resolver.DisableIPv6.Load() || metadata.Type != C.TUN ||
+		!destination.Is6() || destination.Is4In6() ||
+		!destination.IsGlobalUnicast() || destination.IsPrivate() {
+		return false
+	}
+
+	if rejector, ok := packet.(C.PacketRejector); ok {
+		_ = rejector.Reject()
+	}
+	packet.Drop()
+	return true
 }
 
 func logMetadata(metadata *C.Metadata, rule C.Rule, remoteConn C.Connection) {

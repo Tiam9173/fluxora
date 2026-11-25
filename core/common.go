@@ -224,7 +224,7 @@ func updateConfig(params *UpdateParams) {
 	}
 	if params.IPv6 != nil {
 		general.IPv6 = *params.IPv6
-		resolver.DisableIPv6 = !general.IPv6
+		resolver.DisableIPv6.Store(!general.IPv6)
 	}
 	if params.ExternalController != nil {
 		currentConfig.Controller.ExternalController = *params.ExternalController

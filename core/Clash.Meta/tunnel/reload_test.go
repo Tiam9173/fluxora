@@ -1,10 +1,13 @@
 package tunnel
 
 import (
+	"errors"
+	"net/netip"
 	"sync/atomic"
 	"testing"
 	"time"
 
+	"github.com/metacubex/mihomo/component/resolver"
 	C "github.com/metacubex/mihomo/constant"
 	"github.com/stretchr/testify/require"
 )
@@ -75,13 +78,97 @@ func TestConfigReloadTCPWaitIsBounded(t *testing.T) {
 
 type reloadTestPacket struct {
 	C.PacketAdapter
-	metadata C.Metadata
-	drops    atomic.Int32
+	metadata  C.Metadata
+	drops     atomic.Int32
+	rejects   atomic.Int32
+	rejectErr error
 }
 
 func (p *reloadTestPacket) Metadata() *C.Metadata { return &p.metadata }
 func (p *reloadTestPacket) Key() string           { return "reload-test-packet" }
 func (p *reloadTestPacket) Drop()                 { p.drops.Add(1) }
+func (p *reloadTestPacket) Reject() error         { p.rejects.Add(1); return p.rejectErr }
+
+type noRejectTestPacket struct {
+	C.PacketAdapter
+	metadata C.Metadata
+	drops    atomic.Int32
+}
+
+func (p *noRejectTestPacket) Metadata() *C.Metadata { return &p.metadata }
+func (p *noRejectTestPacket) Key() string           { return "no-reject-test-packet" }
+func (p *noRejectTestPacket) Drop()                 { p.drops.Add(1) }
+
+func TestRejectDisabledIPv6TUNUDP(t *testing.T) {
+	original := resolver.DisableIPv6.Load()
+	t.Cleanup(func() { resolver.DisableIPv6.Store(original) })
+
+	tests := []struct {
+		name        string
+		disabled    bool
+		inbound     C.Type
+		destination string
+		wantDrop    bool
+	}{
+		{name: "global IPv6 TUN", disabled: true, inbound: C.TUN, destination: "2606:4700:4700::1111", wantDrop: true},
+		{name: "IPv6 enabled", disabled: false, inbound: C.TUN, destination: "2606:4700:4700::1111"},
+		{name: "non-TUN inbound", disabled: true, inbound: C.SOCKS5, destination: "2606:4700:4700::1111"},
+		{name: "IPv4", disabled: true, inbound: C.TUN, destination: "8.8.8.8"},
+		{name: "IPv4-mapped IPv6", disabled: true, inbound: C.TUN, destination: "::ffff:8.8.8.8"},
+		{name: "private IPv6", disabled: true, inbound: C.TUN, destination: "fd00::1"},
+		{name: "link-local IPv6", disabled: true, inbound: C.TUN, destination: "fe80::1"},
+		{name: "multicast IPv6", disabled: true, inbound: C.TUN, destination: "ff02::1"},
+		{name: "loopback IPv6", disabled: true, inbound: C.TUN, destination: "::1"},
+		{name: "unspecified IPv6", disabled: true, inbound: C.TUN, destination: "::"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resolver.DisableIPv6.Store(tt.disabled)
+			packet := &reloadTestPacket{metadata: C.Metadata{
+				Type:  tt.inbound,
+				DstIP: netip.MustParseAddr(tt.destination),
+			}}
+
+			rejected := rejectDisabledIPv6TUNUDP(packet, &packet.metadata)
+
+			require.Equal(t, tt.wantDrop, rejected)
+			if tt.wantDrop {
+				require.EqualValues(t, 1, packet.drops.Load())
+				require.EqualValues(t, 1, packet.rejects.Load())
+			} else {
+				require.Zero(t, packet.drops.Load())
+				require.Zero(t, packet.rejects.Load())
+			}
+		})
+	}
+}
+
+func TestRejectDisabledIPv6TUNUDPWithoutRejectSupport(t *testing.T) {
+	original := resolver.DisableIPv6.Load()
+	resolver.DisableIPv6.Store(true)
+	t.Cleanup(func() { resolver.DisableIPv6.Store(original) })
+	packet := &noRejectTestPacket{metadata: C.Metadata{
+		Type: C.TUN, DstIP: netip.MustParseAddr("2606:4700:4700::1111"),
+	}}
+
+	require.True(t, rejectDisabledIPv6TUNUDP(packet, &packet.metadata))
+	require.EqualValues(t, 1, packet.drops.Load())
+}
+
+func TestRejectDisabledIPv6TUNUDPStillDropsWhenRejectFails(t *testing.T) {
+	original := resolver.DisableIPv6.Load()
+	resolver.DisableIPv6.Store(true)
+	t.Cleanup(func() { resolver.DisableIPv6.Store(original) })
+	packet := &reloadTestPacket{
+		metadata:  C.Metadata{Type: C.TUN, DstIP: netip.MustParseAddr("2606:4700:4700::1111")},
+		rejectErr: errors.New("reject unsupported by packet transport"),
+	}
+
+	require.True(t, rejectDisabledIPv6TUNUDP(packet, &packet.metadata))
+	require.EqualValues(t, 1, packet.rejects.Load())
+	require.EqualValues(t, 1, packet.drops.Load())
+}
 
 func TestConfigReloadUDPAdmission(t *testing.T) {
 	for _, suspend := range []bool{false, true} {
