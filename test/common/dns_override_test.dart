@@ -4,6 +4,23 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   const bootstrap = ['192.0.2.53'];
 
+  test('adds strict private DNS host to a mode-independent bypass list', () {
+    final config = <String, dynamic>{
+      'dns': <String, dynamic>{'enhanced-mode': 'fake-ip'},
+    };
+    applyPrivateDnsBypass(config, 'Dns.Private.Example.');
+    applyPrivateDnsBypass(config, 'dns.private.example');
+    expect(config['dns']['fake-ip-filter-bypass'], ['dns.private.example']);
+    expect(config['dns']['nameserver'], [
+      'tls://dns.private.example:853#DIRECT',
+    ]);
+    expect(config['dns']['fallback'], [
+      'https://dns.alidns.com/dns-query#DIRECT',
+      'https://doh.pub/dns-query#DIRECT',
+    ]);
+    expect(config['dns']['fallback-lazy-query'], isTrue);
+  });
+
   test('bypasses Android Private DNS hostnames from fake-IP', () {
     final config = <String, dynamic>{
       'dns': {

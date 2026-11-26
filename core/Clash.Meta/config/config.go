@@ -236,6 +236,7 @@ type RawDNS struct {
 	FakeIPRange                  string                              `yaml:"fake-ip-range" json:"fake-ip-range"`
 	FakeIPRange6                 string                              `yaml:"fake-ip-range6" json:"fake-ip-range6"`
 	FakeIPFilter                 []string                            `yaml:"fake-ip-filter" json:"fake-ip-filter"`
+	FakeIPFilterBypass           []string                            `yaml:"fake-ip-filter-bypass" json:"fake-ip-filter-bypass"`
 	FakeIPFilterMode             C.FilterMode                        `yaml:"fake-ip-filter-mode" json:"fake-ip-filter-mode"`
 	FakeIPTTL                    int                                 `yaml:"fake-ip-ttl" json:"fake-ip-ttl"`
 	DefaultNameserver            []string                            `yaml:"default-nameserver" json:"default-nameserver"`
@@ -1533,6 +1534,18 @@ func parseDNS(rawCfg *RawConfig, ruleProviders map[string]P.RuleProvider) (*DNS,
 				return nil, err
 			}
 			skipper.Host = host
+		}
+		if len(cfg.FakeIPFilterBypass) > 0 {
+			bypass, err := parseDomain(
+				cfg.FakeIPFilterBypass,
+				&trie.DomainSetBuilder{},
+				"dns.fake-ip-filter-bypass",
+				ruleProviders,
+			)
+			if err != nil {
+				return nil, err
+			}
+			skipper.Bypass = bypass
 		}
 
 		dnsCfg.FakeIPSkipper = skipper
