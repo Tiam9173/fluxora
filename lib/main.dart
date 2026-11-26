@@ -430,6 +430,13 @@ Future<void> _service(List<String> flags) async {
         onNetworkChanged: checkSmartAutoStop,
       ),
     );
+    try {
+      final dns = await (vpn?.getCurrentDns() ?? Future<String>.value(''))
+          .timeout(const Duration(seconds: 2));
+      if (dns.isNotEmpty) clashLibHandler.updateDns(dns);
+    } catch (e) {
+      commonPrint.log('Service: initial DNS sync failed: $e');
+    }
 
     if (!quickStart && !bootStart) {
       _handleMainIpc(clashLibHandler);
