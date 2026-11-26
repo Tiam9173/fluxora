@@ -35,10 +35,13 @@ func sendMessage(message Message) {
 }
 
 func writeFrame(w io.Writer, data []byte) error {
-	frame := make([]byte, 4+len(data))
-	binary.LittleEndian.PutUint32(frame, uint32(len(data)))
-	copy(frame[4:], data)
-	_, err := w.Write(frame)
+	var header [4]byte
+	binary.LittleEndian.PutUint32(header[:], uint32(len(data)))
+	buffers := net.Buffers{header[:], data}
+	n, err := buffers.WriteTo(w)
+	if err == nil && n != int64(4+len(data)) {
+		return io.ErrShortWrite
+	}
 	return err
 }
 
