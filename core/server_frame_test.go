@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"os"
 	"path/filepath"
 	"runtime"
 	"sync"
@@ -73,7 +74,13 @@ func TestSendConcurrentFramesOverUnix(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("Windows desktop bridge uses TCP")
 	}
-	testConcurrentFrames(t, "unix", filepath.Join(t.TempDir(), "bridge.sock"))
+	// macOS has a short AF_UNIX path limit; t.TempDir includes the test name.
+	dir, err := os.MkdirTemp("", "fx-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(dir) })
+	testConcurrentFrames(t, "unix", filepath.Join(dir, "bridge.sock"))
 }
 
 func testConcurrentFrames(t *testing.T, network, address string) {
