@@ -521,7 +521,7 @@ func NewVless(option VlessOption) (*Vless, error) {
 	if err != nil {
 		return nil, err
 	}
-	v.restlsConfig, err = option.RestlsOpts.Parse(option.ServerName, option.ClientFingerprint)
+	v.restlsConfig, err = option.RestlsOpts.Parse(option.ServerName, option.ClientFingerprint, option.RootCAs)
 	if err != nil {
 		return nil, err
 	}
@@ -749,7 +749,7 @@ func NewVless(option VlessOption) (*Vless, error) {
 			}
 			downloadRestlsConfig := v.restlsConfig
 			if ds.RestlsOpts != nil {
-				downloadRestlsConfig, err = ds.RestlsOpts.Parse(downloadServerName, downloadClientFingerprint)
+				downloadRestlsConfig, err = ds.RestlsOpts.Parse(downloadServerName, downloadClientFingerprint, option.RootCAs)
 				if err != nil {
 					return nil, err
 				}

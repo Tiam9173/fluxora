@@ -13,7 +13,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/metacubex/mihomo/component/ca"
 	"github.com/metacubex/mihomo/component/dialer"
 	"github.com/metacubex/mihomo/component/iface/anet"
 	"github.com/metacubex/mihomo/component/resolver"
@@ -163,7 +162,7 @@ func NewTailscale(option TailscaleOption) (*Tailscale, error) {
 			log.Debugln("[Tailscale](%s) SystemPacketListener: finish listen %s %s, err: %v", option.Name, network, address, err)
 			return pc, err
 		},
-		ExtraRootCAs: ca.GetCertPool(),
+		ExtraRootCAs: option.trustedRoots(),
 		LookupHook: func(ctx context.Context, host string) ([]netip.Addr, error) {
 			log.Debugln("[Tailscale](%s) LookupHook: start lookup %s", option.Name, host)
 			ips, err := resolver.LookupIPWithResolver(ctx, host, resolver.ProxyServerHostResolver)

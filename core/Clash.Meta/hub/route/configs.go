@@ -396,7 +396,7 @@ func patchConfigs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if general.IPv6 != nil {
-		resolver.DisableIPv6 = !*general.IPv6
+		resolver.DisableIPv6.Store(!*general.IPv6)
 	}
 
 	render.NoContent(w, r)

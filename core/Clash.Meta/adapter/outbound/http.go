@@ -158,6 +158,7 @@ func NewHttp(option HttpOption) (*Http, error) {
 		var err error
 		tlsConfig, err = ca.GetTLSConfig(ca.Option{
 			TLSConfig: &tls.Config{
+				RootCAs:            option.RootCAs,
 				InsecureSkipVerify: option.SkipCertVerify,
 				ServerName:         sni,
 			},

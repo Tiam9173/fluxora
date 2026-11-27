@@ -2,6 +2,7 @@ package outbound
 
 import (
 	"context"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -11,6 +12,7 @@ import (
 
 	N "github.com/metacubex/mihomo/common/net"
 	"github.com/metacubex/mihomo/common/utils"
+	"github.com/metacubex/mihomo/component/ca"
 	"github.com/metacubex/mihomo/component/dialer"
 	"github.com/metacubex/mihomo/component/proxydialer"
 	"github.com/metacubex/mihomo/component/resolver"
@@ -201,9 +203,17 @@ type BasicOption struct {
 	//
 	// The following parameters are used internally, assign value by the structure decoder are disallowed
 	//
-	DialerForAPI C.Dialer `proxy:"-"` // the dialer used for API usage has higher priority than all the above configurations.
-	TunnelForAPI C.Tunnel `proxy:"-"`
-	ProviderName string   `proxy:"-"`
+	DialerForAPI C.Dialer       `proxy:"-"` // the dialer used for API usage has higher priority than all the above configurations.
+	TunnelForAPI C.Tunnel       `proxy:"-"`
+	ProviderName string         `proxy:"-"`
+	RootCAs      *x509.CertPool `proxy:"-"`
+}
+
+func (b *BasicOption) trustedRoots() *x509.CertPool {
+	if b.RootCAs != nil {
+		return b.RootCAs
+	}
+	return ca.GetCertPool()
 }
 
 func (b *BasicOption) NewDialer(opts []dialer.Option) C.Dialer {

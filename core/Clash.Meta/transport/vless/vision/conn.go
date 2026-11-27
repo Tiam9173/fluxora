@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"sync"
+	"sync/atomic"
 	"unsafe"
 
 	"github.com/metacubex/mihomo/common/buf"
@@ -31,6 +33,7 @@ type Conn struct {
 	input    *bytes.Reader // &tlsConn.input or nil
 	rawInput *bytes.Buffer // &tlsConn.rawInput or nil
 
+	filterMu                   sync.Mutex
 	packetsToFilter            int
 	isTLS                      bool
 	isTLS12orAbove             bool
@@ -40,16 +43,17 @@ type Conn struct {
 	readRemainingBuffer        *buf.Buffer
 	readRemainingContent       int
 	readRemainingPadding       int
-	readProcess                bool
-	readFilterUUID             bool
-	readLastCommand            byte
-	writeFilterApplicationData bool
-	writeDirect                bool
+	readProcess                atomic.Bool
+	readFilterUUID             atomic.Bool
+	readLastCommand            atomic.Uint32
+	writeFilterApplicationData atomic.Bool
+	writeDirect                atomic.Bool
 	writeOnceUserUUID          []byte
+	writeUUIDSent              atomic.Bool
 }
 
 func (vc *Conn) Read(b []byte) (int, error) {
-	if vc.readProcess {
+	if vc.readProcess.Load() {
 		buffer := buf.With(b)
 		err := vc.ReadBuffer(buffer)
 		if unsafe.SliceData(buffer.Bytes()) != unsafe.SliceData(b) { // buffer.Bytes() not at the beginning of b
@@ -102,12 +106,12 @@ func (vc *Conn) ReadBuffer(buffer *buf.Buffer) error {
 		}
 		vc.readRemainingPadding -= int(n)
 	}
-	if vc.readProcess {
-		switch vc.readLastCommand {
+	if vc.readProcess.Load() {
+		switch byte(vc.readLastCommand.Load()) {
 		case commandPaddingContinue:
 			//if vc.isTLS || vc.packetsToFilter > 0 {
 			need := PaddingHeaderLen
-			if !vc.readFilterUUID {
+			if !vc.readFilterUUID.Load() {
 				need = PaddingHeaderLen - uuid.Size
 			}
 			var header []byte
@@ -120,8 +124,8 @@ func (vc *Conn) ReadBuffer(buffer *buf.Buffer) error {
 			if err != nil {
 				return err
 			}
-			if vc.readFilterUUID {
-				vc.readFilterUUID = false
+			if vc.readFilterUUID.Load() {
+				vc.readFilterUUID.Store(false)
 				if !bytes.Equal(vc.userUUID.Bytes(), header[:uuid.Size]) {
 					err = fmt.Errorf("XTLS Vision server responded unknown UUID: %s", uuid.FromBytesOrNil(header[:uuid.Size]))
 					log.Errorln(err.Error())
@@ -131,13 +135,13 @@ func (vc *Conn) ReadBuffer(buffer *buf.Buffer) error {
 			}
 			vc.readRemainingPadding = int(binary.BigEndian.Uint16(header[3:]))
 			vc.readRemainingContent = int(binary.BigEndian.Uint16(header[1:]))
-			vc.readLastCommand = header[0]
+			vc.readLastCommand.Store(uint32(header[0]))
 			log.Debugln("XTLS Vision read padding: command=%d, payloadLen=%d, paddingLen=%d",
-				vc.readLastCommand, vc.readRemainingContent, vc.readRemainingPadding)
+				vc.readLastCommand.Load(), vc.readRemainingContent, vc.readRemainingPadding)
 			return vc.ReadBuffer(buffer)
 			//}
 		case commandPaddingEnd:
-			vc.readProcess = false
+			vc.readProcess.Store(false)
 			return vc.ReadBuffer(buffer)
 		case commandPaddingDirect:
 			needReturn := false
@@ -170,15 +174,15 @@ func (vc *Conn) ReadBuffer(buffer *buf.Buffer) error {
 				}
 			}
 			if vc.input == nil && vc.rawInput == nil {
-				vc.readProcess = false
 				vc.ExtendedReader = N.NewExtendedReader(vc.netConn)
+				vc.readProcess.Store(false)
 				log.Debugln("XTLS Vision direct read start")
 			}
 			if needReturn {
 				return nil
 			}
 		default:
-			err := fmt.Errorf("XTLS Vision read unknown command: %d", vc.readLastCommand)
+			err := fmt.Errorf("XTLS Vision read unknown command: %d", vc.readLastCommand.Load())
 			log.Debugln(err.Error())
 			return err
 		}
@@ -187,16 +191,17 @@ func (vc *Conn) ReadBuffer(buffer *buf.Buffer) error {
 }
 
 func (vc *Conn) Write(p []byte) (int, error) {
-	if vc.writeFilterApplicationData {
+	if vc.writeFilterApplicationData.Load() {
 		return N.WriteBuffer(vc, buf.As(p))
 	}
 	return vc.ExtendedWriter.Write(p)
 }
 
 func (vc *Conn) WriteBuffer(buffer *buf.Buffer) (err error) {
-	if vc.writeFilterApplicationData {
+	if vc.writeFilterApplicationData.Load() {
 		if buffer.IsEmpty() {
-			ApplyPadding(buffer, commandPaddingContinue, &vc.writeOnceUserUUID, true) // we do a long padding to hide vless header
+			ApplyPadding(buffer, commandPaddingContinue, &vc.writeOnceUserUUID, true)
+			vc.writeUUIDSent.Store(true) // we do a long padding to hide vless header
 			return vc.ExtendedWriter.WriteBuffer(buffer)
 		}
 
@@ -206,20 +211,24 @@ func (vc *Conn) WriteBuffer(buffer *buf.Buffer) (err error) {
 		for i, buffer := range buffers {
 			command := commandPaddingContinue
 			if applyPadding {
-				if vc.isTLS && buffer.Len() > 6 && bytes.Equal(tlsApplicationDataStart, buffer.To(3)) {
+				vc.filterMu.Lock()
+				isTLS, isTLS12orAbove, enableXTLS, packetsToFilter := vc.isTLS, vc.isTLS12orAbove, vc.enableXTLS, vc.packetsToFilter
+				vc.filterMu.Unlock()
+				if isTLS && buffer.Len() > 6 && bytes.Equal(tlsApplicationDataStart, buffer.To(3)) {
 					command = commandPaddingEnd
-					if vc.enableXTLS {
+					if enableXTLS {
 						command = commandPaddingDirect
-						vc.writeDirect = true
+						vc.writeDirect.Store(true)
 					}
-					vc.writeFilterApplicationData = false
+					vc.writeFilterApplicationData.Store(false)
 					applyPadding = false
-				} else if !vc.isTLS12orAbove && vc.packetsToFilter <= 1 {
+				} else if !isTLS12orAbove && packetsToFilter <= 1 {
 					command = commandPaddingEnd
-					vc.writeFilterApplicationData = false
+					vc.writeFilterApplicationData.Store(false)
 					applyPadding = false
 				}
-				ApplyPadding(buffer, command, &vc.writeOnceUserUUID, vc.isTLS)
+				ApplyPadding(buffer, command, &vc.writeOnceUserUUID, isTLS)
+				vc.writeUUIDSent.Store(true)
 			}
 
 			err = vc.ExtendedWriter.WriteBuffer(buffer)
@@ -235,7 +244,7 @@ func (vc *Conn) WriteBuffer(buffer *buf.Buffer) (err error) {
 		}
 		return err
 	}
-	/*if vc.writeDirect {
+	/*if vc.writeDirect.Load() {
 		log.Debugln("XTLS Vision Direct write, payloadLen=%d", buffer.Len())
 	}*/
 	return vc.ExtendedWriter.WriteBuffer(buffer)
@@ -243,10 +252,10 @@ func (vc *Conn) WriteBuffer(buffer *buf.Buffer) (err error) {
 
 func (vc *Conn) FrontHeadroom() int {
 	fontHeadroom := PaddingHeaderLen - uuid.Size
-	if vc.readFilterUUID || vc.writeOnceUserUUID != nil {
+	if vc.readFilterUUID.Load() || !vc.writeUUIDSent.Load() {
 		fontHeadroom = PaddingHeaderLen
 	}
-	if vc.writeFilterApplicationData { // The writer may be replaced, add the required value for vc.netConn
+	if vc.writeFilterApplicationData.Load() { // The writer may be replaced, add the required value for vc.netConn
 		if abs := N.CalculateFrontHeadroom(vc.netConn) - N.CalculateFrontHeadroom(vc.Conn); abs > 0 {
 			fontHeadroom += abs
 		}
@@ -256,7 +265,7 @@ func (vc *Conn) FrontHeadroom() int {
 
 func (vc *Conn) RearHeadroom() int {
 	rearHeadroom := 500 + 900
-	if vc.writeFilterApplicationData { // The writer may be replaced, add the required value for vc.netConn
+	if vc.writeFilterApplicationData.Load() { // The writer may be replaced, add the required value for vc.netConn
 		if abs := N.CalculateRearHeadroom(vc.netConn) - N.CalculateRearHeadroom(vc.Conn); abs > 0 {
 			rearHeadroom += abs
 		}
@@ -265,7 +274,7 @@ func (vc *Conn) RearHeadroom() int {
 }
 
 func (vc *Conn) NeedHandshake() bool {
-	return vc.writeOnceUserUUID != nil
+	return !vc.writeUUIDSent.Load()
 }
 
 func (vc *Conn) NeedAdditionalReadDeadline() bool {
@@ -273,31 +282,31 @@ func (vc *Conn) NeedAdditionalReadDeadline() bool {
 }
 
 func (vc *Conn) Upstream() any {
-	if vc.writeDirect ||
-		vc.readLastCommand == commandPaddingDirect {
+	if vc.writeDirect.Load() ||
+		vc.readLastCommand.Load() == uint32(commandPaddingDirect) {
 		return vc.netConn
 	}
 	return vc.Conn
 }
 
 func (vc *Conn) ReaderPossiblyReplaceable() bool {
-	return vc.readProcess
+	return vc.readProcess.Load()
 }
 
 func (vc *Conn) ReaderReplaceable() bool {
-	if !vc.readProcess &&
-		vc.readLastCommand == commandPaddingDirect {
+	if !vc.readProcess.Load() &&
+		vc.readLastCommand.Load() == uint32(commandPaddingDirect) {
 		return true
 	}
 	return false
 }
 
 func (vc *Conn) WriterPossiblyReplaceable() bool {
-	return vc.writeFilterApplicationData
+	return vc.writeFilterApplicationData.Load()
 }
 
 func (vc *Conn) WriterReplaceable() bool {
-	if vc.writeDirect {
+	if vc.writeDirect.Load() {
 		return true
 	}
 	return false

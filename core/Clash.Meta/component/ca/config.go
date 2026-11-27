@@ -28,50 +28,69 @@ func AddCertificate(certificate string) error {
 	mutex.Lock()
 	defer mutex.Unlock()
 
+	if globalCertPool == nil {
+		globalCertPool = newSystemCertPool()
+	}
+	return addCertificate(globalCertPool, certificate)
+}
+
+func addCertificate(pool *x509.CertPool, certificate string) error {
 	if certificate == "" {
 		return fmt.Errorf("certificate is empty")
 	}
-
-	if globalCertPool == nil {
-		initializeCertPool()
-	}
-
-	if globalCertPool.AppendCertsFromPEM([]byte(certificate)) {
+	if pool.AppendCertsFromPEM([]byte(certificate)) {
 		return nil
 	} else if cert, err := x509.ParseCertificate([]byte(certificate)); err == nil {
-		globalCertPool.AddCert(cert)
+		pool.AddCert(cert)
 		return nil
 	} else {
 		return fmt.Errorf("add certificate failed")
 	}
 }
 
-func initializeCertPool() {
+func newSystemCertPool() (pool *x509.CertPool) {
 	var err error
 	if DisableSystemCa {
-		globalCertPool = x509.NewCertPool()
+		pool = x509.NewCertPool()
 	} else {
-		globalCertPool, err = x509.SystemCertPool()
+		pool, err = x509.SystemCertPool()
 		if err != nil {
-			globalCertPool = x509.NewCertPool()
+			pool = x509.NewCertPool()
 		}
 	}
 	if !DisableEmbedCa {
-		globalCertPool.AppendCertsFromPEM(_CaCertificates)
+		pool.AppendCertsFromPEM(_CaCertificates)
 	}
+	return pool
 }
 
 func ResetCertificate() {
+	SetCertPool(newSystemCertPool())
+}
+
+// NewCertPool builds a configuration's trust before its proxies are constructed.
+func NewCertPool(certificates []string) (*x509.CertPool, []error) {
+	pool := newSystemCertPool()
+	var invalid []error
+	for i, certificate := range certificates {
+		if err := addCertificate(pool, certificate); err != nil {
+			invalid = append(invalid, fmt.Errorf("custom CA %d: %w", i+1, err))
+		}
+	}
+	return pool, invalid
+}
+
+func SetCertPool(pool *x509.CertPool) {
 	mutex.Lock()
 	defer mutex.Unlock()
-	initializeCertPool()
+	globalCertPool = pool
 }
 
 func GetCertPool() *x509.CertPool {
 	mutex.Lock()
 	defer mutex.Unlock()
 	if globalCertPool == nil {
-		initializeCertPool()
+		globalCertPool = newSystemCertPool()
 	}
 	return globalCertPool
 }
@@ -94,7 +113,7 @@ func GetTLSConfig(opt Option) (tlsConfig *tls.Config, err error) {
 
 	if opt.ZeroTrust {
 		tlsConfig.RootCAs = zeroTrustCertPool()
-	} else {
+	} else if tlsConfig.RootCAs == nil {
 		tlsConfig.RootCAs = GetCertPool()
 	}
 

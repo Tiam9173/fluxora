@@ -29,6 +29,7 @@ type dnsOverTLS struct {
 
 	access      sync.Mutex
 	connections deque.Deque[net.Conn] // LIFO
+	generation  uint64
 }
 
 var _ dnsClient = (*dnsOverTLS)(nil)
@@ -58,10 +59,12 @@ func (t *dnsOverTLS) ExchangeContext(ctx context.Context, m *D.Msg) (*D.Msg, err
 			}
 
 			var conn net.Conn
+			var generation uint64
 			isOldConn := true
 
 			if !t.disableReuse {
 				t.access.Lock()
+				generation = t.generation
 				if t.connections.Len() > 0 {
 					conn = t.connections.PopBack()
 				}
@@ -97,6 +100,11 @@ func (t *dnsOverTLS) ExchangeContext(ctx context.Context, m *D.Msg) (*D.Msg, err
 
 			if !t.disableReuse {
 				t.access.Lock()
+				if generation != t.generation {
+					t.access.Unlock()
+					go conn.Close() // deliver the answer without waiting for TLS shutdown
+					return
+				}
 				if t.connections.Len() >= maxOldDotConns {
 					oldConn := t.connections.PopFront()
 					go oldConn.Close() // close in a new goroutine, not blocking the current task
@@ -148,6 +156,7 @@ func (t *dnsOverTLS) dialContext(ctx context.Context) (net.Conn, error) {
 func (t *dnsOverTLS) ResetConnection() {
 	if !t.disableReuse {
 		t.access.Lock()
+		t.generation++
 		for t.connections.Len() > 0 {
 			oldConn := t.connections.PopFront()
 			go oldConn.Close() // close in a new goroutine, not blocking the current task

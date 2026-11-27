@@ -340,7 +340,8 @@ func (cp *CompatibleProvider) Close() error {
 	return cp.compatibleProvider.Close()
 }
 
-func NewProxiesParser(pdName string, tunnel C.Tunnel, filter string, excludeFilter string, excludeType string, dialerProxy string, override overrideSchema, ageSecretKey string) (resource.Parser[[]C.Proxy], error) {
+func NewProxiesParser(pdName string, tunnel C.Tunnel, filter string, excludeFilter string, excludeType string, dialerProxy string, override overrideSchema, ageSecretKey string, proxyOptions ...adapter.ProxyOption) (resource.Parser[[]C.Proxy], error) {
+	options := append([]adapter.ProxyOption{adapter.WithTunnelForAPI(tunnel), adapter.WithProviderName(pdName)}, proxyOptions...)
 	var excludeTypeArray []string
 	if excludeType != "" {
 		excludeTypeArray = strings.Split(excludeType, "|")
@@ -446,7 +447,7 @@ func NewProxiesParser(pdName string, tunnel C.Tunnel, filter string, excludeFilt
 					return nil, fmt.Errorf("proxy %d override error: %w", idx, err)
 				}
 
-				proxy, err := adapter.ParseProxy(mapping, adapter.WithTunnelForAPI(tunnel), adapter.WithProviderName(pdName))
+				proxy, err := adapter.ParseProxy(mapping, options...)
 				if err != nil {
 					return nil, fmt.Errorf("proxy %d error: %w", idx, err)
 				}

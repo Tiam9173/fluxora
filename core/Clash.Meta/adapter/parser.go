@@ -1,6 +1,7 @@
 package adapter
 
 import (
+	"crypto/x509"
 	"fmt"
 
 	"github.com/metacubex/mihomo/adapter/outbound"
@@ -20,6 +21,7 @@ func ParseProxy(mapping map[string]any, options ...ProxyOption) (C.Proxy, error)
 		DialerForAPI: opt.DialerForAPI,
 		TunnelForAPI: opt.TunnelForAPI,
 		ProviderName: opt.ProviderName,
+		RootCAs:      opt.RootCAs,
 	}
 
 	var (
@@ -253,6 +255,7 @@ type proxyOption struct {
 	DialerForAPI C.Dialer
 	TunnelForAPI C.Tunnel
 	ProviderName string
+	RootCAs      *x509.CertPool
 }
 
 func applyProxyOptions(options ...ProxyOption) proxyOption {
@@ -280,5 +283,11 @@ func WithTunnelForAPI(tunnel C.Tunnel) ProxyOption {
 func WithProviderName(name string) ProxyOption {
 	return func(opt *proxyOption) {
 		opt.ProviderName = name
+	}
+}
+
+func WithRootCAs(pool *x509.CertPool) ProxyOption {
+	return func(opt *proxyOption) {
+		opt.RootCAs = pool
 	}
 }

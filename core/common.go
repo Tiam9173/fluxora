@@ -2,14 +2,12 @@ package main
 
 import (
 	b "bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"github.com/metacubex/mihomo/adapter"
 	"github.com/metacubex/mihomo/adapter/inbound"
 	"github.com/metacubex/mihomo/adapter/outboundgroup"
 	"github.com/metacubex/mihomo/adapter/provider"
-	"github.com/metacubex/mihomo/common/batch"
 	"github.com/metacubex/mihomo/component/dialer"
 	"github.com/metacubex/mihomo/component/resolver"
 	"github.com/metacubex/mihomo/config"
@@ -17,6 +15,7 @@ import (
 	"github.com/metacubex/mihomo/constant/features"
 	cp "github.com/metacubex/mihomo/constant/provider"
 	"github.com/metacubex/mihomo/hub"
+	"github.com/metacubex/mihomo/hub/executor"
 	"github.com/metacubex/mihomo/hub/route"
 	"github.com/metacubex/mihomo/listener"
 	"github.com/metacubex/mihomo/log"
@@ -24,7 +23,7 @@ import (
 	"github.com/metacubex/mihomo/tunnel"
 	"os"
 	"path/filepath"
-	"runtime"
+	"reflect"
 	"runtime/debug"
 	"sync"
 	"time"
@@ -36,7 +35,6 @@ var (
 	version          = 0
 	isRunning        = false
 	runLock          sync.Mutex
-	mBatch, _        = batch.New[bool](context.Background(), batch.WithConcurrencyNum[bool](50))
 )
 
 type ExternalProviders []ExternalProvider
@@ -226,7 +224,7 @@ func updateConfig(params *UpdateParams) {
 	}
 	if params.IPv6 != nil {
 		general.IPv6 = *params.IPv6
-		resolver.DisableIPv6 = !general.IPv6
+		resolver.DisableIPv6.Store(!general.IPv6)
 	}
 	if params.ExternalController != nil {
 		currentConfig.Controller.ExternalController = *params.ExternalController
@@ -300,15 +298,41 @@ func setupConfig(params *SetupParams) error {
 		}
 	}
 
-	currentConfig, err = config.ParseRawConfig(rawCfg)
+	// The fake-IP ranges also feed TUN configuration, so those changes need a full apply.
+	if isRunning && currentRawConfig != nil && currentConfig != nil &&
+		currentRawConfig.DNS.FakeIPRange == rawCfg.DNS.FakeIPRange &&
+		currentRawConfig.DNS.FakeIPRange6 == rawCfg.DNS.FakeIPRange6 &&
+		!reflect.DeepEqual(currentRawConfig.DNS, rawCfg.DNS) {
+		previous := *currentRawConfig
+		previous.DNS = rawCfg.DNS
+		if reflect.DeepEqual(&previous, rawCfg) {
+			dnsConfig, err := config.ParseDNS(rawCfg, currentConfig.RuleProviders)
+			if err != nil {
+				return err
+			}
+			executor.ReloadDNS(dnsConfig, currentConfig.General.IPv6)
+			currentConfig.DNS = dnsConfig
+			currentRawConfig = rawCfg
+			patchSelectGroup(params.SelectedMap)
+			return nil
+		}
+	}
+
+	// Full parsing normalizes IPv6 fields in place. Keep the input for later comparisons.
+	parseInput := *rawCfg
+	nextConfig, err := config.ParseRawConfig(&parseInput)
 	if err != nil {
 		return err
 	}
+	if isRunning {
+		finishReload := tunnel.BeginConfigReload()
+		defer finishReload()
+	}
+	currentConfig = nextConfig
 	currentRawConfig = rawCfg
 	hub.ApplyConfig(currentConfig)
 	patchSelectGroup(params.SelectedMap)
 	updateListeners()
-	runtime.GC()
 	debug.FreeOSMemory()
 	return nil
 }

@@ -47,7 +47,7 @@ type Resolver struct {
 	group                 singleflight.Group[*D.Msg]
 	cache                 dnsCache
 	policy                []dnsPolicy
-	defaultResolver       *Resolver
+	resetClients          []dnsClient
 }
 
 func (r *Resolver) LookupIPPrimaryIPv4(ctx context.Context, host string) (ips []netip.Addr, err error) {
@@ -398,14 +398,8 @@ func (r *Resolver) ClearCache() {
 
 func (r *Resolver) ResetConnection() {
 	if r != nil {
-		for _, c := range r.main {
+		for _, c := range r.resetClients {
 			c.ResetConnection()
-		}
-		for _, c := range r.fallback {
-			c.ResetConnection()
-		}
-		if dr := r.defaultResolver; dr != nil {
-			dr.ResetConnection()
 		}
 	}
 }
@@ -509,17 +503,13 @@ func (rs Resolvers) ClearCache() {
 	rs.DirectResolver.ClearCache()
 }
 
-func (rs Resolvers) ResetConnection() {
-	rs.Resolver.ResetConnection()
-	rs.ProxyResolver.ResetConnection()
-	rs.DirectResolver.ResetConnection()
-}
-
 func NewResolverFromClient(client dnsClient) *Resolver {
+	clients := []dnsClient{client}
 	return &Resolver{
-		ipv6:  true,
-		main:  []dnsClient{client},
-		cache: Config{}.newCache(),
+		ipv6:         true,
+		main:         clients,
+		cache:        Config{}.newCache(),
+		resetClients: clients,
 	}
 }
 
@@ -529,6 +519,8 @@ func NewResolver(config Config) (rs Resolvers) {
 		cache:       config.newCache(),
 		ipv6Timeout: time.Duration(config.IPv6Timeout) * time.Millisecond,
 	}
+	// Keep a single reset list for all transports, including policy-only clients.
+	resetClients := append([]dnsClient(nil), defaultResolver.main...)
 
 	var nameServerCache []struct {
 		NameServer
@@ -555,6 +547,7 @@ func NewResolver(config Config) (rs Resolvers) {
 					continue
 				}
 				dc = built[0]
+				resetClients = append(resetClients, dc)
 			}
 			nameServerCache = append(nameServerCache, struct {
 				NameServer
@@ -601,7 +594,6 @@ func NewResolver(config Config) (rs Resolvers) {
 		ipv6Timeout: time.Duration(config.IPv6Timeout) * time.Millisecond,
 		policy:      makePolicy(config.Policy),
 	}
-	r.defaultResolver = defaultResolver
 	rs.Resolver = r
 
 	if len(config.ProxyServer) != 0 {
@@ -633,6 +625,11 @@ func NewResolver(config Config) (rs Resolvers) {
 		r.fallbackLazyQuery = config.FallbackLazyQuery
 	}
 
+	for _, r := range []*Resolver{rs.Resolver, rs.ProxyResolver, rs.DirectResolver} {
+		if r != nil {
+			r.resetClients = resetClients
+		}
+	}
 	return
 }
 

@@ -3,6 +3,7 @@ package socks
 import (
 	"net"
 
+	"github.com/metacubex/mihomo/common/pool"
 	"github.com/metacubex/mihomo/transport/socks5"
 )
 
@@ -19,7 +20,10 @@ func (c *packet) Data() []byte {
 
 // WriteBack write UDP packet with source(ip, port) = `addr`
 func (c *packet) WriteBack(b []byte, addr net.Addr) (n int, err error) {
-	packet, err := socks5.EncodeUDPPacket(socks5.ParseAddrToSocksAddr(addr), b)
+	source := socks5.ParseAddrToSocksAddr(addr)
+	buffer := pool.Get(3 + len(source) + len(b))
+	defer pool.Put(buffer)
+	packet, err := socks5.EncodeUDPPacketTo(buffer, source, b)
 	if err != nil {
 		return
 	}

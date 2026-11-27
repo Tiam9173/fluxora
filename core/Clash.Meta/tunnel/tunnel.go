@@ -40,14 +40,14 @@ const (
 var (
 	status        = atomic.NewInt32Enum(Suspend)
 	udpInit       sync.Once
-	udpQueues     []chan C.PacketAdapter
+	udpQueues     []chan udpWork
 	natTable      = nat.New()
 	rules         []C.Rule
 	listeners     = make(map[string]C.InboundListener)
 	subRules      map[string][]C.Rule
 	proxies       = make(map[string]C.Proxy)
 	providers     map[string]P.ProxyProvider
-	ruleProviders map[string]P.RuleProvider
+	ruleProviders atomic.TypedValue[map[string]P.RuleProvider]
 	configMux     sync.RWMutex
 
 	// for compatibility, lazy init
@@ -93,33 +93,39 @@ func (t tunnel) HandleTCPConn(conn net.Conn, metadata *C.Metadata) {
 	handleTCPConn(connCtx)
 }
 
+type udpWork struct {
+	packet C.PacketAdapter
+	reload *reloadWindow
+}
+
 func initUDP() {
 	numUDPWorkers := 4
 	if num := runtime.GOMAXPROCS(0); num > numUDPWorkers {
 		numUDPWorkers = num
 	}
 
-	udpQueues = make([]chan C.PacketAdapter, numUDPWorkers)
+	udpQueues = make([]chan udpWork, numUDPWorkers)
 	for i := 0; i < numUDPWorkers; i++ {
-		queue := make(chan C.PacketAdapter, queueCapacity)
+		queue := make(chan udpWork, queueCapacity)
 		udpQueues[i] = queue
 		go processUDP(queue)
 	}
 }
 
 func (t tunnel) HandleUDPPacket(packet C.UDPPacket, metadata *C.Metadata) {
+	enqueueUDP(udpWork{packet: C.NewPacketAdapter(packet, metadata)})
+}
+
+func enqueueUDP(work udpWork) {
 	udpInit.Do(initUDP)
 
-	packetAdapter := C.NewPacketAdapter(packet, metadata)
-	key := packetAdapter.Key()
-
-	hash := utils.MapHash(key)
+	hash := utils.MapHash(work.packet.Key())
 	queueNo := uint(hash) % uint(len(udpQueues))
 
 	select {
-	case udpQueues[queueNo] <- packetAdapter:
+	case udpQueues[queueNo] <- work:
 	default:
-		packet.Drop()
+		work.packet.Drop()
 	}
 }
 
@@ -136,7 +142,7 @@ func (t tunnel) Providers() map[string]P.ProxyProvider {
 }
 
 func (t tunnel) RuleProviders() map[string]P.RuleProvider {
-	return ruleProviders
+	return RuleProviders()
 }
 
 func (t tunnel) RuleUpdateCallback() *utils.Callback[P.RuleProvider] {
@@ -144,6 +150,14 @@ func (t tunnel) RuleUpdateCallback() *utils.Callback[P.RuleProvider] {
 }
 
 func OnSuspend() {
+	OnConfigApplying()
+	if ready := configReloadDone.Load(); ready != nil {
+		ready.finish(true)
+	}
+}
+
+// OnConfigApplying pauses external traffic while preserving the reload waiters.
+func OnConfigApplying() {
 	status.Store(Suspend)
 }
 
@@ -217,7 +231,7 @@ func Listeners() map[string]C.InboundListener {
 func UpdateRules(newRules []C.Rule, newSubRule map[string][]C.Rule, rp map[string]P.RuleProvider) {
 	configMux.Lock()
 	rules = newRules
-	ruleProviders = rp
+	ruleProviders.Store(rp)
 	subRules = newSubRule
 	configMux.Unlock()
 }
@@ -234,7 +248,7 @@ func Providers() map[string]P.ProxyProvider {
 
 // RuleProviders return all loaded rule providers
 func RuleProviders() map[string]P.RuleProvider {
-	return ruleProviders
+	return ruleProviders.Load()
 }
 
 // UpdateProxies handle update proxies
@@ -422,9 +436,15 @@ func resolveMetadata(metadata *C.Metadata) (proxy C.Proxy, rule C.Rule, err erro
 }
 
 // processUDP starts a loop to handle udp packet
-func processUDP(queue chan C.PacketAdapter) {
-	for conn := range queue {
-		handleUDPConn(conn)
+func processUDP(queue chan udpWork) {
+	for work := range queue {
+		if work.reload != nil && !time.Now().Before(work.reload.udpDeadline) {
+			work.packet.Drop()
+			continue
+		}
+		if !deferUDPForReload(work) {
+			handleUDPConn(work.packet)
+		}
 	}
 }
 
@@ -445,6 +465,9 @@ func handleUDPConn(packet C.PacketAdapter) {
 	if err := preHandleMetadata(metadata.Clone()); err != nil { // precheck without modify metadata
 		packet.Drop()
 		log.Debugln("[Metadata PreHandle] error: %s", err)
+		return
+	}
+	if rejectDisabledIPv6TUNUDP(packet, metadata) {
 		return
 	}
 
@@ -526,7 +549,7 @@ func handleUDPConn(packet C.PacketAdapter) {
 }
 
 func handleTCPConn(connCtx C.ConnContext) {
-	if !isHandle(connCtx.Metadata().Type) {
+	if !waitForTCPReady(connCtx.Metadata().Type) {
 		_ = connCtx.Conn().Close()
 		return
 	}
@@ -658,6 +681,21 @@ func logMetadataErr(metadata *C.Metadata, rule C.Rule, proxy C.ProxyAdapter, err
 	}
 }
 
+func rejectDisabledIPv6TUNUDP(packet C.PacketAdapter, metadata *C.Metadata) bool {
+	destination := metadata.DstIP
+	if !resolver.DisableIPv6.Load() || metadata.Type != C.TUN ||
+		!destination.Is6() || destination.Is4In6() ||
+		!destination.IsGlobalUnicast() || destination.IsPrivate() {
+		return false
+	}
+
+	if rejector, ok := packet.(C.PacketRejector); ok {
+		_ = rejector.Reject()
+	}
+	packet.Drop()
+	return true
+}
+
 func logMetadata(metadata *C.Metadata, rule C.Rule, remoteConn C.Connection) {
 	switch {
 	case metadata.SpecialProxy != "":
@@ -783,14 +821,15 @@ func shouldStopRetry(err error) bool {
 }
 
 func retry[T any](ctx context.Context, ft func(context.Context) (T, error), fe func(err error)) (t T, err error) {
+	const maxAttempts = 10
 	s := slowdown.New()
-	for i := 0; i < 10; i++ {
+	for i := 0; i < maxAttempts; i++ {
 		t, err = ft(ctx)
 		if err != nil {
 			if fe != nil {
 				fe(err)
 			}
-			if shouldStopRetry(err) {
+			if i+1 == maxAttempts || shouldStopRetry(err) {
 				return
 			}
 			if s.Wait(ctx) == nil {

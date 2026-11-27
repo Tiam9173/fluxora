@@ -160,6 +160,25 @@ func TestStructure_DoubleNest(t *testing.T) {
 	assert.Equal(t, s.Bar.BazOptional, goal)
 }
 
+func TestStructure_FieldTagOptions(t *testing.T) {
+	type nested struct {
+		Host     string `test:"host"`
+		Optional string `test:",,unknown,omitempty"`
+		Ignored  string `test:"-"`
+	}
+	var out struct {
+		Endpoint *nested        `test:"endpoint,squash,remain"`
+		Unused   map[string]any `test:",remain,squash"`
+	}
+	out.Endpoint = &nested{}
+	raw := map[string]any{"HOST": "localhost", "extra": 3}
+	assert.NoError(t, decoder.Decode(raw, &out))
+	assert.Equal(t, &nested{Host: "localhost"}, out.Endpoint)
+	assert.Equal(t, map[string]any{"extra": 3}, out.Unused)
+	delete(raw, "HOST")
+	assert.EqualError(t, decoder.Decode(raw, &out), "'' has unset fields: host")
+}
+
 func TestStructure_Remain(t *testing.T) {
 	rawMap := map[string]any{
 		"foo":   1,

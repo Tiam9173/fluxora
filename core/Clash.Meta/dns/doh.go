@@ -43,13 +43,18 @@ const (
 
 var DefaultHTTPVersions = []C.HTTPVersion{C.HTTPVersion11, C.HTTPVersion2}
 
+type dohHTTPClient struct {
+	*http.Client
+	active sync.WaitGroup
+}
+
 // dnsOverHTTPS is a struct that implements the Upstream interface for the
 // DNS-over-HTTPS protocol.
 type dnsOverHTTPS struct {
 	// The Client's Transport typically has internal state (cached TCP
 	// connections), so Clients should be reused instead of created as
 	// needed. Clients are safe for concurrent use by multiple goroutines.
-	client   *http.Client
+	client   *dohHTTPClient
 	clientMu sync.Mutex
 
 	// quicConfig is the QUIC configuration that is used if HTTP/3 is enabled
@@ -139,7 +144,7 @@ func (doh *dnsOverHTTPS) ExchangeContext(ctx context.Context, m *D.Msg) (msg *D.
 	// the case when the connection was closed (due to inactivity for example)
 	// AND the server refuses to open a 0-RTT connection.
 	for i := 0; isCached && doh.shouldRetry(err) && i < 2; i++ {
-		client, err = doh.resetClient(ctx, err)
+		client, err = doh.resetClient(ctx, client, err, true)
 		if err != nil {
 			return nil, fmt.Errorf("failed to reset http client: %w", err)
 		}
@@ -149,7 +154,7 @@ func (doh *dnsOverHTTPS) ExchangeContext(ctx context.Context, m *D.Msg) (msg *D.
 
 	if err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
 		// If the request failed anyway, make sure we don't use this client.
-		_, resErr := doh.resetClient(ctx, err)
+		_, resErr := doh.resetClient(ctx, client, err, false)
 
 		return nil, fmt.Errorf("%w (resErr:%v)", err, resErr)
 	}
@@ -168,19 +173,22 @@ func (doh *dnsOverHTTPS) Close() (err error) {
 		return nil
 	}
 
-	return doh.closeClient(doh.client)
+	return doh.closeClient(doh.client.Client)
 }
 
 func (doh *dnsOverHTTPS) ResetConnection() {
 	doh.clientMu.Lock()
-	defer doh.clientMu.Unlock()
-
-	if doh.client == nil {
-		return
-	}
-
-	_ = doh.closeClient(doh.client)
+	old := doh.client
 	doh.client = nil
+	doh.clientMu.Unlock()
+
+	if old != nil {
+		// New queries use the new route while in-flight queries drain under their existing deadlines.
+		go func() {
+			old.active.Wait()
+			_ = doh.closeClient(old.Client)
+		}()
+	}
 }
 
 // closeClient cleans up resources used by client if necessary.
@@ -200,7 +208,8 @@ func (doh *dnsOverHTTPS) closeClient(client *http.Client) (err error) {
 
 // exchangeHTTPS sends the DNS query to a DoH resolver using the specified
 // http.Client instance.
-func (doh *dnsOverHTTPS) exchangeHTTPS(ctx context.Context, client *http.Client, req *D.Msg) (resp *D.Msg, err error) {
+func (doh *dnsOverHTTPS) exchangeHTTPS(ctx context.Context, client *dohHTTPClient, req *D.Msg) (resp *D.Msg, err error) {
+	defer client.active.Done()
 	buf, err := req.Pack()
 	if err != nil {
 		return nil, fmt.Errorf("packing message: %w", err)
@@ -209,7 +218,7 @@ func (doh *dnsOverHTTPS) exchangeHTTPS(ctx context.Context, client *http.Client,
 	// It appears, that GET requests are more memory-efficient with Golang
 	// implementation of HTTP/2.
 	method := http.MethodGet
-	if isHTTP3(client) {
+	if isHTTP3(client.Client) {
 		// If we're using HTTP/3, use http3.MethodGet0RTT to force using 0-RTT.
 		method = http3.MethodGet0RTT
 	}
@@ -289,9 +298,16 @@ func (doh *dnsOverHTTPS) shouldRetry(err error) (ok bool) {
 // resetClient triggers re-creation of the *http.Client that is used by this
 // upstream.  This method accepts the error that caused resetting client as
 // depending on the error we may also reset the QUIC config.
-func (doh *dnsOverHTTPS) resetClient(ctx context.Context, resetErr error) (client *http.Client, err error) {
+func (doh *dnsOverHTTPS) resetClient(ctx context.Context, failed *dohHTTPClient, resetErr error, retry bool) (client *dohHTTPClient, err error) {
 	doh.clientMu.Lock()
 	defer doh.clientMu.Unlock()
+
+	if doh.client != nil && doh.client != failed {
+		if retry {
+			doh.client.active.Add(1)
+		}
+		return doh.client, nil
+	}
 
 	if errors.Is(resetErr, quic.Err0RTTRejected) {
 		// Reset the TokenStore only if 0-RTT was rejected.
@@ -300,7 +316,7 @@ func (doh *dnsOverHTTPS) resetClient(ctx context.Context, resetErr error) (clien
 
 	oldClient := doh.client
 	if oldClient != nil {
-		closeErr := doh.closeClient(oldClient)
+		closeErr := doh.closeClient(oldClient.Client)
 		if closeErr != nil {
 			log.Warnln("warning: failed to close the old http client: %v", closeErr)
 		}
@@ -309,6 +325,9 @@ func (doh *dnsOverHTTPS) resetClient(ctx context.Context, resetErr error) (clien
 	log.Debugln("re-creating the http client due to %v", resetErr)
 	doh.client, err = doh.createClient(ctx)
 
+	if retry && err == nil {
+		doh.client.active.Add(1)
+	}
 	return doh.client, err
 }
 
@@ -333,12 +352,13 @@ func (doh *dnsOverHTTPS) resetQUICConfig() {
 
 // getClient gets or lazily initializes an HTTP client (and transport) that will
 // be used for this DoH resolver.
-func (doh *dnsOverHTTPS) getClient(ctx context.Context) (c *http.Client, isCached bool, err error) {
+func (doh *dnsOverHTTPS) getClient(ctx context.Context) (c *dohHTTPClient, isCached bool, err error) {
 	startTime := time.Now()
 
 	doh.clientMu.Lock()
 	defer doh.clientMu.Unlock()
 	if doh.client != nil {
+		doh.client.active.Add(1)
 		return doh.client, true, nil
 	}
 
@@ -352,6 +372,9 @@ func (doh *dnsOverHTTPS) getClient(ctx context.Context) (c *http.Client, isCache
 	log.Debugln("creating a new http client")
 	doh.client, err = doh.createClient(ctx)
 
+	if err == nil {
+		doh.client.active.Add(1)
+	}
 	return doh.client, false, err
 }
 
@@ -359,21 +382,17 @@ func (doh *dnsOverHTTPS) getClient(ctx context.Context) (c *http.Client, isCache
 // will depend on whether HTTP3 is allowed and provided by this upstream.  Note,
 // that we'll attempt to establish a QUIC connection when creating the client in
 // order to check whether HTTP3 is supported.
-func (doh *dnsOverHTTPS) createClient(ctx context.Context) (*http.Client, error) {
+func (doh *dnsOverHTTPS) createClient(ctx context.Context) (*dohHTTPClient, error) {
 	transport, err := doh.createTransport(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("[%s] initializing http transport: %w", doh.url.String(), err)
 	}
 
-	client := &http.Client{
+	return &dohHTTPClient{Client: &http.Client{
 		Transport: transport,
 		Timeout:   DefaultTimeout,
 		Jar:       nil,
-	}
-
-	doh.client = client
-
-	return doh.client, nil
+	}}, nil
 }
 
 // createTransport initializes an HTTP transport that will be used specifically

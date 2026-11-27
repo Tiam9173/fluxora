@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"net/netip"
 	"runtime"
 	"strings"
 	"time"
 
+	"github.com/metacubex/mihomo/common/atomic"
 	"github.com/metacubex/mihomo/common/pool"
 	"github.com/metacubex/mihomo/common/yaml"
 	"github.com/metacubex/mihomo/component/resource"
@@ -61,7 +63,7 @@ type mrsRuleStrategy interface {
 
 type baseProvider struct {
 	behavior P.RuleBehavior
-	strategy ruleStrategy
+	strategy atomic.TypedValue[ruleStrategy]
 }
 
 func (bp *baseProvider) Type() P.ProviderType {
@@ -73,15 +75,16 @@ func (bp *baseProvider) Behavior() P.RuleBehavior {
 }
 
 func (bp *baseProvider) Count() int {
-	return bp.strategy.Count()
+	return bp.strategy.Load().Count()
 }
 
 func (bp *baseProvider) Match(metadata *C.Metadata, helper C.RuleMatchHelper) bool {
-	return bp.strategy != nil && bp.strategy.Match(metadata, helper)
+	strategy := bp.strategy.Load()
+	return strategy != nil && strategy.Match(metadata, helper)
 }
 
 func (bp *baseProvider) Strategy() any {
-	return bp.strategy
+	return bp.strategy.Load()
 }
 
 type ruleSetProvider struct {
@@ -110,7 +113,7 @@ func (rp *ruleSetProvider) MarshalJSON() ([]byte, error) {
 			Behavior:    rp.behavior.String(),
 			Format:      rp.format.String(),
 			Name:        rp.Fetcher.Name(),
-			RuleCount:   rp.strategy.Count(),
+			RuleCount:   rp.Count(),
 			Type:        rp.Type().String(),
 			UpdatedAt:   rp.UpdatedAt(),
 			VehicleType: rp.VehicleType().String(),
@@ -131,14 +134,15 @@ func NewRuleSetProvider(name string, behavior P.RuleBehavior, format P.RuleForma
 	}
 
 	onUpdate := func(strategy ruleStrategy) {
-		rp.strategy = strategy
+		rp.strategy.Store(strategy)
 		tunnel.RuleUpdateCallback().Emit(rp)
 	}
 
-	rp.strategy = newStrategy(behavior, parse)
+	strategy := newStrategy(behavior, parse)
 	if len(payload) > 0 { // using as fallback rules
-		rp.strategy = rulesParseInline(payload, rp.strategy)
+		strategy = rulesParseInline(payload, strategy)
 	}
+	rp.strategy.Store(strategy)
 	rp.Fetcher = resource.NewFetcher(name, interval, vehicle, bundleFile, func(bytes []byte) (ruleStrategy, error) {
 		return rulesParse(bytes, newStrategy(behavior, parse), format)
 	}, onUpdate)
@@ -168,9 +172,21 @@ func newStrategy(behavior P.RuleBehavior, parse common.ParseRuleFunc) ruleStrate
 }
 
 var (
-	ErrNoPayload     = errors.New("file must have a `payload` field")
+	ErrNoPayload     = errors.New("file must have a `payload` or `rules` list")
 	ErrInvalidFormat = errors.New("invalid format")
 )
+
+func bareCIDRLine(line []byte) string {
+	value, ok := bytes.CutPrefix(line, []byte("  - "))
+	if !ok {
+		return ""
+	}
+	rule := string(bytes.TrimRight(value, "\r\n"))
+	if _, err := netip.ParsePrefix(rule); err != nil {
+		return ""
+	}
+	return rule
+}
 
 func rulesParse(buf []byte, strategy ruleStrategy, format P.RuleFormat) (ruleStrategy, error) {
 	strategy.Reset()
@@ -179,6 +195,7 @@ func rulesParse(buf []byte, strategy ruleStrategy, format P.RuleFormat) (ruleStr
 	}
 
 	schema := &RulePayload{}
+	var cidrEntries *[]string
 
 	firstLineBuffer := pool.GetBuffer()
 	defer pool.PutBuffer(firstLineBuffer)
@@ -193,10 +210,7 @@ func rulesParse(buf []byte, strategy ruleStrategy, format P.RuleFormat) (ruleStr
 			line = buf[s : i+1]
 			s = i + 1
 		} else {
-			s = len(buf)                                      // stop loop in next step
-			if firstLineLength == 0 && format == P.YamlRule { // no head or only one line body
-				return nil, ErrNoPayload
-			}
+			s = len(buf) // stop loop in next step
 		}
 		var str string
 		switch format {
@@ -220,28 +234,50 @@ func rulesParse(buf []byte, strategy ruleStrategy, format P.RuleFormat) (ruleStr
 			if trimLine[0] == '#' { // comment
 				continue
 			}
-			firstLineBuffer.Write(line)
 			if firstLineLength == 0 { // find payload head
+				firstLineBuffer.Write(line)
+				if line[len(line)-1] != '\n' {
+					firstLineBuffer.WriteByte('\n')
+				}
 				firstLineLength = firstLineBuffer.Len()
 				firstLineBuffer.WriteString("  - ''") // a test line
 
 				err := yaml.Unmarshal(firstLineBuffer.Bytes(), schema)
 				firstLineBuffer.Truncate(firstLineLength)
 				if err == nil && (len(schema.Rules) > 0 || len(schema.Payload) > 0) { // found
+					if strategy.Behavior() == P.IPCIDR {
+						header, _, _ := bytes.Cut(line, []byte("#"))
+						switch string(bytes.TrimRight(header, " \t\r\n")) {
+						case "payload:", `"payload":`, "'payload':":
+							cidrEntries = &schema.Payload
+						case "rules:", `"rules":`, "'rules':":
+							cidrEntries = &schema.Rules
+						}
+					}
 					continue
 				}
 
 				// not found or err!=nil
 				firstLineBuffer.Truncate(0)
 				firstLineLength = 0
+				*schema = RulePayload{}
 				continue
 			}
 
-			// parse payload body
-			err := yaml.Unmarshal(firstLineBuffer.Bytes(), schema)
-			firstLineBuffer.Truncate(firstLineLength)
-			if err != nil {
-				continue
+			var cidrLine string
+			if cidrEntries != nil {
+				cidrLine = bareCIDRLine(line)
+			}
+			if cidrLine == "" {
+				firstLineBuffer.Write(line)
+				err := yaml.Unmarshal(firstLineBuffer.Bytes(), schema)
+				firstLineBuffer.Truncate(firstLineLength)
+				if err != nil {
+					continue
+				}
+			} else {
+				// Keep the YAML destination in sync for subsequent non-CIDR lines.
+				*cidrEntries = append((*cidrEntries)[:0], cidrLine)
 			}
 
 			if len(schema.Rules) > 0 {
@@ -259,6 +295,25 @@ func rulesParse(buf []byte, strategy ruleStrategy, format P.RuleFormat) (ruleStr
 		}
 
 		strategy.Insert(str)
+	}
+
+	if format == P.YamlRule && firstLineLength == 0 {
+		// Flow lists cannot be followed by the synthetic block item.
+		if bytes.IndexByte(buf, '[') < 0 || yaml.Unmarshal(buf, schema) != nil {
+			return nil, ErrNoPayload
+		}
+		rules := schema.Payload
+		if len(rules) == 0 && schema.Rules != nil {
+			rules = schema.Rules
+		}
+		if rules == nil {
+			return nil, ErrNoPayload
+		}
+		for _, rule := range rules {
+			if rule != "" {
+				strategy.Insert(rule)
+			}
+		}
 	}
 
 	strategy.FinishInsert()
@@ -284,7 +339,7 @@ type InlineProvider struct {
 type inlineProvider struct {
 	baseProvider
 	name     string
-	updateAt time.Time
+	updateAt atomic.TypedValue[time.Time]
 	payload  []string
 }
 
@@ -298,7 +353,7 @@ func (i *inlineProvider) Initial() error {
 
 func (i *inlineProvider) Update() error {
 	// make api update happy
-	i.updateAt = time.Now()
+	i.updateAt.Store(time.Now())
 	return nil
 }
 
@@ -311,10 +366,10 @@ func (i *inlineProvider) MarshalJSON() ([]byte, error) {
 		providerForApi{
 			Behavior:    i.behavior.String(),
 			Name:        i.Name(),
-			RuleCount:   i.strategy.Count(),
+			RuleCount:   i.Count(),
 			Type:        i.Type().String(),
 			VehicleType: i.VehicleType().String(),
-			UpdatedAt:   i.updateAt,
+			UpdatedAt:   i.updateAt.Load(),
 			Payload:     i.payload,
 		})
 }
@@ -323,13 +378,12 @@ func NewInlineProvider(name string, behavior P.RuleBehavior, payload []string, p
 	ip := &inlineProvider{
 		baseProvider: baseProvider{
 			behavior: behavior,
-			strategy: newStrategy(behavior, parse),
 		},
-		payload:  payload,
-		name:     name,
-		updateAt: time.Now(),
+		payload: payload,
+		name:    name,
 	}
-	ip.strategy = rulesParseInline(payload, ip.strategy)
+	ip.updateAt.Store(time.Now())
+	ip.strategy.Store(rulesParseInline(payload, newStrategy(behavior, parse)))
 
 	wrapper := &InlineProvider{
 		ip,

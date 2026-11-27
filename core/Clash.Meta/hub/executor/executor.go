@@ -2,6 +2,7 @@ package executor
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"net/netip"
 	"os"
@@ -84,16 +85,21 @@ func ParseWithBytes(buf []byte) (*config.Config, error) {
 func ApplyConfig(cfg *config.Config, force bool) {
 	mux.Lock()
 	defer mux.Unlock()
+	finishReload := tunnel.BeginConfigReload()
+	defer finishReload()
 	log.SetLevel(cfg.General.LogLevel)
 
-	tunnel.OnSuspend()
+	tunnel.OnConfigApplying()
 
-	ca.ResetCertificate()
-	for _, c := range cfg.TLS.CustomTrustCert {
-		if err := ca.AddCertificate(c); err != nil {
-			log.Warnln("%s\nadd error: %s", c, err.Error())
+	roots := cfg.TLS.RootCAs
+	if roots == nil {
+		var invalid []error
+		roots, invalid = ca.NewCertPool(cfg.TLS.CustomTrustCert)
+		for _, err := range invalid {
+			log.Warnln("%s", err)
 		}
 	}
+	ca.SetCertPool(roots)
 
 	updateExperimental(cfg.Experimental)
 	updateUsers(cfg.Users)
@@ -156,7 +162,7 @@ func GetGeneral() *config.General {
 		Mode:         tunnel.Mode(),
 		UnifiedDelay: adapter.UnifiedDelay.Load(),
 		LogLevel:     log.Level(),
-		IPv6:         !resolver.DisableIPv6,
+		IPv6:         !resolver.DisableIPv6.Load(),
 		Interface:    dialer.DefaultInterface.Load(),
 		RoutingMark:  int(dialer.DefaultRoutingMark.Load()),
 		GeoXUrl: config.GeoXUrl{
@@ -233,6 +239,16 @@ func updateNTP(c *config.NTP) {
 	} else {
 		ntp.ReCreateNTPService("", 0, "", nil, false)
 	}
+}
+
+// ReloadDNS installs the parsed resolver configuration with the current routing rules.
+func ReloadDNS(c *config.DNS, generalIPv6 bool) {
+	mux.Lock()
+	defer mux.Unlock()
+	finishReload := tunnel.BeginConfigReload()
+	defer finishReload()
+	updateDNS(c, generalIPv6)
+	resolver.ResetConnection()
 }
 
 func updateDNS(c *config.DNS, generalIPv6 bool) {
@@ -312,6 +328,11 @@ func updateProxies(proxies map[string]C.Proxy, providers map[string]P.ProxyProvi
 }
 
 func updateRules(rules []C.Rule, subRules map[string][]C.Rule, ruleProviders map[string]P.RuleProvider) {
+	for name, old := range tunnel.RuleProviders() {
+		if closer, ok := old.(io.Closer); ok && old != ruleProviders[name] {
+			_ = closer.Close()
+		}
+	}
 	tunnel.UpdateRules(rules, subRules, ruleProviders)
 }
 
@@ -393,7 +414,7 @@ func temporaryUpdateGeneral(general *config.General) func() {
 func updateGeneral(general *config.General, logging bool) {
 	tunnel.SetMode(general.Mode)
 	tunnel.SetFindProcessMode(general.FindProcessMode)
-	resolver.DisableIPv6 = !general.IPv6
+	resolver.DisableIPv6.Store(!general.IPv6)
 
 	dialer.SetTcpConcurrent(general.TCPConcurrent)
 	if logging && general.TCPConcurrent {

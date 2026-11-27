@@ -71,9 +71,9 @@ func recordLogHistory(entry logEntry) {
 	logHistoryHead = (logHistoryHead + 1) % maxLogHistory
 }
 
-/// Serialised for the Dart side. Always returns valid JSON — an empty array on
-/// a cold buffer or a marshal failure, never an error, so a log read can never
-/// break the page that asked for it.
+// / Serialised for the Dart side. Always returns valid JSON — an empty array on
+// / a cold buffer or a marshal failure, never an error, so a log read can never
+// / break the page that asked for it.
 func handleGetLogs() string {
 	logHistoryLock.RLock()
 	if len(logHistory) == 0 {
@@ -148,9 +148,10 @@ func handleGetIsInit() bool {
 func handleForceGc(forceFreeOSMemory bool) {
 	go func() {
 		log.Infoln("[APP] Request force GC, forceFreeOSMemory=%t", forceFreeOSMemory)
-		runtime.GC()
 		if forceFreeOSMemory {
 			debug.FreeOSMemory()
+		} else {
+			runtime.GC()
 		}
 	}()
 }
@@ -158,7 +159,6 @@ func handleForceGc(forceFreeOSMemory bool) {
 func handleShutdown() bool {
 	stopListeners()
 	executor.Shutdown()
-	runtime.GC()
 	debug.FreeOSMemory()
 	isInit = false
 	return true
@@ -288,19 +288,24 @@ func handleResetTraffic() {
 	statistic.DefaultManager.ResetStatistic()
 }
 
+var delayTestSlots = make(chan struct{}, 50)
+
 func handleAsyncTestDelay(paramsString string, fn func(string)) {
-	mBatch.Go(paramsString, func() (bool, error) {
+	go func() {
+		delayTestSlots <- struct{}{}
+		defer func() { <-delayTestSlots }()
+
 		var params = &TestDelayParams{}
 		err := json.Unmarshal([]byte(paramsString), params)
 		if err != nil {
 			fn("")
-			return false, nil
+			return
 		}
 
 		expectedStatus, err := utils.NewUnsignedRanges[uint16]("")
 		if err != nil {
 			fn("")
-			return false, nil
+			return
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*time.Duration(params.Timeout))
@@ -331,7 +336,7 @@ func handleAsyncTestDelay(paramsString string, fn func(string)) {
 			delayData.Value = -1
 			data, _ := json.Marshal(delayData)
 			fn(string(data))
-			return false, nil
+			return
 		}
 
 		testUrl := constant.DefaultTestURL
@@ -347,14 +352,13 @@ func handleAsyncTestDelay(paramsString string, fn func(string)) {
 			delayData.TimedOut = errors.Is(err, context.DeadlineExceeded)
 			data, _ := json.Marshal(delayData)
 			fn(string(data))
-			return false, nil
+			return
 		}
 
 		delayData.Value = int32(delay)
 		data, _ := json.Marshal(delayData)
 		fn(string(data))
-		return false, nil
-	})
+	}()
 }
 
 func handleGetConnections() string {
@@ -900,11 +904,7 @@ func init() {
 			Url:  url,
 			Name: name,
 		}
-		if delay == 0 {
-			delayData.Value = -1
-		} else {
-			delayData.Value = int32(delay)
-		}
+		delayData.Value = uiDelayValue(delay)
 		sendMessage(Message{
 			Type: DelayMessage,
 			Data: delayData,
@@ -922,4 +922,11 @@ func init() {
 			Data: providerName,
 		})
 	}
+}
+
+func uiDelayValue(delay uint16) int32 {
+	if delay == 0 || delay == ^uint16(0) {
+		return -1
+	}
+	return int32(delay)
 }

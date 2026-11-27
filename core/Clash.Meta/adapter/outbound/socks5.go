@@ -176,6 +176,7 @@ func NewSocks5(option Socks5Option) (*Socks5, error) {
 		var err error
 		tlsConfig, err = ca.GetTLSConfig(ca.Option{
 			TLSConfig: &tls.Config{
+				RootCAs:            option.RootCAs,
 				InsecureSkipVerify: option.SkipCertVerify,
 				ServerName:         option.Server,
 			},

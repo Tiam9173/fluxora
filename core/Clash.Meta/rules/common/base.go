@@ -34,18 +34,14 @@ func ParseParams(params []string) (isSrc bool, noResolve bool) {
 	return
 }
 
-func trimArr(arr []string) (r []string) {
-	for _, e := range arr {
-		r = append(r, strings.Trim(e, " "))
-	}
-	return
-}
-
 // ParseRulePayload parse rule format like:
 // `tp,payload,target(,params...)` or `tp,payload(,params...)`
 // needTarget control the format contains `target` in string
 func ParseRulePayload(ruleRaw string, needTarget bool) (tp, payload, target string, params []string) {
-	item := trimArr(strings.Split(ruleRaw, ","))
+	item := strings.Split(ruleRaw, ",")
+	for i := range item {
+		item[i] = strings.Trim(item[i], " ")
+	}
 	tp = strings.ToUpper(item[0])
 	if len(item) > 1 {
 		switch tp {

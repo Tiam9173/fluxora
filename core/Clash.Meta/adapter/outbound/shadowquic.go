@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/metacubex/mihomo/common/utils"
-	"github.com/metacubex/mihomo/component/ca"
 	C "github.com/metacubex/mihomo/constant"
 	"github.com/metacubex/mihomo/ntp"
 	"github.com/metacubex/mihomo/transport/shadowquic"
@@ -94,7 +93,7 @@ func NewShadowQuic(option ShadowQuicOption) (*ShadowQuic, error) {
 		ServerName: serverName,
 		MinVersion: tls.VersionTLS13,
 		Time:       ntp.Now,
-		RootCAs:    ca.GetCertPool(),
+		RootCAs:    option.trustedRoots(),
 	}
 	if option.ALPN != nil {
 		tlsConfig.NextProtos = option.ALPN

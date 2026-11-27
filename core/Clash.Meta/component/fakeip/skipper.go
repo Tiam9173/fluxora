@@ -10,8 +10,9 @@ const (
 )
 
 type Skipper struct {
-	Rules  []C.Rule
-	Host   []C.DomainMatcher
+	Rules []C.Rule
+	Host  []C.DomainMatcher
+	// Bypass always uses real IP, regardless of the configured filter mode.
 	Bypass []C.DomainMatcher
 	Mode   C.FilterMode
 }

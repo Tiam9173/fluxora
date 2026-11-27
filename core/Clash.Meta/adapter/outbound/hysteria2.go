@@ -169,6 +169,7 @@ func NewHysteria2(option Hysteria2Option) (*Hysteria2, error) {
 
 	tlsConfig, err := ca.GetTLSConfig(ca.Option{
 		TLSConfig: &tls.Config{
+			RootCAs:            option.RootCAs,
 			ServerName:         serverName,
 			InsecureSkipVerify: option.SkipCertVerify,
 			MinVersion:         tls.VersionTLS13,
@@ -270,6 +271,7 @@ func NewHysteria2(option Hysteria2Option) (*Hysteria2, error) {
 	if option.RealmOpts.Enable {
 		httpTLSClientConfig, err := ca.GetTLSConfig(ca.Option{
 			TLSConfig: &tls.Config{
+				RootCAs:            option.RootCAs,
 				ServerName:         option.RealmOpts.SNI,
 				InsecureSkipVerify: option.RealmOpts.SkipCertVerify,
 				NextProtos:         option.RealmOpts.ALPN,

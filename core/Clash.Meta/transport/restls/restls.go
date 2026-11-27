@@ -2,6 +2,7 @@ package restls
 
 import (
 	"context"
+	"crypto/x509"
 	"net"
 
 	"github.com/metacubex/mihomo/component/ca"
@@ -24,12 +25,16 @@ func (r *Restls) Upstream() any {
 
 type Config = tls.Config
 
-func NewRestlsConfig(serverName, password, versionHint, restlsScript, clientID string) (*Config, error) {
+func NewRestlsConfig(serverName, password, versionHint, restlsScript, clientID string, roots ...*x509.CertPool) (*Config, error) {
 	config, err := tls.NewRestlsConfig(serverName, password, versionHint, restlsScript, clientID)
 	if err != nil {
 		return nil, err
 	}
-	config.RootCAs = ca.GetCertPool()
+	if len(roots) > 0 && roots[0] != nil {
+		config.RootCAs = roots[0]
+	} else {
+		config.RootCAs = ca.GetCertPool()
+	}
 	config.Time = ntp.Now
 	return config, nil
 }

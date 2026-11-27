@@ -217,7 +217,7 @@ func NewSnell(option SnellOption) (*Snell, error) {
 		}
 
 		var err error
-		restlsConfig, err = restls.NewRestlsConfig(opt.Host, opt.Password, opt.VersionHint, opt.RestlsScript, option.ClientFingerprint)
+		restlsConfig, err = restls.NewRestlsConfig(opt.Host, opt.Password, opt.VersionHint, opt.RestlsScript, option.ClientFingerprint, option.RootCAs)
 		if err != nil {
 			return nil, fmt.Errorf("snell %s initialize restls-plugin error: %w", addr, err)
 		}
