@@ -190,7 +190,12 @@ void applyAndroidPrivateDnsServer(
   String serverName,
 ) {
   final host = serverName.trim().toLowerCase().replaceFirst(RegExp(r'\.$'), '');
-  if (host.isEmpty) return;
+  if (host.isEmpty ||
+      InternetAddress.tryParse(host) != null ||
+      !host.contains('.') ||
+      !RegExp(r'^[a-z0-9.-]+$').hasMatch(host)) {
+    return;
+  }
 
   final endpoint = Uri.tryParse('tls://$host:853');
   if (endpoint == null || endpoint.host != host || endpoint.hasQuery) return;
@@ -225,8 +230,8 @@ void applyAndroidPrivateDnsServer(
   }
   if (fallback.isEmpty) {
     fallback.addAll(const [
-      'https://dns.alidns.com/dns-query',
-      'https://doh.pub/dns-query',
+      'https://dns.alidns.com/dns-query#DIRECT',
+      'https://doh.pub/dns-query#DIRECT',
     ]);
   }
 

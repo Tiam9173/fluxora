@@ -434,7 +434,6 @@ Future<void> _service(List<String> flags) async {
         },
       ),
     );
-
     try {
       final dns = await (vpn?.getCurrentDns() ?? Future<String>.value(''))
           .timeout(const Duration(seconds: 2));

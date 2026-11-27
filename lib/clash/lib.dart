@@ -43,6 +43,7 @@ class ClashLib extends ClashHandlerInterface with AndroidClashInterface {
   bool get hasLiveProcess => true;
   static ClashLib? _instance;
   Completer<bool> _canSendCompleter = Completer();
+  Future<void>? _ipcConnectFuture;
   SendPort? sendPort;
   final receiverPort = ReceivePort();
 
@@ -59,11 +60,40 @@ class ClashLib extends ClashHandlerInterface with AndroidClashInterface {
         handleResult(ActionResult.fromJson(json.decode(message)));
       }
     });
-    _initService();
+    unawaited(
+      _connectService().catchError((Object error) {
+        commonPrint.log('ClashLib: initial IPC connection failed: $error');
+      }),
+    );
   }
 
   @override
   preload() => _canSendCompleter.future;
+
+  Future<void> _connectService() {
+    final connecting = _ipcConnectFuture;
+    if (connecting != null) return connecting;
+    if (_canSendCompleter.isCompleted) _canSendCompleter = Completer();
+    final readiness = _canSendCompleter;
+    late final Future<void> connection;
+    connection = _initService()
+        .catchError((Object error, StackTrace stack) {
+          if (!readiness.isCompleted) {
+            readiness.complete(false);
+          }
+          if (identical(_ipcConnectFuture, connection)) {
+            _ipcConnectFuture = null;
+          }
+          Error.throwWithStackTrace(error, stack);
+        })
+        .whenComplete(() {
+          if (identical(_ipcConnectFuture, connection)) {
+            _ipcConnectFuture = null;
+          }
+        });
+    _ipcConnectFuture = connection;
+    return connection;
+  }
 
   Future<void> _initService() async {
     _registerMainPort(receiverPort.sendPort);
@@ -91,8 +121,7 @@ class ClashLib extends ClashHandlerInterface with AndroidClashInterface {
       }
       await service?.reconnectIpc();
     }
-    commonPrint.log('ClashLib: IPC failed after 3 attempts');
-    if (!_canSendCompleter.isCompleted) _canSendCompleter.complete(false);
+    throw TimeoutException('Android service IPC failed after 3 attempts');
   }
 
   void _registerMainPort(SendPort sendPort) {
@@ -108,14 +137,9 @@ class ClashLib extends ClashHandlerInterface with AndroidClashInterface {
   /// A closed SendPort silently drops messages; rebind before a profile apply.
   Future<void> refreshIpc() async {
     sendPort = null;
-    if (_canSendCompleter.isCompleted) _canSendCompleter = Completer();
     _registerMainPort(receiverPort.sendPort);
-    if (await service?.isServiceEngineRunning() == true) {
-      await service?.reconnectIpc();
-      await _waitForIpc();
-    } else {
-      await _initService();
-    }
+    await _connectService();
+    if (sendPort == null) await _connectService();
     if (sendPort == null) {
       throw StateError('Unable to reconnect to the VPN service');
     }
@@ -128,9 +152,7 @@ class ClashLib extends ClashHandlerInterface with AndroidClashInterface {
   }
 
   @override
-  reStart() {
-    _initService();
-  }
+  reStart() => refreshIpc();
 
   @override
   Future<bool> shutdown() async {
@@ -141,15 +163,19 @@ class ClashLib extends ClashHandlerInterface with AndroidClashInterface {
 
   @override
   sendMessage(String message) async {
-    await _canSendCompleter.future;
+    if (!await _canSendCompleter.future) {
+      commonPrint.log('ClashLib: IPC is unavailable, reconnecting');
+      await refreshIpc();
+    }
+    final currentPort = sendPort;
+    if (currentPort == null) {
+      throw StateError('Android service IPC is not connected');
+    }
     try {
-      sendPort?.send(message);
+      currentPort.send(message);
     } catch (e) {
       commonPrint.log('ClashLib: sendMessage failed: $e, reconnecting IPC');
-      sendPort = null;
-      _canSendCompleter = Completer();
-      await service?.reconnectIpc();
-      await _waitForIpc();
+      await refreshIpc();
       sendPort?.send(message);
     }
   }

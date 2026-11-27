@@ -1350,7 +1350,11 @@ class Utils {
       return '${match.group(1)}false${match.group(3)}';
     });
   }
-  /// one. Other platforms and opportunistic/private-DNS modes return null.
+  Future<String?> getPrivateDnsServerName() async {
+    if (!system.isAndroid) return null;
+    final host = (await getAndroidPrivateDnsServerName())?.trim();
+    return host == null || host.isEmpty ? null : host;
+  }
 }
 
 final utils = Utils();

@@ -17,8 +17,8 @@ void main() {
       'tls://dns.private.example:853#DIRECT',
     ]);
     expect(config['dns']['fallback'], [
-      'https://dns.alidns.com/dns-query',
-      'https://doh.pub/dns-query',
+      'https://dns.alidns.com/dns-query#DIRECT',
+      'https://doh.pub/dns-query#DIRECT',
     ]);
     expect(config['dns']['fallback-lazy-query'], isTrue);
   });
@@ -87,8 +87,37 @@ void main() {
       'tls://resolver.private.example:853#DIRECT',
     ]);
     expect(config['dns']['fallback'], [
-      'https://dns.alidns.com/dns-query',
-      'https://doh.pub/dns-query',
+      'https://dns.alidns.com/dns-query#DIRECT',
+      'https://doh.pub/dns-query#DIRECT',
+    ]);
+  });
+
+  test('replaces system nameserver policies without rewriting hostnames', () {
+    final config = <String, dynamic>{
+      'dns': <String, dynamic>{
+        'enable': true,
+        'enhanced-mode': 'fake-ip',
+        'nameserver-policy': <String, dynamic>{
+          'geosite:private': ['system'],
+          'geosite:cn': 'https://resolver.example/dns-query',
+          'internal.example': 'dhcp://system',
+        },
+      },
+      'proxies': <dynamic>[
+        {'name': 'tls-node', 'server': 'edge.example.test'},
+      ],
+    };
+
+    applyAndroidPrivateDnsServer(config, 'Resolver.Private.Example.');
+    applyPrivateDnsBypass(config, 'Resolver.Private.Example.');
+
+    expect(config['dns']['nameserver-policy'], {
+      'geosite:private': ['tls://resolver.private.example:853#DIRECT'],
+      'geosite:cn': 'https://resolver.example/dns-query',
+      'internal.example': 'tls://resolver.private.example:853#DIRECT',
+    });
+    expect(config['proxies'], [
+      {'name': 'tls-node', 'server': 'edge.example.test'},
     ]);
   });
 
