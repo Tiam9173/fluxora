@@ -435,10 +435,6 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             "ip" to ((addresses.firstOrNull { it is Inet4Address } ?: addresses.firstOrNull())?.hostAddress ?: ""),
             "gateway" to (gateway?.hostAddress ?: ""),
             "dns" to link?.dnsServers?.mapNotNull { it.hostAddress }.orEmpty(),
-            "privateDnsServerName" to if (
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
-                link?.isPrivateDnsActive == true
-            ) link.privateDnsServerName.orEmpty() else "",
         )
     }.getOrElse {
         android.util.Log.e("VpnPlugin", "getNetworkInfo error: ${it.message}")
@@ -549,17 +545,18 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
         override fun onLinkPropertiesChanged(network: Network, linkProperties: LinkProperties) {
             val dnsList = linkProperties.dnsServers.map { it.asSocketAddressText(53) }
-            val dnsChanged = networkDnsMap.put(network, dnsList) != dnsList
+            networkDnsMap[network] = dnsList
+            onUpdateNetwork()
             val privateDnsServerName = if (
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
                 linkProperties.isPrivateDnsActive
-            ) linkProperties.privateDnsServerName.orEmpty() else ""
-            val privateDnsChanged = networkPrivateDnsMap.put(
-                network,
-                privateDnsServerName,
-            ) != privateDnsServerName
-            if (dnsChanged || privateDnsChanged) invokeDart("networkChanged")
-            onUpdateNetwork()
+            ) linkProperties.privateDnsServerName?.trim().orEmpty() else ""
+            val previous = networkPrivateDnsMap.put(network, privateDnsServerName)
+            if (previous != privateDnsServerName &&
+                (previous != null || privateDnsServerName.isNotEmpty())
+            ) {
+                invokeDart("networkChanged")
+            }
         }
     }
 
@@ -589,6 +586,7 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         }.also {
             networks.clear()
             networkDnsMap.clear()
+            networkPrivateDnsMap.clear()
             onUpdateNetwork()
         }
     }

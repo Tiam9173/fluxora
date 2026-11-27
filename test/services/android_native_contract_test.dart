@@ -47,6 +47,23 @@ void main() {
     expect(tempActivity!.group(1), 'false');
   });
 
+  test(
+    'private DNS stays out of network diagnostics and clears with callback',
+    () {
+      final source = read(
+        'android/app/src/main/kotlin/io/fluxora/app/plugins/VpnPlugin.kt',
+      );
+
+      expect(source, isNot(contains('"privateDnsServerName" to')));
+      expect(source, contains('networkPrivateDnsMap.clear()'));
+      expect(source, contains('linkProperties.privateDnsServerName?.trim()'));
+      expect(
+        source,
+        contains('(previous != null || privateDnsServerName.isNotEmpty())'),
+      );
+    },
+  );
+
   test('unlocked pre-34 tile taps collapse the quick-settings panel', () {
     final source = read(
       'android/app/src/main/kotlin/io/fluxora/app/services/FluxoraTileService.kt',
