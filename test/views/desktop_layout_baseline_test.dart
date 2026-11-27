@@ -12,8 +12,8 @@ import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/widgets/widgets.dart';
 
-/// Desktop content alignment with a 68px narrow rail or 208px expanded sidebar.
-/// Borders paint inside the sidebar; page gutters and app-bar metrics stay intact.
+/// Desktop content alignment with a 68px narrow or 208px expanded shell.
+/// The floating surface has an 8px inset on each side inside that shell.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -99,9 +99,17 @@ void main() {
       ) async {
         await pumpDesktop(tester, width: width);
 
-        final rail = tester.getRect(find.byType(AuroraNavigationRail));
         final sidebarWidth = width <= maxLaptopWidth ? 68.0 : 208.0;
-        expect(rail.width, sidebarWidth);
+        final sidebar = tester.getRect(
+          find.byKey(const ValueKey('desktop-sidebar')),
+        );
+        final rail = tester.getRect(find.byType(AuroraNavigationRail));
+        expect(sidebar.width, sidebarWidth);
+        expect(
+          rail.width,
+          sidebarWidth - 2 * FluxoraSpacing.sm,
+          reason: 'the glass panel keeps its horizontal inset inside the shell',
+        );
 
         final contentOrigin = sidebarWidth;
         final card = tester.getRect(find.byType(CommonCard).first);

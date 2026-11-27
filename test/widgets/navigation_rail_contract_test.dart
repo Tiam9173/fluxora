@@ -232,14 +232,14 @@ void main() {
 
       // The pill is the first `Material` inside the rail; its colour must be the
       // shared tint over the user's active accent.
-      final pill = tester
-          .widgetList<Material>(
-            find.descendant(
-              of: find.byType(AuroraNavigationRail),
+      final pill = tester.widget<Material>(
+        find
+            .ancestor(
+              of: find.text(desktopItems().first.label.localizedName),
               matching: find.byType(Material),
-            ),
-          )
-          .firstWhere((m) => m.color != null);
+            )
+            .first,
+      );
 
       expect(
         pill.color,
@@ -382,6 +382,7 @@ void main() {
       // Tab moves into the rail; the first stop is the first unselected item
       // after the current one, which is enough to prove the ring exists.
       await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
       await tester.pump();
 
       final focusedPill = tester
@@ -443,6 +444,8 @@ void main() {
         );
 
         await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
         await tester.pump();
 
         final ringed = ringedShapes().toList();
@@ -488,6 +491,15 @@ void main() {
       final items = desktopItems();
 
       final visited = <String>[];
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pump();
+      expect(
+        Focus.of(
+          tester.element(find.byKey(const ValueKey('toggle-desktop-sidebar'))),
+        ).hasFocus,
+        isTrue,
+        reason: 'the sidebar control remains reachable before destinations',
+      );
       for (var i = 0; i < items.length; i++) {
         await tester.sendKeyEvent(LogicalKeyboardKey.tab);
         await tester.pump();
@@ -515,6 +527,7 @@ void main() {
       await pumpRail(tester);
 
       // Focus the second destination so the ring is not on the selected pill.
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
       await tester.sendKeyEvent(LogicalKeyboardKey.tab);
       await tester.sendKeyEvent(LogicalKeyboardKey.tab);
       await tester.pump();

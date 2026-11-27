@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 import 'dart:isolate';
 import 'dart:ui';
@@ -71,7 +70,7 @@ void main() {
       publishIpcPort = false;
       final reconnect = bridge.refreshIpc();
       final readiness = bridge.preload();
-      await expectLater(reconnect, throwsA(isA<TimeoutException>()));
+      await expectLater(reconnect, throwsA(isA<StateError>()));
       expect(await readiness, isFalse);
 
       publishIpcPort = true;

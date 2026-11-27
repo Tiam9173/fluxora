@@ -1,8 +1,8 @@
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/models/models.dart';
 import 'package:fluxora/state.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'generated/config.g.dart';
 

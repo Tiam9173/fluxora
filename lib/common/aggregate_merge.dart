@@ -40,11 +40,73 @@ class AggregateMemberConfig {
   });
 }
 
+/// Removes rules whose proxy target disappeared after scripts or profile
+/// switching. Mihomo rejects the whole config for one stale target, which can
+/// otherwise leave the previous subscription active and make the new one look
+/// like it failed to switch.
+List<String> removeRulesWithUnknownTargets(
+  Map<String, dynamic> rawConfig, {
+  Set<String> knownStaleTargets = const {},
+  void Function(String message)? log,
+}) {
+  final rules = rawConfig['rules'];
+  if (rules is! List) return const [];
+  final writeLog = log ?? commonPrint.log;
+  final nodes = <String, String>{
+    for (final node in (rawConfig['proxies'] as List? ?? const []))
+      if (node is Map && node['name'] is String)
+        node['name'] as String: node['name'] as String,
+  };
+  final groups = <String, String>{
+    for (final group in (rawConfig['proxy-groups'] as List? ?? const []))
+      if (group is Map && group['name'] is String)
+        group['name'] as String: group['name'] as String,
+  };
+  final subRules =
+      (rawConfig['sub-rules'] as Map?)?.keys
+          .map((name) => name.toString())
+          .toSet() ??
+      const <String>{};
+  final hasDynamicProxyProviders =
+      (rawConfig['proxy-providers'] as Map?)?.isNotEmpty == true;
+  final dropped = <String>[];
+  final validRules = <dynamic>[];
+  for (final rule in rules) {
+    if (rule is! String || rule.isEmpty) {
+      validRules.add(rule);
+      continue;
+    }
+    final parsed = ParsedRule.parseString(rule);
+    final target = parsed.ruleAction == RuleAction.SUB_RULE
+        ? parsed.subRule
+        : parsed.ruleTarget;
+    final missing =
+        target != null &&
+            (parsed.ruleAction == RuleAction.SUB_RULE
+                ? !subRules.contains(target)
+                : mapAggregateRuleTarget(
+                        target,
+                        nodeNames: nodes,
+                        groupNames: groups,
+                        baseGroups: groups.keys.toSet(),
+                      ) ==
+                      null)
+        ? target
+        : null;
+    if (missing != null &&
+        (!hasDynamicProxyProviders || knownStaleTargets.contains(missing))) {
+      dropped.add(rule);
+      writeLog('config: drop rule with missing proxy target "$missing"');
+    } else {
+      validRules.add(rule);
+    }
+  }
+  if (dropped.isNotEmpty) rawConfig['rules'] = validRules;
+  return dropped;
+}
+
 typedef AggregateRuleProviderPathResolver =
-    Future<String?> Function(
-      String profileId,
-      Map<String, dynamic> provider,
-    );
+    Future<String?> Function(String profileId, Map<String, dynamic> provider);
 
 /// Merges member groups/rules/rule-providers into [rawConfig].
 ///
@@ -146,7 +208,8 @@ Future<AggregateMergeReport> mergeAggregateMembers(
               })
               .whereType<String>()
               .toList();
-          copy['proxies'] = mappedProxies.isEmpty &&
+          copy['proxies'] =
+              mappedProxies.isEmpty &&
                   (copy['use'] is! List || (copy['use'] as List).isEmpty)
               ? ['DIRECT']
               : mappedProxies;
@@ -236,7 +299,8 @@ Future<AggregateMergeReport> mergeAggregateMembers(
         subRule: subRule,
         ruleProvider: provider,
       );
-      if (!baseRules.contains(next.value) && !mergedRules.contains(next.value)) {
+      if (!baseRules.contains(next.value) &&
+          !mergedRules.contains(next.value)) {
         mergedRules.add(next.value);
       }
     }
@@ -304,10 +368,7 @@ Future<Map<String, String>> _mergeRuleProviders(
     final value = entry.value;
     if (value is! Map) continue;
     final copy = Map<String, dynamic>.from(value);
-    final resolvedPath = await resolveRuleProviderPath(
-      member.profile.id,
-      copy,
-    );
+    final resolvedPath = await resolveRuleProviderPath(member.profile.id, copy);
     if (resolvedPath == null && copy['type'] == 'file') {
       log(
         'aggregate: skip file rule-provider "${entry.key}" from ${member.profile.id}, path not found',

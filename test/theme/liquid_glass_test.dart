@@ -59,6 +59,31 @@ void main() {
       }
     });
   });
+  testWidgets(
+    'floating surfaces use the liquid lens without a call-site flag',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(
+            extensions: const [
+              FluxoraMaterial(style: FluxoraSurfaceStyle.liquid),
+            ],
+          ),
+          home: const Center(
+            child: GlassSurface(
+              floating: true,
+              child: SizedBox(width: 180, height: 56),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.byType(LiquidBackdrop), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
   test('clarity persists independently and older settings remain readable', () {
     const props = ThemeProps(
       surfaceStyle: FluxoraSurfaceStyle.liquid,

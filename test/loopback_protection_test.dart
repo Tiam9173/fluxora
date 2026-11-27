@@ -73,10 +73,7 @@ void main() {
 
       final desktop = buildLoopbackRules(config, isAndroid: false);
       expect(desktop, hasLength(2));
-      expect(
-        desktop.any((rule) => rule.contains('853')),
-        isFalse,
-      );
+      expect(desktop.any((rule) => rule.contains('853')), isFalse);
     });
 
     test('the Android rule survives an otherwise empty port set', () {
@@ -92,6 +89,24 @@ void main() {
       final rules = buildLoopbackRules(config, isAndroid: true);
       expect(rules, hasLength(1));
       expect(rules.single, contains('853'));
+    });
+  });
+
+  group('buildQuicDisableRules', () {
+    test('rejects QUIC promptly so clients can fall back to TCP', () {
+      expect(buildQuicDisableRules(excludeChina: false, isRussian: false), [
+        'AND,((NETWORK,UDP),(DST-PORT,443)),REJECT',
+      ]);
+    });
+
+    test('can leave China traffic available when the setting requests it', () {
+      expect(buildQuicDisableRules(excludeChina: true, isRussian: false), [
+        'AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((OR,((GEOSITE,geolocation-cn),(GEOIP,CN,no-resolve)))))),REJECT',
+      ]);
+      expect(
+        buildQuicDisableRules(excludeChina: true, isRussian: true).single,
+        contains('REJECT'),
+      );
     });
   });
 }

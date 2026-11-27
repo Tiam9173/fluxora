@@ -332,6 +332,7 @@ class CommonScaffoldState extends State<CommonScaffold> {
                                 ? const GlassCanvas(child: SizedBox.expand())
                                 : const GlassSurface(
                                     radius: 0,
+                                    floating: true,
                                     border: false,
                                     child: SizedBox.expand(),
                                   )

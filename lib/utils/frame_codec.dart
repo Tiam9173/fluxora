@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' show min;
 import 'dart:typed_data';
 
 class FrameCodec {
@@ -15,45 +16,50 @@ class FrameCodec {
 
 class FrameDecoder {
   final BytesBuilder _builder = BytesBuilder();
+  final Uint8List _header = Uint8List(4);
+  int _headerLength = 0;
+  int? _length;
 
   List<String> decode(Uint8List data) {
     final results = <String>[];
-    _builder.add(data);
-
-    final Uint8List buffer = _builder.takeBytes();
     int offset = 0;
 
     try {
-      while (buffer.length - offset >= 4) {
-        final view = ByteData.view(buffer.buffer, buffer.offsetInBytes + offset, 4);
-        final length = view.getUint32(0, Endian.little);
-
-        if (length > 10 * 1024 * 1024 || length < 0) {
-          throw FormatException('Invalid or too large frame length: $length');
+      while (offset < data.length) {
+        if (_length == null) {
+          final count = min(4 - _headerLength, data.length - offset);
+          _header.setRange(_headerLength, _headerLength + count, data, offset);
+          _headerLength += count;
+          offset += count;
+          if (_headerLength < 4) break;
+          final length = ByteData.sublistView(
+            _header,
+          ).getUint32(0, Endian.little);
+          if (length > 10 * 1024 * 1024) {
+            throw FormatException('Invalid or too large frame length: $length');
+          }
+          _length = length;
         }
-
-        if (buffer.length - offset < 4 + length) {
-          break;
+        final length = _length!;
+        if (_builder.isEmpty && data.length - offset >= length) {
+          results.add(
+            utf8.decode(Uint8List.sublistView(data, offset, offset + length)),
+          );
+          offset += length;
+          _length = null;
+          _headerLength = 0;
+          continue;
         }
-
-        final frame = Uint8List.view(
-          buffer.buffer,
-          buffer.offsetInBytes + offset + 4,
-          length,
-        );
-        results.add(utf8.decode(frame));
-        offset += 4 + length;
-      }
-
-      if (offset < buffer.length) {
-        _builder.add(Uint8List.view(
-          buffer.buffer,
-          buffer.offsetInBytes + offset,
-          buffer.length - offset,
-        ));
+        final count = min(length - _builder.length, data.length - offset);
+        _builder.add(Uint8List.sublistView(data, offset, offset + count));
+        offset += count;
+        if (_builder.length < length) break;
+        results.add(utf8.decode(_builder.takeBytes()));
+        _length = null;
+        _headerLength = 0;
       }
     } catch (e) {
-      _builder.clear();
+      reset();
       rethrow;
     }
 
@@ -62,6 +68,8 @@ class FrameDecoder {
 
   void reset() {
     _builder.clear();
+    _length = null;
+    _headerLength = 0;
   }
 }
 

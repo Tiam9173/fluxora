@@ -13,10 +13,12 @@ on:
     branches:
       - main
       - dev
+      - test
   push:
     branches:
       - main
       - dev
+      - test
   workflow_dispatch:
 
 # Read-only: the checks only need the checked-out source. Nothing here writes
@@ -111,6 +113,14 @@ jobs:
         env:
           CGO_ENABLED: '0'
         run: go test -mod=readonly -tags=with_gvisor ./...
+      - name: Mihomo controller and config regressions
+        working-directory: core/Clash.Meta
+        env:
+          CGO_ENABLED: '0'
+        run: go test -mod=readonly -tags=with_gvisor ./hub/route ./config ./dns ./rules/... ./tunnel
+      - name: smux queued write regression
+        working-directory: core/third_party/smux
+        run: go test -mod=readonly -run '^TestWriteDeadlineKeepsQueuedPayload$' .
       - name: Controller and desktop navigation regressions
         run: >-
           flutter test

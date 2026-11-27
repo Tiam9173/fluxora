@@ -57,13 +57,14 @@ class AuroraNavigationRail extends StatelessWidget {
     required this.destinations,
     required this.selectedIndex,
     required this.onDestinationSelected,
+    this.header,
     this.extended = true,
   });
 
-  /// Icon-only width.
+  /// Width reserved by the desktop shell when the rail is collapsed.
   static const double collapsedWidth = 68;
 
-  /// Width when labels sit beside the icons.
+  /// Width reserved by the desktop shell when labels are expanded.
   static const double extendedWidth = 208;
 
   /// Minimum target height; expanded text can grow with accessibility scaling.
@@ -75,17 +76,24 @@ class AuroraNavigationRail extends StatelessWidget {
   final List<AuroraRailDestination> destinations;
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
+  final Widget? header;
   final bool extended;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: extended ? extendedWidth : collapsedWidth,
+      width:
+          (extended ? extendedWidth : collapsedWidth) - 2 * FluxoraSpacing.sm,
       child: LayoutBuilder(
         builder: (context, constraints) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (header case final header?)
+              Padding(
+                padding: const EdgeInsets.only(bottom: FluxoraSpacing.sm),
+                child: header,
+              ),
             for (var index = 0; index < destinations.length; index++)
               Padding(
                 padding: const EdgeInsets.only(bottom: FluxoraSpacing.xs),

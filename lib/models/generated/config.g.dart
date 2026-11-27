@@ -615,6 +615,7 @@ _AggregateProfile _$AggregateProfileFromJson(Map<String, dynamic> json) =>
     _AggregateProfile(
       id: json['id'] as String,
       name: json['name'] as String,
+      baseProfileId: json['baseProfileId'] as String?,
       memberIds:
           (json['memberIds'] as List<dynamic>?)
               ?.map((e) => e as String)
@@ -640,6 +641,7 @@ Map<String, dynamic> _$AggregateProfileToJson(_AggregateProfile instance) =>
     <String, dynamic>{
       'id': instance.id,
       'name': instance.name,
+      'baseProfileId': instance.baseProfileId,
       'memberIds': instance.memberIds,
       'mode': _$AggregateModeEnumMap[instance.mode],
       'scriptTiming': _$AggregateScriptTimingEnumMap[instance.scriptTiming],

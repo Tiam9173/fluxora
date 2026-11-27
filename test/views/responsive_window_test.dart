@@ -150,15 +150,19 @@ void main() {
                 'no overflow at ${size.width.toInt()}x${size.height.toInt()}',
           );
 
-          // The accepted sidebar contract is 208 px expanded / 68 px compact.
-          // Its foreground divider consumes no additional layout width.
-          // The rail *widget* is the destination list inside the shell column
-          // (the column also holds the app mark and the bottom section), so the
-          // honest assertions are its fixed width and that it stays inside the
-          // window at every height.
+          // The sidebar shell reserves 208 px expanded / 68 px compact. The
+          // floating glass panel is inset by 8 px on each side inside it.
           final rail = tester.getRect(find.byType(AuroraNavigationRail));
-          final expectedWidth = size.width > 840 ? 208.0 : 68.0;
-          expect(rail.width, expectedWidth);
+          final expectedShellWidth = size.width > 840 ? 208.0 : 68.0;
+          final sidebar = tester.getRect(
+            find.byKey(const ValueKey('desktop-sidebar')),
+          );
+          expect(sidebar.width, expectedShellWidth);
+          expect(
+            rail.width,
+            expectedShellWidth - 2 * FluxoraSpacing.sm,
+            reason: 'the glass panel remains inset without shrinking content',
+          );
           expect(rail.top, greaterThanOrEqualTo(0));
           // A short window is allowed to overflow the rail — it lives inside a
           // scroll view (`K4 — short window scroll affordance` covers the bar).
@@ -183,7 +187,7 @@ void main() {
           }
 
           final contentLeft = tester.getTopLeft(find.byType(CommonScaffold)).dx;
-          expect(contentLeft, expectedWidth);
+          expect(contentLeft, expectedShellWidth);
 
           // The trailing actions must stay inside the window.
           final actionRight = tester
@@ -214,7 +218,14 @@ void main() {
       expect(tester.takeException(), isNull);
       await pumpAt(tester, const Size(601, 800));
       expect(tester.takeException(), isNull);
-      expect(tester.getSize(find.byType(AuroraNavigationRail)).width, 68);
+      expect(
+        tester.getSize(find.byKey(const ValueKey('desktop-sidebar'))).width,
+        68,
+      );
+      expect(
+        tester.getSize(find.byType(AuroraNavigationRail)).width,
+        68 - 2 * FluxoraSpacing.sm,
+      );
     });
   });
 

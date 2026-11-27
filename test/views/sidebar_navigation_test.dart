@@ -11,6 +11,7 @@ import 'package:fluxora/models/models.dart';
 import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/widgets/aurora_navigation_rail.dart';
+import 'package:fluxora/widgets/liquid_backdrop.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -57,11 +58,17 @@ void main() {
     double scale = 1,
     double width = 1200,
     double height = 800,
+    FluxoraSurfaceStyle surfaceStyle = FluxoraSurfaceStyle.hybrid,
   }) async {
     tester.view.physicalSize = Size(width, height);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
+    globalState.config = globalState.config.copyWith(
+      themeProps: globalState.config.themeProps.copyWith(
+        surfaceStyle: surfaceStyle,
+      ),
+    );
     final container = ProviderContainer(
       overrides: [
         navigationStateProvider.overrideWith((ref) {
@@ -98,9 +105,12 @@ void main() {
             GlobalWidgetsLocalizations.delegate,
           ],
           supportedLocales: AppLocalizations.delegate.supportedLocales,
-          theme: ThemeData(
-            fontFamily: 'HarmonyOS_Sans',
-            colorScheme: container.read(genColorSchemeProvider(brightness)),
+          theme: fluxoraMaterialTheme(
+            ThemeData(
+              fontFamily: 'HarmonyOS_Sans',
+              colorScheme: container.read(genColorSchemeProvider(brightness)),
+            ),
+            surfaceStyle,
           ),
           home: Builder(
             builder: (context) => MediaQuery(
@@ -184,6 +194,31 @@ void main() {
     },
   );
 
+  testWidgets('desktop navigation is a compact top aligned surface', (
+    tester,
+  ) async {
+    await pumpSidebar(tester);
+
+    final rail = find.byType(AuroraNavigationRail);
+    expect(tester.getTopLeft(rail).dy, lessThan(80));
+    expect(
+      tester.getSize(rail).height,
+      lessThan(500),
+      reason: 'the glass surface should end shortly after its destinations',
+    );
+    expect(
+      find.descendant(of: rail, matching: getToggle()),
+      findsOneWidget,
+      reason: 'the brand and the sidebar control share one navigation surface',
+    );
+
+    await tester.tap(getToggle());
+    await tester.pumpAndSettle();
+    expect(tester.getTopLeft(rail).dy, lessThan(80));
+    expect(tester.getSize(rail).height, lessThan(500));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets(
     'collapsed destinations have tooltips, accessible names and real routes',
     (tester) async {
@@ -265,6 +300,52 @@ void main() {
     await tester.pump();
     expect(tester.getSize(getSidebar()).width, 68);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('liquid material remains visible on desktop rail at both widths', (
+    tester,
+  ) async {
+    for (final brightness in Brightness.values) {
+      await tester.pumpWidget(const SizedBox());
+      globalState.config = globalState.config.copyWith(
+        appSetting: globalState.config.appSetting.copyWith(showLabel: true),
+      );
+      final container = await pumpSidebar(
+        tester,
+        brightness: brightness,
+        surfaceStyle: FluxoraSurfaceStyle.liquid,
+      );
+      for (final collapsed in [false, true]) {
+        if (collapsed) {
+          await tester.tap(getToggle());
+          await tester.pumpAndSettle();
+        }
+        expect(
+          find.descendant(
+            of: getSidebar(),
+            matching: find.byType(LiquidBackdrop),
+          ),
+          findsOneWidget,
+        );
+        expect(tester.takeException(), isNull);
+        final boundary = tester.renderObject<RenderRepaintBoundary>(
+          find.byKey(const ValueKey('sidebar-capture')),
+        );
+        await tester.runAsync(() async {
+          final screenshot = await boundary.toImage();
+          final bytes = await screenshot.toByteData(
+            format: ui.ImageByteFormat.png,
+          );
+          final file = File(
+            'build/sidebar_navigation/liquid_${brightness.name}_${collapsed ? 'collapsed' : 'expanded'}.png',
+          );
+          file.parent.createSync(recursive: true);
+          file.writeAsBytesSync(bytes!.buffer.asUint8List());
+          screenshot.dispose();
+        });
+      }
+      expect(container.read(appSettingProvider).showLabel, isFalse);
+    }
   });
 
   for (final brightness in Brightness.values) {

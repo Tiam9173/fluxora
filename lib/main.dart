@@ -7,8 +7,8 @@ import 'dart:ui';
 
 import 'package:fluxora/plugins/app.dart';
 import 'package:fluxora/plugins/clipboard_ext.dart';
-import 'package:fluxora/plugins/notification_switch_transport.dart';
 import 'package:fluxora/plugins/service.dart' show Service;
+import 'package:fluxora/plugins/notification_switch_transport.dart';
 import 'package:fluxora/plugins/tile.dart';
 import 'package:fluxora/plugins/vpn.dart';
 import 'package:fluxora/state.dart';
@@ -427,9 +427,14 @@ Future<void> _service(List<String> flags) async {
         onDnsChanged: (String dns) {
           clashLibHandler.updateDns(dns);
         },
-        onNetworkChanged: checkSmartAutoStop,
+        onNetworkChanged: () async {
+          await checkSmartAutoStop();
+          await globalState.appController
+              .refreshAndroidPrivateDnsOnNetworkChanged();
+        },
       ),
     );
+
     try {
       final dns = await (vpn?.getCurrentDns() ?? Future<String>.value(''))
           .timeout(const Duration(seconds: 2));

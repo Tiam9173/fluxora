@@ -60,6 +60,8 @@ class ProxyCard extends StatelessWidget {
 
   Measure get measure => globalState.measure;
 
+  // The same shared rule used by manual and batch probes permits measurable
+  // strategy groups while excluding built-in direct/reject and shadow nodes.
   bool get _isNonTestableProxy => !isDelayTestableProxy(proxy);
 
   void _handleTestCurrentDelay() {

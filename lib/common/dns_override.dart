@@ -151,7 +151,11 @@ bool matchDomainPattern(String pattern, Iterable<String> domains) {
   });
 }
 
-/// Uses Android's strict Private DNS first and falls back when it refuses a name.
+/// Keeps a strict Android Private DNS endpoint out of the fake-IP pool.
+///
+/// This is separate from the user's filter list because adding a host to a
+/// whitelist has the opposite meaning. The core consumes this field before
+/// applying blacklist, whitelist, or rule semantics.
 void applyPrivateDnsBypass(
   Map<String, dynamic> rawConfig, [
   String? privateDnsServerName,
@@ -168,40 +172,88 @@ void applyPrivateDnsBypass(
     return;
   }
   final dns = (rawConfig['dns'] as Map?)?.cast<String, dynamic>();
-  if (dns == null) return;
-
-  final privateResolver = 'tls://$host:853#DIRECT';
-  final fallback = <String>{};
-  for (final raw in [
-    ...(dns['fallback'] as List? ?? const []),
-    ...(dns['nameserver'] is List ? dns['nameserver'] as List : const []),
-  ]) {
-    final resolver = raw.toString().trim();
-    if (resolver.isEmpty) continue;
-    final endpoint = _dnsEndpoint(stripDnsSuffix(resolver));
-    if (endpoint != null &&
-        (_isSystemDns(endpoint) || _dnsHost(endpoint) == host)) {
-      continue;
-    }
-    fallback.add(resolver);
-  }
-  if (fallback.isEmpty) {
-    fallback.addAll(const [
-      'https://dns.alidns.com/dns-query#DIRECT',
-      'https://doh.pub/dns-query#DIRECT',
-    ]);
-  }
-  dns['nameserver'] = [privateResolver];
-  dns['fallback'] = fallback.toList();
-  dns['fallback-lazy-query'] = true;
-
-  if (dns['enhanced-mode']?.toString() != 'fake-ip') return;
+  if (dns == null || dns['enhanced-mode']?.toString() != 'fake-ip') return;
   final current = dns['fake-ip-filter-bypass'];
   final bypass = current is List
       ? current.map((item) => item.toString()).toList()
       : <String>[];
-  if (!bypass.any((item) => item.toLowerCase() == host)) bypass.add(host);
+  if (!bypass.any((item) => item.toLowerCase() == host)) {
+    bypass.add(host);
+  }
   dns['fake-ip-filter-bypass'] = bypass;
+}
+
+/// Uses Android's strict Private DNS host as Mihomo's TLS resolver while
+/// keeping the hostname intact for SNI and certificate verification.
+void applyAndroidPrivateDnsServer(
+  Map<String, dynamic> rawConfig,
+  String serverName,
+) {
+  final host = serverName.trim().toLowerCase().replaceFirst(RegExp(r'\.$'), '');
+  if (host.isEmpty) return;
+
+  final endpoint = Uri.tryParse('tls://$host:853');
+  if (endpoint == null || endpoint.host != host || endpoint.hasQuery) return;
+  final dns = (rawConfig['dns'] as Map?)?.cast<String, dynamic>();
+  if (dns == null || dns['enable'] != true) return;
+
+  List<String> servers(Object? value) => switch (value) {
+    String value when value.trim().isNotEmpty => [value.trim()],
+    List value =>
+      value
+          .map((item) => item.toString().trim())
+          .where((item) => item.isNotEmpty)
+          .toList(),
+    _ => const [],
+  };
+
+  final primary = 'tls://$host:853#DIRECT';
+  final seen = {primary.toLowerCase()};
+  final fallback = <String>[];
+  for (final server in [
+    ...servers(dns['nameserver']),
+    ...servers(dns['fallback']),
+  ]) {
+    final endpoint = _dnsEndpoint(stripDnsSuffix(server));
+    if (endpoint == null ||
+        _isSystemDns(endpoint) ||
+        _dnsHost(endpoint).toLowerCase() == host ||
+        !seen.add(server.toLowerCase())) {
+      continue;
+    }
+    fallback.add(server);
+  }
+  if (fallback.isEmpty) {
+    fallback.addAll(const [
+      'https://dns.alidns.com/dns-query',
+      'https://doh.pub/dns-query',
+    ]);
+  }
+
+  dns['nameserver'] = [primary];
+  dns['fallback'] = fallback;
+  dns['fallback-lazy-query'] = true;
+
+  final policyValue = dns['nameserver-policy'];
+  if (policyValue is Map) {
+    final policy = policyValue.cast<String, dynamic>();
+    bool isSystemResolver(Object? value) {
+      if (value is! String) return false;
+      final endpoint = value.trim().toLowerCase().split('#').first;
+      return const {'system', 'system://', 'dhcp://system'}.contains(endpoint);
+    }
+
+    for (final entry in policy.entries.toList()) {
+      final values = entry.value is List
+          ? List<dynamic>.from(entry.value as List)
+          : [entry.value];
+      if (!values.any(isSystemResolver)) continue;
+      final resolved = values
+          .map((value) => isSystemResolver(value) ? primary : value)
+          .toList();
+      policy[entry.key] = entry.value is List ? resolved : resolved.single;
+    }
+  }
 }
 
 String stripDnsSuffix(String dns) {

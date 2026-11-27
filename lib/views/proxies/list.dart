@@ -170,7 +170,7 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
   double _getHeaderHeight([Group? group]) {
     final measure = globalState.measure;
     final contentRowHeight = [
-      52.0,
+      48.0,
       measure.titleMediumHeight + 4 + measure.labelMediumHeight,
     ].reduce((a, b) => a > b ? a : b);
     return 28.0 +
@@ -491,7 +491,7 @@ class _GroupHeader extends ConsumerWidget {
           children: [
             Row(
               children: [
-                _buildIcon(context, ref, iconStyle, icon),
+                _buildIcon(context, iconStyle, icon),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -572,58 +572,50 @@ class _GroupHeader extends ConsumerWidget {
     ),
   ];
 
-  Widget _buildIcon(
-    BuildContext context,
-    WidgetRef ref,
-    ProxiesIconStyle style,
-    String icon,
-  ) {
+  Widget _buildIcon(BuildContext context, ProxiesIconStyle style, String icon) {
     if (style == ProxiesIconStyle.none) return const SizedBox();
     const iconSize = 40.0;
+    final chinese = Localizations.localeOf(context).languageCode == 'zh';
     return Padding(
-      padding: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.only(right: 16),
       child: Tooltip(
-        message: Localizations.localeOf(context).languageCode == 'zh'
-            ? '更换策略组图标'
-            : 'Change group icon',
-        child: IconButton(
+        message: chinese ? '更换分组图标' : 'Change group icon',
+        child: InkWell(
           key: ValueKey('change-group-icon-${group.name}'),
-          onPressed: () async {
-            final selected = await showProxyIconLibrary(
-              context,
-              groupName: group.name,
-              selected: icon,
-            );
-            if (selected == null || !context.mounted) return;
-            ref
-                .read(proxiesStyleSettingProvider.notifier)
-                .updateState(
-                  (state) => state.copyWith(
-                    iconStyle: state.iconStyle == ProxiesIconStyle.none
-                        ? ProxiesIconStyle.standard
-                        : state.iconStyle,
-                    iconMap: setGroupIcon(state.iconMap, group.name, selected),
-                  ),
-                );
-          },
-          icon: Container(
+          borderRadius: BorderRadius.circular(FluxoraRadius.md),
+          onTap: () => showProxyIconLibrary(
+            context,
+            groupName: group.name,
+            selected: icon,
+          ),
+          child: Container(
             width: iconSize,
             height: iconSize,
             alignment: Alignment.center,
-            padding: EdgeInsets.all(style == ProxiesIconStyle.standard ? 6 : 0),
+            padding: style == ProxiesIconStyle.standard
+                ? const EdgeInsets.all(6)
+                : EdgeInsets.zero,
             decoration: style == ProxiesIconStyle.standard
                 ? BoxDecoration(
                     borderRadius: BorderRadius.circular(FluxoraRadius.md),
                     color: context.colorScheme.secondaryContainer,
                   )
-                : null,
-            clipBehavior: style == ProxiesIconStyle.standard
-                ? Clip.antiAlias
-                : Clip.none,
-            child: CommonTargetIcon(
-              src: icon,
-              size: iconSize - (style == ProxiesIconStyle.standard ? 12 : 8),
-            ),
+                : BoxDecoration(
+                    borderRadius: BorderRadius.circular(FluxoraRadius.md),
+                  ),
+            clipBehavior: Clip.antiAlias,
+            child: icon.isEmpty
+                ? Icon(
+                    Icons.add_photo_alternate_outlined,
+                    size: iconSize - 8,
+                    color: context.colorScheme.onSurfaceVariant,
+                  )
+                : CommonTargetIcon(
+                    src: icon,
+                    size:
+                        iconSize -
+                        (style == ProxiesIconStyle.standard ? 12 : 8),
+                  ),
           ),
         ),
       ),

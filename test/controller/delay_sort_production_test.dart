@@ -107,11 +107,32 @@ void main() {
     },
   );
 
+  testWidgets('one background timeout keeps the last good latency', (
+    tester,
+  ) async {
+    await pump(tester);
+    final good = Delay(url: testUrl, name: 'auto-node', value: 140);
+    final timeout = good.copyWith(value: -1);
+
+    controller.setDelay(good, background: true);
+    controller.setDelay(timeout, background: true);
+    expect(ref.read(delayDataSourceProvider)[testUrl]?['auto-node'], 140);
+
+    controller.setDelay(timeout, background: true);
+    expect(ref.read(delayDataSourceProvider)[testUrl]?['auto-node'], -1);
+
+    controller.setDelay(good.copyWith(value: 155), background: true);
+    controller.setDelay(timeout, background: true);
+    expect(ref.read(delayDataSourceProvider)[testUrl]?['auto-node'], 155);
+  });
+
   Future<List<String>> sortedNames(WidgetTester tester, int count) async {
     await pump(tester);
     final names = [for (var i = 0; i < count; i++) 'n$i'];
     for (var i = 0; i < count; i++) {
-      controller.setDelay(Delay(url: testUrl, name: 'n$i', value: latencyOf(i)));
+      controller.setDelay(
+        Delay(url: testUrl, name: 'n$i', value: latencyOf(i)),
+      );
     }
     final proxies = [for (final n in names) Proxy(name: n, type: 'vless')];
     final sorted = controller.getSortProxies(
@@ -126,9 +147,8 @@ void main() {
   ) async {
     const count = 8;
     final actual = await sortedNames(tester, count);
-    final expected = [
-      for (var i = 0; i < count; i++) i,
-    ]..sort((a, b) => latencyOf(a).compareTo(latencyOf(b)));
+    final expected = [for (var i = 0; i < count; i++) i]
+      ..sort((a, b) => latencyOf(a).compareTo(latencyOf(b)));
 
     expect(actual, [for (final i in expected) 'n$i']);
   });
@@ -138,14 +158,11 @@ void main() {
   ) async {
     const count = 300;
     final actual = await sortedNames(tester, count);
-    final expected = [
-      for (var i = 0; i < count; i++) i,
-    ]..sort((a, b) => latencyOf(a).compareTo(latencyOf(b)));
+    final expected = [for (var i = 0; i < count; i++) i]
+      ..sort((a, b) => latencyOf(a).compareTo(latencyOf(b)));
 
-    expect(
-      actual,
-      [for (final i in expected) 'n$i'],
-      reason: 'a measured node must never be left where it started',
-    );
+    expect(actual, [
+      for (final i in expected) 'n$i',
+    ], reason: 'a measured node must never be left where it started');
   });
 }

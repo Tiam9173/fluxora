@@ -139,8 +139,7 @@ class _AggregateViewState extends State<AggregateView> {
     globalState.appController.applyProfileDebounce(silence: true);
   }
 
-  AggregateProfile? get _activeAggregate =>
-      globalState.config.currentAggregate;
+  AggregateProfile? get _activeAggregate => globalState.config.currentAggregate;
 
   bool _isMember(Profile profile) {
     final active = _activeAggregate;
@@ -192,6 +191,7 @@ class _AggregateViewState extends State<AggregateView> {
                   final created = AggregateProfile(
                     id: DateTime.now().microsecondsSinceEpoch.toString(),
                     name: name,
+                    baseProfileId: current.currentProfileId,
                   );
                   config = current.copyWith(
                     aggregates: [...current.aggregates, created],
@@ -269,9 +269,8 @@ class _AggregateViewState extends State<AggregateView> {
     }
     final aggregates = globalState.config.aggregates
         .map(
-          (item) => item.id == active.id
-              ? item.copyWith(memberIds: memberIds)
-              : item,
+          (item) =>
+              item.id == active.id ? item.copyWith(memberIds: memberIds) : item,
         )
         .toList();
     final config = globalState.config.copyWith(aggregates: aggregates);
@@ -307,8 +306,7 @@ class _AggregateViewState extends State<AggregateView> {
             memberScripts ?? current.aggregateMergeMemberScripts,
         aggregateApplyNodeOverrides:
             nodeOverrides ?? current.aggregateApplyNodeOverrides,
-        aggregateOverrideData:
-            overrideData ?? current.aggregateOverrideData,
+        aggregateOverrideData: overrideData ?? current.aggregateOverrideData,
       );
     }
     final updated = active.copyWith(
@@ -583,9 +581,7 @@ class _AggregateViewState extends State<AggregateView> {
                       Text(
                         subtitle,
                         style: context.textTheme.labelSmall?.toLight.copyWith(
-                          color: failed
-                              ? context.colorScheme.error
-                              : null,
+                          color: failed ? context.colorScheme.error : null,
                         ),
                       ),
                       if (failed && stats?.error != null)
@@ -640,7 +636,8 @@ class _AggregateViewState extends State<AggregateView> {
               if (globalState.config.scriptProps.scripts.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
-                  initialValue: globalState.config.scriptProps.scripts.any(
+                  initialValue:
+                      globalState.config.scriptProps.scripts.any(
                         (script) => script.id == profile.scriptId,
                       )
                       ? profile.scriptId!
@@ -653,9 +650,7 @@ class _AggregateViewState extends State<AggregateView> {
                   items: [
                     DropdownMenuItem(
                       value: '',
-                      child: Text(
-                        appLocalizations.aggregateFollowGlobalScript,
-                      ),
+                      child: Text(appLocalizations.aggregateFollowGlobalScript),
                     ),
                     for (final script in globalState.config.scriptProps.scripts)
                       DropdownMenuItem(
@@ -764,31 +759,39 @@ class _AggregateViewState extends State<AggregateView> {
     }
     final rows = <Widget>[];
     for (final entry in aliases.entries) {
-      rows.add(_previewRow(
-        context,
-        icon: Icons.dns_outlined,
-        title: appLocalizations.aggregateMemberGroup(entry.value),
-        source: appLocalizations.aggregateNotCurrent,
-      ));
-      rows.add(_previewRow(
-        context,
-        icon: Icons.speed_outlined,
-        title: appLocalizations.aggregateMemberAuto(entry.value),
-        source: appLocalizations.aggregateNotCurrent,
-      ));
+      rows.add(
+        _previewRow(
+          context,
+          icon: Icons.dns_outlined,
+          title: appLocalizations.aggregateMemberGroup(entry.value),
+          source: appLocalizations.aggregateNotCurrent,
+        ),
+      );
+      rows.add(
+        _previewRow(
+          context,
+          icon: Icons.speed_outlined,
+          title: appLocalizations.aggregateMemberAuto(entry.value),
+          source: appLocalizations.aggregateNotCurrent,
+        ),
+      );
     }
-    rows.add(_previewRow(
-      context,
-      icon: Icons.hub_outlined,
-      title: appLocalizations.aggregateGroupNodes,
-      source: appLocalizations.aggregateCurrent,
-    ));
-    rows.add(_previewRow(
-      context,
-      icon: Icons.auto_awesome_outlined,
-      title: appLocalizations.aggregateGroupAuto,
-      source: appLocalizations.aggregateCurrent,
-    ));
+    rows.add(
+      _previewRow(
+        context,
+        icon: Icons.hub_outlined,
+        title: appLocalizations.aggregateGroupNodes,
+        source: appLocalizations.aggregateCurrent,
+      ),
+    );
+    rows.add(
+      _previewRow(
+        context,
+        icon: Icons.auto_awesome_outlined,
+        title: appLocalizations.aggregateGroupAuto,
+        source: appLocalizations.aggregateCurrent,
+      ),
+    );
     return Column(children: rows);
   }
 
@@ -831,9 +834,9 @@ class _AggregateViewState extends State<AggregateView> {
     }
     final afterMerge =
         (globalState.config.effectiveAggregateMode == AggregateMode.full ||
-            globalState.config.effectiveAggregateMode == AggregateMode.custom) &&
-        globalState.config.effectiveScriptTiming ==
-            AggregateScriptTiming.after;
+            globalState.config.effectiveAggregateMode ==
+                AggregateMode.custom) &&
+        globalState.config.effectiveScriptTiming == AggregateScriptTiming.after;
     if (!afterMerge) {
       nodes = _stats[currentProfileId]?.nodes ?? 0;
     }
@@ -900,9 +903,7 @@ class _AggregateViewState extends State<AggregateView> {
                         Tab(text: appLocalizations.aggregatePreviewNodes),
                         Tab(text: appLocalizations.aggregatePreviewGroups),
                         Tab(text: appLocalizations.aggregatePreviewRules),
-                        Tab(
-                          text: appLocalizations.aggregatePreviewSourceYaml,
-                        ),
+                        Tab(text: appLocalizations.aggregatePreviewSourceYaml),
                         Tab(text: appLocalizations.aggregatePreviewYaml),
                       ],
                     ),
@@ -918,16 +919,16 @@ class _AggregateViewState extends State<AggregateView> {
                                   groupNames.length,
                                   ruleStrings.length,
                                 ),
-                                style: Theme.of(dialogContext)
-                                    .textTheme
-                                    .titleSmall,
+                                style: Theme.of(
+                                  dialogContext,
+                                ).textTheme.titleSmall,
                               ),
                               const SizedBox(height: 8),
                               Text(
                                 appLocalizations.aggregatePreviewHint,
-                                style: Theme.of(dialogContext)
-                                    .textTheme
-                                    .bodySmall,
+                                style: Theme.of(
+                                  dialogContext,
+                                ).textTheme.bodySmall,
                               ),
                               const SizedBox(height: 8),
                               Text(
@@ -944,16 +945,14 @@ class _AggregateViewState extends State<AggregateView> {
                               const SizedBox(height: 14),
                               Text(
                                 appLocalizations.aggregateConflicts,
-                                style: Theme.of(dialogContext)
-                                    .textTheme
-                                    .titleSmall,
+                                style: Theme.of(
+                                  dialogContext,
+                                ).textTheme.titleSmall,
                               ),
                               const SizedBox(height: 6),
                               if (globalState.lastAggregateMergeReport ==
                                       null ||
-                                  globalState
-                                      .lastAggregateMergeReport!
-                                      .isEmpty)
+                                  globalState.lastAggregateMergeReport!.isEmpty)
                                 Text(appLocalizations.aggregateNoConflicts)
                               else ...[
                                 for (final rename
@@ -1012,16 +1011,13 @@ class _AggregateViewState extends State<AggregateView> {
                               const SizedBox(height: 14),
                               Text(
                                 appLocalizations.aggregateDiff,
-                                style: Theme.of(dialogContext)
-                                    .textTheme
-                                    .titleSmall,
+                                style: Theme.of(
+                                  dialogContext,
+                                ).textTheme.titleSmall,
                               ),
                               const SizedBox(height: 6),
-                              if (globalState.lastAggregateConfigDiff ==
-                                      null ||
-                                  globalState
-                                      .lastAggregateConfigDiff!
-                                      .isEmpty)
+                              if (globalState.lastAggregateConfigDiff == null ||
+                                  globalState.lastAggregateConfigDiff!.isEmpty)
                                 Text(appLocalizations.aggregateNoDiff)
                               else ...[
                                 Text(
@@ -1242,8 +1238,7 @@ class _AggregateViewState extends State<AggregateView> {
             if (activeAggregate != null) ...[
               IconButton(
                 tooltip: appLocalizations.aggregateRename,
-                onPressed: () =>
-                    _editAggregateName(aggregate: activeAggregate),
+                onPressed: () => _editAggregateName(aggregate: activeAggregate),
                 icon: const Icon(Icons.edit_outlined),
               ),
               IconButton(
@@ -1285,7 +1280,8 @@ class _AggregateViewState extends State<AggregateView> {
           title: appLocalizations.aggregateCustom,
           description: appLocalizations.aggregateCustomDesc,
         ),
-        if (globalState.config.effectiveAggregateMode == AggregateMode.custom) ...[
+        if (globalState.config.effectiveAggregateMode ==
+            AggregateMode.custom) ...[
           SwitchListTile.adaptive(
             contentPadding: EdgeInsets.zero,
             title: Text(appLocalizations.aggregateMergeNodes),
@@ -1332,7 +1328,8 @@ class _AggregateViewState extends State<AggregateView> {
           ),
         ],
         if (globalState.config.effectiveAggregateMode == AggregateMode.full ||
-            globalState.config.effectiveAggregateMode == AggregateMode.custom) ...[
+            globalState.config.effectiveAggregateMode ==
+                AggregateMode.custom) ...[
           _sectionTitle(context, appLocalizations.aggregateScriptTiming),
           Wrap(
             spacing: 8,
@@ -1417,10 +1414,7 @@ class _AggregateViewState extends State<AggregateView> {
         Row(
           children: [
             Expanded(
-              child: _sectionTitle(
-                context,
-                appLocalizations.aggregateMembers,
-              ),
+              child: _sectionTitle(context, appLocalizations.aggregateMembers),
             ),
             IconButton(
               tooltip: appLocalizations.refresh,

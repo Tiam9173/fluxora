@@ -405,7 +405,9 @@ class _WindowHeaderState extends ConsumerState<WindowHeader> {
 }
 
 class AppIcon extends ConsumerWidget {
-  const AppIcon({super.key});
+  const AppIcon({super.key, this.size = 40});
+
+  final double size;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -423,7 +425,7 @@ class AppIcon extends ConsumerWidget {
           }
         }
       },
-      child: const AppBrandIcon(size: 40),
+      child: AppBrandIcon(size: size),
     );
   }
 }

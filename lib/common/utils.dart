@@ -1218,6 +1218,19 @@ class Utils {
     }
   }
 
+  Future<String?> getAndroidPrivateDnsServerName() async {
+    if (!system.isAndroid) return null;
+    try {
+      final value = await const MethodChannel(
+        'service',
+      ).invokeMethod<String>('getPrivateDnsServerName');
+      return value?.trim();
+    } catch (e) {
+      commonPrint.log('Read Android Private DNS provider failed: $e');
+      return null;
+    }
+  }
+
   /// `Wi-Fi` · `Ethernet` · `Cellular`, or `''` when the platform cannot say.
   Future<String> _getConnectivityType() async {
     try {
@@ -1338,18 +1351,6 @@ class Utils {
     });
   }
   /// one. Other platforms and opportunistic/private-DNS modes return null.
-  Future<String?> getPrivateDnsServerName() async {
-    if (!system.isAndroid) return null;
-    try {
-      final value = await const MethodChannel(
-        'service',
-      ).invokeMethod<String>('getPrivateDnsServerName');
-      final host = value?.trim();
-      return host == null || host.isEmpty ? null : host;
-    } catch (_) {
-      return null;
-    }
-  }
 }
 
 final utils = Utils();

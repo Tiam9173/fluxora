@@ -20,8 +20,6 @@ void main() {
     () async {
       System.platformOverride = 'android';
       globalState.isService = false;
-      final previousCore = clashCore.clashInterface;
-      clashCore.clashInterface = _HungStopCore();
       var nativeStopCalled = false;
       final messenger =
           TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
@@ -32,8 +30,11 @@ void main() {
           nativeStopCalled = true;
           return true;
         }
+        if (call.method == 'isServiceEngineRunning') return false;
         return null;
       });
+      final previousCore = clashCore.clashInterface;
+      clashCore.clashInterface = _HungStopCore();
       addTearDown(() {
         clashCore.clashInterface = previousCore;
         globalState.isService = false;

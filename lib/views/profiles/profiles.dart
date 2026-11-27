@@ -93,6 +93,14 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
     }
   }
 
+  Future<void> _selectAggregate(String id) async {
+    final config = globalState.config.copyWith(currentAggregateId: id);
+    globalState.config = config;
+    await preferences.saveConfig(config);
+    globalState.appController.applyProfileDebounce(silence: true);
+    if (mounted) setState(() {});
+  }
+
   List<Widget> _buildActions({required bool hasProfiles}) {
     return [
       ..._buildProfileControls(hasProfiles: hasProfiles),
@@ -107,7 +115,7 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
         icon: const Icon(Icons.more_horiz_rounded),
         onSelected: (value) async {
           if (value == 'aggregate') {
-            showExtend(
+            await showExtend(
               context,
               builder: (_, type) => AdaptiveSheetScaffold(
                 type: type,
@@ -115,6 +123,7 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
                 title: appLocalizations.aggregateTitle,
               ),
             );
+            if (mounted) setState(() {});
           } else if (value == 'clearRulesScripts') {
             final confirmed = await globalState.showMessage(
               title: appLocalizations.tip,
@@ -209,12 +218,20 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
     final hasProfiles = ref.watch(
       profilesProvider.select((profiles) => profiles.isNotEmpty),
     );
+    final aggregates = globalState.config.aggregates;
     return CommonScaffold(
       title: appLocalizations.profiles,
       floatingActionButton: hasProfiles ? _buildFAB() : null,
       actions: _buildActions(hasProfiles: hasProfiles),
       body: Column(
         children: [
+          if (aggregates.isNotEmpty)
+            AggregateSubscriptionSwitcher(
+              aggregates: aggregates,
+              selectedId: globalState.config.currentAggregateId,
+              enabled: hasProfiles,
+              onSelected: _selectAggregate,
+            ),
           Expanded(
             child: Consumer(
               builder: (_, ref, _) {
@@ -313,6 +330,45 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
 ///
 /// Top-level on purpose — a widget class nested inside the page's State would
 /// rebuild with it on every frame and loses const identity.
+class AggregateSubscriptionSwitcher extends StatelessWidget {
+  const AggregateSubscriptionSwitcher({
+    super.key,
+    required this.aggregates,
+    required this.selectedId,
+    required this.enabled,
+    required this.onSelected,
+  });
+
+  final List<AggregateProfile> aggregates;
+  final String? selectedId;
+  final bool enabled;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 52,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 4),
+        child: Row(
+          children: [
+            for (final aggregate in aggregates) ...[
+              if (aggregate != aggregates.first) const SizedBox(width: 8),
+              ChoiceChip(
+                avatar: const Icon(Icons.layers_outlined, size: 18),
+                label: Text('${aggregate.name} · ${aggregate.memberIds.length}'),
+                selected: selectedId == aggregate.id,
+                onSelected: enabled ? (_) => onSelected(aggregate.id) : null,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _ProfileDragHandle extends StatelessWidget {
   const _ProfileDragHandle();
 

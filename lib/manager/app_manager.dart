@@ -356,29 +356,28 @@ class AppSidebarContainer extends ConsumerWidget {
     required BuildContext context,
     required Widget child,
   }) {
-    final isLight = context.colorScheme.brightness == Brightness.light;
     final material = FluxoraMaterial.of(context);
     return GlassSurface(
-      radius: 0,
+      floating: true,
+      readable: true,
       border: false,
       child: Container(
         decoration: BoxDecoration(
           color: material.enabled
               ? Colors.transparent
               : context.colorScheme.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(FluxoraRadius.card),
         ),
-        foregroundDecoration: BoxDecoration(
-          border: Border(
-            // Softer than the pre-Phase-02 hairline (0.6 / 0.45): the rail now
-            // carries its own selection affordances, so the divider only has to
-            // separate two surfaces, not announce the boundary.
-            right: BorderSide(
-              color: context.colorScheme.outlineVariant.withValues(
-                alpha: isLight ? 0.5 : 0.35,
+        foregroundDecoration: material.liquid
+            ? null
+            : BoxDecoration(
+                borderRadius: BorderRadius.circular(FluxoraRadius.card),
+                border: Border.all(
+                  color: context.colorScheme.outlineVariant.withValues(
+                    alpha: material.enabled ? .45 : 1,
+                  ),
+                ),
               ),
-            ),
-          ),
-        ),
         child: Material(color: Colors.transparent, child: child),
       ),
     );
@@ -416,165 +415,102 @@ class AppSidebarContainer extends ConsumerWidget {
               key: const ValueKey('desktop-sidebar'),
               width: sidebarWidth,
               child: Stack(
-                alignment: Alignment.topRight,
+                alignment: Alignment.topCenter,
                 children: [
-                  _buildBackground(
-                    context: context,
-                    child: SafeArea(
-                      left: true,
-                      top: true,
-                      right: false,
-                      bottom: false,
-                      child: Column(
-                        children: [
-                          if (system.isMacOS) const SizedBox(height: 22),
-                          const SizedBox(height: FluxoraSpacing.lg),
-                          if (!system.isMacOS) ...[
-                            Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: extended
-                                    ? FluxoraSpacing.md
-                                    : FluxoraSpacing.xs,
-                              ),
-                              child: LayoutBuilder(
-                                builder: (context, constraints) => Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const AppIcon(),
-                                    if (extended &&
-                                        constraints.maxWidth >= 120) ...[
-                                      const SizedBox(width: FluxoraSpacing.md),
-                                      Expanded(
-                                        child: Text(
-                                          appName,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.titleSmall,
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
+                  SafeArea(
+                    left: false,
+                    top: true,
+                    right: false,
+                    bottom: false,
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        top: system.isMacOS ? 22 : FluxoraSpacing.sm,
+                      ),
+                      child: ScrollConfiguration(
+                        behavior: ShowBarScrollBehavior(),
+                        child: SingleChildScrollView(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: FluxoraSpacing.sm,
+                              vertical: FluxoraSpacing.xs,
                             ),
-                            const SizedBox(height: FluxoraSpacing.sm),
-                          ],
-                          Align(
-                            alignment: AlignmentDirectional.centerStart,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: FluxoraSpacing.xs,
-                              ),
-                              child: IconButton(
-                                key: const ValueKey('toggle-desktop-sidebar'),
-                                tooltip: toggleLabel,
-                                icon: Icon(
-                                  showLabel ? Icons.menu_open : Icons.menu,
-                                ),
-                                onPressed: !canExpand
-                                    ? null
-                                    : () => ref
+                            child: _buildBackground(
+                              context: context,
+                              child: CallbackShortcuts(
+                                bindings: <ShortcutActivator, VoidCallback>{
+                                  const SingleActivator(
+                                    LogicalKeyboardKey.arrowUp,
+                                  ): () {
+                                    if (currentIndex > 0) {
+                                      globalState.appController.toPage(
+                                        navigationItems[currentIndex - 1].label,
+                                      );
+                                    }
+                                  },
+                                  const SingleActivator(
+                                    LogicalKeyboardKey.arrowDown,
+                                  ): () {
+                                    if (currentIndex <
+                                        navigationItems.length - 1) {
+                                      globalState.appController.toPage(
+                                        navigationItems[currentIndex + 1].label,
+                                      );
+                                    }
+                                  },
+                                  const SingleActivator(
+                                    LogicalKeyboardKey.select,
+                                  ): () {},
+                                  const SingleActivator(
+                                    LogicalKeyboardKey.enter,
+                                  ): () {},
+                                },
+                                child: Focus(
+                                  autofocus: true,
+                                  child: AuroraNavigationRail(
+                                    header: _buildNavigationHeader(
+                                      context: context,
+                                      showLabel: extended,
+                                      canExpand: canExpand,
+                                      toggleLabel: toggleLabel,
+                                      onToggle: () => ref
                                           .read(appSettingProvider.notifier)
                                           .updateState(
                                             (state) => state.copyWith(
                                               showLabel: !state.showLabel,
                                             ),
                                           ),
-                              ),
-                            ),
-                          ),
-                          const Divider(
-                            indent: FluxoraSpacing.md,
-                            endIndent: FluxoraSpacing.md,
-                          ),
-                          Expanded(
-                            child: ScrollConfiguration(
-                              behavior: ShowBarScrollBehavior(),
-                              child: LayoutBuilder(
-                                builder: (context, constraints) {
-                                  return SingleChildScrollView(
-                                    child: ConstrainedBox(
-                                      constraints: BoxConstraints(
-                                        minHeight: constraints.maxHeight,
-                                      ),
-                                      child: CallbackShortcuts(
-                                        bindings: <ShortcutActivator, VoidCallback>{
-                                          const SingleActivator(
-                                            LogicalKeyboardKey.arrowUp,
-                                          ): () {
-                                            if (currentIndex > 0) {
-                                              globalState.appController.toPage(
-                                                navigationItems[currentIndex -
-                                                        1]
-                                                    .label,
-                                              );
-                                            }
-                                          },
-                                          const SingleActivator(
-                                            LogicalKeyboardKey.arrowDown,
-                                          ): () {
-                                            if (currentIndex <
-                                                navigationItems.length - 1) {
-                                              globalState.appController.toPage(
-                                                navigationItems[currentIndex +
-                                                        1]
-                                                    .label,
-                                              );
-                                            }
-                                          },
-                                          const SingleActivator(
-                                            LogicalKeyboardKey.select,
-                                          ): () {},
-                                          const SingleActivator(
-                                            LogicalKeyboardKey.enter,
-                                          ): () {},
-                                        },
-                                        child: Focus(
-                                          autofocus: true,
-                                          child: AuroraNavigationRail(
-                                            destinations: navigationItems
-                                                .map(
-                                                  (e) => AuroraRailDestination(
-                                                    icon: e.icon,
-                                                    label:
-                                                        e.label.localizedName,
-                                                  ),
-                                                )
-                                                .toList(),
-                                            selectedIndex: currentIndex,
-                                            extended: extended,
-                                            onDestinationSelected: (index) {
-                                              final label =
-                                                  navigationItems[index].label;
-                                              if (currentIndex == index) {
-                                                final pageContext =
-                                                    GlobalObjectKey(
-                                                      label,
-                                                    ).currentContext;
-                                                if (pageContext != null) {
-                                                  Navigator.of(
-                                                    pageContext,
-                                                  ).popUntil(
-                                                    (route) => route.isFirst,
-                                                  );
-                                                }
-                                              }
-                                              globalState.appController.toPage(
-                                                label,
-                                              );
-                                            },
-                                          ),
-                                        ),
-                                      ),
                                     ),
-                                  );
-                                },
+                                    destinations: navigationItems
+                                        .map(
+                                          (e) => AuroraRailDestination(
+                                            icon: e.icon,
+                                            label: e.label.localizedName,
+                                          ),
+                                        )
+                                        .toList(),
+                                    selectedIndex: currentIndex,
+                                    extended: extended,
+                                    onDestinationSelected: (index) {
+                                      final label =
+                                          navigationItems[index].label;
+                                      if (currentIndex == index) {
+                                        final pageContext = GlobalObjectKey(
+                                          label,
+                                        ).currentContext;
+                                        if (pageContext != null) {
+                                          Navigator.of(
+                                            pageContext,
+                                          ).popUntil((route) => route.isFirst);
+                                        }
+                                      }
+                                      globalState.appController.toPage(label);
+                                    },
+                                  ),
+                                ),
                               ),
                             ),
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
@@ -597,6 +533,44 @@ class AppSidebarContainer extends ConsumerWidget {
         // The sidebar sits outside the Navigator's overlay.
         return Overlay.wrap(child: layout);
       },
+    );
+  }
+
+  Widget _buildNavigationHeader({
+    required BuildContext context,
+    required bool showLabel,
+    required bool canExpand,
+    required String toggleLabel,
+    required VoidCallback onToggle,
+  }) {
+    final toggle = IconButton(
+      key: const ValueKey('toggle-desktop-sidebar'),
+      tooltip: toggleLabel,
+      icon: Icon(showLabel ? Icons.menu_open : Icons.menu),
+      onPressed: canExpand ? onToggle : null,
+    );
+
+    if (showLabel) {
+      return Row(
+        children: [
+          const AppIcon(size: 32),
+          const SizedBox(width: FluxoraSpacing.sm),
+          Expanded(
+            child: Text(
+              appName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+          ),
+          toggle,
+        ],
+      );
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [const AppIcon(size: 36), toggle],
     );
   }
 }

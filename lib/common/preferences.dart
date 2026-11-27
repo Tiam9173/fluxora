@@ -87,6 +87,38 @@ class Preferences {
       );
     }
 
+    final currentDns = result.dns;
+    if (listEquals(
+      currentDns.nameserver,
+      const ['223.5.5.5', '119.29.29.29'],
+    )) {
+      result = result.copyWith(
+        dns: result.dns.copyWith(
+          nameserver: const [
+            'https://dns.alidns.com/dns-query',
+            'https://doh.pub/dns-query',
+          ],
+        ),
+      );
+    }
+
+    final policy = Map<String, String>.from(result.dns.nameserverPolicy);
+    var policyChanged = false;
+    if (policy['geosite:cn'] == '119.29.29.29') {
+      policy['geosite:cn'] =
+          'https://dns.alidns.com/dns-query,https://doh.pub/dns-query';
+      policyChanged = true;
+    }
+    if (policy['*'] == 'system') {
+      policy.remove('*');
+      policyChanged = true;
+    }
+    if (policyChanged) {
+      result = result.copyWith(
+        dns: result.dns.copyWith(nameserverPolicy: policy),
+      );
+    }
+
     return result;
   }
 
@@ -97,6 +129,13 @@ class Preferences {
     try {
       final configMap = json.decode(configString);
       var config = Config.compatibleFromJson(configMap);
+
+      var configChanged = false;
+      final normalizedPatch = _normalizeLegacyDefaults(config.patchClashConfig);
+      if (normalizedPatch != config.patchClashConfig) {
+        config = config.copyWith(patchClashConfig: normalizedPatch);
+        configChanged = true;
+      }
 
       if (preferences?.getBool('autoLaunch') != config.appSetting.autoLaunch) {
         await preferences?.setBool('autoLaunch', config.appSetting.autoLaunch);
@@ -113,10 +152,11 @@ class Preferences {
           config = config.copyWith(
             appSetting: config.appSetting.copyWith(silentLaunch: true),
           );
-          await saveConfig(config);
+          configChanged = true;
         }
       }
 
+      if (configChanged) await saveConfig(config);
       return config;
     } catch (e, stackTrace) {
       commonPrint.log('Failed to parse config from preferences: $e\n$stackTrace');

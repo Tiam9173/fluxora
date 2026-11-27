@@ -6,17 +6,19 @@ void main() {
 
   test('adds strict private DNS host to a mode-independent bypass list', () {
     final config = <String, dynamic>{
-      'dns': <String, dynamic>{'enhanced-mode': 'fake-ip'},
+      'dns': <String, dynamic>{'enable': true, 'enhanced-mode': 'fake-ip'},
     };
+    applyAndroidPrivateDnsServer(config, 'Dns.Private.Example.');
     applyPrivateDnsBypass(config, 'Dns.Private.Example.');
+    applyAndroidPrivateDnsServer(config, 'dns.private.example');
     applyPrivateDnsBypass(config, 'dns.private.example');
     expect(config['dns']['fake-ip-filter-bypass'], ['dns.private.example']);
     expect(config['dns']['nameserver'], [
       'tls://dns.private.example:853#DIRECT',
     ]);
     expect(config['dns']['fallback'], [
-      'https://dns.alidns.com/dns-query#DIRECT',
-      'https://doh.pub/dns-query#DIRECT',
+      'https://dns.alidns.com/dns-query',
+      'https://doh.pub/dns-query',
     ]);
     expect(config['dns']['fallback-lazy-query'], isTrue);
   });
@@ -24,12 +26,14 @@ void main() {
   test('bypasses Android Private DNS hostnames from fake-IP', () {
     final config = <String, dynamic>{
       'dns': {
+        'enable': true,
         'enhanced-mode': 'fake-ip',
         'nameserver': bootstrap,
         'fake-ip-filter-bypass': ['existing.example'],
       },
     };
 
+    applyAndroidPrivateDnsServer(config, 'Resolver.Private.Example.');
     applyPrivateDnsBypass(config, 'Resolver.Private.Example.');
     applyPrivateDnsBypass(config, 'resolver.private.example');
 
@@ -46,13 +50,15 @@ void main() {
 
   test('does not add IP addresses and keeps redir-host on Private DNS', () {
     final fakeIp = <String, dynamic>{
-      'dns': <String, dynamic>{'enhanced-mode': 'fake-ip'},
+      'dns': <String, dynamic>{'enable': true, 'enhanced-mode': 'fake-ip'},
     };
     final redirHost = <String, dynamic>{
-      'dns': <String, dynamic>{'enhanced-mode': 'redir-host'},
+      'dns': <String, dynamic>{'enable': true, 'enhanced-mode': 'redir-host'},
     };
 
+    applyAndroidPrivateDnsServer(fakeIp, '192.0.2.53');
     applyPrivateDnsBypass(fakeIp, '192.0.2.53');
+    applyAndroidPrivateDnsServer(redirHost, 'resolver.private.example');
     applyPrivateDnsBypass(redirHost, 'resolver.private.example');
 
     expect(fakeIp['dns'].containsKey('fake-ip-filter-bypass'), isFalse);
@@ -68,19 +74,21 @@ void main() {
   test('uses encrypted fallback when Private DNS is the only resolver', () {
     final config = <String, dynamic>{
       'dns': {
+        'enable': true,
         'enhanced-mode': 'redir-host',
         'nameserver': ['tls://resolver.private.example:853'],
       },
     };
 
+    applyAndroidPrivateDnsServer(config, 'resolver.private.example');
     applyPrivateDnsBypass(config, 'resolver.private.example');
 
     expect(config['dns']['nameserver'], [
       'tls://resolver.private.example:853#DIRECT',
     ]);
     expect(config['dns']['fallback'], [
-      'https://dns.alidns.com/dns-query#DIRECT',
-      'https://doh.pub/dns-query#DIRECT',
+      'https://dns.alidns.com/dns-query',
+      'https://doh.pub/dns-query',
     ]);
   });
 

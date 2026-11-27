@@ -435,18 +435,23 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             "ip" to ((addresses.firstOrNull { it is Inet4Address } ?: addresses.firstOrNull())?.hostAddress ?: ""),
             "gateway" to (gateway?.hostAddress ?: ""),
             "dns" to link?.dnsServers?.mapNotNull { it.hostAddress }.orEmpty(),
+            "privateDnsServerName" to if (
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
+                link?.isPrivateDnsActive == true
+            ) link.privateDnsServerName.orEmpty() else "",
         )
     }.getOrElse {
         android.util.Log.e("VpnPlugin", "getNetworkInfo error: ${it.message}")
         emptyMap()
     }
 
-    fun getPrivateDnsServerName(): String = runCatching {
+    fun getPrivateDnsServerName(): String? = runCatching {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return@runCatching ""
-        val cm = connectivity ?: return@runCatching ""
-        val network = getDefaultPhysicalNetwork() ?: return@runCatching ""
-        cm.getLinkProperties(network)?.privateDnsServerName?.trim().orEmpty()
-    }
+        val cm = connectivity ?: return@runCatching null
+        val network = getDefaultPhysicalNetwork() ?: return@runCatching null
+        val link = cm.getLinkProperties(network) ?: return@runCatching null
+        if (!link.isPrivateDnsActive) "" else link.privateDnsServerName?.trim().orEmpty()
+    }.getOrNull()
 
     fun handleStart(options: VpnOptions): Boolean {
         GlobalState.runLock.withLock {
@@ -524,6 +529,7 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     }
 
     private val networkDnsMap = ConcurrentHashMap<Network, List<String>>()
+    private val networkPrivateDnsMap = ConcurrentHashMap<Network, String>()
 
     private val callback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
@@ -535,6 +541,7 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         override fun onLost(network: Network) {
             networks.remove(network)
             networkDnsMap.remove(network)
+            networkPrivateDnsMap.remove(network)
             onUpdateNetwork()
             handleNetworkChange()
             invokeDart("networkChanged")
@@ -542,7 +549,16 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
         override fun onLinkPropertiesChanged(network: Network, linkProperties: LinkProperties) {
             val dnsList = linkProperties.dnsServers.map { it.asSocketAddressText(53) }
-            networkDnsMap[network] = dnsList
+            val dnsChanged = networkDnsMap.put(network, dnsList) != dnsList
+            val privateDnsServerName = if (
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
+                linkProperties.isPrivateDnsActive
+            ) linkProperties.privateDnsServerName.orEmpty() else ""
+            val privateDnsChanged = networkPrivateDnsMap.put(
+                network,
+                privateDnsServerName,
+            ) != privateDnsServerName
+            if (dnsChanged || privateDnsChanged) invokeDart("networkChanged")
             onUpdateNetwork()
         }
     }

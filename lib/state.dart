@@ -85,6 +85,7 @@ class GlobalState {
   bool isService = false;
   bool isExiting = false;
   bool isScreenOn = true;
+  String? androidPrivateDnsServerName;
 
   /// 重启内核时是否保持 VPN 服务在线。
   ///
@@ -1129,7 +1130,14 @@ class GlobalState {
     }
 
     if (system.isAndroid) {
-      applyPrivateDnsBypass(rawConfig, await utils.getPrivateDnsServerName());
+      final privateDnsServerName = await utils.getAndroidPrivateDnsServerName();
+      if (privateDnsServerName != null) {
+        globalState.androidPrivateDnsServerName = privateDnsServerName;
+      }
+      final serverName =
+          privateDnsServerName ?? globalState.androidPrivateDnsServerName;
+      applyAndroidPrivateDnsServer(rawConfig, serverName ?? '');
+      applyPrivateDnsBypass(rawConfig, serverName);
     }
 
     if (rawConfig['ntp'] == null) {
@@ -1295,12 +1303,13 @@ class GlobalState {
                   utils.getSystemLocale())
               .languageCode ==
           'ru';
-      final quicRules = config.vpnProps.excludeChina && !isRussian
-          ? [
-              'AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((OR,((GEOSITE,geolocation-cn),(GEOIP,CN,no-resolve)))))),REJECT',
-            ]
-          : ['AND,((NETWORK,UDP),(DST-PORT,443)),REJECT'];
-      rules = [...quicRules, ...rules];
+      rules = [
+        ...buildQuicDisableRules(
+          excludeChina: config.vpnProps.excludeChina,
+          isRussian: isRussian,
+        ),
+        ...rules,
+      ];
     }
 
     if (rawConfig['proxy-groups'] == null && originalProxyGroups != null) {
@@ -2539,6 +2548,16 @@ class MediaUnlockStateNotifier {
 }
 
 final mediaUnlockState = MediaUnlockStateNotifier();
+
+List<String> buildQuicDisableRules({
+  required bool excludeChina,
+  required bool isRussian,
+}) => [
+  if (excludeChina && !isRussian)
+    'AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((OR,((GEOSITE,geolocation-cn),(GEOIP,CN,no-resolve)))))),REJECT'
+  else
+    'AND,((NETWORK,UDP),(DST-PORT,443)),REJECT',
+];
 
 /// item 6 (Bettbox 1.19.3) — the rules that make up loopback protection.
 ///

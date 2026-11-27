@@ -30,7 +30,10 @@ class GlassSurface extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final rounded = BorderRadius.circular(radius);
     final hasBlur = _GlassBlurScope.maybeOf(context);
-    final useBlur = blur && material.blurEnabled && !hasBlur;
+    final useBlur =
+        (blur || (material.liquid && floating)) &&
+        material.blurEnabled &&
+        !hasBlur;
     final fill = material.fill(scheme, floating: floating);
     final panel =
         (material.isObsidian || material.liquid) &&

@@ -80,6 +80,7 @@ class AppController {
   int get groupDelayGeneration => _groupDelayGeneration;
   ({int mixedPort, ExternalControllerStatus controller})? _appliedPortSettings;
   final Set<DelayTestTarget> _manualDelayTargets = {};
+  final Map<DelayTestTarget, int> _backgroundTimeoutCounts = {};
   final Set<String> _updatingProfileIds = {};
   Timer? _idleGcTimer;
   int _localIpRequest = 0;
@@ -159,6 +160,7 @@ class AppController {
 
   void _invalidateCoreReads() {
     _invalidateGroupDelays();
+    _backgroundTimeoutCounts.clear();
     _coreGeneration++;
     _backgroundLoadVersion++;
     _connectionCheckGeneration++;
@@ -406,12 +408,6 @@ class AppController {
     }
     void refresh() {
       if (!_ref.read(runTimeProvider.notifier).isStart) return;
-      // Restarting the core (and the notification's 重置, which goes through
-      // it) changes the exit IP. The old result has to be cleared, not just
-      // refreshed: `startCheck()` without `clearPrevious` keeps the previous
-      // `ipInfo` on screen while the new request runs, and if that request
-      // fails — likely, one second after a restart — the stale IP simply stays
-      // there. That is the reported "重置后 IP 检测不会重新获取".
       detectionState.startCheck(immediate: true, clearPrevious: true);
       addCheckIpNumDebounce();
       unawaited(_checkConnection(generation));
@@ -2593,6 +2589,18 @@ class AppController {
         (_ref.read(delayDataSourceProvider)[delay.url]?[delay.name] ?? 0) < 0) {
       return;
     }
+    final previous = _ref.read(delayDataSourceProvider)[delay.url]?[delay.name];
+    final isBackgroundTimeout =
+        background && delay.value != null && delay.value! < 0;
+    final timeoutCount = _backgroundTimeoutCounts[target] ?? 0;
+    final keepFirstTimeout = isBackgroundTimeout &&
+        (previous ?? 0) > 0 &&
+        timeoutCount == 0;
+    if (isBackgroundTimeout) {
+      _backgroundTimeoutCounts[target] = timeoutCount + 1;
+    } else if (!background || (delay.value ?? 0) > 0) {
+      _backgroundTimeoutCounts.remove(target);
+    }
     final startedAt = globalState.startTime;
     // A health check can complete just after the tunnel comes up.
     final settling =
@@ -2603,8 +2611,34 @@ class AppController {
         .read(delayDataSourceProvider.notifier)
         .setDelay(
           delay,
-          keepPreviousSuccess: startup || (background && settling),
+          keepPreviousSuccess:
+              startup || (background && (settling || keepFirstTimeout)),
         );
+  }
+
+  Future<void> refreshAndroidPrivateDnsOnNetworkChanged() async {
+    if (!system.isAndroid) return;
+    await _coreLifecycleLock.synchronized(() async {
+      final serverName = await utils.getAndroidPrivateDnsServerName();
+      if (serverName == null ||
+          serverName == globalState.androidPrivateDnsServerName) {
+        return;
+      }
+
+      final previous = globalState.androidPrivateDnsServerName;
+      globalState.androidPrivateDnsServerName = serverName;
+      if (!globalState.isStart || globalState.config.currentProfile == null) {
+        return;
+      }
+      try {
+        await _applyProfile();
+      } catch (error) {
+        globalState.androidPrivateDnsServerName = previous;
+        commonPrint.log(
+          'Apply Android Private DNS after network change failed: $error',
+        );
+      }
+    });
   }
 
   int? getTrayProxyDelay({required String proxyName, String? testUrl}) {

@@ -609,6 +609,7 @@ abstract class AggregateProfile with _$AggregateProfile {
   const factory AggregateProfile({
     required String id,
     required String name,
+    String? baseProfileId,
     @Default([]) List<String> memberIds,
     AggregateMode? mode,
     AggregateScriptTiming? scriptTiming,

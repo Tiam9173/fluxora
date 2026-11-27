@@ -62,8 +62,8 @@ class _KeptPageViewState extends State<KeptPageView>
   int? _leaving;
   double _direction = 1;
   bool _dragging = false;
+  bool _memoryPressurePending = false;
   int? _dragOrigin;
-  bool _evictInactiveAfterTransition = false;
 
   double get _readingDirection =>
       Directionality.of(context) == TextDirection.rtl ? -1 : 1;
@@ -81,11 +81,11 @@ class _KeptPageViewState extends State<KeptPageView>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     _current = widget.index;
     _built.add(_current);
     _resolveAnimations();
     _controller.addStatusListener(_onStatus);
+    WidgetsBinding.instance.addObserver(this);
   }
 
   void _resolveAnimations() {
@@ -104,28 +104,24 @@ class _KeptPageViewState extends State<KeptPageView>
     if (status == AnimationStatus.completed && _leaving != null && !_dragging) {
       setState(() {
         _leaving = null;
-        _applyPendingMemoryEviction();
+        _evictInactivePages();
       });
     }
   }
 
   @override
   void didHaveMemoryPressure() {
-    if (!mounted) return;
-    if (_leaving != null || _dragging) {
-      _evictInactiveAfterTransition = true;
+    _memoryPressurePending = true;
+    if (_controller.isAnimating || _dragging || _leaving != null) {
       return;
     }
-    _built.removeWhere((index) => index != _current);
-    setState(() {});
+    setState(_evictInactivePages);
   }
 
-  void _applyPendingMemoryEviction() {
-    if (!_evictInactiveAfterTransition || _leaving != null || _dragging) {
-      return;
-    }
-    _built.removeWhere((index) => index != _current);
-    _evictInactiveAfterTransition = false;
+  void _evictInactivePages() {
+    if (!_memoryPressurePending) return;
+    _built.retainWhere((index) => index == _current || index == _leaving);
+    _memoryPressurePending = false;
   }
 
   @override
@@ -186,7 +182,6 @@ class _KeptPageViewState extends State<KeptPageView>
           _controller.forward();
         }
       }
-      _applyPendingMemoryEviction();
     }
   }
 
@@ -352,7 +347,6 @@ class _KeptPageViewState extends State<KeptPageView>
         _current = origin ?? widget.index;
         _leaving = null;
         _controller.value = 1;
-        _applyPendingMemoryEviction();
       });
     }
   }

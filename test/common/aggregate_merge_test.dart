@@ -3,11 +3,7 @@ import 'package:fluxora/models/models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Profile _member(String id, String label) {
-  return Profile(
-    id: id,
-    label: label,
-    autoUpdateDuration: Duration.zero,
-  );
+  return Profile(id: id, label: label, autoUpdateDuration: Duration.zero);
 }
 
 Future<AggregateMergeReport> _merge(
@@ -29,6 +25,67 @@ Future<AggregateMergeReport> _merge(
 }
 
 void main() {
+  test('drops stale base rule targets without blocking profile activation', () {
+    final raw = <String, dynamic>{
+      'proxies': [
+        {'name': 'HK'},
+      ],
+      'proxy-groups': [
+        {
+          'name': 'Main',
+          'type': 'select',
+          'proxies': ['HK', 'DIRECT'],
+        },
+      ],
+      'rules': ['DOMAIN-SUFFIX,services.googleapis.cn,闪电猫', 'MATCH,Main'],
+    };
+    final logs = <String>[];
+
+    final dropped = removeRulesWithUnknownTargets(raw, log: logs.add);
+
+    expect(dropped, ['DOMAIN-SUFFIX,services.googleapis.cn,闪电猫']);
+    expect(raw['rules'], ['MATCH,Main']);
+    expect(logs.single, contains('闪电猫'));
+  });
+
+  test('keeps valid SUB-RULE targets while dropping stale proxy targets', () {
+    final raw = <String, dynamic>{
+      'proxies': <Map<String, String>>[],
+      'proxy-groups': <Map<String, dynamic>>[],
+      'sub-rules': {
+        'SUB-REJECT': ['RULE-SET,stun,REJECT'],
+      },
+      'rules': [
+        'SUB-RULE,(NETWORK,UDP),SUB-REJECT',
+        'DOMAIN-SUFFIX,broken.example,MissingGroup',
+      ],
+    };
+
+    final dropped = removeRulesWithUnknownTargets(raw, log: (_) {});
+
+    expect(dropped, ['DOMAIN-SUFFIX,broken.example,MissingGroup']);
+    expect(raw['rules'], ['SUB-RULE,(NETWORK,UDP),SUB-REJECT']);
+  });
+
+  test(
+    'keeps unknown direct targets while a dynamic provider may supply them',
+    () {
+      final raw = <String, dynamic>{
+        'proxies': <Map<String, String>>[],
+        'proxy-groups': <Map<String, dynamic>>[],
+        'proxy-providers': {
+          'remote': {'type': 'file', 'path': './nodes.yaml'},
+        },
+        'rules': ['DOMAIN-SUFFIX,node.example,RemoteOnlyNode'],
+      };
+
+      final dropped = removeRulesWithUnknownTargets(raw, log: (_) {});
+
+      expect(dropped, isEmpty);
+      expect(raw['rules'], ['DOMAIN-SUFFIX,node.example,RemoteOnlyNode']);
+    },
+  );
+
   test('merges member groups and rules before the base MATCH rule', () async {
     final raw = <String, dynamic>{
       'proxies': [
@@ -74,9 +131,11 @@ void main() {
     final report = await _merge(raw, [member]);
 
     final groups = raw['proxy-groups'] as List;
-    final proxy = groups.firstWhere(
-      (group) => group is Map && group['name'] == '[A] Proxy',
-    ) as Map;
+    final proxy =
+        groups.firstWhere(
+              (group) => group is Map && group['name'] == '[A] Proxy',
+            )
+            as Map;
     expect(proxy['proxies'], ['[A] HK 01', '[A] US 01']);
 
     final rules = (raw['rules'] as List).cast<String>();
@@ -84,14 +143,8 @@ void main() {
     expect(rules, contains('DOMAIN,example.com,[A] Proxy'));
     expect(rules, isNot(contains('DOMAIN,stale.example,Missing')));
     expect(rules.last, 'MATCH,Main');
-    expect(
-      report.droppedRules,
-      contains('DOMAIN,stale.example,Missing'),
-    );
-    expect(
-      rules.where((rule) => rule.startsWith('MATCH,')).length,
-      1,
-    );
+    expect(report.droppedRules, contains('DOMAIN,stale.example,Missing'));
+    expect(rules.where((rule) => rule.startsWith('MATCH,')).length, 1);
   });
 
   test('renames conflicting member groups and rewrites rule targets', () async {
@@ -146,7 +199,11 @@ void main() {
   test('expands a member use group to direct nodes', () async {
     final raw = <String, dynamic>{
       'proxy-groups': [
-        {'name': 'Main', 'type': 'select', 'proxies': ['DIRECT']},
+        {
+          'name': 'Main',
+          'type': 'select',
+          'proxies': ['DIRECT'],
+        },
       ],
       'rules': ['MATCH,Main'],
     };
@@ -170,9 +227,11 @@ void main() {
 
     await _merge(raw, [member]);
 
-    final group = (raw['proxy-groups'] as List).firstWhere(
-      (item) => item is Map && item['name'] == '[A] Provider group',
-    ) as Map;
+    final group =
+        (raw['proxy-groups'] as List).firstWhere(
+              (item) => item is Map && item['name'] == '[A] Provider group',
+            )
+            as Map;
     expect(group.containsKey('use'), isFalse);
     expect(group['proxies'], ['[A] HK', '[A] US']);
   });
@@ -180,7 +239,11 @@ void main() {
   test('keeps use-group filters when expanding to direct nodes', () async {
     final raw = <String, dynamic>{
       'proxy-groups': [
-        {'name': 'Main', 'type': 'select', 'proxies': ['DIRECT']},
+        {
+          'name': 'Main',
+          'type': 'select',
+          'proxies': ['DIRECT'],
+        },
       ],
       'rules': ['MATCH,Main'],
     };
@@ -206,16 +269,22 @@ void main() {
 
     await _merge(raw, [member]);
 
-    final group = (raw['proxy-groups'] as List).firstWhere(
-      (item) => item is Map && item['name'] == '[A] Filtered',
-    ) as Map;
+    final group =
+        (raw['proxy-groups'] as List).firstWhere(
+              (item) => item is Map && item['name'] == '[A] Filtered',
+            )
+            as Map;
     expect(group['proxies'], ['[A] HK 01']);
   });
 
   test('rewrites SUB-RULE targets', () async {
     final raw = <String, dynamic>{
       'proxy-groups': [
-        {'name': 'Main', 'type': 'select', 'proxies': ['DIRECT']},
+        {
+          'name': 'Main',
+          'type': 'select',
+          'proxies': ['DIRECT'],
+        },
       ],
       'rules': ['MATCH,Main'],
     };
@@ -248,7 +317,11 @@ void main() {
   test('custom merge can skip groups and rules', () async {
     final raw = <String, dynamic>{
       'proxy-groups': [
-        {'name': 'Main', 'type': 'select', 'proxies': ['DIRECT']},
+        {
+          'name': 'Main',
+          'type': 'select',
+          'proxies': ['DIRECT'],
+        },
       ],
       'rules': ['MATCH,Main'],
     };
@@ -281,45 +354,52 @@ void main() {
     expect((raw['rules'] as List).cast<String>(), ['MATCH,Main']);
   });
 
-  test('merges inline rule providers and rewrites RULE-SET references', () async {
-    final raw = <String, dynamic>{
-      'proxy-groups': [
-        {'name': 'Main', 'type': 'select', 'proxies': ['DIRECT']},
-      ],
-      'rules': ['MATCH,Main'],
-    };
-    final member = AggregateMemberConfig(
-      profile: _member('m1', 'A'),
-      alias: 'A',
-      config: <String, dynamic>{
-        'proxies': [
-          {'name': 'HK'},
-        ],
+  test(
+    'merges inline rule providers and rewrites RULE-SET references',
+    () async {
+      final raw = <String, dynamic>{
         'proxy-groups': [
           {
-            'name': 'Proxy',
+            'name': 'Main',
             'type': 'select',
-            'proxies': ['HK'],
+            'proxies': ['DIRECT'],
           },
         ],
-        'rule-providers': {
-          'ads': {
-            'type': 'inline',
-            'behavior': 'domain',
-            'payload': ['DOMAIN,ads.example'],
+        'rules': ['MATCH,Main'],
+      };
+      final member = AggregateMemberConfig(
+        profile: _member('m1', 'A'),
+        alias: 'A',
+        config: <String, dynamic>{
+          'proxies': [
+            {'name': 'HK'},
+          ],
+          'proxy-groups': [
+            {
+              'name': 'Proxy',
+              'type': 'select',
+              'proxies': ['HK'],
+            },
+          ],
+          'rule-providers': {
+            'ads': {
+              'type': 'inline',
+              'behavior': 'domain',
+              'payload': ['DOMAIN,ads.example'],
+            },
           },
+          'rules': ['RULE-SET,ads,Proxy'],
         },
-        'rules': ['RULE-SET,ads,Proxy'],
-      },
-    );
+      );
 
-    await _merge(raw, [member]);
+      await _merge(raw, [member]);
 
-    final providers = raw['rule-providers'] as Map;
-    expect(providers.containsKey('agg_m1_ads'), isTrue);
-    expect(
-      (raw['rules'] as List).cast<String>(),
-      contains('RULE-SET,agg_m1_ads,[A] Proxy'),
-    );
-  });
+      final providers = raw['rule-providers'] as Map;
+      expect(providers.containsKey('agg_m1_ads'), isTrue);
+      expect(
+        (raw['rules'] as List).cast<String>(),
+        contains('RULE-SET,agg_m1_ads,[A] Proxy'),
+      );
+    },
+  );
 }

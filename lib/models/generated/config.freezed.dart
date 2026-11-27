@@ -2943,7 +2943,7 @@ as List<Script>,
 /// @nodoc
 mixin _$AggregateProfile {
 
- String get id; String get name; List<String> get memberIds; AggregateMode? get mode; AggregateScriptTiming? get scriptTiming; bool? get mergeNodes; bool? get mergeGroups; bool? get mergeRules; bool? get mergeRuleProviders; bool? get mergeMemberScripts; bool? get applyNodeOverrides; OverrideData? get overrideData;
+ String get id; String get name; String? get baseProfileId; List<String> get memberIds; AggregateMode? get mode; AggregateScriptTiming? get scriptTiming; bool? get mergeNodes; bool? get mergeGroups; bool? get mergeRules; bool? get mergeRuleProviders; bool? get mergeMemberScripts; bool? get applyNodeOverrides; OverrideData? get overrideData;
 /// Create a copy of AggregateProfile
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -2957,20 +2957,20 @@ $AggregateProfileCopyWith<AggregateProfile> get copyWith => _$AggregateProfileCo
 @override
 bool operator ==(Object other) {
   final _this = this as AggregateProfile;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AggregateProfile&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.name, _this.name) || other.name == _this.name)&&const DeepCollectionEquality().equals(other.memberIds, _this.memberIds)&&(identical(other.mode, _this.mode) || other.mode == _this.mode)&&(identical(other.scriptTiming, _this.scriptTiming) || other.scriptTiming == _this.scriptTiming)&&(identical(other.mergeNodes, _this.mergeNodes) || other.mergeNodes == _this.mergeNodes)&&(identical(other.mergeGroups, _this.mergeGroups) || other.mergeGroups == _this.mergeGroups)&&(identical(other.mergeRules, _this.mergeRules) || other.mergeRules == _this.mergeRules)&&(identical(other.mergeRuleProviders, _this.mergeRuleProviders) || other.mergeRuleProviders == _this.mergeRuleProviders)&&(identical(other.mergeMemberScripts, _this.mergeMemberScripts) || other.mergeMemberScripts == _this.mergeMemberScripts)&&(identical(other.applyNodeOverrides, _this.applyNodeOverrides) || other.applyNodeOverrides == _this.applyNodeOverrides)&&(identical(other.overrideData, _this.overrideData) || other.overrideData == _this.overrideData));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AggregateProfile&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.baseProfileId, _this.baseProfileId) || other.baseProfileId == _this.baseProfileId)&&const DeepCollectionEquality().equals(other.memberIds, _this.memberIds)&&(identical(other.mode, _this.mode) || other.mode == _this.mode)&&(identical(other.scriptTiming, _this.scriptTiming) || other.scriptTiming == _this.scriptTiming)&&(identical(other.mergeNodes, _this.mergeNodes) || other.mergeNodes == _this.mergeNodes)&&(identical(other.mergeGroups, _this.mergeGroups) || other.mergeGroups == _this.mergeGroups)&&(identical(other.mergeRules, _this.mergeRules) || other.mergeRules == _this.mergeRules)&&(identical(other.mergeRuleProviders, _this.mergeRuleProviders) || other.mergeRuleProviders == _this.mergeRuleProviders)&&(identical(other.mergeMemberScripts, _this.mergeMemberScripts) || other.mergeMemberScripts == _this.mergeMemberScripts)&&(identical(other.applyNodeOverrides, _this.applyNodeOverrides) || other.applyNodeOverrides == _this.applyNodeOverrides)&&(identical(other.overrideData, _this.overrideData) || other.overrideData == _this.overrideData));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as AggregateProfile;
-  return Object.hash(runtimeType,_this.id,_this.name,const DeepCollectionEquality().hash(_this.memberIds),_this.mode,_this.scriptTiming,_this.mergeNodes,_this.mergeGroups,_this.mergeRules,_this.mergeRuleProviders,_this.mergeMemberScripts,_this.applyNodeOverrides,_this.overrideData);
+  return Object.hash(runtimeType,_this.id,_this.name,_this.baseProfileId,const DeepCollectionEquality().hash(_this.memberIds),_this.mode,_this.scriptTiming,_this.mergeNodes,_this.mergeGroups,_this.mergeRules,_this.mergeRuleProviders,_this.mergeMemberScripts,_this.applyNodeOverrides,_this.overrideData);
 }
 
 @override
 String toString() {
   final _this = this as AggregateProfile;
-  return 'AggregateProfile(id: ${_this.id}, name: ${_this.name}, memberIds: ${_this.memberIds}, mode: ${_this.mode}, scriptTiming: ${_this.scriptTiming}, mergeNodes: ${_this.mergeNodes}, mergeGroups: ${_this.mergeGroups}, mergeRules: ${_this.mergeRules}, mergeRuleProviders: ${_this.mergeRuleProviders}, mergeMemberScripts: ${_this.mergeMemberScripts}, applyNodeOverrides: ${_this.applyNodeOverrides}, overrideData: ${_this.overrideData})';
+  return 'AggregateProfile(id: ${_this.id}, name: ${_this.name}, baseProfileId: ${_this.baseProfileId}, memberIds: ${_this.memberIds}, mode: ${_this.mode}, scriptTiming: ${_this.scriptTiming}, mergeNodes: ${_this.mergeNodes}, mergeGroups: ${_this.mergeGroups}, mergeRules: ${_this.mergeRules}, mergeRuleProviders: ${_this.mergeRuleProviders}, mergeMemberScripts: ${_this.mergeMemberScripts}, applyNodeOverrides: ${_this.applyNodeOverrides}, overrideData: ${_this.overrideData})';
 }
 
 
@@ -2981,7 +2981,7 @@ abstract mixin class $AggregateProfileCopyWith<$Res>  {
   factory $AggregateProfileCopyWith(AggregateProfile value, $Res Function(AggregateProfile) _then) = _$AggregateProfileCopyWithImpl;
 @useResult
 $Res call({
- String id, String name, List<String> memberIds, AggregateMode? mode, AggregateScriptTiming? scriptTiming, bool? mergeNodes, bool? mergeGroups, bool? mergeRules, bool? mergeRuleProviders, bool? mergeMemberScripts, bool? applyNodeOverrides, OverrideData? overrideData
+ String id, String name, String? baseProfileId, List<String> memberIds, AggregateMode? mode, AggregateScriptTiming? scriptTiming, bool? mergeNodes, bool? mergeGroups, bool? mergeRules, bool? mergeRuleProviders, bool? mergeMemberScripts, bool? applyNodeOverrides, OverrideData? overrideData
 });
 
 
@@ -2998,11 +2998,12 @@ class _$AggregateProfileCopyWithImpl<$Res>
 
 /// Create a copy of AggregateProfile
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? memberIds = null,Object? mode = freezed,Object? scriptTiming = freezed,Object? mergeNodes = freezed,Object? mergeGroups = freezed,Object? mergeRules = freezed,Object? mergeRuleProviders = freezed,Object? mergeMemberScripts = freezed,Object? applyNodeOverrides = freezed,Object? overrideData = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? baseProfileId = freezed,Object? memberIds = null,Object? mode = freezed,Object? scriptTiming = freezed,Object? mergeNodes = freezed,Object? mergeGroups = freezed,Object? mergeRules = freezed,Object? mergeRuleProviders = freezed,Object? mergeMemberScripts = freezed,Object? applyNodeOverrides = freezed,Object? overrideData = freezed,}) {
   return _then(AggregateProfile(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
-as String,memberIds: null == memberIds ? _self.memberIds : memberIds // ignore: cast_nullable_to_non_nullable
+as String,baseProfileId: freezed == baseProfileId ? _self.baseProfileId : baseProfileId // ignore: cast_nullable_to_non_nullable
+as String?,memberIds: null == memberIds ? _self.memberIds : memberIds // ignore: cast_nullable_to_non_nullable
 as List<String>,mode: freezed == mode ? _self.mode : mode // ignore: cast_nullable_to_non_nullable
 as AggregateMode?,scriptTiming: freezed == scriptTiming ? _self.scriptTiming : scriptTiming // ignore: cast_nullable_to_non_nullable
 as AggregateScriptTiming?,mergeNodes: freezed == mergeNodes ? _self.mergeNodes : mergeNodes // ignore: cast_nullable_to_non_nullable
@@ -3109,10 +3110,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  List<String> memberIds,  AggregateMode? mode,  AggregateScriptTiming? scriptTiming,  bool? mergeNodes,  bool? mergeGroups,  bool? mergeRules,  bool? mergeRuleProviders,  bool? mergeMemberScripts,  bool? applyNodeOverrides,  OverrideData? overrideData)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String? baseProfileId,  List<String> memberIds,  AggregateMode? mode,  AggregateScriptTiming? scriptTiming,  bool? mergeNodes,  bool? mergeGroups,  bool? mergeRules,  bool? mergeRuleProviders,  bool? mergeMemberScripts,  bool? applyNodeOverrides,  OverrideData? overrideData)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AggregateProfile() when $default != null:
-return $default(_that.id,_that.name,_that.memberIds,_that.mode,_that.scriptTiming,_that.mergeNodes,_that.mergeGroups,_that.mergeRules,_that.mergeRuleProviders,_that.mergeMemberScripts,_that.applyNodeOverrides,_that.overrideData);case _:
+return $default(_that.id,_that.name,_that.baseProfileId,_that.memberIds,_that.mode,_that.scriptTiming,_that.mergeNodes,_that.mergeGroups,_that.mergeRules,_that.mergeRuleProviders,_that.mergeMemberScripts,_that.applyNodeOverrides,_that.overrideData);case _:
   return orElse();
 
 }
@@ -3130,10 +3131,10 @@ return $default(_that.id,_that.name,_that.memberIds,_that.mode,_that.scriptTimin
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  List<String> memberIds,  AggregateMode? mode,  AggregateScriptTiming? scriptTiming,  bool? mergeNodes,  bool? mergeGroups,  bool? mergeRules,  bool? mergeRuleProviders,  bool? mergeMemberScripts,  bool? applyNodeOverrides,  OverrideData? overrideData)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String? baseProfileId,  List<String> memberIds,  AggregateMode? mode,  AggregateScriptTiming? scriptTiming,  bool? mergeNodes,  bool? mergeGroups,  bool? mergeRules,  bool? mergeRuleProviders,  bool? mergeMemberScripts,  bool? applyNodeOverrides,  OverrideData? overrideData)  $default,) {final _that = this;
 switch (_that) {
 case _AggregateProfile():
-return $default(_that.id,_that.name,_that.memberIds,_that.mode,_that.scriptTiming,_that.mergeNodes,_that.mergeGroups,_that.mergeRules,_that.mergeRuleProviders,_that.mergeMemberScripts,_that.applyNodeOverrides,_that.overrideData);case _:
+return $default(_that.id,_that.name,_that.baseProfileId,_that.memberIds,_that.mode,_that.scriptTiming,_that.mergeNodes,_that.mergeGroups,_that.mergeRules,_that.mergeRuleProviders,_that.mergeMemberScripts,_that.applyNodeOverrides,_that.overrideData);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -3150,10 +3151,10 @@ return $default(_that.id,_that.name,_that.memberIds,_that.mode,_that.scriptTimin
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  List<String> memberIds,  AggregateMode? mode,  AggregateScriptTiming? scriptTiming,  bool? mergeNodes,  bool? mergeGroups,  bool? mergeRules,  bool? mergeRuleProviders,  bool? mergeMemberScripts,  bool? applyNodeOverrides,  OverrideData? overrideData)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String? baseProfileId,  List<String> memberIds,  AggregateMode? mode,  AggregateScriptTiming? scriptTiming,  bool? mergeNodes,  bool? mergeGroups,  bool? mergeRules,  bool? mergeRuleProviders,  bool? mergeMemberScripts,  bool? applyNodeOverrides,  OverrideData? overrideData)?  $default,) {final _that = this;
 switch (_that) {
 case _AggregateProfile() when $default != null:
-return $default(_that.id,_that.name,_that.memberIds,_that.mode,_that.scriptTiming,_that.mergeNodes,_that.mergeGroups,_that.mergeRules,_that.mergeRuleProviders,_that.mergeMemberScripts,_that.applyNodeOverrides,_that.overrideData);case _:
+return $default(_that.id,_that.name,_that.baseProfileId,_that.memberIds,_that.mode,_that.scriptTiming,_that.mergeNodes,_that.mergeGroups,_that.mergeRules,_that.mergeRuleProviders,_that.mergeMemberScripts,_that.applyNodeOverrides,_that.overrideData);case _:
   return null;
 
 }
@@ -3165,11 +3166,12 @@ return $default(_that.id,_that.name,_that.memberIds,_that.mode,_that.scriptTimin
 @JsonSerializable()
 
 class _AggregateProfile implements AggregateProfile {
-  const _AggregateProfile({required this.id, required this.name,  List<String> memberIds = const [], this.mode, this.scriptTiming, this.mergeNodes, this.mergeGroups, this.mergeRules, this.mergeRuleProviders, this.mergeMemberScripts, this.applyNodeOverrides, this.overrideData}): _memberIds = memberIds;
+  const _AggregateProfile({required this.id, required this.name, this.baseProfileId,  List<String> memberIds = const [], this.mode, this.scriptTiming, this.mergeNodes, this.mergeGroups, this.mergeRules, this.mergeRuleProviders, this.mergeMemberScripts, this.applyNodeOverrides, this.overrideData}): _memberIds = memberIds;
   factory _AggregateProfile.fromJson(Map<String, dynamic> json) => _$AggregateProfileFromJson(json);
 
 @override final  String id;
 @override final  String name;
+@override final  String? baseProfileId;
  final  List<String> _memberIds;
 @override@JsonKey() List<String> get memberIds {
   if (_memberIds is EqualUnmodifiableListView) return _memberIds;
@@ -3200,18 +3202,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _AggregateProfile&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&const DeepCollectionEquality().equals(other.memberIds, _memberIds)&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.scriptTiming, scriptTiming) || other.scriptTiming == scriptTiming)&&(identical(other.mergeNodes, mergeNodes) || other.mergeNodes == mergeNodes)&&(identical(other.mergeGroups, mergeGroups) || other.mergeGroups == mergeGroups)&&(identical(other.mergeRules, mergeRules) || other.mergeRules == mergeRules)&&(identical(other.mergeRuleProviders, mergeRuleProviders) || other.mergeRuleProviders == mergeRuleProviders)&&(identical(other.mergeMemberScripts, mergeMemberScripts) || other.mergeMemberScripts == mergeMemberScripts)&&(identical(other.applyNodeOverrides, applyNodeOverrides) || other.applyNodeOverrides == applyNodeOverrides)&&(identical(other.overrideData, overrideData) || other.overrideData == overrideData));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _AggregateProfile&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.baseProfileId, baseProfileId) || other.baseProfileId == baseProfileId)&&const DeepCollectionEquality().equals(other.memberIds, _memberIds)&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.scriptTiming, scriptTiming) || other.scriptTiming == scriptTiming)&&(identical(other.mergeNodes, mergeNodes) || other.mergeNodes == mergeNodes)&&(identical(other.mergeGroups, mergeGroups) || other.mergeGroups == mergeGroups)&&(identical(other.mergeRules, mergeRules) || other.mergeRules == mergeRules)&&(identical(other.mergeRuleProviders, mergeRuleProviders) || other.mergeRuleProviders == mergeRuleProviders)&&(identical(other.mergeMemberScripts, mergeMemberScripts) || other.mergeMemberScripts == mergeMemberScripts)&&(identical(other.applyNodeOverrides, applyNodeOverrides) || other.applyNodeOverrides == applyNodeOverrides)&&(identical(other.overrideData, overrideData) || other.overrideData == overrideData));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,id,name,const DeepCollectionEquality().hash(_memberIds),mode,scriptTiming,mergeNodes,mergeGroups,mergeRules,mergeRuleProviders,mergeMemberScripts,applyNodeOverrides,overrideData);
+    return Object.hash(runtimeType,id,name,baseProfileId,const DeepCollectionEquality().hash(_memberIds),mode,scriptTiming,mergeNodes,mergeGroups,mergeRules,mergeRuleProviders,mergeMemberScripts,applyNodeOverrides,overrideData);
 }
 
 @override
 String toString() {
-    return 'AggregateProfile(id: $id, name: $name, memberIds: $memberIds, mode: $mode, scriptTiming: $scriptTiming, mergeNodes: $mergeNodes, mergeGroups: $mergeGroups, mergeRules: $mergeRules, mergeRuleProviders: $mergeRuleProviders, mergeMemberScripts: $mergeMemberScripts, applyNodeOverrides: $applyNodeOverrides, overrideData: $overrideData)';
+    return 'AggregateProfile(id: $id, name: $name, baseProfileId: $baseProfileId, memberIds: $memberIds, mode: $mode, scriptTiming: $scriptTiming, mergeNodes: $mergeNodes, mergeGroups: $mergeGroups, mergeRules: $mergeRules, mergeRuleProviders: $mergeRuleProviders, mergeMemberScripts: $mergeMemberScripts, applyNodeOverrides: $applyNodeOverrides, overrideData: $overrideData)';
 }
 
 
@@ -3222,7 +3224,7 @@ abstract mixin class _$AggregateProfileCopyWith<$Res> implements $AggregateProfi
   factory _$AggregateProfileCopyWith(_AggregateProfile value, $Res Function(_AggregateProfile) _then) = __$AggregateProfileCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String name, List<String> memberIds, AggregateMode? mode, AggregateScriptTiming? scriptTiming, bool? mergeNodes, bool? mergeGroups, bool? mergeRules, bool? mergeRuleProviders, bool? mergeMemberScripts, bool? applyNodeOverrides, OverrideData? overrideData
+ String id, String name, String? baseProfileId, List<String> memberIds, AggregateMode? mode, AggregateScriptTiming? scriptTiming, bool? mergeNodes, bool? mergeGroups, bool? mergeRules, bool? mergeRuleProviders, bool? mergeMemberScripts, bool? applyNodeOverrides, OverrideData? overrideData
 });
 
 
@@ -3239,11 +3241,12 @@ class __$AggregateProfileCopyWithImpl<$Res>
 
 /// Create a copy of AggregateProfile
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? memberIds = null,Object? mode = freezed,Object? scriptTiming = freezed,Object? mergeNodes = freezed,Object? mergeGroups = freezed,Object? mergeRules = freezed,Object? mergeRuleProviders = freezed,Object? mergeMemberScripts = freezed,Object? applyNodeOverrides = freezed,Object? overrideData = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? baseProfileId = freezed,Object? memberIds = null,Object? mode = freezed,Object? scriptTiming = freezed,Object? mergeNodes = freezed,Object? mergeGroups = freezed,Object? mergeRules = freezed,Object? mergeRuleProviders = freezed,Object? mergeMemberScripts = freezed,Object? applyNodeOverrides = freezed,Object? overrideData = freezed,}) {
   return _then(_AggregateProfile(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
-as String,memberIds: null == memberIds ? _self._memberIds : memberIds // ignore: cast_nullable_to_non_nullable
+as String,baseProfileId: freezed == baseProfileId ? _self.baseProfileId : baseProfileId // ignore: cast_nullable_to_non_nullable
+as String?,memberIds: null == memberIds ? _self._memberIds : memberIds // ignore: cast_nullable_to_non_nullable
 as List<String>,mode: freezed == mode ? _self.mode : mode // ignore: cast_nullable_to_non_nullable
 as AggregateMode?,scriptTiming: freezed == scriptTiming ? _self.scriptTiming : scriptTiming // ignore: cast_nullable_to_non_nullable
 as AggregateScriptTiming?,mergeNodes: freezed == mergeNodes ? _self.mergeNodes : mergeNodes // ignore: cast_nullable_to_non_nullable

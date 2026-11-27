@@ -29,6 +29,20 @@ void main() {
     expect(config.effectiveMergeRules, isTrue);
   });
 
+  test('aggregate keeps its own base subscription across app restarts', () {
+    const aggregate = AggregateProfile(
+      id: 'work',
+      name: 'Work',
+      baseProfileId: 'base',
+      memberIds: ['member'],
+    );
+
+    final restored = AggregateProfile.fromJson(aggregate.toJson());
+
+    expect(restored.baseProfileId, 'base');
+    expect(restored.memberIds, ['member']);
+  });
+
   test('default aggregate falls back to global merge settings', () {
     final config = Config(
       themeProps: defaultThemeProps,
