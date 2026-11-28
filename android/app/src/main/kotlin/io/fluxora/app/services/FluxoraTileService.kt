@@ -32,6 +32,11 @@ class FluxoraTileService : TileService() {
 
     private var scope: CoroutineScope? = null
 
+    private fun stopListeningScope() {
+        scope?.cancel()
+        scope = null
+    }
+
     private fun updateTile(runState: RunState) {
         qsTile?.apply {
             state = when (runState) {
@@ -50,7 +55,9 @@ class FluxoraTileService : TileService() {
 
     override fun onStartListening() {
         super.onStartListening()
+        activeInstance?.takeIf { it !== this }?.stopListeningScope()
         activeInstance = this
+        stopListeningScope()
         scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
         GlobalState.syncStatus()
         scope?.launch {
@@ -62,8 +69,7 @@ class FluxoraTileService : TileService() {
         if (activeInstance === this) {
             activeInstance = null
         }
-        scope?.cancel()
-        scope = null
+        stopListeningScope()
         super.onStopListening()
     }
 
@@ -99,8 +105,7 @@ class FluxoraTileService : TileService() {
         if (activeInstance === this) {
             activeInstance = null
         }
-        scope?.cancel()
-        scope = null
+        stopListeningScope()
         super.onDestroy()
     }
 }

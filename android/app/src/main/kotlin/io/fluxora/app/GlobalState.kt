@@ -53,7 +53,10 @@ object GlobalState {
     const val NOTIFICATION_ID = 1
 
     private const val TOGGLE_DEBOUNCE_MS = 1000L
-    private const val PENDING_TIMEOUT_MS = 5000L
+    // The Android service bind has its own 10-second timeout. Keep this state
+    // watchdog longer so a cold tile start is not reset before that bind can
+    // finish on a slower device.
+    private const val PENDING_TIMEOUT_MS = 15_000L
     private const val PENDING_TIMEOUT_RETRIES = 2
     private const val STOP_LOCK_TIMEOUT_MS = 5000L
     private const val VPN_STATE_PREFS = "vpn_state"

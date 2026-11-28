@@ -192,6 +192,7 @@ class AppController {
     bool refreshData = true,
     bool requireWindowsHelper = false,
   }) async {
+    final restartTimer = Stopwatch()..start();
     commonPrint.log('restart core');
     _appliedPortSettings = null;
     _invalidateCoreReads();
@@ -238,7 +239,7 @@ class AppController {
     if (wasRunning && setupConfig && !configured) {
       throw StateError(appLocalizations.checkOrAddProfile);
     }
-    if (refreshData && configured) {
+    if (refreshData && configured && !wasRunning) {
       await updateGroups();
       await updateProviders();
       scheduleIdleGc();
@@ -265,11 +266,36 @@ class AppController {
       if (_ref.read(runTimeProvider) == null) {
         _ref.read(runTimeProvider.notifier).value = 0;
       }
+      commonPrint.log(
+        'Core restart restored the VPN tunnel in ${restartTimer.elapsedMilliseconds} ms',
+      );
       _scheduleCheckIpRefresh();
       if (system.isDesktop && _ref.read(realTunEnableProvider)) {
         unawaited(_observeTun());
       }
-      _backgroundLoad();
+      if (refreshData && configured) {
+        final version = _backgroundLoadVersion;
+        // A detached refresh must not inherit the reentrant restart lock.
+        Zone.root.run(() => unawaited(_refreshCoreDataAfterRestart(version)));
+      } else {
+        _backgroundLoad();
+      }
+    }
+  }
+
+  Future<void> _refreshCoreDataAfterRestart(int version) async {
+    bool isCurrent() => context.mounted && version == _backgroundLoadVersion;
+    try {
+      await _coreLifecycleLock.synchronized(() async {
+        if (isCurrent()) await _updateGroups();
+      });
+      if (!isCurrent()) return;
+      final providers = await clashCore.getExternalProviders();
+      if (!isCurrent()) return;
+      _ref.read(providersProvider.notifier).value = providers;
+      scheduleIdleGc();
+    } catch (error) {
+      commonPrint.log('Core restart background refresh failed: $error');
     }
   }
 
