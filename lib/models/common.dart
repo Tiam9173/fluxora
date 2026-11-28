@@ -3,6 +3,7 @@
 import 'dart:io';
 import 'dart:math';
 
+import 'package:fluxora/common/atomic_file.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/enum/enum.dart';
 import 'package:flutter/material.dart';
@@ -949,11 +950,7 @@ extension ScriptExt on Script {
   /// crash mid-write can never leave a half-written script behind. The config
   /// only keeps the digest afterwards.
   Future<Script> writeContent(String value) async {
-    final path = await appPath.getScriptPath(id);
-    final temp = File('$path.${DateTime.now().microsecondsSinceEpoch}.tmp');
-    await temp.parent.create(recursive: true);
-    await temp.writeAsString(value, flush: true);
-    await temp.rename(path);
+    await writeTextAtomically(File(await appPath.getScriptPath(id)), value);
     return copyWith(
       content: '',
       digest: value.toMd5(),

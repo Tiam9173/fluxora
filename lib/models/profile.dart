@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:fluxora/clash/core.dart';
+import 'package:fluxora/common/atomic_file.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/enum/enum.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -221,8 +222,9 @@ extension ProfileExtension on Profile {
   }
 
   Future<int> get profileLastModified async {
-    final file = await getFile();
-    return (await file.lastModified()).microsecondsSinceEpoch;
+    final file = File(await appPath.getProfilePath(id));
+    if (!await file.exists()) return 0;
+    return (await file.stat()).modified.microsecondsSinceEpoch;
   }
 
   Future<Profile> update({bool validate = true}) async {
@@ -276,8 +278,7 @@ extension ProfileExtension on Profile {
         }
       }
     }
-    final file = await getFile();
-    await file.writeAsString(content);
+    await writeTextAtomically(File(await appPath.getProfilePath(id)), content);
     return copyWith(lastUpdateDate: DateTime.now());
   }
 
@@ -315,8 +316,7 @@ extension ProfileExtension on Profile {
         throw message;
       }
     }
-    final file = await getFile();
-    await file.writeAsString(content);
+    await writeTextAtomically(File(await appPath.getProfilePath(id)), content);
     return copyWith(lastUpdateDate: DateTime.now());
   }
 }

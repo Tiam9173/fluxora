@@ -6,6 +6,7 @@ import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:fluxora/clash/clash.dart';
+import 'package:fluxora/common/atomic_file.dart';
 import 'package:fluxora/common/theme.dart';
 import 'package:fluxora/common/provider_script.dart';
 import 'package:fluxora/enum/enum.dart';
@@ -856,18 +857,7 @@ class GlobalState {
   }) async {
     final content = await encodeCompactYamlTask(clashConfig);
     final configPath = path ?? await appPath.configFilePath;
-    final tempFile = File('$configPath.tmp');
-    await tempFile.parent.create(recursive: true);
-    await tempFile.writeAsString(content, flush: true);
-    try {
-      await tempFile.rename(configPath);
-    } catch (_) {
-      final targetFile = File(configPath);
-      if (await targetFile.exists()) {
-        await targetFile.delete();
-      }
-      await tempFile.rename(configPath);
-    }
+    await writeTextAtomically(File(configPath), content);
   }
 
   Future<Map<String, dynamic>> patchRawConfig({
@@ -1555,10 +1545,9 @@ class GlobalState {
       throw StateError('aggregate member has no usable proxies');
     }
     final directoryPath = await appPath.getProvidersDirPath(profileId);
-    await Directory(directoryPath).create(recursive: true);
     final file = File(p.join(directoryPath, 'aggregate_nodes.yaml'));
     final content = await encodeYamlTask({'proxies': proxies});
-    await file.writeAsString(content, flush: true);
+    await writeTextAtomically(file, content);
     return file.path;
   }
 
