@@ -35,10 +35,7 @@ class GlassSurface extends StatelessWidget {
         material.blurEnabled &&
         !hasBlur;
     final fill = material.fill(scheme, floating: floating);
-    final panel =
-        (material.isObsidian || material.liquid) &&
-        material.blurEnabled &&
-        !useBlur;
+    final panel = material.blurEnabled && !useBlur;
     Widget surface = DecoratedBox(
       decoration: BoxDecoration(
         color: material.liquid && useBlur
@@ -68,7 +65,7 @@ class GlassSurface extends StatelessWidget {
         child: _GlassBlurScope(hasBlur: hasBlur || useBlur, child: child),
       ),
     );
-    if (panel) {
+    if (panel && (floating || material.isObsidian || material.liquid)) {
       surface = CustomPaint(
         foregroundPainter: _PanelRim(radius, scheme.brightness),
         child: surface,
@@ -195,7 +192,50 @@ class GlassCanvas extends StatelessWidget {
             : null,
         color: scheme.surface,
       ),
-      child: child,
+      child: CustomPaint(
+        painter:
+            material.blurEnabled &&
+                !material.isObsidian &&
+                scheme.surface != Colors.black
+            ? _NebulaPainter(scheme)
+            : null,
+        child: child,
+      ),
     );
   }
+}
+
+class _NebulaPainter extends CustomPainter {
+  const _NebulaPainter(this.scheme);
+  final ColorScheme scheme;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+    final bounds = Offset.zero & size;
+    final dark = scheme.brightness == Brightness.dark;
+    canvas.save();
+    canvas.clipRect(bounds);
+    for (final (center, color) in [
+      (Offset(size.width * .9, 0), scheme.primary),
+      (Offset(0, size.height * .4), scheme.secondary),
+    ]) {
+      final radius = size.shortestSide.clamp(280.0, 600.0) * .8;
+      canvas.drawCircle(
+        center,
+        radius,
+        Paint()
+          ..shader = RadialGradient(
+            colors: [
+              color.withValues(alpha: dark ? .08 : .06),
+              color.withValues(alpha: 0),
+            ],
+          ).createShader(Rect.fromCircle(center: center, radius: radius)),
+      );
+    }
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_NebulaPainter old) => old.scheme != scheme;
 }

@@ -355,13 +355,17 @@ class AppSidebarContainer extends ConsumerWidget {
   Widget _buildBackground({
     required BuildContext context,
     required Widget child,
+    required double minHeight,
   }) {
     final material = FluxoraMaterial.of(context);
     return GlassSurface(
-      floating: true,
+      floating: false,
       readable: true,
       border: false,
       child: Container(
+        constraints: BoxConstraints(
+          minHeight: minHeight.clamp(0, double.infinity),
+        ),
         decoration: BoxDecoration(
           color: material.enabled
               ? Colors.transparent
@@ -436,6 +440,10 @@ class AppSidebarContainer extends ConsumerWidget {
                             ),
                             child: _buildBackground(
                               context: context,
+                              minHeight:
+                                  constraints.maxHeight -
+                                  MediaQuery.viewPaddingOf(context).vertical -
+                                  (system.isMacOS ? 38 : 24),
                               child: CallbackShortcuts(
                                 bindings: <ShortcutActivator, VoidCallback>{
                                   const SingleActivator(
@@ -531,7 +539,7 @@ class AppSidebarContainer extends ConsumerWidget {
           ],
         );
         // The sidebar sits outside the Navigator's overlay.
-        return Overlay.wrap(child: layout);
+        return Overlay.wrap(child: GlassCanvas(child: layout));
       },
     );
   }

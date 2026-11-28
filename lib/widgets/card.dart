@@ -143,7 +143,11 @@ class CommonCard extends StatelessWidget {
 
   BorderSide getBorderSide(BuildContext context, Set<WidgetState> states) {
     final colorScheme = context.colorScheme;
-    if (type == CommonCardType.filled) {
+    if (type == CommonCardType.filled &&
+        !isSelected &&
+        !states.contains(WidgetState.focused) &&
+        !states.contains(WidgetState.hovered) &&
+        !states.contains(WidgetState.pressed)) {
       return BorderSide.none;
     }
     final hoverColor = isSelected
@@ -248,7 +252,11 @@ class CommonCard extends StatelessWidget {
         (type != CommonCardType.filled ||
             material.isObsidian ||
             material.liquid)) {
-      card = GlassSurface(radius: actualRadius, border: false, child: card);
+      card = GlassSurface(
+        radius: actualRadius,
+        border: type == CommonCardType.filled && !isSelected,
+        child: card,
+      );
     }
 
     return switch (enterAnimated) {

@@ -409,6 +409,58 @@ void main() {
     return container;
   }
 
+  for (final size in [const Size(390, 844), const Size(1200, 820)]) {
+    for (final brightness in Brightness.values) {
+      for (final page in [
+        PageLabel.dashboard,
+        PageLabel.proxies,
+        PageLabel.profiles,
+        PageLabel.tools,
+      ]) {
+        testWidgets(
+          'cosmic pages ${size.width.toInt()} ${brightness.name} ${page.name}',
+          (tester) async {
+            await show(
+              tester,
+              size: size,
+              brightness: brightness,
+              page: page,
+              groups: [
+                Group(
+                  type: GroupType.Selector,
+                  name: '节点选择',
+                  all: const [
+                    Proxy(name: '东京 · 高速线路 01', type: 'VLESS'),
+                    Proxy(name: '新加坡 · 长名称节点用于验证窄屏显示 02', type: 'Trojan'),
+                    Proxy(name: '法兰克福 03', type: 'Shadowsocks'),
+                  ],
+                ),
+              ],
+            );
+            expect(tester.takeException(), isNull);
+            final filters = find.byType(BackdropFilter);
+            expect(
+              filters.evaluate().length,
+              lessThanOrEqualTo(size.width < 1000 ? 1 : 0),
+            );
+            for (final element in filters.evaluate()) {
+              expect(
+                tester.getSize(find.byWidget(element.widget)).height,
+                lessThan(120),
+              );
+            }
+            await capture(
+              tester,
+              'cosmic-${size.width.toInt()}-${brightness.name}-${page.name}',
+            );
+            await tester.pumpWidget(const SizedBox());
+            await tester.pump(const Duration(seconds: 1));
+          },
+        );
+      }
+    }
+  }
+
   testWidgets('notification content switches are independent', (tester) async {
     const node = '东京 · 高速线路 01';
     final container = await show(

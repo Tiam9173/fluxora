@@ -187,6 +187,8 @@ ThemeData fluxoraMaterialTheme(
     ),
     appBarTheme: base.appBarTheme.copyWith(
       surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      scrolledUnderElevation: 0,
     ),
     snackBarTheme: base.snackBarTheme.copyWith(
       shape: RoundedRectangleBorder(
@@ -274,6 +276,7 @@ ColorScheme fluxoraSchemeFromSeed({
     surfaceContainer: fluxora.surfaceContainer,
     surfaceContainerHigh: fluxora.surfaceContainerHigh,
     surfaceContainerHighest: fluxora.surfaceContainerHighest,
+    onSurface: fluxora.onSurface,
     // Lines.
     outline: fluxora.outline,
     outlineVariant: fluxora.outlineVariant,

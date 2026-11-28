@@ -148,6 +148,47 @@ void main() {
     ),
   };
 
+  testWidgets('IP information fields update immediately and can be restored', (
+    tester,
+  ) async {
+    final container = await pump(
+      tester,
+      const NetworkIpInfoDialog(
+        info: IpInfo(
+          ip: '192.0.2.1',
+          countryCode: 'JP',
+          country: 'Japan',
+          city: 'Tokyo',
+          isp: 'Example ISP',
+          asn: 'AS64500',
+        ),
+      ),
+      size: const Size(360, 780),
+    );
+    expect(find.text('Example ISP'), findsOneWidget);
+    await tester.tap(find.text(appLocalizations.ipInfoFieldsTitle));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('ip-info-field-isp')));
+    await tester.pump();
+    expect(
+      container.read(appSettingProvider).networkInfoFields,
+      isNot(contains('isp')),
+    );
+    await tester.tap(find.text(appLocalizations.confirm).last);
+    await tester.pumpAndSettle();
+    expect(find.text('Example ISP'), findsNothing);
+    expect(find.text('192.0.2.1'), findsOneWidget);
+    await tester.tap(find.text(appLocalizations.ipInfoFieldsTitle));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(appLocalizations.reset));
+    await tester.pump();
+    expect(
+      container.read(appSettingProvider).networkInfoFields,
+      defaultAppSettingProps.networkInfoFields,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   void expectOnlyPreviewBlur() {
     final previewFilters = find
         .descendant(

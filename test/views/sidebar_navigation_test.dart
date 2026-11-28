@@ -11,6 +11,7 @@ import 'package:fluxora/models/models.dart';
 import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/widgets/aurora_navigation_rail.dart';
+import 'package:fluxora/widgets/glass_surface.dart';
 import 'package:fluxora/widgets/liquid_backdrop.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -194,7 +195,7 @@ void main() {
     },
   );
 
-  testWidgets('desktop navigation is a compact top aligned surface', (
+  testWidgets('desktop navigation fills the available top aligned surface', (
     tester,
   ) async {
     await pumpSidebar(tester);
@@ -203,8 +204,8 @@ void main() {
     expect(tester.getTopLeft(rail).dy, lessThan(80));
     expect(
       tester.getSize(rail).height,
-      lessThan(500),
-      reason: 'the glass surface should end shortly after its destinations',
+      greaterThan(700),
+      reason: 'the sidebar panel should span the available desktop height',
     );
     expect(
       find.descendant(of: rail, matching: getToggle()),
@@ -215,7 +216,7 @@ void main() {
     await tester.tap(getToggle());
     await tester.pumpAndSettle();
     expect(tester.getTopLeft(rail).dy, lessThan(80));
-    expect(tester.getSize(rail).height, lessThan(500));
+    expect(tester.getSize(rail).height, greaterThan(700));
     expect(tester.takeException(), isNull);
   });
 
@@ -302,7 +303,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('liquid material remains visible on desktop rail at both widths', (
+  testWidgets('desktop rail keeps a static glass panel across themes and widths', (
     tester,
   ) async {
     for (final brightness in Brightness.values) {
@@ -323,9 +324,24 @@ void main() {
         expect(
           find.descendant(
             of: getSidebar(),
-            matching: find.byType(LiquidBackdrop),
+            matching: find.byType(GlassSurface),
           ),
           findsOneWidget,
+        );
+        expect(
+          find.descendant(
+            of: getSidebar(),
+            matching: find.byType(LiquidBackdrop),
+          ),
+          findsNothing,
+          reason: 'the full-height rail uses a static panel to avoid a large blur',
+        );
+        expect(
+          find.descendant(
+            of: getSidebar(),
+            matching: find.byType(BackdropFilter),
+          ),
+          findsNothing,
         );
         expect(tester.takeException(), isNull);
         final boundary = tester.renderObject<RenderRepaintBoundary>(

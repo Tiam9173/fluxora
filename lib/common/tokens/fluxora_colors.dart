@@ -23,7 +23,7 @@ abstract final class FluxoraColors {
   static const flowViolet = Color(0xFF7C75FF);
 
   /// Default UI accent; cyan remains a detail of the brand mark.
-  static const brandSeed = flowViolet;
+  static const brandSeed = Color(0xFF6366F1);
 
   // ─────────────────────────────────────────────────────────────────────────
   // Neutral (Slate family — matches the values already used across the app)
@@ -91,13 +91,13 @@ abstract final class FluxoraColors {
     onTertiary: Color(0xFFFFFFFF),
     tertiaryContainer: Color(0xFFE3DFFF),
     onTertiaryContainer: Color(0xFF170065),
-    background: Color(0xFFF6F7FC),
-    onBackground: Color(0xFF1E293B),
+    background: Color(0xFFF7F9FF),
+    onBackground: Color(0xFF172642),
     surface: Color(0xFFFFFFFF),
-    onSurface: Color(0xFF1E293B),
-    surfaceContainer: Color(0xFFF0F1F8),
-    surfaceContainerHigh: Color(0xFFE7E9F3),
-    surfaceContainerHighest: Color(0xFFDDE0EF),
+    onSurface: Color(0xFF172642),
+    surfaceContainer: Color(0xFFEDF2FF),
+    surfaceContainerHigh: Color(0xFFE6ECFA),
+    surfaceContainerHighest: Color(0xFFDEE6F6),
     outline: Color(0xFFCBD5E1),
     outlineVariant: Color(0xFFE2E8ED),
     success: Color(0xFF006D4B),
@@ -130,16 +130,16 @@ abstract final class FluxoraColors {
     onTertiary: Color(0xFF2B1F86),
     tertiaryContainer: Color(0xFF4239AC),
     onTertiaryContainer: Color(0xFFE3DFFF),
-    background: Color(0xFF090B14),
-    onBackground: Color(0xFFF1F5F9),
-    surface: Color(0xFF10131F),
-    onSurface: Color(0xFFF1F5F9),
-    surfaceContainer: Color(0xFF171B2C),
-    surfaceContainerHigh: Color(0xFF20263B),
-    surfaceContainerHighest: Color(0xFF2A3149),
+    background: Color(0xFF0A0E1A),
+    onBackground: Color(0xFFEAF0FF),
+    surface: Color(0xFF0F192B),
+    onSurface: Color(0xFFEAF0FF),
+    surfaceContainer: Color(0xFF152137),
+    surfaceContainerHigh: Color(0xFF1D2B43),
+    surfaceContainerHighest: Color(0xFF293952),
     outline: Color(0xFF334155),
     outlineVariant: Color(0xFF243049),
-    success: Color(0xFF5CDBA0),
+    success: Color(0xFF52DEC2),
     onSuccess: Color(0xFF003824),
     warning: Color(0xFFFFB951),
     onWarning: Color(0xFF462A00),

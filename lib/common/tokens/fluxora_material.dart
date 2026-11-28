@@ -65,8 +65,8 @@ class FluxoraMaterial extends ThemeExtension<FluxoraMaterial> {
 
   Color border(ColorScheme scheme) => scheme.onSurface.withValues(
     alpha: scheme.brightness == Brightness.dark
-        ? .10 + .12 * strength
-        : .08 + .08 * strength,
+        ? .07 + .09 * strength
+        : .09 + .08 * strength,
   );
 
   /// Colour and depth for content panels; optical filters belong to overlays.
@@ -77,12 +77,12 @@ class FluxoraMaterial extends ThemeExtension<FluxoraMaterial> {
       end: Alignment.bottomRight,
       colors: [
         Color.alphaBlend(
-          Colors.white.withValues(alpha: dark ? .055 : .92),
+          Colors.white.withValues(alpha: dark ? .025 : .72),
           scheme.surfaceContainer,
         ),
         scheme.surfaceContainerLow,
         Color.alphaBlend(
-          scheme.primary.withValues(alpha: dark ? .075 : .035),
+          scheme.primary.withValues(alpha: dark ? .045 : .025),
           scheme.surfaceContainerLow,
         ),
       ],
