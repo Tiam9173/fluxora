@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/metacubex/mihomo/common/atomic"
@@ -29,13 +30,16 @@ const (
 type internalProxyState struct {
 	alive   atomic.Bool
 	history *queue.Queue[C.DelayHistory]
+	testMu  sync.Mutex
+	testID  uint64
 }
 
 type Proxy struct {
 	C.ProxyAdapter
-	alive   atomic.Bool
-	history *queue.Queue[C.DelayHistory]
-	extra   xsync.Map[string, *internalProxyState]
+	alive     atomic.Bool
+	history   *queue.Queue[C.DelayHistory]
+	historyMu sync.Mutex
+	extra     xsync.Map[string, *internalProxyState]
 }
 
 // Adapter implements C.Proxy
@@ -165,10 +169,24 @@ func (p *Proxy) MarshalJSON() ([]byte, error) {
 // implements C.Proxy
 func (p *Proxy) URLTest(ctx context.Context, url string, expectedStatus utils.IntRanges[uint16]) (t uint16, err error) {
 	var satisfied bool
+	state, _ := p.extra.LoadOrStoreFn(url, func() *internalProxyState {
+		return &internalProxyState{
+			history: queue.New[C.DelayHistory](defaultHistoriesNum),
+			alive:   atomic.NewBool(true),
+		}
+	})
+	state.testMu.Lock()
+	state.testID++
+	testID := state.testID
+	state.testMu.Unlock()
 
 	defer func() {
-		if UrlTestHook != nil {
-			UrlTestHook(url, p.Name(), t)
+		state.testMu.Lock()
+		defer state.testMu.Unlock()
+		// Multiple groups can probe the same node. A slower, older probe must
+		// not overwrite the latest probe's health or broadcast a stale delay.
+		if testID != state.testID {
+			return
 		}
 
 		alive := err == nil
@@ -177,18 +195,15 @@ func (p *Proxy) URLTest(ctx context.Context, url string, expectedStatus utils.In
 			record.Delay = t
 		}
 
+		// A proxy's aggregate history is shared by groups that can use different
+		// test URLs. Keep its append/trim transaction serialized across them.
+		p.historyMu.Lock()
 		p.alive.Store(alive)
 		p.history.Put(record)
 		if p.history.Len() > defaultHistoriesNum {
 			p.history.Pop()
 		}
-
-		state, _ := p.extra.LoadOrStoreFn(url, func() *internalProxyState {
-			return &internalProxyState{
-				history: queue.New[C.DelayHistory](defaultHistoriesNum),
-				alive:   atomic.NewBool(true),
-			}
-		})
+		p.historyMu.Unlock()
 
 		if !satisfied {
 			record.Delay = 0
@@ -200,7 +215,9 @@ func (p *Proxy) URLTest(ctx context.Context, url string, expectedStatus utils.In
 		if state.history.Len() > defaultHistoriesNum {
 			state.history.Pop()
 		}
-
+		if hook := UrlTestHook; hook != nil {
+			hook(url, p.Name(), record.Delay)
+		}
 	}()
 
 	unifiedDelay := UnifiedDelay.Load()

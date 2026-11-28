@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"sync/atomic"
 
 	"github.com/metacubex/mihomo/adapter/inbound"
 	N "github.com/metacubex/mihomo/common/net"
@@ -20,7 +21,7 @@ import (
 )
 
 type Listener struct {
-	closed       bool
+	closed       atomic.Bool
 	config       LC.ShadowsocksServer
 	listeners    []net.Listener
 	udpListeners []*UDPListener
@@ -29,7 +30,7 @@ type Listener struct {
 	simpleObfs   func(net.Conn) net.Conn
 }
 
-var _listener *Listener
+var _listener atomic.Pointer[Listener]
 
 func New(config LC.ShadowsocksServer, lc C.InboundListenConfig, tunnel C.Tunnel, additions ...inbound.Addition) (*Listener, error) {
 	pickCipher, err := core.PickCipher(config.Cipher, nil, config.Password)
@@ -48,7 +49,6 @@ func New(config LC.ShadowsocksServer, lc C.InboundListenConfig, tunnel C.Tunnel,
 	}
 
 	sl := &Listener{config: config, pickCipher: pickCipher, handler: h}
-	_listener = sl
 
 	securityModes := make([]string, 0, 3)
 	if config.ShadowTLS.Enable {
@@ -126,7 +126,7 @@ func New(config LC.ShadowsocksServer, lc C.InboundListenConfig, tunnel C.Tunnel,
 			for {
 				c, err := l.Accept()
 				if err != nil {
-					if sl.closed {
+					if sl.closed.Load() {
 						break
 					}
 					continue
@@ -136,11 +136,15 @@ func New(config LC.ShadowsocksServer, lc C.InboundListenConfig, tunnel C.Tunnel,
 		}()
 	}
 
+	// Publish only a fully initialized listener; exported helpers may be called
+	// concurrently while listeners are being replaced during config reloads.
+	_listener.Store(sl)
 	return sl, nil
 }
 
 func (l *Listener) Close() error {
-	l.closed = true
+	l.closed.Store(true)
+	_listener.CompareAndSwap(l, nil)
 	var retErr error
 	for _, lis := range l.listeners {
 		err := lis.Close()
@@ -195,8 +199,9 @@ func (l *Listener) HandleConn(conn net.Conn, tunnel C.Tunnel, additions ...inbou
 }
 
 func HandleShadowSocks(conn net.Conn, tunnel C.Tunnel, additions ...inbound.Addition) bool {
-	if _listener != nil && _listener.pickCipher != nil {
-		go _listener.HandleConn(conn, tunnel, additions...)
+	listener := _listener.Load()
+	if listener != nil && listener.pickCipher != nil && !listener.closed.Load() {
+		go listener.HandleConn(conn, tunnel, additions...)
 		return true
 	}
 	return false

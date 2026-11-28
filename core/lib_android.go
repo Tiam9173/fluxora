@@ -4,7 +4,6 @@ package main
 
 import "C"
 import (
-	"context"
 	bridge "core/dart-bridge"
 	"core/platform"
 	"core/state"
@@ -18,7 +17,6 @@ import (
 	"github.com/metacubex/mihomo/dns"
 	"github.com/metacubex/mihomo/listener/sing_tun"
 	"github.com/metacubex/mihomo/log"
-	"golang.org/x/sync/semaphore"
 	"net"
 	"strconv"
 	"sync"
@@ -32,41 +30,48 @@ type TunHandler struct {
 	listener *sing_tun.Listener
 	callback unsafe.Pointer
 
-	limit *semaphore.Weighted
+	callbacks *tunCallbackGate
+	ready     atomic.Bool
 }
 
 func (t *TunHandler) close() {
-	_ = t.limit.Acquire(context.TODO(), 4)
-	defer t.limit.Release(4)
+	t.ready.Store(false)
 	removeTunHook()
-	if t.listener != nil {
-		_ = t.listener.Close()
-	}
-
-	if t.callback != nil {
-		releaseObject(t.callback)
-	}
-	t.callback = nil
-	t.listener = nil
+	t.callbacks.close(func() {
+		if t.listener != nil {
+			_ = t.listener.Close()
+		}
+	}, func() {
+		if t.callback != nil {
+			releaseObject(t.callback)
+		}
+		t.callback = nil
+		t.listener = nil
+	})
 }
 
-func (t *TunHandler) handleProtect(fd int) {
-	_ = t.limit.Acquire(context.Background(), 1)
-	defer t.limit.Release(1)
+func (t *TunHandler) handleProtect(fd int) bool {
+	if !t.callbacks.enter() {
+		return false
+	}
+	defer t.callbacks.leave()
 
 	cb := t.callback
 	if cb == nil {
-		return
+		return false
 	}
 
 	Protect(cb, fd)
+	return true
 }
 
 func (t *TunHandler) handleResolveProcess(source, target net.Addr) string {
-	_ = t.limit.Acquire(context.Background(), 1)
-	defer t.limit.Release(1)
+	if !t.callbacks.enter() {
+		return ""
+	}
+	defer t.callbacks.leave()
 
-	if t.listener == nil {
+	if !t.ready.Load() {
 		return ""
 	}
 	var protocol int
@@ -97,9 +102,16 @@ func init() {
 		}
 		handler := tunHandler.Load()
 		if handler != nil {
-			return conn.Control(func(fd uintptr) {
-				handler.handleProtect(int(fd))
+			protected := false
+			err := conn.Control(func(fd uintptr) {
+				protected = handler.handleProtect(int(fd))
 			})
+			if err != nil {
+				return err
+			}
+			if !protected {
+				return net.ErrClosed
+			}
 		}
 		return nil
 	}
@@ -108,6 +120,10 @@ func init() {
 func handleStopTun() {
 	tunLock.Lock()
 	defer tunLock.Unlock()
+	stopTunLocked()
+}
+
+func stopTunLocked() {
 	runTime = nil
 	handler := tunHandler.Swap(nil)
 	if handler != nil {
@@ -116,9 +132,9 @@ func handleStopTun() {
 }
 
 func handleStartTun(fd int, callback unsafe.Pointer) bool {
-	handleStopTun()
 	tunLock.Lock()
 	defer tunLock.Unlock()
+	stopTunLocked()
 	if fd != 0 {
 		if currentConfig == nil {
 			log.Warnln("[APP] handleStartTun called before setupConfig")
@@ -127,8 +143,8 @@ func handleStartTun(fd int, callback unsafe.Pointer) bool {
 			return false
 		}
 		handler := &TunHandler{
-			callback: callback,
-			limit:    semaphore.NewWeighted(4),
+			callback:  callback,
+			callbacks: newTunCallbackGate(),
 		}
 		tunHandler.Store(handler)
 		initTunHook()
@@ -136,6 +152,7 @@ func handleStartTun(fd int, callback unsafe.Pointer) bool {
 		if tunListener != nil {
 			log.Infoln("TUN address: %v", tunListener.Address())
 			handler.listener = tunListener
+			handler.ready.Store(true)
 		} else {
 			tunHandler.Store(nil)
 			handler.close()
