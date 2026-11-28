@@ -176,6 +176,7 @@ class Tray {
       }
       menuItems.add(MenuItem.separator());
       if (trayState.trayEnhancement) {
+        final quickSwitchItems = <MenuItem>[];
         for (final group in trayState.groups) {
           List<MenuItem> subMenuItems = [];
 
@@ -218,22 +219,25 @@ class Tray {
                     ) ==
                     proxy.name,
                 onClick: (_) {
-                  globalState.appController.selectProxy(
-                    group.name,
-                    proxy.name,
-                  );
+                  globalState.appController.selectProxy(group.name, proxy.name);
                 },
               ),
             );
           }
-          menuItems.add(
+          quickSwitchItems.add(
             MenuItem.submenu(
               label: group.name,
               submenu: Menu(items: subMenuItems),
             ),
           );
         }
-        if (trayState.groups.isNotEmpty) {
+        if (quickSwitchItems.isNotEmpty) {
+          menuItems.add(
+            MenuItem.submenu(
+              label: appLocalizations.quickSwitch,
+              submenu: Menu(items: quickSwitchItems),
+            ),
+          );
           menuItems.add(MenuItem.separator());
         }
       }

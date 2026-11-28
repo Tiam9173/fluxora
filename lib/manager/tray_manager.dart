@@ -39,7 +39,7 @@ class _TrayContainerState extends ConsumerState<TrayManager> with TrayListener {
     if (system.isWindows) {
       if (isRightClick) {
         // ignore: deprecated_member_use
-        await trayManager.popUpContextMenu(bringAppToFront: true);
+        await trayManager.popUpContextMenu(bringAppToFront: false);
       } else {
         window?.show();
       }
@@ -57,7 +57,7 @@ class _TrayContainerState extends ConsumerState<TrayManager> with TrayListener {
         : vpnProps.trayLeftClickBehavior;
     if (behavior == TrayClickBehavior.showMenu) {
       // ignore: deprecated_member_use
-      await trayManager.popUpContextMenu(bringAppToFront: true);
+      await trayManager.popUpContextMenu(bringAppToFront: false);
       return;
     }
     window?.show();
