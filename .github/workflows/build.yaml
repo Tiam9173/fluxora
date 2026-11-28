@@ -16,9 +16,10 @@ on:
       target_platform:
         description: 'Target platform to build'
         required: false
-        default: 'android'
+        default: 'preview'
         type: choice
         options:
+          - preview
           - android
           - all
           - windows
@@ -66,7 +67,14 @@ jobs:
             {'platform': 'linux', 'os': 'ubuntu-22.04', 'arch': 'amd64', 'compatible': True}
           ]
           if target and target != 'all':
-            if target == 'windows-amd64':
+            if target == 'preview':
+              filtered = [m for m in all_matrix
+                          if (m['platform'], m['arch']) in {
+                            ('windows', 'amd64'),
+                            ('android', 'arm64'),
+                            ('android', 'universal')
+                          } and not m.get('compatible', False)]
+            elif target == 'windows-amd64':
               filtered = [m for m in all_matrix
                           if m['platform'] == 'windows'
                           and m.get('arch') == 'amd64'
