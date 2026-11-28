@@ -732,6 +732,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "doubleBounce": MessageLookupByLibrary.simpleMessage("雙重彈奏"),
     "downLabel": MessageLookupByLibrary.simpleMessage("下行"),
     "download": MessageLookupByLibrary.simpleMessage("下載"),
+    "downloadAndInstall": MessageLookupByLibrary.simpleMessage("下載並安裝"),
+    "preparingInstall": MessageLookupByLibrary.simpleMessage("正在準備安裝套件"),
+    "updateDownloadFailed": MessageLookupByLibrary.simpleMessage("更新套件下載失敗"),
+    "installPermissionRequired": MessageLookupByLibrary.simpleMessage(
+      "請在系統設定中允許 Fluxora 安裝應用程式，然後重試",
+    ),
     "dozeSuspend": MessageLookupByLibrary.simpleMessage("休眠支援"),
     "dozeSuspendDesc": MessageLookupByLibrary.simpleMessage(
       "開啟後同步系統 Doze 休眠模式",
@@ -1746,6 +1752,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "trafficUsage": MessageLookupByLibrary.simpleMessage("流量統計"),
     "trayClickBehavior": MessageLookupByLibrary.simpleMessage("托盤點擊行為"),
     "trayEnhancement": MessageLookupByLibrary.simpleMessage("托盤增強"),
+    "quickSwitch": MessageLookupByLibrary.simpleMessage("快速切換"),
     "trayEnhancementDesc": MessageLookupByLibrary.simpleMessage(
       "在系統托盤區菜單中控制代理組",
     ),

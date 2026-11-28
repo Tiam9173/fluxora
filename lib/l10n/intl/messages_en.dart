@@ -996,6 +996,18 @@ class MessageLookup extends MessageLookupByLibrary {
     "doubleBounce": MessageLookupByLibrary.simpleMessage("Double Bounce"),
     "downLabel": MessageLookupByLibrary.simpleMessage("Down"),
     "download": MessageLookupByLibrary.simpleMessage("Download"),
+    "downloadAndInstall": MessageLookupByLibrary.simpleMessage(
+      "Download and install",
+    ),
+    "preparingInstall": MessageLookupByLibrary.simpleMessage(
+      "Preparing the installer",
+    ),
+    "updateDownloadFailed": MessageLookupByLibrary.simpleMessage(
+      "Update download failed",
+    ),
+    "installPermissionRequired": MessageLookupByLibrary.simpleMessage(
+      "Allow Fluxora to install apps in system settings, then try again",
+    ),
     "dozeSuspend": MessageLookupByLibrary.simpleMessage("Doze Support"),
     "dozeSuspendDesc": MessageLookupByLibrary.simpleMessage(
       "Sync with system Doze mode",
@@ -2390,6 +2402,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Tray Click Behavior",
     ),
     "trayEnhancement": MessageLookupByLibrary.simpleMessage("Tray Enhancement"),
+    "quickSwitch": MessageLookupByLibrary.simpleMessage("Quick switch"),
     "trayEnhancementDesc": MessageLookupByLibrary.simpleMessage(
       "Control proxy groups in system tray menu",
     ),

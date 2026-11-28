@@ -819,6 +819,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "doubleBounce": MessageLookupByLibrary.simpleMessage("더블 바운스"),
     "downLabel": MessageLookupByLibrary.simpleMessage("다운로드"),
     "download": MessageLookupByLibrary.simpleMessage("다운로드"),
+    "downloadAndInstall": MessageLookupByLibrary.simpleMessage("다운로드 및 설치"),
+    "preparingInstall": MessageLookupByLibrary.simpleMessage("설치 파일 준비 중"),
+    "updateDownloadFailed": MessageLookupByLibrary.simpleMessage(
+      "업데이트 다운로드 실패",
+    ),
+    "installPermissionRequired": MessageLookupByLibrary.simpleMessage(
+      "시스템 설정에서 Fluxora의 앱 설치를 허용한 뒤 다시 시도하세요",
+    ),
     "dozeSuspend": MessageLookupByLibrary.simpleMessage("절전 모드 연동"),
     "dozeSuspendDesc": MessageLookupByLibrary.simpleMessage(
       "시스템 Doze 절전 모드와 동기화",
@@ -1936,6 +1944,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "trafficUsage": MessageLookupByLibrary.simpleMessage("트래픽 사용량"),
     "trayClickBehavior": MessageLookupByLibrary.simpleMessage("트레이 클릭 동작"),
     "trayEnhancement": MessageLookupByLibrary.simpleMessage("트레이 기능 향상"),
+    "quickSwitch": MessageLookupByLibrary.simpleMessage("빠른 전환"),
     "trayEnhancementDesc": MessageLookupByLibrary.simpleMessage(
       "시스템 트레이 메뉴에서 프록시 그룹 제어",
     ),

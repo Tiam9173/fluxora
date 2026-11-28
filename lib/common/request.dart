@@ -3,12 +3,14 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:intl/intl.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/models/models.dart';
 import 'package:fluxora/state.dart';
+import 'package:path/path.dart' as p;
 import 'package:flutter/cupertino.dart';
 
 class _DecompressedResponseLimitExceeded extends FormatException {
@@ -64,15 +66,17 @@ class Request {
   late final Dio _clashDio;
   String? userAgent;
 
-  Request() {
-    _dio = Dio(BaseOptions(headers: {'User-Agent': browserUa}));
-    _dio.httpClientAdapter = IOHttpClientAdapter(
-      createHttpClient: () {
-        final client = HttpClient();
-        client.autoUncompress = false;
-        return client;
-      },
-    );
+  Request({Dio? dio}) {
+    _dio = dio ?? Dio(BaseOptions(headers: {'User-Agent': browserUa}));
+    if (dio == null) {
+      _dio.httpClientAdapter = IOHttpClientAdapter(
+        createHttpClient: () {
+          final client = HttpClient();
+          client.autoUncompress = false;
+          return client;
+        },
+      );
+    }
     _clashDio = Dio();
     _clashDio.httpClientAdapter = IOHttpClientAdapter(
       createHttpClient: () {
@@ -162,14 +166,21 @@ class Request {
     return sink.takeBytes();
   }
 
-  Future<Uint8List> _readResponseBody(ResponseBody responseBody) async {
+  Future<Uint8List> _readResponseBody(
+    ResponseBody responseBody, {
+    void Function(int received, int total)? onProgress,
+  }) async {
     final sink = _LimitedByteSink(
       _maxResponseBodyBytes,
       const _ResponseBodyLimitExceeded(),
     );
+    final total = responseBody.contentLength;
+    var received = 0;
     try {
       await for (final chunk in responseBody.stream) {
         sink.add(chunk);
+        received += chunk.length;
+        if (total > 0) onProgress?.call(received, total);
       }
       return sink.takeBytes();
     } finally {
@@ -183,6 +194,7 @@ class Request {
     String url,
     ResponseType responseType, {
     CancelToken? cancelToken,
+    void Function(int received, int total)? onProgress,
   }) async {
     String? userInfo;
     String requestUrl = url;
@@ -221,7 +233,7 @@ class Request {
 
     final body = response.data;
     if (body == null) throw const FormatException('Empty HTTP response body');
-    final rawBytes = await _readResponseBody(body);
+    final rawBytes = await _readResponseBody(body, onProgress: onProgress);
     final decompressedBytes = _decompressIfNeeded(rawBytes, response.headers);
 
     if (responseType == ResponseType.plain) {
@@ -261,14 +273,114 @@ class Request {
     );
   }
 
+  /// Metadata is fetched only after the user selects an update. GitHub's
+  /// published asset digest lets the installer reject tampered or partial
+  /// downloads before they reach the operating system.
+  Future<Map<String, dynamic>> getReleaseAsset(
+    String tag,
+    String assetSuffix, {
+    CancelToken? cancelToken,
+  }) async {
+    final response = await _dio.get(
+      'https://api.github.com/repos/$repository/releases/tags/${Uri.encodeComponent(tag)}',
+      cancelToken: cancelToken,
+      options: Options(
+        responseType: ResponseType.json,
+        headers: const {'Accept': 'application/vnd.github+json'},
+      ),
+    );
+    final release = response.data;
+    if (release is! Map || release['assets'] is! List) {
+      throw const FormatException('GitHub release has no asset list');
+    }
+    final asset = (release['assets'] as List)
+        .whereType<Map>()
+        .cast<Map<String, dynamic>>()
+        .where((item) => (item['name'] as String? ?? '').endsWith(assetSuffix))
+        .firstOrNull;
+    if (asset == null) {
+      throw FormatException('This release has no $assetSuffix package');
+    }
+    return validateGithubReleaseAsset(
+      Map<String, dynamic>.from(asset),
+      assetSuffix: assetSuffix,
+      releaseTag: tag,
+    );
+  }
+
+  Future<File> downloadVerifiedReleaseAsset(
+    Map<String, dynamic> asset, {
+    CancelToken? cancelToken,
+    void Function(int received, int total)? onProgress,
+  }) async {
+    final verifiedAsset = validateGithubReleaseAsset(asset);
+    final uri = Uri.parse(verifiedAsset['browser_download_url'] as String);
+    final name = verifiedAsset['name'] as String;
+    final expectedDigest = (verifiedAsset['digest'] as String).substring(7);
+    final expectedSize = verifiedAsset['size'] as int;
+
+    final directory = Directory(
+      p.join((await appPath.tempDir.future).path, 'fluxora-updates'),
+    );
+    await directory.create(recursive: true);
+    final target = File(p.join(directory.path, name));
+    final staging = File(
+      '${target.path}.${DateTime.now().microsecondsSinceEpoch}.part',
+    );
+    IOSink? output;
+    var received = 0;
+    try {
+      final response = await _dio.get<ResponseBody>(
+        uri.toString(),
+        cancelToken: cancelToken,
+        options: Options(responseType: ResponseType.stream),
+      );
+      final body = response.data;
+      if (body == null) throw const FormatException('Empty update package');
+      output = staging.openWrite();
+      await for (final chunk in body.stream) {
+        received += chunk.length;
+        if (received > expectedSize) {
+          throw const FormatException(
+            'Update package exceeds its published size',
+          );
+        }
+        output.add(chunk);
+        onProgress?.call(received, expectedSize);
+      }
+      await output.flush();
+      await output.close();
+      output = null;
+      if (received != expectedSize) {
+        throw const FormatException('Update package download was incomplete');
+      }
+      final actualDigest = await sha256.bind(staging.openRead()).first;
+      if (actualDigest.toString().toLowerCase() !=
+          expectedDigest.toLowerCase()) {
+        throw const FormatException('Update package checksum did not match');
+      }
+      return await staging.rename(target.path);
+    } catch (_) {
+      try {
+        await output?.close();
+        if (await staging.exists()) await staging.delete();
+      } on FileSystemException {
+        // Preserve the original download, checksum, or cancellation error.
+      }
+      rethrow;
+    }
+  }
+
   Future<Response> getTextResponseForUrl(
     String url, {
     CancelToken? cancelToken,
+    void Function(int received, int total)? onProgress,
   }) async {
     return _getResponseForUrl(
       url,
       ResponseType.plain,
       cancelToken: cancelToken,
+      onProgress: onProgress,
     );
   }
 
@@ -821,6 +933,43 @@ class Request {
       return Result.error(e.toString());
     }
   }
+}
+
+/// Validates official GitHub release asset metadata before any download or
+/// platform installer sees it.
+Map<String, dynamic> validateGithubReleaseAsset(
+  Map<String, dynamic> asset, {
+  String? assetSuffix,
+  String? releaseTag,
+}) {
+  final uri = Uri.tryParse(asset['browser_download_url'] as String? ?? '');
+  final name = asset['name'] as String? ?? '';
+  final digest = asset['digest'] as String? ?? '';
+  final size = asset['size'];
+  final path = uri?.pathSegments ?? const <String>[];
+  final isFluxoraRelease =
+      path.length == 6 &&
+      path[0] == 'Tiam9173' &&
+      path[1] == 'fluxora' &&
+      path[2] == 'releases' &&
+      path[3] == 'download' &&
+      path[5] == name &&
+      (releaseTag == null || path[4] == releaseTag);
+  if (uri == null ||
+      uri.scheme != 'https' ||
+      uri.host != 'github.com' ||
+      uri.userInfo.isNotEmpty ||
+      (uri.hasPort && uri.port != 443) ||
+      !isFluxoraRelease ||
+      !RegExp(r'^[A-Za-z0-9._+-]+$').hasMatch(name) ||
+      (assetSuffix != null && !name.endsWith(assetSuffix)) ||
+      !RegExp(r'^sha256:[0-9a-fA-F]{64}$').hasMatch(digest) ||
+      size is! int ||
+      size <= 0 ||
+      size > 512 * 1024 * 1024) {
+    throw const FormatException('GitHub release asset metadata is invalid');
+  }
+  return asset;
 }
 
 final request = Request();

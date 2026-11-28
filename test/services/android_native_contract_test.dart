@@ -44,6 +44,61 @@ void main() {
     );
   });
 
+  test('Android update packages use the system-confirmed install session', () {
+    final manifest = read('android/app/src/main/AndroidManifest.xml');
+    final plugin = read(
+      'android/app/src/main/kotlin/io/fluxora/app/plugins/AppPlugin.kt',
+    );
+    final receiver = read(
+      'android/app/src/main/kotlin/io/fluxora/app/receivers/ApkInstallStatusReceiver.kt',
+    );
+
+    expect(manifest, contains('android.permission.REQUEST_INSTALL_PACKAGES'));
+    expect(plugin, contains('canRequestPackageInstalls()'));
+    expect(
+      plugin,
+      contains('PackageInstaller.SessionParams.MODE_FULL_INSTALL'),
+    );
+    expect(plugin, contains('session.commit(callback.intentSender)'));
+    expect(receiver, contains('STATUS_PENDING_USER_ACTION'));
+    expect(receiver, contains('context.startActivity(confirmation)'));
+  });
+
+  test('normal app exit stops Android VPN before shutting down the core', () {
+    final controller = read('lib/controller.dart');
+    final start = controller.indexOf('List<TeardownStep> _teardownSteps()');
+    final end = controller.indexOf('Future<void> handleExit()', start);
+    final teardown = controller.substring(start, end);
+    final vpnStop = teardown.indexOf("'android-vpn-service'");
+    final coreStop = teardown.indexOf("'core-shutdown'");
+
+    expect(vpnStop, greaterThanOrEqualTo(0));
+    expect(coreStop, greaterThan(vpnStop));
+    expect(teardown, contains('if (!system.isAndroid) return;'));
+    expect(teardown, contains('keepOnRestart: true'));
+    expect(teardown, contains('stopVpn().timeout('));
+  });
+
+  test(
+    'Android removes the VPN only when its activity is actually finishing',
+    () {
+      final plugin = read(
+        'android/app/src/main/kotlin/io/fluxora/app/plugins/AppPlugin.kt',
+      );
+      final android = read('lib/common/android.dart');
+
+      expect(
+        plugin,
+        contains(
+          'channel.invokeMethod("exit", activityRef?.get()?.isFinishing == true)',
+        ),
+      );
+      expect(android, contains('(activityFinishing) async'));
+      expect(android, contains('if (activityFinishing)'));
+      expect(android, contains('handleExit()'));
+    },
+  );
+
   test('TempActivity is no longer exported to other apps', () {
     final manifest = read('android/app/src/main/AndroidManifest.xml');
     final tempActivity = RegExp(

@@ -5,8 +5,12 @@ import 'system.dart';
 
 class Android {
   Future<void> init() async {
-    app.onExit = () async {
-      await globalState.appController.savePreferences();
+    app.onExit = (activityFinishing) async {
+      if (activityFinishing) {
+        await globalState.appController.handleExit();
+      } else {
+        await globalState.appController.savePreferences();
+      }
     };
   }
 }

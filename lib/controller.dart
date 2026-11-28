@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ffi' show Abi;
 import 'dart:io';
 import 'dart:isolate';
 
@@ -13,6 +14,7 @@ import 'package:fluxora/plugins/service.dart' as vpn_service;
 import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/views/proxies/common.dart';
+import 'package:fluxora/views/about/update_install_dialog.dart';
 import 'package:fluxora/widgets/dialog.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
@@ -2079,6 +2081,15 @@ class AppController {
       () async => networkFingerprintProvider.stop(),
     ),
     TeardownStep('background-mode', () => globalState.handleBackground()),
+    TeardownStep('android-vpn-service', () async {
+      if (!system.isAndroid) return;
+      final stopped = await vpn_service.service?.stopVpn().timeout(
+        const Duration(seconds: 3),
+      );
+      if (stopped != true) {
+        throw StateError('Android VPN service did not confirm shutdown');
+      }
+    }, keepOnRestart: true),
     TeardownStep('tun-flag', () async {
       if (!system.isDesktop) return;
       final prefs = await preferences.sharedPreferencesCompleter.future;
@@ -2248,17 +2259,24 @@ class AppController {
         return;
       }
       const String assetSuffix = String.fromEnvironment('APP_ASSET_SUFFIX');
-      String downloadUrl = 'https://github.com/$repository/releases/latest';
-
-      if (assetSuffix.isNotEmpty) {
-        final versionWithoutV = tagName.startsWith('v')
-            ? tagName.substring(1)
-            : tagName;
-        downloadUrl =
-            'https://github.com/$repository/releases/download/$tagName/Fluxora-$versionWithoutV-$assetSuffix';
+      final installSuffix = system.isAndroid
+          ? (Abi.current() == Abi.androidArm64
+                ? 'android-arm64-v8a.apk'
+                : 'android-universal.apk')
+          : system.isWindows
+          ? (assetSuffix.isNotEmpty ? assetSuffix : 'windows-amd64-setup.exe')
+          : null;
+      if (installSuffix == null || appPath.isPortable) {
+        globalState.openUrl('https://github.com/$repository/releases/latest');
+        return;
       }
-
-      globalState.openUrl(downloadUrl);
+      await globalState.showCommonDialog<void>(
+        child: UpdateInstallDialog(
+          tag: tagName.toString(),
+          notes: submits,
+          assetSuffix: installSuffix,
+        ),
+      );
     } else if (handleError) {
       globalState.showMessage(
         title: appLocalizations.checkUpdate,

@@ -9,14 +9,14 @@ import 'package:intl/intl.dart';
 class App {
   static App? _instance;
   late MethodChannel methodChannel;
-  Function()? onExit;
+  Future<void> Function(bool activityFinishing)? onExit;
 
   App._internal() {
     methodChannel = const MethodChannel('app');
     methodChannel.setMethodCallHandler((call) async {
       switch (call.method) {
         case 'exit':
-          await onExit?.call();
+          await onExit?.call(call.arguments == true);
         case 'getText':
           try {
             return Intl.message(call.arguments as String);
@@ -77,6 +77,9 @@ class App {
   Future<void> openAppSettings() async {
     await methodChannel.invokeMethod<void>('openAppSettings');
   }
+
+  Future<String?> installApk(String path) async =>
+      await methodChannel.invokeMethod<String>('installApk', {'path': path});
 
   Future<bool> openFcmDiagnostics() async {
     if (!system.isAndroid) return false;

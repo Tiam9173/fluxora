@@ -265,6 +265,38 @@ class AppLocalizations {
     return Intl.message('Download', name: 'download', desc: '', args: []);
   }
 
+  /// `Download and install`
+  String get downloadAndInstall => Intl.message(
+    'Download and install',
+    name: 'downloadAndInstall',
+    desc: '',
+    args: [],
+  );
+
+  /// `Preparing the installer`
+  String get preparingInstall => Intl.message(
+    'Preparing the installer',
+    name: 'preparingInstall',
+    desc: '',
+    args: [],
+  );
+
+  /// `Update download failed`
+  String get updateDownloadFailed => Intl.message(
+    'Update download failed',
+    name: 'updateDownloadFailed',
+    desc: '',
+    args: [],
+  );
+
+  /// `Allow Fluxora to install apps in system settings, then try again`
+  String get installPermissionRequired => Intl.message(
+    'Allow Fluxora to install apps in system settings, then try again',
+    name: 'installPermissionRequired',
+    desc: '',
+    args: [],
+  );
+
   /// `No Proxy`
   String get noProxy {
     return Intl.message('No Proxy', name: 'noProxy', desc: '', args: []);
@@ -575,6 +607,16 @@ class AppLocalizations {
     return Intl.message(
       'Control proxy groups in system tray menu',
       name: 'trayEnhancementDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Quick switch`
+  String get quickSwitch {
+    return Intl.message(
+      'Quick switch',
+      name: 'quickSwitch',
       desc: '',
       args: [],
     );
@@ -9610,7 +9652,8 @@ class AppLocalizations {
     return Intl.message(
       'Mode: route the proxy through WARP. Every provider node is chained through the WARP tunnel, which rescues nodes blocked by the GFW. No dialer needs to be chosen.',
       name: 'warpStr57',
-      desc: '当前为「通过 WARP 路由代理」模式：所有机场代理节点均自动级联经由 WARP 隧道出境连接，能有效拯救被 GFW 阻断的节点，无需额外选择前置跳板。',
+      desc:
+          '当前为「通过 WARP 路由代理」模式：所有机场代理节点均自动级联经由 WARP 隧道出境连接，能有效拯救被 GFW 阻断的节点，无需额外选择前置跳板。',
       args: [],
     );
   }

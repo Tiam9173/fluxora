@@ -3,15 +3,18 @@ package io.fluxora.app.plugins
 import android.Manifest
 import android.app.Activity
 import android.app.ActivityManager
+import android.app.PendingIntent
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.ComponentInfo
 import android.content.pm.PackageManager
+import android.content.pm.PackageInstaller
 import android.content.pm.ShortcutInfo
 import android.content.pm.ShortcutManager
 import android.net.VpnService
+import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.util.Base64
@@ -301,6 +304,31 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
             "getSelfLastUpdateTime" -> {
                 result.success(getSelfLastUpdateTime())
             }
+            "installApk" -> scope.launch {
+                val context = FluxoraApplication.getAppContext()
+                try {
+                    val file = File(call.argument<String>("path") ?: "")
+                    require(file.isFile && file.length() > 0L && file.extension == "apk")
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+                        !context.packageManager.canRequestPackageInstalls()
+                    ) {
+                        context.startActivity(
+                            Intent(
+                                Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                                Uri.parse("package:${context.packageName}"),
+                            ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                        )
+                        result.success("permission-required")
+                        return@launch
+                    }
+                    val sessionId = withContext(Dispatchers.IO) {
+                        createApkInstallSession(file)
+                    }
+                    result.success(if (sessionId >= 0) "started" else "failed")
+                } catch (error: Exception) {
+                    result.error("APK_INSTALL_FAILED", error.message, null)
+                }
+            }
             "isIgnoringBatteryOptimizations" -> {
                 result.success(isIgnoringBatteryOptimizations())
             }
@@ -386,6 +414,50 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
             context.startActivity(intent)
             true
         }.getOrElse { false }
+    }
+
+    private fun createApkInstallSession(file: File): Int {
+        val context = FluxoraApplication.getAppContext()
+        val installer = context.packageManager.packageInstaller
+        val params = PackageInstaller.SessionParams(
+            PackageInstaller.SessionParams.MODE_FULL_INSTALL,
+        ).apply {
+            setAppPackageName(context.packageName)
+            setSize(file.length())
+        }
+        val sessionId = installer.createSession(params)
+        try {
+            installer.openSession(sessionId).use { session ->
+                file.inputStream().use { input ->
+                    session.openWrite("base.apk", 0, file.length()).use { output ->
+                        input.copyTo(output)
+                        session.fsync(output)
+                    }
+                }
+                val statusIntent = Intent(
+                    context,
+                    io.fluxora.app.receivers.ApkInstallStatusReceiver::class.java,
+                ).setAction("io.fluxora.app.action.INSTALL_STATUS")
+                    .putExtra(PackageInstaller.EXTRA_SESSION_ID, sessionId)
+                val flags = PendingIntent.FLAG_UPDATE_CURRENT or
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        PendingIntent.FLAG_MUTABLE
+                    } else {
+                        0
+                    }
+                val callback = PendingIntent.getBroadcast(
+                    context,
+                    sessionId,
+                    statusIntent,
+                    flags,
+                )
+                session.commit(callback.intentSender)
+            }
+            return sessionId
+        } catch (error: Exception) {
+            installer.abandonSession(sessionId)
+            throw error
+        }
     }
 
     private fun updateExcludeFromRecents(value: Boolean): Boolean {
@@ -630,7 +702,7 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
         }
     }
     override fun onDetachedFromActivity() {
-        channel.invokeMethod("exit", null)
+        channel.invokeMethod("exit", activityRef?.get()?.isFinishing == true)
         activityRef = null
         cachedTaskId = null
         isActivityAttached = false

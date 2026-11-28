@@ -21,6 +21,7 @@ import 'package:fluxora/widgets/sheet.dart';
 import 'package:fluxora/widgets/text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
 
 (Map<String, bool>, Map<String, String>, Set<String>) _processScriptData(
   Map<String, dynamic> data,
@@ -507,25 +508,27 @@ class _ScriptsViewState extends ConsumerState<ScriptsView> {
       return;
     }
 
-    try {
-      final res = await request.getTextResponseForUrl(url);
-      if (!JavaScriptRuntimeManager.looksLikeScript(res.data)) {
-        // 直接进编辑器再存下来，只会在启用脚本时报一句看不懂的语法错误。
-        globalState.showMessage(
-          message: TextSpan(text: appLocalizations.scriptUrlNotAScript),
-          cancelable: false,
-        );
-        return;
-      }
-      if (mounted) {
-        _handleToEditor(initialContent: res.data, url: url);
-      }
-    } catch (e) {
+    final result = await globalState.showCommonDialog<_ScriptImportResult>(
+      child: _ScriptImportProgressDialog(url: url),
+    );
+    if (!mounted || result == null) return;
+    if (result.error != null) {
       globalState.showMessage(
-        message: TextSpan(text: '${appLocalizations.importFailed}: $e'),
+        message: TextSpan(
+          text: '${appLocalizations.importFailed}: ${result.error}',
+        ),
         cancelable: false,
       );
+      return;
     }
+    if (!JavaScriptRuntimeManager.looksLikeScript(result.content)) {
+      globalState.showMessage(
+        message: TextSpan(text: appLocalizations.scriptUrlNotAScript),
+        cancelable: false,
+      );
+      return;
+    }
+    _handleToEditor(initialContent: result.content, url: url);
   }
 
   Future<void> _handleFileImport() async {
@@ -570,6 +573,96 @@ class _ScriptsViewState extends ConsumerState<ScriptsView> {
       ],
       body: _buildContent(),
       title: appLocalizations.script,
+    );
+  }
+}
+
+class _ScriptImportResult {
+  const _ScriptImportResult({this.content = '', this.error});
+  final String content;
+  final Object? error;
+}
+
+class _ScriptImportProgressDialog extends StatefulWidget {
+  const _ScriptImportProgressDialog({required this.url});
+  final String url;
+
+  @override
+  State<_ScriptImportProgressDialog> createState() =>
+      _ScriptImportProgressDialogState();
+}
+
+class _ScriptImportProgressDialogState
+    extends State<_ScriptImportProgressDialog> {
+  final _cancelToken = CancelToken();
+  int? _received;
+  int? _total;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _download());
+  }
+
+  Future<void> _download() async {
+    try {
+      final response = await request.getTextResponseForUrl(
+        widget.url,
+        cancelToken: _cancelToken,
+        onProgress: (received, total) {
+          if (mounted) {
+            setState(() {
+              _received = received;
+              _total = total;
+            });
+          }
+        },
+      );
+      if (mounted) {
+        Navigator.of(
+          context,
+        ).pop(_ScriptImportResult(content: response.data as String));
+      }
+    } catch (error) {
+      if (mounted && !_cancelToken.isCancelled) {
+        Navigator.of(context).pop(_ScriptImportResult(error: error));
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _cancelToken.cancel('Script import cancelled');
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final total = _total;
+    final received = _received;
+    final progress = total == null || total <= 0 || received == null
+        ? null
+        : (received / total).clamp(0.0, 1.0);
+    return CommonDialog(
+      title: appLocalizations.importUrl,
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(appLocalizations.cancel),
+        ),
+      ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          children: [
+            Expanded(child: LinearProgressIndicator(value: progress)),
+            if (progress != null) ...[
+              const SizedBox(width: 12),
+              Text('${(progress * 100).round()}%'),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

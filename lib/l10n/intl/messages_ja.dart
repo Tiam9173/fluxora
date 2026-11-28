@@ -816,6 +816,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "doubleBounce": MessageLookupByLibrary.simpleMessage("ダブルバウンス"),
     "downLabel": MessageLookupByLibrary.simpleMessage("下り"),
     "download": MessageLookupByLibrary.simpleMessage("受信"),
+    "downloadAndInstall": MessageLookupByLibrary.simpleMessage(
+      "ダウンロードしてインストール",
+    ),
+    "preparingInstall": MessageLookupByLibrary.simpleMessage("インストーラーを準備中"),
+    "updateDownloadFailed": MessageLookupByLibrary.simpleMessage(
+      "更新のダウンロードに失敗しました",
+    ),
+    "installPermissionRequired": MessageLookupByLibrary.simpleMessage(
+      "システム設定で Fluxora のアプリインストールを許可してから、もう一度お試しください",
+    ),
     "dozeSuspend": MessageLookupByLibrary.simpleMessage("スリープ連携"),
     "dozeSuspendDesc": MessageLookupByLibrary.simpleMessage(
       "OSのDozeスリープモードに同期",
@@ -1943,6 +1953,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "trafficUsage": MessageLookupByLibrary.simpleMessage("通信量統計"),
     "trayClickBehavior": MessageLookupByLibrary.simpleMessage("トレイクリック動作"),
     "trayEnhancement": MessageLookupByLibrary.simpleMessage("トレイ拡張"),
+    "quickSwitch": MessageLookupByLibrary.simpleMessage("クイック切替"),
     "trayEnhancementDesc": MessageLookupByLibrary.simpleMessage(
       "システムトレイメニューでプロキシグループを操作",
     ),

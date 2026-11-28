@@ -1030,6 +1030,18 @@ class MessageLookup extends MessageLookupByLibrary {
     "doubleBounce": MessageLookupByLibrary.simpleMessage("Двойной отскок"),
     "downLabel": MessageLookupByLibrary.simpleMessage("Вниз"),
     "download": MessageLookupByLibrary.simpleMessage("Загрузка"),
+    "downloadAndInstall": MessageLookupByLibrary.simpleMessage(
+      "Скачать и установить",
+    ),
+    "preparingInstall": MessageLookupByLibrary.simpleMessage(
+      "Подготовка установщика",
+    ),
+    "updateDownloadFailed": MessageLookupByLibrary.simpleMessage(
+      "Не удалось скачать обновление",
+    ),
+    "installPermissionRequired": MessageLookupByLibrary.simpleMessage(
+      "Разрешите Fluxora устанавливать приложения в системных настройках и повторите попытку",
+    ),
     "dozeSuspend": MessageLookupByLibrary.simpleMessage("Поддержка Doze"),
     "dozeSuspendDesc": MessageLookupByLibrary.simpleMessage(
       "Синхронизация с режимом сна Android",
@@ -2503,6 +2515,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Действие при нажатии на значок",
     ),
     "trayEnhancement": MessageLookupByLibrary.simpleMessage("Улучшение трея"),
+    "quickSwitch": MessageLookupByLibrary.simpleMessage("Быстрое переключение"),
     "trayEnhancementDesc": MessageLookupByLibrary.simpleMessage(
       "Управление группами прокси в меню системного трея",
     ),

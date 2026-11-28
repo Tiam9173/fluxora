@@ -996,6 +996,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "doubleBounce": MessageLookupByLibrary.simpleMessage("جهش دوگانه"),
     "downLabel": MessageLookupByLibrary.simpleMessage("پایین"),
     "download": MessageLookupByLibrary.simpleMessage("دانلود"),
+    "downloadAndInstall": MessageLookupByLibrary.simpleMessage("دانلود و نصب"),
+    "preparingInstall": MessageLookupByLibrary.simpleMessage(
+      "در حال آماده‌سازی نصب‌کننده",
+    ),
+    "updateDownloadFailed": MessageLookupByLibrary.simpleMessage(
+      "بارگیری به‌روزرسانی ناموفق بود",
+    ),
+    "installPermissionRequired": MessageLookupByLibrary.simpleMessage(
+      "در تنظیمات سیستم، اجازه نصب برنامه را به Fluxora بدهید و دوباره تلاش کنید",
+    ),
     "dozeSuspend": MessageLookupByLibrary.simpleMessage("پشتیبانی از Doze"),
     "dozeSuspendDesc": MessageLookupByLibrary.simpleMessage(
       "همگام‌سازی با حالت خواب سیستم (Doze)",
@@ -2431,6 +2441,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "رفتار کلیک روی سینی",
     ),
     "trayEnhancement": MessageLookupByLibrary.simpleMessage("ارتقای منوی سینی"),
+    "quickSwitch": MessageLookupByLibrary.simpleMessage("تعویض سریع"),
     "trayEnhancementDesc": MessageLookupByLibrary.simpleMessage(
       "کنترل گروه‌های پروکسی در منوی سینی سیستم",
     ),

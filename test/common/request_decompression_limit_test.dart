@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -64,6 +65,33 @@ void main() {
 
     expect(response.data, expected);
   });
+
+  test(
+    'reports streamed response progress when the server sends a length',
+    () async {
+      final bytes = utf8.encode('export default {}');
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      final subscription = server.listen((request) async {
+        request.response.bufferOutput = false;
+        request.response.contentLength = bytes.length;
+        request.response.add(bytes);
+        await request.response.close();
+      });
+      addTearDown(() async {
+        await subscription.cancel();
+        await server.close(force: true);
+      });
+
+      final progress = <(int, int)>[];
+      await Request().getTextResponseForUrl(
+        'http://127.0.0.1:${server.port}/script.js',
+        onProgress: (received, total) => progress.add((received, total)),
+      );
+
+      expect(progress, isNotEmpty);
+      expect(progress.last, (bytes.length, bytes.length));
+    },
+  );
 
   test('accepts a gzip response exactly at the output limit', () async {
     final expected = Uint8List(_maxDecompressedBytes);
