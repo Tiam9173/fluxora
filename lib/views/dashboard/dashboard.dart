@@ -728,9 +728,9 @@ class _DashboardTitleDialogState extends State<_DashboardTitleDialog> {
   /// which is why the list is `int?` rather than a list of colours.
   static final List<int?> _palette = [
     null,
-    FluxoraColors.fluxCyan.toARGB32(),
     FluxoraColors.auroraBlue.toARGB32(),
     FluxoraColors.flowViolet.toARGB32(),
+    0xFFB77AE8,
     0xFFFF6B9D,
     0xFFFFB020,
     0xFFFF5252,

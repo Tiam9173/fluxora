@@ -52,16 +52,10 @@ void main() {
   vec2 pixel = pixelsPerUnit / u_size;
   vec2 refracted = uv + normal * rim * u_strength * 12.0 * pixel;
 
-  // One pass avoids mismatched blur and refraction bounds while softening text.
-  vec2 spread = (1.0 + 3.0 * (1.0 - u_clarity)) * pixel;
-  vec2 dx = vec2(spread.x, 0.0);
-  vec2 dy = vec2(0.0, spread.y);
-  vec4 color = sampleBackdrop(refracted) * 0.40;
-  color += sampleBackdrop(refracted + dx) * 0.15;
-  color += sampleBackdrop(refracted - dx) * 0.15;
-  color += sampleBackdrop(refracted + dy) * 0.15;
-  color += sampleBackdrop(refracted - dy) * 0.15;
-  vec3 rgb = mix(color.rgb / max(color.a, 0.0001), u_tint, 0.24 - 0.20 * u_clarity);
+  // Keep the face sharp; refract only at its rim so text under a panel never
+  // appears doubled.
+  vec4 color = sampleBackdrop(refracted);
+  vec3 rgb = mix(color.rgb / max(color.a, 0.0001), u_tint, 0.18 - 0.12 * u_clarity);
   float coverageMask = smoothstep(0.82, 0.99, coverage);
   float edgeShade = 1.0 - smoothstep(0.0, 1.25, inset);
   float bevelLight = smoothstep(0.0, 0.8, inset)

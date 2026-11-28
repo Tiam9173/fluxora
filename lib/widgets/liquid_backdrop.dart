@@ -184,7 +184,7 @@ class _RenderLensFilter extends RenderBackdropFilter {
   void _updateFilter() {
     final effect = shader;
     if (effect == null || size.isEmpty) {
-      final sigma = 2 + 8 * (1 - clarity) + 2 * strength;
+      final sigma = .8 + 1.6 * (1 - clarity) + .7 * strength;
       filter = ui.ImageFilter.blur(sigmaX: sigma, sigmaY: sigma);
       return;
     }
@@ -228,10 +228,10 @@ class _GlassRim extends CustomPainter {
           size.longestSide * (.82 + .12 * pressure),
           [
             Colors.white.withValues(
-              alpha: (dark ? .23 : .56) + .10 * strength + .13 * pressure,
+              alpha: (dark ? .14 : .56) + .06 * strength + .08 * pressure,
             ),
             (dark ? Colors.white : const Color(0xFF7585A7)).withValues(
-              alpha: dark ? .06 : .12,
+              alpha: dark ? .045 : .12,
             ),
           ],
         ),
@@ -249,9 +249,9 @@ class _GlassRim extends CustomPainter {
           Offset.zero,
           Offset(size.width, size.height),
           [
-            Colors.white.withValues(alpha: (dark ? .20 : .48) + .13 * pressure),
-            Colors.white.withValues(alpha: dark ? .015 : .035),
-            const Color(0xFF94A9E8).withValues(alpha: dark ? .10 : .12),
+            Colors.white.withValues(alpha: (dark ? .12 : .48) + .08 * pressure),
+            Colors.white.withValues(alpha: dark ? .02 : .035),
+            const Color(0xFF94A9E8).withValues(alpha: dark ? .07 : .12),
           ],
           const [0, .5, 1],
         ),
@@ -262,7 +262,7 @@ class _GlassRim extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = .55
         ..color = (dark ? const Color(0xFF8195D8) : const Color(0xFF8291AC))
-            .withValues(alpha: dark ? .11 : .10),
+            .withValues(alpha: dark ? .07 : .10),
     );
   }
 

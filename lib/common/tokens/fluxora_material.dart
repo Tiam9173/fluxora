@@ -65,7 +65,9 @@ class FluxoraMaterial extends ThemeExtension<FluxoraMaterial> {
 
   Color border(ColorScheme scheme) => scheme.onSurface.withValues(
     alpha: scheme.brightness == Brightness.dark
-        ? .07 + .09 * strength
+        ? isObsidian
+              ? .07 + .09 * strength
+              : .045 + .045 * strength
         : .09 + .08 * strength,
   );
 

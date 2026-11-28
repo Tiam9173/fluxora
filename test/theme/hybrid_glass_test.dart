@@ -58,6 +58,29 @@ void main() {
   });
 
   test(
+    'Fluxora dark glass uses a quieter rim while Obsidian stays unchanged',
+    () {
+      final scheme = glassTestTheme(
+        Brightness.dark,
+        FluxoraSurfaceStyle.classic,
+      ).colorScheme;
+      const strength = .55;
+      final fluxora = const FluxoraMaterial(
+        style: FluxoraSurfaceStyle.hybrid,
+        glassIntensity: strength,
+      ).border(scheme);
+      final obsidian = const FluxoraMaterial(
+        style: FluxoraSurfaceStyle.hybrid,
+        glassIntensity: strength,
+        visualStyle: FluxoraVisualStyle.obsidian,
+      ).border(scheme);
+
+      expect(fluxora.a, lessThan(obsidian.a));
+      expect(obsidian.a, closeTo(.07 + .09 * strength, 1e-6));
+    },
+  );
+
+  test(
     'motion and glass preferences round trip and invalid strength is bounded',
     () {
       for (final motion in FluxoraMotionStyle.values) {

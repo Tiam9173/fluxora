@@ -1657,9 +1657,9 @@ Widget _buildColorSourcePreview(BuildContext context, ColorSource source) {
         children: [
           if (isFluxora)
             for (final color in const [
-              FluxoraColors.fluxCyan,
               FluxoraColors.auroraBlue,
               FluxoraColors.flowViolet,
+              Color(0xFFB77AE8),
             ])
               Padding(
                 padding: const EdgeInsets.only(right: FluxoraSpacing.sm),
