@@ -195,6 +195,11 @@ func (p *Proxy) URLTest(ctx context.Context, url string, expectedStatus utils.In
 			record.Delay = t
 		}
 
+		if !satisfied {
+			record.Delay = 0
+			alive = false
+		}
+
 		// A proxy's aggregate history is shared by groups that can use different
 		// test URLs. Keep its append/trim transaction serialized across them.
 		p.historyMu.Lock()
@@ -204,11 +209,6 @@ func (p *Proxy) URLTest(ctx context.Context, url string, expectedStatus utils.In
 			p.history.Pop()
 		}
 		p.historyMu.Unlock()
-
-		if !satisfied {
-			record.Delay = 0
-			alive = false
-		}
 
 		state.alive.Store(alive)
 		state.history.Put(record)

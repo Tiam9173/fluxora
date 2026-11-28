@@ -2,6 +2,7 @@ package adapter
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -107,8 +108,16 @@ func TestURLTestHookRespectsExpectedStatus(t *testing.T) {
 	if notified != 0 || p.AliveForTestUrl(server.URL) {
 		t.Fatalf("unexpected HTTP status reported as healthy: delay=%d", notified)
 	}
-	if !p.AliveForTestUrl("") {
-		t.Fatal("a working transport was incorrectly marked dead for all URLs")
+	marshaled, err := p.MarshalJSON()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var state map[string]any
+	if err := json.Unmarshal(marshaled, &state); err != nil {
+		t.Fatal(err)
+	}
+	if state["alive"] != false {
+		t.Fatal("an unexpected HTTP status was reported as globally healthy")
 	}
 }
 
