@@ -329,6 +329,36 @@ class ClashCore {
     return clashInterface.parseExternalProviderContent(providerName);
   }
 
+  Future<List<Map<String, dynamic>>> readProviderNodes(Map definition) async {
+    final data = jsonEncode(definition);
+    final Result result;
+    if (clashLibHandler case final handler?) {
+      final raw = await handler.invokeAction(
+        jsonEncode(
+          Action(
+            id: 'provider-nodes-${utils.id}',
+            method: ActionMethod.readProviderNodes,
+            data: data,
+          ),
+        ),
+        timeout: const Duration(seconds: 22),
+      );
+      result = ActionResult.fromJson(jsonDecode(raw)).toResult;
+    } else {
+      result = await clashInterface.invoke<Result>(
+        method: ActionMethod.readProviderNodes,
+        data: data,
+        timeout: const Duration(seconds: 22),
+        onTimeout: () => throw TimeoutException('Provider node read timed out'),
+      );
+    }
+    if (!result.isSuccess) throw StateError(result.message);
+    return (result.data as List)
+        .whereType<Map>()
+        .map((node) => Map<String, dynamic>.from(node))
+        .toList();
+  }
+
   Future<bool> startListener() => clashInterface.startListener();
 
   Future<void> stopListener() async {

@@ -74,6 +74,7 @@ type ChangeProxyParams struct {
 
 type TestDelayParams struct {
 	ProxyName string `json:"proxy-name"`
+	GroupName string `json:"group-name,omitempty"`
 	TestUrl   string `json:"test-url"`
 	Timeout   int64  `json:"timeout"`
 }
@@ -137,6 +138,7 @@ const (
 	convertAgeSecretKeyToPublicKeyMethod Method = "convertAgeSecretKeyToPublicKey"
 	getModeMethod                        Method = "getMode"
 	parseExternalProviderContentMethod   Method = "parseExternalProviderContent"
+	readProviderNodesMethod              Method = "readProviderNodes"
 	getCoreStatusMethod                  Method = "getCoreStatus"
 )
 

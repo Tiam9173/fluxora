@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fluxora/clash/core.dart';
+import 'package:fluxora/clash/interface.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/common/theme.dart';
 import 'package:fluxora/controller.dart';
@@ -21,12 +23,43 @@ import 'package:fluxora/state.dart';
 import 'package:fluxora/views/backup_and_recovery.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:yaml/yaml.dart';
 // ignore: depend_on_referenced_packages
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 // ignore: depend_on_referenced_packages
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import '../support/render_capture.dart';
+
+class _RecoveryCore extends Fake implements ClashHandlerInterface {
+  @override
+  Future<bool> forceGc({bool forceFreeOSMemory = false}) async => true;
+  @override
+  Future<Result> getConfig(String path, {String? ageSecretKey}) async {
+    final raw =
+        jsonDecode(jsonEncode(loadYaml(await File(path).readAsString())))
+            as Map<String, dynamic>;
+    raw['rule'] = raw.remove('rules');
+    return Result.success(raw);
+  }
+
+  @override
+  Future<String> setupConfig(SetupParams params) async => '';
+  @override
+  Future<String> getExternalProviders() async => '[]';
+  @override
+  Future<String> getMode() async => 'rule';
+  @override
+  Future<Map> getProxies() async => {
+    'GLOBAL': {
+      'name': 'GLOBAL',
+      'type': 'Selector',
+      'now': 'DIRECT',
+      'all': ['DIRECT'],
+    },
+    'DIRECT': {'name': 'DIRECT', 'type': 'Direct'},
+  };
+}
 
 class _Paths extends Fake
     with MockPlatformInterfaceMixin
@@ -122,6 +155,16 @@ void main() {
     useHome(source);
     System.platformOverride = 'android';
     globalState.config = const Config(themeProps: ThemeProps());
+    globalState.appState = AppState(
+      viewSize: const Size(800, 600),
+      brightness: Brightness.light,
+      requests: FixedList(0),
+      logs: FixedList(0),
+      traffics: FixedList(0),
+      version: 1,
+      totalTraffic: Traffic(),
+      systemUiOverlayStyle: const SystemUiOverlayStyle(),
+    );
     await chainProxyManager.restoreBackupConfig(chain);
     await profileChainManager.restoreBackupConfig({
       'subscription': profileChain,
@@ -217,21 +260,116 @@ void main() {
     });
   });
 
+  testWidgets(
+    'profiles-only restore retains an aggregate that was never enabled',
+    (tester) async {
+      await mount(tester);
+      await tester.runAsync(() async {
+        const profile = Profile(
+          id: 'source',
+          label: 'Source',
+          autoUpdateDuration: Duration(days: 1),
+        );
+        const yaml = 'proxies: []\nrules: ["MATCH,DIRECT"]\n';
+        await (await profile.getFile()).writeAsString(yaml);
+        globalState.config = Config(
+          themeProps: defaultThemeProps,
+          profiles: [profile],
+          currentProfileId: profile.id,
+          aggregates: const [
+            AggregateProfile(
+              id: 'bundle',
+              name: 'Bundle',
+              baseProfileId: 'source',
+            ),
+          ],
+        ).withAggregateProfiles();
+        final id = globalState.config.aggregates.single.profileId!;
+        expect(await File(await appPath.getProfilePath(id)).exists(), isFalse);
+        final bytes = await controller.backupData();
+        useHome(target);
+        globalState.config = const Config(themeProps: ThemeProps());
+        await controller.recoveryData(bytes, RecoveryOption.onlyProfiles);
+        expect(
+          globalState.config.aggregateForProfile(id)?.baseProfileId,
+          profile.id,
+        );
+        expect(globalState.config.profiles.getProfile(id)?.label, 'Bundle');
+        expect(await (await profile.getFile()).readAsString(), yaml);
+      });
+    },
+  );
+
+  for (final option in [RecoveryOption.all, RecoveryOption.onlyProfiles]) {
+    testWidgets(
+      'compatible $option restore reuses the same aggregate identity',
+      (tester) async {
+        final originalCore = clashCore.clashInterface;
+        clashCore.clashInterface = _RecoveryCore();
+        addTearDown(() => clashCore.clashInterface = originalCore);
+        await mount(tester);
+        await tester.runAsync(() async {
+          final sourceProfile = Profile.normal().copyWith(
+            id: 'source',
+            label: 'Source',
+            url: 'https://example.invalid/source',
+          );
+          const yaml = '''
+proxies:
+  - {name: entry, type: socks5, server: entry.example.invalid, port: 1080}
+  - {name: relay, type: socks5, server: relay.example.invalid, port: 1080}
+rules: ["MATCH,DIRECT"]
+''';
+          await (await sourceProfile.getFile()).writeAsString(yaml);
+          final original = Config(
+            themeProps: defaultThemeProps,
+            profiles: [sourceProfile],
+            currentProfileId: sourceProfile.id,
+            aggregates: const [
+              AggregateProfile(
+                id: 'bundle',
+                name: 'Bundle',
+                baseProfileId: 'source',
+              ),
+            ],
+          ).withAggregateProfiles();
+          globalState.config = original;
+          final backupId = original.aggregates.single.profileId!;
+          final bytes = await controller.backupData();
+
+          useHome(target);
+          globalState.config = original.copyWith(
+            profiles: [
+              sourceProfile,
+              original.profiles.last.copyWith(id: 'local-generated'),
+            ],
+            aggregates: [
+              original.aggregates.single.copyWith(profileId: 'local-generated'),
+            ],
+          );
+          await controller.recoveryData(bytes, option);
+          expect(globalState.config.profiles, hasLength(2));
+          expect(
+            globalState.config.aggregates.single.profileId,
+            'local-generated',
+          );
+          expect(globalState.config.profiles.getProfile(backupId), isNull);
+          expect(
+            globalState.config.profiles.getProfile('source')!.url,
+            sourceProfile.url,
+          );
+          expect(await (await sourceProfile.getFile()).readAsString(), yaml);
+        });
+        await tester.pump(const Duration(seconds: 3));
+      },
+    );
+  }
+
   testWidgets('compatible recovery reuses a matching subscription identity', (
     tester,
   ) async {
     await mount(tester);
     await tester.runAsync(() async {
-      globalState.appState = AppState(
-        viewSize: const Size(800, 600),
-        brightness: Brightness.light,
-        requests: FixedList(0),
-        logs: FixedList(0),
-        traffics: FixedList(0),
-        version: 1,
-        totalTraffic: Traffic(),
-        systemUiOverlayStyle: const SystemUiOverlayStyle(),
-      );
       const backupProfile = Profile(
         id: 'backup-profile',
         label: 'Backup label',
@@ -295,9 +433,17 @@ void main() {
 
       await controller.recoveryData(bytes, RecoveryOption.all);
 
-      expect(globalState.config.profiles.single.id, localProfile.id);
-      expect(globalState.config.profiles.single.label, localProfile.label);
-      expect(globalState.config.currentProfileId, localProfile.id);
+      expect(globalState.config.profiles, hasLength(2));
+      expect(globalState.config.profiles.first.id, localProfile.id);
+      expect(globalState.config.profiles.first.label, localProfile.label);
+      expect(
+        globalState.config.currentProfileId,
+        globalState.config.aggregates.single.profileId,
+      );
+      expect(
+        globalState.config.aggregates.single.baseProfileId,
+        localProfile.id,
+      );
       expect(globalState.config.aggregates.single.id, 'backup-aggregate');
       expect(globalState.config.aggregates.single.memberIds, [localProfile.id]);
       expect(globalState.config.currentAggregateId, 'backup-aggregate');

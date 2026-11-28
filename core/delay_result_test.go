@@ -10,9 +10,50 @@ import (
 
 	"github.com/metacubex/mihomo/adapter"
 	"github.com/metacubex/mihomo/adapter/outbound"
+	"github.com/metacubex/mihomo/adapter/outboundgroup"
+	"github.com/metacubex/mihomo/adapter/provider"
 	"github.com/metacubex/mihomo/constant"
+	cp "github.com/metacubex/mihomo/constant/provider"
 	"github.com/metacubex/mihomo/tunnel"
 )
+
+func TestProviderDelayUsesRequestedGroupMembership(t *testing.T) {
+	oldProxies, oldProviders := tunnel.Proxies(), tunnel.Providers()
+	t.Cleanup(func() { tunnel.UpdateProxies(oldProxies, oldProviders) })
+	newProvider := func(name string) cp.ProxyProvider {
+		pd, err := provider.ParseProxyProvider(name, map[string]any{
+			"type": "inline", "payload": []map[string]any{{"name": "same node", "type": "direct"}},
+		}, tunnel.Tunnel)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if closer, ok := pd.(interface{ Close() error }); ok {
+			t.Cleanup(func() { _ = closer.Close() })
+		}
+		return pd
+	}
+	a, b := newProvider("source-a"), newProvider("source-b")
+	group, err := outboundgroup.NewSelector(outboundgroup.GroupCommonOption{Name: "group-b"}, outboundgroup.SelectorOption{}, adapter.NewProxy(outbound.NewDirect()), []cp.ProxyProvider{b})
+	if err != nil {
+		t.Fatal(err)
+	}
+	tunnel.UpdateProxies(map[string]constant.Proxy{
+		"group-b": adapter.NewProxy(group), "same node": a.Proxies()[0],
+	}, map[string]cp.ProxyProvider{"source-a": a, "source-b": b})
+	if got := findDelayProxy("same node", "group-b"); got != b.Proxies()[0] {
+		t.Fatal("tested a different provider's duplicate name")
+	}
+	if got := findDelayProxy("same node", "missing-group"); got != nil {
+		t.Fatal("stale group silently tested an unrelated node")
+	}
+	if got := findDelayProxy("same node", ""); got != a.Proxies()[0] {
+		t.Fatal("legacy lookup changed")
+	}
+	tunnel.UpdateProxies(map[string]constant.Proxy{}, map[string]cp.ProxyProvider{"source-b": b})
+	if got := findDelayProxy("same node", ""); got != b.Proxies()[0] {
+		t.Fatal("provider-only node was not found")
+	}
+}
 
 func TestUiDelayValue(t *testing.T) {
 	for _, test := range []struct {

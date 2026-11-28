@@ -8,12 +8,11 @@ import 'package:fluxora/widgets/dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// Manages the node-pool aggregate without forcing users back into every
-/// profile's edit sheet. Members are the profiles already marked with
-/// `joinAggregate`; the current profile is always the base config and cannot
-/// be a member of itself.
+/// Edits a derived configuration without switching the active subscription.
 class AggregateView extends StatefulWidget {
-  const AggregateView({super.key});
+  final String? aggregateId;
+
+  const AggregateView({super.key, this.aggregateId});
 
   @override
   State<AggregateView> createState() => _AggregateViewState();
@@ -37,6 +36,7 @@ class _AggregateMemberStats {
 
 class _AggregateViewState extends State<AggregateView> {
   late List<Profile> profiles;
+  String? _editingId;
   final Map<String, TextEditingController> _aliasControllers = {};
   final Map<String, Timer> _aliasTimers = {};
   final Map<String, _AggregateMemberStats> _stats = {};
@@ -46,7 +46,10 @@ class _AggregateViewState extends State<AggregateView> {
   @override
   void initState() {
     super.initState();
-    profiles = List<Profile>.from(globalState.config.profiles);
+    profiles = globalState.config.profiles
+        .where((p) => globalState.config.aggregateForProfile(p.id) == null)
+        .toList();
+    _editingId = widget.aggregateId ?? globalState.config.currentAggregate?.id;
     _loadStats();
   }
 
@@ -135,11 +138,29 @@ class _AggregateViewState extends State<AggregateView> {
       );
     }
     setState(() => profiles[index] = next);
-    globalState.appController.setProfile(next);
-    globalState.appController.applyProfileDebounce(silence: true);
+    globalState.appController.setProfileAndAutoApply(next);
   }
 
-  AggregateProfile? get _activeAggregate => globalState.config.currentAggregate;
+  AggregateProfile? get _activeAggregate => globalState.config.aggregates
+      .where((aggregate) => aggregate.id == _editingId)
+      .firstOrNull;
+
+  Config get _settings => globalState.config.copyWith(
+    currentProfileId: _activeAggregate?.profileId,
+    currentAggregateId: _editingId,
+  );
+
+  String? get _baseProfileId =>
+      _activeAggregate?.baseProfileId ??
+      globalState.config.currentAggregate?.baseProfileId ??
+      globalState.config.currentProfileId ??
+      profiles.firstOrNull?.id;
+
+  void _applyIfActive() {
+    if (_activeAggregate?.id == globalState.config.currentAggregate?.id) {
+      globalState.appController.applyProfileDebounce(silence: true);
+    }
+  }
 
   bool _isMember(Profile profile) {
     final active = _activeAggregate;
@@ -147,14 +168,8 @@ class _AggregateViewState extends State<AggregateView> {
     return profile.joinAggregate;
   }
 
-  Future<void> _selectAggregate(String? id) async {
-    final config = globalState.config.copyWith(
-      currentAggregateId: id == null || id.isEmpty ? null : id,
-    );
-    globalState.config = config;
-    await preferences.saveConfig(config);
-    globalState.appController.applyProfileDebounce(silence: true);
-    if (mounted) setState(() {});
+  void _selectAggregate(String? id) {
+    setState(() => _editingId = id);
   }
 
   Future<void> _editAggregateName({AggregateProfile? aggregate}) async {
@@ -186,32 +201,17 @@ class _AggregateViewState extends State<AggregateView> {
                 final name = controller.text.trim();
                 if (name.isEmpty) return;
                 final current = globalState.config;
-                late final Config config;
-                if (aggregate == null) {
-                  final created = AggregateProfile(
-                    id: DateTime.now().microsecondsSinceEpoch.toString(),
-                    name: name,
-                    baseProfileId: current.currentProfileId,
-                  );
-                  config = current.copyWith(
-                    aggregates: [...current.aggregates, created],
-                    currentAggregateId: created.id,
-                  );
-                } else {
-                  config = current.copyWith(
-                    aggregates: current.aggregates
-                        .map(
-                          (item) => item.id == aggregate.id
-                              ? item.copyWith(name: name)
-                              : item,
-                        )
-                        .toList(),
-                  );
-                }
-                globalState.config = config;
-                await preferences.saveConfig(config);
-                globalState.appController.applyProfileDebounce(silence: true);
-                if (mounted) setState(() {});
+                final updated =
+                    aggregate?.copyWith(name: name) ??
+                    AggregateProfile(
+                      id: utils.uuidV4,
+                      name: name,
+                      baseProfileId: _baseProfileId,
+                      mode: current.aggregateMode,
+                      scriptTiming: current.aggregateScriptTiming,
+                    );
+                await globalState.appController.saveAggregate(updated);
+                if (mounted) setState(() => _editingId = updated.id);
                 if (dialogContext.mounted) Navigator.of(dialogContext).pop();
               },
               child: Text(appLocalizations.save),
@@ -243,22 +243,27 @@ class _AggregateViewState extends State<AggregateView> {
       ),
     );
     if (confirmed != true) return;
-    final config = globalState.config.copyWith(
-      aggregates: globalState.config.aggregates
-          .where((item) => item.id != aggregate.id)
-          .toList(),
-      currentAggregateId: null,
-    );
-    globalState.config = config;
-    await preferences.saveConfig(config);
-    globalState.appController.applyProfileDebounce(silence: true);
-    if (mounted) setState(() {});
+    if (aggregate.profileId case final id?) {
+      await globalState.appController.deleteProfile(id);
+    }
+    if (mounted) setState(() => _editingId = null);
   }
 
-  void _setJoin(Profile profile, bool value) {
+  Future<void> _setJoin(Profile profile, bool value) async {
     final active = _activeAggregate;
     if (active == null) {
-      _replaceProfile(profile.copyWith(joinAggregate: value));
+      if (!value) {
+        _replaceProfile(profile.copyWith(joinAggregate: false));
+        return;
+      }
+      final created = AggregateProfile(
+        id: utils.uuidV4,
+        name: appLocalizations.aggregateTitle,
+        baseProfileId: _baseProfileId,
+        memberIds: [profile.id],
+      );
+      await globalState.appController.saveAggregate(created);
+      if (mounted) setState(() => _editingId = created.id);
       return;
     }
     final memberIds = [...active.memberIds];
@@ -267,16 +272,9 @@ class _AggregateViewState extends State<AggregateView> {
     } else {
       memberIds.remove(profile.id);
     }
-    final aggregates = globalState.config.aggregates
-        .map(
-          (item) =>
-              item.id == active.id ? item.copyWith(memberIds: memberIds) : item,
-        )
-        .toList();
-    final config = globalState.config.copyWith(aggregates: aggregates);
-    globalState.config = config;
-    preferences.saveConfig(config);
-    globalState.appController.applyProfileDebounce(silence: true);
+    await globalState.appController.saveAggregate(
+      active.copyWith(memberIds: memberIds),
+    );
     if (mounted) setState(() {});
   }
 
@@ -292,7 +290,7 @@ class _AggregateViewState extends State<AggregateView> {
     OverrideData? overrideData,
   }) {
     final current = globalState.config;
-    final active = current.currentAggregate;
+    final active = _activeAggregate;
     if (active == null) {
       return current.copyWith(
         aggregateMode: mode ?? current.aggregateMode,
@@ -328,20 +326,20 @@ class _AggregateViewState extends State<AggregateView> {
   }
 
   Future<void> _setMode(AggregateMode mode) async {
-    if (globalState.config.effectiveAggregateMode == mode) return;
+    if (_settings.effectiveAggregateMode == mode) return;
     final next = _withAggregateSettings(mode: mode);
     globalState.config = next;
     await preferences.saveConfig(next);
-    globalState.appController.applyProfileDebounce(silence: true);
+    _applyIfActive();
     if (mounted) setState(() {});
   }
 
   Future<void> _setScriptTiming(AggregateScriptTiming timing) async {
-    if (globalState.config.effectiveScriptTiming == timing) return;
+    if (_settings.effectiveScriptTiming == timing) return;
     final next = _withAggregateSettings(timing: timing);
     globalState.config = next;
     await preferences.saveConfig(next);
-    globalState.appController.applyProfileDebounce(silence: true);
+    _applyIfActive();
     if (mounted) setState(() {});
   }
 
@@ -363,7 +361,7 @@ class _AggregateViewState extends State<AggregateView> {
     );
     globalState.config = next;
     await preferences.saveConfig(next);
-    globalState.appController.applyProfileDebounce(silence: true);
+    _applyIfActive();
     if (mounted) setState(() {});
   }
 
@@ -371,8 +369,7 @@ class _AggregateViewState extends State<AggregateView> {
     bool? enable,
     OverrideRuleType? type,
   }) async {
-    final current = globalState.config;
-    final override = current.effectiveAggregateOverride;
+    final override = _settings.effectiveAggregateOverride;
     final next = override.copyWith(
       enable: enable ?? override.enable,
       rule: type == null ? override.rule : override.rule.copyWith(type: type),
@@ -380,12 +377,12 @@ class _AggregateViewState extends State<AggregateView> {
     final config = _withAggregateSettings(overrideData: next);
     globalState.config = config;
     await preferences.saveConfig(config);
-    globalState.appController.applyProfileDebounce(silence: true);
+    _applyIfActive();
     if (mounted) setState(() {});
   }
 
   Future<void> _editAggregateOverrideRules() async {
-    final override = globalState.config.effectiveAggregateOverride;
+    final override = _settings.effectiveAggregateOverride;
     final controller = TextEditingController(
       text: override.rule.rules.map((rule) => rule.value).join('\n'),
     );
@@ -417,15 +414,14 @@ class _AggregateViewState extends State<AggregateView> {
                     .where((line) => line.isNotEmpty)
                     .map(Rule.value)
                     .toList();
-                final current = globalState.config;
-                final override = current.effectiveAggregateOverride;
+                final override = _settings.effectiveAggregateOverride;
                 final next = override.copyWith(
                   rule: override.rule.updateRules((_) => rules),
                 );
                 final config = _withAggregateSettings(overrideData: next);
                 globalState.config = config;
                 await preferences.saveConfig(config);
-                globalState.appController.applyProfileDebounce(silence: true);
+                _applyIfActive();
                 if (mounted) setState(() {});
                 if (dialogContext.mounted) Navigator.of(dialogContext).pop();
               },
@@ -465,7 +461,12 @@ class _AggregateViewState extends State<AggregateView> {
       }
     }
     if (!changed) return;
-    globalState.appController.setProfiles(profiles);
+    globalState.appController.setProfiles([
+      ...profiles,
+      ...globalState.config.profiles.where(
+        (p) => globalState.config.aggregateForProfile(p.id) != null,
+      ),
+    ]);
     globalState.appController.applyProfileDebounce(silence: true);
     globalState.showNotifier(appLocalizations.aggregateFixAliasesDone);
     if (mounted) setState(() {});
@@ -477,7 +478,12 @@ class _AggregateViewState extends State<AggregateView> {
       final profile = profiles.removeAt(oldIndex);
       profiles.insert(newIndex, profile);
     });
-    globalState.appController.setProfiles(profiles);
+    globalState.appController.setProfiles([
+      ...profiles,
+      ...globalState.config.profiles.where(
+        (p) => globalState.config.aggregateForProfile(p.id) != null,
+      ),
+    ]);
     globalState.appController.applyProfileDebounce(silence: true);
   }
 
@@ -600,7 +606,7 @@ class _AggregateViewState extends State<AggregateView> {
                 ),
                 if (isCurrent)
                   Chip(
-                    label: Text(appLocalizations.aggregateCurrent),
+                    label: Text(appLocalizations.aggregateBaseProfile),
                     visualDensity: VisualDensity.compact,
                   )
                 else
@@ -683,7 +689,7 @@ class _AggregateViewState extends State<AggregateView> {
     required String title,
     required String description,
   }) {
-    final selected = globalState.config.effectiveAggregateMode == mode;
+    final selected = _settings.effectiveAggregateMode == mode;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: InkWell(
@@ -833,10 +839,9 @@ class _AggregateViewState extends State<AggregateView> {
       nodes += _stats[profile.id]?.nodes ?? 0;
     }
     final afterMerge =
-        (globalState.config.effectiveAggregateMode == AggregateMode.full ||
-            globalState.config.effectiveAggregateMode ==
-                AggregateMode.custom) &&
-        globalState.config.effectiveScriptTiming == AggregateScriptTiming.after;
+        (_settings.effectiveAggregateMode == AggregateMode.full ||
+            _settings.effectiveAggregateMode == AggregateMode.custom) &&
+        _settings.effectiveScriptTiming == AggregateScriptTiming.after;
     if (!afterMerge) {
       nodes = _stats[currentProfileId]?.nodes ?? 0;
     }
@@ -845,7 +850,7 @@ class _AggregateViewState extends State<AggregateView> {
 
   Future<void> _showEffectivePreview() async {
     if (_buildingPreview) return;
-    final profile = globalState.config.currentProfile;
+    final profile = _settings.currentProfile;
     if (profile == null) {
       globalState.showNotifier(appLocalizations.aggregatePreviewFailed);
       return;
@@ -1196,7 +1201,7 @@ class _AggregateViewState extends State<AggregateView> {
 
   @override
   Widget build(BuildContext context) {
-    final currentProfileId = globalState.config.currentProfileId ?? '';
+    final currentProfileId = _baseProfileId ?? '';
     final activeAggregate = _activeAggregate;
     final header = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1208,6 +1213,7 @@ class _AggregateViewState extends State<AggregateView> {
               child: DropdownButtonFormField<String>(
                 key: ValueKey(activeAggregate?.id ?? ''),
                 initialValue: activeAggregate?.id ?? '',
+                isExpanded: true,
                 decoration: const InputDecoration(
                   isDense: true,
                   border: OutlineInputBorder(),
@@ -1250,14 +1256,41 @@ class _AggregateViewState extends State<AggregateView> {
           ],
         ),
         const SizedBox(height: 4),
-        Text(
-          appLocalizations.aggregateSharedSettings,
-          style: context.textTheme.labelSmall?.toLight,
-        ),
-        Text(
-          appLocalizations.aggregateDesc,
-          style: context.textTheme.bodyMedium?.toLight,
-        ),
+        if (activeAggregate != null) ...[
+          const SizedBox(height: 8),
+          DropdownButtonFormField<String>(
+            key: ValueKey('${activeAggregate.id}:$currentProfileId'),
+            initialValue: profiles.any((p) => p.id == currentProfileId)
+                ? currentProfileId
+                : null,
+            isExpanded: true,
+            decoration: InputDecoration(
+              labelText: appLocalizations.aggregateBaseProfile,
+              border: const OutlineInputBorder(),
+              errorText: profiles.any((p) => p.id == currentProfileId)
+                  ? null
+                  : appLocalizations.aggregateSourceMissing,
+            ),
+            items: [
+              for (final profile in profiles)
+                DropdownMenuItem(
+                  value: profile.id,
+                  child: Text(
+                    profile.label ?? profile.id,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+            ],
+            onChanged: (id) async {
+              if (id == null) return;
+              await globalState.appController.saveAggregate(
+                activeAggregate.copyWith(baseProfileId: id),
+              );
+              if (mounted) setState(() {});
+            },
+          ),
+        ],
         _sectionTitle(context, appLocalizations.aggregateMode),
         _modeCard(
           context,
@@ -1280,15 +1313,14 @@ class _AggregateViewState extends State<AggregateView> {
           title: appLocalizations.aggregateCustom,
           description: appLocalizations.aggregateCustomDesc,
         ),
-        if (globalState.config.effectiveAggregateMode ==
-            AggregateMode.custom) ...[
+        if (_settings.effectiveAggregateMode == AggregateMode.custom) ...[
           SwitchListTile.adaptive(
             contentPadding: EdgeInsets.zero,
             title: Text(appLocalizations.aggregateMergeNodes),
-            value: globalState.config.effectiveMergeNodes,
+            value: _settings.effectiveMergeNodes,
             onChanged: (value) => _setCustomOption(nodes: value),
           ),
-          if (!globalState.config.effectiveMergeNodes)
+          if (!_settings.effectiveMergeNodes)
             Padding(
               padding: const EdgeInsets.only(bottom: 6),
               child: Text(
@@ -1299,37 +1331,36 @@ class _AggregateViewState extends State<AggregateView> {
           SwitchListTile.adaptive(
             contentPadding: EdgeInsets.zero,
             title: Text(appLocalizations.aggregateMergeGroups),
-            value: globalState.config.effectiveMergeGroups,
+            value: _settings.effectiveMergeGroups,
             onChanged: (value) => _setCustomOption(groups: value),
           ),
           SwitchListTile.adaptive(
             contentPadding: EdgeInsets.zero,
             title: Text(appLocalizations.aggregateMergeRules),
-            value: globalState.config.effectiveMergeRules,
+            value: _settings.effectiveMergeRules,
             onChanged: (value) => _setCustomOption(rules: value),
           ),
           SwitchListTile.adaptive(
             contentPadding: EdgeInsets.zero,
             title: Text(appLocalizations.aggregateMergeRuleProviders),
-            value: globalState.config.effectiveMergeRuleProviders,
+            value: _settings.effectiveMergeRuleProviders,
             onChanged: (value) => _setCustomOption(ruleProviders: value),
           ),
           SwitchListTile.adaptive(
             contentPadding: EdgeInsets.zero,
             title: Text(appLocalizations.aggregateMergeMemberScripts),
-            value: globalState.config.effectiveMergeMemberScripts,
+            value: _settings.effectiveMergeMemberScripts,
             onChanged: (value) => _setCustomOption(memberScripts: value),
           ),
           SwitchListTile.adaptive(
             contentPadding: EdgeInsets.zero,
             title: Text(appLocalizations.aggregateApplyNodeOverrides),
-            value: globalState.config.effectiveApplyNodeOverrides,
+            value: _settings.effectiveApplyNodeOverrides,
             onChanged: (value) => _setCustomOption(nodeOverrides: value),
           ),
         ],
-        if (globalState.config.effectiveAggregateMode == AggregateMode.full ||
-            globalState.config.effectiveAggregateMode ==
-                AggregateMode.custom) ...[
+        if (_settings.effectiveAggregateMode == AggregateMode.full ||
+            _settings.effectiveAggregateMode == AggregateMode.custom) ...[
           _sectionTitle(context, appLocalizations.aggregateScriptTiming),
           Wrap(
             spacing: 8,
@@ -1338,7 +1369,7 @@ class _AggregateViewState extends State<AggregateView> {
               ChoiceChip(
                 label: Text(appLocalizations.aggregateScriptBefore),
                 selected:
-                    globalState.config.effectiveScriptTiming ==
+                    _settings.effectiveScriptTiming ==
                     AggregateScriptTiming.before,
                 onSelected: (_) =>
                     _setScriptTiming(AggregateScriptTiming.before),
@@ -1346,7 +1377,7 @@ class _AggregateViewState extends State<AggregateView> {
               ChoiceChip(
                 label: Text(appLocalizations.aggregateScriptAfter),
                 selected:
-                    globalState.config.effectiveScriptTiming ==
+                    _settings.effectiveScriptTiming ==
                     AggregateScriptTiming.after,
                 onSelected: (_) =>
                     _setScriptTiming(AggregateScriptTiming.after),
@@ -1355,8 +1386,7 @@ class _AggregateViewState extends State<AggregateView> {
           ),
           const SizedBox(height: 6),
           Text(
-            globalState.config.effectiveScriptTiming ==
-                    AggregateScriptTiming.after
+            _settings.effectiveScriptTiming == AggregateScriptTiming.after
                 ? appLocalizations.aggregateScriptAfterDesc
                 : appLocalizations.aggregateMemberScriptNote,
             style: context.textTheme.labelSmall?.toLight,
@@ -1368,15 +1398,15 @@ class _AggregateViewState extends State<AggregateView> {
             style: context.textTheme.labelSmall?.toLight,
           ),
         ],
-        _sectionTitle(context, appLocalizations.aggregateOverride),
+        const SizedBox(height: 12),
         SwitchListTile.adaptive(
           contentPadding: EdgeInsets.zero,
           title: Text(appLocalizations.aggregateOverride),
           subtitle: Text(appLocalizations.aggregateOverrideHint),
-          value: globalState.config.effectiveAggregateOverride.enable,
+          value: _settings.effectiveAggregateOverride.enable,
           onChanged: (value) => _setAggregateOverride(enable: value),
         ),
-        if (globalState.config.effectiveAggregateOverride.enable) ...[
+        if (_settings.effectiveAggregateOverride.enable) ...[
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -1384,7 +1414,7 @@ class _AggregateViewState extends State<AggregateView> {
               ChoiceChip(
                 label: Text(appLocalizations.overrideOriginRules),
                 selected:
-                    globalState.config.effectiveAggregateOverride.rule.type ==
+                    _settings.effectiveAggregateOverride.rule.type ==
                     OverrideRuleType.override,
                 onSelected: (_) =>
                     _setAggregateOverride(type: OverrideRuleType.override),
@@ -1392,7 +1422,7 @@ class _AggregateViewState extends State<AggregateView> {
               ChoiceChip(
                 label: Text(appLocalizations.addedOriginRules),
                 selected:
-                    globalState.config.effectiveAggregateOverride.rule.type ==
+                    _settings.effectiveAggregateOverride.rule.type ==
                     OverrideRuleType.added,
                 onSelected: (_) =>
                     _setAggregateOverride(type: OverrideRuleType.added),
@@ -1406,7 +1436,7 @@ class _AggregateViewState extends State<AggregateView> {
               onPressed: _editAggregateOverrideRules,
               icon: const Icon(Icons.edit_note),
               label: Text(
-                '${appLocalizations.rule} (${globalState.config.effectiveAggregateOverride.rule.rules.length})',
+                '${appLocalizations.rule} (${_settings.effectiveAggregateOverride.rule.rules.length})',
               ),
             ),
           ),
@@ -1429,6 +1459,29 @@ class _AggregateViewState extends State<AggregateView> {
             ),
           ],
         ),
+        for (final id in activeAggregate?.memberIds ?? <String>[])
+          if (!profiles.any((p) => p.id == id))
+            ListTile(
+              leading: Icon(
+                Icons.warning_amber_rounded,
+                color: context.colorScheme.error,
+              ),
+              title: Text(appLocalizations.aggregateSourceMissing),
+              trailing: IconButton(
+                tooltip: appLocalizations.delete,
+                icon: const Icon(Icons.remove_circle_outline),
+                onPressed: () async {
+                  await globalState.appController.saveAggregate(
+                    activeAggregate!.copyWith(
+                      memberIds: activeAggregate.memberIds
+                          .where((member) => member != id)
+                          .toList(),
+                    ),
+                  );
+                  if (mounted) setState(() {});
+                },
+              ),
+            ),
         if (_hasDuplicateAliases(currentProfileId))
           Align(
             alignment: Alignment.centerLeft,

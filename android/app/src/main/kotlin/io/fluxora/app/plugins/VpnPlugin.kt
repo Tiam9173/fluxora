@@ -446,7 +446,9 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         val cm = connectivity ?: return@runCatching null
         val network = getDefaultPhysicalNetwork() ?: return@runCatching null
         val link = cm.getLinkProperties(network) ?: return@runCatching null
-        if (!link.isPrivateDnsActive) "" else link.privateDnsServerName?.trim().orEmpty()
+        // Strict-mode hostname remains configured while DoT validation retries.
+        // Treating that transient failure as "off" causes config reload loops.
+        link.privateDnsServerName?.trim().orEmpty()
     }.getOrNull()
 
     fun handleStart(options: VpnOptions): Boolean {
@@ -531,6 +533,7 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         override fun onAvailable(network: Network) {
             networks.add(network)
             handleNetworkChange()
+            ServicePlugin.notifyNetworkChanged()
             invokeDart("networkChanged")
         }
 
@@ -540,6 +543,7 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             networkPrivateDnsMap.remove(network)
             onUpdateNetwork()
             handleNetworkChange()
+            ServicePlugin.notifyNetworkChanged()
             invokeDart("networkChanged")
         }
 
@@ -547,14 +551,13 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             val dnsList = linkProperties.dnsServers.map { it.asSocketAddressText(53) }
             networkDnsMap[network] = dnsList
             onUpdateNetwork()
-            val privateDnsServerName = if (
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
-                linkProperties.isPrivateDnsActive
-            ) linkProperties.privateDnsServerName?.trim().orEmpty() else ""
+            val privateDnsServerName = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
+                linkProperties.privateDnsServerName?.trim().orEmpty() else ""
             val previous = networkPrivateDnsMap.put(network, privateDnsServerName)
             if (previous != privateDnsServerName &&
                 (previous != null || privateDnsServerName.isNotEmpty())
             ) {
+                ServicePlugin.notifyNetworkChanged()
                 invokeDart("networkChanged")
             }
         }

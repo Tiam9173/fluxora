@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:ui';
 
 import 'package:fluxora/common/common.dart';
@@ -91,14 +92,6 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
         cancelable: false,
       );
     }
-  }
-
-  Future<void> _selectAggregate(String id) async {
-    final config = globalState.config.copyWith(currentAggregateId: id);
-    globalState.config = config;
-    await preferences.saveConfig(config);
-    globalState.appController.applyProfileDebounce(silence: true);
-    if (mounted) setState(() {});
   }
 
   List<Widget> _buildActions({required bool hasProfiles}) {
@@ -218,20 +211,12 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
     final hasProfiles = ref.watch(
       profilesProvider.select((profiles) => profiles.isNotEmpty),
     );
-    final aggregates = globalState.config.aggregates;
     return CommonScaffold(
       title: appLocalizations.profiles,
       floatingActionButton: hasProfiles ? _buildFAB() : null,
       actions: _buildActions(hasProfiles: hasProfiles),
       body: Column(
         children: [
-          if (aggregates.isNotEmpty)
-            AggregateSubscriptionSwitcher(
-              aggregates: aggregates,
-              selectedId: globalState.config.currentAggregateId,
-              enabled: hasProfiles,
-              onSelected: _selectAggregate,
-            ),
           Expanded(
             child: Consumer(
               builder: (_, ref, _) {
@@ -357,7 +342,9 @@ class AggregateSubscriptionSwitcher extends StatelessWidget {
               if (aggregate != aggregates.first) const SizedBox(width: 8),
               ChoiceChip(
                 avatar: const Icon(Icons.layers_outlined, size: 18),
-                label: Text('${aggregate.name} · ${aggregate.memberIds.length}'),
+                label: Text(
+                  '${aggregate.name} · ${aggregate.memberIds.length}',
+                ),
                 selected: selectedId == aggregate.id,
                 onSelected: enabled ? (_) => onSelected(aggregate.id) : null,
               ),
@@ -390,6 +377,9 @@ class ProfileItem extends StatelessWidget {
   final String? groupValue;
   final bool isPending;
   final void Function(String? value) onChanged;
+
+  AggregateProfile? get _aggregate =>
+      globalState.config.aggregateForProfile(profile.id);
 
   const ProfileItem({
     super.key,
@@ -460,6 +450,16 @@ class ProfileItem extends StatelessWidget {
     BuildContext context, {
     bool focusPortal = false,
   }) {
+    if (_aggregate case final aggregate?) {
+      BaseNavigator.push(
+        context,
+        CommonScaffold(
+          title: aggregate.name,
+          body: AggregateView(aggregateId: aggregate.id),
+        ),
+      );
+      return;
+    }
     final editKey = GlobalKey<EditProfileViewState>();
     showExtend(
       context,
@@ -587,7 +587,9 @@ class ProfileItem extends StatelessWidget {
   }
 
   Widget _buildTitleRow(BuildContext context) {
-    final subtitleText = profile.type == ProfileType.file
+    final subtitleText = _aggregate != null
+        ? appLocalizations.aggregateTitle
+        : profile.type == ProfileType.file
         ? appLocalizations.localFile
         : profile.subscriptionInfo?.expireDesc;
 
@@ -616,6 +618,30 @@ class ProfileItem extends StatelessWidget {
   }
 
   Widget _buildContentInfo(BuildContext context) {
+    if (_aggregate case final aggregate?) {
+      final ids = {
+        if (aggregate.baseProfileId != null) aggregate.baseProfileId!,
+        ...aggregate.memberIds,
+      };
+      final members = ids.map(
+        (id) => globalState.config.profiles.getProfile(id),
+      );
+      final missing = members.any((p) => p == null);
+      return Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Text(
+          '${appLocalizations.aggregateMembers} · ${ids.length}\n'
+          '${members.map((p) => p?.label ?? p?.id ?? appLocalizations.aggregateSourceMissing).join(' · ')}',
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
+          style: context.textTheme.labelMedium?.copyWith(
+            color: missing
+                ? context.colorScheme.error
+                : context.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      );
+    }
     final subscriptionInfo = profile.subscriptionInfo;
     final updateTimeText = profile.lastUpdateDate?.lastUpdateTimeDesc ?? '';
     final hasUsageBar =
@@ -727,14 +753,25 @@ class ProfileItem extends StatelessWidget {
   Future<void> _handleExportFile(BuildContext context) async {
     final res = await globalState.appController.safeRun<bool>(
       () async {
-        final file = await profile.getFile();
+        final data = _aggregate == null
+            ? await (await profile.getFile()).readAsBytes()
+            : Uint8List.fromList(
+                utf8.encode(
+                  await encodeYamlTask(
+                    await globalState.patchRawConfig(
+                      patchConfig: globalState.config.patchClashConfig,
+                      profile: profile,
+                    ),
+                  ),
+                ),
+              );
         final rawName = (profile.label ?? profile.id).trim();
         final fileName = (rawName.endsWith('.yaml') || rawName.endsWith('.yml'))
             ? rawName
             : '$rawName.yaml';
         final value = await picker.saveFile(
           fileName,
-          await file.readAsBytes(),
+          data,
           allowedExtensions: ['yaml', 'yml'],
         );
         if (value == null) return false;
@@ -757,10 +794,16 @@ class ProfileItem extends StatelessWidget {
     final hasPortal = profile.portalUrl.isSafeWebUrl;
     return [
       PopupMenuItemData(
-        icon: Icons.dns_outlined,
-        label: appLocalizations.profileManageNodes,
+        icon: _aggregate == null ? Icons.dns_outlined : Icons.layers_outlined,
+        label: _aggregate == null
+            ? appLocalizations.profileManageNodes
+            : appLocalizations.aggregateMembers,
         onPressed: () {
-          BaseNavigator.push(context, ProfileNodesView(profile: profile));
+          if (_aggregate != null) {
+            _handleShowEditExtendPage(context);
+          } else {
+            BaseNavigator.push(context, ProfileNodesView(profile: profile));
+          }
         },
       ),
       PopupMenuItemData(
@@ -927,7 +970,9 @@ class ProfileItem extends StatelessWidget {
                     : Icon(
                         profile.id == groupValue
                             ? Icons.check_rounded
-                            : (profile.type == ProfileType.file
+                            : (_aggregate != null
+                                  ? Icons.layers_outlined
+                                  : profile.type == ProfileType.file
                                   ? Icons.description_outlined
                                   : Icons.cloud_download_outlined),
                         size: 20,

@@ -8430,10 +8430,10 @@ class AppLocalizations {
     );
   }
 
-  /// `Sends your IP to a third party (no privacy policy)`
+  /// `Your IP is sent to IPure / IPQuery for this lookup.`
   String get ipRiskPrivacyNote {
     return Intl.message(
-      'Sends your IP to a third party (no privacy policy)',
+      'Your IP is sent to IPure / IPQuery for this lookup.',
       name: 'ipRiskPrivacyNote',
       desc: '',
       args: [],
@@ -8680,10 +8680,10 @@ class AppLocalizations {
     );
   }
 
-  /// `IPure has limited requests. Try again later.`
+  /// `Query limit reached. Try again later.`
   String get ipRiskRateLimited {
     return Intl.message(
-      'IPure has limited requests. Try again later.',
+      'Query limit reached. Try again later.',
       name: 'ipRiskRateLimited',
       desc: '',
       args: [],
@@ -11790,10 +11790,10 @@ class AppLocalizations {
     );
   }
 
-  /// `Current subscription (base)`
+  /// `Base subscription`
   String get aggregateBaseProfile {
     return Intl.message(
-      'Current subscription (base)',
+      'Base subscription',
       name: 'aggregateBaseProfile',
       desc: '',
       args: [],
@@ -12110,10 +12110,10 @@ class AppLocalizations {
     );
   }
 
-  /// `Default aggregate`
+  /// `Defaults for new aggregates`
   String get aggregateDefault {
     return Intl.message(
-      'Default aggregate',
+      'Defaults for new aggregates',
       name: 'aggregateDefault',
       desc: '',
       args: [],
@@ -12475,6 +12475,46 @@ class AppLocalizations {
     return Intl.message(
       'Member scripts run only when that profile has script override enabled; node-pool mode does not merge member rules or groups.',
       name: 'aggregateMemberScriptNote',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Source subscription missing`
+  String get aggregateSourceMissing {
+    return Intl.message(
+      'Source subscription missing',
+      name: 'aggregateSourceMissing',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Remove this subscription from these aggregates before deleting it: {names}`
+  String aggregateSourceInUse(Object names) {
+    return Intl.message(
+      'Remove this subscription from these aggregates before deleting it: $names',
+      name: 'aggregateSourceInUse',
+      desc: '',
+      args: [names],
+    );
+  }
+
+  /// `Public risk indicators are available. Purity and scenario scores are not provided.`
+  String get ipRiskPublicReportNote {
+    return Intl.message(
+      'Public risk indicators are available. Purity and scenario scores are not provided.',
+      name: 'ipRiskPublicReportNote',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Information shown`
+  String get ipInfoFieldsTitle {
+    return Intl.message(
+      'Information shown',
+      name: 'ipInfoFieldsTitle',
       desc: '',
       args: [],
     );

@@ -40,6 +40,11 @@ _AppSettingProps _$AppSettingPropsFromJson(
   testUrl: json['testUrl'] as String? ?? defaultTestUrl,
   networkDetectionUrl:
       json['networkDetectionUrl'] as String? ?? defaultNetworkDetectionUrl,
+  networkInfoFields:
+      (json['networkInfoFields'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toSet() ??
+      const {'country', 'region', 'isp', 'asn', 'domain'},
   ipReputationEnabled: json['ipReputationEnabled'] as bool? ?? false,
   tolerateRuleProviderErrors:
       json['tolerateRuleProviderErrors'] as bool? ?? false,
@@ -94,6 +99,7 @@ Map<String, dynamic> _$AppSettingPropsToJson(_AppSettingProps instance) =>
       'closeConnections': instance.closeConnections,
       'testUrl': instance.testUrl,
       'networkDetectionUrl': instance.networkDetectionUrl,
+      'networkInfoFields': instance.networkInfoFields.toList(),
       'ipReputationEnabled': instance.ipReputationEnabled,
       'tolerateRuleProviderErrors': instance.tolerateRuleProviderErrors,
       'ipReputationFields': instance.ipReputationFields.toList(),
@@ -615,6 +621,7 @@ _AggregateProfile _$AggregateProfileFromJson(Map<String, dynamic> json) =>
     _AggregateProfile(
       id: json['id'] as String,
       name: json['name'] as String,
+      profileId: json['profileId'] as String?,
       baseProfileId: json['baseProfileId'] as String?,
       memberIds:
           (json['memberIds'] as List<dynamic>?)
@@ -641,6 +648,7 @@ Map<String, dynamic> _$AggregateProfileToJson(_AggregateProfile instance) =>
     <String, dynamic>{
       'id': instance.id,
       'name': instance.name,
+      'profileId': instance.profileId,
       'baseProfileId': instance.baseProfileId,
       'memberIds': instance.memberIds,
       'mode': _$AggregateModeEnumMap[instance.mode],

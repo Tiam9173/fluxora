@@ -4,6 +4,62 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   const bootstrap = ['192.0.2.53'];
 
+  test(
+    'private DNS endpoint uses bootstrap and bypasses proxy only for DoT',
+    () {
+      final config = <String, dynamic>{
+        'dns': <String, dynamic>{
+          'enable': true,
+          'default-nameserver': bootstrap,
+          'nameserver': ['system'],
+          'nameserver-policy': {
+            'geosite:private': ['system'],
+            '+.internal.example': ['https://office.example/dns-query'],
+          },
+        },
+        'rules': ['DOMAIN,blocked.example,REJECT', 'MATCH,Proxy'],
+      };
+      applyAndroidPrivateDnsServer(config, 'Dns.Private.Example.');
+      applyAndroidPrivateDnsRules(config, 'Dns.Private.Example.');
+      applyAndroidPrivateDnsRules(config, 'dns.private.example');
+      expect(config['dns']['nameserver-policy'], {
+        'geosite:private': ['tls://dns.private.example:853#DIRECT'],
+        '+.internal.example': ['https://office.example/dns-query'],
+        'dns.private.example': bootstrap,
+      });
+      expect(
+        (config['dns']['nameserver-policy'] as Map).keys.first,
+        'dns.private.example',
+      );
+      expect(config['rules'], [
+        'AND,((DOMAIN,dns.private.example),(NETWORK,TCP),(DST-PORT,853)),DIRECT',
+        'DOMAIN,blocked.example,REJECT',
+        'MATCH,Proxy',
+      ]);
+    },
+  );
+
+  test(
+    'private DNS cannot bootstrap through itself or inject routing rules',
+    () {
+      final config = <String, dynamic>{
+        'dns': <String, dynamic>{
+          'enable': true,
+          'default-nameserver': ['tls://dns.private.example:853#DIRECT'],
+        },
+        'rules': ['MATCH,Proxy'],
+      };
+      applyAndroidPrivateDnsServer(config, 'dns.private.example');
+      expect(config['dns']['nameserver-policy'], {
+        'dns.private.example': ['system'],
+      });
+      for (final host in ['', '192.0.2.53', 'resolver.example),REJECT']) {
+        applyAndroidPrivateDnsRules(config, host);
+      }
+      expect(config['rules'], ['MATCH,Proxy']);
+    },
+  );
+
   test('adds strict private DNS host to a mode-independent bypass list', () {
     final config = <String, dynamic>{
       'dns': <String, dynamic>{'enable': true, 'enhanced-mode': 'fake-ip'},
@@ -65,10 +121,7 @@ void main() {
     expect(redirHost['dns']['nameserver'], [
       'tls://resolver.private.example:853#DIRECT',
     ]);
-    expect(
-      redirHost['dns'].containsKey('fake-ip-filter-bypass'),
-      isFalse,
-    );
+    expect(redirHost['dns'].containsKey('fake-ip-filter-bypass'), isFalse);
   });
 
   test('uses encrypted fallback when Private DNS is the only resolver', () {
@@ -112,6 +165,7 @@ void main() {
     applyPrivateDnsBypass(config, 'Resolver.Private.Example.');
 
     expect(config['dns']['nameserver-policy'], {
+      'resolver.private.example': ['system'],
       'geosite:private': ['tls://resolver.private.example:853#DIRECT'],
       'geosite:cn': 'https://resolver.example/dns-query',
       'internal.example': 'tls://resolver.private.example:853#DIRECT',

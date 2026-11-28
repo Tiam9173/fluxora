@@ -239,6 +239,26 @@ void applyAndroidPrivateDnsServer(
   dns['fallback'] = fallback;
   dns['fallback-lazy-query'] = true;
 
+  // The resolver's own hostname must use bootstrap DNS, including when a TUN
+  // packet is mapped back to that hostname before a DIRECT dial.
+  final bootstrap = servers(dns['default-nameserver']).where((server) {
+    final endpoint = _dnsEndpoint(server);
+    return endpoint != null && _dnsHost(endpoint).toLowerCase() != host;
+  }).toList();
+  // `system` in the core uses the physical network's DNS addresses, which are
+  // also Android's bootstrap source. Use it only for the resolver hostname.
+  if (bootstrap.isEmpty) bootstrap.add('system');
+  if (bootstrap.isNotEmpty) {
+    dns['nameserver-policy'] = <String, dynamic>{
+      host: bootstrap,
+      for (final entry
+          in ((dns['nameserver-policy'] as Map?)?.cast<String, dynamic>() ??
+                  <String, dynamic>{})
+              .entries)
+        if (entry.key.toLowerCase() != host) entry.key: entry.value,
+    };
+  }
+
   final policyValue = dns['nameserver-policy'];
   if (policyValue is Map) {
     final policy = policyValue.cast<String, dynamic>();
@@ -249,6 +269,7 @@ void applyAndroidPrivateDnsServer(
     }
 
     for (final entry in policy.entries.toList()) {
+      if (entry.key == host && bootstrap.isNotEmpty) continue;
       final values = entry.value is List
           ? List<dynamic>.from(entry.value as List)
           : [entry.value];
@@ -259,6 +280,27 @@ void applyAndroidPrivateDnsServer(
       policy[entry.key] = entry.value is List ? resolved : resolved.single;
     }
   }
+}
+
+/// Android's system DoT validation must not depend on the selected proxy.
+/// Restrict the rule to the configured hostname and TCP/853.
+void applyAndroidPrivateDnsRules(
+  Map<String, dynamic> config,
+  String? serverName,
+) {
+  final host = serverName?.trim().toLowerCase().replaceFirst(
+    RegExp(r'\.$'),
+    '',
+  );
+  if (host == null ||
+      !host.contains('.') ||
+      InternetAddress.tryParse(host) != null ||
+      !RegExp(r'^[a-z0-9.-]+$').hasMatch(host)) {
+    return;
+  }
+  final rule = 'AND,((DOMAIN,$host),(NETWORK,TCP),(DST-PORT,853)),DIRECT';
+  final rules = config['rules'] as List? ?? const [];
+  config['rules'] = [rule, ...rules.where((item) => item != rule)];
 }
 
 String stripDnsSuffix(String dns) {

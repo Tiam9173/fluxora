@@ -3,7 +3,7 @@ package io.fluxora.app.receivers
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.os.Build
+import android.net.VpnService
 import android.util.Log
 import io.fluxora.app.GlobalState
 
@@ -20,13 +20,13 @@ class PackageReplacedReceiver : BroadcastReceiver() {
             return
         }
 
-        if (Build.VERSION.SDK_INT >= 36) {
+        runCatching {
+            if (VpnService.prepare(context) != null) {
+                Log.w(TAG, "App updated but VPN permission requires user approval")
+                return@runCatching
+            }
             val started = GlobalState.handleStart(skipDebounce = true)
             Log.d(TAG, "App updated while VPN was running; restart requested=$started")
-        } else {
-            runCatching {
-                android.net.VpnService.prepare(context)
-            }.onFailure { Log.e(TAG, "Prepare failed", it) }
-        }
+        }.onFailure { Log.e(TAG, "VPN restore after update failed", it) }
     }
 }

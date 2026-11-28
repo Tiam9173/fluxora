@@ -13,6 +13,46 @@ Profile _profile(String id, String url, {String? label}) => Profile(
 void main() {
   const url = 'https://example.test/sub?token=a';
 
+  test(
+    'generated aggregate identities remap files without duplicating profiles',
+    () {
+      final plan = ProfileRecoveryPlan.compatible(
+        [_profile('backup-generated', '')],
+        [_profile('local-generated', '')],
+        generatedProfileIds: {'backup-generated': 'local-generated'},
+      );
+      expect(plan.profiles.single.id, 'local-generated');
+      expect(plan.targetId('backup-generated'), 'local-generated');
+      expect(
+        plan
+            .remapArchiveFile(
+              ArchiveFile.bytes('profiles/backup-generated.yaml', [1]),
+            )
+            .name,
+        'profiles/local-generated.yaml',
+      );
+    },
+  );
+
+  test(
+    'an aggregate identity cannot overwrite a source or another incoming profile',
+    () {
+      for (final localUrl in [url, '']) {
+        expect(
+          () => ProfileRecoveryPlan.compatible(
+            [
+              _profile('backup-generated', ''),
+              if (localUrl.isEmpty) _profile('local', url),
+            ],
+            [_profile('local', localUrl)],
+            generatedProfileIds: {'backup-generated': 'local'},
+          ),
+          throwsA(isA<FormatException>()),
+        );
+      }
+    },
+  );
+
   test('compatible restore reuses the local subscription ID and label', () {
     final incoming = _profile('backup', ' HTTPS://EXAMPLE.TEST/sub?token=a#x ');
     final plan = ProfileRecoveryPlan.compatible(

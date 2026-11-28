@@ -24,11 +24,12 @@ const _allLocales = [
 
 void main() {
   group('P3 — networkDetectionUrl default & persistence', () {
-    test('default equals the previous hard-coded primary source', () {
-      // The built-in primary for zh is the lang-suffixed ip-api endpoint.
-      expect(defaultNetworkDetectionUrl, 'http://ip-api.com/json/?lang=zh-CN');
-      expect(defaultAppSettingProps.networkDetectionUrl,
-          defaultNetworkDetectionUrl);
+    test('default uses the public HTTPS IP information endpoint', () {
+      expect(defaultNetworkDetectionUrl, 'https://my.ippure.com/v1/info');
+      expect(
+        defaultAppSettingProps.networkDetectionUrl,
+        defaultNetworkDetectionUrl,
+      );
     });
 
     test('default is a valid URL accepted by the shared validator', () {
@@ -37,9 +38,11 @@ void main() {
 
     test('preset list is non-empty, deduped and all valid URLs', () {
       expect(presetNetworkDetectionUrls, isNotEmpty);
-      expect(presetNetworkDetectionUrls.toSet().length,
-          presetNetworkDetectionUrls.length,
-          reason: 'preset list must not contain duplicates');
+      expect(
+        presetNetworkDetectionUrls.toSet().length,
+        presetNetworkDetectionUrls.length,
+        reason: 'preset list must not contain duplicates',
+      );
       for (final url in presetNetworkDetectionUrls) {
         expect(url.isUrl, isTrue, reason: '$url is not a valid URL');
       }
@@ -48,15 +51,17 @@ void main() {
     });
 
     test('copyWith overrides the field, others untouched', () {
-      final custom =
-          defaultAppSettingProps.copyWith(networkDetectionUrl: 'https://x.test');
+      final custom = defaultAppSettingProps.copyWith(
+        networkDetectionUrl: 'https://x.test',
+      );
       expect(custom.networkDetectionUrl, 'https://x.test');
       expect(custom.testUrl, defaultAppSettingProps.testUrl);
     });
 
     test('JSON round-trip preserves the configured value', () {
-      final custom =
-          defaultAppSettingProps.copyWith(networkDetectionUrl: 'https://y.test');
+      final custom = defaultAppSettingProps.copyWith(
+        networkDetectionUrl: 'https://y.test',
+      );
       final json = custom.toJson();
       expect(json['networkDetectionUrl'], 'https://y.test');
 
@@ -83,18 +88,24 @@ void main() {
       expect(''.isNotEmpty && ''.isUrl, isFalse);
     });
 
-    test('an invalid URL fails the shared validator (runtime fallback path)', () {
-      expect('not-a-url'.isUrl, isFalse);
-      expect(''.isUrl, isFalse);
-    });
+    test(
+      'an invalid URL fails the shared validator (runtime fallback path)',
+      () {
+        expect('not-a-url'.isUrl, isFalse);
+        expect(''.isUrl, isFalse);
+      },
+    );
   });
 
   group('P3 — networkDetectionUrl label resolves in every locale', () {
     for (final locale in _allLocales) {
       test('${locale.toLanguageTag()} returns non-empty text', () async {
         await AppLocalizations.load(locale);
-        expect(appLocalizations.networkDetectionUrl, isNotEmpty,
-            reason: 'networkDetectionUrl empty in $locale');
+        expect(
+          appLocalizations.networkDetectionUrl,
+          isNotEmpty,
+          reason: 'networkDetectionUrl empty in $locale',
+        );
       });
     }
 
@@ -105,8 +116,11 @@ void main() {
       for (final locale in _allLocales) {
         if (locale.languageCode == 'en') continue;
         await AppLocalizations.load(locale);
-        expect(appLocalizations.networkDetectionUrl, isNot(equals(en)),
-            reason: 'networkDetectionUrl falls back to English in $locale');
+        expect(
+          appLocalizations.networkDetectionUrl,
+          isNot(equals(en)),
+          reason: 'networkDetectionUrl falls back to English in $locale',
+        );
       }
     });
   });
@@ -126,10 +140,7 @@ void main() {
       expect(on.ipReputationEnabled, isTrue);
 
       expect(on.toJson()['ipReputationEnabled'], isTrue);
-      expect(
-        AppSettingProps.fromJson(on.toJson()).ipReputationEnabled,
-        isTrue,
-      );
+      expect(AppSettingProps.fromJson(on.toJson()).ipReputationEnabled, isTrue);
 
       // A payload written before the field existed must still read as OFF.
       expect(
@@ -178,9 +189,7 @@ void main() {
 
     test('non-English locales do not silently fall back to English', () async {
       await AppLocalizations.load(const Locale('en'));
-      final english = {
-        for (final e in labels.entries) e.key: e.value(),
-      };
+      final english = {for (final e in labels.entries) e.key: e.value()};
 
       for (final locale in _allLocales) {
         if (locale.languageCode == 'en') continue;
@@ -246,9 +255,7 @@ void main() {
 
     test('non-English locales do not silently fall back to English', () async {
       await AppLocalizations.load(const Locale('en'));
-      final english = {
-        for (final e in chainLabels.entries) e.key: e.value(),
-      };
+      final english = {for (final e in chainLabels.entries) e.key: e.value()};
 
       for (final locale in _allLocales) {
         if (locale.languageCode == 'en') continue;

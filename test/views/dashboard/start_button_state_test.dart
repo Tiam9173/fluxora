@@ -280,12 +280,33 @@ void main() {
     expect(controller.connectionCheckAttemptsForTest, 1);
     expect(probes, 1);
     await tester.pump(const Duration(milliseconds: 500));
-    expect(find.text(appLocalizations.checkError), findsOneWidget);
-    await tester.pump(const Duration(seconds: 3));
+    expect(find.text(appLocalizations.checkError), findsNothing);
+    expect(find.text(appLocalizations.checking), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 600));
     expect(probes, 2);
     expect(find.text(appLocalizations.healthHealthy), findsOneWidget);
     expect(controller.restartCoreCalls, 0);
   });
+
+  testWidgets(
+    'persistent probe failure remains visible after the first retry',
+    (tester) async {
+      final controller = await pumpHero(tester);
+      controller.connectionProbeForTest = () async => false;
+      controller.delegateHealthCheck = true;
+      controller.bindingRef.read(runTimeProvider.notifier).value = 156000;
+      controller.refreshConnectionCheck(immediate: true);
+      await tester.pump(const Duration(milliseconds: 1));
+      expect(find.text(appLocalizations.checkError), findsNothing);
+      await tester.pump(const Duration(milliseconds: 601));
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text(appLocalizations.checkError), findsOneWidget);
+      expect(controller.restartCoreCalls, 0);
+      controller.bindingRef.read(connectionTargetProvider.notifier).state =
+          false;
+      await tester.pump(const Duration(seconds: 10));
+    },
+  );
 
   testWidgets('a stop request disables the pending health-check retry', (
     tester,

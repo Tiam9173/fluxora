@@ -4,20 +4,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:fluxora/models/ip_reputation.dart';
 
-/// Reads a public report for one IP from IPure.
-///
-/// Contract (see `ip_reputation.dart` for the E-4/E-5 decisions):
-///
-/// * **Never throws.** Every failure becomes [IpReputation.unavailable] with a
-///   reason, because a failed lookup must never be presented as "clean" (E-5).
-/// * **Score only with its reasons.** E-4 originally dropped `risk` entirely.
-///   The user has since relaxed that: the source's `purity` / `level` /
-///   `verdict` are now mapped **together with `risk.factors`**, and the UI must
-///   always render the number and the reasons as one unit, attributed to the
-///   source. A score without its reasons would still be the black box E-4
-///   rejected.
-/// * **No new dependency.** Uses the `dio` client the project already ships.
-/// * Does not touch `networkDetectionUrl`, the IP query order, or `IpInfo`.
+/// Reads public IP risk reports without credentials. Missing data stays unknown.
 class IpReputationService {
   IpReputationService({Dio? dio}) : _dio = dio ?? Dio();
 
@@ -26,6 +13,7 @@ class IpReputationService {
 
   /// Only reports already stored by IPure are available anonymously.
   static const String endpoint = 'https://ipure.dev/api/v1/ip';
+  static const String publicEndpoint = 'https://api.ipquery.io';
 
   /// Vendor-documented status codes that carry a machine-readable `code`.
   static const String _codeVerificationRequired = 'verification_required';
@@ -49,67 +37,158 @@ class IpReputationService {
 
   Future<IpReputation> lookup(
     String ip, {
-    Duration timeout = const Duration(seconds: 8),
+    Duration timeout = const Duration(seconds: 12),
     CancelToken? cancelToken,
   }) async {
     final address = InternetAddress.tryParse(ip.trim());
     if (address == null) {
       return IpReputation.unavailable(ip, IpReputationFailure.parseError);
     }
+    if (cancelToken?.isCancelled == true) {
+      return IpReputation.unavailable(ip, IpReputationFailure.network);
+    }
+    if (timeout <= Duration.zero) {
+      return IpReputation.unavailable(ip, IpReputationFailure.timeout);
+    }
     final key = address.address;
     final cached = _cache[key];
     if (cached != null && cached.expiresAt.isAfter(DateTime.now())) {
       return cached.report;
     }
-    final token = cancelToken ?? CancelToken();
+    final timer = Stopwatch()..start();
+    final firstBudget = Duration(microseconds: timeout.inMicroseconds ~/ 3);
+    var report = await _request(
+      key,
+      '$endpoint/${Uri.encodeComponent(key)}',
+      firstBudget,
+      cancelToken,
+      parse,
+    );
+    if (!report.isOk && cancelToken?.isCancelled != true) {
+      final remaining = timeout - timer.elapsed;
+      if (remaining > Duration.zero) {
+        report = await _request(
+          key,
+          '$publicEndpoint/${Uri.encodeComponent(key)}',
+          remaining,
+          cancelToken,
+          parsePublicReport,
+        );
+      }
+    }
+    if (report.isOk && cancelToken?.isCancelled != true) {
+      _cache.remove(key);
+      if (_cache.length >= 32) {
+        _cache.remove(_cache.keys.first);
+      }
+      _cache[key] = (
+        report: report,
+        expiresAt: DateTime.now().add(const Duration(minutes: 5)),
+      );
+    }
+    return report;
+  }
+
+  Future<IpReputation> _request(
+    String ip,
+    String url,
+    Duration timeout,
+    CancelToken? parent,
+    IpReputation Function(String, int, Map<String, dynamic>?) decode,
+  ) async {
+    final token = CancelToken();
+    var finished = false;
+    parent?.whenCancel.then((_) {
+      if (!finished) token.cancel();
+    });
+    if (parent?.isCancelled == true) token.cancel();
     try {
       final res = await _dio
           .get<dynamic>(
-            '$endpoint/${Uri.encodeComponent(key)}',
+            url,
             cancelToken: token,
             options: Options(
               responseType: ResponseType.json,
+              followRedirects: false,
               receiveTimeout: timeout,
               sendTimeout: timeout,
-              validateStatus: (status) => true,
+              validateStatus: (_) => true,
             ),
           )
           .timeout(
             timeout,
             onTimeout: () {
               token.cancel();
-              throw TimeoutException('IP reputation lookup timed out', timeout);
+              throw TimeoutException('IP reputation lookup timed out');
             },
           );
-      final body = res.data is Map
-          ? Map<String, dynamic>.from(res.data as Map)
-          : null;
-      final report = parse(ip, res.statusCode ?? 0, body);
-      if (report.isOk) {
-        _cache.remove(key);
-        if (_cache.length >= 32) _cache.remove(_cache.keys.first);
-        _cache[key] = (
-          report: report,
-          expiresAt: DateTime.now().add(const Duration(minutes: 5)),
-        );
-      }
-      return report;
+      return decode(
+        ip,
+        res.statusCode ?? 0,
+        res.data is Map ? Map<String, dynamic>.from(res.data as Map) : null,
+      );
     } on TimeoutException {
       return IpReputation.unavailable(ip, IpReputationFailure.timeout);
     } on DioException catch (e) {
-      if (e.type == DioExceptionType.cancel) {
-        return IpReputation.unavailable(ip, IpReputationFailure.network);
-      }
-      final mapped =
-          e.type == DioExceptionType.connectionTimeout ||
-              e.type == DioExceptionType.receiveTimeout ||
-              e.type == DioExceptionType.sendTimeout
-          ? IpReputationFailure.timeout
-          : IpReputationFailure.network;
-      return IpReputation.unavailable(ip, mapped);
+      return IpReputation.unavailable(
+        ip,
+        e.type == DioExceptionType.connectionTimeout ||
+                e.type == DioExceptionType.receiveTimeout ||
+                e.type == DioExceptionType.sendTimeout
+            ? IpReputationFailure.timeout
+            : IpReputationFailure.network,
+      );
     } catch (_) {
       return IpReputation.unavailable(ip, IpReputationFailure.network);
+    } finally {
+      finished = true;
     }
+  }
+
+  /// IPQuery 公开接口仅提供独立标记；不将其风险值换算成 IPure 纯净度。
+  IpReputation parsePublicReport(
+    String ip,
+    int status,
+    Map<String, dynamic>? body,
+  ) {
+    if (status == 429) {
+      return IpReputation.unavailable(ip, IpReputationFailure.rateLimited);
+    }
+    if (status < 200 || status >= 300) {
+      return IpReputation.unavailable(ip, IpReputationFailure.httpError);
+    }
+    final risk = body?['risk'];
+    final address = InternetAddress.tryParse(ip);
+    if (body == null ||
+        address == null ||
+        risk is! Map ||
+        InternetAddress.tryParse(body['ip']?.toString() ?? '') != address ||
+        !const [
+          'is_vpn',
+          'is_proxy',
+          'is_tor',
+          'is_datacenter',
+          'is_mobile',
+        ].any((key) => risk[key] is bool)) {
+      return IpReputation.unavailable(ip, IpReputationFailure.parseError);
+    }
+    final isp = body['isp'];
+    return IpReputation(
+      status: IpReputationStatus.ok,
+      ip: address.address,
+      source: 'IPQuery',
+      markers: _markers({
+        'isVpn': risk['is_vpn'],
+        'isProxy': risk['is_proxy'],
+        'isTor': risk['is_tor'],
+        'isHosting': risk['is_datacenter'],
+        'isMobile': risk['is_mobile'],
+      }),
+      asn: isp is Map ? _nonEmpty(isp['asn']) : null,
+      asnOrg: isp is Map ? _nonEmpty(isp['org']) : null,
+      reportUrl:
+          'https://ipquery.io/ip/${Uri.encodeComponent(address.address)}',
+    );
   }
 
   /// Pure mapping from an HTTP status + decoded body to a report. Kept public so
@@ -117,7 +196,7 @@ class IpReputationService {
   IpReputation parse(String ip, int statusCode, Map<String, dynamic>? body) {
     final error = body?['error'];
     final code = error is Map ? error['code'] : body?['code'];
-    if (statusCode == 401 && code == 'invalid_api_key') {
+    if (statusCode == 401) {
       return IpReputation.unavailable(ip, IpReputationFailure.noPublicReport);
     }
     if (statusCode == 403) {
@@ -148,7 +227,7 @@ class IpReputationService {
         status: IpReputationStatus.ok,
         ip: body['ip'].toString(),
         queriedAt: DateTime.tryParse(body['queriedAt']?.toString() ?? ''),
-        source: body['source']?.toString(),
+        source: 'IPure',
         stale: body['stale'] == true,
         markers: _markers(body['flags']),
         asn: _asnNumber(body['asn']),

@@ -130,7 +130,9 @@ class Preferences {
       final configMap = json.decode(configString);
       var config = Config.compatibleFromJson(configMap);
 
-      var configChanged = false;
+      final withAggregates = config.withAggregateProfiles();
+      var configChanged = withAggregates != config;
+      config = withAggregates;
       final normalizedPatch = _normalizeLegacyDefaults(config.patchClashConfig);
       if (normalizedPatch != config.patchClashConfig) {
         config = config.copyWith(patchClashConfig: normalizedPatch);

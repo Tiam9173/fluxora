@@ -20,9 +20,12 @@ import 'package:flutter_test/flutter_test.dart';
 /// builds a `Rope` through flutter_rust_bridge), so they load the DLL left by
 /// the last desktop build. A fresh clone without a build artifact skips them
 /// instead of failing — the pure-function groups still run.
-const _prebuiltRustLib =
-    'build/windows/x64/plugins/code_forge/cargokit_build/'
-    'x86_64-pc-windows-msvc/release/code_forge.dll';
+const _prebuiltRustLib = String.fromEnvironment(
+  'SCRIPT_DLL',
+  defaultValue:
+      'build/windows/x64/plugins/code_forge/cargokit_build/'
+      'x86_64-pc-windows-msvc/release/code_forge.dll',
+);
 
 void main() {
   final rustLibFile = File(_prebuiltRustLib);

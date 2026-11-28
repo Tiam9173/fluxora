@@ -1,16 +1,4 @@
-/// P4 — IP reputation ("IP 风险情报") data contract.
-///
-/// Decisions this file encodes (from the user's E-1..E-6 baseline):
-///
-/// * **E-4** — independent markers only. There is deliberately **no composite
-///   0–100 score** and no overall verdict: the vendor exposes `risk.purity`
-///   and a six-level `verdict`, but surfacing those would invent a single
-///   number the project explicitly rejected.
-/// * **E-4** — a marker that the source does not provide is [IpRiskMarkerState
-///   .unknown], **never** `clear`. "No data" is not "low risk".
-/// * **E-5** — this model is **separate from `IpInfo`** and never feeds it.
-/// * **E-5** — failure is modelled as [IpReputationStatus.unavailable] with a
-///   reason, never as a clean result.
+/// IP 风险数据独立于地址信息；保留来源，缺失标记保持未知，失败不表示安全。
 library;
 
 /// Tri-state for a single risk marker.
@@ -180,7 +168,7 @@ class IpReputation {
   /// When the *source* produced the report (`queriedAt`). Null when unavailable.
   final DateTime? queriedAt;
 
-  /// `fresh` (live query) · `cache` (process cache) · `store` (historical).
+  /// The reporting service, such as IPure or IPQuery.
   final String? source;
 
   /// True when the source itself marks the report as past its freshness

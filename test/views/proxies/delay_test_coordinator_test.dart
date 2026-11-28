@@ -115,4 +115,30 @@ void main() {
     oldResult.complete(fresh.copyWith(value: -1));
     expect((await pending).value, -1);
   });
+
+  test(
+    'config reload isolates same-name probes in the same subscription',
+    () async {
+      final pool = DelayTestRequestPool();
+      const old = DelayTestTarget(
+        name: 'node',
+        url: 'url',
+        profileId: 'A',
+        configGeneration: 1,
+      );
+      const fresh = DelayTestTarget(
+        name: 'node',
+        url: 'url',
+        profileId: 'A',
+        configGeneration: 2,
+      );
+      final pending = Completer<Delay>();
+      final oldRequest = pool.run(old, () => pending.future);
+      const result = Delay(name: 'node', url: 'url', value: 42);
+      expect(await pool.run(fresh, () async => result), result);
+      pending.complete(result.copyWith(value: -1));
+      await oldRequest;
+      expect(pool.pendingCount, 0);
+    },
+  );
 }

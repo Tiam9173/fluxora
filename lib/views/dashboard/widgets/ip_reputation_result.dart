@@ -60,9 +60,10 @@ class IpReputationResult extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SelectableText(switch (reason) {
-              IpReputationFailure.noPublicReport ||
-              IpReputationFailure.quotaExhausted =>
+              IpReputationFailure.noPublicReport =>
                 appLocalizations.ipRiskNoPublicReport,
+              IpReputationFailure.quotaExhausted =>
+                appLocalizations.ipRiskRateLimited,
               IpReputationFailure.rateLimited =>
                 appLocalizations.ipRiskRateLimited,
               IpReputationFailure.timeout => appLocalizations.timeoutLabel,
@@ -70,10 +71,7 @@ class IpReputationResult extends StatelessWidget {
                 appLocalizations.networkErrorRetryLater,
               _ => appLocalizations.unknown,
             }, style: context.textTheme.bodyMedium),
-            if (onRetry != null &&
-                (reason == IpReputationFailure.network ||
-                    reason == IpReputationFailure.timeout ||
-                    reason == IpReputationFailure.httpError))
+            if (onRetry != null)
               TextButton(
                 onPressed: onRetry,
                 child: Text(appLocalizations.retry),
@@ -273,6 +271,11 @@ class IpReputationResult extends StatelessWidget {
                 label: appLocalizations.source,
                 value: report.source ?? appLocalizations.unknown,
               ),
+              if (report.source == 'IPQuery')
+                Text(
+                  appLocalizations.ipRiskPublicReportNote,
+                  style: context.textTheme.bodyMedium,
+                ),
               if (report.queriedAt case final time?)
                 _ResultFact(
                   label: appLocalizations.time,

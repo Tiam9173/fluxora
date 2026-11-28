@@ -35,6 +35,13 @@ void main() {
       source,
       contains('App updated while VPN was stopped; not starting it'),
     );
+    expect(source, isNot(contains('Build.VERSION.SDK_INT')));
+    expect(source, contains('VpnService.prepare(context) != null'));
+    expect(source, contains('GlobalState.handleStart(skipDebounce = true)'));
+    expect(
+      source.indexOf('VpnService.prepare(context)'),
+      lessThan(source.indexOf('GlobalState.handleStart(')),
+    );
   });
 
   test('TempActivity is no longer exported to other apps', () {
@@ -72,5 +79,25 @@ void main() {
     expect(source, contains('startActivityAndCollapse(intent)'));
     expect(source, contains('Intent.FLAG_ACTIVITY_NEW_TASK'));
     expect(source, contains('isLocked'));
+  });
+
+  test('private DNS changes reach the UI without a headless UI controller', () {
+    final native = read(
+      'android/app/src/main/kotlin/io/fluxora/app/plugins/VpnPlugin.kt',
+    );
+    final changed = native.substring(
+      native.indexOf('override fun onLinkPropertiesChanged'),
+      native.indexOf('private val request ='),
+    );
+    expect(changed, contains('ServicePlugin.notifyNetworkChanged()'));
+    final main = read('lib/main.dart');
+    final service = main.substring(main.indexOf('Future<void> _service('));
+    expect(service, isNot(contains('globalState.appController')));
+    final controller = read('lib/controller.dart');
+    expect(controller, contains("if (method == 'networkChanged')"));
+    expect(
+      controller,
+      contains('await refreshAndroidPrivateDnsOnNetworkChanged()'),
+    );
   });
 }

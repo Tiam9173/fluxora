@@ -174,10 +174,11 @@ const presetNtpServers = [
 bool defaultShowStartSwitch({required bool isAndroidTV}) =>
     isAndroidTV || system.isAndroid;
 
-const defaultNetworkDetectionUrl = 'http://ip-api.com/json/?lang=zh-CN';
+const defaultNetworkDetectionUrl = 'https://my.ippure.com/v1/info';
 
 // Preset network detection URLs (deduped from the existing built-in sources)
 const presetNetworkDetectionUrls = [
+  defaultNetworkDetectionUrl,
   'http://ip-api.com/json/?lang=zh-CN',
   'http://ip-api.com/json',
   'https://get.geojs.io/v1/ip/geo.json',

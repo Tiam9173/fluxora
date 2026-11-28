@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:fluxora/common/common.dart';
+import 'package:fluxora/models/models.dart';
 
 /// 本地节点覆盖层。
 ///
@@ -136,14 +137,13 @@ class NodeOverrideStore {
   /// 没有任何连接参数的代理，内核直接报错。
   void apply(String profileId, Map<String, dynamic> configMap) {
     final nodes = _data[profileId];
-    if (nodes == null || nodes.isEmpty) return;
     final proxies = configMap['proxies'];
     if (proxies is! List) return;
     for (final item in proxies) {
       if (item is! Map) continue;
       final name = item['name']?.toString();
       if (name == null) continue;
-      final fields = nodes[name];
+      final fields = nodes?[name];
       if (fields == null || fields.isEmpty) continue;
       for (final e in fields.entries) {
         item[e.key] = e.value;
@@ -166,6 +166,10 @@ class NodeOverrideStore {
         final name = item['name']?.toString();
         final renamed = name == null ? null : mapName(name);
         if (renamed != null) item['name'] = renamed;
+        final dialer = item['dialer-proxy'];
+        if (dialer is String && renames.containsKey(dialer)) {
+          item['dialer-proxy'] = renames[dialer];
+        }
       }
     }
 
@@ -182,18 +186,16 @@ class NodeOverrideStore {
       }
     }
 
-    // 规则形如 `DOMAIN,x.com,节点名`，只有最后一段可能是节点名。
+    // MATCH 和带 no-resolve 的规则同样需要更新节点引用。
     final rules = configMap['rules'];
     if (rules is List) {
       for (var i = 0; i < rules.length; i++) {
         final rule = rules[i];
         if (rule is! String) continue;
-        final parts = rule.split(',');
-        if (parts.length < 3) continue;
-        final renamed = mapName(parts.last.trim());
+        final parsed = ParsedRule.parseString(rule);
+        final renamed = mapName(parsed.ruleTarget ?? '');
         if (renamed == null) continue;
-        parts[parts.length - 1] = renamed;
-        rules[i] = parts.join(',');
+        rules[i] = parsed.copyWith(ruleTarget: renamed).value;
       }
     }
   }

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:math';
 import 'dart:ui';
 
 import 'package:fluxora/plugins/app.dart';
@@ -346,7 +347,18 @@ Future<void> _service(List<String> flags) async {
       switchCardHandler(
         (action) => clashLibHandler.invokeAction(
           action,
-          timeout: const Duration(seconds: 5),
+          timeout: Duration(
+            milliseconds:
+                max(
+                  globalState.config.healthCheckTimeout,
+                  delayTestTimeout.inMilliseconds,
+                ) +
+                2000,
+          ),
+        ),
+        testTimeoutMillis: () => max(
+          globalState.config.healthCheckTimeout,
+          delayTestTimeout.inMilliseconds,
         ),
       ),
     );
@@ -404,14 +416,12 @@ Future<void> _service(List<String> flags) async {
             }
           } catch (error) {
             await globalState.handleStop();
-            await vpn?.stop();
             await app.tip(error.formatError);
           }
         },
         onStop: () async {
           await app.tip(appLocalizations.stopVpn);
-          await clashLibHandler.stopListener();
-          await vpn?.stop();
+          await globalState.handleStop();
         },
         onReconnectIpc: () {
           commonPrint.log(
@@ -429,8 +439,6 @@ Future<void> _service(List<String> flags) async {
         },
         onNetworkChanged: () async {
           await checkSmartAutoStop();
-          await globalState.appController
-              .refreshAndroidPrivateDnsOnNetworkChanged();
         },
       ),
     );
@@ -527,8 +535,7 @@ Future<void> _service(List<String> flags) async {
       } catch (e) {
         commonPrint.log('Fatal error during service background start: $e');
         await app.tip('Quick start failed: $e');
-        await clashLibHandler.stopListener();
-        await vpn?.stop();
+        await globalState.handleStop();
       }
     });
   }

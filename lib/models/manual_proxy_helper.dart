@@ -1288,6 +1288,7 @@ class ManualProxyHelper {
     if (configMap['rules'] is! List && configMap['rule'] is! List) {
       configMap['rules'] = ['MATCH,PROXY'];
     }
+    ensureDefaultProxyTarget(configMap);
 
     final newYaml = await encodeYamlTask(configMap);
     final updatedProfile = await profile.saveFileWithString(newYaml);

@@ -332,6 +332,7 @@ const _$ActionMethodEnumMap = {
   ActionMethod.decryptAgeConfig: 'decryptAgeConfig',
   ActionMethod.getMode: 'getMode',
   ActionMethod.parseExternalProviderContent: 'parseExternalProviderContent',
+  ActionMethod.readProviderNodes: 'readProviderNodes',
   ActionMethod.getCoreStatus: 'getCoreStatus',
   ActionMethod.speedTest: 'speedTest',
   ActionMethod.speedTestStatus: 'speedTestStatus',

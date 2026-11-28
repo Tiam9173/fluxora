@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:fluxora/common/system.dart';
+import 'package:fluxora/common/common.dart';
 import 'package:fluxora/models/core.dart';
 import 'package:fluxora/state.dart';
 import 'package:flutter/services.dart';
@@ -95,6 +95,23 @@ class Service {
   }
 
   Future<bool?> stopVpn() => methodChannel.invokeMethod<bool>('stopVpn');
+
+  /// Both UI and headless callers must release the VPN after a failed core stop.
+  Future<void> stopCoreAndVpn({
+    required Future<void> Function() stopListener,
+    bool includeVpnService = true,
+    Duration timeout = const Duration(seconds: 3),
+  }) async {
+    try {
+      await stopListener().timeout(timeout);
+    } catch (error) {
+      commonPrint.log('Android core listener stop did not finish: $error');
+    } finally {
+      if (includeVpnService && await stopVpn().timeout(timeout) != true) {
+        throw StateError('Android VPN stop was not acknowledged');
+      }
+    }
+  }
 
   Future<bool?> smartStop() => methodChannel.invokeMethod<bool>('smartStop');
 

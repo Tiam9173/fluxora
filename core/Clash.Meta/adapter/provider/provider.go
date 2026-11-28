@@ -342,6 +342,12 @@ func (cp *CompatibleProvider) Close() error {
 
 func NewProxiesParser(pdName string, tunnel C.Tunnel, filter string, excludeFilter string, excludeType string, dialerProxy string, override overrideSchema, ageSecretKey string, proxyOptions ...adapter.ProxyOption) (resource.Parser[[]C.Proxy], error) {
 	options := append([]adapter.ProxyOption{adapter.WithTunnelForAPI(tunnel), adapter.WithProviderName(pdName)}, proxyOptions...)
+	return newProxiesParser(filter, excludeFilter, excludeType, dialerProxy, override, ageSecretKey,
+		func(mapping map[string]any) (C.Proxy, error) { return adapter.ParseProxy(mapping, options...) })
+}
+
+// 脚本读取配置时复用内核的筛选和覆盖，不创建连接或启动健康检查。
+func newProxiesParser[V any](filter string, excludeFilter string, excludeType string, dialerProxy string, override overrideSchema, ageSecretKey string, parse func(map[string]any) (V, error)) (resource.Parser[[]V], error) {
 	var excludeTypeArray []string
 	if excludeType != "" {
 		excludeTypeArray = strings.Split(excludeType, "|")
@@ -373,7 +379,7 @@ func NewProxiesParser(pdName string, tunnel C.Tunnel, filter string, excludeFilt
 		}
 	}
 
-	return func(buf []byte) ([]C.Proxy, error) {
+	return func(buf []byte) ([]V, error) {
 		schema := &ProxySchema{}
 
 		// decrypt config
@@ -394,7 +400,7 @@ func NewProxiesParser(pdName string, tunnel C.Tunnel, filter string, excludeFilt
 			return nil, errors.New("file must have a `proxies` field")
 		}
 
-		proxies := []C.Proxy{}
+		proxies := []V{}
 		proxiesSet := map[string]struct{}{}
 		for _, filterReg := range filterRegs {
 		LOOP1:
@@ -437,17 +443,21 @@ func NewProxiesParser(pdName string, tunnel C.Tunnel, filter string, excludeFilt
 				if _, ok := proxiesSet[name]; ok {
 					continue
 				}
-
-				if len(dialerProxy) > 0 {
-					mapping["dialer-proxy"] = dialerProxy
+				node := make(map[string]any, len(mapping))
+				for key, value := range mapping {
+					node[key] = value
 				}
 
-				err := override.Apply(mapping)
+				if len(dialerProxy) > 0 {
+					node["dialer-proxy"] = dialerProxy
+				}
+
+				err := override.Apply(node)
 				if err != nil {
 					return nil, fmt.Errorf("proxy %d override error: %w", idx, err)
 				}
 
-				proxy, err := adapter.ParseProxy(mapping, options...)
+				proxy, err := parse(node)
 				if err != nil {
 					return nil, fmt.Errorf("proxy %d error: %w", idx, err)
 				}

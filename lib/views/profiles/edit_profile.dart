@@ -39,7 +39,6 @@ class EditProfileViewState extends State<EditProfileView> {
   late bool autoUpdate;
   late TextEditingController ageSecretKeyController;
   late TextEditingController aggregateAliasController;
-  late bool _joinAggregate;
   late ProfilePortalSource _portalSource;
   FocusNode? urlFocusNode;
   FocusNode? portalFocusNode;
@@ -74,7 +73,6 @@ class EditProfileViewState extends State<EditProfileView> {
     aggregateAliasController = TextEditingController(
       text: widget.profile.aggregateAlias,
     );
-    _joinAggregate = widget.profile.joinAggregate;
     if (widget.isNew) {
       urlFocusNode = FocusNode();
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -156,7 +154,6 @@ class EditProfileViewState extends State<EditProfileView> {
       autoUpdateDuration: Duration(
         minutes: int.parse(autoUpdateDurationController.text),
       ),
-      joinAggregate: _joinAggregate,
       aggregateAlias: aggregateAliasController.text.trim(),
     );
     if (widget.isNew) {
@@ -225,11 +222,6 @@ class EditProfileViewState extends State<EditProfileView> {
         Navigator.of(widget.context).pop();
       }
     }
-  }
-
-  void _setJoinAggregate(bool value) {
-    if (_joinAggregate == value) return;
-    setState(() => _joinAggregate = value);
   }
 
   void _setAutoUpdate(bool value) {
@@ -535,25 +527,16 @@ class EditProfileViewState extends State<EditProfileView> {
             onChanged: _setAutoUpdate,
           ),
         ),
-        ListItem.switchItem(
-          title: Text(appLocalizations.aggregateJoin),
-          subtitle: Text(appLocalizations.aggregateJoinDesc),
-          delegate: SwitchDelegate<bool>(
-            value: _joinAggregate,
-            onChanged: _setJoinAggregate,
-          ),
-        ),
-        if (_joinAggregate)
-          ListItem(
-            title: TextFormField(
-              textInputAction: TextInputAction.next,
-              controller: aggregateAliasController,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: appLocalizations.aggregatePrefix,
-              ),
+        ListItem(
+          title: TextFormField(
+            textInputAction: TextInputAction.next,
+            controller: aggregateAliasController,
+            decoration: InputDecoration(
+              border: OutlineInputBorder(),
+              labelText: appLocalizations.aggregatePrefix,
             ),
           ),
+        ),
         if (autoUpdate)
           ListItem(
             title: TextFormField(

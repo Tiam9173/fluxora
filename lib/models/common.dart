@@ -572,7 +572,7 @@ class IpInfo {
               ?.toString();
       final city = json['city']?.toString();
       final isp = json['isp']?.toString();
-      final org = json['org']?.toString();
+      final org = (json['org'] ?? json['asOrganization'])?.toString();
       final asName = org?.isNotEmpty == true
           ? org
           : (json['as_name']?.toString());
@@ -584,7 +584,9 @@ class IpInfo {
       ).firstMatch(rawAs.trim());
       final asn = asnMatch != null
           ? asnMatch.group(1)!.toUpperCase()
-          : (rawAs.isNotEmpty ? rawAs.trim().split(' ').first : null);
+          : (RegExp(r'^\d+$').hasMatch(rawAs.trim())
+                ? 'AS${rawAs.trim()}'
+                : (rawAs.isNotEmpty ? rawAs.trim().split(' ').first : null));
 
       if (ip.isNotEmpty) {
         return IpInfo(

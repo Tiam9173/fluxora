@@ -354,6 +354,39 @@ void main() {
     await capture(tester, 'network-card-failure');
   });
 
+  testWidgets(
+    'public source is usable without setup and has no invented score',
+    (tester) async {
+      await open(
+        tester,
+        size: const Size(320, 740),
+        brightness: Brightness.light,
+        child: result(
+          const IpReputation(
+            status: IpReputationStatus.ok,
+            ip: _ip,
+            source: 'IPQuery',
+            markers: [
+              IpRiskMarker(id: 'vpn', state: IpRiskMarkerState.flagged),
+              IpRiskMarker(id: 'relay', state: IpRiskMarkerState.unknown),
+            ],
+            asn: 'AS64500',
+          ),
+        ),
+      );
+      expect(
+        find.text(appLocalizations.ipRiskPublicReportNote),
+        findsOneWidget,
+      );
+      expect(find.text(appLocalizations.ipRiskScore), findsNothing);
+      expect(find.text('API Key'), findsNothing);
+      await capture(tester, 'public-report-narrow-light');
+      await reveal(tester, find.text('IPQuery'));
+      await capture(tester, 'public-report-source-light');
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('missing score and unknown markers remain unknown at 200% text', (
     tester,
   ) async {

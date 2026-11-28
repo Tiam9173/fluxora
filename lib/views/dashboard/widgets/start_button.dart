@@ -4,6 +4,7 @@ import 'package:fluxora/models/models.dart';
 import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
 import 'package:fluxora/widgets/widgets.dart';
+import 'package:fluxora/widgets/fluxora/connection_halo.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -313,13 +314,10 @@ class _StartButtonState extends ConsumerState<StartButton> {
           final largeText =
               MediaQuery.textScalerOf(context).scale(16) > 22 &&
               MediaQuery.sizeOf(context).width < 600;
-          final control = DecoratedBox(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: scheme.primary.withValues(alpha: .3)),
-            ),
+          final control = ConnectionHalo(
+            status: hero.kind,
             child: Padding(
-              padding: const EdgeInsets.all(6),
+              padding: EdgeInsets.zero,
               child: SizedBox(
                 width: 56,
                 height: 56,
@@ -380,81 +378,11 @@ class _StartButtonState extends ConsumerState<StartButton> {
                 curve: FluxoraMotion.standard,
                 decoration: BoxDecoration(
                   borderRadius: FluxoraRadius.cardAll,
-                  border: Border.all(
-                    color: displayStart
-                        ? FluxoraStatus.colorOf(
-                            context,
-                            FluxoraStatusKind.connected,
-                          ).withValues(alpha: .4)
-                        : material.isObsidian && material.blurEnabled
-                        ? material.border(scheme)
-                        : Colors.transparent,
-                  ),
-                  color: scheme.surfaceContainerHigh,
+                  color: material.fill(scheme),
                   gradient: material.blurEnabled
-                      ? material.isObsidian
-                            ? LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  Color.alphaBlend(
-                                    const Color(0xFF6478FF).withValues(
-                                      alpha:
-                                          scheme.brightness == Brightness.dark
-                                          ? .40
-                                          : .12,
-                                    ),
-                                    scheme.surfaceContainerHigh,
-                                  ),
-                                  Color.alphaBlend(
-                                    const Color(0xFF6174D6).withValues(
-                                      alpha:
-                                          scheme.brightness == Brightness.dark
-                                          ? .26
-                                          : .04,
-                                    ),
-                                    scheme.surfaceContainer,
-                                  ),
-                                  scheme.surfaceContainer,
-                                ],
-                                stops: const [0, .48, 1],
-                              )
-                            : LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  Color.alphaBlend(
-                                    FluxoraColors.flowViolet.withValues(
-                                      alpha:
-                                          scheme.brightness == Brightness.light
-                                          ? .10
-                                          : .22,
-                                    ),
-                                    scheme.surfaceContainer,
-                                  ),
-                                  Color.alphaBlend(
-                                    FluxoraColors.auroraBlue.withValues(
-                                      alpha: .06,
-                                    ),
-                                    scheme.surfaceContainer,
-                                  ),
-                                ],
-                              )
+                      ? material.panelGradient(scheme)
                       : null,
                 ),
-                foregroundDecoration:
-                    material.isObsidian && material.blurEnabled
-                    ? BoxDecoration(
-                        borderRadius: FluxoraRadius.cardAll,
-                        border: Border.all(
-                          color: Colors.white.withValues(
-                            alpha: scheme.brightness == Brightness.dark
-                                ? .25
-                                : .9,
-                          ),
-                        ),
-                      )
-                    : null,
                 child: Padding(
                   padding: const EdgeInsets.all(FluxoraSpacing.lg),
                   child: Column(

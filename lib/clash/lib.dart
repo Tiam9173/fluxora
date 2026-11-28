@@ -5,6 +5,7 @@ import 'dart:isolate';
 import 'dart:ui';
 
 import 'package:ffi/ffi.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/models/models.dart';
@@ -42,6 +43,8 @@ class ClashLib extends ClashHandlerInterface with AndroidClashInterface {
   @override
   bool get hasLiveProcess => true;
   static ClashLib? _instance;
+  static const _serviceCallTimeout = Duration(seconds: 2);
+  static const _serviceInitTimeout = Duration(seconds: 6);
   Completer<bool> _canSendCompleter = Completer();
   Future<void>? _ipcConnectFuture;
   SendPort? sendPort;
@@ -97,12 +100,18 @@ class ClashLib extends ClashHandlerInterface with AndroidClashInterface {
 
   Future<void> _initService() async {
     _registerMainPort(receiverPort.sendPort);
-    final alreadyRunning = await service?.isServiceEngineRunning() ?? false;
+    final native = service;
+    if (native == null) throw StateError('Android service is unavailable');
+    final alreadyRunning = await native.isServiceEngineRunning().timeout(
+      _serviceCallTimeout,
+    );
     if (alreadyRunning) {
-      await service?.reconnectIpc();
+      await native.reconnectIpc().timeout(_serviceCallTimeout);
     } else {
-      await service?.destroy();
-      await service?.init();
+      await native.destroy().timeout(_serviceCallTimeout);
+      if (await native.init().timeout(_serviceInitTimeout) != true) {
+        throw StateError('Android service initialization was not acknowledged');
+      }
     }
     await _waitForIpc();
   }
@@ -118,8 +127,8 @@ class ClashLib extends ClashHandlerInterface with AndroidClashInterface {
         commonPrint.log(
           'ClashLib: IPC attempt ${attempt + 1}/3 failed, retrying...',
         );
+        await service?.reconnectIpc().timeout(_serviceCallTimeout);
       }
-      await service?.reconnectIpc();
     }
     throw TimeoutException('Android service IPC failed after 3 attempts');
   }
@@ -219,6 +228,9 @@ class ClashLibHandler {
 
   late final DynamicLibrary lib;
 
+  @visibleForTesting
+  ClashLibHandler.withBindings(this.clashFFI);
+
   ClashLibHandler._internal() {
     lib = DynamicLibrary.open('libclash.so');
     clashFFI = ClashFFI(lib);
@@ -308,8 +320,16 @@ class ClashLibHandler {
   }
 
   Future<bool> stopListener() async {
-    clashFFI.stopListener();
-    return true;
+    // A synchronous FFI stop blocks this isolate, including its timeout timers.
+    final result =
+        json.decode(
+              await invokeAction(
+                '{"id":"stopListener","method":"stopListener"}',
+                timeout: const Duration(seconds: 3),
+              ),
+            )
+            as Map;
+    return result['code'] == 0 && result['data'] == true;
   }
 
   DateTime? getRunTime() {

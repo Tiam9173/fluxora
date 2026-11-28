@@ -30,6 +30,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlin.concurrent.withLock
 
 interface BaseServiceInterface {
     suspend fun start(options: VpnOptions): Int
@@ -252,12 +253,18 @@ internal class ForegroundNotification(
                 )
                 .build()
 
-            if (builder == null || channel?.first != suspended) {
-                if (!service.startForeground(notification, useSpecialType = !suspended)) return
-            } else {
-                service.getSystemService(NotificationManager::class.java)
-                    ?.notify(GlobalState.NOTIFICATION_ID, notification)
+            val published = GlobalState.runLock.withLock publish@ {
+                if (isStopped() || GlobalState.isCurrentlyStopping() ||
+                    (GlobalState.currentRunState == RunState.STOP && !GlobalState.isSmartStopped)) return@publish false
+                if (builder == null || channel?.first != suspended) {
+                    service.startForeground(notification, useSpecialType = !suspended)
+                } else {
+                    service.getSystemService(NotificationManager::class.java)
+                        ?.notify(GlobalState.NOTIFICATION_ID, notification)
+                    true
+                }
             }
+            if (!published) return
             builder = notificationBuilder
             channel = channelKey
             previous = content
@@ -429,7 +436,16 @@ fun Service.startForeground(notification: Notification, useSpecialType: Boolean 
         startForeground(GlobalState.NOTIFICATION_ID, notification)
     }.onFailure { error ->
         android.util.Log.e("BaseServiceInterface", "startForeground fallback failed: ${error.message}")
-    }.isSuccess
+    }.isSuccess.also { foreground ->
+        if (foreground) {
+            // 前台服务还必须登记为 started，才能独立于界面的绑定继续运行。
+            runCatching {
+                startService(Intent(this, javaClass).setAction(FluxoraService.ACTION_KEEP_ALIVE))
+            }.onFailure {
+                android.util.Log.e("BaseServiceInterface", "Could not retain started service: ${it.message}")
+            }
+        }
+    }
 }
 
 /// Registers the notification action receiver at runtime.

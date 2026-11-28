@@ -170,6 +170,8 @@ abstract class AppSettingProps with _$AppSettingProps {
     @Default(true) bool closeConnections,
     @Default(defaultTestUrl) String testUrl,
     @Default(defaultNetworkDetectionUrl) String networkDetectionUrl,
+    @Default({'country', 'region', 'isp', 'asn', 'domain'})
+    Set<String> networkInfoFields,
     // P4 (E-5): the IP reputation section is opt-in. Default OFF means no
     // third-party lookup happens until the user explicitly turns it on.
     @Default(false) bool ipReputationEnabled,
@@ -609,6 +611,7 @@ abstract class AggregateProfile with _$AggregateProfile {
   const factory AggregateProfile({
     required String id,
     required String name,
+    String? profileId,
     String? baseProfileId,
     @Default([]) List<String> memberIds,
     AggregateMode? mode,
@@ -729,15 +732,129 @@ abstract class Config with _$Config {
 }
 
 extension ConfigExt on Config {
+  AggregateProfile? aggregateForProfile(String? profileId) {
+    if (profileId == null) return null;
+    for (final aggregate in aggregates) {
+      if (aggregate.profileId == profileId) return aggregate;
+    }
+    return null;
+  }
+
+  /// Give each aggregate a normal selectable profile, keeping its source intact.
+  /// Existing named/legacy aggregates are migrated once and remain editable.
+  Config withAggregateProfiles() {
+    var nextAggregates = aggregates;
+    if (nextAggregates.isEmpty && profiles.any((p) => p.joinAggregate)) {
+      nextAggregates = [
+        AggregateProfile(
+          id: utils.uuidV4,
+          name: (appSetting.locale ?? '').startsWith('zh')
+              ? '订阅聚合'
+              : 'Aggregate',
+          baseProfileId: currentProfileId,
+          memberIds: profiles
+              .where((p) => p.joinAggregate)
+              .map((p) => p.id)
+              .toList(),
+        ),
+      ];
+    }
+    if (nextAggregates.isEmpty) return this;
+    final nextProfiles = [...profiles];
+    final oldAggregate =
+        currentAggregateId ??
+        (aggregates.isEmpty ? nextAggregates.first.id : null);
+    final updated = <AggregateProfile>[];
+    final sourceIds = <String>{
+      for (final aggregate in nextAggregates) ...[
+        if (aggregate.baseProfileId != null) aggregate.baseProfileId!,
+        ...aggregate.memberIds,
+      ],
+    };
+    final claimedIds = <String>{};
+    for (final aggregate in nextAggregates) {
+      final independent = aggregate.copyWith(
+        mode: aggregate.mode ?? aggregateMode,
+        scriptTiming: aggregate.scriptTiming ?? aggregateScriptTiming,
+        mergeNodes: aggregate.mergeNodes ?? aggregateMergeNodes,
+        mergeGroups: aggregate.mergeGroups ?? aggregateMergeGroups,
+        mergeRules: aggregate.mergeRules ?? aggregateMergeRules,
+        mergeRuleProviders:
+            aggregate.mergeRuleProviders ?? aggregateMergeRuleProviders,
+        mergeMemberScripts:
+            aggregate.mergeMemberScripts ?? aggregateMergeMemberScripts,
+        applyNodeOverrides:
+            aggregate.applyNodeOverrides ?? aggregateApplyNodeOverrides,
+        overrideData: aggregate.overrideData ?? aggregateOverrideData,
+      );
+      final existing = nextProfiles.getProfile(aggregate.profileId);
+      if (existing != null &&
+          RegExp(r'^[a-zA-Z0-9_-]+$').hasMatch(existing.id) &&
+          existing.url.isEmpty &&
+          !sourceIds.contains(existing.id) &&
+          claimedIds.add(existing.id)) {
+        final index = nextProfiles.indexOf(existing);
+        nextProfiles[index] = existing.copyWith(label: aggregate.name);
+        updated.add(independent);
+        continue;
+      }
+      final baseId =
+          aggregate.baseProfileId ??
+          (aggregateForProfile(currentProfileId) == null
+              ? currentProfileId
+              : currentAggregate?.baseProfileId);
+      final base = profiles.getProfile(baseId);
+      // Missing sources remain visible and repairable. Never reuse an imported
+      // ID as a path or turn a source subscription into a generated profile.
+      final id = utils.uuidV4;
+      claimedIds.add(id);
+      nextProfiles.add(
+        (base ?? Profile.normal()).copyWith(
+          id: id,
+          label: aggregate.name,
+          url: '',
+          portalUrl: '',
+          portalLabel: '',
+          portalSource: ProfilePortalSource.unset,
+          subscriptionInfo: null,
+          autoUpdate: false,
+          joinAggregate: false,
+          ageSecretKey: null,
+        ),
+      );
+      updated.add(independent.copyWith(profileId: id, baseProfileId: baseId));
+    }
+    final oldSelection = nextAggregates
+        .where((a) => a.id == oldAggregate)
+        .firstOrNull;
+    final active =
+        updated.where((a) => a.profileId == currentProfileId).firstOrNull ??
+        (oldSelection != null &&
+                (oldSelection.profileId == null ||
+                    oldSelection.profileId == currentProfileId)
+            ? updated.where((a) => a.id == oldAggregate).firstOrNull
+            : null);
+    return copyWith(
+      profiles: nextProfiles
+          .map((p) => p.copyWith(joinAggregate: false))
+          .toList(),
+      aggregates: updated,
+      currentAggregateId: active?.id,
+      currentProfileId: active?.profileId ?? currentProfileId,
+    );
+  }
+
   Profile? get currentProfile {
     return profiles.getProfile(currentProfileId);
   }
 
   AggregateProfile? get currentAggregate {
+    final selected = aggregateForProfile(currentProfileId);
+    if (selected != null) return selected;
     final id = currentAggregateId;
     if (id == null || id.isEmpty) return null;
     for (final aggregate in aggregates) {
-      if (aggregate.id == id) return aggregate;
+      if (aggregate.id == id && aggregate.profileId == null) return aggregate;
     }
     return null;
   }

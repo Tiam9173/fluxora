@@ -12,6 +12,7 @@ import android.os.IBinder
 import android.os.Parcel
 import android.util.Log
 import io.fluxora.app.GlobalState
+import io.fluxora.app.RunState
 import io.fluxora.app.extensions.getIpv4RouteAddress
 import io.fluxora.app.extensions.getIpv6RouteAddress
 import io.fluxora.app.extensions.toCIDR
@@ -39,7 +40,6 @@ class FluxoraVpnService : VpnService(), BaseServiceInterface {
 
     override fun onCreate() {
         super.onCreate()
-        GlobalState.initServiceEngine()
         // Registered here rather than in the manifest: implicit broadcasts do
         // not reach manifest receivers since Android 8, so the notification
         // buttons would silently do nothing.
@@ -148,8 +148,29 @@ class FluxoraVpnService : VpnService(), BaseServiceInterface {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == FluxoraService.ACTION_KEEP_ALIVE &&
+            (isStopped || GlobalState.isCurrentlyStopping() ||
+                (GlobalState.currentRunState == RunState.STOP && !GlobalState.isSmartStopped))) {
+            stopSelf(startId)
+            return START_NOT_STICKY
+        }
         // Notification action buttons (stop / switch / reset / speed test).
-        if (handleNotificationAction(intent)) return START_NOT_STICKY
+        if (handleNotificationAction(intent)) {
+            return if (intent?.action == FluxoraService.ACTION_STOP) START_NOT_STICKY else START_STICKY
+        }
+        if (intent == null) {
+            if (!GlobalState.wasRunningBeforeRestart() || prepare(this) != null) {
+                stopSelf(startId)
+                return START_NOT_STICKY
+            }
+            GlobalState.handleStart(skipDebounce = true)
+        } else if (intent.action == SERVICE_INTERFACE) {
+            if (prepare(this) != null) {
+                stopSelf(startId)
+                return START_NOT_STICKY
+            }
+            GlobalState.handleStart(skipDebounce = true)
+        }
         return START_STICKY
     }
     override fun stop() {
@@ -203,6 +224,7 @@ class FluxoraVpnService : VpnService(), BaseServiceInterface {
         if (intent?.action == VpnService.SERVICE_INTERFACE) {
             return super.onBind(intent)
         }
+        GlobalState.initServiceEngine()
         return binder
     }
 

@@ -232,17 +232,21 @@ class _NetworkDetectionState extends ConsumerState<NetworkDetection> {
   }
 }
 
-class NetworkIpInfoDialog extends StatelessWidget {
+class NetworkIpInfoDialog extends ConsumerWidget {
   const NetworkIpInfoDialog({super.key, required this.info});
   final IpInfo info;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final fields = ref.watch(
+      appSettingProvider.select((settings) => settings.networkInfoFields),
+    );
     final country = (info.country?.isNotEmpty ?? false)
         ? info.country!
         : info.countryCode;
     final facts = <(String, String)>[
-      if (country.isNotEmpty || (info.continent?.isNotEmpty ?? false))
+      if (fields.contains('country') &&
+          (country.isNotEmpty || (info.continent?.isNotEmpty ?? false)))
         (
           appLocalizations.countryOrRegion,
           [
@@ -250,8 +254,9 @@ class NetworkIpInfoDialog extends StatelessWidget {
             info.continent,
           ].whereType<String>().where((s) => s.isNotEmpty).join(' · '),
         ),
-      if ((info.province?.isNotEmpty ?? false) ||
-          (info.city?.isNotEmpty ?? false))
+      if (fields.contains('region') &&
+          ((info.province?.isNotEmpty ?? false) ||
+              (info.city?.isNotEmpty ?? false)))
         (
           appLocalizations.provinceAndCity,
           [
@@ -259,11 +264,13 @@ class NetworkIpInfoDialog extends StatelessWidget {
             if (info.city != info.province) info.city,
           ].whereType<String>().where((s) => s.isNotEmpty).join(' · '),
         ),
-      if (info.isp?.isNotEmpty ?? false) (appLocalizations.isp, info.isp!),
-      if ((info.asn?.isNotEmpty ?? false) ||
-          ((info.asName?.isNotEmpty ?? false) &&
-              info.asName != info.isp &&
-              info.asName != info.asDomain))
+      if (fields.contains('isp') && (info.isp?.isNotEmpty ?? false))
+        (appLocalizations.isp, info.isp!),
+      if (fields.contains('asn') &&
+          ((info.asn?.isNotEmpty ?? false) ||
+              ((info.asName?.isNotEmpty ?? false) &&
+                  info.asName != info.isp &&
+                  info.asName != info.asDomain)))
         (
           appLocalizations.operatorOrAsn,
           [
@@ -272,7 +279,7 @@ class NetworkIpInfoDialog extends StatelessWidget {
             info.asn,
           ].whereType<String>().where((s) => s.isNotEmpty).join(' · '),
         ),
-      if (info.asDomain?.isNotEmpty ?? false)
+      if (fields.contains('domain') && (info.asDomain?.isNotEmpty ?? false))
         (appLocalizations.domain, info.asDomain!),
     ];
     return CommonDialog(
@@ -283,6 +290,14 @@ class NetworkIpInfoDialog extends StatelessWidget {
         vertical: FluxoraSpacing.lg,
       ),
       actions: [
+        TextButton.icon(
+          onPressed: () => showDialog<void>(
+            context: context,
+            builder: (_) => const _NetworkInfoFieldsDialog(),
+          ),
+          icon: const Icon(Icons.tune_rounded, size: 18),
+          label: Text(appLocalizations.ipInfoFieldsTitle),
+        ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: Text(appLocalizations.confirm),
@@ -369,6 +384,61 @@ class NetworkIpInfoDialog extends StatelessWidget {
               ),
             ),
           if (info.ip.isNotEmpty) _IpRiskSection(ip: info.ip),
+        ],
+      ),
+    );
+  }
+}
+
+class _NetworkInfoFieldsDialog extends ConsumerWidget {
+  const _NetworkInfoFieldsDialog();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selected = ref.watch(
+      appSettingProvider.select((settings) => settings.networkInfoFields),
+    );
+    final labels = {
+      'country': appLocalizations.countryOrRegion,
+      'region': appLocalizations.provinceAndCity,
+      'isp': appLocalizations.isp,
+      'asn': appLocalizations.operatorOrAsn,
+      'domain': appLocalizations.domain,
+    };
+    void save(Set<String> fields) => ref
+        .read(appSettingProvider.notifier)
+        .updateState(
+          (settings) => settings.copyWith(networkInfoFields: fields),
+        );
+    return CommonDialog(
+      title: appLocalizations.ipInfoFieldsTitle,
+      actions: [
+        TextButton(
+          onPressed: () => save(defaultAppSettingProps.networkInfoFields),
+          child: Text(appLocalizations.reset),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(appLocalizations.confirm),
+        ),
+      ],
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final entry in labels.entries)
+            CheckboxListTile(
+              key: ValueKey('ip-info-field-${entry.key}'),
+              contentPadding: EdgeInsets.zero,
+              title: Text(entry.value),
+              value: selected.contains(entry.key),
+              onChanged: (value) {
+                final fields = {...selected};
+                value == true
+                    ? fields.add(entry.key)
+                    : fields.remove(entry.key);
+                save(fields);
+              },
+            ),
         ],
       ),
     );

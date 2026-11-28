@@ -105,7 +105,16 @@ class Profiles extends _$Profiles with AutoDisposeNotifierMixin {
 
   @override
   onUpdate(value) {
-    globalState.config = globalState.config.copyWith(profiles: value);
+    globalState.config = globalState.config.copyWith(
+      profiles: value,
+      aggregates: [
+        for (final aggregate in globalState.config.aggregates)
+          aggregate.copyWith(
+            name:
+                value.getProfile(aggregate.profileId)?.label ?? aggregate.name,
+          ),
+      ],
+    );
   }
 
   String? _getLabel(String? label, String id) {
@@ -165,7 +174,10 @@ class CurrentProfileId extends _$CurrentProfileId
 
   @override
   onUpdate(value) {
-    globalState.config = globalState.config.copyWith(currentProfileId: value);
+    globalState.config = globalState.config.copyWith(
+      currentProfileId: value,
+      currentAggregateId: globalState.config.aggregateForProfile(value)?.id,
+    );
   }
 }
 

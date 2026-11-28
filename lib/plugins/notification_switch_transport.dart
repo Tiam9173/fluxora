@@ -1,13 +1,15 @@
 import 'dart:convert';
 
 import 'package:fluxora/clash/lib.dart';
+import 'package:fluxora/common/constant.dart';
 import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/models/models.dart';
 import 'package:flutter/services.dart';
 
 Future<Object?> Function(MethodCall) switchCardHandler(
-  Future<String> Function(String) invokeAction,
-) {
+  Future<String> Function(String) invokeAction, {
+  int Function()? testTimeoutMillis,
+}) {
   var sequence = 0;
   Future<String> invoke(
     ActionMethod method, [
@@ -38,7 +40,30 @@ Future<Object?> Function(MethodCall) switchCardHandler(
 
     switch (call.method) {
       case 'groups':
-        return invoke(ActionMethod.getProxies);
+        final proxies =
+            jsonDecode(await invoke(ActionMethod.getProxies)) as Map;
+        final providers =
+            jsonDecode(await invoke(ActionMethod.getExternalProviders)) as List;
+        final ambiguousNames = <String>{};
+        for (final provider in providers.whereType<Map>()) {
+          for (final proxy
+              in (provider['proxies'] as List? ?? []).whereType<Map>()) {
+            final name = proxy['name'];
+            if (name is! String) continue;
+            if (proxies.containsKey(name)) {
+              ambiguousNames.add(name);
+            } else {
+              proxies[name] = proxy;
+            }
+          }
+        }
+        // 同名节点的历史无法按组归属；等待带分组的实际测速结果。
+        for (final name in ambiguousNames) {
+          if (proxies[name] case final Map detail) {
+            proxies[name] = {...detail, 'history': []};
+          }
+        }
+        return jsonEncode(proxies);
       case 'select':
       case 'unlock':
         final name = call.method == 'select' ? argument('node') : '';
@@ -67,7 +92,9 @@ Future<Object?> Function(MethodCall) switchCardHandler(
         final result = await invoke(ActionMethod.asyncTestDelay, {
           'proxy-name': name,
           'test-url': url,
-          'timeout': 3000,
+          'group-name': ?argument('group'),
+          'timeout':
+              testTimeoutMillis?.call() ?? delayTestTimeout.inMilliseconds,
         });
         return Delay.fromJson(
               jsonDecode(result) as Map<String, dynamic>,

@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
+	"time"
 
+	proxyProvider "github.com/metacubex/mihomo/adapter/provider"
 	"github.com/metacubex/mihomo/component/age"
 )
 
@@ -143,6 +146,28 @@ func handleAction(action *Action, result ActionResult) {
 			return
 		}
 		result.success(config)
+		return
+	case readProviderNodesMethod:
+		go func() {
+			var mapping map[string]any
+			data, ok := action.Data.(string)
+			if !ok {
+				result.error("invalid provider definition")
+				return
+			}
+			if err := json.Unmarshal([]byte(data), &mapping); err != nil {
+				result.error("invalid provider definition")
+				return
+			}
+			ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+			defer cancel()
+			nodes, err := proxyProvider.ReadProxyMappings(ctx, mapping)
+			if err != nil {
+				result.error(err.Error())
+				return
+			}
+			result.success(nodes)
+		}()
 		return
 	case closeConnectionMethod:
 		id := action.Data.(string)

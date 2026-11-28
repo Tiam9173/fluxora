@@ -46,113 +46,115 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m12(count) => "略過規則集：${count} 個";
 
-  static String m13(nodes, groups, rules) =>
+  static String m13(names) => "請先從以下聚合中移除此訂閱或更換基礎訂閱，再刪除：${names}";
+
+  static String m14(nodes, groups, rules) =>
       "${nodes} 節點 · ${groups} 策略組 · ${rules} 規則";
 
-  static String m14(completed, total) => "正在檢測 (${completed}/${total})...";
+  static String m15(completed, total) => "正在檢測 (${completed}/${total})...";
 
-  static String m15(count) => "成功匯入 ${count} 個節點";
+  static String m16(count) => "成功匯入 ${count} 個節點";
 
-  static String m16(hop) => "🔗 跳板: ${hop}";
+  static String m17(hop) => "🔗 跳板: ${hop}";
 
-  static String m17(name) => "跳板: ${name}";
+  static String m18(name) => "跳板: ${name}";
 
-  static String m18(index) => "中轉節點 ${index}";
+  static String m19(index) => "中轉節點 ${index}";
 
-  static String m19(server, port) => "住宅IP-${server}:${port}";
+  static String m20(server, port) => "住宅IP-${server}:${port}";
 
-  static String m20(count) => "已清理 ${count} 個失效節點";
+  static String m21(count) => "已清理 ${count} 個失效節點";
 
-  static String m21(name) => "確定要刪除節點 \"${name}\" 嗎？";
+  static String m22(name) => "確定要刪除節點 \"${name}\" 嗎？";
 
-  static String m22(error) => "建立分組失敗: ${error}";
+  static String m23(error) => "建立分組失敗: ${error}";
 
-  static String m23(name) => "空白分組 \"${name}\" 建立成功，請新增節點";
+  static String m24(name) => "空白分組 \"${name}\" 建立成功，請新增節點";
 
-  static String m24(count) => "${Intl.plural(count, other: '天')}";
+  static String m25(count) => "${Intl.plural(count, other: '天')}";
 
-  static String m25(label) => "確定刪除選取的 ${label} 嗎？";
+  static String m26(label) => "確定刪除選取的 ${label} 嗎？";
 
-  static String m26(label) => "確定刪除目前的 ${label} 嗎？";
+  static String m27(label) => "確定刪除目前的 ${label} 嗎？";
 
-  static String m27(label) => "${label}不能為空";
+  static String m28(label) => "${label}不能為空";
 
-  static String m28(label) => "${label}目前已存在";
+  static String m29(label) => "${label}目前已存在";
 
-  static String m29(reason) => "故障轉移失敗：${reason}";
+  static String m30(reason) => "故障轉移失敗：${reason}";
 
-  static String m30(node) => "故障轉移成功，已平滑切換至 [${node}]";
+  static String m31(node) => "故障轉移成功，已平滑切換至 [${node}]";
 
-  static String m31(count) => "${Intl.plural(count, other: '小時')}";
+  static String m32(count) => "${Intl.plural(count, other: '小時')}";
 
-  static String m32(count) => "成功匯入 ${count} 個落地代理節點";
+  static String m33(count) => "成功匯入 ${count} 個落地代理節點";
 
-  static String m33(count) => "${count}";
+  static String m34(count) => "${count}";
 
-  static String m34(count) => "${Intl.plural(count, other: '分鐘')}";
+  static String m35(count) => "${Intl.plural(count, other: '分鐘')}";
 
-  static String m35(count) => "${Intl.plural(count, other: '月')}";
+  static String m36(count) => "${Intl.plural(count, other: '月')}";
 
-  static String m36(name) => "已新增節點: ${name}";
+  static String m37(name) => "已新增節點: ${name}";
 
-  static String m37(count) => "將刪除 ${count} 個上次測速失敗的節點";
+  static String m38(count) => "將刪除 ${count} 個上次測速失敗的節點";
 
-  static String m38(name) => "已刪除節點: ${name}";
+  static String m39(name) => "已刪除節點: ${name}";
 
-  static String m39(count) => "已刪除 ${count} 個節點";
+  static String m40(count) => "已刪除 ${count} 個節點";
 
-  static String m40(name) => "編輯 ${name}";
+  static String m41(name) => "編輯 ${name}";
 
-  static String m41(count) => "刪除 ${count} 個重複節點";
+  static String m42(count) => "刪除 ${count} 個重複節點";
 
-  static String m42(count) => "發現 ${count} 組重複";
+  static String m43(count) => "發現 ${count} 組重複";
 
-  static String m43(name) => "節點管理 · ${name}";
+  static String m44(name) => "節點管理 · ${name}";
 
-  static String m44(proto) => "如: 香港 01 - ${proto}";
+  static String m45(proto) => "如: 香港 01 - ${proto}";
 
-  static String m45(done, total) => "測速中 ${done}/${total}";
+  static String m46(done, total) => "測速中 ${done}/${total}";
 
-  static String m46(label) => "暫無 ${label}";
+  static String m47(label) => "暫無 ${label}";
 
-  static String m47(label) => "${label}必須為數字";
+  static String m48(label) => "${label}必須為數字";
 
-  static String m48(from, to) => "連接埠 ${from} 已被佔用，本次工作階段改用 ${to}";
+  static String m49(from, to) => "連接埠 ${from} 已被佔用，本次工作階段改用 ${to}";
 
-  static String m49(label) => "${label} 必須在 1024 到 49151 之間，0 為關閉";
+  static String m50(label) => "${label} 必須在 1024 到 49151 之間，0 為關閉";
 
-  static String m50(name) => "前置與落地代理 · ${name}";
+  static String m51(name) => "前置與落地代理 · ${name}";
 
-  static String m51(statusCode) =>
+  static String m52(statusCode) =>
       "配置導入失敗，請檢查網路狀況或嘗試重置訂閱連結( HTTP錯誤代碼: ${statusCode} )";
 
-  static String m52(count) => "已選擇 ${count} 項";
+  static String m53(count) => "已選擇 ${count} 項";
 
-  static String m53(error) => "體檢失敗：${error}";
+  static String m54(error) => "體檢失敗：${error}";
 
-  static String m54(name) => "當前仍在使用：${name}";
+  static String m55(name) => "當前仍在使用：${name}";
 
-  static String m55(label) => "${label}必須為 URL";
+  static String m56(label) => "${label}必須為 URL";
 
-  static String m56(label) => "已複製 ${label}";
+  static String m57(label) => "已複製 ${label}";
 
-  static String m57(colo, ip) => "🎉 診斷成功！WARP 已生效 (機房: ${colo}, 出口: ${ip})";
+  static String m58(colo, ip) => "🎉 診斷成功！WARP 已生效 (機房: ${colo}, 出口: ${ip})";
 
-  static String m58(name) => "已指定前置跳板為 ${name}";
+  static String m59(name) => "已指定前置跳板為 ${name}";
 
-  static String m59(code) => "邊緣節點 ${code}";
+  static String m60(code) => "邊緣節點 ${code}";
 
-  static String m60(ip) => "已選用最快節點 ${ip}";
+  static String m61(ip) => "已選用最快節點 ${ip}";
 
-  static String m61(ip) => "已選用 ${ip}";
+  static String m62(ip) => "已選用 ${ip}";
 
-  static String m62(ip) => "提示：已連線出口 ${ip}，但未偵測到 WARP 簽名，請確認跳板設定";
+  static String m63(ip) => "提示：已連線出口 ${ip}，但未偵測到 WARP 簽名，請確認跳板設定";
 
-  static String m63(loc) => "歸屬地: ${loc}";
+  static String m64(loc) => "歸屬地: ${loc}";
 
-  static String m64(label) => "已切換為 ${label}";
+  static String m65(label) => "已切換為 ${label}";
 
-  static String m65(count) => "${Intl.plural(count, other: '年')}";
+  static String m66(count) => "${Intl.plural(count, other: '年')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -206,14 +208,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "aggregateApplyNodeOverrides": MessageLookupByLibrary.simpleMessage(
       "套用成員本機節點編輯",
     ),
-    "aggregateBaseProfile": MessageLookupByLibrary.simpleMessage("目前訂閱（基準）"),
+    "aggregateBaseProfile": MessageLookupByLibrary.simpleMessage("基礎訂閱"),
     "aggregateConflicts": MessageLookupByLibrary.simpleMessage("合併衝突"),
     "aggregateCurrent": MessageLookupByLibrary.simpleMessage("目前"),
     "aggregateCustom": MessageLookupByLibrary.simpleMessage("自訂合併"),
     "aggregateCustomDesc": MessageLookupByLibrary.simpleMessage(
       "始終合併節點，可單獨選擇是否合併策略組、規則和規則集",
     ),
-    "aggregateDefault": MessageLookupByLibrary.simpleMessage("預設聚合"),
+    "aggregateDefault": MessageLookupByLibrary.simpleMessage("新聚合的預設設定"),
     "aggregateDelete": MessageLookupByLibrary.simpleMessage("刪除聚合"),
     "aggregateDesc": MessageLookupByLibrary.simpleMessage("將多個訂閱的節點合併為一個聚合組"),
     "aggregateDiff": MessageLookupByLibrary.simpleMessage("與上次生效對比"),
@@ -304,7 +306,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "多個聚合目前共用同一套合併設定",
     ),
     "aggregateSkippedProviders": m12,
-    "aggregateStats": m13,
+    "aggregateSourceInUse": m13,
+    "aggregateSourceMissing": MessageLookupByLibrary.simpleMessage("來源訂閱已遺失"),
+    "aggregateStats": m14,
     "aggregateStatsFailed": MessageLookupByLibrary.simpleMessage("無法讀取該訂閱"),
     "aggregateTitle": MessageLookupByLibrary.simpleMessage("聚合訂閱"),
     "ago": MessageLookupByLibrary.simpleMessage("前"),
@@ -366,7 +370,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "backupSuccess": MessageLookupByLibrary.simpleMessage("備份成功"),
     "basicConfig": MessageLookupByLibrary.simpleMessage("內核配置"),
     "basicConfigDesc": MessageLookupByLibrary.simpleMessage("全域修改內核配置"),
-    "batchCheckingProgress": m14,
+    "batchCheckingProgress": m15,
     "batchImportLinks": MessageLookupByLibrary.simpleMessage("批次匯入連結"),
     "batchImportParseFailed": MessageLookupByLibrary.simpleMessage(
       "未能解析到有效節點連結，請核對格式",
@@ -375,7 +379,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "在此貼上節點分享連結或節點設定 (YAML/JSON)...",
     ),
     "batchImportShareLinks": MessageLookupByLibrary.simpleMessage("批次匯入分享連結"),
-    "batchImportSuccess": m15,
+    "batchImportSuccess": m16,
     "batchImportSupportHint": MessageLookupByLibrary.simpleMessage(
       "支援單條/多行連結或 YAML/JSON 節點片段：",
     ),
@@ -403,7 +407,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "cancelFilterSystemApp": MessageLookupByLibrary.simpleMessage("取消過濾系統應用程式"),
     "cancelSelectAll": MessageLookupByLibrary.simpleMessage("取消全選"),
     "cardFollowMain": MessageLookupByLibrary.simpleMessage("跟隨主選擇"),
-    "cardHopValue": m16,
+    "cardHopValue": m17,
     "cardNodeSelect": MessageLookupByLibrary.simpleMessage("節點選擇"),
     "cardSelect": MessageLookupByLibrary.simpleMessage("選擇"),
     "categoryAi": MessageLookupByLibrary.simpleMessage("AI"),
@@ -434,7 +438,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "chainDiagnosticsOk": MessageLookupByLibrary.simpleMessage(
       "已探測過，展開可看它用的拓撲。",
     ),
-    "chainDialerValue": m17,
+    "chainDialerValue": m18,
     "chainDisabled": MessageLookupByLibrary.simpleMessage("未啟用"),
     "chainEdit": MessageLookupByLibrary.simpleMessage("編輯"),
     "chainEditLanding": MessageLookupByLibrary.simpleMessage("編輯落地代理"),
@@ -514,12 +518,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "設定前置跳板與落地靜態住宅 IP 代理",
     ),
     "chainReady": MessageLookupByLibrary.simpleMessage("已就緒"),
-    "chainRelayIndex": m18,
+    "chainRelayIndex": m19,
     "chainResetFilter": MessageLookupByLibrary.simpleMessage("重設篩選"),
     "chainResidentialExample": MessageLookupByLibrary.simpleMessage(
       "例：美國家庭住宅IP 01",
     ),
-    "chainResidentialIp": m19,
+    "chainResidentialIp": m20,
     "chainSearchNode": MessageLookupByLibrary.simpleMessage("搜尋節點"),
     "chainShareLabel": MessageLookupByLibrary.simpleMessage("分享"),
     "chainSpeedTest": MessageLookupByLibrary.simpleMessage("測速"),
@@ -568,7 +572,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "clearDataTipTitle": MessageLookupByLibrary.simpleMessage("危險操作"),
     "clearInvalidProxies": MessageLookupByLibrary.simpleMessage("清理不可用節點"),
-    "clearedInvalidCount": m20,
+    "clearedInvalidCount": m21,
     "clipboard": MessageLookupByLibrary.simpleMessage("剪貼簿"),
     "clipboardDesc": MessageLookupByLibrary.simpleMessage("自動獲取剪貼簿訂閱連結"),
     "clipboardExport": MessageLookupByLibrary.simpleMessage("匯出剪貼簿"),
@@ -592,7 +596,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "確定清理所有檢測為不可用的住宅 IP 嗎？",
     ),
     "confirmDelete": MessageLookupByLibrary.simpleMessage("確認刪除"),
-    "confirmDeleteNodeMsg": m21,
+    "confirmDeleteNodeMsg": m22,
     "confirmImport": MessageLookupByLibrary.simpleMessage("確認匯入"),
     "confirmPassword": MessageLookupByLibrary.simpleMessage("確認密碼"),
     "connection": MessageLookupByLibrary.simpleMessage("活躍連線"),
@@ -638,8 +642,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "createEmptyGroupHint": MessageLookupByLibrary.simpleMessage(
       "建立空白分組後，您可以手動錄入各協定節點或一鍵批次匯入分享連結。",
     ),
-    "createGroupFailed": m22,
-    "createGroupSuccess": m23,
+    "createGroupFailed": m23,
+    "createGroupSuccess": m24,
     "creationTime": MessageLookupByLibrary.simpleMessage("建立時間"),
     "custom": MessageLookupByLibrary.simpleMessage("自訂"),
     "customConfigHintText": MessageLookupByLibrary.simpleMessage(
@@ -660,7 +664,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "darkIcon": MessageLookupByLibrary.simpleMessage("深色圖示"),
     "darkIconDesc": MessageLookupByLibrary.simpleMessage("手動切換深色系桌面應用程式圖示"),
     "dashboard": MessageLookupByLibrary.simpleMessage("首頁"),
-    "days": m24,
+    "days": m25,
     "dedicatedGroup": MessageLookupByLibrary.simpleMessage("建立專屬鏈式代理組"),
     "dedicatedGroupDesc": MessageLookupByLibrary.simpleMessage(
       "在代理頁面生成「🔗 鏈式代理」獨立策略組卡片",
@@ -681,9 +685,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "delayAnimationDesc": MessageLookupByLibrary.simpleMessage("自訂測試過程中的動畫顯示"),
     "delaySort": MessageLookupByLibrary.simpleMessage("按延遲排序"),
     "delete": MessageLookupByLibrary.simpleMessage("刪除"),
-    "deleteMultipTip": m25,
+    "deleteMultipTip": m26,
     "deleteNode": MessageLookupByLibrary.simpleMessage("刪除節點"),
-    "deleteTip": m26,
+    "deleteTip": m27,
     "deleteTunnel": MessageLookupByLibrary.simpleMessage("刪除轉發"),
     "desc": MessageLookupByLibrary.simpleMessage(
       "Fluxora 基於強大靈活的 Mihomo (Clash.Meta) 代理核心，致力於更好的體驗，我們的願景: 清晰的路由，平静的掌控",
@@ -740,7 +744,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "emptyLandingTip": MessageLookupByLibrary.simpleMessage(
       "暫無落地住宅節點。支援主流住宅 IP 供應商（如 IPRoyal、LunaProxy、Oxylabs 等）常見格式一鍵貼上匯入。",
     ),
-    "emptyTip": m27,
+    "emptyTip": m28,
     "enableChainProxy": MessageLookupByLibrary.simpleMessage("啟用鏈式代理"),
     "enableChainProxyDesc": MessageLookupByLibrary.simpleMessage(
       "透過前置節點中轉連接落地代理，繞過網路限制並保持真實住宅出口",
@@ -777,7 +781,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "放行中國 QUIC 流量而非全部停用",
     ),
     "excludeDesc": MessageLookupByLibrary.simpleMessage("從最近任務中隱藏應用程式"),
-    "existsTip": m28,
+    "existsTip": m29,
     "exit": MessageLookupByLibrary.simpleMessage("退出"),
     "expand": MessageLookupByLibrary.simpleMessage("標準"),
     "experimental": MessageLookupByLibrary.simpleMessage("Experimental"),
@@ -799,7 +803,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "fadingFour": MessageLookupByLibrary.simpleMessage("四方爍動"),
     "failover": MessageLookupByLibrary.simpleMessage("故障轉移"),
     "failoverEnableFirst": MessageLookupByLibrary.simpleMessage("請先啟用鏈式代理"),
-    "failoverFailed": m29,
+    "failoverFailed": m30,
     "failoverInProgress": MessageLookupByLibrary.simpleMessage("故障轉移執行中..."),
     "failoverManualHint": MessageLookupByLibrary.simpleMessage(
       "偵測到鏈路異常時可手動切換至備用候選節點",
@@ -810,7 +814,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "failoverNoCandidatesAdvice": MessageLookupByLibrary.simpleMessage(
       "請在上方為至少一個角色新增備用候選節點，然後重試",
     ),
-    "failoverSuccess": m30,
+    "failoverSuccess": m31,
     "failoverTrigger": MessageLookupByLibrary.simpleMessage("立即故障轉移"),
     "failoverTriggerReason": MessageLookupByLibrary.simpleMessage(
       "使用者手動觸發故障轉移",
@@ -932,7 +936,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "hotkeyConflict": MessageLookupByLibrary.simpleMessage("快捷鍵衝突"),
     "hotkeyManagement": MessageLookupByLibrary.simpleMessage("快捷鍵管理"),
     "hotkeyManagementDesc": MessageLookupByLibrary.simpleMessage("使用鍵盤控制應用程式"),
-    "hours": m31,
+    "hours": m32,
     "httpPortSniffer": MessageLookupByLibrary.simpleMessage("HTTP 連接埠嗅探"),
     "icmpForwarding": MessageLookupByLibrary.simpleMessage("ICMP 轉發"),
     "icmpForwardingDesc": MessageLookupByLibrary.simpleMessage(
@@ -947,7 +951,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "importFromCode": MessageLookupByLibrary.simpleMessage("透過程式碼匯入"),
     "importFromURL": MessageLookupByLibrary.simpleMessage("從 URL 匯入"),
     "importShareLinks": MessageLookupByLibrary.simpleMessage("匯入分享連結"),
-    "importSuccessCount": m32,
+    "importSuccessCount": m33,
     "importUrl": MessageLookupByLibrary.simpleMessage("透過 URL 匯入"),
     "infiniteTime": MessageLookupByLibrary.simpleMessage("長期有效"),
     "inheritDefaultDialer": MessageLookupByLibrary.simpleMessage("繼承全域預設跳板"),
@@ -967,6 +971,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "ipCheckCoreNotReady": MessageLookupByLibrary.simpleMessage("內核尚未就緒"),
     "ipCheckTimeout": MessageLookupByLibrary.simpleMessage("節點無回應"),
     "ipClickBehavior": MessageLookupByLibrary.simpleMessage("顯示切換"),
+    "ipInfoFieldsTitle": MessageLookupByLibrary.simpleMessage("顯示欄位"),
     "ipPrivacyProtection": MessageLookupByLibrary.simpleMessage("隱藏 IP 顯示"),
     "ipRiskAbuse": MessageLookupByLibrary.simpleMessage("濫用記錄"),
     "ipRiskBlocklists": MessageLookupByLibrary.simpleMessage("黑名單"),
@@ -986,12 +991,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "ipRiskNotFlagged": MessageLookupByLibrary.simpleMessage("未發現"),
     "ipRiskOpenReport": MessageLookupByLibrary.simpleMessage("檢視完整報告"),
     "ipRiskPrivacyNote": MessageLookupByLibrary.simpleMessage(
-      "資料將傳送至第三方（無隱私政策）",
+      "查詢時會將 IP 位址傳送給 IPure／IPQuery。",
     ),
     "ipRiskProxy": MessageLookupByLibrary.simpleMessage("代理"),
-    "ipRiskRateLimited": MessageLookupByLibrary.simpleMessage(
-      "IPure 查詢次數受限，請稍後重試。",
+    "ipRiskPublicReportNote": MessageLookupByLibrary.simpleMessage(
+      "已取得公開風險標記，暫未提供純淨度和情境評分。",
     ),
+    "ipRiskRateLimited": MessageLookupByLibrary.simpleMessage("查詢次數受限，請稍後重試。"),
     "ipRiskRelay": MessageLookupByLibrary.simpleMessage("中繼"),
     "ipRiskScenarios": MessageLookupByLibrary.simpleMessage("分場景評分"),
     "ipRiskScore": MessageLookupByLibrary.simpleMessage("源方純淨度"),
@@ -1005,7 +1011,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "ipv6Desc": MessageLookupByLibrary.simpleMessage("開啟後將可以接收 IPv6 流量"),
     "ipv6InboundDesc": MessageLookupByLibrary.simpleMessage("允許 IPv6 入站"),
     "isp": MessageLookupByLibrary.simpleMessage("電信業者"),
-    "itemsCount": m33,
+    "itemsCount": m34,
     "jcLabel": MessageLookupByLibrary.simpleMessage("Jc (垃圾封包數)"),
     "juicityPassword": MessageLookupByLibrary.simpleMessage(
       "Juicity 密碼 (上方填寫 UUID)",
@@ -1091,11 +1097,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "minimize": MessageLookupByLibrary.simpleMessage("最小化"),
     "minimizeOnExit": MessageLookupByLibrary.simpleMessage("退出最小化"),
     "minimizeOnExitDesc": MessageLookupByLibrary.simpleMessage("修改系統預設退出事件"),
-    "minutes": m34,
+    "minutes": m35,
     "mixedPort": MessageLookupByLibrary.simpleMessage("混合連接埠"),
     "mode": MessageLookupByLibrary.simpleMessage("模式"),
     "monochromeScheme": MessageLookupByLibrary.simpleMessage("單色"),
-    "months": m35,
+    "months": m36,
     "more": MessageLookupByLibrary.simpleMessage("查看"),
     "moreIpInfo": MessageLookupByLibrary.simpleMessage("更多 IP 資訊"),
     "name": MessageLookupByLibrary.simpleMessage("名稱"),
@@ -1154,10 +1160,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "noResolve": MessageLookupByLibrary.simpleMessage("不解析 IP"),
     "noStatusAvailable": MessageLookupByLibrary.simpleMessage("未獲取到狀態"),
     "noUsageData": MessageLookupByLibrary.simpleMessage("無用量統計"),
-    "nodeAdded": m36,
+    "nodeAdded": m37,
     "nodeAllProtocols": MessageLookupByLibrary.simpleMessage("全部協定"),
     "nodeCleanUnavailable": MessageLookupByLibrary.simpleMessage("清理不可用設定"),
-    "nodeCleanUnavailableConfirm": m37,
+    "nodeCleanUnavailableConfirm": m38,
     "nodeCleanUnavailableNone": MessageLookupByLibrary.simpleMessage(
       "沒有可清理的失敗節點",
     ),
@@ -1166,14 +1172,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "nodeDeleteNoChange": MessageLookupByLibrary.simpleMessage(
       "沒有節點被刪除（設定檔未變更）",
     ),
-    "nodeDeleted": m38,
-    "nodeDeletedCount": m39,
+    "nodeDeleted": m39,
+    "nodeDeletedCount": m40,
     "nodeDetailCancel": MessageLookupByLibrary.simpleMessage("取消"),
     "nodeDetailClose": MessageLookupByLibrary.simpleMessage("關閉"),
     "nodeDetailCopied": MessageLookupByLibrary.simpleMessage("已複製到剪貼簿"),
     "nodeDetailCopyConfig": MessageLookupByLibrary.simpleMessage("複製設定"),
     "nodeDetailEdit": MessageLookupByLibrary.simpleMessage("編輯"),
-    "nodeDetailEditTitle": m40,
+    "nodeDetailEditTitle": m41,
     "nodeDetailMissing": MessageLookupByLibrary.simpleMessage(
       "找不到這個節點的原始設定（可能來自策略組或已被訂閱更新替換）",
     ),
@@ -1184,8 +1190,8 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "nodeDetailSave": MessageLookupByLibrary.simpleMessage("儲存"),
     "nodeDetailSaved": MessageLookupByLibrary.simpleMessage("已儲存本機修改，重啟核心後生效"),
-    "nodeDuplicatesDelete": m41,
-    "nodeDuplicatesFound": m42,
+    "nodeDuplicatesDelete": m42,
+    "nodeDuplicatesFound": m43,
     "nodeDuplicatesNone": MessageLookupByLibrary.simpleMessage("沒有重複伺服器"),
     "nodeExclusion": MessageLookupByLibrary.simpleMessage("節點排除"),
     "nodeExclusionDesc": MessageLookupByLibrary.simpleMessage("排除所有匹配到的節點"),
@@ -1196,9 +1202,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "nodeExportDone": MessageLookupByLibrary.simpleMessage("已複製到剪貼簿"),
     "nodeExportEmpty": MessageLookupByLibrary.simpleMessage("未選擇節點"),
     "nodeExportTitle": MessageLookupByLibrary.simpleMessage("匯出的連結"),
-    "nodeManagement": m43,
+    "nodeManagement": m44,
     "nodeName": MessageLookupByLibrary.simpleMessage("節點名稱"),
-    "nodeNameHint": m44,
+    "nodeNameHint": m45,
     "nodeNameLabel": MessageLookupByLibrary.simpleMessage("節點名稱"),
     "nodeNoMatches": MessageLookupByLibrary.simpleMessage("沒有符合的節點"),
     "nodeOnlyFailed": MessageLookupByLibrary.simpleMessage("只看失敗"),
@@ -1214,7 +1220,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "nodeTestUnavailable": MessageLookupByLibrary.simpleMessage(
       "請先套用該訂閱再進行 URL 測速",
     ),
-    "nodeTestingProgress": m45,
+    "nodeTestingProgress": m46,
     "nodeUpdateSubscription": MessageLookupByLibrary.simpleMessage("更新目前組訂閱"),
     "none": MessageLookupByLibrary.simpleMessage("無"),
     "notRecommended": MessageLookupByLibrary.simpleMessage("不推薦"),
@@ -1235,8 +1241,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "ntpStatus": MessageLookupByLibrary.simpleMessage("狀態"),
     "ntpStatusDesc": MessageLookupByLibrary.simpleMessage("開啟 NTP 時間服務"),
     "nullProfileDesc": MessageLookupByLibrary.simpleMessage("沒有設定檔，請先新增設定檔"),
-    "nullTip": m46,
-    "numberTip": m47,
+    "nullTip": m47,
+    "numberTip": m48,
     "obfsModeLabel": MessageLookupByLibrary.simpleMessage("混淆模式"),
     "obfsNoneOff": MessageLookupByLibrary.simpleMessage("無 (關閉)"),
     "officialCommunity": MessageLookupByLibrary.simpleMessage("官方社群"),
@@ -1336,7 +1342,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "portFallbackDesc": MessageLookupByLibrary.simpleMessage(
       "設定的連接埠被佔用時，暫時使用其他連接埠",
     ),
-    "portFallbackNotice": m48,
+    "portFallbackNotice": m49,
     "portFallbackNoticeSwitch": MessageLookupByLibrary.simpleMessage(
       "連接埠迴避時通知",
     ),
@@ -1344,7 +1350,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "連接埠被占用、本次工作階段改用其他連接埠時彈出提示",
     ),
     "portLabel": MessageLookupByLibrary.simpleMessage("連接埠"),
-    "portTip": m49,
+    "portTip": m50,
     "powerSwitch": MessageLookupByLibrary.simpleMessage("啟動開關"),
     "preProxyOptionCustom": MessageLookupByLibrary.simpleMessage(
       "✏️ 手動輸入前置節點名稱...",
@@ -1375,14 +1381,14 @@ class MessageLookup extends MessageLookupByLibrary {
         MessageLookupByLibrary.simpleMessage("請輸入有效間隔時間格式"),
     "profileAutoUpdateIntervalNullValidationDesc":
         MessageLookupByLibrary.simpleMessage("請輸入自動更新間隔時間"),
-    "profileChainDialogTitle": m50,
+    "profileChainDialogTitle": m51,
     "profileChainProxies": MessageLookupByLibrary.simpleMessage("前置與落地代理"),
     "profileChainSaved": MessageLookupByLibrary.simpleMessage("已儲存前置與落地代理設定"),
     "profileFallbackFailed": MessageLookupByLibrary.simpleMessage("舊配置也無法恢復"),
     "profileHasUpdate": MessageLookupByLibrary.simpleMessage(
       "設定檔已經修改，是否關閉自動更新？",
     ),
-    "profileImportFailed": m51,
+    "profileImportFailed": m52,
     "profileManageNodes": MessageLookupByLibrary.simpleMessage("節點管理 / 新增節點"),
     "profileNameNullValidationDesc": MessageLookupByLibrary.simpleMessage(
       "請輸入配置名稱",
@@ -1535,7 +1541,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "selectAll": MessageLookupByLibrary.simpleMessage("全選"),
     "selectBackupVersion": MessageLookupByLibrary.simpleMessage("選擇備份版本"),
     "selected": MessageLookupByLibrary.simpleMessage("已選擇"),
-    "selectedCountTitle": m52,
+    "selectedCountTitle": m53,
     "serverAddress": MessageLookupByLibrary.simpleMessage("伺服器位址"),
     "serverAddressHint": MessageLookupByLibrary.simpleMessage("IP 或網域"),
     "serverAddressLabel": MessageLookupByLibrary.simpleMessage("伺服器位址"),
@@ -1568,7 +1574,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "smartAutoStopServiceRunning": MessageLookupByLibrary.simpleMessage(
       "智慧啟停服務執行中",
     ),
-    "smartCheckFailed": m53,
+    "smartCheckFailed": m54,
     "smartCheckNow": MessageLookupByLibrary.simpleMessage("立即體檢"),
     "smartChecking": MessageLookupByLibrary.simpleMessage("體檢中…"),
     "smartDelayLaunch": MessageLookupByLibrary.simpleMessage("智慧延遲"),
@@ -1620,7 +1626,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "startVpn": MessageLookupByLibrary.simpleMessage("正在啟動"),
     "status": MessageLookupByLibrary.simpleMessage("狀態"),
     "statusDesc": MessageLookupByLibrary.simpleMessage("關閉後將使用系統 DNS"),
-    "stillUsingProfile": m54,
+    "stillUsingProfile": m55,
     "stop": MessageLookupByLibrary.simpleMessage("停止"),
     "stopVpn": MessageLookupByLibrary.simpleMessage("正在停止"),
     "storeFix": MessageLookupByLibrary.simpleMessage("商店修復"),
@@ -1851,7 +1857,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "upload": MessageLookupByLibrary.simpleMessage("上傳"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage("透過 URL 獲取設定檔"),
-    "urlTip": m55,
+    "urlTip": m56,
     "useGlobalScriptOverride": MessageLookupByLibrary.simpleMessage("使用全域腳本覆寫"),
     "useHosts": MessageLookupByLibrary.simpleMessage("使用 Hosts"),
     "useSystemHosts": MessageLookupByLibrary.simpleMessage("使用系統 Hosts"),
@@ -1882,12 +1888,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "wakelockDescription": MessageLookupByLibrary.simpleMessage(
       "本功能不需要任何特殊權限，因為它僅啟用螢幕喚醒鎖，而不是任何 CPU 喚醒鎖，應用會在後台保持必要的活躍，且螢幕不會自動熄滅，這在一些場景下會很有用",
     ),
-    "warpCopied": m56,
-    "warpDiagOk": m57,
-    "warpDialerSet": m58,
-    "warpEdgeNode": m59,
-    "warpFastestChosen": m60,
-    "warpIpChosen": m61,
+    "warpCopied": m57,
+    "warpDiagOk": m58,
+    "warpDialerSet": m59,
+    "warpEdgeNode": m60,
+    "warpFastestChosen": m61,
+    "warpIpChosen": m62,
     "warpModeAll": MessageLookupByLibrary.simpleMessage("全域接管模式"),
     "warpModeAllDesc": MessageLookupByLibrary.simpleMessage(
       "所有代理出站流量全部經過 WARP 進行二次封裝，隱藏真實機場落地 IP",
@@ -1903,8 +1909,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpModeTitle": MessageLookupByLibrary.simpleMessage(
       "分流工作模式 (Routing Mode)",
     ),
-    "warpNoSignature": m62,
-    "warpRegion": m63,
+    "warpNoSignature": m63,
+    "warpRegion": m64,
     "warpRouteProxyOverWarp": MessageLookupByLibrary.simpleMessage(
       "透過 WARP 路由代理",
     ),
@@ -2053,7 +2059,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "warpStr97": MessageLookupByLibrary.simpleMessage("連接未完成或檢測超時"),
     "warpStr98": MessageLookupByLibrary.simpleMessage("選擇 WARP 前置跳板"),
     "warpStr99": MessageLookupByLibrary.simpleMessage("選擇 WireGuard MTU"),
-    "warpSwitchedTo": m64,
+    "warpSwitchedTo": m65,
     "warpUnknownColo": MessageLookupByLibrary.simpleMessage("未知邊緣節點"),
     "wave": MessageLookupByLibrary.simpleMessage("波浪起伏"),
     "webDAVConfiguration": MessageLookupByLibrary.simpleMessage("WebDAV 設定"),
@@ -2062,6 +2068,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystem": MessageLookupByLibrary.simpleMessage("寫入系統"),
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage("需要管理員權限"),
     "wrongBackupPassword": MessageLookupByLibrary.simpleMessage("密碼錯誤或備份已被竄改"),
-    "years": m65,
+    "years": m66,
   };
 }

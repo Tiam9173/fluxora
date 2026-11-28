@@ -290,6 +290,36 @@ func handleResetTraffic() {
 
 var delayTestSlots = make(chan struct{}, 50)
 
+func findDelayProxy(name, groupName string) constant.Proxy {
+	if groupName != "" {
+		group, ok := tunnel.Proxies()[groupName].(*adapter.Proxy)
+		if !ok {
+			return nil
+		}
+		members, ok := group.ProxyAdapter.(interface{ GetProxies(bool) []constant.Proxy })
+		if !ok {
+			return nil
+		}
+		for _, proxy := range members.GetProxies(false) {
+			if proxy.Name() == name {
+				return proxy
+			}
+		}
+		return nil
+	}
+	if proxy := tunnel.Proxies()[name]; proxy != nil {
+		return proxy
+	}
+	for _, provider := range tunnel.Providers() {
+		for _, proxy := range provider.Proxies() {
+			if proxy.Name() == name {
+				return proxy
+			}
+		}
+	}
+	return nil
+}
+
 func handleAsyncTestDelay(paramsString string, fn func(string)) {
 	go func() {
 		delayTestSlots <- struct{}{}
@@ -311,22 +341,7 @@ func handleAsyncTestDelay(paramsString string, fn func(string)) {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*time.Duration(params.Timeout))
 		defer cancel()
 
-		var proxy constant.Proxy
-		var exist bool
-		if proxy, exist = tunnel.Proxies()[params.ProxyName]; !exist {
-			for _, provider := range tunnel.Providers() {
-				for _, p := range provider.Proxies() {
-					if p.Name() == params.ProxyName {
-						proxy = p
-						exist = true
-						break
-					}
-				}
-				if exist {
-					break
-				}
-			}
-		}
+		proxy := findDelayProxy(params.ProxyName, params.GroupName)
 
 		delayData := &Delay{
 			Name: params.ProxyName,

@@ -76,6 +76,7 @@ class AppController {
   bool _isUpdatingGroups = false;
   Timer? _updateGroupsRetryTimer;
   int _coreGeneration = 0;
+  int get delayConfigGeneration => _coreGeneration;
   int _groupDelayGeneration = 0;
   int get groupDelayGeneration => _groupDelayGeneration;
   ({int mixedPort, ExternalControllerStatus controller})? _appliedPortSettings;
@@ -441,11 +442,13 @@ class AppController {
 
     _ref.read(connectionCheckProvider.notifier).state = reachable
         ? ConnectionCheck.reachable
+        : retries == 0
+        ? ConnectionCheck.checking
         : ConnectionCheck.limited;
     if (reachable || retries >= 3) return;
 
     final delay = switch (retries) {
-      0 => const Duration(seconds: 3),
+      0 => const Duration(milliseconds: 600),
       1 => const Duration(seconds: 10),
       _ => const Duration(seconds: 30),
     };
@@ -732,13 +735,38 @@ class AppController {
   }
 
   Future<void> deleteProfile(String id) async {
+    final dependents = globalState.config.aggregates.where(
+      (item) => item.baseProfileId == id || item.memberIds.contains(id),
+    );
+    if (dependents.isNotEmpty) {
+      globalState.showNotifier(
+        appLocalizations.aggregateSourceInUse(
+          dependents.map((item) => item.name).join(', '),
+        ),
+      );
+      return;
+    }
+    final aggregate = globalState.config.aggregateForProfile(id);
+    if (aggregate != null) {
+      globalState.config = globalState.config.copyWith(
+        aggregates: globalState.config.aggregates
+            .where((item) => item.id != aggregate.id)
+            .toList(),
+        currentAggregateId:
+            globalState.config.currentAggregateId == aggregate.id
+            ? null
+            : globalState.config.currentAggregateId,
+      );
+    }
     _ref.read(profilesProvider.notifier).deleteProfileById(id);
     await clearEffect(id);
     if (globalState.config.currentProfileId == id) {
       final profiles = globalState.config.profiles;
       final currentProfileId = _ref.read(currentProfileIdProvider.notifier);
       if (profiles.isNotEmpty) {
-        final updateId = profiles.first.id;
+        final updateId =
+            profiles.getProfile(aggregate?.baseProfileId)?.id ??
+            profiles.first.id;
         currentProfileId.value = updateId;
       } else {
         currentProfileId.value = null;
@@ -780,7 +808,7 @@ class AppController {
       _ref
           .read(profilesProvider.notifier)
           .setProfile(newProfile.copyWith(isUpdating: false));
-      if (profile.id == _ref.read(currentProfileIdProvider)) {
+      if (_profileFeedsCurrentConfig(profile.id)) {
         applyProfileDebounce(silence: true);
       }
     } finally {
@@ -794,9 +822,16 @@ class AppController {
 
   void setProfileAndAutoApply(Profile profile) {
     _ref.read(profilesProvider.notifier).setProfile(profile);
-    if (profile.id == _ref.read(currentProfileIdProvider)) {
+    if (_profileFeedsCurrentConfig(profile.id)) {
       applyProfileDebounce(silence: true);
     }
+  }
+
+  bool _profileFeedsCurrentConfig(String id) {
+    final aggregate = globalState.config.currentAggregate;
+    return id == _ref.read(currentProfileIdProvider) ||
+        id == aggregate?.baseProfileId ||
+        (aggregate?.memberIds.contains(id) ?? false);
   }
 
   void setProfiles(List<Profile> profiles) {
@@ -1261,6 +1296,43 @@ class AppController {
       }
       _ref.read(currentProfileIdProvider.notifier).value = profileId;
     });
+  }
+
+  Future<void> selectAggregate(String? aggregateId) async {
+    final config = globalState.config;
+    final aggregate = config.aggregates
+        .where((item) => item.id == aggregateId)
+        .firstOrNull;
+    final target =
+        aggregate?.profileId ?? config.currentAggregate?.baseProfileId;
+    if (target == null) return;
+    // Let the ordinary profile lifecycle own loading, errors and rollback.
+    await selectProfile(target);
+  }
+
+  Future<void> saveAggregate(AggregateProfile aggregate) async {
+    final current = globalState.config;
+    final exists = current.aggregates.any((item) => item.id == aggregate.id);
+    final normalized = current
+        .copyWith(
+          aggregates: [
+            for (final item in current.aggregates)
+              if (item.id == aggregate.id) aggregate else item,
+            if (!exists) aggregate,
+          ],
+        )
+        .withAggregateProfiles();
+    globalState.config = normalized.copyWith(
+      currentProfileId: current.currentProfileId,
+      currentAggregateId: normalized
+          .aggregateForProfile(current.currentProfileId)
+          ?.id,
+    );
+    setProfiles(globalState.config.profiles);
+    await preferences.saveConfig(globalState.config);
+    if (exists && globalState.config.currentAggregate?.id == aggregate.id) {
+      applyProfileDebounce(silence: true);
+    }
   }
 
   Future<void> handleChangeProfile({
@@ -2378,7 +2450,9 @@ class AppController {
     };
 
     vpn_service.service?.addNativeEventCallback((method, arguments) async {
-      if (method == 'vpnStartFailed' &&
+      if (method == 'networkChanged') {
+        await refreshAndroidPrivateDnsOnNetworkChanged();
+      } else if (method == 'vpnStartFailed' &&
           !_isStarting &&
           !_ref.read(isRestartingCoreProvider)) {
         globalState.showNotifier(appLocalizations.networkErrorRetryLater);
@@ -2593,9 +2667,8 @@ class AppController {
     final isBackgroundTimeout =
         background && delay.value != null && delay.value! < 0;
     final timeoutCount = _backgroundTimeoutCounts[target] ?? 0;
-    final keepFirstTimeout = isBackgroundTimeout &&
-        (previous ?? 0) > 0 &&
-        timeoutCount == 0;
+    final keepFirstTimeout =
+        isBackgroundTimeout && (previous ?? 0) > 0 && timeoutCount == 0;
     if (isBackgroundTimeout) {
       _backgroundTimeoutCounts[target] = timeoutCount + 1;
     } else if (!background || (delay.value ?? 0) > 0) {
@@ -3524,7 +3597,7 @@ class AppController {
     }
     final raw =
         json.decode(utf8.decode(configFile.content)) as Map<String, dynamic>;
-    var config = Config.compatibleFromJson(raw);
+    var config = Config.compatibleFromJson(raw).withAggregateProfiles();
     final fullRestore = recoveryOption == RecoveryOption.all;
     final chainData = fullRestore ? raw['chainProxy'] : null;
     final chainConfig = chainData == null
@@ -3539,10 +3612,33 @@ class AppController {
       final merge =
           _ref.read(appSettingProvider).recoveryStrategy ==
           RecoveryStrategy.compatible;
+      final localAggregates = {
+        for (final aggregate in globalState.config.aggregates)
+          aggregate.id: aggregate,
+      };
+      final sourceIds = {
+        for (final aggregate in [
+          ...config.aggregates,
+          ...localAggregates.values,
+        ]) ...[aggregate.baseProfileId, ...aggregate.memberIds],
+      };
       final profileRecovery = merge
           ? ProfileRecoveryPlan.compatible(
               config.profiles,
               _ref.read(profilesProvider),
+              generatedProfileIds: {
+                for (final aggregate in config.aggregates)
+                  if (aggregate.profileId case final incomingId?
+                      when !sourceIds.contains(incomingId))
+                    if (localAggregates[aggregate.id]?.profileId
+                        case final localId?
+                        when !sourceIds.contains(localId) &&
+                            globalState.config.profiles
+                                    .getProfile(localId)
+                                    ?.url ==
+                                '')
+                      incomingId: localId,
+              },
             )
           : ProfileRecoveryPlan.exact(config.profiles);
       final recoveredProfileIds = profileRecovery.profiles
@@ -3566,6 +3662,8 @@ class AppController {
         aggregates: [
           for (final aggregate in config.aggregates)
             aggregate.copyWith(
+              profileId: profileRecovery.targetId(aggregate.profileId),
+              baseProfileId: profileRecovery.targetId(aggregate.baseProfileId),
               memberIds: <String>{
                 for (final memberId in aggregate.memberIds)
                   if (recoveredProfileIds.contains(
@@ -3638,7 +3736,7 @@ class AppController {
           );
         }
       }
-      _recovery(config, recoveryOption);
+      _recovery(config.withAggregateProfiles(), recoveryOption);
       if (!await preferences.saveConfig(globalState.config)) {
         throw StateError('Failed to save restored settings');
       }
@@ -3905,6 +4003,20 @@ class AppController {
   /// Full restore
   void _recovery(Config config, RecoveryOption recoveryOption) {
     final profiles = config.profiles;
+    final incomingIds = config.aggregates.map((item) => item.id).toSet();
+    final merge =
+        _ref.read(appSettingProvider).recoveryStrategy ==
+        RecoveryStrategy.compatible;
+    // Aggregate definitions are part of the profiles, including a profiles-only
+    // restore. Their generated YAML can always be recreated from the sources.
+    globalState.config = globalState.config.copyWith(
+      aggregates: [
+        if (merge)
+          for (final aggregate in globalState.config.aggregates)
+            if (!incomingIds.contains(aggregate.id)) aggregate,
+        ...config.aggregates,
+      ],
+    );
 
     // Restore subscriptions
     _restoreProfiles(profiles);
@@ -3990,7 +4102,6 @@ class AppController {
         aggregateMergeMemberScripts: config.aggregateMergeMemberScripts,
         aggregateApplyNodeOverrides: config.aggregateApplyNodeOverrides,
         aggregateOverrideData: config.aggregateOverrideData,
-        aggregates: config.aggregates,
         currentAggregateId: config.currentAggregateId,
       );
 

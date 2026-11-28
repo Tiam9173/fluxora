@@ -15,6 +15,7 @@ import 'package:fluxora/clash/core.dart';
 import 'package:fluxora/clash/interface.dart';
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/controller.dart';
+import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/models/models.dart';
 import 'package:fluxora/providers/providers.dart';
 import 'package:fluxora/state.dart';
@@ -22,6 +23,7 @@ import 'package:fluxora/l10n/l10n.dart';
 import 'package:fluxora/manager/clash_manager.dart';
 import 'package:fluxora/views/config/dns.dart';
 import 'package:fluxora/views/profiles/profiles.dart';
+import 'package:fluxora/views/profiles/aggregate_view.dart';
 import 'package:fluxora/views/proxies/proxies.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:yaml/yaml.dart';
@@ -42,6 +44,49 @@ class _Paths extends Fake
 }
 
 class _Core extends Fake implements ClashHandlerInterface {
+  int providerReads = 0;
+  @override
+  Future<T> invoke<T>({
+    required ActionMethod method,
+    dynamic data,
+    Duration? timeout,
+    FutureOr<T> Function()? onTimeout,
+    T? defaultValue,
+  }) async {
+    if (method != ActionMethod.readProviderNodes) {
+      throw StateError('Unexpected action $method');
+    }
+    providerReads++;
+    return Result.success([
+          {
+            'name': 'remote-$providerReads',
+            'type': 'trojan',
+            'server': 'tls.example.test',
+            'port': 443,
+            'password': 'fixture',
+            'sni': 'tls.example.test',
+            'skip-cert-verify': false,
+          },
+        ])
+        as T;
+  }
+
+  @override
+  Future<String> validateConfig(String config, {String? ageSecretKey}) async {
+    final raw = loadYaml(config);
+    final names = {
+      for (final item in [...?raw['proxies'], ...?raw['proxy-groups']])
+        item['name'],
+      'DIRECT',
+      'REJECT',
+    };
+    for (final rule in (raw['rules'] as List? ?? const [])) {
+      final target = ParsedRule.parseString(rule as String).ruleTarget;
+      if (target != null && !names.contains(target)) return 'missing $target';
+    }
+    return '';
+  }
+
   @override
   Future<bool> setState(CoreState state) async => true;
   String node = 'A-node';
@@ -70,9 +115,9 @@ class _Core extends Fake implements ClashHandlerInterface {
   Future<bool> flushDnsCache() => flush.future;
   @override
   Future<Result> getConfig(String path, {String? ageSecretKey}) async {
-    final config = Map<String, dynamic>.from(
-      loadYaml(await File(path).readAsString()),
-    );
+    final config =
+        jsonDecode(jsonEncode(loadYaml(await File(path).readAsString())))
+            as Map<String, dynamic>;
     config['rule'] = config.remove('rules');
     return Result.success(config);
   }
@@ -130,6 +175,11 @@ class _Controller extends AppController {
   _Controller(super.context, super.ref);
   Future<void>? lastChange;
   Future<void>? lastApply;
+  Future<void>? lastAggregateSave;
+
+  @override
+  Future<void> saveAggregate(AggregateProfile aggregate) =>
+      lastAggregateSave = super.saveAggregate(aggregate);
 
   @override
   Future<void> applyProfile({bool silence = false}) {
@@ -159,6 +209,9 @@ void main() {
   setUpAll(() async {
     if (scriptDll.isNotEmpty) {
       await RustLib.init(externalLibrary: ExternalLibrary.open(scriptDll));
+    }
+    if (scriptDll.isNotEmpty ||
+        const bool.fromEnvironment('UI_REFINEMENT_CAPTURE')) {
       await (FontLoader(
         'MaterialIcons',
       )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
@@ -235,6 +288,553 @@ rules: ['MATCH,Select']
     System.platformOverride = null;
     globalState.startTime = null;
   });
+
+  testWidgets('node import repairs the default target in an existing group', (
+    tester,
+  ) async {
+    await tester.runAsync(() async {
+      final profile = profiles.first;
+      final file = await profile.getFile();
+      await file.writeAsString('''
+proxies:
+  - {name: Existing, type: trojan, server: edge.example, port: 443, password: fixture}
+proxy-groups:
+  - {name: Select, type: select, proxies: [Existing]}
+''');
+      await ManualProxyHelper.addOrUpdateProxiesToProfile(profile, [
+        {
+          'name': 'Imported',
+          'type': 'ss',
+          'server': 'new.example',
+          'port': 443,
+          'cipher': 'aes-128-gcm',
+          'password': 'fixture',
+        },
+      ]);
+      final output = loadYaml(await file.readAsString());
+      expect(output['rules'], ['MATCH,PROXY']);
+      expect((output['proxy-groups'] as List).last['proxies'], [
+        'Existing',
+        'Imported',
+      ]);
+    });
+  });
+
+  testWidgets(
+    'runtime repairs cached PROXY rules without changing subscription',
+    (tester) async {
+      await tester.runAsync(() async {
+        final file = await profiles.first.getFile();
+        final source = (await file.readAsString()).replaceFirst(
+          'MATCH,Select',
+          'MATCH,PROXY',
+        );
+        await file.writeAsString(source);
+        final output = await globalState.patchRawConfig(
+          patchConfig: globalState.config.patchClashConfig,
+        );
+        expect(output['rules'], ['MATCH,PROXY']);
+        expect((output['proxy-groups'] as List).last, {
+          'name': 'PROXY',
+          'type': 'select',
+          'proxies': ['A-node'],
+        });
+        expect(await file.readAsString(), source);
+      });
+    },
+  );
+
+  testWidgets(
+    'subscription validation repairs PROXY and retains other errors',
+    (tester) async {
+      await tester.runAsync(() async {
+        final profile = profiles.first;
+        final file = await profile.getFile();
+        final original = await file.readAsString();
+        final imported = original.replaceFirst('MATCH,Select', 'MATCH,PROXY');
+        await profile.saveFile(Uint8List.fromList(utf8.encode(imported)));
+        final raw = loadYaml(await file.readAsString());
+        expect((raw['proxy-groups'] as List).last['name'], 'PROXY');
+        expect(raw['rules'], ['MATCH,PROXY']);
+        expect(raw['proxies'][0]['server'], 'example.invalid');
+        await profile.saveFileWithString(imported);
+        final accepted = await file.readAsString();
+        await expectLater(
+          profile.saveFileWithString(
+            imported.replaceAll('MATCH,PROXY', 'MATCH,Unknown'),
+          ),
+          throwsA('missing Unknown'),
+        );
+        expect(await file.readAsString(), accepted);
+      });
+    },
+  );
+
+  for (final overrideDns in [false, true]) {
+    for (final scriptEnabled in [false, true]) {
+      testWidgets(
+        'strict private DNS survives generation: override=$overrideDns script=$scriptEnabled',
+        (tester) async {
+          const host = 'resolver.private.example';
+          const channel = MethodChannel('service');
+          tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+            channel,
+            (call) async =>
+                call.method == 'getPrivateDnsServerName' ? host : null,
+          );
+          addTearDown(() {
+            tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+              channel,
+              null,
+            );
+            globalState.androidPrivateDnsServerName = null;
+          });
+          globalState.config = globalState.config.copyWith(
+            overrideDns: overrideDns,
+            scriptProps: scriptEnabled
+                ? const ScriptProps(
+                    currentId: 'dns-script',
+                    scripts: [
+                      Script(
+                        id: 'dns-script',
+                        label: 'DNS fixture',
+                        content: '''
+function main(c) {
+  c.dns = {enable: true, 'default-nameserver': ['192.0.2.53'],
+    nameserver: ['system'], 'nameserver-policy': {'geosite:private': ['system']}};
+  c.rules = ['MATCH,Select'];
+  return c;
+}
+''',
+                      ),
+                    ],
+                  )
+                : const ScriptProps(),
+          );
+          await tester.runAsync(() async {
+            final output = await globalState.patchRawConfig(
+              patchConfig: globalState.config.patchClashConfig,
+            );
+            final dns = output['dns'] as Map;
+            expect(dns['nameserver'], ['tls://$host:853#DIRECT']);
+            final policy = dns['nameserver-policy'] as Map;
+            expect(policy.keys.first, host);
+            expect(policy[host], isNot(contains('tls://$host:853#DIRECT')));
+            expect(output['rules'], [
+              'AND,((DOMAIN,$host),(NETWORK,TCP),(DST-PORT,853)),DIRECT',
+              'MATCH,Select',
+            ]);
+            expect(output['proxies'][0]['server'], 'example.invalid');
+            expect(output['proxies'][0]['skip-cert-verify'], isNull);
+          });
+        },
+        skip: scriptEnabled && scriptDll.isEmpty,
+      );
+    }
+  }
+
+  for (final scenario in ['phone', 'desktop', 'missing']) {
+    testWidgets(
+      'aggregate management preserves the active profile: $scenario',
+      (tester) async {
+        final desktop = scenario == 'desktop';
+        final missing = scenario == 'missing';
+        System.platformOverride = desktop ? 'windows' : 'android';
+        await AppLocalizations.load(const Locale('zh', 'CN'));
+        tester.view.physicalSize = Size(
+          desktop ? 1024 : (missing ? 320 : 390),
+          844,
+        );
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        globalState.config = globalState.config
+            .copyWith(
+              aggregates: [
+                AggregateProfile(
+                  id: 'work',
+                  name: '办公与旅行',
+                  baseProfileId: missing ? 'missing-source' : profiles.first.id,
+                  memberIds: [profiles.last.id, if (missing) 'missing-member'],
+                ),
+              ],
+            )
+            .withAggregateProfiles();
+        final boundary = GlobalKey();
+        await tester.pumpWidget(
+          ProviderScope(
+            child: MaterialApp(
+              navigatorKey: globalState.navigatorKey,
+              theme: ThemeData(
+                fontFamily: 'HarmonyOS_Sans',
+                colorScheme: ColorScheme.fromSeed(
+                  seedColor: const Color(0xff4269d2),
+                  brightness: desktop ? Brightness.light : Brightness.dark,
+                ),
+              ),
+              home: Consumer(
+                builder: (context, r, _) {
+                  ref = r;
+                  controller = _Controller(context, ref);
+                  globalState.appController = controller;
+                  return RepaintBoundary(
+                    key: boundary,
+                    child: Scaffold(
+                      appBar: AppBar(title: const Text('管理聚合')),
+                      body: MediaQuery(
+                        data: MediaQuery.of(context).copyWith(
+                          textScaler: TextScaler.linear(missing ? 1.3 : 1),
+                        ),
+                        child: const AggregateView(aggregateId: 'work'),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+        // Let the real profile-file reads finish before checking the controls.
+        await tester.runAsync(() async {
+          for (var attempt = 0; attempt < 100; attempt++) {
+            final refresh = tester.widget<IconButton>(
+              find.byWidgetPredicate(
+                (widget) =>
+                    widget is IconButton &&
+                    widget.tooltip == appLocalizations.refresh,
+              ),
+            );
+            if (refresh.onPressed != null) return;
+            await Future<void>.delayed(const Duration(milliseconds: 10));
+            await tester.pump();
+          }
+          fail('aggregate member statistics did not finish');
+        });
+        await tester.pumpAndSettle();
+        if (missing) {
+          expect(
+            find.text(appLocalizations.aggregateSourceMissing),
+            findsWidgets,
+          );
+        }
+        if (const bool.fromEnvironment('UI_REFINEMENT_CAPTURE')) {
+          await captureFlutterFrame(
+            tester,
+            find.byKey(boundary),
+            'build/feedback-20261127/aggregate-management-$scenario.png',
+          );
+        }
+        await tester.tap(find.byTooltip(appLocalizations.aggregateRename));
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.descendant(
+            of: find.byType(Dialog),
+            matching: find.byType(TextField),
+          ),
+          '出行配置',
+        );
+        await tester.runAsync(() async {
+          await tester.tap(find.text(appLocalizations.save));
+          await controller.lastAggregateSave!.timeout(
+            const Duration(seconds: 3),
+          );
+        });
+        await tester.pumpAndSettle();
+        expect(find.byType(Dialog), findsNothing);
+        expect(globalState.config.aggregates.single.name, '出行配置');
+        expect(ref.read(currentProfileIdProvider), profiles.first.id);
+        await tester.ensureVisible(
+          find.text(appLocalizations.aggregateFullMerge),
+        );
+        await tester.runAsync(() async {
+          await tester.tap(find.text(appLocalizations.aggregateFullMerge));
+          for (var attempt = 0; attempt < 100; attempt++) {
+            if ((await preferences.getConfig())?.aggregates.single.mode ==
+                AggregateMode.full) {
+              return;
+            }
+            await Future<void>.delayed(const Duration(milliseconds: 10));
+          }
+          fail('aggregate merge mode was not persisted');
+        });
+        await tester.pumpAndSettle();
+        expect(globalState.config.aggregates.single.mode, AggregateMode.full);
+        expect(ref.read(currentProfileIdProvider), profiles.first.id);
+        final member = find.byKey(ValueKey(profiles.last.id));
+        await tester.scrollUntilVisible(
+          member,
+          350,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.runAsync(() async {
+          await tester.tap(
+            find.descendant(of: member, matching: find.byType(Switch)),
+          );
+          await controller.lastAggregateSave!.timeout(
+            const Duration(seconds: 3),
+          );
+        });
+        await tester.pumpAndSettle();
+        expect(
+          globalState.config.aggregates.single.memberIds,
+          isNot(contains(profiles.last.id)),
+        );
+        expect(
+          globalState.config.profiles.getProfile(profiles.last.id)!.url,
+          profiles.last.url,
+        );
+        expect(ref.read(currentProfileIdProvider), profiles.first.id);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox());
+        await tester.pump(const Duration(seconds: 3));
+      },
+    );
+  }
+
+  for (final scripted in [false, true]) {
+    testWidgets(
+      'provider aggregate refreshes without stale member cache: script=$scripted',
+      (tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            child: Consumer(
+              builder: (context, r, _) {
+                globalState.appController = _Controller(context, r);
+                return const SizedBox();
+              },
+            ),
+          ),
+        );
+        await tester.runAsync(() async {
+          final member = profiles.last.copyWith(
+            scriptId: scripted ? 'provider-script' : null,
+          );
+          globalState.config = globalState.config
+              .copyWith(
+                profiles: [profiles.first, member],
+                aggregates: const [
+                  AggregateProfile(
+                    id: 'provider-work',
+                    name: 'Providers',
+                    baseProfileId: 'switch-A',
+                    memberIds: ['switch-B'],
+                    mode: AggregateMode.full,
+                  ),
+                ],
+                scriptProps: scripted
+                    ? const ScriptProps(
+                        scripts: [
+                          Script(
+                            id: 'provider-script',
+                            label: 'Provider script',
+                            content:
+                                "function main(c) { if (!c.proxies || !c.proxies.length) throw new Error('no proxy nodes'); return c; }",
+                          ),
+                        ],
+                      )
+                    : const ScriptProps(),
+              )
+              .withAggregateProfiles();
+          globalState.config = globalState.config.copyWith(
+            currentProfileId: globalState.config.aggregates.single.profileId,
+          );
+          final file = await member.getFile();
+          const source = '''
+proxy-providers:
+  remote: {type: http, url: 'https://fixture.invalid/provider', path: ./fixture.yaml}
+proxy-groups:
+  - {name: Remote, type: select, use: [remote]}
+rules: ['MATCH,Remote']
+''';
+          await file.writeAsString(source);
+          for (var version = 1; version <= 2; version++) {
+            final output = await globalState.patchRawConfig(
+              patchConfig: globalState.config.patchClashConfig,
+            );
+            final nodes = (output['proxies'] as List)
+                .where((n) => n['type'] == 'trojan')
+                .toList();
+            expect(nodes, hasLength(1));
+            expect(nodes.single['name'], '[B] remote-$version');
+            expect(nodes.single['server'], 'tls.example.test');
+            expect(nodes.single['sni'], 'tls.example.test');
+            expect(nodes.single['skip-cert-verify'], false);
+            final group = (output['proxy-groups'] as List).firstWhere(
+              (g) => g['name'] == '[B] Remote',
+            );
+            expect(group['proxies'], ['[B] remote-$version']);
+            expect(group.containsKey('use'), false);
+            expect(core.providerReads, version);
+          }
+          expect(await file.readAsString(), source);
+        });
+      },
+      skip: scripted && scriptDll.isEmpty,
+    );
+  }
+
+  for (final platform in ['android', 'windows']) {
+    testWidgets(
+      'aggregate switches independently and preserves source profiles on $platform',
+      (tester) async {
+        System.platformOverride = platform;
+        globalState.config = globalState.config
+            .copyWith(
+              currentProfileId: profiles.last.id,
+              aggregates: const [
+                AggregateProfile(
+                  id: 'work',
+                  name: 'Work',
+                  baseProfileId: 'switch-A',
+                  memberIds: ['switch-B'],
+                  mode: AggregateMode.full,
+                ),
+              ],
+            )
+            .withAggregateProfiles();
+        final aggregateId = globalState.config.aggregates.single.profileId!;
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+        var bound = false;
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: MaterialApp(
+              navigatorKey: globalState.navigatorKey,
+              home: ClashManager(
+                child: Consumer(
+                  builder: (context, r, _) {
+                    if (!bound) {
+                      ref = r;
+                      controller = _Controller(context, ref);
+                      globalState.appController = controller;
+                      bound = true;
+                    }
+                    return const SizedBox();
+                  },
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.runAsync(() async {
+          final original = await (await profiles.first.getFile())
+              .readAsString();
+          await controller.applyProfile(silence: true);
+          expect(core.node, 'B-node');
+          await controller.selectAggregate('work');
+          container.read(needSetupProvider);
+          await controller.lastChange!.timeout(const Duration(seconds: 5));
+          expect(core.node, 'A-node');
+          expect(globalState.config.currentProfileId, aggregateId);
+          final snapshot = loadYaml(
+            await File(
+              await appPath.getProfilePath(aggregateId),
+            ).readAsString(),
+          );
+          expect(
+            (snapshot['proxies'] as List).map((p) => p['name']),
+            containsAll(['A-node', '[B] B-node']),
+          );
+          controller.updateCurrentSelectedMap('Select', '[B] B-node');
+          expect(
+            globalState.config.profiles.getProfile('switch-A')!.selectedMap,
+            isEmpty,
+          );
+          expect(
+            globalState.config.currentProfile!.selectedMap['Select'],
+            '[B] B-node',
+          );
+          // Source deletion must not leave a selectable aggregate with dangling
+          // references or remove the YAML used by the running configuration.
+          for (final source in profiles) {
+            await controller.deleteProfile(source.id);
+            expect(
+              globalState.config.profiles.getProfile(source.id),
+              isNotNull,
+            );
+            expect(await (await source.getFile()).exists(), isTrue);
+          }
+          expect(globalState.config.currentProfileId, aggregateId);
+          // Updating a member refreshes the independent runtime configuration.
+          final memberFile = await profiles.last.getFile();
+          await memberFile.writeAsString(
+            (await memberFile.readAsString()).replaceAll('B-node', 'B-updated'),
+          );
+          controller.setProfileAndAutoApply(profiles.last);
+          await Future<void>.delayed(const Duration(milliseconds: 700));
+          await controller.lastApply!.timeout(const Duration(seconds: 5));
+          final refreshed = loadYaml(
+            await File(
+              await appPath.getProfilePath(aggregateId),
+            ).readAsString(),
+          );
+          expect(
+            (refreshed['proxies'] as List).map((p) => p['name']),
+            contains('[B] B-updated'),
+          );
+          await controller.selectProfile('switch-A');
+          container.read(needSetupProvider);
+          await controller.lastChange!.timeout(const Duration(seconds: 5));
+          expect(globalState.config.currentAggregateId, isNull);
+          final standalone = loadYaml(
+            await File(await appPath.configFilePath).readAsString(),
+          );
+          expect((standalone['proxies'] as List).map((p) => p['name']), [
+            'A-node',
+          ]);
+          expect(
+            await (await profiles.first.getFile()).readAsString(),
+            original,
+          );
+          expect(
+            globalState.config.profiles.getProfile('switch-A')!.url,
+            profiles.first.url,
+          );
+          // Editing another aggregate must not change the live selection.
+          await controller.saveAggregate(
+            globalState.config.aggregates.single.copyWith(name: 'Renamed'),
+          );
+          expect(ref.read(currentProfileIdProvider), 'switch-A');
+          expect(globalState.config.currentAggregate, isNull);
+          expect(
+            globalState.config.profiles.getProfile(aggregateId)!.label,
+            'Renamed',
+          );
+
+          // A missing base is a visible error and uses the normal rollback.
+          await controller.saveAggregate(
+            globalState.config.aggregates.single.copyWith(
+              baseProfileId: 'missing-source',
+            ),
+          );
+          await controller.selectAggregate('work');
+          container.read(needSetupProvider);
+          await controller.lastChange!.timeout(const Duration(seconds: 5));
+          expect(ref.read(currentProfileIdProvider), 'switch-A');
+          expect(globalState.config.currentAggregate, isNull);
+          expect(core.node, 'A-node');
+          // The live manager also observes the rollback selection. Drain its
+          // queued application before disposing the provider scope.
+          container.read(needSetupProvider);
+          await controller.lastChange!.timeout(const Duration(seconds: 5));
+          // Removing the generated profile preserves both source subscriptions.
+          await controller.deleteProfile(aggregateId);
+          expect(globalState.config.aggregates, isEmpty);
+          expect(
+            globalState.config.profiles.map((p) => p.id),
+            profiles.map((p) => p.id),
+          );
+          expect(
+            await (await profiles.first.getFile()).readAsString(),
+            original,
+          );
+        });
+        await tester.pumpWidget(const SizedBox());
+        await tester.pump(const Duration(seconds: 3));
+      },
+    );
+  }
 
   for (final platform in ['android', 'windows']) {
     testWidgets('native script profile switching on $platform', (tester) async {
@@ -330,6 +930,87 @@ async function main(c) {
       await tester.pump(const Duration(seconds: 3));
     }, skip: scriptDll.isEmpty);
   }
+
+  testWidgets(
+    'private DNS refresh applies changes once and retries failed reloads',
+    (tester) async {
+      String? privateHost = 'first.private.example';
+      const channel = MethodChannel('service');
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (
+        call,
+      ) async {
+        return call.method == 'getPrivateDnsServerName' ? privateHost : null;
+      });
+      addTearDown(() {
+        tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          channel,
+          null,
+        );
+        globalState.androidPrivateDnsServerName = null;
+      });
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            navigatorKey: globalState.navigatorKey,
+            home: Consumer(
+              builder: (context, r, _) {
+                ref = r;
+                controller = _Controller(context, ref);
+                globalState.appController = controller;
+                return const SizedBox();
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.runAsync(() async {
+        globalState.androidPrivateDnsServerName = 'previous.private.example';
+        globalState.startTime = DateTime.now().subtract(
+          const Duration(seconds: 1),
+        );
+        await controller.refreshAndroidPrivateDnsOnNetworkChanged();
+        expect(core.setups, ['A-node']);
+        final generated = loadYaml(
+          await File(await appPath.configFilePath).readAsString(),
+        );
+        expect(generated['dns']['nameserver'], [
+          'tls://first.private.example:853#DIRECT',
+        ]);
+        await controller.refreshAndroidPrivateDnsOnNetworkChanged();
+        privateHost = null;
+        await controller.refreshAndroidPrivateDnsOnNetworkChanged();
+        expect(core.setups, ['A-node']);
+        expect(
+          globalState.androidPrivateDnsServerName,
+          'first.private.example',
+        );
+
+        ref.read(currentProfileIdProvider.notifier).value = profiles.last.id;
+        core.rejectB = true;
+        privateHost = 'second.private.example';
+        await controller.refreshAndroidPrivateDnsOnNetworkChanged();
+        expect(
+          globalState.androidPrivateDnsServerName,
+          'first.private.example',
+        );
+        core.rejectB = false;
+        await controller.refreshAndroidPrivateDnsOnNetworkChanged();
+        expect(core.setups, ['A-node', 'B-node', 'B-node']);
+        expect(
+          globalState.androidPrivateDnsServerName,
+          'second.private.example',
+        );
+        final updated = loadYaml(
+          await File(await appPath.configFilePath).readAsString(),
+        );
+        expect(updated['dns']['nameserver'], [
+          'tls://second.private.example:853#DIRECT',
+        ]);
+      });
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 3));
+    },
+  );
 
   for (final warm in [false, true]) {
     testWidgets(

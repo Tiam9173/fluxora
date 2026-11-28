@@ -399,11 +399,7 @@ class Request {
   // Returns the current *built-in* primary IP source for the given locale.
   // Kept as the fallback when the user has not overridden the URL.
   String _builtinPrimaryIpSource() {
-    final locale = Intl.getCurrentLocale().toLowerCase();
-    final isZh = locale.startsWith('zh');
-    return isZh
-        ? 'http://ip-api.com/json/?lang=zh-CN'
-        : 'http://ip-api.com/json';
+    return defaultNetworkDetectionUrl;
   }
 
   // Reads the user-configured network detection URL (primary source).

@@ -300,7 +300,7 @@ final class ProfilesProvider
   }
 }
 
-String _$profilesHash() => r'3203cc7de88b91fff86b79c75c2cacd8116fffb7';
+String _$profilesHash() => r'ddec17a7cc03705c317232b2e1dd9e40e264d5cf';
 
 abstract class _$Profiles extends $Notifier<List<Profile>> {
   List<Profile> build();
@@ -352,7 +352,7 @@ final class CurrentProfileIdProvider
   }
 }
 
-String _$currentProfileIdHash() => r'0c3e324e751aac1164da479e1796e826615bdcbe';
+String _$currentProfileIdHash() => r'7e9d394c3a5fea16d86c03d508fa8b9378b1ec0d';
 
 abstract class _$CurrentProfileId extends $Notifier<String?> {
   String? build();

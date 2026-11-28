@@ -61,6 +61,9 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
     private var activityRef: WeakReference<Activity>? = null
     private var cachedTaskId: Int? = null
     private var excludeFromRecentsRequest = 0
+    private val taskPreferences by lazy {
+        FluxoraApplication.getAppContext().getSharedPreferences("recent_task", Context.MODE_PRIVATE)
+    }
     private lateinit var channel: MethodChannel
     private lateinit var scope: CoroutineScope
     private var vpnCallBack: ((Boolean) -> Unit)? = null
@@ -241,6 +244,11 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
             "updateExcludeFromRecents" -> {
                 val value = call.argument<Boolean>("value") ?: false
                 val request = ++excludeFromRecentsRequest
+                taskPreferences.edit().putBoolean("hidden", value).apply()
+                if (updateExcludeFromRecents(value)) {
+                    result.success(true)
+                    return
+                }
                 scope.launch {
                     repeat(4) { attempt ->
                         if (request != excludeFromRecentsRequest) {
@@ -381,6 +389,10 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
     }
 
     private fun updateExcludeFromRecents(value: Boolean): Boolean {
+        activityRef?.get()?.intent?.let { intent ->
+            intent.flags = if (value) intent.flags or Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
+                else intent.flags and Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS.inv()
+        }
         val taskId = activityRef?.get()?.taskId ?: cachedTaskId ?: return false
         cachedTaskId = taskId
         val am = FluxoraApplication.getAppContext().getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
@@ -597,6 +609,9 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         activityRef = WeakReference(binding.activity)
         cachedTaskId = binding.activity.taskId
+        if (taskPreferences.contains("hidden")) {
+            updateExcludeFromRecents(taskPreferences.getBoolean("hidden", false))
+        }
         if (!isActivityAttached) {
             isActivityAttached = true
             binding.addActivityResultListener(::onActivityResult)
@@ -610,6 +625,9 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
         activityRef = WeakReference(binding.activity)
         cachedTaskId = binding.activity.taskId
+        if (taskPreferences.contains("hidden")) {
+            updateExcludeFromRecents(taskPreferences.getBoolean("hidden", false))
+        }
     }
     override fun onDetachedFromActivity() {
         channel.invokeMethod("exit", null)

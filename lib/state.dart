@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:fluxora/clash/clash.dart';
 import 'package:fluxora/common/theme.dart';
+import 'package:fluxora/common/provider_script.dart';
 import 'package:fluxora/enum/enum.dart';
 import 'package:fluxora/l10n/l10n.dart';
 import 'package:fluxora/plugins/app.dart';
@@ -588,22 +590,23 @@ class GlobalState {
     stopUpdateTasks();
     try {
       if (system.isAndroid) {
-        final stopListener = isService
-            ? clashLibHandler?.stopListener()
-            : clashCore.stopListener();
-        if (stopListener != null) {
-          await stopListener.timeout(const Duration(seconds: 3));
-        }
+        await Service().stopCoreAndVpn(
+          stopListener: () async {
+            if (isService) {
+              await clashLibHandler?.stopListener();
+            } else {
+              await clashCore.stopListener();
+            }
+          },
+          includeVpnService: includeVpnService,
+        );
       } else {
         await clashCore.stopListener();
       }
-    } catch (error) {
-      if (!system.isAndroid) rethrow;
-      commonPrint.log('Android core listener stop did not finish: $error');
     } finally {
       if (includeVpnService) {
         try {
-          await service?.stopVpn();
+          if (!system.isAndroid) await service?.stopVpn();
         } finally {
           final prefs = await preferences.sharedPreferencesCompleter.future;
           await prefs?.setBool('is_vpn_running', false);
@@ -831,6 +834,13 @@ class GlobalState {
       policyAliases: aliases,
     );
     await _writeRunningConfig(clashConfig);
+    final aggregate = config.aggregateForProfile(sourceProfileId);
+    if (aggregate?.profileId case final id?) {
+      await _writeRunningConfig(
+        clashConfig,
+        path: await appPath.getProfilePath(id),
+      );
+    }
     lastGeneratedConfigProfileId = sourceProfileId;
     chainPolicyAliases = aliases;
     return SetupParams(
@@ -840,10 +850,14 @@ class GlobalState {
     );
   }
 
-  Future<void> _writeRunningConfig(Map<String, dynamic> clashConfig) async {
+  Future<void> _writeRunningConfig(
+    Map<String, dynamic> clashConfig, {
+    String? path,
+  }) async {
     final content = await encodeCompactYamlTask(clashConfig);
-    final configPath = await appPath.configFilePath;
+    final configPath = path ?? await appPath.configFilePath;
     final tempFile = File('$configPath.tmp');
+    await tempFile.parent.create(recursive: true);
     await tempFile.writeAsString(content, flush: true);
     try {
       await tempFile.rename(configPath);
@@ -861,6 +875,12 @@ class GlobalState {
     Profile? profile,
     ChainPolicyAliases? policyAliases,
   }) async {
+    final selectedId = profile?.id ?? this.config.currentProfileId;
+    final aggregate = this.config.aggregateForProfile(selectedId);
+    final config = this.config.copyWith(
+      currentProfileId: selectedId,
+      currentAggregateId: aggregate?.id,
+    );
     final targetProfile = profile ?? config.currentProfile;
     if (targetProfile == null) {
       return <String, dynamic>{};
@@ -886,8 +906,9 @@ class GlobalState {
       // therefore still win over anything the script writes.
       aggregateProxies = await _injectAggregateProviders(
         rawConfig,
-        targetProfile.id,
+        aggregate?.baseProfileId ?? targetProfile.id,
         applyMemberTransforms: false,
+        settings: config,
       );
       final beforeProxies = rawConfig['proxies'];
       final beforeGroups = rawConfig['proxy-groups'];
@@ -1129,15 +1150,16 @@ class GlobalState {
       }
     }
 
+    String? privateDnsHost;
     if (system.isAndroid) {
       final privateDnsServerName = await utils.getAndroidPrivateDnsServerName();
       if (privateDnsServerName != null) {
         globalState.androidPrivateDnsServerName = privateDnsServerName;
       }
-      final serverName =
+      privateDnsHost =
           privateDnsServerName ?? globalState.androidPrivateDnsServerName;
-      applyAndroidPrivateDnsServer(rawConfig, serverName ?? '');
-      applyPrivateDnsBypass(rawConfig, serverName);
+      applyAndroidPrivateDnsServer(rawConfig, privateDnsHost ?? '');
+      applyPrivateDnsBypass(rawConfig, privateDnsHost);
     }
 
     if (rawConfig['ntp'] == null) {
@@ -1398,13 +1420,16 @@ class GlobalState {
     if (!postMergeScript) {
       aggregateProxies = await _injectAggregateProviders(
         rawConfig,
-        targetProfile.id,
+        aggregate?.baseProfileId ?? targetProfile.id,
+        settings: config,
       );
     }
 
     // Aggregate-level override runs after merge and after the optional
     // post-merge script, so it is the final say on rules.
-    final aggregateOverride = config.effectiveAggregateOverride;
+    final aggregateOverride = aggregate == null && config.aggregates.isNotEmpty
+        ? const OverrideData()
+        : config.effectiveAggregateOverride;
     if (aggregateOverride.enable) {
       final currentRules = rawConfig['rules'] is List
           ? (rawConfig['rules'] as List).whereType<String>().toList()
@@ -1413,6 +1438,11 @@ class GlobalState {
           aggregateOverride.rule.type == OverrideRuleType.override
           ? aggregateOverride.runningRule
           : [...aggregateOverride.runningRule, ...currentRules];
+    }
+
+    // Repair older node imports before chain/WARP transforms consume the groups.
+    if (ensureDefaultProxyTarget(rawConfig)) {
+      commonPrint.log('config: restored missing default PROXY selector');
     }
 
     // Apply chain proxy configuration if enabled (including WebRTC leak prevention rules)
@@ -1440,6 +1470,10 @@ class GlobalState {
         selectedMap: targetProfile.selectedMap,
         policyAliases: policyAliases,
       );
+    }
+
+    if (system.isAndroid) {
+      applyAndroidPrivateDnsRules(rawConfig, privateDnsHost);
     }
 
     // Scripts may rename aggregate nodes (for example, adding a region flag).
@@ -1539,13 +1573,23 @@ class GlobalState {
     Map<String, dynamic> rawConfig,
     String currentProfileId, {
     bool applyMemberTransforms = true,
+    Config? settings,
   }) async {
+    final config = settings ?? this.config;
     final activeAggregate = config.currentAggregate;
+    if (activeAggregate == null && config.aggregates.isNotEmpty) {
+      return const {};
+    }
     final memberIds = activeAggregate == null
         ? config.profiles.where((p) => p.joinAggregate).map((p) => p.id).toSet()
         : activeAggregate.memberIds.toSet();
     final others = config.profiles
-        .where((p) => p.id != currentProfileId && memberIds.contains(p.id))
+        .where(
+          (p) =>
+              p.id != currentProfileId &&
+              memberIds.contains(p.id) &&
+              config.aggregateForProfile(p.id) == null,
+        )
         .toList();
     final customNodeMode =
         config.effectiveAggregateMode == AggregateMode.custom &&
@@ -1616,10 +1660,18 @@ class GlobalState {
       if (cached != null) {
         evaluated = Map<String, dynamic>.from(cached);
       } else {
-        Future<Map<String, dynamic>> readMember() => getProfileConfig(
-          profile.id,
-          applyNodeOverrides: config.effectiveApplyNodeOverrides,
-        );
+        var hasProviderSource = false;
+        Future<Map<String, dynamic>> readMember() async {
+          final raw = await getProfileConfig(
+            profile.id,
+            applyNodeOverrides: config.effectiveApplyNodeOverrides,
+          );
+          hasProviderSource =
+              raw['proxy-providers'] is Map &&
+              (raw['proxy-providers'] as Map).isNotEmpty;
+          return raw;
+        }
+
         if (!applyMemberScripts) {
           // Post-merge script mode, or custom mode with member scripts disabled.
           evaluated = await readMember();
@@ -1632,6 +1684,7 @@ class GlobalState {
               await readMember(),
               profile: profile,
               script: memberScript,
+              applyProviderNodeOverrides: config.effectiveApplyNodeOverrides,
             );
             _applyAggregateMemberOverride(evaluated, profile);
           } catch (e) {
@@ -1643,7 +1696,20 @@ class GlobalState {
         if (_aggregateMemberCache.length > 16) {
           _aggregateMemberCache.clear();
         }
-        _aggregateMemberCache[cacheKey] = evaluated;
+        if (!hasProviderSource) _aggregateMemberCache[cacheKey] = evaluated;
+      }
+      if (evaluated['proxy-providers'] is Map &&
+          (evaluated['proxy-providers'] as Map).isNotEmpty) {
+        // Provider 内容可独立更新，不能随订阅文件永久命中成员缓存。
+        _aggregateMemberCache.remove(cacheKey);
+        evaluated = await materializeProviderNodes(
+          evaluated,
+          clashCore.readProviderNodes,
+          flattenGroups: true,
+        );
+        if (config.effectiveApplyNodeOverrides) {
+          NodeOverrideStore.instance.apply(profile.id, evaluated);
+        }
       }
       final nodes = evaluated['proxies'];
       if (nodes is! List || nodes.isEmpty) {
@@ -1698,7 +1764,7 @@ class GlobalState {
         // load" failure, especially when a script renames nodes.
         final existingProxies = rawConfig['proxies'];
         final proxiesList = existingProxies is List
-            ? existingProxies
+            ? List<dynamic>.of(existingProxies)
             : <dynamic>[];
         rawConfig['proxies'] = proxiesList;
         proxiesList.addAll(prefixedNodes);
@@ -1769,8 +1835,13 @@ class GlobalState {
       };
     }
 
-    final groups = rawConfig['proxy-groups'];
-    if (groups is! List) return providerProxies;
+    final existingGroups = rawConfig['proxy-groups'];
+    if (existingGroups is! List) return providerProxies;
+    final groups = [
+      for (final group in existingGroups)
+        if (group is Map) Map<String, dynamic>.from(group) else group,
+    ];
+    rawConfig['proxy-groups'] = groups;
     groups.addAll(memberGroups);
     final aggregateGroup = appLocalizations.aggregateGroupNodes;
     final aggregateAutoGroup = appLocalizations.aggregateGroupAuto;
@@ -1803,7 +1874,7 @@ class GlobalState {
       final proxies = group['proxies'];
       if (proxies is! List) continue;
       if (!proxies.contains(aggregateGroup)) {
-        proxies.insert(0, aggregateGroup);
+        group['proxies'] = [aggregateGroup, ...proxies];
       }
       mounted = true;
       break;
@@ -1814,7 +1885,7 @@ class GlobalState {
         final proxies = group['proxies'];
         if (proxies is! List) continue;
         if (!proxies.contains(aggregateGroup)) {
-          proxies.insert(0, aggregateGroup);
+          group['proxies'] = [aggregateGroup, ...proxies];
         }
         mounted = true;
         break;
@@ -1900,6 +1971,10 @@ class GlobalState {
         await prefs?.setString('core_group', group);
       }
       // 卡片测速要用和 App 相同的目标地址，否则同一节点两边数字对不上。
+      await prefs?.setInt(
+        'core_test_timeout',
+        max(config.healthCheckTimeout, delayTestTimeout.inMilliseconds),
+      );
       final testUrl = config.appSetting.testUrl;
       if (testUrl.isNotEmpty) {
         await prefs?.setString('core_test_url', testUrl);
@@ -1947,6 +2022,25 @@ class GlobalState {
     String profileId, {
     bool applyNodeOverrides = true,
   }) async {
+    final aggregate = config.aggregateForProfile(profileId);
+    if (aggregate != null) {
+      final baseId = aggregate.baseProfileId;
+      if (baseId == null ||
+          config.profiles.getProfile(baseId) == null ||
+          config.aggregateForProfile(baseId) != null) {
+        throw StateError(
+          'Aggregate "${aggregate.name}" has no source subscription',
+        );
+      }
+      final raw = await getProfileConfig(
+        baseId,
+        applyNodeOverrides: applyNodeOverrides,
+      );
+      if (applyNodeOverrides) {
+        NodeOverrideStore.instance.apply(profileId, raw);
+      }
+      return raw;
+    }
     final profile = config.profiles.getProfile(profileId);
     final ageSecretKey = profile?.ageSecretKey;
     final configMap = await switch (clashLibHandler != null) {
@@ -1968,6 +2062,7 @@ class GlobalState {
     Map<String, dynamic> config, {
     Profile? profile,
     Script? script,
+    bool applyProviderNodeOverrides = true,
   }) async {
     final currentScript =
         script ?? globalState.config.scriptProps.currentScript;
@@ -1984,10 +2079,25 @@ class GlobalState {
             'Script "${currentScript.label}" has no saved content',
           );
         }
-        return await JavaScriptRuntimeManager.evaluateScript(
-          content,
+        return await evaluateProviderScript(
           config,
-          customOptions: currentScript.customOptions,
+          (input) => JavaScriptRuntimeManager.evaluateScript(
+            content,
+            input,
+            customOptions: currentScript.customOptions,
+          ),
+          clashCore.readProviderNodes,
+          applyNodeOverrides: (input) {
+            if (profile != null && applyProviderNodeOverrides) {
+              final baseId = this.config
+                  .aggregateForProfile(profile.id)
+                  ?.baseProfileId;
+              if (baseId != null) {
+                NodeOverrideStore.instance.apply(baseId, input);
+              }
+              NodeOverrideStore.instance.apply(profile.id, input);
+            }
+          },
         );
       } catch (e) {
         commonPrint.log('Script execution failed: $e');

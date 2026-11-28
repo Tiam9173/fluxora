@@ -140,6 +140,7 @@ abstract class ClashHandlerInterface with ClashInterface {
           completer?.complete(true);
           return;
         case ActionMethod.getConfig:
+        case ActionMethod.readProviderNodes:
         case ActionMethod.convertAgeSecretKeyToPublicKey:
           completer?.complete(result.toResult);
           return;

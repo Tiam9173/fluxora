@@ -33,7 +33,18 @@ abstract class SubscriptionInfo with _$SubscriptionInfo {
     Map<String, int?> map = {};
     for (final i in list) {
       final keyValue = i.trim().split('=');
-      map[keyValue[0]] = int.tryParse(keyValue[1]);
+      if (keyValue.length != 2) continue;
+      final key = keyValue[0].trim();
+      final raw = keyValue[1].trim();
+      final numeric = num.tryParse(raw);
+      if (numeric == null ||
+          !numeric.isFinite ||
+          numeric < 0 ||
+          numeric > 0x7fffffffffffffff ||
+          (key == 'expire' && numeric > 8640000000000)) {
+        continue;
+      }
+      map[key] = numeric.toInt();
     }
     return SubscriptionInfo(
       upload: map['upload'] ?? 0,
@@ -242,13 +253,19 @@ extension ProfileExtension on Profile {
     }
     content = utils.patchYamlConfig(content);
     if (validate) {
-      final message =
-          await clashCore.validateConfig(content, ageSecretKey: ageSecretKey);
+      final message = await clashCore.validateConfig(
+        content,
+        ageSecretKey: ageSecretKey,
+      );
       if (message.isNotEmpty) {
-        final patched = utils.patchValidateConfig(content);
+        final patched = await repairDefaultProxyYaml(
+          utils.patchValidateConfig(content),
+        );
         if (patched != content) {
-          final patchedMessage =
-              await clashCore.validateConfig(patched, ageSecretKey: ageSecretKey);
+          final patchedMessage = await clashCore.validateConfig(
+            patched,
+            ageSecretKey: ageSecretKey,
+          );
           if (patchedMessage.isEmpty) {
             content = patched;
           } else {
@@ -276,13 +293,19 @@ extension ProfileExtension on Profile {
       } catch (_) {}
     }
     content = utils.patchYamlConfig(content);
-    final message =
-        await clashCore.validateConfig(content, ageSecretKey: ageSecretKey);
+    final message = await clashCore.validateConfig(
+      content,
+      ageSecretKey: ageSecretKey,
+    );
     if (message.isNotEmpty) {
-      final patched = utils.patchValidateConfig(content);
+      final patched = await repairDefaultProxyYaml(
+        utils.patchValidateConfig(content),
+      );
       if (patched != content) {
-        final patchedMessage =
-            await clashCore.validateConfig(patched, ageSecretKey: ageSecretKey);
+        final patchedMessage = await clashCore.validateConfig(
+          patched,
+          ageSecretKey: ageSecretKey,
+        );
         if (patchedMessage.isEmpty) {
           content = patched;
         } else {

@@ -40,12 +40,14 @@ class DelayTestTarget {
   final String name;
   final String url;
   final String? profileId;
+  final int? configGeneration;
   final int? groupGeneration;
 
   const DelayTestTarget({
     required this.name,
     required this.url,
     this.profileId,
+    this.configGeneration,
     this.groupGeneration,
   });
 
@@ -55,11 +57,13 @@ class DelayTestTarget {
         other.name == name &&
         other.url == url &&
         other.profileId == profileId &&
+        other.configGeneration == configGeneration &&
         other.groupGeneration == groupGeneration;
   }
 
   @override
-  int get hashCode => Object.hash(name, url, profileId, groupGeneration);
+  int get hashCode =>
+      Object.hash(name, url, profileId, configGeneration, groupGeneration);
 }
 
 class DelayTestRequestPool {
@@ -122,6 +126,7 @@ Future<void> proxyDelayTest(
         name: proxy.name,
         url: url,
         profileId: appController.ref.read(currentProfileIdProvider),
+        configGeneration: appController.delayConfigGeneration,
         groupGeneration: GroupTypeExtension.getGroupType(proxy.type) != null
             ? appController.groupDelayGeneration
             : null,
@@ -141,6 +146,8 @@ Future<void> _testProxyDelay(
   final appController = globalState.appController;
   bool isCurrent() =>
       appController.ref.read(currentProfileIdProvider) == target.profileId &&
+      (target.configGeneration == null ||
+          target.configGeneration == appController.delayConfigGeneration) &&
       (target.groupGeneration == null ||
           target.groupGeneration == appController.groupDelayGeneration);
   if (!isCurrent()) return;
@@ -175,6 +182,7 @@ Future<void> delayTest(
   Future<void> runTest() async {
     final appController = globalState.appController;
     final profileId = appController.ref.read(currentProfileIdProvider);
+    final configGeneration = appController.delayConfigGeneration;
     final groups = appController.getCurrentGroups();
     final sourceGroup = groups.getGroup(groupName ?? '');
     final targets = <DelayTestTarget>{};
@@ -186,6 +194,7 @@ Future<void> delayTest(
               name: proxy.name,
               url: appController.getRealTestUrl(testUrl ?? ''),
               profileId: profileId,
+              configGeneration: configGeneration,
               groupGeneration:
                   GroupTypeExtension.getGroupType(proxy.type) != null
                   ? appController.groupDelayGeneration
@@ -208,6 +217,7 @@ Future<void> delayTest(
           name: proxy.name,
           url: url,
           profileId: profileId,
+          configGeneration: configGeneration,
           groupGeneration: GroupTypeExtension.getGroupType(proxy.type) != null
               ? appController.groupDelayGeneration
               : null,
@@ -231,7 +241,8 @@ Future<void> delayTest(
 
     var nextTask = 0;
     Future<void> runWorker() async {
-      while (appController.ref.read(currentProfileIdProvider) == profileId) {
+      while (appController.ref.read(currentProfileIdProvider) == profileId &&
+          appController.delayConfigGeneration == configGeneration) {
         if (nextTask >= delayTasks.length) return;
         final task = delayTasks[nextTask++];
         await task();
@@ -239,7 +250,10 @@ Future<void> delayTest(
     }
 
     await Future.wait(List.generate(concurrencyLimit, (_) => runWorker()));
-    if (appController.ref.read(currentProfileIdProvider) != profileId) return;
+    if (appController.ref.read(currentProfileIdProvider) != profileId ||
+        appController.delayConfigGeneration != configGeneration) {
+      return;
+    }
     appController.addSortNum();
     // A `url-test` group would otherwise keep whatever the core picked at its
     // last interval tick, which is what makes "自动选择" feel dead right after

@@ -18,8 +18,9 @@ class ProfileRecoveryPlan {
 
   factory ProfileRecoveryPlan.compatible(
     List<Profile> incoming,
-    List<Profile> local,
-  ) {
+    List<Profile> local, {
+    Map<String, String> generatedProfileIds = const {},
+  }) {
     _validateUniqueProfileIds(incoming);
 
     final localById = {for (final profile in local) profile.id: profile};
@@ -35,12 +36,25 @@ class ProfileRecoveryPlan {
     final targetIds = <String, String>{};
     final restored = <String, Profile>{};
     for (final profile in incoming) {
+      final generatedId = generatedProfileIds[profile.id];
+      final generated = localById[generatedId];
+      if (generatedId != null &&
+          (profile.url.isNotEmpty ||
+              generated == null ||
+              generated.url.isNotEmpty ||
+              (generatedId != profile.id &&
+                  reservedIds.contains(generatedId)) ||
+              restored.containsKey(generatedId))) {
+        throw const FormatException('Conflicting aggregate profile identity');
+      }
       final candidates = localById.containsKey(profile.id)
           ? null
           : localBySource[_subscriptionSource(profile)];
-      final match = candidates == null || candidates.isEmpty
-          ? null
-          : candidates.removeAt(0);
+      final match =
+          generated ??
+          (candidates == null || candidates.isEmpty
+              ? null
+              : candidates.removeAt(0));
       final targetId = match?.id ?? profile.id;
       targetIds[profile.id] = targetId;
       restored[targetId] = match == null

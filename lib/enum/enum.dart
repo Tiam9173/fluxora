@@ -303,6 +303,7 @@ enum ActionMethod {
   decryptAgeConfig,
   getMode,
   parseExternalProviderContent,
+  readProviderNodes,
   getCoreStatus,
   speedTest,
   speedTestStatus,

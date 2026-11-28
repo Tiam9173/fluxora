@@ -148,7 +148,11 @@ class SwitchCardActivity : Activity() {
                 }
             })
         }
-        return response.get(6, TimeUnit.SECONDS)
+        val timeout = if (method == "delay") {
+            getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+                .getLong("flutter.core_test_timeout", 10_000L).coerceAtLeast(10_000L) + 3_000L
+        } else 6_000L
+        return response.get(timeout, TimeUnit.MILLISECONDS)
     }
 
     private fun loadNodes() {
@@ -294,9 +298,10 @@ class SwitchCardActivity : Activity() {
 
     /// 节点历史的最后一条就是上次测得的延迟。
     private fun lastDelay(detail: JSONObject?): Int {
-        val history = detail?.optJSONArray("history") ?: return -1
-        if (history.length() == 0) return -1
-        return history.optJSONObject(history.length() - 1)?.optInt("delay", -1) ?: -1
+        val history = detail?.optJSONArray("history") ?: return -2
+        if (history.length() == 0) return -2
+        val delay = history.optJSONObject(history.length() - 1)?.optInt("delay", 0) ?: 0
+        return if (delay in 1..65534) delay else -1
     }
 
     private fun testAll() {
@@ -308,19 +313,20 @@ class SwitchCardActivity : Activity() {
 
     private fun testDelay(node: Node) {
         if (node.testing) return
+        val groupName = groups.getOrNull(selectedGroup)?.name ?: return
         node.testing = true
         val testUrl = testUrlForCurrentGroup()
         runOnUiThread { adapter?.notifyDataSetChanged() }
         io.execute {
             val value = try {
-                (request("delay", mapOf("node" to node.name, "url" to testUrl)) as? Number)
+                (request("delay", mapOf("node" to node.name, "url" to testUrl, "group" to groupName)) as? Number)
                     ?.toInt() ?: -1
             } catch (e: Exception) {
                 -1
             }
-            node.delay = value
-            node.testing = false
             runOnUiThread {
+                node.delay = value
+                node.testing = false
                 adapter?.notifyDataSetChanged()
                 if (nodes.none { it.testing }) updateStatus()
             }
@@ -366,7 +372,7 @@ class SwitchCardActivity : Activity() {
                     delay.setTextColor(context.getColor(R.color.switch_card_sub))
                 }
                 node.delay < 0 -> {
-                    delay.text = ""
+                    delay.text = if (node.delay == -2) "" else "不可用"
                     delay.setTextColor(context.getColor(R.color.switch_card_sub))
                 }
                 else -> {

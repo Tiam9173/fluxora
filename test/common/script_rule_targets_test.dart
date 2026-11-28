@@ -41,7 +41,11 @@ class _SubscriptionCore extends Fake implements ClashHandlerInterface {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final library = File(
-    'build/windows/x64/plugins/code_forge/cargokit_build/x86_64-pc-windows-msvc/release/code_forge.dll',
+    const String.fromEnvironment(
+      'SCRIPT_DLL',
+      defaultValue:
+          'build/windows/x64/plugins/code_forge/cargokit_build/x86_64-pc-windows-msvc/release/code_forge.dll',
+    ),
   );
   final available = library.existsSync();
   late ClashHandlerInterface previousCore;

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluxora/models/ip_reputation.dart';
@@ -10,6 +12,175 @@ import 'package:fluxora/services/ip_reputation_service.dart';
 /// never a clean result), and the deliberate absence of a composite score.
 void main() {
   final service = IpReputationService();
+
+  Map<String, dynamic> publicBody() => {
+    'ip': '203.0.113.7',
+    'isp': {'asn': 'AS64500', 'org': 'Example'},
+    'risk': {
+      'is_vpn': true,
+      'is_proxy': false,
+      'is_tor': false,
+      'is_datacenter': true,
+      'risk_score': 90,
+    },
+  };
+
+  test(
+    'missing IPure report uses public source without user credentials',
+    () async {
+      final dio = Dio();
+      addTearDown(() => dio.close(force: true));
+      final hosts = <String>[];
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            hosts.add(options.uri.host);
+            expect(options.headers.containsKey('Authorization'), false);
+            expect(options.headers.containsKey('X-API-Key'), false);
+            handler.resolve(
+              Response(
+                requestOptions: options,
+                statusCode: options.uri.host == 'ipure.dev' ? 401 : 200,
+                data: options.uri.host == 'ipure.dev'
+                    ? {
+                        'error': {'code': 'invalid_api_key'},
+                      }
+                    : publicBody(),
+              ),
+            );
+          },
+        ),
+      );
+      final client = IpReputationService(dio: dio);
+      final report = await client.lookup('203.0.113.7');
+      expect(report.isOk, true);
+      expect(report.source, 'IPQuery');
+      expect(
+        report.markers.firstWhere((m) => m.id == 'vpn').state,
+        IpRiskMarkerState.flagged,
+      );
+      expect(
+        report.markers.firstWhere((m) => m.id == 'relay').state,
+        IpRiskMarkerState.unknown,
+      );
+      expect(report.risk, isNull);
+      expect(report.scenarios, isEmpty);
+      expect(report.queriedAt, isNull);
+      expect(await client.lookup('203.0.113.7'), same(report));
+      expect(hosts, ['ipure.dev', 'api.ipquery.io']);
+    },
+  );
+
+  test('cancelling the query prevents another source request', () async {
+    final dio = Dio();
+    addTearDown(() => dio.close(force: true));
+    final token = CancelToken();
+    var requests = 0;
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          requests++;
+          token.cancel();
+          handler.resolve(Response(requestOptions: options, statusCode: 401));
+        },
+      ),
+    );
+    final report = await IpReputationService(
+      dio: dio,
+    ).lookup('203.0.113.7', cancelToken: token);
+    expect(report.isOk, false);
+    expect(requests, 1);
+  });
+
+  test(
+    'public reports reject wrong addresses, missing flags and rate limits',
+    () {
+      expect(
+        service.parsePublicReport('203.0.113.8', 200, publicBody()).isOk,
+        false,
+      );
+      expect(
+        service.parsePublicReport('203.0.113.7', 200, {
+          'ip': '203.0.113.7',
+          'risk': {},
+        }).isOk,
+        false,
+      );
+      expect(
+        service.parsePublicReport('203.0.113.7', 429, null).failureReason,
+        IpReputationFailure.rateLimited,
+      );
+    },
+  );
+
+  test('public source failure stays unavailable and can be retried', () async {
+    final dio = Dio();
+    addTearDown(() => dio.close(force: true));
+    var requests = 0;
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          requests++;
+          handler.resolve(Response(requestOptions: options, statusCode: 429));
+        },
+      ),
+    );
+    final client = IpReputationService(dio: dio);
+    expect(
+      (await client.lookup('203.0.113.7')).failureReason,
+      IpReputationFailure.rateLimited,
+    );
+    expect((await client.lookup('203.0.113.7')).isOk, false);
+    expect(requests, 4);
+  });
+
+  test('a slow first source is cancelled before the public query', () async {
+    final dio = Dio();
+    addTearDown(() => dio.close(force: true));
+    final firstCancelled = Completer<void>();
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          if (options.uri.host == 'ipure.dev') {
+            options.cancelToken!.whenCancel.then((error) {
+              firstCancelled.complete();
+              handler.reject(error);
+            });
+          } else {
+            handler.resolve(
+              Response(
+                requestOptions: options,
+                statusCode: 200,
+                data: publicBody(),
+              ),
+            );
+          }
+        },
+      ),
+    );
+    final report = await IpReputationService(
+      dio: dio,
+    ).lookup('203.0.113.7', timeout: const Duration(milliseconds: 300));
+    expect(firstCancelled.isCompleted, true);
+    expect(report.source, 'IPQuery');
+    expect(report.reportUrl, 'https://ipquery.io/ip/203.0.113.7');
+  });
+
+  test('an expired budget sends no requests', () async {
+    final dio = Dio();
+    addTearDown(() => dio.close(force: true));
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (_, _) {
+          fail('No request may start after the lookup deadline');
+        },
+      ),
+    );
+    final report = await IpReputationService(
+      dio: dio,
+    ).lookup('203.0.113.7', timeout: Duration.zero);
+    expect(report.failureReason, IpReputationFailure.timeout);
+  });
 
   Map<String, dynamic> fullBody({
     Map<String, dynamic>? flags,
@@ -92,7 +263,7 @@ void main() {
       expect(r.status, IpReputationStatus.ok);
       expect(r.isOk, isTrue);
       expect(r.ip, '203.0.113.7');
-      expect(r.source, 'fresh');
+      expect(r.source, 'IPure');
       expect(r.stale, isFalse);
       expect(r.queriedAt, isNotNull);
 
@@ -123,7 +294,7 @@ void main() {
       );
 
       expect(r.stale, isTrue);
-      expect(r.source, 'store');
+      expect(r.source, 'IPure');
     });
   });
 
