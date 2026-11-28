@@ -345,6 +345,37 @@ enum FunctionTag {
   autoScrollToEnd,
 }
 
+/// User-selectable dashboard spans: width is split into four logical columns,
+/// while height uses the dashboard's fixed row size.
+enum DashboardWidgetLayout {
+  original(0, 0),
+  oneByTwo(1, 2),
+  twoByTwo(2, 2),
+  oneByFour(1, 4),
+  twoByOne(2, 1),
+  fourByOne(4, 1);
+
+  const DashboardWidgetLayout(this.widthUnits, this.heightRows);
+
+  final int widthUnits;
+  final int heightRows;
+
+  int crossAxisCellCount(int columns) {
+    if (this == original) return columns;
+    return ((columns * widthUnits) / 4).round().clamp(1, columns).toInt();
+  }
+
+  String get label => this == original ? '' : '$widthUnits × $heightRows';
+
+  static DashboardWidgetLayout fromName(String? name) => values.firstWhere(
+    (layout) => layout.name == name,
+    orElse: () => original,
+  );
+
+  static DashboardWidgetLayout defaultPreviewFor(DashboardWidget widget) =>
+      widget.widget.crossAxisCellCount > 4 ? fourByOne : twoByOne;
+}
+
 enum DashboardWidget {
   networkSpeed(GridItem(crossAxisCellCount: 8, child: NetworkSpeed())),
   networkSpeedSmall(

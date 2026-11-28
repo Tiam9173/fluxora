@@ -79,7 +79,24 @@ int dashboardColumnCount(double viewWidth) =>
 /// The grid span a dashboard item actually takes.
 ///
 /// Keep the connection card full-width on phones and compact on desktop.
-GridItem dashboardGridItemFor(GridItem item, int columns) {
+GridItem dashboardGridItemFor(
+  GridItem item,
+  int columns, {
+  DashboardWidgetLayout layout = DashboardWidgetLayout.original,
+}) {
+  final type = DashboardWidget.getDashboardWidget(item);
+  if (layout == DashboardWidgetLayout.original && type != null) {
+    item = type.widget;
+  }
+  if (layout != DashboardWidgetLayout.original &&
+      !identical(item.child, DashboardWidget.startButton.widget.child)) {
+    return GridItem(
+      crossAxisCellCount: layout.crossAxisCellCount(columns),
+      mainAxisCellCount: layout.heightRows,
+      isDeletable: item.isDeletable,
+      child: item.child,
+    );
+  }
   if (!identical(item, DashboardWidget.startButton.widget)) return item;
   return GridItem(
     crossAxisCellCount: min(columns, 8),
@@ -216,9 +233,10 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
               type: type,
               body: _AddDashboardWidgetModal(
                 items: value,
-                onAdd: (gridItem) {
-                  key.currentState?.handleAdd(gridItem);
-                },
+                currentLayouts: ref
+                    .read(appSettingProvider)
+                    .dashboardWidgetLayouts,
+                onAdd: _handleAddWidget,
               ),
               title: appLocalizations.add,
             );
@@ -226,6 +244,32 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
         );
       },
       context: context,
+    );
+  }
+
+  void _handleAddWidget(GridItem item, DashboardWidgetLayout layout) {
+    final type = DashboardWidget.getDashboardWidget(item);
+    if (type == null || type == DashboardWidget.startButton) return;
+
+    final layouts = Map<String, String>.of(
+      ref.read(appSettingProvider).dashboardWidgetLayouts,
+    );
+    if (layout == DashboardWidgetLayout.original) {
+      layouts.remove(type.name);
+    } else {
+      layouts[type.name] = layout.name;
+    }
+    ref
+        .read(appSettingProvider.notifier)
+        .updateState(
+          (state) => state.copyWith(dashboardWidgetLayouts: layouts),
+        );
+
+    final columns = dashboardColumnCount(
+      ref.read(dashboardStateProvider).viewWidth,
+    );
+    key.currentState?.handleAdd(
+      dashboardGridItemFor(item, columns, layout: layout),
     );
   }
 
@@ -275,6 +319,63 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                             : () => grid.moveItem(index, 1),
                         icon: const Icon(Icons.arrow_downward_rounded),
                       ),
+                      if (entry != DashboardWidget.startButton)
+                        PopupMenuButton<String>(
+                          key: ValueKey('layout-${entry.name}'),
+                          tooltip:
+                              Localizations.localeOf(context).languageCode ==
+                                  'zh'
+                              ? '组件布局'
+                              : 'Widget layout',
+                          icon: const Icon(Icons.aspect_ratio_rounded),
+                          onSelected: (name) {
+                            final layout = DashboardWidgetLayout.fromName(name);
+                            final layouts = Map<String, String>.of(
+                              ref
+                                  .read(appSettingProvider)
+                                  .dashboardWidgetLayouts,
+                            );
+                            if (layout == DashboardWidgetLayout.original) {
+                              layouts.remove(entry.name);
+                            } else {
+                              layouts[entry.name] = layout.name;
+                            }
+                            ref
+                                .read(appSettingProvider.notifier)
+                                .updateState(
+                                  (state) => state.copyWith(
+                                    dashboardWidgetLayouts: layouts,
+                                  ),
+                                );
+                            final columns = dashboardColumnCount(
+                              ref.read(dashboardStateProvider).viewWidth,
+                            );
+                            grid.updateItem(
+                              index,
+                              dashboardGridItemFor(
+                                items[index],
+                                columns,
+                                layout: layout,
+                              ),
+                            );
+                          },
+                          itemBuilder: (context) => [
+                            for (final layout in DashboardWidgetLayout.values)
+                              PopupMenuItem(
+                                value: layout.name,
+                                child: Text(
+                                  layout == DashboardWidgetLayout.original
+                                      ? (Localizations.localeOf(
+                                                  context,
+                                                ).languageCode ==
+                                                'zh'
+                                            ? '默认尺寸'
+                                            : 'Original size')
+                                      : layout.label,
+                                ),
+                              ),
+                          ],
+                        ),
                       IconButton(
                         key: ValueKey('remove-${entry.name}'),
                         tooltip: MaterialLocalizations.of(
@@ -376,6 +477,9 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
   @override
   Widget build(BuildContext context) {
     final dashboardState = ref.watch(dashboardStateProvider);
+    final widgetLayouts = ref.watch(
+      appSettingProvider.select((state) => state.dashboardWidgetLayouts),
+    );
     final columns = dashboardColumnCount(dashboardState.viewWidth);
     final spacing = 16.ap;
     final isMobileView = ref.watch(isMobileViewProvider);
@@ -386,7 +490,11 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
         .toList();
     final children = [
       for (final item in visibleItems)
-        dashboardGridItemFor(item.widget, columns),
+        dashboardGridItemFor(
+          item.widget,
+          columns,
+          layout: DashboardWidgetLayout.fromName(widgetLayouts[item.name]),
+        ),
     ];
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -427,9 +535,16 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                             crossAxisCount: columns,
                             crossAxisSpacing: spacing,
                             mainAxisSpacing: spacing,
+                            mainAxisExtent: 100.ap,
                             children: [
                               for (final item in visibleItems)
-                                dashboardGridItemFor(item.widget, columns),
+                                dashboardGridItemFor(
+                                  item.widget,
+                                  columns,
+                                  layout: DashboardWidgetLayout.fromName(
+                                    widgetLayouts[item.name],
+                                  ),
+                                ),
                             ],
                             onUpdate: () {
                               _handleSave();
@@ -448,6 +563,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                     crossAxisCount: columns,
                     crossAxisSpacing: spacing,
                     mainAxisSpacing: spacing,
+                    mainAxisExtent: 100.ap,
                     children: [...children],
                   );
                 }
@@ -460,11 +576,37 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
   }
 }
 
-class _AddDashboardWidgetModal extends StatelessWidget {
+class _AddDashboardWidgetModal extends StatefulWidget {
   final List<GridItem> items;
-  final Function(GridItem item) onAdd;
+  final Map<String, String> currentLayouts;
+  final void Function(GridItem item, DashboardWidgetLayout layout) onAdd;
 
-  const _AddDashboardWidgetModal({required this.items, required this.onAdd});
+  const _AddDashboardWidgetModal({
+    required this.items,
+    required this.currentLayouts,
+    required this.onAdd,
+  });
+
+  @override
+  State<_AddDashboardWidgetModal> createState() =>
+      _AddDashboardWidgetModalState();
+}
+
+class _AddDashboardWidgetModalState extends State<_AddDashboardWidgetModal> {
+  late final Map<String, DashboardWidgetLayout> _layouts;
+
+  @override
+  void initState() {
+    super.initState();
+    _layouts = {};
+    for (final item in widget.items) {
+      final type = DashboardWidget.getDashboardWidget(item);
+      if (type == null) continue;
+      _layouts[type.name] = DashboardWidgetLayout.fromName(
+        widget.currentLayouts[type.name],
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -473,53 +615,85 @@ class _AddDashboardWidgetModal extends StatelessWidget {
       builder: (context, constraints) => GridView.builder(
         shrinkWrap: true,
         padding: const EdgeInsets.all(FluxoraSpacing.lg),
-        itemCount: items.length,
+        itemCount: widget.items.length,
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: max(1, (constraints.maxWidth / 300).floor()),
           mainAxisExtent: MediaQuery.textScalerOf(context).scale(16) > 22
-              ? 280
-              : 208,
+              ? 360
+              : 312,
           mainAxisSpacing: 12,
           crossAxisSpacing: 12,
         ),
         itemBuilder: (context, index) {
-          final item = items[index];
+          final item = widget.items[index];
           final type = DashboardWidget.getDashboardWidget(item)!;
+          final layout = _layouts[type.name] ?? DashboardWidgetLayout.original;
           return CommonCard(
             key: ValueKey('catalog-${type.name}'),
-            onPressed: () => onAdd(item),
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(child: DashboardWidgetPreview(type: type)),
-                  const SizedBox(height: 12),
                   Row(
                     children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              type.title,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: context.textTheme.titleSmall,
-                            ),
-                            Text(
-                              item.crossAxisCellCount > 4
-                                  ? (chinese ? '外观预览 · 宽幅' : 'Preview · wide')
-                                  : (chinese
-                                        ? '外观预览 · 紧凑'
-                                        : 'Preview · compact'),
-                              style: context.textTheme.labelSmall,
-                            ),
-                          ],
-                        ),
+                      Icon(
+                        type.icon,
+                        size: 20,
+                        color: context.colorScheme.primary,
                       ),
                       const SizedBox(width: 8),
-                      const Icon(Icons.add_circle_outline_rounded),
+                      Expanded(
+                        child: Text(
+                          type.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: context.textTheme.titleSmall,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Expanded(
+                    child: Center(
+                      child: DashboardWidgetPreview(type: type, layout: layout),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 4,
+                    runSpacing: 2,
+                    children: [
+                      for (final option in DashboardWidgetLayout.values)
+                        ChoiceChip(
+                          key: ValueKey(
+                            'layout-option-${type.name}-${option.name}',
+                          ),
+                          label: Text(
+                            option == DashboardWidgetLayout.original
+                                ? (chinese ? '默认' : 'Default')
+                                : option.label,
+                          ),
+                          selected: option == layout,
+                          visualDensity: VisualDensity.compact,
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
+                          onSelected: (_) => setState(() {
+                            _layouts[type.name] = option;
+                          }),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      FilledButton.tonalIcon(
+                        key: ValueKey('add-${type.name}'),
+                        onPressed: () => widget.onAdd(item, layout),
+                        icon: const Icon(Icons.add_rounded),
+                        label: Text(chinese ? '添加' : 'Add'),
+                      ),
                     ],
                   ),
                 ],

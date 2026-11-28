@@ -6,10 +6,10 @@ part 'generated/network_info.g.dart';
 /// item 6 (Bettbox 1.19.4 alignment) — the device's local (LAN) network details.
 ///
 /// Filled by `utils.getNetworkInfo()`:
-/// * **desktop** — pure Dart: the default route is parsed from the routing
-///   table (`/proc/net/route` on Linux, `route -n get default` on macOS,
-///   `Get-NetRoute` on Windows), the address comes from `NetworkInterface.list`
-///   and the resolvers from the existing `_getSystemDns()`;
+/// * **Windows** — IP Helper returns the local address, gateway and resolvers
+///   from the same network adapter.
+/// * **Linux/macOS** — the default route, local interfaces and system resolver
+///   supply the details.
 /// * **Android** — a `MethodChannel('service')` call, because neither
 ///   `NetworkInterface.list` nor `connectivity_plus` exposes a gateway there.
 ///

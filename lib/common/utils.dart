@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:math';
 import 'dart:ui';
 
@@ -13,6 +14,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluxora/widgets/fluxora/fluxora_latency_badge.dart';
 import 'package:lpinyin/lpinyin.dart';
+
+import 'windows_network_info.dart';
 
 enum IpCategory { tun, lan, public }
 
@@ -1168,13 +1171,10 @@ class Utils {
     }
   }
 
-  /// item 6 — the LAN detail behind the "intranet IP" card.
+  /// The LAN details behind the "intranet IP" card.
   ///
-  /// Desktop is pure Dart: the default route comes from [_getDefaultRoutes]
-  /// (already used by Smart Auto Stop), the address from `NetworkInterface.list`
-  /// and the resolvers from [_getSystemDns]. Android has to go through
-  /// `MethodChannel('service')` because neither `NetworkInterface.list` nor
-  /// `connectivity_plus` exposes a gateway there.
+  /// Windows and Android can read all fields from the active network adapter.
+  /// Other desktops use the route table, local interfaces and system resolver.
   ///
   /// Every field defaults to empty, so a failed lookup returns an **empty**
   /// report rather than throwing — the UI renders "-" and never invents a value.
@@ -1186,6 +1186,7 @@ class Utils {
         ).invokeMapMethod<String, Object?>('getNetworkInfo');
         return info == null ? const NetworkInfo() : NetworkInfo.fromJson(info);
       }
+      if (Platform.isWindows) return await Isolate.run(readWindowsNetworkInfo);
       final routes = await _getDefaultRoutes();
       final route = routes
           .where(
@@ -1254,36 +1255,10 @@ class Utils {
       // own DNS hijack bookkeeping.
       return await MacOS().systemDns ?? [];
     }
-    if (Platform.isWindows) {
-      return _getWindowsDns();
-    }
     if (Platform.isLinux) {
       return _getLinuxDns();
     }
     return [];
-  }
-
-  Future<List<String>> _getWindowsDns() async {
-    try {
-      final result = await Process.run('powershell', [
-        '-NoProfile',
-        '-Command',
-        r'$route = Get-NetRoute -DestinationPrefix "0.0.0.0/0" | Where-Object { $_.InterfaceAlias -notmatch "(?i)(tun|tap|wintun|meta|clash|vpn)" -and $_.NextHop -ne "0.0.0.0" } | Sort-Object RouteMetric | Select-Object -First 1; if ($route) { (Get-DnsClientServerAddress -InterfaceIndex $route.InterfaceIndex -AddressFamily IPv4).ServerAddresses } else { (Get-DnsClientServerAddress -AddressFamily IPv4).ServerAddresses }',
-      ]);
-      if (result.exitCode != 0) return [];
-      final servers = <String>{};
-      for (final line in result.stdout.toString().split('\n')) {
-        final server = line.trim();
-        if (server.isEmpty) continue;
-        if (!RegExp(r'^\d{1,3}(\.\d{1,3}){3}$').hasMatch(server)) continue;
-        if (server.startsWith('198.18.') || server == '127.0.0.1') continue;
-        servers.add(server);
-      }
-      return servers.toList();
-    } catch (e) {
-      commonPrint.log('Windows DNS error: $e');
-      return [];
-    }
   }
 
   Future<List<String>> _getLinuxDns() async {
@@ -1350,6 +1325,7 @@ class Utils {
       return '${match.group(1)}false${match.group(3)}';
     });
   }
+
   Future<String?> getPrivateDnsServerName() async {
     if (!system.isAndroid) return null;
     final host = (await getAndroidPrivateDnsServerName())?.trim();

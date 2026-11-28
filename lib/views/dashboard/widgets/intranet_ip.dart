@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fluxora/common/common.dart';
 import 'package:fluxora/models/models.dart';
 import 'package:fluxora/providers/app.dart';
@@ -9,23 +11,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// item 6 — the "intranet IP" dashboard card, plus the LAN detail it opens.
-///
-/// The card itself is unchanged apart from the tap target, which used to be an
-/// empty `() {}`. The detail sheet reports what the desktop route table and
-/// Android `LinkProperties` actually say: connection type, interface, address,
-/// **default gateway** and **system DNS**. Anything unavailable renders as "-" —
-/// never as a fabricated value.
 class IntranetIP extends ConsumerWidget {
   const IntranetIP({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final localIp = ref.watch(localIpProvider);
     return SizedBox(
       height: getWidgetHeight(1),
       child: FluxoraCard(
         info: Info(label: appLocalizations.intranetIP, iconData: Icons.devices),
-        onTap: () => _openLanSettings(context, ref),
+        onTap: _openLanSettings,
         child: Padding(
           padding: baseInfoEdgeInsets.copyWith(top: 0),
           child: Column(
@@ -34,30 +30,17 @@ class IntranetIP extends ConsumerWidget {
             children: [
               SizedBox(
                 height: globalState.measure.bodyMediumHeight + 2,
-                child: Consumer(
-                  builder: (_, ref, _) {
-                    final localIp = ref.watch(localIpProvider);
-                    return localIp != null
-                        ? TooltipText(
-                            text: Text(
-                              localIp.isNotEmpty
-                                  ? localIp
-                                  : appLocalizations.noNetwork,
-                              style: FluxoraTypography.body.copyWith(
-                                color: context.colorScheme.onSurfaceVariant,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          )
-                        : Padding(
-                            padding: const EdgeInsets.all(2),
-                            child: AspectRatio(
-                              aspectRatio: 1,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                          );
-                  },
+                child: TooltipText(
+                  text: Text(
+                    localIp == null
+                        ? '—'
+                        : localIp.isEmpty
+                        ? appLocalizations.noNetwork
+                        : localIp,
+                    style: context.textTheme.bodyMedium,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ),
             ],
@@ -67,7 +50,7 @@ class IntranetIP extends ConsumerWidget {
     );
   }
 
-  void _openLanSettings(BuildContext context, WidgetRef ref) {
+  void _openLanSettings() {
     // A dialog card, not a bottom sheet: this panel is read at a glance and
     // edited in place, and a sheet pushed everything to the bottom edge.
     globalState.showCommonDialog(
@@ -125,6 +108,7 @@ class _LanSettingsBody extends ConsumerStatefulWidget {
 class _LanSettingsBodyState extends ConsumerState<_LanSettingsBody> {
   NetworkInfo? _fresh;
   bool _loading = true;
+  bool _loadFailed = false;
 
   @override
   void initState() {
@@ -138,18 +122,37 @@ class _LanSettingsBodyState extends ConsumerState<_LanSettingsBody> {
   /// The write only happens while this sheet is still mounted, which keeps it
   /// off the auto-disposed notifier after the route is gone.
   Future<void> _load() async {
-    final info = await utils.getNetworkInfo();
+    NetworkInfo? info;
+    try {
+      info = await utils.getNetworkInfo().timeout(const Duration(seconds: 4));
+    } on TimeoutException {
+      commonPrint.log('Local network info lookup timed out');
+    } catch (error) {
+      commonPrint.log('Local network info lookup failed: $error');
+    }
     if (!mounted) return;
+    final freshInfo = info;
+    final hasNetworkInfo =
+        freshInfo != null &&
+        (freshInfo.type.isNotEmpty ||
+            freshInfo.interfaceName.isNotEmpty ||
+            freshInfo.ip.isNotEmpty ||
+            freshInfo.gateway.isNotEmpty ||
+            freshInfo.dns.isNotEmpty);
     setState(() {
-      _fresh = info;
+      _fresh = hasNetworkInfo ? freshInfo : null;
+      _loadFailed = !hasNetworkInfo;
       _loading = false;
     });
-    ref.read(localNetworkProvider.notifier).value = info;
+    if (freshInfo != null && hasNetworkInfo) {
+      ref.read(localNetworkProvider.notifier).value = freshInfo;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final network = _fresh ?? ref.watch(localNetworkProvider);
+    final cachedNetwork = ref.watch(localNetworkProvider);
+    final network = _fresh ?? cachedNetwork;
     final clashConfig = ref.watch(
       patchClashConfigProvider.select(
         (state) => (
@@ -171,70 +174,31 @@ class _LanSettingsBodyState extends ConsumerState<_LanSettingsBody> {
     final colorScheme = context.colorScheme;
     // `null` means the lookup has not landed yet; an empty report means it
     // landed and found nothing. The two read differently on purpose.
-    final placeholder = network == null ? '...' : '-';
-    final sharedAddress = '${info.ip}:${clashConfig.mixedPort}';
+    const placeholder = '—';
+    final host = info.ip.contains(':') ? '[${info.ip}]' : info.ip;
+    final sharedAddress = '$host:${clashConfig.mixedPort}';
 
     return ListView(
       padding: EdgeInsets.zero,
       shrinkWrap: true,
       children: [
-        // Header: the active transport as a status strip. Deliberately our own
-        // shape (tinted rounded strip + pill) rather than the upstream dialog's
-        // bracketed sections and boxed tiles.
-        Container(
-          margin: const EdgeInsets.only(bottom: 4),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: colorScheme.primaryContainer.withValues(alpha: 0.32),
-            borderRadius: BorderRadius.circular(FluxoraRadius.md),
+        if (_loadFailed)
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: () {
+                setState(() {
+                  _loading = true;
+                  _loadFailed = false;
+                });
+                _load();
+              },
+              icon: const Icon(Icons.refresh_rounded, size: 18),
+              label: Text(appLocalizations.retry),
+            ),
           ),
-          child: Row(
-            children: [
-              Icon(
-                _networkIcon(info.type),
-                size: 18,
-                color: colorScheme.primary,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  info.type.isEmpty
-                      ? (network == null ? '...' : appLocalizations.noNetwork)
-                      : info.type,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: FluxoraFontSize.compact,
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-              ),
-              if (info.ip.isNotEmpty)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primary.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(FluxoraRadius.full),
-                  ),
-                  child: Text(
-                    appLocalizations.coreConnected,
-                    style: TextStyle(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w600,
-                      color: colorScheme.primary,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-        _buildSectionLabel(appLocalizations.intranetAndGateway),
         _buildRow(
-          icon: Icons.wifi_rounded,
+          icon: _networkIcon(info.type),
           label: appLocalizations.networkType,
           value: info.type.isEmpty ? placeholder : info.type,
         ),

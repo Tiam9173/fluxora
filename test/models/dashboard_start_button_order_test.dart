@@ -50,12 +50,13 @@ void main() {
   // users, so the fallback must prepend.
   test('every other default widget is still present', () {
     expect(defaultDashboardWidgets.length, 10);
-    expect(defaultAndroidDashboardWidgets.length, 7);
+    expect(defaultAndroidDashboardWidgets.length, 8);
     // Spot-check that reordering did not drop or duplicate anything.
     for (final w in const [
       DashboardWidget.networkSpeed,
       DashboardWidget.trafficUsage,
       DashboardWidget.networkDetection,
+      DashboardWidget.intranetIp,
       DashboardWidget.memoryInfo,
       DashboardWidget.connectionsCount,
     ]) {
@@ -70,5 +71,24 @@ void main() {
         reason: '$w missing from the Android defaults',
       );
     }
+  });
+
+  test('widget layouts persist only valid dashboard choices', () {
+    final settings = AppSettingProps.fromJson({
+      'dashboardWidgetLayouts': {
+        'memoryInfo': DashboardWidgetLayout.twoByTwo.name,
+        'startButton': DashboardWidgetLayout.oneByFour.name,
+        'unknownWidget': DashboardWidgetLayout.fourByOne.name,
+        'intranetIp': 'not-a-layout',
+      },
+    });
+
+    expect(settings.dashboardWidgetLayouts, {
+      'memoryInfo': DashboardWidgetLayout.twoByTwo.name,
+    });
+    expect(
+      AppSettingProps.fromJson(settings.toJson()).dashboardWidgetLayouts,
+      settings.dashboardWidgetLayouts,
+    );
   });
 }

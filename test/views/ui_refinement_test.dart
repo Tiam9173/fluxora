@@ -2845,7 +2845,7 @@ void main() {
         findsNothing,
       );
       await capture(tester, 'catalog-${size.width.toInt()}');
-      await tester.tap(catalog);
+      await tester.tap(find.byKey(const ValueKey('add-networkSpeed')));
       await tester.pumpAndSettle();
       List<DashboardWidget> saved() => size.width < 1000
           ? container.read(appSettingProvider).mobileDashboardWidgets

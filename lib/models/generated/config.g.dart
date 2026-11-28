@@ -23,6 +23,11 @@ _AppSettingProps _$AppSettingPropsFromJson(
       : desktopDashboardWidgetsSafeFromJson(
           json['desktopDashboardWidgets'] as List?,
         ),
+  dashboardWidgetLayouts: json['dashboardWidgetLayouts'] == null
+      ? const <String, String>{}
+      : dashboardWidgetLayoutsSafeFromJson(
+          json['dashboardWidgetLayouts'] as Map<String, dynamic>?,
+        ),
   pinnedMediaPlatforms: json['pinnedMediaPlatforms'] == null
       ? defaultPinnedMediaPlatforms
       : pinnedMediaPlatformsSafeFromJson(json['pinnedMediaPlatforms'] as List?),
@@ -84,6 +89,7 @@ Map<String, dynamic> _$AppSettingPropsToJson(_AppSettingProps instance) =>
       'desktopDashboardWidgets': instance.desktopDashboardWidgets
           .map((e) => _$DashboardWidgetEnumMap[e]!)
           .toList(),
+      'dashboardWidgetLayouts': instance.dashboardWidgetLayouts,
       'pinnedMediaPlatforms': instance.pinnedMediaPlatforms
           .map((e) => _$MediaPlatformEnumMap[e]!)
           .toList(),

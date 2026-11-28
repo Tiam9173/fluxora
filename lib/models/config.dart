@@ -68,6 +68,7 @@ const List<DashboardWidget> defaultAndroidDashboardWidgets = [
   DashboardWidget.networkSpeed,
   DashboardWidget.trafficUsage,
   DashboardWidget.networkDetection,
+  DashboardWidget.intranetIp,
   DashboardWidget.connectionsCount,
   DashboardWidget.memoryInfo,
 ];
@@ -115,6 +116,28 @@ List<DashboardWidget> desktopDashboardWidgetsSafeFromJson(
   }
 }
 
+Map<String, String> dashboardWidgetLayoutsSafeFromJson(
+  Map<String, dynamic>? layouts,
+) {
+  if (layouts == null) return const {};
+  final widgetNames = DashboardWidget.values
+      .map((widget) => widget.name)
+      .toSet();
+  final result = <String, String>{};
+  for (final entry in layouts.entries) {
+    if (!widgetNames.contains(entry.key) ||
+        entry.key == DashboardWidget.startButton.name ||
+        entry.value is! String) {
+      continue;
+    }
+    final layout = DashboardWidgetLayout.fromName(entry.value as String);
+    if (layout != DashboardWidgetLayout.original) {
+      result[entry.key] = layout.name;
+    }
+  }
+  return result;
+}
+
 const List<MediaPlatform> defaultPinnedMediaPlatforms = [
   MediaPlatform.reddit,
   MediaPlatform.gemini,
@@ -155,6 +178,9 @@ abstract class AppSettingProps with _$AppSettingProps {
     @Default(defaultDashboardWidgets)
     @JsonKey(fromJson: desktopDashboardWidgetsSafeFromJson)
     List<DashboardWidget> desktopDashboardWidgets,
+    @Default(<String, String>{})
+    @JsonKey(fromJson: dashboardWidgetLayoutsSafeFromJson)
+    Map<String, String> dashboardWidgetLayouts,
     @Default(defaultPinnedMediaPlatforms)
     @JsonKey(fromJson: pinnedMediaPlatformsSafeFromJson)
     List<MediaPlatform> pinnedMediaPlatforms,

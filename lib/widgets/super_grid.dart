@@ -17,6 +17,7 @@ class SuperGrid extends StatefulWidget {
   final List<GridItem> children;
   final double mainAxisSpacing;
   final double crossAxisSpacing;
+  final double? mainAxisExtent;
   final int crossAxisCount;
   final VoidCallback? onUpdate;
 
@@ -39,6 +40,7 @@ class SuperGrid extends StatefulWidget {
     this.crossAxisCount = 1,
     this.mainAxisSpacing = 0,
     this.crossAxisSpacing = 0,
+    this.mainAxisExtent,
     this.onUpdate,
     this.dragHandleBuilder,
   });
@@ -217,6 +219,14 @@ class SuperGridState extends State<SuperGrid> with TickerProviderStateMixin {
 
   void handleAdd(GridItem gridItem) {
     _childrenNotifier.value = List.from(_childrenNotifier.value)..add(gridItem);
+  }
+
+  void updateItem(int index, GridItem gridItem) {
+    if (index < 0 || index >= length || _dragIndexNotifier.value != -1) return;
+    final next = List<GridItem>.of(_childrenNotifier.value);
+    next[index] = gridItem;
+    _childrenNotifier.value = next;
+    _initState();
   }
 
   @override
@@ -749,6 +759,7 @@ class SuperGridState extends State<SuperGrid> with TickerProviderStateMixin {
                   crossAxisCount: crossCount,
                   crossAxisSpacing: widget.crossAxisSpacing,
                   mainAxisSpacing: widget.mainAxisSpacing,
+                  mainAxisExtent: widget.mainAxisExtent,
                   children: [
                     for (int i = 0; i < children.length; i++) _builderItem(i),
                   ],
