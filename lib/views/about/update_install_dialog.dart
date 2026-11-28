@@ -81,6 +81,16 @@ class _UpdateInstallDialogState extends State<UpdateInstallDialog> {
         if (windows?.runas(installer.path, '', showWindow: true) != true) {
           throw StateError('Windows installer could not be started');
         }
+      } else if (system.isMacOS || system.isLinux) {
+        if (system.isLinux && installer.path.endsWith('.AppImage')) {
+          final result = await Process.run('chmod', ['u+x', installer.path]);
+          if (result.exitCode != 0) {
+            throw StateError('Linux AppImage could not be made executable');
+          }
+        }
+        await Process.start(system.isMacOS ? 'open' : 'xdg-open', [
+          installer.path,
+        ], mode: ProcessStartMode.detached);
       } else {
         throw UnsupportedError('In-app installation is not supported here');
       }

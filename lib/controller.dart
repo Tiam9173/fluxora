@@ -2259,12 +2259,28 @@ class AppController {
         return;
       }
       const String assetSuffix = String.fromEnvironment('APP_ASSET_SUFFIX');
+      final linuxArchitecture = switch (Abi.current()) {
+        Abi.linuxX64 => 'amd64',
+        Abi.linuxArm64 => 'arm64',
+        _ => null,
+      };
+      final linuxOsRelease = system.isLinux
+          ? await File('/etc/os-release').readAsString().catchError((_) => '')
+          : '';
       final installSuffix = system.isAndroid
           ? (Abi.current() == Abi.androidArm64
                 ? 'android-arm64-v8a.apk'
                 : 'android-universal.apk')
           : system.isWindows
           ? (assetSuffix.isNotEmpty ? assetSuffix : 'windows-amd64-setup.exe')
+          : system.isMacOS
+          ? (assetSuffix.isNotEmpty
+                ? assetSuffix
+                : Abi.current() == Abi.macosArm64
+                ? 'macos-arm64.dmg'
+                : 'macos-amd64.dmg')
+          : system.isLinux && linuxArchitecture != null
+          ? resolveLinuxUpdateAssetSuffix(linuxOsRelease, linuxArchitecture)
           : null;
       if (installSuffix == null || appPath.isPortable) {
         globalState.openUrl('https://github.com/$repository/releases/latest');

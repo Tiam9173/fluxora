@@ -293,17 +293,32 @@ class Request {
     if (release is! Map || release['assets'] is! List) {
       throw const FormatException('GitHub release has no asset list');
     }
-    final asset = (release['assets'] as List)
+    final assets = (release['assets'] as List)
         .whereType<Map>()
         .cast<Map<String, dynamic>>()
+        .toList();
+    final asset = assets
         .where((item) => (item['name'] as String? ?? '').endsWith(assetSuffix))
         .firstOrNull;
-    if (asset == null) {
+    final compatibleSuffix = _compatibleReleaseAssetSuffix(assetSuffix);
+    final selected =
+        asset ??
+        (compatibleSuffix == null
+            ? null
+            : assets
+                  .where(
+                    (item) => matchesGithubReleaseAssetSuffix(
+                      item['name'] as String? ?? '',
+                      assetSuffix,
+                    ),
+                  )
+                  .firstOrNull);
+    if (selected == null) {
       throw FormatException('This release has no $assetSuffix package');
     }
     return validateGithubReleaseAsset(
-      Map<String, dynamic>.from(asset),
-      assetSuffix: assetSuffix,
+      Map<String, dynamic>.from(selected),
+      assetSuffix: asset == null ? compatibleSuffix : assetSuffix,
       releaseTag: tag,
     );
   }
@@ -970,6 +985,80 @@ Map<String, dynamic> validateGithubReleaseAsset(
     throw const FormatException('GitHub release asset metadata is invalid');
   }
   return asset;
+}
+
+@visibleForTesting
+bool matchesGithubReleaseAssetSuffix(String name, String suffix) {
+  if (name.endsWith(suffix)) return true;
+  final compatibleSuffix = _compatibleReleaseAssetSuffix(suffix);
+  return compatibleSuffix != null && name.endsWith(compatibleSuffix);
+}
+
+String? _compatibleReleaseAssetSuffix(String suffix) {
+  if (!suffix.startsWith('macos-') && !suffix.startsWith('linux-')) {
+    return null;
+  }
+  final extension = suffix.lastIndexOf('.');
+  if (extension <= 0) return null;
+  return '${suffix.substring(0, extension)}-compatible${suffix.substring(extension)}';
+}
+
+/// Selects the Linux package built for the running distribution and CPU.
+/// Unknown x86_64 distributions use the portable AppImage release.
+String? resolveLinuxUpdateAssetSuffix(String osRelease, String architecture) {
+  if (architecture != 'amd64' && architecture != 'arm64') return null;
+
+  final fields = <String, String>{};
+  for (final line in osRelease.split('\n')) {
+    final separator = line.indexOf('=');
+    if (separator <= 0) continue;
+    var value = line.substring(separator + 1).trim();
+    if (value.length >= 2 &&
+        ((value.startsWith('"') && value.endsWith('"')) ||
+            (value.startsWith("'") && value.endsWith("'")))) {
+      value = value.substring(1, value.length - 1);
+    }
+    fields[line.substring(0, separator)] = value;
+  }
+  final distroIds = {
+    ...?fields['ID']?.split(RegExp(r'\s+')),
+    ...?fields['ID_LIKE']?.split(RegExp(r'\s+')),
+  }.map((id) => id.toLowerCase());
+
+  const debianBased = {
+    'debian',
+    'ubuntu',
+    'linuxmint',
+    'pop',
+    'elementary',
+    'zorin',
+    'kali',
+    'raspbian',
+    'deepin',
+  };
+  const rpmBased = {
+    'fedora',
+    'rhel',
+    'centos',
+    'rocky',
+    'almalinux',
+    'opensuse',
+    'suse',
+    'sles',
+    'ol',
+    'amzn',
+    'mariner',
+  };
+
+  if (distroIds.any(debianBased.contains)) return 'linux-$architecture.deb';
+  if (architecture == 'amd64' &&
+      distroIds.any(
+        (id) => rpmBased.contains(id) || id.startsWith('opensuse'),
+      )) {
+    return 'linux-amd64.rpm';
+  }
+  if (architecture == 'amd64') return 'linux-amd64.AppImage';
+  return null;
 }
 
 final request = Request();

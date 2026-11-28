@@ -73,4 +73,56 @@ void main() {
       );
     }
   });
+
+  test('selects a native Linux package for known distributions', () {
+    expect(
+      resolveLinuxUpdateAssetSuffix('ID=ubuntu\nID_LIKE=debian', 'amd64'),
+      'linux-amd64.deb',
+    );
+    expect(
+      resolveLinuxUpdateAssetSuffix('ID=fedora\nID_LIKE="rhel"', 'amd64'),
+      'linux-amd64.rpm',
+    );
+    expect(
+      resolveLinuxUpdateAssetSuffix('ID=opensuse-leap', 'amd64'),
+      'linux-amd64.rpm',
+    );
+    expect(
+      resolveLinuxUpdateAssetSuffix('ID=debian', 'arm64'),
+      'linux-arm64.deb',
+    );
+  });
+
+  test('uses portable Linux package only where it is published', () {
+    expect(
+      resolveLinuxUpdateAssetSuffix('ID=arch', 'amd64'),
+      'linux-amd64.AppImage',
+    );
+    expect(resolveLinuxUpdateAssetSuffix('ID=arch', 'arm64'), isNull);
+    expect(resolveLinuxUpdateAssetSuffix('ID=ubuntu', 'x64'), isNull);
+  });
+
+  test('accepts a compatible build only for macOS and Linux assets', () {
+    expect(
+      matchesGithubReleaseAssetSuffix(
+        'Fluxora-1.2.3-macos-amd64-compatible.dmg',
+        'macos-amd64.dmg',
+      ),
+      isTrue,
+    );
+    expect(
+      matchesGithubReleaseAssetSuffix(
+        'Fluxora-1.2.3-linux-amd64-compatible.AppImage',
+        'linux-amd64.AppImage',
+      ),
+      isTrue,
+    );
+    expect(
+      matchesGithubReleaseAssetSuffix(
+        'Fluxora-1.2.3-windows-amd64-compatible-setup.exe',
+        'windows-amd64-setup.exe',
+      ),
+      isFalse,
+    );
+  });
 }
