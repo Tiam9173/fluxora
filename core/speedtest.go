@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -25,11 +24,12 @@ import (
 // 速度。放在 Dart 侧做单连接下载的话，高延迟线路上会严重偏低，用户会以为代理
 // 有问题。
 const (
-	speedTestStreams   = 8
-	speedTestLatencyN  = 10
-	speedTestDownBytes = 10_000_000
-	speedTestUpBytes   = 10_000_000
-	speedTestSampleMs  = 200
+	speedTestStreams    = 8
+	speedTestLatencyN   = 10
+	speedTestDownBytes  = 10_000_000
+	speedTestUpBytes    = 10_000_000
+	speedTestProbeBytes = 256 * 1024
+	speedTestSampleMs   = 100
 	// 爬坡窗口：这段时间内的增量不计入最终速度。
 	speedTestRampWindow  = 2 * time.Second
 	speedTestPhaseIdle   = "idle"
@@ -140,58 +140,94 @@ func appleTarget(ctx context.Context, client *http.Client) (string, string, bool
 	if json.NewDecoder(io.LimitReader(resp.Body, 64*1024)).Decode(&cfg) != nil {
 		return "", "", false
 	}
-	if cfg.Urls.Large == "" || cfg.Urls.Upload == "" {
+	if !isHTTPSURL(cfg.Urls.Large) || !isHTTPSURL(cfg.Urls.Upload) {
 		return "", "", false
 	}
 	return cfg.Urls.Large, cfg.Urls.Upload, true
+}
+
+func isHTTPSURL(raw string) bool {
+	u, err := url.Parse(raw)
+	return err == nil && u.Scheme == "https" && u.Host != ""
 }
 
 // 在几个候选源里挑响应最快的那个。
 //
 // 国内网络到 Cloudflare 常常绕路，Apple 的 CDN 在境内有节点，所以两个都探一次
 // 再决定，而不是写死一家。
-func resolveTarget(ctx context.Context, client *http.Client) (string, string, string) {
+func resolveTarget(ctx context.Context, client *http.Client) (string, string, string, string, bool) {
 	type candidate struct {
-		name    string
-		probe   string
-		downURL string
-		upURL   string
+		name       string
+		latencyURL string
+		down       string
+		up         string
+		elapsed    time.Duration
+		ok         bool
 	}
-	cands := []candidate{
-		{"Cloudflare", "https://speed.cloudflare.com/__down?bytes=0", cloudflareDownURL, cloudflareUpURL},
+	probeCtx, cancelProbe := context.WithTimeout(ctx, 3*time.Second)
+	defer cancelProbe()
+	results := make(chan candidate, 2)
+	go func() {
+		started := time.Now()
+		down := fmt.Sprintf(cloudflareDownURL, speedTestProbeBytes)
+		ok := probeUsable(probeCtx, client, down)
+		results <- candidate{
+			name:       "Cloudflare",
+			latencyURL: fmt.Sprintf(cloudflareDownURL, 0),
+			down:       cloudflareDownURL,
+			up:         cloudflareUpURL,
+			elapsed:    time.Since(started),
+			ok:         ok,
+		}
+	}()
+	go func() {
+		down, up, ok := appleTarget(probeCtx, client)
+		elapsed := time.Duration(1<<63 - 1)
+		if ok {
+			started := time.Now()
+			ok = probeUsable(probeCtx, client, down)
+			elapsed = time.Since(started)
+		}
+		results <- candidate{
+			name:       "Apple",
+			latencyURL: down,
+			down:       down,
+			up:         up,
+			elapsed:    elapsed,
+			ok:         ok,
+		}
+	}()
+
+	// Check actual payload bytes from both reliable providers. A zero-byte probe
+	// can respond while the download route itself is unusable.
+	var best candidate
+	hasBest := false
+	pending := 2
+waitForCandidates:
+	for pending > 0 {
+		select {
+		case result := <-results:
+			pending--
+			if result.ok && (!hasBest || result.elapsed < best.elapsed) {
+				best = result
+				hasBest = true
+			}
+		case <-probeCtx.Done():
+			break waitForCandidates
+		}
+	}
+	if hasBest {
+		return best.name, best.latencyURL, best.down, best.up, true
 	}
 
-	best := cands[0]
-	bestMs := 1 << 30
-	for _, c := range cands {
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.probe, nil)
-		if err != nil {
-			continue
-		}
-		start := time.Now()
-		resp, err := client.Do(req)
-		if err != nil {
-			continue
-		}
-		ms := int(time.Since(start).Milliseconds())
-		_, _ = io.Copy(io.Discard, resp.Body)
-		resp.Body.Close()
-		if ms < bestMs {
-			bestMs = ms
-			best = c
-		}
+	// Cloudflare and Apple may both be blocked. Try a nearby HTTPS Speedtest.net
+	// server as the final public fallback.
+	speedtestCtx, cancelSpeedtest := context.WithTimeout(ctx, 4*time.Second)
+	defer cancelSpeedtest()
+	if name, latency, down, up, ok := speedtestTarget(speedtestCtx, client); ok {
+		return name, latency, down, up, true
 	}
-	// 国内 CDN 试过阿里云/腾讯云：探测能过，正式下载一律吊死到超时。
-	// 这类镜像对跨境流量不友好，留着只会让每轮测速多等十几秒，索性去掉。
-	if best.name == "Apple" {
-		if large, up, ok := appleTarget(ctx, client); ok && probeUsable(ctx, client, large) {
-			return "Apple", large, up
-		}
-		// 配置解析失败、或者它的下载地址根本连不上，就退回 Cloudflare。
-		// 光看配置文件能不能取到不够——实测 /gm/large 会直接超时。
-		return "Cloudflare", cloudflareDownURL, cloudflareUpURL
-	}
-	return best.name, best.downURL, best.upURL
+	return "", "", "", "", false
 }
 
 // 从 speedtest.net 的服务器列表里挑一台最快的。
@@ -227,7 +263,10 @@ func exitLocation(ctx context.Context, client *http.Client) string {
 
 func speedtestTarget(ctx context.Context, client *http.Client) (string, string, string, string, bool) {
 	listURL := speedtestServersURL
-	if loc := exitLocation(ctx, client); loc != "" {
+	locationCtx, cancelLocation := context.WithTimeout(ctx, time.Second)
+	loc := exitLocation(locationCtx, client)
+	cancelLocation()
+	if loc != "" {
 		// 按出口城市搜：这样挑出来的是"离出口近"的节点，而不是离本机近。
 		listURL += "&search=" + url.QueryEscape(loc)
 	}
@@ -252,54 +291,76 @@ func speedtestTarget(ctx context.Context, client *http.Client) (string, string, 
 		return "", "", "", "", false
 	}
 
-	bestHost, bestName, bestMs := "", "", 1<<30
-	for i, s := range servers {
-		if i >= 6 {
-			break // 只探前 6 台，再多就太慢
-		}
+	type serverResult struct {
+		host    string
+		name    string
+		elapsed time.Duration
+	}
+	probeCount := len(servers)
+	if probeCount > 6 {
+		probeCount = 6
+	}
+	results := make(chan serverResult, probeCount)
+	var wg sync.WaitGroup
+	for _, s := range servers[:probeCount] {
 		if s.Host == "" {
 			continue
 		}
-		start := time.Now()
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet,
-			"https://"+s.Host+"/latency.txt", nil)
-		if err != nil {
-			continue
-		}
-		resp, err := client.Do(req)
-		if err != nil {
-			continue
-		}
-		ms := int(time.Since(start).Milliseconds())
-		_, _ = io.Copy(io.Discard, resp.Body)
-		resp.Body.Close()
-		if resp.StatusCode != http.StatusOK {
-			continue
-		}
-		if ms < bestMs {
-			bestMs = ms
-			bestHost = s.Host
-			bestName = strings.TrimSpace(s.Sponsor + " " + s.Name)
+		server := s
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			start := time.Now()
+			req, err := http.NewRequestWithContext(
+				ctx,
+				http.MethodGet,
+				"https://"+server.Host+"/latency.txt",
+				nil,
+			)
+			if err != nil {
+				return
+			}
+			resp, err := client.Do(req)
+			if err != nil {
+				return
+			}
+			elapsed := time.Since(start)
+			status := resp.StatusCode
+			resp.Body.Close()
+			if status == http.StatusOK {
+				results <- serverResult{
+					host:    server.Host,
+					name:    strings.TrimSpace(server.Sponsor + " " + server.Name),
+					elapsed: elapsed,
+				}
+			}
+		}()
+	}
+	wg.Wait()
+	close(results)
+	bestHost, bestName := "", ""
+	bestElapsed := time.Duration(1<<63 - 1)
+	for result := range results {
+		if result.elapsed < bestElapsed {
+			bestHost = result.host
+			bestName = result.name
+			bestElapsed = result.elapsed
 		}
 	}
 	if bestHost == "" {
 		return "", "", "", "", false
 	}
-	// speedtest.net 的节点大多在 8080 上跑 http，用 https 连 8080 会直接超时。
-	scheme := "https"
-	if strings.Contains(bestHost, ":8080") {
-		scheme = "http"
-	}
-	base := scheme + "://" + bestHost
-	down := base + "/download?size=" + strconv.Itoa(speedTestDownBytes)
-	return bestName, down, base + "/upload", down, true
+	base := "https://" + bestHost
+	down := base + "/download?size=%d"
+	return bestName, base + "/latency.txt", down, base + "/upload", true
 }
 
 type speedCounter struct {
 	total int64
-	// 计时过半时记一次总量，用来把爬坡期排除掉。
-	halfwayBytes int64
-	halfwaySet   int32
+	// 记录爬坡期结束时的字节数和实际时刻。
+	afterRampBytes int64
+	afterRampAtNs  int64
+	afterRampSet   int32
 }
 
 func newSpeedClient(outbound string) *http.Client {
@@ -374,7 +435,14 @@ func handleSpeedTest(action *Action, result ActionResult) {
 		ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 		defer cancel()
 
-		name, downURL, upURL := resolveTarget(ctx, client)
+		name, latencyURL, downURL, upURL, ok := resolveTarget(ctx, client)
+		if !ok {
+			report(SpeedTestProgress{
+				Phase: speedTestPhaseFailed,
+				Error: "No reachable speed test server found",
+			})
+			return
+		}
 		speedTestName, speedTestUpURL = name, upURL
 		// 只有带 %d 的模板才交给 Sprintf 填大小；已经拼好的完整 URL 直接存下来，
 		// 否则会被塞进一个多余的参数，变成 ...size=20000000%!(EXTRA int=0)。
@@ -387,7 +455,13 @@ func handleSpeedTest(action *Action, result ActionResult) {
 
 		// 1. 延迟：取中位数，不被单次抖动拉偏。
 		report(SpeedTestProgress{Phase: speedTestPhaseLat, ServerName: speedTestName})
-		latencies, err := measureLatency(ctx, client, speedTestLatencyN)
+		latencies, err := measureLatency(
+			ctx,
+			client,
+			speedTestLatencyN,
+			latencyURL,
+			speedTestDownFixed != "",
+		)
 		if err != nil {
 			report(SpeedTestProgress{Phase: speedTestPhaseFailed, Error: err.Error()})
 			return
@@ -411,7 +485,21 @@ func handleSpeedTest(action *Action, result ActionResult) {
 				speedTestDownFixed = ""
 				speedTestDownURL = cloudflareDownURL
 				speedTestUpURL = cloudflareUpURL
-				rctx, rcancel := context.WithTimeout(context.Background(), 25*time.Second)
+				fallbackCtx, fallbackCancel := context.WithTimeout(ctx, 12*time.Second)
+				fallbackLatencies, fallbackErr := measureLatency(
+					fallbackCtx,
+					client,
+					speedTestLatencyN,
+					fmt.Sprintf(cloudflareDownURL, 0),
+					false,
+				)
+				fallbackCancel()
+				if fallbackErr != nil {
+					report(SpeedTestProgress{Phase: speedTestPhaseFailed, Error: fallbackErr.Error()})
+					return
+				}
+				latencies = fallbackLatencies
+				rctx, rcancel := context.WithTimeout(ctx, 25*time.Second)
 				down, err = measureDownload(rctx, client, report)
 				rcancel()
 			}
@@ -456,26 +544,69 @@ func handleSpeedTest(action *Action, result ActionResult) {
 	}()
 }
 
-func measureLatency(ctx context.Context, client *http.Client, n int) ([]int, error) {
+func measureLatency(
+	ctx context.Context,
+	client *http.Client,
+	n int,
+	probeURL string,
+	usesFixedDownload bool,
+) ([]int, error) {
 	out := make([]int, 0, n)
 	for i := 0; i < n; i++ {
 		start := time.Now()
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet,
-			downURLFor(0), nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, probeURL, nil)
 		if err != nil {
 			return nil, err
+		}
+		if usesFixedDownload {
+			req.Header.Set("Range", "bytes=0-0")
 		}
 		resp, err := client.Do(req)
 		if err != nil {
 			return nil, err
 		}
+		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusPartialContent {
+			resp.Body.Close()
+			return nil, fmt.Errorf("latency endpoint returned status %d", resp.StatusCode)
+		}
 		// 只算到响应头：把 body 下载时间算进延迟会把读数抬高一倍。
 		elapsed := int(time.Since(start).Milliseconds())
-		_, _ = io.Copy(io.Discard, resp.Body)
-		resp.Body.Close()
+		if usesFixedDownload {
+			// Fixed-size providers may return a huge body if Range is ignored.
+			// Closing here keeps latency probes from consuming the full test file.
+			resp.Body.Close()
+		} else {
+			_, _ = io.Copy(io.Discard, resp.Body)
+			resp.Body.Close()
+		}
 		out = append(out, elapsed)
 	}
 	return out, nil
+}
+
+type speedSample struct {
+	at    time.Duration
+	bytes int64
+}
+
+func speedWindowMbps(samples []speedSample, window time.Duration) float64 {
+	if len(samples) < 2 {
+		return 0
+	}
+	end := samples[len(samples)-1]
+	cutoff := end.at - window
+	start := samples[0]
+	for _, sample := range samples[1:] {
+		if sample.at > cutoff {
+			break
+		}
+		start = sample
+	}
+	elapsed := end.at - start.at
+	if elapsed <= 0 || end.bytes <= start.bytes {
+		return 0
+	}
+	return mbps(end.bytes-start.bytes, int(elapsed.Milliseconds()))
 }
 
 func measureDownload(ctx context.Context, client *http.Client, report func(SpeedTestProgress)) (float64, error) {
@@ -485,24 +616,32 @@ func measureDownload(ctx context.Context, client *http.Client, report func(Speed
 	errs := make(chan error, speedTestStreams)
 
 	stopSampling := make(chan struct{})
+	samplingDone := make(chan struct{})
 	go func() {
+		defer close(samplingDone)
 		ticker := time.NewTicker(speedTestSampleMs * time.Millisecond)
 		defer ticker.Stop()
-		var last int64
+		samples := []speedSample{{at: 0, bytes: 0}}
 		for {
 			select {
 			case <-stopSampling:
 				return
 			case <-ticker.C:
 				cur := atomic.LoadInt64(&counter.total)
-				if atomic.LoadInt32(&counter.halfwaySet) == 0 &&
-					time.Since(start) > speedTestRampWindow {
-					atomic.StoreInt64(&counter.halfwayBytes, cur)
-					atomic.StoreInt32(&counter.halfwaySet, 1)
+				sample := speedSample{at: time.Since(start), bytes: cur}
+				samples = append(samples, sample)
+				cutoff := sample.at - time.Second
+				for len(samples) > 2 && samples[1].at < cutoff {
+					samples = samples[1:]
 				}
-				delta := cur - last
-				last = cur
-				elapsed := time.Since(start).Seconds()
+				if atomic.LoadInt32(&counter.afterRampSet) == 0 &&
+					time.Since(start) > speedTestRampWindow {
+					atomic.StoreInt64(&counter.afterRampBytes, cur)
+					atomic.StoreInt64(&counter.afterRampAtNs, int64(sample.at))
+					atomic.StoreInt32(&counter.afterRampSet, 1)
+				}
+				speed := speedWindowMbps(samples, time.Second)
+				elapsed := sample.at.Seconds()
 				// 前 30% 是爬坡期，速度还没稳定，报上去只会让人误判。
 				percent := 10
 				if elapsed > 0 {
@@ -513,7 +652,7 @@ func measureDownload(ctx context.Context, client *http.Client, report func(Speed
 				}
 				report(SpeedTestProgress{
 					Phase:      speedTestPhaseDown,
-					DownMbps:   mbps(delta, speedTestSampleMs),
+					DownMbps:   speed,
 					Percent:    percent,
 					ServerName: speedTestName,
 				})
@@ -521,7 +660,13 @@ func measureDownload(ctx context.Context, client *http.Client, report func(Speed
 		}
 	}()
 
-	for i := 0; i < speedTestStreams; i++ {
+	streams := speedTestStreams
+	if speedTestDownFixed != "" {
+		// Apple's download URL has no size parameter. Use one stream and cap
+		// bytes locally so a provider's large test file cannot multiply traffic.
+		streams = 1
+	}
+	for i := 0; i < streams; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -537,9 +682,17 @@ func measureDownload(ctx context.Context, client *http.Client, report func(Speed
 				return
 			}
 			defer resp.Body.Close()
+			if resp.StatusCode != http.StatusOK {
+				errs <- fmt.Errorf("download endpoint returned status %d", resp.StatusCode)
+				return
+			}
 			buf := make([]byte, 64*1024)
+			body := io.Reader(resp.Body)
+			if speedTestDownFixed != "" {
+				body = io.LimitReader(resp.Body, int64(speedTestDownBytes))
+			}
 			for {
-				n, err := resp.Body.Read(buf)
+				n, err := body.Read(buf)
 				if n > 0 {
 					atomic.AddInt64(&counter.total, int64(n))
 				}
@@ -554,6 +707,7 @@ func measureDownload(ctx context.Context, client *http.Client, report func(Speed
 	}
 	wg.Wait()
 	close(stopSampling)
+	<-samplingDone
 	close(errs)
 
 	if err := <-errs; err != nil && atomic.LoadInt64(&counter.total) == 0 {
@@ -563,14 +717,20 @@ func measureDownload(ctx context.Context, client *http.Client, report func(Speed
 	if elapsed <= 0 {
 		return 0, nil
 	}
-	// 前一半时间是爬坡（TCP 慢启动、并发流建立），只取后半段的增量算速度。
-	// 之前虽然注释这么写，实现却是全程平均，所以读数偏保守。
-	half := int64(atomic.LoadInt64(&counter.halfwayBytes))
-	tail := atomic.LoadInt64(&counter.total) - half
-	if half > 0 && tail > 0 {
-		return mbps(tail, int(elapsed*500)), nil
+	// 排除连接和 TCP 慢启动阶段，用爬坡结束后的真实时长计算稳态速度。
+	return speedAfterRamp(
+		atomic.LoadInt64(&counter.total),
+		atomic.LoadInt64(&counter.afterRampBytes),
+		time.Since(start),
+		time.Duration(atomic.LoadInt64(&counter.afterRampAtNs)),
+	), nil
+}
+
+func speedAfterRamp(totalBytes, rampEndBytes int64, elapsed, rampEndAt time.Duration) float64 {
+	if rampEndBytes <= 0 || totalBytes <= rampEndBytes || elapsed <= rampEndAt || rampEndAt <= 0 {
+		return mbps(totalBytes, int(elapsed.Milliseconds()))
 	}
-	return mbps(atomic.LoadInt64(&counter.total), int(elapsed*1000)), nil
+	return mbps(totalBytes-rampEndBytes, int((elapsed - rampEndAt).Milliseconds()))
 }
 
 func measureUpload(ctx context.Context, client *http.Client, report func(SpeedTestProgress), latency int, down float64) (float64, error) {
@@ -588,15 +748,24 @@ func measureUpload(ctx context.Context, client *http.Client, report func(SpeedTe
 	start := time.Now()
 
 	stop := make(chan struct{})
+	samplingDone := make(chan struct{})
 	go func() {
+		defer close(samplingDone)
 		ticker := time.NewTicker(speedTestSampleMs * time.Millisecond)
 		defer ticker.Stop()
+		samples := []speedSample{{at: 0, bytes: 0}}
 		for {
 			select {
 			case <-stop:
 				return
 			case <-ticker.C:
 				done := atomic.LoadInt64(&sent)
+				sample := speedSample{at: time.Since(start), bytes: done}
+				samples = append(samples, sample)
+				cutoff := sample.at - time.Second
+				for len(samples) > 2 && samples[1].at < cutoff {
+					samples = samples[1:]
+				}
 				percent := 50
 				if done > 0 {
 					percent = 50 + int(50*float64(done)/float64(speedTestUpBytes))
@@ -606,7 +775,7 @@ func measureUpload(ctx context.Context, client *http.Client, report func(SpeedTe
 				}
 				report(SpeedTestProgress{
 					Phase:      speedTestPhaseUp,
-					UpMbps:     mbps(done, int(time.Since(start).Milliseconds())),
+					UpMbps:     speedWindowMbps(samples, time.Second),
 					Percent:    percent,
 					LatencyMs:  latency,
 					DownMbps:   down,
@@ -635,11 +804,16 @@ func measureUpload(ctx context.Context, client *http.Client, report func(SpeedTe
 				return
 			}
 			defer resp.Body.Close()
+			if resp.StatusCode >= http.StatusBadRequest {
+				errs <- fmt.Errorf("upload endpoint returned status %d", resp.StatusCode)
+				return
+			}
 			_, _ = io.Copy(io.Discard, resp.Body)
 		}()
 	}
 	wg.Wait()
 	close(stop)
+	<-samplingDone
 	close(errs)
 
 	total := atomic.LoadInt64(&sent)
